@@ -1,5 +1,71 @@
 # Handover
 
+## State (9 November 2026, night): Olov's list from playing Äventyr 2 through, saved unfinished
+
+- **Olov played Äventyr 2 through and wrote down 32 things to improve** (his list is below), and asked that a line
+  being said is always let finish before the next line or event. Later he added: when someone speaks, everything stands
+  still (the characters should go on moving a little meanwhile), and lip-sync for whoever speaks. Eight building agents
+  worked on it in worktrees for about two hours. **Then Olov asked to stop and wrap up at once**, to go on in a new
+  session the next day. **None of it is in the game:** nothing was put together or checked as a whole, and main got only
+  this handover and the saved work.
+- **The work is saved as eight patches in `docs/wip/2026-11-09/`**, each made against `2e3454f` (main after PR #250)
+  with `git diff --binary` in its builder's worktree: the builder's commits and uncommitted changes together, new files
+  included, throwaway measuring tests left out. Their binary parts are public game models only (`flarken.glb`,
+  `street.glb`, `creatures.glb`, `props.glb`); nothing from the private repository is in them. They overlap in
+  `src/content/aventyr2/render.ts`, `src/sim/types.ts`, `src/render/view.ts`, `src/sim/sim.ts`, `src/sim/scene.ts`,
+  `src/render/stage.ts`, `src/main.ts`, `src/ui/hud.ts`, `buildings.ts`, `kit.ts`, `docs/aventyr-2.md` and
+  `scripts/voices-aventyr2.json`. Apply them one at a time with `git apply --3way` on a branch from main, in the order
+  01, 04, 03, 02, 05, 06, 07, 08, resolving as you go; then finish, check, commit per chapter, and delete the folder.
+
+| Patch | Olov's items | State when stopped |
+| --- | --- | --- |
+| `01-dialogue.patch` | Lines finish; 2 | **Lines finish: done and tested by its builder.** A line on screen is never cut or dropped; a beat due while someone speaks waits its turn, its flag with it; every held scene waits for quiet; a scene that talks makes a reading stop at its next line; the last card waits for the whole conversation; the voice goes with the bubble; Pause holds a recorded line. With the robot reading every line (`tests/robot/listener.ts`), 340 lines in the 18 chapters had 31 cut short and 50 never shown; 0 and 0 after. Tests: `tests/robot/dialogue.test.ts`, `tests/sim/talk.test.ts`, reading stops in `tests/sim/scene.test.ts`, `tests/unit/voice-player.test.ts`; `dialogue-reading.mjs` and `finale-stage.mjs` now check the new rule. **Item 2 is unfinished:** Stormskogen's talk with Pappa when Klonk lies down as a bridge was being rewritten to fit what the picture shows (Pappa's lamp is already on Elof, so he peers at something tiny in its light). |
+| `02-kap1-3-4.patch` | 1, 5, 6, 7, 8, 9 | Unfinished, in its third round of pictures: Stormgården's flash at the hedge (Elof stops and watches; a gust lifts the little one slowly up over the hedge, close to the path, and the shots follow him); Moa holding her umbrella from the start in Byn; time for the cap's moment in the gutter by the shoemaker's; stone steps up to Olympia on its hill; Olympia's puddle; the wind taking the little one north, slowed. The three chapters' robot tests extended. |
+| `03-flarken.patch` | 10, 11, 12 | Unfinished, being checked: "Flärken" on the sun board (`art/blender/flarken.py`, `flarken.glb` exported again, its LICENSES row), the little one seen where the å begins, the stone for the gap (a fieldstone, bark, a splash where it goes in); `tests/unit/flarken-puzzle.test.ts`. Overlaps 04 in `flarken.ts` and `flarken-kit.test.ts`. |
+| `04-water-logs.patch` | 13, 14, 15, 16 | **Committed by its builder in three steps and unit-tested; its browser suites (water-light, the tiers) were running when it stopped.** Open water is one surface over the whole chapter with no cut face or open edge in view (Älven, Stormens öga, Myren, Flärken; `src/render/water.ts`). Älven's logs are made in code (`src/content/aventyr2/river-log.ts`) with their top at the simulation's top (they lay 0.47 to 0.78 EL under his soles). Flärken's jetty ends over the lake's outlet, a running å with banks, stones in its bed, reeds and foam (`src/content/aventyr2/outlet.ts`). |
+| `05-models.patch` | 3, 4, 18, 21 | Unfinished, nearly done: a grown-up's legs walking past behind Byn's street, made in Blender and walked with planted feet (`art/blender/a2-street.py`, `src/render/passerby.ts`); the car going by with wheels that turn and spray from the wet road; the family's silver hatchback made in Blender, no badge or plate (`art/blender/a2-props.py`); a beaver at Älven's lodge made in Blender (`art/blender/a2-creatures.py`, `src/content/aventyr2/beaver.ts`: it gnaws, looks at Elof, thumps its tail and goes); LICENSES rows; tests `cars-kit`, `beaver`, `passerby`. |
+| `06-alven-billsta.patch` | 17, 19, 20, 22, 23, 24 | Unfinished: Pappa's knitted scarf from the bridge (`src/render/scarf.ts`); the owl's ride swooping low over the lake's candy so it can be taken (`src/sim/ride-path.ts`, `Ride.skim`); Bertil and Moa coming to the car; Mormor clear of the stump, walking up the planks and opening the barn's door (`bi:door`); a closer, clearer shot of the two in the strait. |
+| `07-finale-epilog.patch` | 25 to 32 | Unfinished: the golden geléhallon seen as he holds it up and tastes it (`src/render/gold-sweet.ts`, `tests/unit/finale-sweet.test.ts`); Bertil dreaming of Thailand; Elof walking home; more life in the finale and at breakfast; Morgonen's room as on the evening of the storm (Pappa's shelf back by the window) with the window's new latch, and Mormor and the chocolate with cups and a thermos; a real ending: the last card leads back to the map, as the first adventure's does (`src/save/journey.ts`, `tests/browser/endings.mjs`, `tests/robot/aventyr2-ends.test.ts`). |
+| `08-talk-lipsync.patch` | Life while someone speaks; lip-sync | Unfinished, being compared with and without the mouth: while a line is read the story waits but the bodies go on living, look at whoever speaks, and the speaker speaks (`src/render/talk.ts`, `look.ts`); faces that speak and blink, made in game code as each model is put on its rig, the painted mouth opening with the line (`src/render/face.ts`). **Nothing in the private models changes.** A lab scene: `dev/motion.html?scene=talk`. Tests `face`, `talk`, `talk-stage`. |
+
+- **Olov's list, in his words (9 November 2026):**
+  - *Kapitel 1 – Stormgården.* 1. När lillgubben flyger över häcken i slutet av kapitlet är det svårt att se honom.
+    Det ska synas tydligt.
+  - *Kapitel 2 – Stormskogen.* 2. När man träffar Pappa och Klonk lägger sig som en bro ska samtalet mellan Pappa, Elof
+    och Klonk passa situationen bättre.
+  - *Kapitel 3 – Byn i stormen.* 3. De gigantiska benen som går förbi ser fyrkantiga och konstigt gjorda ut. 4. Bilen
+    som kör förbi har inga rullande däck, så den ser stillastående ut. 5. Moa ska hålla i ett paraply redan innan Elof
+    ropar på henne och får det. 6. När man hittar lillgubbens mössa går det alldeles för fort.
+  - *Kapitel 4 – Olympia.* 7. Man ska gå upp till Olympia, inte ner. 8. Pölen där man sparkar ner bollen ska bli
+    snyggare. 9. Man ser inte när vinden tar lillgubben norrut, för det går alldeles för fort.
+  - *Kapitel 5 – Flärken.* 10. Det ska stå "Flärken" på den stora solskylten. 11. Man ser inte lillgubben där ån
+    börjar. 12. Uppdraget med stenen som ska fylla luckan måste se bättre ut. 13. När ån tar med sig lillgubben vill jag
+    se en riktig å.
+  - *Kapitel 6 – Älven.* 14. Vid det första vattnet ser man från sidan rakt in under vattenytan, och det ser väldigt
+    fyrkantigt ut. 15. På stockarna som man väntar in och hoppar på står man i luften ovanför stocken, inte på den.
+    16. På andra sidan ser man också under vattnet från sidan, som om vattnet bara vore en platt skiva med ingenting
+    under. 17. Pappas halsduk ser bara ut som ett streck när han sänker ner den från bron. 18. Modellera en bäver i
+    Blender till bäverhyddan efter bron. 19. När man flyger på ugglan över sjön syns godisar under. Går de att ta, eller
+    är det omöjligt? 20. Bertil och Moa bara dyker upp vid bilen. 21. Bilen ska bli snyggare, modellerad i Blender. (Det
+    gäller även bilen i Billsta.)
+  - *Kapitel 7 – Billsta.* 22. Mormor döljs av en stubbe. 23. Mormor ska gå fram och öppna ladan. 24. Bilden ska bli
+    tydligare när lillgubben och gamla trägubben syns nere i sundet.
+  - *Finalen – Stormens öga.* 25. Geléhallonet i guld, som gör Elof stor igen, syns inte i scenen. 26. Bertil säger
+    "Nästa äventyr får vara i tofflor". I stället ska han drömma om Thailand, dit familjen ska åka snart. 27. När Elof
+    väljer att gå hem i slutet flyger han. Det måste fixas. 28. Alla står blixtstilla. Karaktärerna ska röra sig mer
+    (the finale and the breakfast both).
+  - *Epilog – Morgonen efter.* 29. Mormor och den varma chokladen ska synas, med koppar och en termos på bordet.
+    30. Fönsterhaken ska se snyggare ut när man hakar fast den. 31. Hyllan med trägubbarna har bytt plats i huset. Den
+    ska stå där den stod i Stormkvällen. 32. När man klarar sista kapitlet blir allt svart och spelet börjar om. Det
+    behövs ett riktigt avslut.
+  - *Speech.* "Fixa även så att när någon säger något kan bli avbrutet, så då måste det den säger få talas klart innan
+    nästa event spelas upp eller pratas upp." Later: "när någon säger någonting så blir allt helt stilla, karaktärerna
+    kan fortsätta röra sig lite subtilt medans någon pratar", and "Går det även lägga till lip-sync för den som pratar?"
+- **Why it froze while someone spoke:** while a tap-to-continue line is up, `src/main.ts` calls `game.resume()` instead of
+  `game.frame(...)`, so the simulation and the scene's clock stop, and the actors are posed from them.
+- **The next step needs:** nothing from Olov's computer. The patches carry their GLBs; Blender (5.2 `bpy`) is needed only
+  if a model is changed again.
+
 ## State (9 November 2026, evening)
 
 - **The five things left of the whole body, done** (Olov: "Fix this!" to: turning on the spot slides the feet; the trunk
@@ -5038,6 +5104,31 @@
 
 ## Next
 
+**Olov's list from playing Äventyr 2 through (9 November, night): start here.** The work of eight builders is saved,
+unfinished, in `docs/wip/2026-11-09/` (see "State"). Put it together, finish it, check each item against Olov's words,
+commit per chapter, delete the folder, and update this handover. Olov's prompt for that session:
+
+```text
+Continue Elof's game from where the 9 November session stopped. Read CLAUDE.md, then HANDOVER.md's section
+"State (9 November 2026, night)" and the first paragraph of "Next".
+
+Yesterday I played Äventyr 2 through and listed 32 things to fix, plus three about speech: a line must be let
+finish before the next line or event; the characters must keep moving subtly while someone speaks; and lip-sync
+for whoever speaks. Eight builders worked on them, but the work was stopped before it was put together, so none of
+it is in the game. It is saved as eight patches in docs/wip/2026-11-09/, all made against 2e3454f.
+
+1. Attach the private repository olovmelander/spokets-godisbus-familj and link it at art/private, so the family's
+   models are in the game while you check.
+2. On your session branch from main, apply the patches one at a time with git apply --3way, in the order 01, 04,
+   03, 02, 05, 06, 07, 08, and resolve where they overlap.
+3. Finish what each one left, as the handover's table says, using building agents in worktrees in parallel where
+   it helps. Check every item in the built game against my words in the handover, on a phone-sized screen too.
+4. "Flärken" on the big sun board is my decision: add it to CLAUDE.md's exceptions and to plan §0, row 13.
+5. Run typecheck, npm test, npm run build and the privacy check, and the browser suites for the chapters touched.
+   Make one commit per chapter, plus one for the speech rules and one for the life and lip-sync while speaking.
+6. Delete docs/wip/2026-11-09/, update HANDOVER.md, open a PR, and merge it to main when CI is green.
+```
+
 **The whole body (9 November, evening), left in the cloud:** a walk under an act slips as a walk does, the free arms
 there do not swing, Elof's running landings and his walking toe, and the children's steady run (see "State"). For Olov
 on the devices: turns on the spot, the running in the prologue and Billsta, Elof's jumps and landings, shoulders and
@@ -5437,6 +5528,14 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **"Flärken" on Flärkenbadet's big sun board (Olov, 9 November 2026: "Det ska stå 'Flärken' på den stora
+  solskylten"):** a third exception to the rule against lettering, beside Olympia on the red hall and the crest on
+  Bertil's cap, in the game's own Playpen Sans. It is in `docs/wip/2026-11-09/03-flarken.patch`; add it to CLAUDE.md's
+  exceptions and plan §0 row 13 when the sign lands.
+- **Bertil dreams of Thailand at the finale (Olov, 9 November 2026),** where the family is going soon, instead of "Nästa
+  äventyr får vara i tofflor". Olov's own request; no dates.
+- **Lip-sync is made in game code (9 November 2026):** the speaker's painted mouth opens with the line as each model is
+  put on its rig, as the fingers were; a Blender jaw in the private models only at Olov's word.
 - **The size gates (Olov, 8 November 2026: "Höj, grafiken till 10 Mbit och js-budgeten till 1000kb"):** at most 1000 KB
   of gzipped JS (from 550) and 10 MB as served for the whole site (from 4.5). "10 Mbit" is read as megabytes, as a
   raise: ten megabits would have been 1.25 MB, under what the site already is. `scripts/size-gate.mjs`, plan §6.6 and
@@ -5518,6 +5617,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Olov's Äventyr 2 playthrough list (9 Nov, night) | Olov's request: fix 32 things he noted, let every line finish, life while someone speaks, lip-sync | Part of the same cloud session, with eight building agents; stopped at Olov's word before integration | — / 0 so far | Saved unfinished as eight patches in `docs/wip/2026-11-09/`; the speech rule and the water and logs were done and unit-tested by their builders. |
 | The rest of the whole body (9 Nov, evening) | Olov's request: "Fix this!" to the five things left | Part of the same cloud session, with two building agents | — / 0 so far | Turning on the spot in steps; the trunk alive under a held act; the weight over before a step and the trunk following the hips; Elof's jumps, landings and turns without snaps; Billsta's children at a child's sprint. |
 | The whole body moving smoothly (9 Nov, late afternoon) | Olov's request: the joints and movement of the whole body, made in Blender, smooth | Part of the same cloud session, with two building agents | — / 0 so far | A fuller skeleton in Blender (collarbones, neck, three spine bones, twist bones, hip correctives; private PR #8) driven by the game; no snaps in the upper body; running legs at their source; the head leading a turn. |
 | Hands with separate fingers (9 Nov, afternoon) | Olov's request: new hands with separate fingers in Blender | Part of the same cloud session, with one building agent | — / 0 so far | New hands on all seven (private PR #7) and grips that use them: a pointing finger, a pinch, fingers through the mug's handle. |

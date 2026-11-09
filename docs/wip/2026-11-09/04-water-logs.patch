@@ -1,0 +1,1324 @@
+diff --git a/src/content/aventyr2/buildings.ts b/src/content/aventyr2/buildings.ts
+index 66f1c28..95299ca 100644
+--- a/src/content/aventyr2/buildings.ts
++++ b/src/content/aventyr2/buildings.ts
+@@ -7,6 +7,7 @@ import type { Storm } from '../../sim/types';
+ import { paintedWood } from '../../render/painted-wood';
+ import { groundDetail } from '../../render/ground-detail';
+ import { PLANK, STONE, barkDetail, barky, notBark } from '../../render/bark-detail';
++import { outletShape } from './outlet';
+ 
+ /**
+  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
+@@ -950,9 +951,18 @@ function store(def: BuildingDef) {
+   return { parts, panes };
+ }
+ 
++/**
++ * Where a lake runs out into its å (Flärken's end): the stream's two banks and the stones in its bed (./outlet.ts),
++ * its middle at the building's z and its foot at the water (`y`), as long as `width`, its banks `height` high, and its
++ * near bank from `opens` on.
++ */
++function outlet(def: BuildingDef) {
++  return { parts: [outletShape({ long: def.width ?? 34, wide: 6, high: def.height ?? 1.2, opens: def.opens ?? 1.5 })], panes: [] };
++}
++
+ const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
+   jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
+-  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce, gardenset,
++  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce, gardenset, outlet,
+ };
+ 
+ /**
+diff --git a/src/content/aventyr2/chapters/flarken.ts b/src/content/aventyr2/chapters/flarken.ts
+index 78111e7..c707801 100644
+--- a/src/content/aventyr2/chapters/flarken.ts
++++ b/src/content/aventyr2/chapters/flarken.ts
+@@ -188,6 +188,16 @@ const RAFT: Stone = { from: 174.7, to: 176.7, y: 0 };
+ const FAR: Stone = { from: 178, to: 180.4, y: 0 };
+ /** The jetty's last stretch, on its stone crib: a step up again, out to the end post. */
+ const END = { from: FAR.to, to: 191 };
++/**
++ * Past the jetty's end the lake runs out into Norra Anundsjöån, between two banks, out of the picture: the outlet that
++ * takes the little one, and the old one after him on a log. It is the lake's water to the simulation, and a fall into
++ * it is the water's; its banks, its stones and its running water are the picture's (`outlet`, and its foam). It was a
++ * wall of ground nine of him high at the jetty's end, which hid where they went (Olov: "När ån tar med sig lillgubben
++ * vill jag se en riktig å").
++ */
++const OUTLET = { from: END.to, to: END.to + 36 };
++/** Where the å leaves the lake: behind the jetty's last stretch, so that its mouth is in the picture with him. */
++const MOUTH = END.to - 7;
+ /** Where the old trägubbe waits on the end post, until he leaps after the little one. */
+ const END_POST = { x: 189.4, y: DECK };
+ 
+@@ -310,11 +320,13 @@ export const flarken: ChapterData = {
+     { x: LOW.to, y: DEEP },
+     { x: FAR.from, y: DEEP },
+     { x: FAR.from, y: FAR.y },
+-    // 9. up onto the last stretch, out to the end post
++    // 9. up onto the last stretch, out to the end post, and the outlet past it
+     { x: END.from, y: FAR.y },
+     { x: END.from, y: DECK },
+     { x: END.to, y: DECK },
+-    { x: END.to, y: 9 },
++    { x: OUTLET.from, y: DEEP },
++    { x: OUTLET.to, y: DEEP },
++    { x: OUTLET.to, y: 9 },
+   ],
+   water: [
+     { from: PUDDLE.from, to: PUDDLE.to, y: PUDDLE_WATER },
+@@ -323,6 +335,7 @@ export const flarken: ChapterData = {
+     { from: BREAK.from, to: BREAK.to, y: WATER },
+     { from: OUTER.to, to: BEYOND.from, y: WATER },
+     { from: LOW.to, to: FAR.from, y: WATER },
++    { from: OUTLET.from, to: OUTLET.to, y: WATER },
+   ],
+   tussocks: [...MATS_A, ...MATS_B].map(mat),
+   // The slide and the picnic table are things on the sand, whatever he goes over.
+@@ -438,7 +451,17 @@ export const flarken: ChapterData = {
+       { kind: 'birch', x: 40, z: -26, height: 72 },
+       { kind: 'birch', x: 64, z: -18, height: 58 },
+       { kind: 'birch', x: 88, z: -30, height: 70 },
++      // The outlet: the å's two banks and the stones in its bed, its mouth behind the jetty's last stretch and on out
++      // of the picture, its middle where what it carries floats (the flybys' z), its near bank from past the jetty's
++      // end. Spruces and a birch on its far bank.
++      { kind: 'outlet', x: MOUTH, y: WATER, z: -4, width: OUTLET.to - MOUTH, height: 1.3, opens: OUTLET.from + 1.5 - MOUTH },
++      { kind: 'spruce', x: 200, y: 0.4, z: -11, height: 42 },
++      { kind: 'birch', x: 208, y: 0.4, z: -11.2, height: 50 },
++      { kind: 'spruce', x: 216, y: 0.4, z: -11, height: 44 },
+     ],
++    // The å runs out of the lake past the jetty's end, and its foam drifts down it: there the lake's water runs too
++    // (../../../render/water.ts).
++    foam: [{ from: MOUTH, to: OUTLET.to, y: WATER, speed: 1.8, dense: 4 }],
+   },
+   decor: [
+     // A pair of mallards, sheltering behind the reeds.
+@@ -454,6 +477,11 @@ export const flarken: ChapterData = {
+     { look: 'tragubbe', at: OLD_ONE, until: 'beat:sjon:old-one' },
+     // And on the jetty's end post, until he leaps after the little one.
+     { look: 'tragubbe', at: END_POST, until: 'beat:sjon:log' },
++    // The outlet: where the lake spills into the å it breaks white over the stones in its bed, and reeds stand along
++    // its banks, at its near and far waterlines.
++    { look: 'whiteWater', at: { x: OUTLET.from + 5, y: WATER }, z: -1.6 },
++    ...[OUTLET.from + 2.4, OUTLET.from + 9.5, OUTLET.from + 16].map((x) => ({ look: 'reed' as const, at: { x, y: WATER }, z: -1.2 })),
++    ...[OUTLET.from + 4.6, OUTLET.from + 12.8].map((x) => ({ look: 'reed' as const, at: { x, y: WATER }, z: -7.1 })),
+   ],
+   // Klonk is always a little ahead, on firm ground: under the picnic table out of the rain, over the mats it never
+   // stops, and it is never on one.
+@@ -556,8 +584,8 @@ export const flarken: ChapterData = {
+     // The tower: the platform, the jetty below it, and the lake beyond.
+     { from: 152, to: 161, zoom: 1.5, lift: 1.2 },
+     { from: 161, to: END.from, zoom: 1.3 },
+-    // At the end the picture opens out over the lake, towards the river's mouth.
+-    { from: END.from, to: END.to, zoom: 1.6, lift: 0.8 },
++    // At the end the picture opens out over the lake, and looks ahead into the outlet, where the å takes them.
++    { from: END.from, to: END.to, zoom: 1.6, lift: 0.8, lead: 3.4 },
+   ],
+   candy: [
+     // 1. the parking, and along both swings: the ramp of candy out of the puddle
+diff --git a/src/content/aventyr2/moonstone.ts b/src/content/aventyr2/moonstone.ts
+index db07810..22b56f2 100644
+--- a/src/content/aventyr2/moonstone.ts
++++ b/src/content/aventyr2/moonstone.ts
+@@ -1,4 +1,4 @@
+-import { BufferGeometry, Color, ConeGeometry, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry } from 'three';
++import { BufferGeometry, Color, ConeGeometry, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, SphereGeometry } from 'three';
+ import { granite } from '../../render/dressing/ground';
+ 
+ /** The meeting's wave-worn granite: one continuous skin, with a level strip for the exact walking surface. */
+@@ -101,12 +101,7 @@ export function moonstone(width: number, top: number, water: number): Group {
+     }
+   }
+   for (const mesh of [lichens, loose, blades]) { mesh.computeBoundingSphere(); group.add(mesh); }
+-
+-  // The river renderer joins narrow rocks only. This broad skerry also needs water in front of its footprint:
+-  // otherwise a tall phone looks underneath it at the dry lakebed and the bog's submerged vegetation.
+-  const lake = new Mesh(new PlaneGeometry(width, 96).rotateX(-Math.PI / 2), new MeshStandardMaterial({ color: '#1e3050', roughness: 0.24, metalness: 0.18 }));
+-  lake.name = 'moonstone-water';
+-  lake.position.set(width / 2, water - 0.015, 42.5);
+-  group.add(lake);
++  // The lake lies in front of it and round it as everywhere in the narrow (../../render/water.ts, open water): it had
++  // a dark plane of its own there, from when the river's water ended at the stone, which now showed through the lake.
+   return group;
+ }
+diff --git a/src/content/aventyr2/outlet.ts b/src/content/aventyr2/outlet.ts
+new file mode 100644
+index 0000000..86df066
+--- /dev/null
++++ b/src/content/aventyr2/outlet.ts
+@@ -0,0 +1,136 @@
++import { BufferGeometry, Color, Float32BufferAttribute } from 'three';
++import { sequence } from '../../render/dressing/kit';
++
++/**
++ * Where a lake runs out into its å (Flärken, where the outlet takes the little one: Olov, "När ån tar med sig
++ * lillgubben vill jag se en riktig å"): the stream's two banks, from the lake's edge on along it out of the picture,
++ * and the stones in its bed that its water breaks round. The stream itself is the chapter's own water, which runs
++ * here (../../render/water.ts, where its foam drifts), with its foam and white water (./render.ts).
++ *
++ * Built in the building's own place: x along the stream from where it leaves the lake, z across it (0 its middle,
++ * the far bank behind, the near bank in front), y up from the water. Each bank is a low ridge of earth and old grass
++ * and sedge, wet and dark at the water, that rounds down into the stream on its one side and into the lake behind
++ * or in front on the other, and that grows out of the lake at the stream's mouth. Corners are vertex-coloured, as the
++ * buildings' are.
++ */
++export interface OutletShape {
++  /** How long it is drawn along x. */
++  long: number;
++  /** How far apart its two waterlines are, across the stream. */
++  wide: number;
++  /** How high its banks stand over the water at their crests. */
++  high: number;
++  /** How far along from the stream's mouth its near bank begins to come up out of the lake: past a jetty's end. */
++  opens: number;
++}
++
++const EARTH = new Color('#2b241c'), WET = new Color('#1a1712'), SEDGE = new Color('#5d5a33'), STRAW = new Color('#8d7f4e'), GRASS = new Color('#46512c');
++const STONE = new Color('#4a4f52'), STONE_WET = new Color('#2c3134'), MOSS = new Color('#47552c');
++
++/**
++ * One bank: a ridge along x whose stream side is at z = 0 in its own place and which lies towards `away`. It grows out
++ * of the lake from `from` on, over four lengths.
++ */
++function bank(shape: OutletShape, away: 1 | -1, seed: number, out: { position: number[]; colour: number[] }, from = 0) {
++  const random = sequence(seed);
++  const step = 0.5;
++  const columns = Math.ceil(shape.long / step) + 1;
++  // Across it, from under the water at the stream, up its slope, over its crest, and down into the lake behind it.
++  const across: readonly [number, number][] = [[-0.6, -0.5], [0, 0], [0.5, 0.42], [1.2, 0.8], [2.2, 1], [3.6, 0.92], [5, 0.5], [6.2, 0], [7, -0.6]];
++  const bumps = Array.from({ length: 6 }, () => ({ at: random() * shape.long, wide: 1.5 + random() * 3, up: (random() - 0.4) * 0.5 }));
++  const grid: [number, number, number][][] = [];
++  const tones: Color[][] = [];
++  for (let i = 0; i < columns; i++) {
++    const x = Math.min(shape.long, i * step);
++    // It grows out of the lake at the stream's mouth over four lengths.
++    const rise = Math.min(1, Math.max(0, x - from) / 4) ** 0.8;
++    const bump = bumps.reduce((sum, b) => sum + b.up * Math.exp(-(((x - b.at) / b.wide) ** 2)), 0);
++    // Its waterline wanders a little, in and out.
++    const wander = 0.35 * Math.sin(x * 0.7 + seed) + 0.2 * Math.sin(x * 1.9 + seed * 2);
++    const column: [number, number, number][] = [];
++    const tone: Color[] = [];
++    for (const [k, [d, h]] of across.entries()) {
++      const y = h > 0 ? h * shape.high * rise * (1 + bump) : h;
++      const noise = Math.sin(x * 3.1 + d * 2.3 + seed) * 0.5 + Math.sin(x * 7.7 - d * 5.1) * 0.5;
++      column.push([x, y + (h > 0 ? 0.06 * noise * rise : 0), away * (d + wander * (k < 3 ? 1 : 0.3))]);
++      // Dark wet earth at the water, then sedge, old straw and grass up its slope, varied along it.
++      const c = new Color();
++      if (y <= 0.08) c.copy(WET);
++      else if (y < 0.3) c.copy(EARTH).lerp(SEDGE, (y - 0.08) / 0.22);
++      else c.copy(SEDGE).lerp(noise > 0.2 ? STRAW : GRASS, 0.3 + 0.4 * Math.abs(noise));
++      tone.push(c.multiplyScalar(0.85 + 0.25 * random()));
++    }
++    grid.push(column);
++    tones.push(tone);
++  }
++  for (let i = 0; i < grid.length - 1; i++) for (let j = 0; j < across.length - 1; j++) {
++    const a = grid[i]![j]!, b = grid[i + 1]![j]!, c = grid[i]![j + 1]!, d = grid[i + 1]![j + 1]!;
++    const ta = tones[i]![j]!, tb = tones[i + 1]![j]!, tc = tones[i]![j + 1]!, td = tones[i + 1]![j + 1]!;
++    // Facing up and out: the winding turns with the side it lies to.
++    const tris = away > 0 ? [[a, c, b, ta, tc, tb], [b, c, d, tb, tc, td]] : [[a, b, c, ta, tb, tc], [b, d, c, tb, td, tc]];
++    for (const [p, q, r, cp, cq, cr] of tris as [number[], number[], number[], Color, Color, Color][]) {
++      out.position.push(...p!, ...q!, ...r!);
++      out.colour.push(cp.r, cp.g, cp.b, cq.r, cq.g, cq.b, cr.r, cr.g, cr.b);
++    }
++  }
++}
++
++/** A stone half out of the water: a lumpy dome, wet and dark below, with moss on its top. */
++function stone(x: number, z: number, size: number, seed: number, out: { position: number[]; colour: number[] }) {
++  const random = sequence(seed);
++  const rings = 4, around = 9;
++  const lump = Array.from({ length: around }, () => 0.8 + random() * 0.4);
++  const points: [number, number, number][][] = [];
++  for (let r = 0; r <= rings; r++) {
++    const up = r / rings;
++    const ring: [number, number, number][] = [];
++    for (let j = 0; j < around; j++) {
++      const a = (j / around) * Math.PI * 2;
++      const spread = Math.cos(up * Math.PI * 0.5) * size * lump[j]! * (r === 0 ? 1.1 : 1);
++      ring.push([x + Math.cos(a) * spread * 1.2, -0.25 + Math.sin(up * Math.PI * 0.5) * size * 0.75, z + Math.sin(a) * spread]);
++    }
++    points.push(ring);
++  }
++  const tone = (p: [number, number, number]) => (p[1] < 0.08 ? STONE_WET : p[1] > size * 0.55 && random() < 0.5 ? MOSS : STONE);
++  for (let r = 0; r < rings; r++) for (let j = 0; j < around; j++) {
++    const a = points[r]![j]!, b = points[r]![(j + 1) % around]!, c = points[r + 1]![j]!, d = points[r + 1]![(j + 1) % around]!;
++    for (const tri of [[a, c, b], [b, c, d]]) {
++      for (const p of tri) {
++        out.position.push(...p!);
++        const c0 = tone(p!);
++        out.colour.push(c0.r, c0.g, c0.b);
++      }
++    }
++  }
++}
++
++/** The outlet's banks and its stones, as one vertex-coloured shape in its own place (see above). */
++export function outletShape(shape: OutletShape, seed = 7): BufferGeometry {
++  const out = { position: [] as number[], colour: [] as number[] };
++  // The far bank behind the stream, and the near bank in front of it.
++  bank(shape, -1, seed, out);
++  const near = { position: [] as number[], colour: [] as number[] };
++  // The near bank is a low wet edge of earth and sedge, so that the camera, which looks along the water from little
++  // over it, sees the stream over it; it comes up out of the lake past a jetty's end.
++  bank({ ...shape, high: shape.high * 0.2 }, 1, seed + 11, near, shape.opens);
++  for (let i = 0; i < near.position.length; i += 3) near.position[i + 2]! += shape.wide;
++  out.position.push(...near.position);
++  out.colour.push(...near.colour);
++  // The far bank stands at the stream's far side: everything moves so that the stream's middle is at z = 0.
++  for (let i = 2; i < out.position.length; i += 3) out.position[i]! -= shape.wide / 2;
++  // Stones in its bed, the water breaking round them: more where it leaves the lake, and none by a jetty's end.
++  const random = sequence(seed + 23);
++  for (let k = 0; k < Math.round(shape.long / 3); k++) {
++    const x = shape.opens + random() ** 1.4 * (shape.long - shape.opens - 1.5);
++    const size = 0.3 + random() * 0.35;
++    // Not on its middle line, where what it carries floats: the whole stone is clear of it.
++    const clear = 0.7 + size * 1.35;
++    const z = (random() < 0.5 ? -1 : 1) * (clear + random() * Math.max(0, shape.wide * 0.5 - 0.4 - clear));
++    stone(x, z, size, seed * 31 + k, out);
++  }
++  const geometry = new BufferGeometry();
++  geometry.setAttribute('position', new Float32BufferAttribute(out.position, 3));
++  geometry.setAttribute('color', new Float32BufferAttribute(out.colour, 3));
++  geometry.computeVertexNormals();
++  return geometry;
++}
+diff --git a/src/content/aventyr2/render.ts b/src/content/aventyr2/render.ts
+index 2b6e261..c89b728 100644
+--- a/src/content/aventyr2/render.ts
++++ b/src/content/aventyr2/render.ts
+@@ -22,6 +22,7 @@ import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fau
+ import { box, building, paint, PANE, rock } from './buildings';
+ import { createGrandparent, type Grandparent } from './grandparents';
+ import { moonstone } from './moonstone';
++import { logSeed, riverLogShape, riverLogWood } from './river-log';
+ 
+ /**
+  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
+@@ -2265,21 +2266,14 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
+       return group;
+     },
+     riverLog: (mover) => {
+-      // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is. The kit's, once it
+-      // has come: art/blender/a2-nature.py.
++      // A sawn log floating half under, its top level where he stands (./river-log.ts): the kit's fallen branch, fitted
++      // to the thing's box, lay 0.47 to 0.78 under his feet.
+       const group = new Group();
+-      group.userData.model = 'stock-flod';
+-      group.userData.block = { width: mover.width * 1.04, height: mover.height * 1.1, depth: mover.height * 1.1, x: 0, y: mover.height / 2 };
+-      const r = mover.height / 2;
+-      const bark = new Mesh(new CylinderGeometry(r, r * 1.05, mover.width, 14).rotateZ(Math.PI / 2), solid('#42342a', 0.62));
+-      bark.position.y = r;
+-      bark.castShadow = true;
+-      const pale = solid('#c2a678', 0.8);
+-      const near = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(Math.PI / 2), pale);
+-      near.position.set(mover.width / 2 + 0.002, r, 0);
+-      const far = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(-Math.PI / 2), pale);
+-      far.position.set(-mover.width / 2 - 0.002, r, 0);
+-      group.add(bark, near, far);
++      const log = new Mesh(riverLogShape(mover.width, mover.height, logSeed(mover.id)), riverLogWood());
++      log.name = 'river-log';
++      log.castShadow = true;
++      log.receiveShadow = true;
++      group.add(log);
+       return group;
+     },
+     lid: (mover) => {
+diff --git a/src/content/aventyr2/river-log.ts b/src/content/aventyr2/river-log.ts
+new file mode 100644
+index 0000000..c95b379
+--- /dev/null
++++ b/src/content/aventyr2/river-log.ts
+@@ -0,0 +1,190 @@
++import { BufferGeometry, Color, Float32BufferAttribute, MeshStandardMaterial } from 'three';
++import { sequence } from '../../render/dressing/kit';
++
++/**
++ * A log the river carries (Älven's eddies, the logs between its stones and the two in the lake's shallows): a sawn
++ * trunk floating half under, lying along the path. It is as long as the simulation's thing is wide and as thick as
++ * it is high, and its top is level where the simulation's top is, so that he stands on it, bobbing and drifting
++ * with it (Olov: "På stockarna ... står man i luften ovanför stocken, inte på den"). It was the nature kit's fallen
++ * branch fitted to the thing's box: that branch tapers from 1.0 to 0.34 thick and its stubs reach down to half its
++ * length again, so the box squashed it to 0.42 thick at most, and its top lay 0.47 to 0.78 under his feet, mostly
++ * under the water.
++ *
++ * Made here, its own for each log (`seed`): wet dark bark in long plates with furrows between, a few patches worn
++ * bare to grey wood, a knot or two and a broken bough's stub out to the side, never over where he walks; and two
++ * sawn ends, pale, with their rings, a darker heart, the bark round them and a crack.
++ */
++export function riverLogShape(width: number, high: number, seed: number): BufferGeometry {
++  const random = sequence(seed * 7919 + 13);
++  const r = high / 2;
++  const around = 32;
++  const along = Math.max(8, Math.ceil(width * 9));
++  const position: number[] = [];
++  const colour: number[] = [];
++  const index: number[] = [];
++  const c = new Color();
++  const put = (x: number, y: number, z: number, tone: Color) => {
++    position.push(x, y, z);
++    colour.push(tone.r, tone.g, tone.b);
++    return position.length / 3 - 1;
++  };
++  // Thinner towards one end by a few hundredths, its top kept level: it is the top he stands on.
++  const taper = 0.04 + random() * 0.04;
++  const thin = random() < 0.5 ? 1 : -1;
++  const radiusAt = (s: number) => r * (1 - taper * (thin > 0 ? s : 1 - s));
++  // The sawn ends are not quite square to it.
++  const tilt = [[(random() - 0.5) * 0.12, (random() - 0.5) * 0.12], [(random() - 0.5) * 0.12, (random() - 0.5) * 0.12]] as const;
++  const endAt = (s: number, y: number, z: number) => (s <= 0 ? -width / 2 + tilt[0][0] * z + tilt[0][1] * (y - r) : s >= 1 ? width / 2 + tilt[1][0] * z + tilt[1][1] * (y - r) : (s - 0.5) * width);
++  // The bark's plates: furrows round it that wander a little along it.
++  const plates = 9 + Math.floor(random() * 3);
++  const phase = random() * Math.PI * 2;
++  const wander = 0.6 + random() * 0.9;
++  const furrowAt = (s: number, a: number) => Math.pow(0.5 + 0.5 * Math.cos(a * plates + phase + 1.1 * Math.sin(s * wander * 6 + a * 2)), 4);
++  // Each plate a tone of its own, and its own breaks along the log.
++  const plateTone = (s: number, a: number) => {
++    const plate = Math.floor((a * plates + phase + 1.1 * Math.sin(s * wander * 6 + a * 2)) / (Math.PI * 2) + 0.5 + Math.floor(s * width * 1.6) * 0.37);
++    const v = Math.sin(plate * 12.9898 + seed * 0.731) * 43758.5453;
++    return v - Math.floor(v);
++  };
++  // Where it has been rolled against stones the bark is worn off: smooth grey wood.
++  const worn = [0, 1, 2].map(() => ({ s: random(), a: random() * Math.PI * 2, size: 0.12 + random() * 0.14 }));
++  const wornAt = (s: number, a: number) => Math.max(0, ...worn.map((w) => {
++    const da = Math.atan2(Math.sin(a - w.a), Math.cos(a - w.a));
++    return 1 - Math.hypot(((s - w.s) * width) / (w.size * 2.6), (da * r) / w.size);
++  }));
++  // Dark knots, where boughs were.
++  const knots = [0, 1].map(() => ({ s: 0.15 + random() * 0.7, a: random() * Math.PI * 2 }));
++  const knotAt = (s: number, a: number) => Math.max(0, ...knots.map((k) => {
++    const da = Math.atan2(Math.sin(a - k.a), Math.cos(a - k.a));
++    return 1 - Math.hypot(((s - k.s) * width) / 0.07, (da * r) / 0.05);
++  }));
++  const BARK = new Color('#3d3027'), BARK_LIGHT = new Color('#5c4a3a'), FURROW = new Color('#1f1813');
++  const GREY = new Color('#857c6c'), WET = new Color('#2b3326'), DRY = new Color('#6e604f');
++
++  // The trunk: rings along it, each round it from the front (+z), up over the top and down the back.
++  const ring = (s: number) => {
++    const first = position.length / 3;
++    const big = radiusAt(s);
++    const centre = high - big;
++    for (let j = 0; j < around; j++) {
++      const a = (j / around) * Math.PI * 2;
++      const bare = Math.min(1, wornAt(s, a) * 3);
++      const furrow = furrowAt(s, a) * (1 - bare);
++      const radius = big * (1 - 0.075 * furrow - 0.02 * bare);
++      const y = centre + Math.sin(a) * radius;
++      const z = Math.cos(a) * radius;
++      c.copy(BARK).lerp(BARK_LIGHT, 0.25 + 0.6 * plateTone(s, a));
++      c.lerp(FURROW, furrow * 0.85);
++      c.lerp(GREY, bare * 0.85);
++      c.lerp(FURROW, Math.min(1, knotAt(s, a) * 1.6));
++      // Its top, out of the water, has dried paler where he stands; it is darker and greener under, in the water.
++      c.lerp(DRY, Math.max(0, Math.sin(a) - 0.55) * 0.9 * (1 - furrow * 0.6));
++      c.lerp(WET, Math.max(0, -Math.sin(a)) * 0.45);
++      put(endAt(s, y, z), y, z, c);
++    }
++    return first;
++  };
++  const rings = Array.from({ length: along + 1 }, (_, i) => ring(i / along));
++  for (let i = 0; i < along; i++) for (let j = 0; j < around; j++) {
++    const a = rings[i]! + j, b = rings[i]! + ((j + 1) % around), d = rings[i + 1]! + j, e = rings[i + 1]! + ((j + 1) % around);
++    index.push(a, d, b, b, d, e);
++  }
++
++  // The sawn ends: rings of the tree's years, closer towards the bark, a darker heart and the pith, the bark round
++  // its edge, and a crack from the edge in.
++  const years: readonly [number, string][] = [
++    [0, '#5e4630'], [0.06, '#80603f'], [0.16, '#a07c55'], [0.2, '#856544'], [0.3, '#aa875e'], [0.33, '#8c6c48'],
++    [0.42, '#b6966a'], [0.45, '#98784f'], [0.55, '#cbb084'], [0.58, '#ab8f63'], [0.66, '#d2b88c'], [0.685, '#b29669'],
++    [0.75, '#d6bd92'], [0.77, '#b89c70'], [0.83, '#d8c096'], [0.88, '#c9ae84'], [0.9, '#4e3a2a'], [0.93, '#3d3027'], [1, '#33281f'],
++  ];
++  const ends: [number, number][] = [[0, -1], [1, 1]];
++  for (const [s, side] of ends) {
++    const big = radiusAt(s);
++    const centre = high - big;
++    const crack = random() * Math.PI * 2;
++    // The pith, a little off the middle, as a stem grows more on its sunny side.
++    const off = [(random() - 0.5) * 0.16 * big, (random() - 0.5) * 0.16 * big];
++    const loops = years.map(([k, hex]) => {
++      const first = position.length / 3;
++      const tone = new Color(hex);
++      for (let j = 0; j < around; j++) {
++        const a = (j / around) * Math.PI * 2;
++        // The edge follows the trunk's own furrowed edge, so that the two meet.
++        const bare = Math.min(1, wornAt(s, a) * 3);
++        const edge = big * (1 - 0.075 * furrowAt(s, a) * (1 - bare) - 0.02 * bare);
++        const rr = edge * k;
++        const y = centre + Math.sin(a) * rr + off[0]! * (1 - k);
++        const z = Math.cos(a) * rr + off[1]! * (1 - k);
++        // Weathered: the outer years greyer, and the crack dark.
++        c.copy(tone).lerp(GREY, 0.18 * k * k);
++        const da = Math.abs(Math.atan2(Math.sin(a - crack), Math.cos(a - crack)));
++        if (k > 0.35 && k < 0.9 && da < 0.11) c.multiplyScalar(0.45);
++        put(endAt(s, y, z), y, z, c);
++      }
++      return first;
++    });
++    for (let i = 0; i < loops.length - 1; i++) for (let j = 0; j < around; j++) {
++      const a = loops[i]! + j, b = loops[i]! + ((j + 1) % around), d = loops[i + 1]! + j, e = loops[i + 1]! + ((j + 1) % around);
++      // Facing out of the end: the winding turns with the side.
++      if (side > 0) index.push(a, b, d, b, e, d);
++      else index.push(a, d, b, b, d, e);
++    }
++  }
++
++  // A broken bough's stub or two, out to the front or the back about level, low enough never to cover his boots.
++  for (let k = 0; k < 1 + Math.floor(random() * 2); k++) {
++    const s = 0.2 + random() * 0.6;
++    const front = random() < 0.5 ? 1 : -1;
++    const a = front > 0 ? -0.1 + random() * 0.4 : Math.PI - 0.3 + random() * 0.4;
++    const big = radiusAt(s);
++    const centre = high - big;
++    const out = [0, Math.sin(a), Math.cos(a)] as const;
++    const long = r * (0.45 + random() * 0.35);
++    const wide = r * 0.16;
++    const side = [1, 0, 0] as const;
++    const up = [0, -out[2], out[1]] as const;
++    const base = (position.length / 3);
++    for (let i = 0; i <= 2; i++) {
++      const t = i / 2;
++      const reach = big * 0.8 + long * t;
++      const radius = wide * (1 - 0.45 * t);
++      for (let j = 0; j < 8; j++) {
++        const b = (j / 8) * Math.PI * 2;
++        const dx = Math.cos(b) * radius * side[0];
++        const dy = Math.sin(b) * radius * up[1];
++        const dz = Math.sin(b) * radius * up[2];
++        c.copy(i === 2 ? GREY : BARK).multiplyScalar(i === 2 ? 1.1 : 0.9);
++        put((s - 0.5) * width + dx, centre + out[1] * reach + dy, out[2] * reach + dz, c);
++      }
++    }
++    for (let i = 0; i < 2; i++) for (let j = 0; j < 8; j++) {
++      const a0 = base + i * 8 + j, b0 = base + i * 8 + ((j + 1) % 8), d0 = base + (i + 1) * 8 + j, e0 = base + (i + 1) * 8 + ((j + 1) % 8);
++      index.push(a0, d0, b0, b0, d0, e0);
++    }
++    // Its broken end, pale.
++    const tip = put((s - 0.5) * width, centre + out[1] * (big * 0.8 + long * 1.04), out[2] * (big * 0.8 + long * 1.04), c.copy(GREY).multiplyScalar(1.25));
++    for (let j = 0; j < 8; j++) index.push(base + 16 + j, tip, base + 16 + ((j + 1) % 8));
++  }
++
++  const geometry = new BufferGeometry();
++  geometry.setAttribute('position', new Float32BufferAttribute(position, 3));
++  geometry.setAttribute('color', new Float32BufferAttribute(colour, 3));
++  geometry.setIndex(index);
++  geometry.computeVertexNormals();
++  geometry.computeBoundingSphere();
++  return geometry;
++}
++
++let wood: MeshStandardMaterial | null = null;
++/** The logs' wood, one for all of them: its colours are on its corners, and it is wet, so it has a sheen. */
++export function riverLogWood(): MeshStandardMaterial {
++  wood ??= new MeshStandardMaterial({ vertexColors: true, roughness: 0.52, metalness: 0, name: 'river-log' });
++  return wood;
++}
++
++/** A log's own number, from its name: the same log looks the same every time. */
++export function logSeed(id: string): number {
++  let h = 2166136261;
++  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
++  return (h >>> 0) % 100000;
++}
+diff --git a/src/render/dressing/foreground.ts b/src/render/dressing/foreground.ts
+index 3a79b95..5620400 100644
+--- a/src/render/dressing/foreground.ts
++++ b/src/render/dressing/foreground.ts
+@@ -2,7 +2,9 @@ import { Group, Matrix4, MeshBasicMaterial, Vector3, type CanvasTexture, type In
+ import { FALL_LIMIT } from '../../sim/constants';
+ import type { ChapterData } from '../../sim/types';
+ import { quadBatch } from '../quads';
++import { openWaterAt } from '../water';
+ import { bendAt, windAt } from '../wind';
++import { floorDrop } from './ground';
+ import { KIT, drawn, grows, heightAt, sequence, surfaceAt } from './kit';
+ 
+ // --- L4: the foreground ---------------------------------------------------------------------------------
+@@ -406,6 +408,19 @@ export function ceilingAt(chapter: ChapterData, walk: (x: number, standing?: boo
+   return top + RISE * z - UNDER;
+ }
+ 
++/**
++ * Whether the forest's floor at x, z in front of the path has gone down into a river's open water (../water.ts), so
++ * that ferns and lingonberries would stand in it: they do not grow there. The bog's sedge and cotton grass stand in its
++ * shallow water as well as on its islands.
++ */
++function flooded(chapter: ChapterData, x: number, z: number): boolean {
++  if (chapter.place !== 'forest' && chapter.place !== 'garden') return false;
++  const water = openWaterAt(chapter, x);
++  if (water === null) return false;
++  // Past the floor's lip it is cut down into the water.
++  return heightAt(chapter, x) - (floorDrop(chapter, x, z) ?? Infinity) < water + 0.1;
++}
++
+ /**
+  * Where the cards in front stand, for a chapter and its growth: one every few EL, 2.6 to 5.6 EL in front of
+  * the path, each with its top as high as it may be there (`ceilingAt`) or a little lower. None stands tall:
+@@ -427,7 +442,7 @@ export function tufts(chapter: ChapterData, growth: Growth): Card[] {
+     const lower = Math.max(0, next() - 0.5) * 0.6;
+     const thin = next() < 0.5;
+     const built = surfaceAt(chapter, x);
+-    const wet = (chapter.water ?? []).some((w) => x >= w.from - 0.5 && x <= w.to + 0.5);
++    const wet = (chapter.water ?? []).some((w) => x >= w.from - 0.5 && x <= w.to + 0.5) || flooded(chapter, x, z);
+     // Sedge stands up out of the bog's water, thinly. Nothing else grows in water, on boards or indoors.
+     if (wet && growth === 'straw' && thin) picture = 3;
+     else if (wet || (kerb ? (built !== undefined && built !== 'paving') || (!!chapter.shop && x > chapter.shop.door - 6) : !grows(chapter, x))) continue;
+diff --git a/src/render/dressing/forest.ts b/src/render/dressing/forest.ts
+index a8a7c16..6e2f967 100644
+--- a/src/render/dressing/forest.ts
++++ b/src/render/dressing/forest.ts
+@@ -1,6 +1,7 @@
+ import { Color, Group, InstancedMesh, Mesh, Object3D } from 'three';
+ import type { ChapterData } from '../../sim/types';
+ import { placing, together, type ForestKit, type Placed } from '../forest-kit';
++import { openWaterAt } from '../water';
+ import { floorDrop, shoreAt } from './ground';
+ import { KIT, TALL_BLADES, grows, heightAt, landscape, mossAt, sequence, softMoss, tallGrass } from './kit';
+ 
+@@ -269,13 +270,18 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
+   // The floor in front of the path: the same things, lying down the slope towards the camera. Nothing there
+   // stands higher than the path it lies under, less a finger, so that nothing ever covers his boots.
+   const front = sequence(seed * 31 + 7);
+-  const lie = (reach = 3.9, draw = front) => {
++  const lie = (reach = 3.9, draw = front, wet = false) => {
+     const x = from + draw() * length;
+     const z = 0.55 + draw() ** 0.85 * reach;
+     // In front of a pool the floor is its near shore, from a hand in front of the water.
+     const shore = shoreAt(chapter, x);
+     const drop = shore !== null ? (z > 0.75 ? floorDrop(chapter, x, z) : null) : grows(chapter, x) ? floorDrop(chapter, x, z) : null;
+-    return drop === null ? null : { x, z, y: (shore ?? heightAt(chapter, x)) - drop, room: drop - 0.05 };
++    if (drop === null) return null;
++    const y = (shore ?? heightAt(chapter, x)) - drop;
++    // Along a river the floor in front goes down into its water (../water.ts, open water): nothing lies there under
++    // it, but a stone may stand in the shallows.
++    const water = wet ? null : openWaterAt(chapter, x);
++    return water !== null && y < water + 0.04 ? null : { x, z, y, room: drop - 0.05 };
+   };
+   for (let i = 0; i < Math.round(length * FRONT.cushions); i++) {
+     const at = lie();
+@@ -354,7 +360,7 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
+     needles.setMatrixAt(needles.count++, place.matrix);
+   }
+   for (let i = 0; i < Math.round(length * FRONT.stones); i++) {
+-    const at = lie();
++    const at = lie(3.9, front, true);
+     const want = 0.2 + front() * 0.6;
+     const turn = front() * 6.28;
+     const shade = 0.85 + front() * 0.3;
+diff --git a/src/render/water.ts b/src/render/water.ts
+index 2ef565e..2852506 100644
+--- a/src/render/water.ts
++++ b/src/render/water.ts
+@@ -164,9 +164,14 @@ const POOL: WaterKind = {
+ 
+ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
+   forest: POOL,
+-  /** Peat water: nearly black, still, and a mirror. It lies in front of the tussocks and behind the whole bog. */
++  /**
++   * Peat water: nearly black, still, and a mirror. It lies in front of the whole bog and behind it, and the islands
++   * stand in it (open water, `waterShape`): it was cut 2.4 in front of the path, and on a phone held upright the lower third of the
++   * picture was that cut, a tank seen from the side under the surface (Olov, Kapitel 6: "ser man från sidan rakt in
++   * under vattenytan, och det ser väldigt fyrkantigt ut"; Myren's and Flärken's water had the same).
++   */
+   bog: {
+-    front: 2.4, corner: 1.5, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
++    front: 48, corner: 48, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
+     dim: 0.6, faceTop: '#34423f', faceDeep: '#0e1a18', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#c9d2c0',
+     mirror: 0.5, tint: '#c8bd9e', ripple: 0.8, bedColour: '#000000', shoreColour: '#000000', stands: null,
+     drift: 0.6,
+@@ -182,10 +187,13 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
+ };
+ 
+ /**
+- * A river: black, running, open towards the camera and on behind the path. Its stones and banks stand in it. Its
+- * surface runs on past the camera, so that its cut is never in the picture: on a phone held upright the camera
++ * A river: black, running, open towards the camera and on behind the path. Its stones and banks stand in it (open
++ * water, `waterShape`).
++ * Its surface runs on past the camera, so that its cut is never in the picture: on a phone held upright the camera
+  * stands about 24 EL out and sees the water to about 13 EL in front of the path, past where it used to end (11),
+- * which then showed as the edge of a block (Olov, 7 November 2026). 48 is past the camera in every shot.
++ * which then showed as the edge of a block (Olov, 7 November 2026). 48 is past the camera in every shot. It ran so
++ * only where the simulation has water, and in front of each bank its sheet ended in the air over the bank's floor,
++ * which falls away towards the camera: seen from the side, a flat sheet with nothing under it (Olov, 9 November 2026).
+  */
+ export const RIVER: WaterKind = {
+   front: 48, corner: 48, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
+@@ -197,6 +205,15 @@ export const RIVER: WaterKind = {
+ 
+ /** How wide a thing can stand in a river with the water going on past it: more than that is a bank. */
+ const STANDS_IN_IT = 10;
++/** Over how many EL still water comes to run fully, where it runs out into a stream. */
++const RUN_IN = 4;
++/** How long each of running water's two copies of its ripples is carried before it begins again, in seconds. */
++const RUN_ROUND = 2.4;
++/**
++ * How far in front of the path open water meets its banks: their floor has gone down into it here, the forest's
++ * where its slope crosses a river's height (about 1.3 to 1.9 in front), the bog's islands sooner.
++ */
++const BANK_FRONT = 1.6;
+ 
+ /** A river is one water: its stretches meet half way between them, under what stands in it. */
+ function joined(pools: readonly { from: number; to: number; y: number }[]) {
+@@ -238,9 +255,11 @@ export interface WaterShape {
+ /**
+  * The water of a chapter as one mesh. A pool's surface lies where the simulation has it (`from`, `to`, `y`);
+  * everything else is the picture's: how far it reaches towards and away from the camera, where it ends in
+- * haze instead of an edge, and the face it is cut with in front.
++ * haze instead of an edge, and the face it is cut with in front. Open water lies over the whole chapter at the
++ * heights of `stretches` (the simulation's own, where `pools` were joined under what stands in them).
+  */
+-export function waterShape(pools: readonly { from: number; to: number; y: number }[], kind: WaterKind, span?: { from: number; to: number }, street?: (x: number) => number): WaterShape {
++export function waterShape(pools: readonly { from: number; to: number; y: number }[], kind: WaterKind, span?: { from: number; to: number }, street?: (x: number) => number,
++  stretches?: readonly { from: number; to: number; y: number }[]): WaterShape {
+   const position: number[] = [];
+   const part: number[] = [];
+   const index: number[] = [];
+@@ -256,37 +275,43 @@ export function waterShape(pools: readonly { from: number; to: number; y: number
+     for (let i = 0; i < grid.length - 1; i++) for (let j = 0; j < grid[i]!.length - 1; j++) quad(grid[i]![j]!, grid[i + 1]![j]!, grid[i]![j + 1]!, grid[i + 1]![j + 1]!);
+   };
+   if (!pools.length) return { position, part, index };
+-  const level = pools[0]!.y;
+-  const everywhere = kind.behind !== null && span !== undefined;
+-  // Far shores first, then the water behind everything, then each pool from its face to its surface: the
+-  // mesh is drawn in this order, and nothing of it is in front of what comes later.
++  if (kind.behind !== null && span !== undefined) {
++    // Open water (a river, a lake, the bog): one surface over the whole chapter, from past the camera to where it
++    // thins into the haze, and the ground stands in it. Where the simulation has a stretch of water it lies at that
++    // stretch's height, and across a bank between two of different heights it goes from the one to the other, under
++    // the bank and in front of it, where the bank's floor has gone down into it. It has no cut and no edge in view.
++    const along = levelLine(stretches ?? pools);
++    const xs = [span.from - 60, span.to + 60, ...along.map(([x]) => x)];
++    const columns = [...new Set(xs)].sort((a, b) => a - b);
++    const grid = columns.map((x) => {
++      const y = levelOn(along, x);
++      return [{ z: kind.front, there: 1 }, { z: kind.thins, there: 1 }, { z: kind.back, there: 0 }].map((row) => corner(x, y, row.z, 0, row.there, 1, y));
++    });
++    for (let i = 0; i < grid.length - 1; i++) for (let j = 0; j < 2; j++) quad(grid[i]![j]!, grid[i + 1]![j]!, grid[i]![j + 1]!, grid[i + 1]![j + 1]!);
++    return { position, part, index };
++  }
++  // Far shores first, then each pool from its face to its surface: the mesh is drawn in this order, and nothing
++  // of it is in front of what comes later.
+   if (kind.bed > 0) for (const w of pools) {
+     const up = street ? Math.max(street(w.from - 0.2), street(w.to + 0.2)) : w.y + 0.3;
+     sheet(w.y, [w.from, w.to], () => [
+       { z: kind.back + 0.4, which: 2 }, { z: kind.back - 0.5, y: up, which: 2 }, { z: kind.shore, y: up, which: 2 },
+     ]);
+   }
+-  if (everywhere) {
+-    const xs = [span.from - 60, span.to + 60];
+-    for (const w of pools) if (w.y === level) xs.push(...columnsOf(w, kind.corner < kind.front ? 1.2 : 0));
+-    const columns = [...new Set(xs)].sort((a, b) => a - b);
+-    sheet(level, columns, () => [{ z: kind.behind! }, { z: kind.thins }, { z: kind.back, there: 0 }]);
+-  }
+   for (const w of pools) {
+-    const joined = everywhere && w.y === level;
+-    const inset = kind.corner < kind.front ? 1.2 : joined ? 0 : kind.bed > 0 ? 2 : kind.feather;
++    const inset = kind.corner < kind.front ? 1.2 : kind.bed > 0 ? 2 : kind.feather;
+     const columns = columnsOf(w, inset);
+     const front = columns.map((_, i) => (i === 0 || i === columns.length - 1 ? kind.corner : kind.front));
+     const edge = (i: number) => i === 0 || i === columns.length - 1;
+-    // The cut face: straight down from the front of the surface.
++    // The cut face: straight down from the front of the surface. A pool's own ground closes it in front with a near
++    // shore over its lip, so that it is not seen (../dressing/ground.ts `shore`).
+     for (let i = 0; i < columns.length - 1; i++) {
+       quad(
+         corner(columns[i]!, w.y, front[i]!, 1, 1, 1, w.y), corner(columns[i + 1]!, w.y, front[i + 1]!, 1, 1, 1, w.y),
+         corner(columns[i]!, w.y - kind.depth, front[i]!, 1, 1, 1, w.y), corner(columns[i + 1]!, w.y - kind.depth, front[i + 1]!, 1, 1, 1, w.y),
+       );
+     }
+-    if (joined) sheet(w.y, columns, (i) => [{ z: front[i]! }, { z: kind.behind! }]);
+-    else if (kind.bed > 0) {
++    if (kind.bed > 0) {
+       // A puddle: shallow at its shores, a hand deep in the middle.
+       sheet(w.y, columns, (i) => [
+         { z: front[i]!, deep: edge(i) ? 0 : 1 }, { z: kind.back + 2.5, deep: edge(i) ? 0 : 1 }, { z: kind.back, deep: 0 },
+@@ -301,6 +326,49 @@ export function waterShape(pools: readonly { from: number; to: number; y: number
+   return { position, part, index };
+ }
+ 
++/**
++ * Open water's height along the chapter, as the points it goes through: each stretch of the simulation's water at its
++ * own height from end to end, straight from one to the next across what lies between, and level beyond the first and
++ * the last.
++ */
++export function levelLine(stretches: readonly { from: number; to: number; y: number }[]): [x: number, y: number][] {
++  const line: [number, number][] = [];
++  for (const w of [...stretches].sort((a, b) => a.from - b.from)) {
++    const last = line[line.length - 1];
++    // A stretch that begins where the last one ended, or inside it, goes on from where that one is.
++    if (last && w.from <= last[0]) {
++      if (w.to > last[0]) line.push([w.to, w.y]);
++      continue;
++    }
++    line.push([w.from, w.y], [w.to, w.y]);
++  }
++  return line;
++}
++
++/** Open water's height at x, from its line. */
++export function levelOn(line: readonly [number, number][], x: number): number {
++  if (!line.length) return 0;
++  if (x <= line[0]![0]) return line[0]![1];
++  for (let i = 1; i < line.length; i++) {
++    const [bx, by] = line[i]!;
++    if (x <= bx) {
++      const [ax, ay] = line[i - 1]!;
++      const k = bx - ax < 1e-6 ? 1 : (x - ax) / (bx - ax);
++      return k >= 1 ? by : k <= 0 ? ay : ay + (by - ay) * k;
++    }
++  }
++  return line[line.length - 1]![1];
++}
++
++/**
++ * Whether a chapter's water is open (a river, a lake, the bog): it lies over the whole chapter, in front of the path
++ * as behind it, and its ground stands in it. Its height at x then is `openWaterAt`.
++ */
++export const isOpenWater = (chapter: ChapterData) => (chapter.water ?? []).length > 0 && (chapter.river ? RIVER : waterKind(chapter.place)).behind !== null;
++export function openWaterAt(chapter: ChapterData, x: number): number | null {
++  return isOpenWater(chapter) ? levelOn(levelLine(chapter.water!), x) : null;
++}
++
+ /** A pool's columns: its two ends, and one a little inside each. */
+ function columnsOf(w: { from: number; to: number }, inset: number): number[] {
+   const by = Math.min(inset, (w.to - w.from) / 3);
+@@ -479,7 +547,15 @@ function nothingFar(): DataTexture {
+ export function createWater(chapter: ChapterData, look: { colour: string; opacity: number; face?: number } | null, sun: readonly [number, number, number] = [-7, 5, -4], setting: WaterSetting = {}) {
+   const group = new Group();
+   const pools = drawnPools(chapter.river ? joined(chapter.water ?? []) : chapter.water ?? [], setting.under);
++  // The simulation's own stretches, at whose heights open water lies.
++  const stretches = drawnPools(chapter.water ?? [], setting.under);
+   const kind = chapter.river ? RIVER : waterKind(setting.place ?? chapter.place, look !== null);
++  // Open water lies in front of its banks too: what it mirrors of a bank, and its wet band along one, end where the
++  // bank's floor has gone down into it, a little in front of the path.
++  const open = kind.behind !== null;
++  // Still water runs where the chapter's foam drifts on it (Äventyr 2's `storm.foam`): Flärken's lake out into its å.
++  // A river runs everywhere already.
++  const outlet = kind.current ? undefined : chapter.storm?.foam?.[0];
+   const details = { value: 0 }, time = { value: 0 };
+   // A puddle in the street mirrors what stands across it: as far to each side as the camera can see it in it.
+   const puddle = pools[0];
+@@ -521,6 +597,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+     columnTint: { value: Array.from({ length: MIRRORED.trunks }, () => new Color()) },
+     bankTop: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[0]) },
+     bankFace: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[1]) },
++    bankFront: { value: open ? BANK_FRONT : 1e4 },
+     viewProjection: { value: new Matrix4() },
+     islands: { value: (islands?.map ?? nothingFar()) as Texture },
+     // Where the islands' row begins and how wide it is (none: 0), where their fronts go under the water, and the height it counts from.
+@@ -545,6 +622,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+     // Its small ripples, and its current: EL a second along x and z, and how long its streaks are drawn out along it.
+     rippleMap: { value: rippleField() },
+     stream: { value: new Vector3(kind.current ?? 0, 0, kind.current ? Math.min(2.6, 1 + kind.current * 0.75) : 1) },
++    // Where still water runs out into a stream, as a lake into its å: from where it begins to run, to where it runs
++    // fully, how fast, and where it ends (none: 0).
++    run: { value: outlet ? new Vector4(outlet.from, outlet.from + RUN_IN, outlet.speed, outlet.to) : new Vector4() },
+     // How hard it rains on it now, how bright the sky is now (lightning brightens it), how much light falls on it now
+     // against its first, and how much of a night it is.
+     weather: { value: new Vector4(0, 1, 1, night) },
+@@ -575,7 +655,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+     fragmentShader: /* glsl */ `
+       uniform sampler2D flowMap, refraction, mirrorMap, islands;
+       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
+-      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze;
++      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze, bankFront;
+       uniform vec4 rings[${RINGS}];
+       uniform vec2 life;
+       uniform sampler2D nearMirror;
+@@ -586,6 +666,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+       uniform vec2 resolution;
+       uniform sampler2D rippleMap;
+       uniform vec3 stream, farTint, lampTint[${LAMPS}];
++      uniform vec4 run;
+       uniform vec4 weather, lamps[${LAMPS}];
+       varying vec3 waterWorld; varying float waterDepth; varying vec4 waterPart;
+       #include <fog_pars_fragment>
+@@ -655,7 +736,21 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+         vec2 carried = waterWorld.xz - stream.xy * time;
+         // How much of the water one pixel covers, towards the eye and across: taken here, outside any branch.
+         float pixelZ = fwidth(waterWorld.z);
+-        vec3 wave = ripples(carried + flow * 0.8, time, pixelZ + fwidth(waterWorld.x) * 0.3);
++        float pixelW = pixelZ + fwidth(waterWorld.x) * 0.3;
++        vec3 wave = ripples(carried + flow * 0.8, time, pixelW);
++        // Where still water runs out into a stream (a lake into its å): there its ripples run with it, drawn out along
++        // it. Two copies, each carried a little way and then begun again, half a round apart, and each seen most while
++        // the other begins again: a pattern carried by a current that differs from place to place is otherwise torn finer
++        // and finer as the minutes go.
++        float running = run.z > 0.0 ? smoothstep(run.x, run.y, waterWorld.x) * (1.0 - smoothstep(run.w - 3.0, run.w, waterWorld.x)) : 0.0;
++        float roundA = fract(time / ${RUN_ROUND.toFixed(1)}), roundB = fract(time / ${RUN_ROUND.toFixed(1)} + 0.5), toB = abs(roundA * 2.0 - 1.0);
++        vec2 runA = carried - vec2(run.z * ${RUN_ROUND.toFixed(1)} * roundA, 0.0);
++        vec2 runB = carried - vec2(run.z * ${RUN_ROUND.toFixed(1)} * roundB, 0.0) + vec2(5.3, 2.1);
++        if (running > 0.001) {
++          vec3 waveA = ripples(runA * vec2(0.55, 1.0) + flow * 0.5, time, pixelW);
++          vec3 waveB = ripples(runB * vec2(0.55, 1.0) + flow * 0.5, time, pixelW);
++          wave = mix(wave, mix(waveA, waveB, toB), running);
++        }
+         // Cat's paws: the wind roughens the water in patches that drift slowly over it, between them it lies almost
+         // still and mirrors cleanly, so that it looks alive and never like glass (Olov: "lite vågor och rörelse").
+         float gust = 0.45 + 0.55 * smoothstep(-0.3, 0.9, sin(waterWorld.x * 0.23 - time * 0.55 + 1.6 * sin(waterWorld.z * 0.31 + time * 0.17))
+@@ -665,10 +760,19 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+         // the current, drawn out along it where it runs. Rougher in a storm's wind and rain.
+         float rough = surface.y * (1.0 + 0.9 * weather.x);
+         float smallCrest = 0.0;
++        // Running water's foam: lines drawn out along the current, carried with it (Mid and High).
++        float runFoam = 0.0;
+         if (details > 0.5) {
+           vec2 a = (carried + flow * 0.6) * vec2(0.62 / stream.z, 0.95) + vec2(0.021, 0.034) * time;
+           vec2 b = mat2(0.6, 0.8, -0.8, 0.6) * carried * vec2(1.3 / stream.z, 1.7) - vec2(0.037, -0.016) * time;
+           vec4 small = texture2D(rippleMap, a) + texture2D(rippleMap, b) - 1.0;
++          if (running > 0.001) {
++            vec4 smallA = texture2D(rippleMap, runA * vec2(0.28, 0.95)) + texture2D(rippleMap, mat2(0.6, 0.8, -0.8, 0.6) * runA * vec2(0.55, 1.7)) - 1.0;
++            vec4 smallB = texture2D(rippleMap, runB * vec2(0.28, 0.95)) + texture2D(rippleMap, mat2(0.6, 0.8, -0.8, 0.6) * runB * vec2(0.55, 1.7)) - 1.0;
++            small = mix(small, mix(smallA, smallB, toB), running);
++            float linesA = textureLod(rippleMap, runA * vec2(0.09, 0.8), 1.0).b, linesB = textureLod(rippleMap, runB * vec2(0.09, 0.8), 1.0).b;
++            runFoam = smoothstep(0.6, 0.86, mix(linesA, linesB, toB)) * running * (1.0 - smoothstep(0.08, 0.3, pixelW));
++          }
+           // A street's puddle, a hand deep, lies all but still unless it rains: its mirror of the yard sways enough.
+           slope += small.xy * 0.035 * rough * (0.6 + 0.4 * gust) * (body.w > 0.0 ? 0.35 + 0.65 * weather.x : 1.0);
+           smallCrest = small.z;
+@@ -726,16 +830,19 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+           vec3 d = normalize(ray + vec3(slope.x * 5.0, 0.0, slope.y * 2.0) * length(ray));
+           float near = 1e9;
+           vec3 standing = vec3(0.0);
++          // Open water goes on in front of a bank, where the bank's floor has gone down into it: no band there.
++          float alongBank = 1.0 - smoothstep(bankFront - 0.4, bankFront + 0.4, waterWorld.z);
+           for (int i = 0; i < ${MIRRORED.banks}; i++) {
+             vec4 b = banks[i];
+             if (waterWorld.x < b.x - 0.05 || waterWorld.x > b.y + 0.05) continue;
+             // A dark wet band where it meets a bank.
+             float left = b.z - waterPart.w, right = b.w - waterPart.w;
+-            banked = max(banked, max(step(0.05, left) * (1.0 - smoothstep(0.0, 0.5, waterWorld.x - b.x)), step(0.05, right) * (1.0 - smoothstep(0.0, 0.5, b.y - waterWorld.x))));
++            banked = max(banked, max(step(0.05, left) * (1.0 - smoothstep(0.0, 0.5, waterWorld.x - b.x)), step(0.05, right) * (1.0 - smoothstep(0.0, 0.5, b.y - waterWorld.x))) * alongBank);
+             float t = ((d.x < 0.0 ? b.x : b.y) - waterWorld.x) / (abs(d.x) < 1e-4 ? 1e-4 : d.x);
+             float high = d.x < 0.0 ? left : right;
+             float under = -d.y * t;
+-            if (t > 0.0 && t < near && under < high && waterWorld.z + d.z * t > -16.0) {
++            float meets = waterWorld.z + d.z * t;
++            if (t > 0.0 && t < near && under < high && meets > -16.0 && meets < bankFront) {
+               near = t;
+               standing = mix(bankFace, bankTop, smoothstep(high - 0.45, high - 0.1, under)) * (0.7 + 0.3 * smoothstep(0.0, 0.6, under));
+             }
+@@ -914,6 +1021,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+             top *= 1.0 - 0.3 * (1.0 - smoothstep(0.02, 0.3, deep));
+           }
+         }
++        foam = max(foam, runFoam * 0.7 * isTop);
+         top = mix(top, mix(through, vec3(1.0), 0.4) * (mix(skyMiddle, skyGlow, 0.5) * weather.y * 0.55 + 0.03), foam * 0.75 * (1.0 - wetOnly));
+         top += sparkle;
+         solid *= shoreFade;
+@@ -957,7 +1065,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
+   });
+   const first = chapter.ground?.[0];
+   const last = chapter.ground?.[chapter.ground.length - 1];
+-  const shape = waterShape(pools, kind, first && last ? { from: first.x, to: last.x } : undefined, setting.street);
++  const shape = waterShape(pools, kind, first && last ? { from: first.x, to: last.x } : undefined, setting.street, stretches);
+   const geometry = new BufferGeometry();
+   geometry.setAttribute('position', new Float32BufferAttribute(shape.position, 3));
+   geometry.setAttribute('part', new Float32BufferAttribute(shape.part, 4));
+diff --git a/src/sim/types.ts b/src/sim/types.ts
+index 9c7d10f..faee0b5 100644
+--- a/src/sim/types.ts
++++ b/src/sim/types.ts
+@@ -745,7 +745,7 @@ export interface Storm {
+   buildings?: {
+     kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
+       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce'
+-      | 'gardenset';
++      | 'gardenset' | 'outlet';
+     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; model?: string; size?: number;
+     /**
+      * A pitch's lines (../content/aventyr2/buildings.ts): its halfway line and circle, a goal's box, how far it runs on
+@@ -761,6 +761,8 @@ export interface Storm {
+     slider?: { top: number; rise: number };
+     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
+     turn?: number;
++    /** An outlet's near bank begins this far along it, past the end of a jetty that runs out into its mouth. */
++    opens?: number;
+   }[];
+   /** Warm windows of lit candles and lanterns, which glow through the rain. */
+   glows?: { at: Vec; z?: number; size?: number; after?: string }[];
+diff --git a/tests/unit/aventyr2-moonstone.test.ts b/tests/unit/aventyr2-moonstone.test.ts
+index 3b30652..b73c264 100644
+--- a/tests/unit/aventyr2-moonstone.test.ts
++++ b/tests/unit/aventyr2-moonstone.test.ts
+@@ -1,10 +1,13 @@
+ import { Box3, Mesh } from 'three';
+ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+ import { moonstone } from '../../src/content/aventyr2/moonstone';
++import { ADVENTURE2, loadAdventure2 } from '../../src/content/chapters';
++import { isOpenWater, openWaterAt } from '../../src/render/water';
+ 
+-beforeAll(() => {
++beforeAll(async () => {
+   const fake: object = new Proxy(function () {}, { get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : fake), apply: () => fake, set: () => true });
+   vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, getContext: () => fake }) });
++  await loadAdventure2();
+ });
+ afterAll(() => vi.unstubAllGlobals());
+ 
+@@ -43,17 +46,20 @@ describe('the moonlit meeting stone', () => {
+     expect(Math.max(...edges.values())).toBe(2);
+   });
+ 
+-  it('submerges the front edge and covers the exposed lakebed on tall screens', () => {
++  it('submerges the front edge, and the lake itself covers the lakebed in front of it on tall screens', () => {
+     const group = moonstone(20, 0.6, -0.5);
+     const stone = group.getObjectByName('moonstone-surface') as Mesh;
+     const position = stone.geometry.getAttribute('position');
+     for (let i = 0; i < position.count; i++) if (position.getZ(i) > 5) expect(position.getY(i)).toBeLessThan(-0.5);
+-    const water = group.getObjectByName('moonstone-water')!;
+-    const bounds = new Box3().setFromObject(water);
+-    expect(bounds.min.x).toBe(0);
+-    expect(bounds.max.x).toBe(20);
+-    expect(bounds.min.z).toBeCloseTo(-5.5);
+-    expect(bounds.max.z).toBeGreaterThan(80);
+-    expect(bounds.max.y).toBeCloseTo(-0.515);
++    // It had a dark plane of its own just under the surface in front of it, from when the river's water ended at the
++    // stone. The narrow's own water lies there now, over the whole chapter (src/render/water.ts, open water), and the
++    // plane showed through it on High as a flat dark sheet.
++    expect(group.getObjectByName('moonstone-water')).toBeUndefined();
++    const stormoga = ADVENTURE2.find((chapter) => chapter.id === 'stormoga')!;
++    const skerry = stormoga.landmarks!.find((mark) => mark.look === 'skerry')!;
++    expect(isOpenWater(stormoga)).toBe(true);
++    for (const x of [skerry.from, (skerry.from + skerry.to) / 2, skerry.to]) expect(openWaterAt(stormoga, x)).toBe(-0.5);
++    const box = new Box3().setFromObject(group);
++    expect(box.min.y).toBeLessThan(-0.5);
+   });
+ });
+diff --git a/tests/unit/flarken-kit.test.ts b/tests/unit/flarken-kit.test.ts
+index 1ed11d7..7c18455 100644
+--- a/tests/unit/flarken-kit.test.ts
++++ b/tests/unit/flarken-kit.test.ts
+@@ -141,9 +141,12 @@ describe('Flärken\'s jetty, standing in the lake', () => {
+   it('draws the lake under the jetty, as one with the water it meets, and leaves the simulation\'s water as it is', () => {
+     expect(jetties.map((j) => [j.from, j.to])).toEqual([[113, 144], [150, 154], [159.6, 173.4], [178, 191]]);
+     const drawn = drawnPools(flarken.water!, jetties);
+-    // The puddle and the first pools as they were; the lake from the jetty's foot to its end, one water.
++    // The puddle and the first pools as they were; the lake from the jetty's foot to its end, one water, and on past
++    // the end into the outlet, where the å takes the little one.
+     expect(drawn[0]).toEqual(flarken.water![0]);
+-    expect(drawn.find((w) => w.from === 113)).toEqual({ from: 113, to: 191, y: lake.y });
++    const outlet = flarken.water![flarken.water!.length - 1]!;
++    expect(outlet.from).toBe(191);
++    expect(drawn.find((w) => w.from === 113)).toEqual({ from: 113, to: outlet.to, y: lake.y });
+     expect(drawnPools(flarken.water!)).toEqual(flarken.water);
+     // A chapter with no jetty draws the pools it has.
+     expect(jettiesOf(flarken, 'sphagnum')).toEqual([]);
+diff --git a/tests/unit/flarken-outlet.test.ts b/tests/unit/flarken-outlet.test.ts
+new file mode 100644
+index 0000000..818d19f
+--- /dev/null
++++ b/tests/unit/flarken-outlet.test.ts
+@@ -0,0 +1,106 @@
++import { Box3, Vector3, type Mesh, type ShaderMaterial } from 'three';
++import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
++import { building } from '../../src/content/aventyr2/buildings';
++import { outletShape } from '../../src/content/aventyr2/outlet';
++import { ADVENTURE2, STORY, loadAdventure2 } from '../../src/content/chapters';
++import { heightAt } from '../../src/render/dressing/kit';
++import { PLACES } from '../../src/render/dressing';
++import { PACK } from '../../src/render/extensions';
++import { createWater, openWaterAt } from '../../src/render/water';
++import type { ChapterData } from '../../src/sim/types';
++
++/**
++ * Flärken's end (src/content/aventyr2/chapters/flarken.ts): the lake runs out past the jetty's end into its å, which
++ * takes the little one and the old one after him (Olov: "När ån tar med sig lillgubben vill jag se en riktig å"). It
++ * was a wall of ground nine of him high at the jetty's end, and they went into it.
++ */
++beforeAll(async () => {
++  const fake: object = new Proxy(function () {}, { get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : fake), apply: () => fake, set: () => true });
++  vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => fake }) });
++  await loadAdventure2();
++});
++afterAll(() => vi.unstubAllGlobals());
++
++const flarken = () => ADVENTURE2.find((chapter) => chapter.id === 'flarken')!;
++const runOf = (chapter: ChapterData) => {
++  const look = PACK.looks.get(chapter.id) ?? PLACES[chapter.place!];
++  const water = createWater(chapter, look.water, look.sun.from, { place: look.id });
++  return ((water.group.children[0] as Mesh).material as ShaderMaterial).uniforms.run!.value as { x: number; y: number; z: number; w: number };
++};
++
++describe("Flärken's outlet, the å", () => {
++  it('lies past the jetty\'s end: the lake\'s water, out past every picture at the end, and the end wall far beyond', () => {
++    const chapter = flarken();
++    const outlet = chapter.water![chapter.water!.length - 1]!;
++    const lake = chapter.water!.find((w) => w.from > 140)!;
++    const end = chapter.ground[chapter.ground.length - 1]!;
++    expect(outlet.y).toBe(lake.y);
++    // The jetty ends at the outlet, a step over its water, and the old one's end post stands on it before that.
++    expect(heightAt(chapter, outlet.from - 0.1)).toBeCloseTo(0.6, 5);
++    expect(heightAt(chapter, outlet.from + 0.1)).toBeLessThan(outlet.y - 4);
++    // The picture at the end looks a little over 10 ahead of him at most, on the widest screen: the wall is well past.
++    expect(end.x - chapter.goalX).toBeGreaterThan(30);
++    expect(outlet.to).toBe(end.x);
++    // The figures go down it.
++    for (const f of chapter.storm!.flybys!.filter((one) => one.on === 'beat:sjon:outlet' || one.on === 'beat:sjon:log')) {
++      expect(f.to.x).toBeGreaterThan(outlet.from);
++      expect(f.to.x).toBeLessThan(outlet.to);
++    }
++  });
++
++  it('runs: its foam drifts down it, and the lake\'s still water runs there and nowhere else', () => {
++    const chapter = flarken();
++    const outlet = chapter.water![chapter.water!.length - 1]!;
++    const foam = chapter.storm!.foam!;
++    expect(foam).toHaveLength(1);
++    expect(foam[0]!.from).toBeLessThanOrEqual(outlet.from);
++    expect(foam[0]!.to).toBe(outlet.to);
++    expect(foam[0]!.speed).toBeGreaterThan(1);
++    const run = runOf(chapter);
++    expect(run.x).toBe(foam[0]!.from);
++    expect(run.y).toBeGreaterThan(run.x);
++    expect(run.z).toBe(foam[0]!.speed);
++    expect(run.w).toBe(outlet.to);
++    // A river runs everywhere already, and Myren's bog lies still.
++    expect(runOf(ADVENTURE2.find((chapter) => chapter.id === 'alven')!).z).toBe(0);
++    expect(runOf(STORY.find((chapter) => chapter.id === 'myren')!).z).toBe(0);
++    // And it lies at the lake's height all the way down it.
++    for (let x = outlet.from; x <= outlet.to; x += 2) expect(openWaterAt(chapter, x)).toBe(outlet.y);
++  });
++
++  it('has its two banks, low over the water, and stones in its bed off the middle line, where what it carries floats', () => {
++    const shape = { long: 43, wide: 6, high: 1.3, opens: 8.5 };
++    const geometry = outletShape(shape);
++    const at = geometry.getAttribute('position');
++    const points = Array.from({ length: at.count }, (_, i) => new Vector3().fromBufferAttribute(at, i));
++    const box = new Box3().setFromPoints(points);
++    expect(box.min.x).toBeGreaterThanOrEqual(-0.01);
++    expect(box.max.x).toBeLessThanOrEqual(shape.long + 0.01);
++    // Never higher than a little over his own height: the jetty's end and the figures stay in the picture over it.
++    expect(box.max.y).toBeLessThan(shape.high * 1.6);
++    // Banks behind and in front of the stream, and between them, down its middle, nothing over the water.
++    expect(points.some((p) => p.z < -shape.wide / 2 - 2 && p.y > 0.5)).toBe(true);
++    expect(points.some((p) => p.z > shape.wide / 2 + 1 && p.y > 0.2)).toBe(true);
++    for (const p of points) if (Math.abs(p.z) < 0.6 && p.x > 2) expect(p.y, `x ${p.x.toFixed(1)}, z ${p.z.toFixed(2)}`).toBeLessThanOrEqual(0.02);
++    // Its near bank comes up only past a jetty's end (`opens`), nor do stones stand in the jetty's way.
++    for (const p of points) if (p.x < shape.opens - 0.01 && p.z > -1) expect(p.y, `x ${p.x.toFixed(1)}, z ${p.z.toFixed(2)}`).toBeLessThanOrEqual(0.02);
++    // In the chapter it stands with its middle where the flybys float, at the water, its mouth behind the jetty's last
++    // stretch, and its near bank from past the jetty's end.
++    const def = flarken().storm!.buildings!.find((one) => one.kind === 'outlet')!;
++    const outlet = flarken().water![flarken().water!.length - 1]!;
++    expect(def.z).toBe(-4);
++    expect(def.y).toBe(outlet.y);
++    expect(def.x).toBeLessThan(outlet.from);
++    expect(def.x + def.opens!).toBeGreaterThan(outlet.from);
++    expect(def.x + def.width!).toBe(outlet.to);
++    expect(building(def).group.children.length).toBe(1);
++    // The trees along it stand on its far bank's crest, not out over the lake behind it.
++    const trees = flarken().storm!.buildings!.filter((one) => (one.kind === 'birch' || one.kind === 'spruce') && one.x > def.x);
++    expect(trees.length).toBeGreaterThan(0);
++    for (const tree of trees) {
++      const across = def.z - shape.wide / 2 - tree.z;
++      expect(across, `tree at ${tree.x}`).toBeGreaterThan(2);
++      expect(across, `tree at ${tree.x}`).toBeLessThan(5);
++    }
++  });
++});
+diff --git a/tests/unit/river-log.test.ts b/tests/unit/river-log.test.ts
+new file mode 100644
+index 0000000..e60e754
+--- /dev/null
++++ b/tests/unit/river-log.test.ts
+@@ -0,0 +1,77 @@
++import { Box3, Vector3, type Mesh, type Object3D } from 'three';
++import { describe, expect, it } from 'vitest';
++import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
++import { moverProp } from '../../src/render/props';
++import type { Mover } from '../../src/sim/types';
++
++/**
++ * Älven's floating logs (src/content/aventyr2/river-log.ts): he stands on them, not in the air over them (Olov: "På
++ * stockarna som man väntar in och hoppar på står man i luften ovanför stocken, inte på den"). The simulation's thing is a
++ * box `width` long and `height` high from where it is, and his feet are on its top; the picture is measured against it.
++ */
++const alven = AVENTYR2.find((chapter) => chapter.id === 'alven')!;
++const logs = (alven.movers ?? []).filter((mover) => mover.look === 'riverLog');
++
++/** Every corner of what is drawn for a thing, where it is in the thing's own place (its foot at 0). */
++function corners(prop: Object3D): Vector3[] {
++  prop.updateMatrixWorld(true);
++  const out: Vector3[] = [];
++  prop.traverse((object) => {
++    const mesh = object as Mesh;
++    if (!mesh.isMesh) return;
++    const at = mesh.geometry.getAttribute('position');
++    for (let i = 0; i < at.count; i++) out.push(new Vector3().fromBufferAttribute(at, i).applyMatrix4(mesh.matrixWorld));
++  });
++  return out;
++}
++
++describe("Älven's floating logs", () => {
++  it('are the eddies\' three, the three between the stones and the two in the lake\'s shallows', () => {
++    expect(logs.map((log) => log.id)).toEqual(['al-eddy-1', 'al-eddy-2', 'al-eddy-3', 'al-log-1', 'al-log-2', 'al-log-3', 'al-roll-1', 'al-roll-2']);
++  });
++
++  it('are drawn as long and as thick as the simulation\'s thing, with the top where his feet are', () => {
++    for (const log of logs) {
++      const prop = moverProp(log)!;
++      // Made here, and fitted to nothing that comes later: a kit's model fitted to the box sank the top under his feet.
++      prop.traverse((object) => expect(object.userData.model, log.id).toBeUndefined());
++      const all = corners(prop);
++      const box = new Box3().setFromPoints(all);
++      // Nothing stands over his feet, and the top is there.
++      expect(box.max.y, log.id).toBeLessThanOrEqual(log.height + 1e-6);
++      expect(box.max.y, log.id).toBeGreaterThan(log.height - 0.01);
++      // End to end, as the simulation has it, and as thick as it is high.
++      expect(box.min.x, log.id).toBeCloseTo(-log.width / 2, 1);
++      expect(box.max.x, log.id).toBeCloseTo(log.width / 2, 1);
++      expect(box.min.y, log.id).toBeGreaterThan(-0.01);
++      expect(box.min.y, log.id).toBeLessThan(log.height * 0.1);
++      // Along the line he walks, from end to end, the top is never more than a few hundredths under his feet.
++      const line = all.filter((p) => Math.abs(p.z) < 0.05 && Math.abs(p.x) < log.width / 2 - 0.12 && p.y > log.height / 2);
++      expect(line.length, log.id).toBeGreaterThan(10);
++      for (const p of line) expect(p.y, `${log.id} at ${p.x.toFixed(2)}`).toBeGreaterThan(log.height - 0.04);
++      // Its stubs stand out to the side, never over the line he walks.
++      for (const p of all.filter((q) => q.y > log.height - 0.15)) expect(Math.abs(p.z), log.id).toBeLessThan(log.height * 0.45);
++    }
++  });
++
++  it('float half under as they bob and drift: the top over the water, the bottom under it', () => {
++    const waterAt = (x: number) => alven.water!.find((pool) => x >= pool.from - 1 && x <= pool.to + 1);
++    for (const log of logs) {
++      for (const stop of log.stops) {
++        const pool = waterAt(stop.x);
++        expect(pool, log.id).toBeDefined();
++        expect(stop.y + log.height - pool!.y, log.id).toBeGreaterThan(0.15);
++        expect(stop.y, log.id).toBeLessThan(pool!.y);
++      }
++    }
++  });
++
++  it('are each their own, and the same every time', () => {
++    const [a, b] = logs;
++    const first = corners(moverProp(a!)!).length;
++    expect(corners(moverProp(a!)!).length).toBe(first);
++    const shapeOf = (mover: Mover) => corners(moverProp(mover)!).map((p) => p.y.toFixed(4)).join();
++    expect(shapeOf(a!)).toBe(shapeOf(a!));
++    expect(shapeOf(a!)).not.toBe(shapeOf(b!));
++  });
++});
+diff --git a/tests/unit/water.test.ts b/tests/unit/water.test.ts
+index 2a45558..9e7fa38 100644
+--- a/tests/unit/water.test.ts
++++ b/tests/unit/water.test.ts
+@@ -1,11 +1,20 @@
+ import { Color, type Mesh } from 'three';
+-import { describe, expect, it } from 'vitest';
+-import { BONUS, STORY } from '../../src/content/chapters';
++import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
++import { ADVENTURE2, BONUS, STORY, loadAdventure2 } from '../../src/content/chapters';
+ import { PLACES } from '../../src/render/dressing';
+-import { createWater, waterKind, waterShape, type WaterShape } from '../../src/render/water';
++import { PACK } from '../../src/render/extensions';
++import { createWater, isOpenWater, levelLine, levelOn, waterKind, waterShape, type WaterShape } from '../../src/render/water';
+ import { STREET_DEPTH } from '../../src/render/village';
+ import type { ChapterData } from '../../src/sim/types';
+ 
++beforeAll(async () => {
++  // The pack's looks draw on canvases: there are none here, and none are needed.
++  const fake: object = new Proxy(function () {}, { get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : fake), apply: () => fake, set: () => true });
++  vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => fake }) });
++  await loadAdventure2();
++});
++afterAll(() => vi.unstubAllGlobals());
++
+ const wet = [...STORY, ...BONUS].filter((chapter) => (chapter.water ?? []).length > 0);
+ const ground = (chapter: ChapterData, x: number) => {
+   const line = chapter.ground;
+@@ -68,17 +77,20 @@ describe('the water, as it is drawn', () => {
+     }
+   });
+ 
+-  it('lies behind the whole bog, and in front of its tussocks', () => {
++  it('lies in front of the whole bog and behind it, and its tussocks stand in it: no cut of it is ever seen', () => {
+     const myren = wet.find((chapter) => chapter.id === 'myren')!;
+     const kind = waterKind('bog');
+-    const surface = corners(shapeOf(myren)).filter((corner) => corner.part === 0);
++    const all = corners(shapeOf(myren));
++    const surface = all.filter((corner) => corner.part === 0);
+     expect(Math.min(...surface.map((corner) => corner.x))).toBeLessThan(myren.ground[0]!.x - 16);
+     expect(Math.max(...surface.map((corner) => corner.x))).toBeGreaterThan(myren.ground[myren.ground.length - 1]!.x + 16);
+-    // The moss's shoulder goes under the water 1.65 EL in front of the path (ground.ts): open water lies in
+-    // front of that, and the cut meets the ground at a pool's two ends where the shoulder is still dry.
+-    expect(kind.front).toBeGreaterThan(2);
+-    expect(kind.corner).toBeLessThan(1.65);
+-    // Behind firm ground it begins under the moss, which sinks below the water's height about 6.5 EL back.
++    // It was cut 2.4 in front of the path, and on a phone held upright the lower third of the picture was that cut:
++    // the water seen from the side, under its surface (Olov, 9 November 2026). It runs on past the camera now, which
++    // stands about 24 EL in front of the path then, so that it is all surface and has no cut in the picture.
++    expect(kind.front).toBeGreaterThan(40);
++    expect(all.every((corner) => corner.part === 0), 'no cut face').toBe(true);
++    expect(Math.max(...surface.map((corner) => corner.z))).toBeGreaterThan(40);
++    // Behind firm ground it is under the moss, which sinks below the water's height about 6.5 EL back.
+     expect(kind.behind).toBeGreaterThan(-6.4);
+   });
+ 
+@@ -114,3 +126,66 @@ describe('the water, as it is drawn', () => {
+     expect(bog.mirror).toBeLessThanOrEqual(0.6);
+   });
+ });
++
++describe('open water: a river, a lake and the bog', () => {
++  /** The water a chapter is drawn with, as createWater makes it, and its corners. */
++  const drawnOf = (chapter: ChapterData) => {
++    const look = PACK.looks.get(chapter.id) ?? PLACES[chapter.place!];
++    const water = createWater(chapter, look.water, look.sun.from, { place: look.id, street: (x) => ground(chapter, x) });
++    const geometry = (water.group.children[0] as Mesh).geometry;
++    const position = geometry.getAttribute('position'), part = geometry.getAttribute('part');
++    return Array.from({ length: position.count }, (_, i) => ({ x: position.getX(i), y: position.getY(i), z: position.getZ(i), part: part.getX(i), level: part.getW(i) }));
++  };
++  const open = () => ADVENTURE2.filter((chapter) => isOpenWater(chapter));
++
++  it('is Älven\'s river, Flärken\'s lake and the narrow at Stormens öga, as Myren\'s bog is', () => {
++    expect(open().map((chapter) => chapter.id).sort()).toEqual(['alven', 'flarken', 'stormoga']);
++    expect([...STORY, ...BONUS].filter((chapter) => isOpenWater(chapter)).map((chapter) => chapter.id)).toEqual(['myren']);
++  });
++
++  it('lies over the whole chapter from past the camera to the haze, all surface, with no cut and no edge in the picture', () => {
++    for (const chapter of open()) {
++      const all = drawnOf(chapter);
++      expect(all.every((corner) => corner.part === 0), chapter.id).toBe(true);
++      // Columns from well before the chapter to well after it, each from past the camera to the far haze: in front of
++      // the banks too, where it ended in the air over their floor (Olov: "som om vattnet bara vore en platt skiva").
++      const xs = [...new Set(all.map((corner) => corner.x))].sort((a, b) => a - b);
++      expect(xs[0]!, chapter.id).toBeLessThan(chapter.ground[0]!.x - 16);
++      expect(xs[xs.length - 1]!, chapter.id).toBeGreaterThan(chapter.ground[chapter.ground.length - 1]!.x + 16);
++      for (const x of xs) {
++        const column = all.filter((corner) => corner.x === x).map((corner) => corner.z);
++        expect(Math.max(...column), `${chapter.id} at ${x}`).toBeGreaterThan(40);
++        expect(Math.min(...column), `${chapter.id} at ${x}`).toBeLessThan(-26);
++      }
++    }
++  });
++
++  it('lies at each stretch\'s own height where the simulation has water, and goes from one to the next across a bank', () => {
++    for (const chapter of open()) {
++      const all = drawnOf(chapter);
++      const line = levelLine(chapter.water!);
++      for (const corner of all) {
++        expect(corner.y, `${chapter.id} at ${corner.x}`).toBeCloseTo(levelOn(line, corner.x), 6);
++        expect(corner.level, chapter.id).toBeCloseTo(corner.y, 6);
++      }
++      for (const pool of chapter.water!) {
++        for (const x of [pool.from, (pool.from + pool.to) / 2, pool.to]) expect(levelOn(line, x), `${chapter.id} at ${x}`).toBe(pool.y);
++      }
++    }
++    // Älven's water steps down and up from stretch to stretch: the current, the stones, the rapids, the lake, the brook.
++    const alven = open().find((chapter) => chapter.id === 'alven')!;
++    const line = levelLine(alven.water!);
++    expect(levelOn(line, 51.3)).toBeGreaterThan(-0.4);
++    expect(levelOn(line, 51.3)).toBeLessThan(-0.15);
++  });
++
++  it('is under the ground of every bank where he walks: a bank stands in it, never in the air over it', () => {
++    for (const chapter of open()) {
++      const line = levelLine(chapter.water!);
++      for (let x = chapter.ground[0]!.x; x <= chapter.ground[chapter.ground.length - 1]!.x; x += 0.25) {
++        const wet = chapter.water!.some((pool) => x > pool.from - 0.01 && x < pool.to + 0.01);
++        if (!wet) expect(ground(chapter, x), `${chapter.id} at ${x}`).toBeGreaterThan(levelOn(line, x));
++      }
++    }
++  });
++});
