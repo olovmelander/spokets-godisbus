@@ -1,5 +1,53 @@
 # Handover
 
+## State (9 November 2026, midday)
+
+- **Hands that grip, and what was left of the family's movements** (Olov: "merge PR #6 in the family repository as well
+  and then continue whats recommended", and "can we improve the hands and fingers when the characters grabbing things so
+  it looks good"), the same cloud session, four building agents in worktrees, on the private models. The private
+  repository's PR #6 (Elof's coat made in Blender) was merged at his word, and went to the site with PR #246.
+  - **Fingers** (`src/render/fingers.ts`, at install, game code only). All seven models have the same sculpted hand,
+    scaled (1.11 for Elof to 1.45 for Pappa): a round palm, the four fingers one block notched apart only at the tips,
+    and a thumb of its own, with no finger bones. Each finger and thumb now gets three bones and three half bones (30 a
+    hand), fitted to the model's own corners, the knuckles keeping their round (0.85 at a right angle), and curls like a
+    mitten. The hands' shapes: resting (a little curled, where every empty hand was flat and spread), flat, open, hook,
+    pinch and power.
+  - **What is held sits in the hand** (`arm-contact.ts` `hold`/`grasp`/`socket`, `rig.ts`, `stage.ts`, `view.ts`,
+    `grandparents.ts`). On a real model the held things hung at the wrist; grips put them through the palm. Now Pappa's
+    knife and the brush are in his fist, the crayon in Moa's fist as a child holds one, the mug has a handle and is held
+    by it, the storm's lamps and the flashlights are gripped, Elof's lollipop, lace, berry, sweet and drawing too;
+    Mormor's lantern hangs in her hooked fingers, and Morfar's hand closes round a rung where he reaches one. The
+    fingers close as the hand arrives and open over 0.45 s as it lets go; hands lie flat on wood and paper.
+  - **The coats going on, finished:** the open front closes along a straight zip line (each corner carries its distance
+    from the zip and its height, and the shader draws the edge), so no teeth on Pappa's and Bertil's coats; the collar
+    hand goes low across the chest and up beside the head, never across the face (the children's lower still); Pappa
+    passes his lamp to the arm already in its sleeve and takes it back after the zip (a `lamp` channel in his clip);
+    Elof's coat made in Blender goes on and comes off cleanly, his collar hand low across his chest.
+  - **Crouching keyed in Blender** (`CLIPS.crouch`, `crouchLegs` in `gait.ts`, on each body's own legs): down in 0.9 s,
+    the knees giving first and the hips sitting back over feet that stay, the trunk forward and both hands on the knees;
+    up in 0.52 s (Moa shows her drawing and Bertil cheers straight after). Used in the prologue (`familj`, `handen`,
+    `lofte`) and in `tillsammans`. It stood the real bodies on their toes before. A kneel or crouch that follows one no
+    longer goes down again from standing.
+  - **Point, gasp and show keyed**, each with an aim channel (how far the hand is on its way to where the scene aims): the
+    point draws back, goes out past and settles, the other arm swinging back; in the gasp a hand reaches the mouth first
+    and the head starts back; the show dips and lifts. **The hug** closes round someone in front of the chest.
+  - **Soft shade:** a band along the foot of Byn's houses and round the bakery's step (13 to 14 % darker, at Low too, where
+    nothing is shaded on the screen), worked out as the street is built; the kringla and boot signs, the fence on its
+    wall, the hedge, and the shop's room; on Berget a rock shelf's support now sits in its lip's shade (94 to 60); the
+    forest's and the mountain's scattered parts shade their neighbours (it shows on Berget, hardly in Granskogen).
+  - **Checked:** typecheck, `npm test` (220 files, 2,216 tests), `npm run build` (JS 588.2 KB of 1,000, boot 5,240.3 KB of
+    10,240), the privacy check, and the browser suites prologue, family-help, family-caps, family-story, finale-stage,
+    aventyr2, story-context, model-installation and mountain-loop, each by the builder that changed what it covers;
+    village and forest-puzzles pass here only with this sandbox's local-network check off (CI runs them as they are).
+  - **Known:** a fused block of fingers cannot point or pinch with one finger: Moa's pinch on her drawing reads as a fist,
+    and the thumb lies beside a thick lamp's handle; separate fingers would mean new hands made in Blender (Olov's
+    call). Morfar's arm falls short of the ladder where he stands, so his hand stays open. The kneel's back foot steps
+    back about 0.4 of the height; Granskogen's seesaw kneel and Moa's at the root hole are still fixed angles in
+    `view.ts`. In a deep crouch Moa's skirt shows a pale flap behind her knees. While a coat's back goes on, small steps
+    can show where its front meets the back; Pappa's lamp jumps the short way between his hands. In the forest the
+    shade that is missing most is where stones meet the moss and the trunks.
+  - **The next step needs:** nothing from Olov's computer, except new hands with separate fingers if he wants them.
+
 ## State (9 November 2026, morning)
 
 - **The family's movements and clothes, and Elof's raincoat** (Olov, the night of 8 to 9 November: "Should Elof have or
@@ -4911,8 +4959,10 @@ and masts, Billsta's poles; the soft shade under Bredbyn church's eaves and betw
 **Left in the cloud:** the shade along the foot of Byn's houses, its signs, wall, fence and hedge, and the forest's and
 the mountain's kit parts where they stand side by side (see "State").
 
-**On Olov's computer (proposals 1 and 2):** sharper textures where the family and Elof show most, faces and clothes, and
-hands with fingers that hold Pappa's knife, Moa's crayon and the mug, made in Blender against `photos/`.
+**On Olov's computer (proposals 1 and 2):** sharper textures where the family and Elof show most, faces and clothes,
+made in Blender against `photos/`. The hands now grip in the game's code (9 November, midday): their fingers curl as a
+mitten round the knife, the crayon and the mug; hands with separate fingers that can point and pinch would be new hands
+made in Blender, if Olov wants them.
 
 **The motion pass (8 November, afternoon), for Olov to judge on the family devices:** the family walking along behind
 Elof and in the prologue's scenes (feet that hold the ground, setting off and stopping), how they stand when nothing
@@ -5368,6 +5418,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Hands that grip and the rest of the movements (9 Nov, midday) | Olov's request: continue what is recommended, and hands and fingers that look good when they grab things | Part of the same cloud session, with four building agents | — / 0 so far | Fingers that curl round what is held, things held in the hand rather than at the wrist; clean coat fronts and Pappa's lamp from hand to hand; crouching, point, gasp and show keyed in Blender; shade at the foot of Byn's houses and between kit parts. |
 | The family's movements and Elof's raincoat (9 Nov) | Olov's request: smoother, natural kneeling, arms and standing; no wings between arm and body; the raincoats put on properly; and his choice of a doll's raincoat for Elof | Part of the same cloud session, with four building agents in worktrees | — / 0 so far | Sleeves that go with their arms, elbows and knees that keep their round, Moa's skirt over her thigh; kneeling on each body's legs; cheer and hug; the family put their coats and boots on in step with them; Elof's doll's coat through the storm (private PR #6 for its Blender coat). |
 | Blender models and baked shade (8 Nov, late evening) | Olov's proposals 3 and 4: Blender models for what is still built in code near the play plane, and soft shade baked into the scenery models | Part of the same cloud session, with three building agents in worktrees | — / 0 so far | Flärkenbadet's tower, huts, chess, sun board and jetty arm; Själevad's church, moved to where it is seen; Älven's beaver lodge, Olympia's store and masts, Billsta's poles; water under the jetties; Bredbyn's landmarks with baked shade and the shade between the parts of Byn's houses; CI's split suites weighed by share. |
 | The Unravel pass (8 Nov, evening) | Olov's request: carry out the proposals for a prettier game, with Unravel as the reference | Part of the same cloud session, with five building agents in worktrees | — / 0 so far | Rock and peat fronts with relief and light; rock, turf, gravel and wet ground seen close; water with rain rings, lights, Fresnel, a shore and a current; moss cushions and worn boulders; Billsta's firewood, Älven's concrete bridge and Olympia's hall in Blender; birds that come and go, ravens, crows, bats and the storm's leaves. |
@@ -5595,9 +5646,10 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
-- Hands with shaped fingers, finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt.
-- Crouching down and getting up from a crouch, keyed in Blender as the kneel and the chair are (`CLIPS` in
-  `art/blender/motion.py`). (The chair and the wave were done on 8 November.)
+- Hands with separate fingers that can point and pinch (since 9 November the game curls the sculpted, fused fingers as a
+  mitten), finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt.
+- The kneel's back foot stepping back about 0.4 of the height, and Granskogen's seesaw kneel and Moa's at the root hole
+  played on each body's legs as the other kneels are. (Crouching was keyed in Blender on 9 November.)
 - Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
   geléhallon of Äventyr 1 keep their meaning). (Moa's map of its places was built on 4 November.)
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for

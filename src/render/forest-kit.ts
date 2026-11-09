@@ -1,6 +1,6 @@
 import {
   BoxGeometry, BufferGeometry, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3,
-  type Material, type Object3D,
+  type Box3, type Material, type Object3D,
 } from 'three';
 import { STONE, barkDetail, barky } from './bark-detail';
 import type { ChapterData, Landmark, LandmarkThing } from '../sim/types';
@@ -114,7 +114,71 @@ export interface Placed {
  * or bark keeps saying so on its corners (`barky`, ./bark-detail.ts), and the rest says 0, so that the floor's
  * stones are granite seen close in the one mesh too.
  */
-export function together(parts: readonly Placed[]): BufferGeometry {
+export function together(parts: readonly Placed[], between = false): BufferGeometry {
+  const made = merged(parts);
+  if (between) {
+    let first = 0;
+    shadeAmong(parts.map(({ shape, matrix }) => {
+      if (!shape.boundingBox) shape.computeBoundingBox();
+      const count = shape.getAttribute('position').count;
+      first += count;
+      return { geometry: made, first: first - count, count, box: shape.boundingBox!, matrix };
+    }));
+  }
+  return made;
+}
+
+/**
+ * How dark a corner may go from the parts round it, and how far round a part its shade reaches, in its own size.
+ * Each part of a kit was baked alone in Blender, so this is the only shade there is between two that are set
+ * side by side: a stone against a stump, a fern at a stone, a shelf of rock on the block under it.
+ */
+const BETWEEN = { strength: 0.75, reach: 2.2 };
+/** A part among others, for `shadeAmong`: its corners in `geometry`, its box in its own space and where that stands. */
+export interface Among { geometry: BufferGeometry; first: number; count: number; box: Box3; matrix: Matrix4 }
+const local = new Vector3();
+const facingLocal = new Vector3();
+
+/**
+ * The shade on each part's corners from the parts round it, worked out once as they are put in place (no cost in
+ * play): each part is taken as the ellipsoid its box fills, and a corner loses as much of the sky as such a ball takes
+ * from it, seen from where the corner faces (Quilez's sphere occlusion, in the ellipsoid's own space).
+ */
+export function shadeAmong(parts: readonly Among[]): void {
+  const balls = parts.map(({ box, matrix }) => {
+    const middle = box.getCenter(new Vector3());
+    const half = box.getSize(new Vector3()).multiplyScalar(0.5).max(new Vector3(0.02, 0.02, 0.02));
+    // From the ball's own space, where it is a ball of radius 1 at the origin, to the scene's.
+    const toScene = matrix.clone().multiply(new Matrix4().makeTranslation(middle.x, middle.y, middle.z)).multiply(new Matrix4().makeScale(half.x, half.y, half.z));
+    const centre = new Vector3().setFromMatrixPosition(toScene);
+    const radius = Math.max(...half.toArray()) * matrix.getMaxScaleOnAxis();
+    // Normals go into the ball's space by the inverse's transpose, which is the transpose itself.
+    return { fromScene: toScene.clone().invert(), facing: toScene.clone().transpose(), centre, radius };
+  });
+  const near = balls.map((a, i) => balls.flatMap((b, j) => (i !== j && a.centre.distanceTo(b.centre) < (a.radius + b.radius) * BETWEEN.reach ? [j] : [])));
+  for (const [i, { geometry, first, count }] of parts.entries()) {
+    if (near[i]!.length === 0) continue;
+    const position = geometry.getAttribute('position'), normal = geometry.getAttribute('normal'), colour = geometry.getAttribute('color');
+    if (!colour) continue;
+    for (let k = first; k < first + count; k++) {
+      let open = 1;
+      for (const j of near[i]!) {
+        const ball = balls[j]!;
+        local.fromBufferAttribute(position, k).applyMatrix4(ball.fromScene);
+        facingLocal.fromBufferAttribute(normal, k).transformDirection(ball.facing);
+        const d = local.length();
+        if (d <= 1) { open *= 0.5; continue; }
+        const towards = -local.dot(facingLocal) / d;
+        if (towards > 0) open *= 1 - Math.min(1, towards / (d * d));
+      }
+      const k2 = 1 - BETWEEN.strength * (1 - open);
+      colour.setXYZ(k, colour.getX(k) * k2, colour.getY(k) * k2, colour.getZ(k) * k2);
+    }
+    colour.needsUpdate = true;
+  }
+}
+
+function merged(parts: readonly Placed[]): BufferGeometry {
   let corners = 0;
   let indices = 0;
   for (const { shape } of parts) {

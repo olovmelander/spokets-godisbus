@@ -52,10 +52,11 @@ describe('the street exposed in section', () => {
   it('adds collinear front samples without moving the original street surface, even beside retracted edges', () => {
     // Stone (the shop's step) still uses the original street profile. Its shape is an independent reference
     // for the road's surface; new section rows may split its segments, never move beyond them or towards the
-    // camera. The profile has 19 rows: one is where a drain's grate ends behind the path.
+    // camera. The profile has 25 rows: one is where a drain's grate ends behind the path, and six are where the near
+    // houses' feet and a door's step stand on the street, for the shade along them.
     const reference = section('stone');
     const before = reference.getAttribute('position');
-    const originalRows = 19;
+    const originalRows = 25;
     const columns = new Map<number, Vector3[][]>();
     for (let first = 0; first < before.count; first += originalRows) {
       const points = Array.from({ length: originalRows }, (_, row) => new Vector3().fromBufferAttribute(before, first + row));

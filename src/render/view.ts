@@ -1,7 +1,7 @@
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
 import { createPaddle, type Paddle } from './paddle';
-import { rainGearFor } from './rain-gear';
+import { heldInOther, rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
@@ -693,7 +693,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
   const elof = createPlayerStandIn();
-  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze' | 'dress'> = elof;
+  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze' | 'dress' | 'hold' | 'grasp' | 'socket'> = elof;
   let playerHips = ['left', 'right'].map(side => elof.group.getObjectByName(`player-hip-${side}`));
   let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
@@ -935,8 +935,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let seesawPlank: Object3D | null | undefined;
   const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0, hold: 0 }); return g; };
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3(), lampLocal = new Vector3();
+  const lampHeld = new Vector3(), upright = new Vector3(0, 1, 0);
   const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
+  /** A berry or a sweet between his thumb and his finger, and a sheet's corner (./fingers.ts). */
+  const BERRY = { kind: 'pinch' as const, size: 0.05 }, PAPER = { kind: 'pinch' as const, size: 0.008 };
   // The little one's knitted cap ("Lillgubbens mössa! Jag tar med den."): from the gutter in Stormbyn Elof carries
   // it, tucked in at his back, through every chapter until he gives it back in the storm's eye (scene "motet").
   const carriedBerry = new Group();
@@ -993,10 +996,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   if (heldCoat) scene.add(heldCoat.group);
   /** Stormkvällen's flashlight: Elof carries it from the table, and Pappa has it from then on. */
   let carriedLamp: Mesh | null = null, pappasLamp: Mesh | null = null;
-  const holdLamp = (lamp: Mesh, rig: Pick<Rig, 'hand'>, side: 0 | 1, facing: number, size: number) => {
-    rig.hand(side, lampHand);
-    lamp.position.copy(lampHand);
-    lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim.set(Math.sin(facing), -0.3, Math.cos(facing)).normalize());
+  const holdLamp = (lamp: Mesh, rig: Pick<Rig, 'hand' | 'grasp' | 'socket'>, side: 0 | 1, facing: number, size: number) => {
+    lampAim.set(Math.sin(facing), -0.3, Math.cos(facing)).normalize();
+    if (rig.grasp && rig.socket) {
+      // Closed round the lamp's body, the hand turned with its light, out past the thumb (./fingers.ts).
+      const grip = { kind: 'power' as const, size: 0.075 * size };
+      rig.grasp(side, grip, rig.socket(side, grip, lampHand), lampAim, lampHand, 1, lampHeld);
+      lamp.position.copy(lampHand).addScaledVector(lampHeld, -0.06 * size);
+      lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampHeld);
+    } else {
+      rig.hand(side, lampHand);
+      lamp.position.copy(lampHand);
+      lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim);
+    }
     lamp.scale.setScalar(size);
     lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
   };
@@ -1510,6 +1522,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Close both hands on the same lace, with the lower hand supporting its visible end.
       playerBody.reach(0, laceHand.addScaledVector(laceAlong, -.2 * tall));
       playerBody.reach(1, laceHand.addScaledVector(laceAlong, -.06 * tall));
+      playerBody.hold?.(0, { kind: 'power', size: .02 * tall });
+      playerBody.hold?.(1, { kind: 'power', size: .02 * tall });
       playerBody.hand(1, laceHand);
     }
     lace.update(curr.hook, laceHand);
@@ -1519,7 +1533,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       elof.group.updateWorldMatrix(true, false);
       lanternLift.set(0.3, 0.98, 0.12).applyMatrix4(elof.group.matrixWorld);
       playerBody.reach(1, lanternLift, 0.9);
-      playerBody.hand(1, lanternHand);
+      if (playerBody.grasp && playerBody.socket) {
+        // Its stick upright in his fist, the sweet over his thumb (./fingers.ts).
+        const grip = { kind: 'power' as const, size: .018 * tall };
+        playerBody.grasp(1, grip, playerBody.socket(1, grip, lanternHand), upright, lanternHand);
+        lanternHand.y -= .1 * tall;
+      } else playerBody.hand(1, lanternHand);
     }
     const hasCap = (chapter.id === 'stormbyn' && flags.has('cap')) || ['olympia', 'flarken', 'alven', 'billsta'].includes(chapter.id)
       || (chapter.id === 'stormoga' && !flags.has('scene:motet'));
@@ -1539,8 +1558,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       elof.group.updateWorldMatrix(true, false);
       berryHand.set(0.32, 0.62, 0.16).applyMatrix4(elof.group.matrixWorld);
       playerBody.reach(0, berryHand, calmStory ? 0.7 : 0.6 + 0.05 * Math.sin(clock * 2.1));
-      playerBody.hand(0, carriedBerry.position);
-      carriedBerry.position.y += 0.06 * tall;
+      if (playerBody.socket) {
+        // Pinched between his thumb and his finger (./fingers.ts).
+        playerBody.hold?.(0, BERRY);
+        playerBody.socket(0, BERRY, carriedBerry.position);
+        carriedBerry.position.y += 0.03 * tall;
+      } else {
+        playerBody.hand(0, carriedBerry.position);
+        carriedBerry.position.y += 0.06 * tall;
+      }
       carriedBerry.scale.setScalar(tall);
     }
     // Moa's leaf drawing, from where he finds it under the bridge until he shows it to her.
@@ -1550,7 +1576,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       elof.group.updateWorldMatrix(true, false);
       berryHand.set(0.3, 0.6, 0.18).applyMatrix4(elof.group.matrixWorld);
       playerBody.reach(0, berryHand, 0.6);
-      playerBody.hand(0, carriedDrawing.position);
+      // Its corner pinched between his thumb and his finger (./fingers.ts).
+      playerBody.hold?.(0, PAPER);
+      if (playerBody.socket) playerBody.socket(0, PAPER, carriedDrawing.position);
+      else playerBody.hand(0, carriedDrawing.position);
       carriedDrawing.position.y += 0.08 * tall;
       carriedDrawing.position.z += 0.04;
       carriedDrawing.rotation.set(-0.2, 0, Math.sin(clock * 1.7) * 0.06);
@@ -1565,7 +1594,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.mouth(goldMouth);
       berryHand.set(0.3, 0.62, 0.18).applyMatrix4(elof.group.matrixWorld).lerp(goldMouth, smooth(bite / 0.3));
       playerBody.reach(0, berryHand, 1);
-      playerBody.hand(0, carriedGold.position);
+      playerBody.hold?.(0, BERRY);
+      if (playerBody.socket) playerBody.socket(0, BERRY, carriedGold.position);
+      else playerBody.hand(0, carriedGold.position);
       carriedGold.scale.setScalar(tall * (1 - smooth((bite - 0.32) / 0.12)));
     }
     // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
@@ -1584,7 +1615,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (pappaHas && pappa) {
         pappa.rig.group.updateWorldMatrix(true, false);
         pappa.rig.group.getWorldQuaternion(lampTurn);
-        holdLamp(pappasLamp, pappa.rig, 0, 2 * Math.atan2(lampTurn.y, lampTurn.w), Math.max(0.7, pappa.rig.height / 5.2));
+        // In his left hand; while he puts his coat on, in his right for a while (./rain-gear.ts heldInOther).
+        const side = heldInOther(chapter, 'pappa', sceneFrame, calmStory) ? 1 : 0;
+        holdLamp(pappasLamp, pappa.rig, side, 2 * Math.atan2(lampTurn.y, lampTurn.w), Math.max(0.7, pappa.rig.height / 5.2));
       }
     }
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
@@ -1886,10 +1919,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           lampHand.set((side === 0 ? 1 : -1) * 0.62 * u, 2.95 * u, 0.85 * u);
           one.rig.group.localToWorld(lampHand);
           one.rig.reach(side, lampHand, 0.9);
-          one.rig.hand(side, lampHand);
-          one.lamp.position.copy(lampHand);
-          one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim);
-          one.lamp.scale.setScalar(Math.max(0.7, u));
+          const size = Math.max(0.7, u);
+          if (one.rig.grasp && one.rig.socket) {
+            // Closed round the lamp's body, the hand turned with its light, out past the thumb (./fingers.ts).
+            const grip = { kind: 'power' as const, size: 0.075 * size };
+            one.rig.grasp(side, grip, one.rig.socket(side, grip, lampHand), lampAim, lampHand, 1, lampHeld);
+            one.lamp.position.copy(lampHand).addScaledVector(lampHeld, -0.06 * size);
+            one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampHeld);
+          } else {
+            one.rig.hand(side, lampHand);
+            one.lamp.position.copy(lampHand);
+            one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim);
+          }
+          one.lamp.scale.setScalar(size);
           one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
         }
       }

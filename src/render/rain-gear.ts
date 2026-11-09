@@ -85,6 +85,17 @@ export function dressingFrom(chapter: Pick<ChapterData, 'scenes'>, scene: string
   return keys?.find((key) => key.act === 'dress')?.at ?? null;
 }
 
+/**
+ * Which hand holds what one of the family carries while they put their gear on (Pappa's flashlight in Stormkvällen): the
+ * one it is held in (0), or the other (1), as their clip's `lamp` keys it. Pappa passes it to his right hand once that is
+ * in its sleeve, so that his left goes over his head and into its sleeve empty, and takes it back once he has zipped up.
+ */
+export function heldInOther(chapter: Pick<ChapterData, 'scenes'>, who: string, scene?: { id: string; seconds: number } | null, calm = false): boolean {
+  if (calm || !scene || !(who in DRESSING)) return false;
+  const from = dressingFrom(chapter, scene.id, who), keys = (CLIPS[DRESSING[who as GearRole]] as Clip).lamp;
+  return from !== null && !!keys && keys.length >= 3 && scene.seconds >= from && sample(keys, scene.seconds - from) > 0.5;
+}
+
 /** They are in their own clothes in Stormkvällen until they have got ready to go out together. */
 const READY = 'scene:tillsammans';
 
@@ -128,7 +139,7 @@ export const COAT_ORDER = {
   sleeve: [0, 0.22], front: [0.22, 0.32], back: [0.32, 0.52], otherSleeve: [0.52, 0.74], otherFront: [0.74, 0.84], zip: [0.88, 1],
 } as const satisfies Record<string, readonly [number, number]>;
 /** How far in from its side the coat's front is open until it is zipped, as a share of the way to its middle. */
-const ZIP_EDGE = 0.85;
+const ZIP_EDGE = 0.8;
 /** What is under a piece goes a little after the piece has come over it, so that there is never a hole between them. */
 const UNDER_LAG = 0.03;
 /** Under nothing: no share of the gear ever hides it. */
@@ -158,7 +169,7 @@ function atRest(mesh: SkinnedMesh): AtRest {
   for (let i = 0; i < owner.length; i++) {
     let best = 0, which = 0;
     for (let k = 0; k < 4; k++) { const w = skinWeight.getComponent(i, k); if (w > best) { best = w; which = skinIndex.getComponent(i, k); } }
-    owner[i] = names[which] ?? '';
+    owner[i] = jointOf(names[which] ?? '');            // a bone added at a joint (./joints.ts) is its limb's
   }
   const pelvis = Math.max(0, names.indexOf('pelvis'));
   return {
@@ -236,9 +247,7 @@ function coatOrderAt(shape: CoatShape, x: number, y: number, z: number, bone: st
     }
     return span(side === shape.first ? COAT_ORDER.sleeve : COAT_ORDER.otherSleeve, up);
   }
-  const index = Math.min(shape.bands.length - 1, Math.max(0, Math.floor((y - shape.low) / BAND)));
-  let band = shape.bands[index];
-  for (let k = 1; !band && k < shape.bands.length; k++) band = shape.bands[index - k] ?? shape.bands[index + k];
+  const band = bandAt(shape, y);
   if (!band) return COAT_ORDER.back[0];
   const up = clamp01((y - shape.low) / (shape.high - shape.low));
   const middle = (band.x0 + band.x1) / 2, half = Math.max(1e-4, (band.x1 - band.x0) / 2);
@@ -246,14 +255,65 @@ function coatOrderAt(shape: CoatShape, x: number, y: number, z: number, bone: st
   const otherX = shape.arms[1 - shape.first]?.from.x ?? middle - (firstX - middle);
   if ((z - (band.z0 + band.z1) / 2) * shape.ahead >= 0) {
     // The front: each side falls from its shoulder once its arm is in, and the middle closes from the hem up.
-    if (1 - Math.abs(x - middle) / half >= ZIP_EDGE) return span(COAT_ORDER.zip, up);
-    const onFirst = (x - middle) * (firstX - middle) >= 0;
-    return span(onFirst ? COAT_ORDER.front : COAT_ORDER.otherFront, 1 - up);
+    const across = zipAcross(shape, x);
+    if (1 - Math.abs(across) >= ZIP_EDGE) return span(COAT_ORDER.zip, up);
+    return span(across >= 0 ? COAT_ORDER.front : COAT_ORDER.otherFront, 1 - up);
   }
   // The back, swept across from the first arm's side, a little ahead at the collar.
   const across = (x - firstX) / (Math.abs(otherX - firstX) > 1e-4 ? otherX - firstX : 1);
   return span(COAT_ORDER.back, 0.85 * clamp01(across) + 0.15 * (1 - up));
 }
+
+/** The coat's cross-section at a height, or the nearest one it has. */
+function bandAt(shape: CoatShape, y: number): CoatShape['bands'][number] {
+  const index = Math.min(shape.bands.length - 1, Math.max(0, Math.floor((y - shape.low) / BAND)));
+  let band = shape.bands[index];
+  for (let k = 1; !band && k < shape.bands.length; k++) band = shape.bands[index - k] ?? shape.bands[index + k];
+  return band;
+}
+
+/**
+ * Where a point of the coat's front is, for its open middle to close with a clean edge (`frontOrder`): how far across it
+ * is from the zip, as a share of the way to the coat's side, on the first arm's side (+) or the other (−); how high, from
+ * the hem (0) to the collar (1); and whether it is on the front at all (1) or not (0). Into `out` at `at`.
+ */
+function coatFrontAt(shape: CoatShape, x: number, y: number, z: number, bone: string, out: Float32Array, at: number): void {
+  const band = armSide(bone) === null ? bandAt(shape, y) : undefined;
+  if (!band || (z - (band.z0 + band.z1) / 2) * shape.ahead < 0) { out[at] = out[at + 1] = out[at + 2] = 0; return; }
+  out[at] = zipAcross(shape, x);
+  out[at + 1] = clamp01((y - shape.low) / (shape.high - shape.low));
+  out[at + 2] = 1;
+}
+
+/**
+ * How far across from the zip a point is, as a share of the way out to the shoulder joint, on the first arm's side (+) or
+ * the other (−), up to 1. The zip runs straight down between the shoulders: measured so, and not by the coat's width at
+ * each height, the edges of the open front run straight down beside it too.
+ */
+function zipAcross(shape: CoatShape, x: number): number {
+  const first = shape.arms[shape.first]?.from.x, other = shape.arms[1 - shape.first]?.from.x;
+  if (first === undefined || other === undefined || Math.abs(first - other) < 1e-4) return 1;
+  const zip = (first + other) / 2, half = (first - other) / 2;
+  return Math.max(-1, Math.min(1, (x - zip) / half));
+}
+
+/**
+ * The coat's front, worked out in the shader from where each point of it is (`coatFrontAt`), not from its corners' own
+ * shares: a share that jumps between two corners, from a side that is on to the middle that is not yet, would cut each
+ * triangle between them in its own place, in teeth. So the edge of the open middle runs straight down beside the zip, and
+ * the zip closes it with a straight line from the hem up. GLSL: `float gearFront(vec3 front, float order)`, the share of
+ * the coat at which a point is covered, from its front and its corners' own share elsewhere.
+ */
+const FRONT_ORDER = (() => {
+  const n = (x: number) => x.toFixed(4);
+  const span = (range: readonly [number, number], k: string) => `(${n(range[0])} + ${n(range[1] - range[0])} * clamp(${k}, 0.0, 1.0))`;
+  return `float gearFront(vec3 front, float order) {
+  if (front.z < 0.5) return order;
+  if (1.0 - abs(front.x) >= ${n(ZIP_EDGE)}) return ${span(COAT_ORDER.zip, 'front.y')};
+  return front.x >= 0.0 ? ${span(COAT_ORDER.front, '1.0 - front.y')} : ${span(COAT_ORDER.otherFront, '1.0 - front.y')};
+}
+`;
+})();
 
 /** A boot's height at rest, which it goes on over from the sole up. */
 function bootSpan(rest: AtRest, keep: (i: number) => boolean = () => true): [number, number] | null {
@@ -264,23 +324,27 @@ function bootSpan(rest: AtRest, keep: (i: number) => boolean = () => true): [num
 const bootOrderAt = (span: [number, number], y: number) => clamp01((y - span[0]) / (span[1] - span[0]));
 
 /**
- * A piece of the gear drawn as far as it is on: its corners with their order (`gearOrder`), and its material's uniform
- * `gearOn`, how far it is on (above 1, all of it). Every piece of every one of the family shares the one program, made
- * in the warm-up with the rest of the chapter (they are in the scene, hidden, from when they are made).
+ * A piece of the gear drawn as far as it is on: its corners with their order (`gearOrder`) and, for a coat, where on its
+ * front each is (`gearFront`, `coatFrontAt`: a boot's are nought), and its material's uniform `gearOn`, how far it is on
+ * (above 1, all of it). Every piece of every one of the family shares the one program, made in the warm-up with the rest
+ * of the chapter (they are in the scene, hidden, from when they are made).
  */
-function revealed(mesh: SkinnedMesh, order: Float32Array): { value: number } {
+function revealed(mesh: SkinnedMesh, order: Float32Array, front = new Float32Array(order.length * 3)): { value: number } {
   mesh.geometry.setAttribute('gearOrder', new BufferAttribute(order, 1));
+  mesh.geometry.setAttribute('gearFront', new BufferAttribute(front, 3));
   const on = { value: 2 };
   const material = mesh.material as MeshStandardMaterial;
   const before = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.gearOn = on;
-    shader.vertexShader = 'attribute float gearOrder;\nvarying float vGearOrder;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGearOrder = gearOrder;');
-    shader.fragmentShader = 'uniform float gearOn;\nvarying float vGearOrder;\n' + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (vGearOrder > gearOn) discard;');
+    shader.vertexShader = 'attribute float gearOrder;\nattribute vec3 gearFront;\nvarying float vGearOrder;\nvarying vec3 vGearFront;\n'
+      + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGearOrder = gearOrder;\n  vGearFront = gearFront;');
+    shader.fragmentShader = 'uniform float gearOn;\nvarying float vGearOrder;\nvarying vec3 vGearFront;\n' + FRONT_ORDER
+      + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (gearFront(vGearFront, vGearOrder) > gearOn) discard;');
   };
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:gear-on`;
+  material.customProgramCacheKey = () => `${key()}:gear-on-v2`;
   material.needsUpdate = true;
   return on;
 }
@@ -385,7 +449,7 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
   const boots = [shell(inBoot(0), 0.07, '#ffffff', 0.3), shell(inBoot(1), 0.07, '#ffffff', 0.3)] as const;
   // They go on in the order of the body's own corners at rest: the coat as `COAT_ORDER`, a boot from the sole up.
   const rest = atRest(body), ahead = aheadOf(rest);
-  const coatOrder = new Float32Array(coat.picked.length);
+  const coatOrder = new Float32Array(coat.picked.length), coatFront = new Float32Array(coat.picked.length * 3);
   const bootOn = ([0, 1] as const).map((side) => {
     const span = bootSpan(rest, inBoot(side));
     return revealed(boots[side].mesh, Float32Array.from(boots[side].picked, (i) => (span ? bootOrderAt(span, rest.at[i * 3 + 1]!) : 0)));
@@ -394,12 +458,17 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     coat: coat.mesh,
     boots: [boots[0].mesh, boots[1].mesh],
     socks: [shell(inBoot(0), 0.015, SOCK, 0.95).mesh, shell(inBoot(1), 0.015, SOCK, 0.95).mesh],
-    on: { coat: revealed(coat.mesh, coatOrder), boots: [bootOn[0]!, bootOn[1]!] },
+    on: { coat: revealed(coat.mesh, coatOrder, coatFront), boots: [bootOn[0]!, bootOn[1]!] },
     first: 0,
     reorder(first) {
       const shape = coatShape(rest, first, ahead, inCoat);
-      coat.picked.forEach((i, j) => { coatOrder[j] = shape ? coatOrderAt(shape, rest.at[i * 3]!, rest.at[i * 3 + 1]!, rest.at[i * 3 + 2]!, rest.owner[i]!) : 0; });
+      coat.picked.forEach((i, j) => {
+        const x = rest.at[i * 3]!, y = rest.at[i * 3 + 1]!, z = rest.at[i * 3 + 2]!;
+        coatOrder[j] = shape ? coatOrderAt(shape, x, y, z, rest.owner[i]!) : 0;
+        if (shape) coatFrontAt(shape, x, y, z, rest.owner[i]!, coatFront, j * 3);
+      });
       coat.mesh.geometry.getAttribute('gearOrder').needsUpdate = true;
+      coat.mesh.geometry.getAttribute('gearFront').needsUpdate = true;
       made.first = first;
     },
   };
@@ -529,6 +598,8 @@ function hideUnder(body: SkinnedMesh, coat: SkinnedMesh | null, boots: [SkinnedM
     }
   }
   g.setAttribute('wardrobeCover', new Float32BufferAttribute(cover, 3));
+  // Where under the coat's front each corner is (`coatFrontAt`), as `inOrder` works it out: nought, not under it.
+  g.setAttribute('wardrobeFront', new BufferAttribute(new Float32Array(position.count * 3), 3));
   // Each corner is drawn until what covers it has come over it (`inOrder`): −1, nothing is worn.
   const uniform = { value: new Vector3(-1, -1, -1) };
   const material = body.material as MeshStandardMaterial;
@@ -536,8 +607,14 @@ function hideUnder(body: SkinnedMesh, coat: SkinnedMesh | null, boots: [SkinnedM
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.wardrobeWorn = uniform;
-    shader.vertexShader = 'attribute vec3 wardrobeCover;\nvarying vec3 vWardrobeCover;\n' + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWardrobeCover = wardrobeCover;');
-    shader.fragmentShader = 'uniform vec3 wardrobeWorn;\nvarying vec3 vWardrobeCover;\n' + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (any(lessThanEqual(vWardrobeCover, wardrobeWorn))) discard;');
+    shader.vertexShader = 'attribute vec3 wardrobeCover;\nattribute vec3 wardrobeFront;\nvarying vec3 vWardrobeCover;\nvarying vec3 vWardrobeFront;\n'
+      + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWardrobeCover = wardrobeCover;\n  vWardrobeFront = wardrobeFront;');
+    // Under the coat's front, where it is covered is worked out as the coat's own is (`FRONT_ORDER`), a little after it.
+    shader.fragmentShader = 'uniform vec3 wardrobeWorn;\nvarying vec3 vWardrobeCover;\nvarying vec3 vWardrobeFront;\n' + FRONT_ORDER
+      + shader.fragmentShader.replace('void main() {', `void main() {
+  vec3 wardrobeHere = vWardrobeCover;
+  if (vWardrobeFront.z > 0.5) wardrobeHere.x = gearFront(vWardrobeFront, 0.0) + ${UNDER_LAG.toFixed(3)};
+  if (any(lessThanEqual(wardrobeHere, wardrobeWorn))) discard;`);
   };
   const key = material.customProgramCacheKey.bind(material);
   material.customProgramCacheKey = () => `${key()}:wardrobe-cover`;
@@ -564,9 +641,15 @@ function inOrder(body: SkinnedMesh, boots: [SkinnedMesh | null, SkinnedMesh | nu
     }
   }
   attribute.needsUpdate = true;
+  const fronts = body.geometry.getAttribute('wardrobeFront') as BufferAttribute, front = fronts.array as Float32Array;
   return (shape) => {
-    for (const i of underCoat) cover[i * 3] = (shape ? coatOrderAt(shape, rest.at[i * 3]!, rest.at[i * 3 + 1]!, rest.at[i * 3 + 2]!, rest.owner[i]!) : 0) + UNDER_LAG;
+    for (const i of underCoat) {
+      const x = rest.at[i * 3]!, y = rest.at[i * 3 + 1]!, z = rest.at[i * 3 + 2]!;
+      cover[i * 3] = (shape ? coatOrderAt(shape, x, y, z, rest.owner[i]!) : 0) + UNDER_LAG;
+      if (shape) coatFrontAt(shape, x, y, z, rest.owner[i]!, front, i * 3);
+    }
     attribute.needsUpdate = true;
+    fronts.needsUpdate = true;
   };
 }
 
@@ -666,7 +749,8 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
   // They go on in order (`COAT_ORDER`, a boot from the sole up), and what they cover goes with them.
   const ahead = aheadOf(atRest(body));
   const coatRest = out.coat ? atRest(out.coat) : null, coatOrder = new Float32Array(coatRest?.owner.length ?? 0);
-  if (out.coat) out.on.coat = revealed(out.coat, coatOrder);
+  const coatFront = new Float32Array(coatOrder.length * 3);
+  if (out.coat) out.on.coat = revealed(out.coat, coatOrder, coatFront);
   for (const side of [0, 1] as const) {
     const boot = out.boots[side];
     if (!boot) continue;
@@ -677,8 +761,13 @@ export function fitWardrobe(model: Object3D, made: Object3D): Wardrobe | null {
   out.reorder = (first) => {
     const shape = coatRest ? coatShape(coatRest, first, ahead) : null;
     if (out.coat && coatRest && shape) {
-      for (let i = 0; i < coatOrder.length; i++) coatOrder[i] = coatOrderAt(shape, coatRest.at[i * 3]!, coatRest.at[i * 3 + 1]!, coatRest.at[i * 3 + 2]!, coatRest.owner[i]!);
+      for (let i = 0; i < coatOrder.length; i++) {
+        const x = coatRest.at[i * 3]!, y = coatRest.at[i * 3 + 1]!, z = coatRest.at[i * 3 + 2]!;
+        coatOrder[i] = coatOrderAt(shape, x, y, z, coatRest.owner[i]!);
+        coatFrontAt(shape, x, y, z, coatRest.owner[i]!, coatFront, i * 3);
+      }
       out.coat.geometry.getAttribute('gearOrder').needsUpdate = true;
+      out.coat.geometry.getAttribute('gearFront').needsUpdate = true;
     }
     under?.(shape);
     out.first = first;

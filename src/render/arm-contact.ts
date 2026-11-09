@@ -110,3 +110,51 @@ export function createHandGrip(lower: Object3D, hand: Object3D, reach: (target: 
     return hand.localToWorld(out.copy(offset));
   };
 }
+
+/**
+ * Holds a thing in a hand after posing (./fingers.ts): the hand turns so that its grip's axis (`axisLocal`, in the hand
+ * bone's frame) lies along the held thing's `axis`, its fingers as near the forearm's own way as that allows (a straight
+ * wrist), and the arm reaches so that the grip's socket (`socketLocal`) comes to `target`. With `either`, the thing may lie
+ * either way along its axis (a rung, a bail), and the hand takes the way nearer how it is. Weight blends from the hand as
+ * posed. Returns the socket where it is (a reach too far is clamped), and the thing's axis as held in `axisOut`.
+ */
+export function createHandHold(lower: Object3D, hand: Object3D, reach: (target: Vector3) => void) {
+  const scale = new Vector3(), now = new Vector3(), forearm = new Vector3(), wrist = new Vector3();
+  const along = new Vector3(), want = new Vector3(), side = new Vector3(), up = new Vector3();
+  const current = new Quaternion(), turned = new Quaternion(), parent = new Quaternion();
+  const from = new Matrix4(), to = new Matrix4();
+  return (socketLocal: Vector3, axisLocal: Vector3, target: Vector3, axis: Vector3, out: Vector3, weight = 1, axisOut?: Vector3, either = false): Vector3 => {
+    weight = Math.max(0, Math.min(1, weight));
+    hand.updateWorldMatrix(true, false);
+    if (weight === 0) {
+      if (axisOut) axisOut.copy(axisLocal).transformDirection(hand.matrixWorld);
+      return hand.localToWorld(out.copy(socketLocal));
+    }
+    const size = hand.getWorldScale(scale).x;
+    hand.localToWorld(now.copy(socketLocal));
+    hand.getWorldQuaternion(current);
+    want.copy(axis).normalize();
+    if (either && side.copy(axisLocal).applyQuaternion(current).dot(want) < 0) want.negate();
+    // The fingers' way: the forearm's, at right angles to the thing's axis.
+    forearm.copy(hand.getWorldPosition(wrist)).sub(lower.getWorldPosition(side)).normalize();
+    if (Math.abs(forearm.dot(want)) > 0.97) forearm.set(1, 0, 0).applyQuaternion(current);
+    forearm.addScaledVector(want, -forearm.dot(want)).normalize();
+    // The turn that takes the hand's own (axis, fingers) to the world's.
+    along.set(0, 1, 0);
+    if (Math.abs(axisLocal.y) > 0.97) along.set(1, 0, 0);
+    along.addScaledVector(axisLocal, -along.dot(axisLocal)).normalize();
+    up.crossVectors(axisLocal, along);
+    from.makeBasis(axisLocal, along, up);
+    side.crossVectors(want, forearm);
+    to.makeBasis(want, forearm, side);
+    turned.setFromRotationMatrix(to.multiply(from.transpose()));
+    current.slerp(turned, weight);
+    // The wrist where the socket comes to the target, and the arm to it.
+    reach(wrist.copy(now).lerp(target, weight).sub(side.copy(socketLocal).multiplyScalar(size).applyQuaternion(current)));
+    if (hand.parent) { hand.parent.updateWorldMatrix(true, false); hand.parent.getWorldQuaternion(parent); } else parent.identity();
+    hand.quaternion.copy(parent.invert().multiply(current));
+    hand.updateWorldMatrix(false, true);
+    if (axisOut) axisOut.copy(axisLocal).transformDirection(hand.matrixWorld);
+    return hand.localToWorld(out.copy(socketLocal));
+  };
+}
