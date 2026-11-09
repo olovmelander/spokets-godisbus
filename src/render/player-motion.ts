@@ -308,10 +308,18 @@ export function createFollower() {
   const pending = new Set<Joint>();
   let fresh = true;
   return {
-    /** Forget how it was moving: the next pose is drawn as asked (a cut, or a pose given from elsewhere). */
+    /**
+     * Forget how it was moving: the next pose is drawn as asked (a cut); or, with `pose`, the body is held there, still (a
+     * pose given from elsewhere, as a scene's), and goes on from it.
+     */
     reset(pose?: Pose): void {
-      fresh = true;
-      if (pose) Object.assign(drawn, pose);
+      if (!pose) { fresh = true; return; }
+      for (const joint of JOINTS) {
+        drawn[joint] = asked[joint] = pose[joint];
+        speed[joint] = step[joint] = off[joint] = offSpeed[joint] = 0;
+      }
+      pending.clear();
+      fresh = false;
     },
     /**
      * Takes `target` (what is asked) over `dt` seconds into `out`; `jumped`: the body has just changed what it does, and
@@ -397,7 +405,7 @@ export function createPlayerMotion() {
   const air: Air = { t: 0, pushed: false, carry: 0, rise: 0 };
   let leftAt = 0, was = '';
   const follower = createFollower();
-  // A stride's legs, arms and trunk are drawn a little softened, as they always have been (STRIDE_EASE).
+  // On his feet he is drawn a little softened, as he always has been (STRIDE_EASE).
   const strode = { ...STANDING };
   let wasScripted = false, blendT = 0;
   const blendFrom = { ...STANDING }, lastScripted = { ...STANDING };
@@ -446,6 +454,7 @@ export function createPlayerMotion() {
         const held = blendT >= SCRIPT_BLEND || calm ? Object.assign(pose, scripted) : blendPose(blendFrom, scripted, smooth(blendT / SCRIPT_BLEND), pose, true);
         // Out of the scene, he goes on from the scene's pose.
         follower.reset(held);
+        for (const joint of JOINTS) strode[joint] = held[joint];
         return held;
       }
       const unscripted = wasScripted;
