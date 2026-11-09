@@ -239,6 +239,153 @@ SIT_DOWN = {
 }
 CLIPS = {'kneel': KNEEL, 'kneelElder': KNEEL_ELDER, 'standUp': STAND_UP, 'sitDown': SIT_DOWN}
 
+# --- putting on the raincoat and the boots -------------------------------------------------------------------------------
+# Stormkvallen's `tillsammans` (src/content/aventyr2/chapters/stormkvall.ts): each of the family pulls on a raincoat and
+# rubber boots before they go out into the storm, in their own way. A part (the coat, or a pair of boots) is keyed here in
+# the game's own pose, in seconds, from standing to standing, with the left arm in first and the left foot first; the parts
+# are put together for each person below, at their own pace, bigger or smaller, and turned about for someone who starts
+# with the right.
+# `coat`, `bootL` and `bootR` key how far each piece is on, 0 to 1: the game draws a piece as far as it is on
+# (src/render/rain-gear.ts), so it goes on with the hands that put it on. The coat goes on in this order (COAT_ORDER there):
+#   0-0.22 the first sleeve, from the cuff up, as the arm goes into it; 0.22-0.32 that side's front, as it falls from the
+#   shoulder; 0.32-0.52 across the back, as the coat is swung round behind; 0.52-0.74 the other sleeve; 0.74-0.84 its
+#   front; 0.88-1 the open front closed from the hem up to the collar, as it is zipped.
+# A boot goes on from the sole up as the foot is pushed down into it, and the foot is stamped down.
+
+# Held by the collar in the right hand, the coat's left sleeve is held open at the left hip; the left arm goes down into it
+# as the right hand pulls the coat up the arm onto the shoulder; the right hand carries the collar up over the head and
+# round behind, lets go, and the right arm reaches back and down into its sleeve, the head turned to find it; a shrug onto
+# the shoulders, the fronts pulled together at the waist, and the zip run up to the chin.
+COAT_ON = {
+    'seconds': 2.95,
+    'armL': [(0.0, 0.02), (0.3, 0.3), (0.62, 0.15), (0.85, 0.08), (1.1, 0.12), (1.62, 0.45), (1.9, 0.38), (2.12, 0.3),
+             (2.4, 0.42), (2.7, 0.38), (2.95, 0.02)],
+    'outL': [(0.0, 0.0), (0.3, 0.15), (0.62, 0.32), (0.85, 0.2), (1.1, 0.1), (1.62, -0.1), (2.12, 0.08), (2.4, -0.32),
+             (2.7, -0.32), (2.95, 0.0)],
+    'elbowL': [(0.0, 0.1), (0.3, 0.9), (0.62, 0.08), (0.85, 0.2), (1.1, 0.3), (1.62, 1.1), (1.9, 0.9), (2.12, 0.35),
+               (2.4, 1.25), (2.7, 1.2), (2.95, 0.1)],
+    'wristL': [(0.0, 0.0), (0.3, 0.1), (0.62, -0.25), (0.85, 0.0), (2.4, 0.15), (2.7, 0.1), (2.95, 0.0)],
+    'armR': [(0.0, 0.02), (0.3, 0.55), (0.62, 0.62), (0.85, 1.2), (1.1, 2.7), (1.38, 0.9), (1.62, -0.7), (1.9, -0.25),
+             (2.12, 0.3), (2.4, 0.42), (2.7, 0.95), (2.95, 0.02)],
+    'outR': [(0.0, 0.0), (0.3, -0.75), (0.62, -1.0), (0.85, -0.85), (1.1, 0.45), (1.38, 0.7), (1.62, 0.35), (1.9, 0.2),
+             (2.12, 0.08), (2.4, -0.32), (2.7, -0.38), (2.95, 0.0)],
+    'elbowR': [(0.0, 0.1), (0.3, 1.05), (0.62, 1.1), (0.85, 1.75), (1.1, 1.25), (1.38, 0.8), (1.62, 0.3), (1.9, 0.12),
+               (2.12, 0.35), (2.4, 1.25), (2.7, 2.25), (2.95, 0.1)],
+    'wristR': [(0.0, 0.0), (0.3, 0.25), (0.85, 0.1), (1.1, 0.3), (1.62, -0.35), (1.9, -0.1), (2.4, 0.15), (2.7, 0.1),
+               (2.95, 0.0)],
+    'lean': [(0.0, 0.0), (0.3, 0.1), (0.62, 0.08), (0.85, 0.04), (1.1, 0.0), (1.38, 0.1), (1.62, 0.18), (1.9, 0.1),
+             (2.12, -0.04), (2.4, 0.06), (2.7, 0.02), (2.95, 0.0)],
+    'nod': [(0.0, 0.0), (0.3, 0.3), (0.62, 0.25), (0.85, 0.05), (1.1, -0.12), (1.38, 0.0), (1.62, 0.1), (2.12, -0.1),
+            (2.4, 0.42), (2.7, 0.15), (2.95, 0.0)],
+    'turn': [(0.0, 0.0), (0.3, 0.2), (0.62, 0.28), (0.85, 0.1), (1.1, -0.1), (1.38, -0.3), (1.62, -0.32), (1.9, -0.12),
+             (2.12, 0.0), (2.95, 0.0)],
+    'twist': [(0.0, 0.0), (0.3, 0.15), (0.62, 0.18), (0.85, 0.1), (1.1, -0.05), (1.38, -0.18), (1.62, -0.25), (1.9, -0.08),
+              (2.12, 0.0), (2.95, 0.0)],
+    'bendSide': [(0.0, 0.0), (0.62, -0.04), (1.1, 0.04), (1.62, 0.02), (2.12, 0.0), (2.95, 0.0)],
+    'coat': [(0.0, 0.0), (0.3, 0.0), (0.62, 0.22), (0.85, 0.32), (1.1, 0.44), (1.38, 0.52), (1.62, 0.6), (1.9, 0.74),
+             (2.12, 0.86), (2.4, 0.88), (2.7, 1.0)],
+}
+
+# Standing on the right foot, the left knee comes up over the boot, the foot is pushed down into it and stamped down; the
+# weight goes over onto the left, and the right foot does the same. The arms go out a little for balance; the eyes on the
+# boot.
+BOOTS_ON = {
+    'seconds': 1.7,
+    'sway': [(0.0, 0.0), (0.2, -0.14), (0.76, -0.14), (1.02, 0.14), (1.48, 0.14), (1.7, 0.0)],
+    'hipRoll': [(0.0, 0.0), (0.2, 0.04), (0.76, 0.03), (1.02, -0.04), (1.48, -0.03), (1.7, 0.0)],
+    'bendSide': [(0.0, 0.0), (0.2, 0.03), (0.76, 0.02), (1.02, -0.03), (1.48, -0.02), (1.7, 0.0)],
+    'legL': [(0.0, 0.0), (0.2, 0.06), (0.4, 0.8), (0.62, 0.35), (0.76, 0.0), (1.7, 0.0)],
+    'kneeL': [(0.0, 0.0), (0.2, 0.1), (0.4, 1.25), (0.62, 0.55), (0.76, 0.1), (0.86, 0.02), (1.48, 0.1), (1.6, 0.0),
+              (1.7, 0.0)],
+    'footL': [(0.0, 0.0), (0.4, -0.1), (0.62, 0.05), (0.76, 0.06), (0.86, 0.0), (1.7, 0.0)],
+    'splayL': [(0.0, 0.0), (0.2, 0.04), (0.4, 0.2), (0.62, 0.1), (0.76, 0.0), (1.7, 0.0)],
+    'legR': [(0.0, 0.0), (0.92, 0.0), (1.02, 0.06), (1.12, 0.8), (1.34, 0.35), (1.48, 0.0), (1.7, 0.0)],
+    'kneeR': [(0.0, 0.0), (0.76, 0.1), (0.86, 0.02), (1.02, 0.1), (1.12, 1.25), (1.34, 0.55), (1.48, 0.1), (1.6, 0.02),
+              (1.7, 0.0)],
+    'footR': [(0.0, 0.0), (1.02, 0.0), (1.12, -0.1), (1.34, 0.05), (1.48, 0.06), (1.6, 0.0), (1.7, 0.0)],
+    'splayR': [(0.0, 0.0), (0.92, 0.0), (1.02, 0.04), (1.12, 0.2), (1.34, 0.1), (1.48, 0.0), (1.7, 0.0)],
+    'armL': [(0.0, 0.02), (0.2, 0.15), (0.76, 0.12), (1.02, 0.15), (1.48, 0.12), (1.7, 0.02)],
+    'armR': [(0.0, 0.02), (0.2, 0.12), (0.76, 0.15), (1.02, 0.12), (1.48, 0.15), (1.7, 0.02)],
+    'outL': [(0.0, 0.0), (0.2, 0.12), (0.76, 0.18), (1.02, 0.1), (1.48, 0.12), (1.7, 0.0)],
+    'outR': [(0.0, 0.0), (0.2, 0.18), (0.76, 0.1), (1.02, 0.18), (1.48, 0.12), (1.7, 0.0)],
+    'elbowL': [(0.0, 0.1), (0.2, 0.35), (0.76, 0.4), (1.48, 0.4), (1.7, 0.1)],
+    'elbowR': [(0.0, 0.1), (0.2, 0.35), (0.76, 0.4), (1.48, 0.4), (1.7, 0.1)],
+    'lean': [(0.0, 0.0), (0.2, 0.08), (0.4, 0.12), (0.76, 0.14), (1.12, 0.12), (1.48, 0.14), (1.7, 0.0)],
+    'nod': [(0.0, 0.0), (0.2, 0.3), (0.76, 0.35), (1.48, 0.35), (1.7, 0.0)],
+    'turn': [(0.0, 0.0), (0.4, 0.1), (0.76, 0.06), (1.12, -0.1), (1.48, -0.06), (1.7, 0.0)],
+    'bootL': [(0.0, 0.0), (0.4, 0.0), (0.62, 0.55), (0.76, 1.0)],
+    'bootR': [(0.0, 0.0), (1.12, 0.0), (1.34, 0.55), (1.48, 1.0)],
+}
+
+STANDING = {'armL': 0.02, 'armR': 0.02, 'elbowL': 0.1, 'elbowR': 0.1}
+GEAR = ('coat', 'bootL', 'bootR')
+# Turned about, left for right: the arms and legs change places, and what turns or tips to one side goes to the other.
+MIRROR = {'armL': 'armR', 'elbowL': 'elbowR', 'outL': 'outR', 'wristL': 'wristR', 'legL': 'legR', 'kneeL': 'kneeR',
+          'footL': 'footR', 'splayL': 'splayR', 'bootL': 'bootR'}
+MIRROR.update({right: left for left, right in list(MIRROR.items())})
+SIDEWAYS = ('turn', 'twist', 'tilt', 'bendSide', 'sway', 'hipRoll')
+
+
+def mirrored(part):
+    """The part the other way about: the right arm in first, or the right foot first."""
+    out = {'seconds': part['seconds']}
+    for name, keys in part.items():
+        if name == 'seconds':
+            continue
+        sign = -1.0 if name in SIDEWAYS else 1.0
+        out[MIRROR.get(name, name)] = [(at, value * sign) for at, value in keys]
+    return out
+
+
+def paced(part, pace=1.0, **gains):
+    """The part taken `pace` times as long, each named channel `gain` times as far from standing (the gear never)."""
+    out = {'seconds': part['seconds'] * pace}
+    for name, keys in part.items():
+        if name == 'seconds':
+            continue
+        rest, gain = STANDING.get(name, 0.0), gains.get(name, 1.0)
+        out[name] = [(at * pace, value if name in GEAR else rest + (value - rest) * gain) for at, value in keys]
+    return out
+
+
+def dressing(*parts, **extra):
+    """One clip of the parts one after another. A channel a part does not key is held between its neighbours (at standing,
+    or for the gear at what is on by then); `extra` keys more on top, in seconds of the whole."""
+    seconds = sum(part['seconds'] for part in parts)
+    names = sorted({name for part in parts for name in part if name != 'seconds'} | set(extra))
+    clip = {'seconds': seconds}
+    for name in names:
+        keys, start, worn = [], 0.0, 0.0
+        for part in parts:
+            if name in part:
+                keys += [(start + at, value) for at, value in part[name]]
+                worn = part[name][-1][1]
+            elif name not in extra:
+                held = worn if name in GEAR else STANDING.get(name, 0.0)
+                keys += [(start, held), (start + part['seconds'], held)]
+            start += part['seconds']
+        keys = sorted(keys + list(extra.get(name, [])))
+        # A key where two parts meet is kept once.
+        clip[name] = [(at / seconds, value) for i, (at, value) in enumerate(keys) if i == 0 or at - keys[i - 1][0] > 1e-6]
+    return clip
+
+
+# Mamma: quick and light, the left arm first, her head tipped as she zips. Pappa: steady and big, the right arm first (the
+# lamp is in his left hand), leaning well into it, heavy on his feet. Moa: the left arm first, quick, her head tipped, a
+# springy stamp. Bertil: the boots first ("Jag tar mina storsta stovlar!"), lifted high and stamped hard, then the coat in a
+# hurry, the right arm first, the arms flung.
+DRESS = {
+    'dressMamma': dressing(paced(COAT_ON, 0.88), paced(BOOTS_ON, 0.85, legL=0.85, kneeL=0.85, legR=0.85, kneeR=0.85),
+                           tilt=[(0.0, 0.0), (2.0, 0.0), (2.3, 0.08), (2.6, 0.02), (4.0, 0.0)]),
+    'dressPappa': dressing(paced(mirrored(COAT_ON), 1.0, lean=1.35, nod=0.85),
+                           paced(mirrored(BOOTS_ON), 1.08, lean=1.3, kneeL=1.15, kneeR=1.15)),
+    'dressMoa': dressing(paced(COAT_ON, 0.92, turn=1.25), paced(BOOTS_ON, 0.82, legL=1.1, legR=1.1),
+                         tilt=[(0.0, 0.0), (0.4, 0.06), (1.2, -0.05), (2.3, 0.08), (2.7, 0.0)]),
+    'dressBertil': dressing(paced(mirrored(BOOTS_ON), 0.8, legL=1.2, kneeL=1.25, legR=1.2, kneeR=1.25, sway=1.3),
+                            paced(mirrored(COAT_ON), 0.78, armL=1.12, armR=1.12, turn=1.2)),
+}
+CLIPS.update(DRESS)
+
 STAND_CHANNELS = ['sway', 'roll', 'side', 'tilt', 'lean', 'nod', 'turn', 'arm', 'elbow', 'wrist']
 STAND_SCALARS = ['period', 'breath', 'deep', 'width']
 

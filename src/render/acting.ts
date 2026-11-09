@@ -1,8 +1,13 @@
 import type { Act } from '../sim/scene';
-import { groundedHips, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
+import { groundedHips, JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { play, seated, stand, stepOf, stride, type Footing } from './gait';
+import { play, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
+import { DRESSING } from './rain-gear';
+
+/** How long, in seconds, the end of putting on the gear takes to hand over to how they stand. */
+const DRESSED = 0.5;
+const dressing: Pose = { ...STANDING };
 
 /**
  * Acting: what each of a scene's acts does to a body, as a pose that moves with time (docs/narrative-audit.md).
@@ -484,6 +489,19 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
       out.nod = 0.65 * k;
       return out;
     }
+    case 'dress': {
+      // Putting on the raincoat and the boots, each in their own way (art/blender/motion.py, DRESSING in ./rain-gear.ts),
+      // the gear going on in step with it; from under it and after it, standing as they stand. Reduced motion: standing,
+      // the gear on at once.
+      stand(out, c.clock ?? c.t, STANDS[c.role ?? 'pappa'], c.legs, c.calm);
+      if (c.calm) return out;
+      const clip: Clip = CLIPS[DRESSING[c.role ?? 'pappa']];
+      const k = 1 - smooth((t - clip.seconds) / DRESSED);
+      if (k <= 0) return out;
+      play(clip, Math.min(t, clip.seconds), Object.assign(dressing, out));
+      for (const joint of JOINTS) out[joint] += (dressing[joint] - out[joint]) * k;
+      return out;
+    }
     case 'paint': {
       under();
       const target = c.aim ?? { ahead: 1.2, up: 1.8 };
@@ -505,6 +523,6 @@ export function stanceOf(act: Act, before: Stance): Stance {
   if (act === 'sit' || act === 'carve' || act === 'draw') return 'sit';
   if (act === 'kneel') return 'kneel';
   if (act === 'crouch') return 'crouch';
-  if (act === 'walk' || act === 'stand' || act === 'stomp' || act === 'sneak' || act === 'cheer') return 'stand';
+  if (act === 'walk' || act === 'stand' || act === 'stomp' || act === 'sneak' || act === 'cheer' || act === 'dress') return 'stand';
   return before;
 }

@@ -996,13 +996,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const frozenLedge = chapter.storm?.frozen ? chapter.ledges?.find((ledge) => ledge.needs === chapter.storm!.frozen) : undefined;
   /** The rain gear each body wears now, by its key, so that it is changed only when it changes. */
   const dressed = new WeakMap<object, string>();
-  const dressFor = (rig: Pick<Rig, 'dress'>, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null) => {
+  // Where the family will put their gear on in this chapter, the pieces are made with the body, hidden, so that they are
+  // drawn in the warm-up and nothing is compiled as they go on (./rain-gear.ts).
+  const putsOn = chapter.storm !== undefined && (chapter.storm.rain ?? 0) > 0;
+  const dressFor = (rig: Pick<Rig, 'dress'>, who: string, flags: ReadonlySet<string>, scene: SceneFrame | null, calm: boolean) => {
     if (!rig.dress) return;
-    const gear = rainGearFor(chapter, who, flags, scene);
-    const key = gear ? `${gear.coat}${gear.boots}${gear.bootOff}` : '';
+    const gear = rainGearFor(chapter, who, flags, scene, calm);
+    const on = gear?.on ? `${gear.on.coat.toFixed(3)},${gear.on.boots[0].toFixed(3)},${gear.on.boots[1].toFixed(3)}` : '';
+    const key = gear ? `${gear.coat}${gear.boots}${gear.bootOff}${gear.first}${on}` : '';
     if (dressed.get(rig) === key) return;
     dressed.set(rig, key);
-    rig.dress(gear);
+    rig.dress(gear, putsOn);
   };
   // "Min keps blir din båt, lillebror.": Bertil's cap is off his head once he has lent it, in Granskogen.
   const bared = new WeakMap<object, boolean>();
@@ -1883,10 +1887,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (actor.visible()) actor.rig.breeze?.(gale * windAt(actor.rig.group.matrixWorld.elements[12]!), dt, calmStory);
     }
     // Rain gear in the storm, as the story has them put it on (./rain-gear.ts): the family at the help points and in
-    // the scenes. Only when it changes: a model that has just taken a figure's place is dressed afresh.
-    for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags, sceneFrame ?? null);
+    // the scenes, going on as they put it on. Only when it changes: a model that has just taken a figure's place is
+    // dressed afresh.
+    for (const [who, actor] of stage.actors) dressFor(actor.rig, who, flags, sceneFrame ?? null, calmStory);
     for (const one of family) {
-      dressFor(one.rig, one.who, flags, sceneFrame ?? null);
+      dressFor(one.rig, one.who, flags, sceneFrame ?? null, calmStory);
       bareFor(one.rig, one.who, flags);
     }
     if (chapter.id === 'norrsken') {

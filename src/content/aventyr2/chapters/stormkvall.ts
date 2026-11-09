@@ -239,11 +239,14 @@ const SCENES: SceneDef[] = [
     },
   },
   {
-    // 5. The giants get ready around him: raincoats, the flashlight, Moa's umbrella, Bertil's boots.
+    // 5. The giants get ready around him: up off their knees, each pulls on a raincoat and rubber boots in their own way
+    // and rhythm (the act `dress`: src/render/rain-gear.ts, art/blender/motion.py), the coat and the boots going on with
+    // the hands and feet that put them on. Mamma first, as she says it; Pappa shows the flashlight, and dresses with it
+    // in his hand; Bertil his biggest boots first, stamped down; Moa last.
     id: 'tillsammans',
     resumeAt: { x: STAR, y: 0 },
     on: 'scene:krymper',
-    seconds: 9.4,
+    seconds: 11.6,
     hold: true,
     lines: [
       { at: 1.0, who: 'mamma', line: 'skTogether' },
@@ -254,12 +257,18 @@ const SCENES: SceneDef[] = [
     stage: {
       shots: [{ at: 0, x: STAR + 1.2, y: 1.8, height: 6.8, width: 10, eye: -1.4, move: 0.9 }],
       actors: {
-        mamma: [{ at: 0.6, act: 'nod' }],
-        pappa: [{ at: 2.8, act: 'show' }],
-        bertil: [{ at: 4.8, act: 'stomp' }],
-        moa: [{ at: 6.8, act: 'wave' }],
+        mamma: [{ at: 0, face: 0.2, act: 'stand' }, { at: 1.0, act: 'dress' }],
+        pappa: [{ at: 1.4, face: 0.33, act: 'stand' }, { at: 2.4, act: 'show' }, { at: 3.6, act: 'dress' }],
+        bertil: [{ at: 4.2, face: 0.3, act: 'stand' }, { at: 4.6, act: 'dress' }],
+        moa: [{ at: 6.4, face: 0.27, act: 'stand' }, { at: 6.8, act: 'dress' }],
       },
-      elof: [{ at: 0, act: 'watch', aim: { x: STAR - 1.6, y: 2.2, z: -1.4 } }, { at: 8.6, act: 'nod' }],
+      elof: [
+        { at: 0, act: 'watch', aim: { x: STAR - 1.6, y: 2.2, z: -1.4 } },
+        { at: 2.4, aim: { x: STAR + 2.2, y: 2.4, z: -1.2 } },
+        { at: 4.6, aim: { x: STAR + 3.4, y: 1.4, z: -2.8 } },
+        { at: 6.8, aim: { x: STAR + 0.6, y: 2.0, z: -2.6 } },
+        { at: 11.0, act: 'nod' },
+      ],
     },
   },
   {

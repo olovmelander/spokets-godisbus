@@ -1,7 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip } from './arm-contact';
-import { SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
+import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
 import { sleevesWithArms } from './sleeves';
 
 /**
@@ -196,8 +196,11 @@ export interface Rig {
   readonly height: number;
   /** Its legs' measures, as shares of its height: the stride is fitted to them (./gait.ts). */
   readonly legs: Legs;
-  /** Rain gear on, or off with null (./rain-gear.ts). */
-  dress?(gear: RainGear | null): void;
+  /**
+   * Rain gear on, as far as it is on, or off with null (./rain-gear.ts). `ready`: it is put on in this chapter, so
+   * whatever it is drawn with is made now, hidden, to be drawn in the warm-up and not first in play.
+   */
+  dress?(gear: RainGear | null, ready?: boolean): void;
   /** The cap off his head, lent away (Bertil's in Granskogen, "Min keps blir din båt"), or back on. */
   bareHead?(bare: boolean): void;
   /** Puts on a wardrobe made in Blender (./rain-gear.ts, fitWardrobe): its pieces are worn from then on. */
@@ -442,13 +445,21 @@ export function createRehearsalRig(who: Role): Rig {
     legs: REHEARSAL_LEGS,
     pose,
     dress(gear) {
-      // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off.
+      // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off. Being put on, each
+      // part takes it as the gear comes over it (./rain-gear.ts COAT_ORDER): the first forearm and upper arm, the body,
+      // the other arm; a boot's foot, then its shin.
       const set = (i: number, hex: string) => mesh.setColorAt(i, colour.set(hex));
-      for (const i of [0, 5, 6, 8, 9]) set(i, gear ? gear.coat : role.top);
+      const on = gear?.on, first = gear?.first ?? 0;
+      const sleeve = (side: 0 | 1, k: number) => {
+        const [from, to] = side === first ? COAT_ORDER.sleeve : COAT_ORDER.otherSleeve;
+        return from + (to - from) * k;
+      };
+      const coatAt: [number, number][] = [[0, (COAT_ORDER.back[0] + COAT_ORDER.back[1]) / 2], [5, sleeve(0, 1)], [6, sleeve(0, 0.4)], [8, sleeve(1, 1)], [9, sleeve(1, 0.4)]];
+      for (const [i, share] of coatAt) set(i, gear && (!on || on.coat >= share) ? gear.coat : role.top);
       for (const [side, shin, foot] of [[0, 12, 13], [1, 15, 16]] as const) {
-        const off = gear?.bootOff === side;
-        set(shin, gear && !off ? gear.boots : trousers);
-        set(foot, gear ? (off ? SOCK : gear.boots) : shoe);
+        const off = gear?.bootOff === side, boot = on ? on.boots[side] : 1;
+        set(shin, gear && !off && boot >= 0.7 ? gear.boots : trousers);
+        set(foot, gear ? (off ? SOCK : boot >= 0.3 ? gear.boots : shoe) : shoe);
       }
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     },
@@ -678,7 +689,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
     group,
     height,
     legs,
-    dress(gear) {
+    dress(gear, ready = false) {
       worn = gear;
       // The wardrobe made in Blender, once it has come; until then (or without one) shells of the body itself.
       if (wardrobe) {
@@ -686,7 +697,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
         return;
       }
       if (shells === undefined) {
-        if (!gear) return;
+        if (!gear && !ready) return;
         const body = bodyOf(model);
         shells = body ? buildShells(body, height) : null;
       }

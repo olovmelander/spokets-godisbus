@@ -66,7 +66,7 @@ describe('story interaction acting', () => {
 
   it('holds readable actions in reduced motion, while walking still follows real travel without bobbing', () => {
     const acts: Act[] = ['stand', 'watch', 'look', 'sit', 'carve', 'draw', 'sip', 'sneak', 'kneel', 'crouch', 'gasp',
-      'point', 'wave', 'cheer', 'offer', 'reach', 'lift', 'show', 'eat', 'blow', 'shrug', 'hug', 'nod', 'startle', 'stomp', 'hands', 'paint'];
+      'point', 'wave', 'cheer', 'offer', 'reach', 'lift', 'show', 'eat', 'blow', 'shrug', 'hug', 'nod', 'startle', 'stomp', 'hands', 'paint', 'dress'];
     for (const act of acts) {
       const held = actPose(act, context(0, 1.4, 3.55, true), { ...STANDING });
       for (const t of [.08, .25, .65, 2, 100]) expect(actPose(act, context(t, 1.4, 3.55, true), { ...STANDING }), act).toEqual(held);
@@ -100,7 +100,7 @@ describe('story interaction acting', () => {
     const reaction = (role: 'mamma' | 'bertil') => actPose('startle', { ...context(.12), role }, { ...STANDING });
     expect(reaction('bertil').armR).toBeGreaterThan(reaction('mamma').armR + .5);
     for (const role of ['pappa', 'mamma', 'moa', 'bertil'] as const) {
-      for (const act of ['wave', 'gasp', 'cheer', 'startle', 'stomp', 'nod', 'hug', 'draw', 'sip', 'show', 'eat'] as const) {
+      for (const act of ['wave', 'gasp', 'cheer', 'startle', 'stomp', 'nod', 'hug', 'draw', 'sip', 'show', 'eat', 'dress'] as const) {
         let previous = actPose(act, { ...context(0), role }, { ...STANDING });
         for (let frame = 1; frame <= 720; frame++) {
           const next = actPose(act, { ...context(frame / 120), role }, { ...STANDING });
@@ -143,7 +143,7 @@ describe('story interaction acting', () => {
 
   it('seeks and pauses family clocks exactly and keeps reduced-motion contacts and gestures still', () => {
     for (const role of ['pappa', 'mamma', 'moa', 'bertil'] as const) {
-      for (const act of ['wave', 'gasp', 'cheer', 'startle', 'stomp', 'nod', 'hug', 'draw', 'sip', 'show'] as const) {
+      for (const act of ['wave', 'gasp', 'cheer', 'startle', 'stomp', 'nod', 'hug', 'draw', 'sip', 'show', 'dress'] as const) {
         const fixed = actPose(act, { ...context(.71), role }, { ...STANDING });
         actPose(act, { ...context(20), role }, { ...STANDING });
         expect(actPose(act, { ...context(.71), role }, { ...STANDING })).toEqual(fixed);
