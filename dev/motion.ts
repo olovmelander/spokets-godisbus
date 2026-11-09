@@ -67,6 +67,12 @@ const SCRIPTS: Record<string, (x: number) => ActorKey[]> = {
     { at: 0, x, y: 0, z: 0, face: 0.25, move: 0.01, act: 'kneel' },
     { at: 0.6, act: 'stand' }, { at: DRESS_AT, act: 'dress' },
   ],
+  // Standing, as each of them stands, towards the camera: and a few steps, to stop and stand again.
+  stand: (x) => [
+    { at: 0, x, y: 0, z: 0, face: 0.25, move: 0.01, act: 'stand' },
+    { at: 24, x: x + 3, move: 2.4 },
+    { at: 27, face: 0.25 },
+  ],
   // Following Elof, who walks, runs, stops and comes back.
   follow: (x) => [{ at: 0, x, y: 0, z: 0, face: 0, move: 0.01, act: 'stand', follow: 2.5 + x / LANE * 2.2 }],
 };

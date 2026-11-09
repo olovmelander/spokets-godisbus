@@ -346,6 +346,8 @@ export interface Stander {
   deep: number;
   /** How far out from the middle each foot stands, a share of the height. */
   width: number;
+  /** How far the hanging arms are held out from the body (radians), clear of it: more on the side the hip goes out to. */
+  out: number;
   /** The hips over one foot (a share of the height) and tipped, the trunk bent and the head tilted against it, the body's
    * lean, the head's nod and its turn about, and the arms hanging from relaxed elbows and wrists. */
   sway: Series;
@@ -371,8 +373,11 @@ export function stand(pose: Pose, t: number, stander: Stander, legs: Legs = REHE
   // Reduced motion: their own posture, held.
   const w = calm ? 0 : clamp(weight, 0, 1), x = calm ? 0 : TAU * t / stander.period;
   const breath = calm ? 0 : Math.sin(TAU * stander.breath * t + 0.6 * Math.sin(TAU * stander.breath * 0.23 * t)) * w;
-  const roll = wave(stander.roll, x) * w, lift = legs.width * Math.sin(roll);
-  pose.sway = wave(stander.sway, x) * 5.2 * w;
+  const roll = wave(stander.roll, x) * w, lift = legs.width * Math.sin(roll), over = wave(stander.sway, x) * w;
+  pose.sway = over * 5.2;
+  // The arms hang clear of the body; the hip that goes out pushes its arm out with it.
+  pose.outL = stander.out + 1.5 * Math.max(0, over);
+  pose.outR = stander.out + 1.5 * Math.max(0, -over);
   pose.hipRoll = roll;
   pose.bendSide = wave(stander.side, x) * w;
   pose.tilt = wave(stander.tilt, x) * w;
