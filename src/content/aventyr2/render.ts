@@ -1002,7 +1002,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         if (f.seen) f.flashed++;
         else {
           f.seen = true;
-          f.elapsed = 0;
+          // Its cue can wait behind an earlier line before this reveal gets to speak. Establish the same
+          // visible opening as a restored reveal, rather than holding its first glow at zero opacity.
+          const waitingHere = revealPaused && moment && !flags.has(`scene:${moment.id}`)
+            && f.reveals.some(one => one.id === moment.id);
+          f.elapsed = waitingHere ? f.def.seconds * .06 : 0;
         }
         flashAt = clock;
         flashBolt = (flashBolt + 1) % bolts.length;

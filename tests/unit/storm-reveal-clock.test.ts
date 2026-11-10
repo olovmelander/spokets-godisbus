@@ -60,6 +60,7 @@ describe('a story reveal waits for its own line without stopping the storm', () 
     const { flight, flags, figure, update } = setup();
     flags.add(flight.on); update(.05, true);
     const start = figure.position.clone();
+    expect(start.x).toBe(flight.from.x); // no active owner: an unrelated pause does not skip its entrance
     expect(figure.visible).toBe(true);
     for (let i = 0; i < 80; i++) update(.05, true);
     expect(figure.position.toArray()).toEqual(start.toArray());
@@ -75,7 +76,7 @@ describe('a story reveal waits for its own line without stopping the storm', () 
 });
 
 describe('restoring the actual Älven reveal without replaying old flights', () => {
-  function saved(completed = false) {
+  function saved(completed = false, fresh = false) {
     const chapter = AVENTYR2.find(chapter => chapter.id === 'alven')!;
     const flight = chapter.storm!.flybys!.find(f => f.on === 'al:little-seen')!;
     const past = chapter.storm!.flybys![0]!;
@@ -83,7 +84,7 @@ describe('restoring the actual Älven reveal without replaying old flights', () 
     camera.position.set(160, 4, 15);
     const extras = PACK.extras.map(make => make({ chapter, scene: view, sky: new Color(), hemisphere: new HemisphereLight(), sun: new DirectionalLight() })).filter(extra => extra !== null);
     // Save filtering removed the unfinished beat:al:see-little, but its earlier non-beat scene cue remains.
-    const flags = new Set([flight.on, past.on, ...(completed ? ['scene:al:little', 'beat:al:see-little'] : [])]);
+    const flags = new Set([...(fresh ? [] : [flight.on]), past.on, ...(completed ? ['scene:al:little', 'beat:al:see-little'] : [])]);
     let clock = 0;
     const update = (dt: number, seconds: number | null, waiting = false) => {
       clock += dt;
@@ -96,6 +97,33 @@ describe('restoring the actual Älven reveal without replaying old flights', () 
     const halo = figure.children.find(child => child.type === 'Mesh') as import('three').Mesh<import('three').BufferGeometry, import('three').MeshBasicMaterial>;
     return { flags, flight, figure, historical, halo, update };
   }
+
+  it('establishes the fresh figure visibly when its first cue waits behind an earlier line', () => {
+    const { flags, flight, figure, historical, halo, update } = saved(false, true);
+    update(.05, .75);
+    expect(figure.visible).toBe(false);
+    // The actual scene cue has just fired, but the earlier owl line still owns the HUD. The scene waits
+    // before emitting its own words; an elapsed-zero flight would otherwise hold a completely dark halo.
+    flags.add(flight.on);
+    update(.05, .8, true);
+    expect(flags.has('beat:al:see-little')).toBe(false);
+    expect(figure.visible).toBe(true);
+    expect(halo.material.opacity).toBeGreaterThan(.3);
+    const x = figure.position.x, z = figure.position.z;
+    expect(x).toBeGreaterThan(flight.from.x);
+    for (let i = 0; i < 200; i++) update(.05, .8, true);
+    expect(figure.position.x).toBe(x);
+    expect(figure.position.z).toBe(z);
+    expect(halo.material.opacity).toBeGreaterThan(.3);
+    expect(historical.visible).toBe(false);
+    update(0, .8, true);
+    expect(figure.position.x).toBe(x);
+    update(.05, .85);
+    expect(figure.position.x).toBeGreaterThan(x);
+    for (let i = 0; i < 120; i++) update(.05, .9 + i * .05);
+    expect(figure.visible).toBe(false);
+    expect(historical.visible).toBe(false);
+  });
 
   it('reconstructs a saved pending reveal at a visible phase, then continues only once', () => {
     const { flags, flight, figure, historical, halo, update } = saved();
