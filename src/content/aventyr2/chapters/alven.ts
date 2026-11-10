@@ -221,6 +221,13 @@ export const alven: ChapterData = {
       id: 'bron', on: 'al:pappa', until: 'al:lift', before: 92, seconds: 1.5, hold: true,
       stage: { shots: [{ at: 0, x: SCARF.at + 0.6, y: DECK - 1.6, height: 15.5, width: 16, move: 0.35 }] },
     },
+    // He sees the little one from the owl. Frame both before the words hold the flight, then let it drift on.
+    // The old distance-triggered glimpse could finish while earlier dialogue was still on the page.
+    {
+      id: 'al:little', at: 152, needs: 'al:owl', before: 169, quiet: true, seconds: 5.8,
+      cues: [{ at: 0.8, flag: 'al:little-seen' }],
+      stage: { shots: [{ at: 0, x: 158.5, y: 2.8, height: 7.5, width: 14, move: 0.6 }] },
+    },
     // As he comes along Moälven they see his light, and run down from the car to the bank at the trail's end, Moa first,
     // Bertil round the gnawed stump after her: there when the trail runs out ("Vi letar tillsammans. Jag är här.").
     // He watches from the safe bank after the creek. The shot includes both children from their first step, also on
@@ -372,7 +379,8 @@ export const alven: ChapterData = {
       // From the gravel bank: the old one on his log, following.
       { on: 'beat:al:old-one', from: { x: 40, y: 0.3 }, to: { x: 66, y: 0.6 }, seconds: 3.2, who: 'tragubbe' },
       // From the owl's back, high over the lake: the little one, far down the river.
-      { on: 'beat:al:see-little', from: { x: 162, y: 0.4 }, to: { x: 192, y: 0.4 }, seconds: 2.8, who: 'lillgubbe' },
+      { on: 'al:little-seen', from: { x: 161, y: 0.4 }, to: { x: 167, y: 0.4 }, z: -2.8,
+        seconds: 5, who: 'lillgubbe', size: 1.8, lit: [0, 2.4] },
       // On Moälven: the old one, further on still.
       { on: 'beat:al:old-ahead', from: { x: 186, y: 0.4 }, to: { x: 212, y: 0.4 }, seconds: 3.2, who: 'tragubbe' },
     ],
@@ -494,8 +502,8 @@ export const alven: ChapterData = {
     { id: 'al:lake', at: 130.2, who: 'elof', line: 'alLake' },
     { id: 'al:owl-seen', at: 132.2, until: 'al:owl-call', who: 'elof', line: 'alOwlSeen', read: true },
     { id: 'al:owl-here', on: 'al:owl-ready', until: 'al:owl', within: [128, 139], who: 'elof', line: 'alOwlHere', read: true },
-    { id: 'al:owl-fly', on: 'al:owl', within: [134, 167], who: 'elof', line: 'alOwlFly' },
-    { id: 'al:see-little', at: 152, needs: 'al:owl', who: 'elof', line: 'alSeeLittle' },
+    { id: 'al:owl-fly', on: 'al:owl', within: [134, 167], who: 'elof', line: 'alOwlFly', read: true },
+    { id: 'al:see-little', on: 'al:little-seen', who: 'elof', line: 'alSeeLittle', read: true },
     { id: 'al:owl-thanks', at: 167, needs: 'al:owl', who: 'elof', line: 'alOwlThanks' },
     // 6. Moälven; the family's car, and the drive to Billsta
     { id: 'al:moalven', at: 169.6, who: 'elof', line: 'alMoalven' },

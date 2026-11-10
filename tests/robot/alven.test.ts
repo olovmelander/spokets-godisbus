@@ -120,7 +120,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
     expect(alven.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(alven.coda).toBe('pappa');
     expect(alven.storm).toMatchObject({ rain: 1, lightning: 7.5 });
-    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'bron', 'al:kids']);
+    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'bron', 'al:little', 'al:kids']);
     expect(sv.scene.alven).toBe('Älven · halv tolv');
   });
 
@@ -355,6 +355,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       for (const line of his) expect(lines[line]).toBeTruthy();
       // His three lines before the lift are read before Elof goes on.
       for (const beat of alven.beats!.filter((b) => b.who === 'pappa').slice(0, 3)) expect(beat.read).toBe(true);
+          expect(alven.beats!.find(beat => beat.id === 'al:owl-fly')!.read).toBe(true);
     });
 
     it('lifts him again when taken up before the rapids, and not when taken up after them', () => {
@@ -532,9 +533,16 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       }
       for (const f of flybys) {
         // Each is Elof's sight, and lies ahead of him, down the river, low over the water.
-        const beat = alven.beats!.find((b) => `beat:${b.id}` === f.on)!;
+        const beat = alven.beats!.find((b) => `beat:${b.id}` === f.on || b.on === f.on)!;
+        const scene = alven.scenes!.find(scene => scene.cues?.some(cue => cue.flag === f.on));
         expect(beat.who).toBe('elof');
-        expect(f.from.x).toBeGreaterThan(beat.at!);
+        expect(f.from.x).toBeGreaterThan(beat.at ?? scene!.at!);
+        if (scene) {
+          expect(beat.read).toBe(true);
+          expect(alven.beats!.find(beat => beat.id === 'al:owl-fly')!.read).toBe(true);
+          expect(scene.stage!.shots![0]!.move).toBeLessThan(scene.cues![0]!.at);
+          expect(f.lit).toBeDefined();
+        }
         expect(f.to.x).toBeGreaterThan(f.from.x);
         expect(Math.max(f.from.y, f.to.y)).toBeLessThan(1);
       }
