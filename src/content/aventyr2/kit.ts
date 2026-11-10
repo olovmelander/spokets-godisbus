@@ -81,7 +81,7 @@ export const walkedAll = (walk: Walk, at: readonly number[]): Candy[] => at.map(
 export const hopCandy = (from: Vec, to: Vec, lift = 1.1): Candy => ({ x: round((from.x + to.x) / 2, 1), y: round(Math.max(from.y, to.y) + lift) });
 
 /** Whether a flyby floats on the water, bobbing along, rather than tumbling through the air. */
-export const afloat = (f: Flyby): boolean => Math.max(f.from.y, f.to.y) < 1.5;
+export const afloat = (f: Flyby): boolean => !f.walk && Math.max(f.from.y, f.to.y) < 1.5;
 
 /**
  * Where a flyby's figure is, `k` of the way through its flight (0 to 1), as the picture flies it (./render.ts): eased
@@ -93,7 +93,7 @@ export function flightAt(f: Flyby, k: number): { x: number; y: number; z: number
   const z = f.z ?? -4;
   return {
     x: f.from.x + (f.to.x - f.from.x) * e,
-    y: f.from.y + (f.to.y - f.from.y) * e + (afloat(f) ? 0 : Math.sin(Math.PI * t) * (f.rise ?? 2.2)),
+    y: f.from.y + (f.to.y - f.from.y) * e + (afloat(f) || f.walk ? 0 : Math.sin(Math.PI * t) * (f.rise ?? 2.2)),
     z: z + ((f.toZ ?? z) - z) * e,
   };
 }

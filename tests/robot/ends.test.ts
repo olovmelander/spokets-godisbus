@@ -216,9 +216,10 @@ describe('Epilog, Godiskalaset, in greybox', () => {
       const steps = did(result.flags).filter((flag) => !flag.startsWith('scene:'));
       expect(result.flags).toContain('scene:klonk-table');
       expect(steps.slice(0, 5).sort()).toEqual(['party:bertil', 'party:mamma', 'party:moa', 'party:pappa', 'party:spoket']);
-      expect(steps.slice(5)).toEqual(['partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'teeth', 'goal']);
+      expect(steps.slice(5)).toEqual(['partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'teeth', 'bedtime', 'goal']);
       // The ghost's feet, its name, Pappa's rule, and Elof's pride.
-      expect(result.said).toEqual(['klonk', 'named', 'away', 'carved']);
+      expect(result.said.filter(id => id.startsWith('partyThanks:')).sort()).toEqual(['partyThanks:bertil', 'partyThanks:mamma', 'partyThanks:moa', 'partyThanks:pappa', 'partyThanks:spoket']);
+      expect(result.said.slice(-7)).toEqual(['klonk', 'named', 'away', 'first-carving:0', 'first-carving:1', 'bathroom:0', 'bathroom:1']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });
@@ -243,7 +244,7 @@ describe('Epilog, Godiskalaset, in greybox', () => {
     // With everyone given, the ghost hops, he names it, and then the knife is.
     const all = at(29, [...four, 'party:spoket']);
     expect(all.flags.has('partied')).toBe(true);
-    expect(all.said).toEqual(['klonk', 'named']);
+    expect(all.said).toEqual(['partyThanks:mamma', 'partyThanks:pappa', 'partyThanks:moa', 'partyThanks:bertil', 'partyThanks:spoket', 'klonk', 'named']);
     expect(all.curr.word).toBe('takeKnife');
   });
 
@@ -263,10 +264,27 @@ describe('Epilog, Godiskalaset, in greybox', () => {
     expect(words).toEqual(['carve', 'cut1', 'cut2', 'cut3', 'dots']);
     expect(sim.story).toBeNull();
     expect(sim.flags.has('dots')).toBe(true);
-    expect(sim.said).toContain('carved');
+    expect(sim.sceneFrame?.id).toBe('first-carving');
+    expect(sim.said).not.toContain('first-carving:0');
+    run(sim, 1);
+    expect(sim.said).toContain('first-carving:0');
   });
 
-  it('cannot be walked past: the stairs to bed are a wall until his teeth are brushed', () => {
+
+  it('walks into the bathroom and finishes brushing before the ending can begin', () => {
+    const sim = new Sim({ ...epilog, spawn: { x: 35.5, y: .01 } }, {}, { flags: ['dots', 'scene:first-carving', 'teeth'] });
+    run(sim, 5);
+    expect(sim.sceneFrame?.id).toBe('bathroom');
+    expect(sim.curr.mode).toBe('free');
+    expect(sim.curr.grounded).toBe(true);
+    expect(sim.flags.has('goal')).toBe(false);
+    expect(sim.flags.has('bedtime')).toBe(false);
+    run(sim, 7);
+    expect(sim.said).toContain('bathroom:1');
+    expect(sim.flags.has('bedtime')).toBe(true);
+    expect(sim.flags.has('goal')).toBe(true);
+  });
+  it('cannot be walked past: the ending waits until his teeth are brushed', () => {
     const sim = new Sim(epilog);
     run(sim, 30, { x: 1, hopHeld: true });
     expect(sim.flags.has('goal')).toBe(false);

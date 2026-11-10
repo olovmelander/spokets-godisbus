@@ -289,7 +289,7 @@ export const stormgard: ChapterData = {
   ],
   checkpoints: [
     // the pumpkin lantern's: the first big candy the old trägubbe has left
-    { x: 29.8, y: LANTERN.y },
+    { x: 28.4, y: STEPS[2]!.y },
     { x: 42.4, y: 0 },
     { x: 72.4, y: 0 },
     { x: 92.4, y: 0 },
@@ -317,6 +317,8 @@ export const stormgard: ChapterData = {
   ],
   thoughtClues: [{ at: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.7 }, picture: 'lonely-figure', after: 'sg:thought' }],
   movers: [
+    // The pumpkin crosses the play plane: a solid shoulder to hop onto from the higher step.
+    { id: 'pumpkin', look: 'none', width: 2, height: 1.9, verb: 'push', stops: [{ x: LANTERN.x, y: LANTERN.y }] },
     // The barrel's lid in the ditch: the tap's water lifts it, by itself, to lie level with the lawn. It is a
     // little longer than the ditch is wide, like Myren's pine, so both its ends rest on the banks.
     // Its last stop puts its top (0.35 over its bottom) at the lawn's height.
@@ -328,6 +330,7 @@ export const stormgard: ChapterData = {
   bouncers: [TRAMPOLINE],
   // Lätta hopp: every edge the trail jumps from, and the way back up the watering can.
   jumps: [
+    jump({ x: 28.6, y: 3.6 }, { x: LANTERN.x, y: LANTERN.y + 1.9 }),
     jump({ x: BED.from - 0.2, y: 0 }, { x: BED.from + 0.7, y: BED.y }),
     jump({ x: CAN.to - 0.95, y: CAN.top }, { x: BARREL.to - 0.6, y: BARREL.top }),
     ...FRONT.map((s, i) => jump({ x: round(s.x - 0.2), y: i === 0 ? 0 : FRONT[i - 1]!.y }, { x: round(s.x + 0.9), y: i === 3 ? round(roof(s.x + 0.9)) : s.y })),
@@ -427,7 +430,7 @@ export const stormgard: ChapterData = {
     { x: 20.2, y: 6.45 },
     { x: 22.4, y: 6.45 },
     // 2. down the steps: where a runner's middle is off each edge, and on each step
-    ...STEPS.flatMap((s) => [offEdge(s.x, s.y, 0.5), { x: round(s.x + 1.6, 1), y: round(s.y - 1.2 + 0.45) }]),
+    ...STEPS.flatMap((s) => [offEdge(s.x, s.y, 0.5), { x: round(s.x + 1.6, 1), y: round(s.y - 1.2 + 0.45) }]).map((c) => c.x > 29.1 && c.x < 32.1 ? { ...c, y: LANTERN.y + 2.35 } : c.x === 32.8 ? { ...c, y: 2.8 } : c),
     // over the flower bed's edging
     { x: 36.8, y: 1.4 },
     { x: 38, y: 1.25 },

@@ -7,10 +7,9 @@ import type { Beat, PlayerState, Speaker, Vec } from './types';
  * moments, and say lines. Its clock is the simulation's, so a pause, a hidden page or a lost picture holds
  * every actor in it together, and the same scene plays the same on every device.
  *
- * Only a finished scene is remembered, as `scene:<id>`, and the save keeps that. A scene that a reload or
- * "Jag har fastnat" interrupted plays again from its start, with its lines; the flags it had already set stay
- * set. What a scene looks like, its acting and its shots, is the picture's business (`stage`): the simulation
- * never reads it.
+ * A finished scene is remembered as `scene:<id>`. An interrupted scene normally replays from its start;
+ * one marked `resumeReading` keeps acknowledged line receipts and resumes their last tableau. Its flags
+ * stay set. Acting and shots are the picture's business (`stage`): the simulation never reads them.
  */
 export interface SceneDef {
   /** A stable name. Finishing the scene sets `scene:<id>`. */
@@ -47,6 +46,8 @@ export interface SceneDef {
    * lines provide reading stops between the actions (the chapter tests check this pacing).
    */
   hold?: boolean;
+  /** Resume this conversation from acknowledged line receipts, preserving its remaining actions and cues. */
+  resumeReading?: boolean;
   /**
    * It waits until nothing is being said, and he stands and listens meanwhile: the words before it are let
    * finish. A held scene always does.
@@ -56,10 +57,10 @@ export interface SceneDef {
   cues?: readonly { at: number; flag: string }[];
   /**
    * What is said in it, and when: each is a bubble, with the speaker's wordless sound (plan §3.7). A line is a
-   * beat with the id `<scene id>:<index>`, said once. Each is a reading stop: while a line is still being read, the
-   * scene's clock waits at its next cue, line, and end, so it never talks over itself.
+   * beat with the id `<scene id>:<index>`, or an explicit stable `id` retained from an older beat. Each is a
+   * reading stop: the scene's clock waits at its next cue, line, and end, so it never talks over itself.
    */
-  lines?: readonly { at: number; who: Speaker; line: string }[];
+  lines?: readonly { at: number; who: Speaker; line: string; id?: string }[];
   /** Wordless sounds follow the same clock as the acting, including reading pauses. */
   sounds?: readonly { at: number; sound: StorySound }[];
   /** Music and ambience soften during this span, leaving room for the story's small sounds. */
@@ -75,7 +76,7 @@ export interface SceneDef {
 
 /** Who acts in a scene. Elof is the player: in a held scene he acts too. */
 export type Actor = 'pappa' | 'mamma' | 'moa' | 'bertil' | 'ghost' | 'elof';
-export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath';
+export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath' | 'wind';
 
 /**
  * What an actor does from a moment on. Each is a movement made in code on the body's joints (src/render/acting.ts),
@@ -161,7 +162,7 @@ export interface ShotKey {
 /** Something that happens in the air: glitter, a stream of magic, the POFF, shavings, a bird at the window. */
 export interface FxKey {
   at: number;
-  kind: 'sparkle' | 'stream' | 'poff' | 'shavings' | 'glow' | 'jay';
+  kind: 'sparkle' | 'stream' | 'poff' | 'shavings' | 'glow' | 'jay' | 'wind';
   /** Where it is; a stream flows from here to `to`. */
   from: Point;
   to?: Point;
@@ -219,9 +220,13 @@ export interface SceneFrame {
   seconds: number;
 }
 
+function sceneLineId(scene: SceneDef, index: number): string {
+  return scene.lines?.[index]?.id ?? `${scene.id}:${index}`;
+}
+
 /** The bubbles of a chapter's scenes, as beats: what the page shows and the sound says. */
 export function sceneBeats(scenes: readonly SceneDef[] | undefined): Beat[] {
-  return (scenes ?? []).flatMap((scene) => (scene.lines ?? []).map((line, i) => ({ id: `${scene.id}:${i}`, who: line.who, line: line.line })));
+  return (scenes ?? []).flatMap((scene) => (scene.lines ?? []).map((line, i) => ({ id: sceneLineId(scene, i), who: line.who, line: line.line })));
 }
 
 /**
@@ -300,7 +305,8 @@ export class SceneDirector {
     for (; playing.cue < cues.length && cues[playing.cue]!.at <= now; playing.cue++) flags.add(cues[playing.cue]!.flag);
     let spoke = false;
     for (; playing.line < lines.length && lines[playing.line]!.at <= now && !(spoke && listening); playing.line++) {
-      const id = `${playing.def.id}:${playing.line}`;
+      const id = sceneLineId(playing.def, playing.line);
+      if (playing.def.resumeReading && flags.has(`beat:${id}`)) continue;
       flags.add(`beat:${id}`);
       said.push(id);
       spoke = true;
@@ -350,11 +356,20 @@ export class SceneDirector {
         this.listening = true;
         return;
       }
-      // Begun again after an interruption: its lines are said again, from the first.
-      for (let i = 0; i < (scene.lines?.length ?? 0); i++) flags.delete(`beat:${scene.id}:${i}`);
-      const from = this.opening?.id === scene.id ? Math.min(this.opening.seconds, scene.seconds) : 0;
+      const opened = this.opening?.id === scene.id;
+      let from = opened ? Math.min(this.opening!.seconds, scene.seconds) : 0, line = 0;
+      if (scene.resumeReading && !opened) {
+        // Saves contain acknowledged receipts only. Keep a new introduction before any older, named receipts;
+        // tick skips those known later lines when reached. Reconstruct the last acknowledged tableau, then
+        // play every action and cue between it and the next unread line (or the scene's ending).
+        while (line < (scene.lines?.length ?? 0) && flags.has(`beat:${sceneLineId(scene, line)}`)) line++;
+        if (line > 0) from = scene.lines![line - 1]!.at;
+      } else {
+        // Other scenes, and an explicit title opening, replay from their chosen beginning after interruption.
+        for (let i = 0; i < (scene.lines?.length ?? 0); i++) flags.delete(`beat:${sceneLineId(scene, i)}`);
+      }
       this.opening = null;
-      this.playing = { def: scene, seconds: from, cue: 0, line: 0 };
+      this.playing = { def: scene, seconds: from, cue: 0, line };
       return;
     }
   }

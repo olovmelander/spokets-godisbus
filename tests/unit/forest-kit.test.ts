@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
+import { stormskog } from '../../src/content/aventyr2/chapters/stormskog';
 import { alven } from '../../src/content/aventyr2/chapters/alven';
 import { STONE } from '../../src/render/bark-detail';
 import { FLOOR_SHAPES, restock, stretch } from '../../src/render/dressing/forest';
@@ -212,6 +213,20 @@ describe('the landmarks', () => {
     }
     // A kit without them leaves the chapter as it was.
     expect(installForest(new Group(), forest, boxes())).toBe(0);
+  });
+
+  it('fits every storm log to its full walkable span and top', () => {
+    const scene = forestLandmarks(stormskog); installForest(scene, stormskog, kit); scene.updateMatrixWorld(true);
+    const ray = new Raycaster(), down = new Vector3(0, -1, 0);
+    for (const mark of stormskog.landmarks!) {
+      const holder = scene.children.find(n => Math.abs(n.position.x - mark.from) < .01)!;
+      for (let x = mark.from + .15; x < mark.to - .15; x += .2) {
+        ray.set(new Vector3(x, 8, 0), down);
+        const hit = ray.intersectObject(holder, true)[0];
+        expect(hit).toBeDefined();
+        expect(Math.abs(hit!.point.y - heightAt(stormskog, x))).toBeLessThan(.07);
+      }
+    }
   });
 
   it('keeps a solid collision-aligned top until each individual landmark arrives, without duplicates on retry', () => {

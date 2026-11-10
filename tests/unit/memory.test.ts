@@ -9,9 +9,9 @@ const numbered = STORY.filter((chapter) => chapterNumber(chapter.id) > 0);
 describe('the four memories', () => {
   it('lets the album replay only discovered memories, with the same existing cards', () => {
     const empty = memoryAlbumHtml({});
-    expect(empty.match(/memory-missing/g)).toHaveLength(4);
+    expect(empty.match(/memory-missing/g)).toHaveLength(12);
     // An empty box shows the glowing curl that starts a memory, never one of its pictures (menus.md row 12).
-    expect(empty.match(/<svg viewBox="0 0 64 40"/g)).toHaveLength(4);
+    expect(empty.match(/<svg viewBox="0 0 64 40"/g)).toHaveLength(12);
     expect(empty).not.toContain('viewBox="0 0 320 200"');
     expect(empty).not.toContain('data-memory=');
     const found = memoryAlbumHtml({ garden: ['memory'], granskog: ['goal'], berget: ['memory'], unknown: ['memory'] });

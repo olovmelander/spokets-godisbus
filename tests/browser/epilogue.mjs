@@ -136,7 +136,7 @@ try {
   ]) {
     if (process.env.EPILOGUE_SCENE === 'shelf') continue;
     const { page, state, info, finish } = await open(name, { viewport, hasTouch: touch, reducedMotion: touch ? 'reduce' : 'no-preference' },
-      `?dev&debug&standin&course=epilog&tier=${tier}&at=52.8,3&flags=dots`, touch ? () => {
+      `?dev&debug&standin&course=epilog&tier=${tier}&at=35.5,0&flags=dots,scene:first-carving,teeth,scene:bathroom,bedtime`, touch ? () => {
         localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1,
           settings: { style: 'aventyr', sound: false, effectsVolume: 0, calm: true }, chapter: 'epilog', checkpoint: 2,
           candy: {}, placed: {}, flags: { epilog: ['dots'] }, playMs: 0 }));
@@ -191,7 +191,7 @@ try {
   }
   {
     const { page, state, info, finish } = await open('shelf', { viewport: { width: 844, height: 390 } },
-      '?dev&debug&standin&course=epilog&tier=low&at=33,0.01&flags=dots');
+      '?dev&debug&standin&course=epilog&tier=low&at=9.4,0.01&flags=dots,scene:first-carving');
     await page.keyboard.press('Escape');
     check('shelf: the completed carving remains saved', (await state()).flags.includes('dots'));
     check('shelf: the two figures stay within the draw budget', withinDraws((await info()).drawCalls, (await info()).tier));

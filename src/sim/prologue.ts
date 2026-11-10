@@ -13,7 +13,7 @@ export interface PrologueLayout {
 }
 export interface PrologueFrame { kind: 'mamma' | 'pappa'; seconds: number; ghost: Vec }
 export const MAMMA_TIME = 2.6;
-export const PAPPA_TIME = 3;
+export const PAPPA_TIME = 5.2;
 
 /**
  * Two short, deterministic freeze jokes (plan §3.3 rule 2). Only completed beats are saved; an interrupted one
@@ -94,7 +94,7 @@ export function prologuePose(layout: PrologueLayout, frame: PrologueFrame) {
     const fall = between(t, 0.25, 0.7) - between(t, 2.0, 2.6);
     return { x: frame.ghost.x, y: mix(frame.ghost.y, layout.doorway.y + 0.29, fall), z: PLAY_Z, tilt: -Math.PI / 2 * fall, turn: 0.4, scale: 1 };
   }
-  const lift = between(t, 0.45, 1.4), sneak = between(t, 1.85, 2.85);
+  const lift = between(t, 1.1, 2.8), sneak = between(t, 3.4, 4.9);
   if (layout.edge) {
     // Behind his back it hops down off the railing and scurries to the deck's edge, where it waits.
     const hop = Math.sin(Math.PI * sneak) * 1.1;
@@ -104,14 +104,14 @@ export function prologuePose(layout: PrologueLayout, frame: PrologueFrame) {
       y: mix(mix(frame.ghost.y, layout.railing.y, lift), layout.edge.y, sneak) + hop,
       z: mix(mix(PLAY_Z, rail, lift), PLAY_Z, sneak),
       // It turns round to go as it sets off, over a third of a second, and leans into its scurry and out of it.
-      tilt: -0.12 * Math.sin(Math.PI * sneak), turn: mix(Math.PI - 0.4, 0.4, between(t, 1.6, 1.95)), scale: 1,
+      tilt: -0.12 * Math.sin(Math.PI * sneak), turn: mix(Math.PI - 0.4, 0.4, between(t, 3.15, 3.5)), scale: 1,
     };
   }
   return {
     x: mix(frame.ghost.x, layout.railing.x, lift) + sneak * 2.7,
     y: mix(frame.ghost.y, layout.railing.y, lift),
     z: PLAY_Z,
-    tilt: -0.1 * Math.sin(Math.PI * sneak), turn: mix(Math.PI - 0.4, 0.4, between(t, 1.6, 1.95)),
-    scale: 1 - between(t, 2.6, 2.95),
+    tilt: -0.1 * Math.sin(Math.PI * sneak), turn: mix(Math.PI - 0.4, 0.4, between(t, 3.15, 3.5)),
+    scale: 1 - between(t, 4.7, 5.15),
   };
 }

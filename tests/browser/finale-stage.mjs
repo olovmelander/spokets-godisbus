@@ -59,7 +59,9 @@ const server = await createServer({ root,
           shoulders.push(new Vector3(0,.5,0).applyMatrix4(matrix).applyMatrix4(body.matrixWorld).y);
           return palm.distanceTo(foot.getWorldPosition(new Vector3()));
         });
-        return { gaps, hands, shoulders, headY:head.getWorldPosition(new Vector3()).y, tops:toys.map(toy=>new Box3().setFromObject(toy).max.y) };
+        const hips=['left','right'].map((side,i)=>elof.getObjectByName('player-hip-'+side) ?? elof.getObjectByName(i===0?'thigh_l':'thigh_r'));
+        const hipsY=hips.reduce((sum,hip)=>sum+hip.getWorldPosition(new Vector3()).y,0)/2;
+        return { gaps, hands, shoulders, hipsY, headY:head.getWorldPosition(new Vector3()).y, tops:toys.map(toy=>new Box3().setFromObject(toy).max.y) };
       }
       export function shadows() { const blobs = scene.getObjectByName('character-blobs'), matrix = new Matrix4(), positions = [];
         for (let i=0; i<blobs.count; i++) { blobs.getMatrixAt(i,matrix); positions.push(new Vector3().setFromMatrixPosition(matrix).toArray()); }
@@ -80,7 +82,7 @@ try {
     await page.goto(`${origin}/spokets-godisbus/finale-probe`);
     const before = await page.evaluate(async ({ tier }) => {
       const f = await import('/spokets-godisbus/finale-stage-fixture.js');
-      const idle = { x:0,y:0,hopHeld:false,hop:false,act:false }, flags = ['lower','crowberry'];
+      const idle = { x:0,y:0,hopHeld:false,hop:false,act:false }, flags = ['lower','crowberry','scene:uppdragen'];
       const chapter = { ...f.norrsken, spawn: { x:13.4,y:.01 } };
       let sim = new f.Sim(chapter, {}, { placed:['tragubbe'], flags });
       const view = f.createView(document.getElementById('game'), chapter, tier, true);
@@ -90,9 +92,9 @@ try {
       const advance = (seconds, input={}) => { for(let i=0;i<Math.round(seconds*120);i++) sim.step({...idle,...input}); };
       await view.ready; advance(.2); for(let i=0;i<12;i++)draw(.1);
       const scene=f.renderedScene(), ghost=scene.getObjectByName('chase-ghost'), carving=scene.getObjectByName('mover:tragubbe');
-      const snapshot=()=> { const pappa=[]; scene.traverse(n=>{if(n.userData.familyRole==='pappa')pappa.push(n);});
+      const snapshot=()=> { const pappa=[]; scene.traverse(n=>{if(n.userData.familyRole==='pappa' && !n.name.startsWith('stage-'))pappa.push(n);});
         const elof=scene.getObjectByName('elof'), bag=scene.getObjectByName('spot:bag');
-        const relatives=[]; scene.traverse(n=>{if(n.userData.familyRole)relatives.push({who:n.userData.familyRole,at:f.at(n)});});
+        const relatives=[]; scene.traverse(n=>{if(n.userData.familyRole && !n.name.startsWith('stage-'))relatives.push({who:n.userData.familyRole,at:f.at(n)});});
         return {...view.info(), word:sim.curr.word, mode:sim.curr.mode, player:[sim.curr.x,sim.curr.y], groundY:sim.curr.groundY,
           eyes:scene.getObjectByName('first-carving-eyes').visible, bag:bag.visible, stolen:scene.getObjectByName('stolen-saturday-bag').visible,
           elof:f.at(elof), pappa:f.at(pappa[0]), ghost:f.at(ghost), carving:f.at(carving),
@@ -108,15 +110,15 @@ try {
     check(`${name}: painting restores eyes and visibly offers the same striped bag`, painted.eyes && painted.bag && !painted.stolen && painted.flags.includes('eyes'));
     const saved=await page.evaluate(()=>{const p=window.probe;p.restore(13.4,['lower','crowberry','eyes','bag','share:tragubbe','gift:tragubbe:skumbanan','share:spoket','gift:spoket:karamell','share:jay','gift:jay:lingon','taste']);return p.snapshot();});
     check(`${name}: restored choices keep the repaired carving and returned bag state`, saved.eyes && !saved.bag && !saved.stolen);
-    const ride=await page.evaluate(()=>{const p=window.probe;p.restore(33,['lower','crowberry','eyes','bag','share:tragubbe','gift:tragubbe:skumbanan','share:spoket','gift:spoket:karamell','share:jay','gift:jay:lingon','taste']);
+    const ride=await page.evaluate(()=>{const p=window.probe;p.restore(33,['lower','crowberry','eyes','bag','share:tragubbe','gift:tragubbe:skumbanan','share:spoket','gift:spoket:karamell','share:jay','gift:jay:lingon','taste','scene:aterfunna']);
       const beforeHome=p.snapshot(),word=beforeHome.word;p.act();p.advance(.6);for(let i=0;i<8;i++)p.draw(.1);return {beforeHome,word,...p.snapshot()};});
     check(`${name}: waiting relatives keep their shadows on the summit floor`, ride.beforeHome.relatives.every(({at})=>
       ride.beforeHome.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-.018)<.01)));
     check(`${name}: Go home starts the actual simulation ride`, ride.flags.includes('home') && ride.mode==='ride');
-    check(`${name}: Pappa carries grown Elof with both carvings beside him`, Math.abs(ride.pappa[0]-ride.player[0])<.01 && Math.abs(ride.pappa[1]-ride.player[1])<.01 && ride.elof[1]-ride.pappa[1]>4 && Math.abs(ride.ghost[0]-ride.elof[0])<1.1 && Math.abs(ride.carving[0]-ride.elof[0])<1.1);
-    check(`${name}: both palms support Elof's ankles and the carvings stay below his face near his hands`, ride.support &&
-      ride.support.gaps.every(gap=>gap<.15) && ride.support.tops.every(top=>top<ride.support.headY-.1) &&
-      [ride.ghost,ride.carving].every(toy=>Math.abs(toy[2]-ride.elof[2])<.6));
+    check(`${name}: Elof sits at Pappa's shoulders with both carvings in front`, Math.abs(ride.pappa[0]-ride.player[0])<.01 && Math.abs(ride.pappa[1]-ride.player[1])<.01 && ride.support.hipsY-ride.pappa[1]>3.4 && ride.support.hipsY-ride.pappa[1]<4.5 && Math.abs(ride.ghost[0]-ride.elof[0])<1.5 && Math.abs(ride.carving[0]-ride.elof[0])<1.5);
+    check(`${name}: both palms support Elof's ankles`, ride.support && ride.support.gaps.every(gap=>gap<.15));
+    check(`${name}: both carvings stay below his face`, ride.support && ride.support.tops.every(top=>top<ride.support.headY-.1));
+    check(`${name}: both carvings stay near his hands`, [ride.ghost,ride.carving].every(toy=>Math.abs(toy[2]-ride.elof[2])<1.2));
     check(`${name}: the whole shoulder composition fits the screen`, ride.corners.every(points=>points.every(([x,y])=>Math.abs(x)<1 && Math.abs(y)<1)));
     const pause=await page.evaluate(()=>{const p=window.probe;for(let i=0;i<20;i++)p.draw(0);return p.snapshot();});
     check(`${name}: pausing holds the shoulder joints and GPU resources`, JSON.stringify(pause.elof)===JSON.stringify(ride.elof) && JSON.stringify(pause.pappa)===JSON.stringify(ride.pappa) && JSON.stringify(pause.pappaPose)===JSON.stringify(ride.pappaPose) && pause.pappaYaw===ride.pappaYaw && pause.geometries===ride.geometries && pause.textures===ride.textures);
@@ -150,10 +152,11 @@ try {
     const draw=()=>view.render({prev:sim.prev,curr:sim.curr,alpha:1,dt:.1,atGoal:false,collected:sim.collected,checkpoint:sim.checkpoint,
       movers:sim.movers,drips:sim.drips,flags:sim.flags,ghost:sim.ghost,rollers:sim.rollers,tussocks:sim.tussocks,gusts:sim.gusts,help:sim.help,berries:sim.berries});
     advance(.2);for(let i=0;i<12;i++)draw();
-    const scene=f.renderedScene(),pappa=scene.getObjectByName('fixture-private-pappa');
+    const scene=f.renderedScene();let pappa;
+    scene.traverse(n=>{if(n.name==='fixture-private-pappa' && n.parent?.name!=='stage-pappa')pappa=n;});
     const beforeReveal=view.info().programs;let hidden=false;
     for(let node=pappa;node;node=node.parent)if(!node.visible)hidden=true;
-    sim.flags.add('taste');advance(.2);for(let i=0;i<12;i++)draw();
+    sim.flags.add('taste');sim.flags.add('scene:aterfunna');advance(.2);for(let i=0;i<12;i++)draw();
     const revealWarmed=beforeReveal===view.info().programs;
     const supported=at=>f.shadows().some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-(sim.curr.groundY+.018))<.01);
     const waiting=supported(f.at(pappa));sim.step({...idle,act:true});advance(8);for(let i=0;i<12;i++)draw();

@@ -1,4 +1,4 @@
-// Repeated family models must receive each view's grade and shadow setup, including arrivals while paused.
+// Delayed family models must receive each view's grade and shadow setup, including arrivals while paused.
 import assert from 'node:assert/strict';
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -106,11 +106,11 @@ try {
       draw(); draw();
       const disposed = fixture.watchRehearsals();
       window.installationProbe = { fixture, sim, view, draw,
-        state: () => ({ models: fixture.installedModels(), info: view.info(), player: { ...sim.curr }, flags: [...sim.flags], disposed: disposed() }) };
+        state: () => ({ models: fixture.installedModels(), waiting: fixture.waiting(), info: view.info(), player: { ...sim.curr }, flags: [...sim.flags], disposed: disposed() }) };
     }, tier);
-    for (const i of [1, 2, 3]) {
+    {
       await page.waitForFunction(() => window.installationProbe.fixture.waiting() === 1);
-      const result = await page.evaluate(async (i) => {
+      const result = await page.evaluate(async () => {
         const p = window.installationProbe, before = p.state();
         p.fixture.release();
         // Loading callbacks run between frames; the simulation and render clock stay paused.
@@ -119,19 +119,20 @@ try {
         const loaded = p.state();
         for (let j = 0; j < 8; j++) p.draw();
         const paused = p.state();
-        return { before, loaded, paused, current: loaded.models.find((model) => model.name === `installed-mamma-${i}`) };
-      }, i);
-      check(`${tier}: delayed Mamma ${i} receives the place grade, rim and shadow receiver setup`, result.current?.graded && result.current.rim && result.current.receiveShadow);
-      check(`${tier}: Mamma ${i} arrival keeps simulation state and the asset display unchanged`,
+        return { before, loaded, paused, current: loaded.models.find((model) => model.name === 'installed-mamma-1') };
+      });
+      check(`${tier}: delayed Mamma receives the place grade, rim and shadow receiver setup`, result.current?.graded && result.current.rim && result.current.receiveShadow);
+      check(`${tier}: Mamma arrival keeps simulation state and the asset display unchanged`,
         JSON.stringify(result.loaded.player) === JSON.stringify(result.before.player) &&
         JSON.stringify(result.loaded.flags) === JSON.stringify(result.before.flags) &&
         result.loaded.info.models.filter((model) => model === 'private/mamma').length === 1);
-      check(`${tier}: Mamma ${i} stays warmed during pause redraws`, result.paused.info.programs === result.loaded.info.programs &&
+      check(`${tier}: Mamma stays warmed during pause redraws`, result.paused.info.programs === result.loaded.info.programs &&
         result.paused.info.geometries === result.loaded.info.geometries && result.paused.info.textures === result.loaded.info.textures &&
         withinDraws(result.paused.info.drawCalls, result.paused.info.tier));
-      check(`${tier}: replaced Mamma ${i} releases instance buffers and material while retaining the shared box`,
-        result.loaded.disposed.instances === i && result.loaded.disposed.materials === i && result.loaded.disposed.geometry === 0);
-      if (i === 3) check(`${tier}: the third installation belongs to the cooperative bog bridge`, Math.abs(result.current.x - 169.2) < .01);
+      check(`${tier}: replaced Mamma releases instance buffers and material while retaining the shared box`,
+        result.loaded.disposed.instances === 1 && result.loaded.disposed.materials === 1 && result.loaded.disposed.geometry === 0);
+      check(`${tier}: one continuous Mamma starts by the pine, without duplicate actors queued at later calls`,
+        result.loaded.models.length === 1 && result.paused.waiting === 0 && Math.abs(result.current.x - 85.2) < .01);
     }
     assert.deepEqual(errors, [], `${tier}: browser or shader errors`);
     await page.close();
@@ -180,6 +181,22 @@ try {
       window.installationProbe.fixture.fail();
       await new Promise(resolve => setTimeout(resolve, 0));
     });
+    if (chapter === 'myren') {
+      const result = await page.evaluate(() => {
+        const p = window.installationProbe, before = p.view.info();
+        for (let i = 0; i < 8; i++) p.draw();
+        return { before, after: p.view.info(), models: p.fixture.installedModels(), waiting: p.fixture.waiting(), disposed: p.disposed() };
+      });
+      check('myren: an unavailable Mamma leaves the single rehearsal helper intact without duplicate loads',
+        result.waiting === 0 && result.models.length === 0 &&
+        result.disposed.instances === 0 && result.disposed.materials === 0 && result.disposed.geometry === 0);
+      check('myren: the retained helper stays warmed and drawable after its optional model fails',
+        result.after.programs === result.before.programs && result.after.geometries === result.before.geometries &&
+        result.after.textures === result.before.textures && withinDraws(result.after.drawCalls, result.after.tier));
+      assert.deepEqual(errors, [], 'myren: browser errors after optional actor failure');
+      await page.close();
+      continue;
+    }
     check(`${chapter}: one unavailable family model does not block the next actor`,
       await page.evaluate(() => window.installationProbe.fixture.waiting() === 1));
     const result = await page.evaluate(async () => {

@@ -1,3 +1,4 @@
+import { collectionReceipts } from '../content/collections';
 import { courseQuery } from '../content/chapters';
 import type { PlayerSave } from './store';
 
@@ -15,8 +16,8 @@ export function ghostNamed(flags: PlayerSave['flags']): boolean {
 }
 
 /** The live goal resets on load; its saved completion must survive the next autosave. */
-export function rememberFlags(previous: readonly string[], live: ReadonlySet<string>): string[] {
-  return [...new Set([...live, ...(previous.includes('goal') ? ['goal'] : [])])];
+export function rememberFlags(previous: readonly string[], live: ReadonlySet<string>, chapter = ''): string[] {
+  return [...new Set([...live, ...collectionReceipts(chapter, [...previous,...live]), ...(previous.includes('goal') ? ['goal'] : [])])];
 }
 
 /** A visit changes the active chapter, never its candy, puzzles, memories or remembered safe places. */

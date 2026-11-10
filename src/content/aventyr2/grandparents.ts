@@ -48,7 +48,7 @@ const HEAD_Y = 1.65;
 const LADDER_LONG = 5;
 /** Where the ladder's foot stands on the ditch's near rim, from Morfar's spot, and when it has come down. */
 const LADDER_AT = { x: 1.2, z: 0.15 };
-const LADDER_DOWN = 1.3;
+const LADDER_DOWN = 2.2;
 /** How far it stands turned from the picture while it stands, so that its rungs show. */
 const LADDER_TURN = 0.8;
 /**
@@ -200,13 +200,13 @@ function ladder(): Mesh {
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
 const clamp = (v: number, low: number, high: number) => Math.min(high, Math.max(low, v));
 
-/** The ladder coming down: slowly at first, then falling, with two small bounces where it lands. */
+/** A heavy ladder guided down, easing onto the opposite bank rather than falling out of his hand. */
 export function ladderAngle(since: number): number {
   if (since <= 0) return 0;
   const k = Math.min(1, since / LADDER_DOWN);
-  const down = (Math.PI / 2) * k * k;
+  const down = (Math.PI / 2) * smooth(k);
   const after = since - LADDER_DOWN;
-  return after <= 0 ? down : Math.PI / 2 - Math.abs(Math.sin(after * 11)) * 0.06 * Math.exp(-after * 5);
+  return after <= 0 ? down : Math.PI / 2 - Math.abs(Math.sin(after * 9)) * 0.015 * Math.exp(-after * 7);
 }
 
 /**
@@ -250,7 +250,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   const group = new Group();
   group.name = `figure:${who}`;
   group.userData.grandparent = who;
-  rig.group.position.z = -1.9;
+  rig.group.position.set(who === 'morfar' && !decor ? .35 : 0, 0, who === 'morfar' && !decor ? -0.7 : -1.9);
   group.add(rig.group);
   const carried = who === 'morfar' && !decor ? ladder() : null;
   if (carried) {
@@ -288,7 +288,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       dressed.scale.setScalar(3);
       group.remove(rig.group);
       rig = createModelRig(dressed, heightOf('mamma'));
-      rig.group.position.z = -1.9;
+      rig.group.position.set(who === 'morfar' && !decor ? .35 : 0, 0, who === 'morfar' && !decor ? -0.7 : -1.9);
       group.add(rig.group);
       hand = dressed.getObjectByName('hand_r') ?? hand;
       if (lantern) {
@@ -305,9 +305,15 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
     update(used, clock, dt, elof, laid = false, going) {
       const still = lessMotion();
       since = used ? since + dt : 0;
+      if (carried) {
+        const angle = ladderAngle(since);
+        carried.rotation.set(0, LADDER_TURN * (1 - Math.min(1, angle / (Math.PI / 2))), -angle);
+        carried.visible = !laid;
+      }
       group.getWorldPosition(now);
       const off = elof - now.x;
-      const close = !decor && !used && Math.abs(off) < 5.5 && !(going && going.pace > 0);
+      // Morfar stays on his existing knee beside Elof as he guides the ladder; his feet remain planted.
+      const close = !decor && ((!used && Math.abs(off) < 5.5) || (who === 'morfar' && used && since < LADDER_DOWN)) && !(going && going.pace > 0);
       // Down at their own pace, and up again the same way back; without motion they are simply there.
       kneel = still ? (close ? 1 : 0) : Math.min(1, Math.max(0, kneel + (close ? 1 : -1) * dt / clip.seconds));
 
@@ -354,7 +360,8 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         const turn = Math.atan2(Math.sin(going.heading - facing), Math.cos(going.heading - facing));
         facing = still ? going.heading : facing + turn * Math.min(1, dt * 4);
       } else {
-        const wish = (who === 'morfar' && used && since > LADDER_DOWN ? 0.9 : lookAt) * 0.55;
+        const wish = who === 'morfar' && used && since < LADDER_DOWN ? 1.25
+          : (who === 'morfar' && used && since > LADDER_DOWN ? 0.9 : lookAt) * 0.55;
         facing += (wish - facing) * Math.min(1, dt * 1.6);
       }
       // Walking, they look where they go.
@@ -390,17 +397,18 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         rig.reach(1, knee.addScaledVector(aheadOf, -rig.height * KNEE_HAND.back), leans);
       }
       if (carried) {
-        // His hand stays on the rail until he has let it go.
-        const holds = 1 - smooth((since - LADDER_DOWN * 0.45) / 0.25);
-        if (holds > 0 && kneel < 0.5) {
+        // Both hands start on the near rail. The upper lets go first; the lower guides it towards the bank.
+        const holds = 1 - smooth((since - .9) / .35);
+        if (holds > 0) {
           group.updateWorldMatrix(true, true);
-          const weight = holds * (1 - kneel * 2);
-          rig.reach(0, carried.localToWorld(rail.set(0, 2.7, 0)), weight);
-          if (rig.hold && rig.socket) {
-            // His hand closes round the rung there as far as it gets to it (./fingers.ts): where he stands, his arm falls
-            // short of the ladder, and the hand stays open rather than closed on the air.
-            const miss = rig.socket(0, RUNG, socketAt).distanceTo(carried.localToWorld(rail.set(0, 2.9, 0)));
-            rig.hold(0, RUNG, weight * (1 - Math.min(1, Math.max(0, (miss - 0.1) / 0.3))));
+          for (const side of [0, 1] as const) {
+            const weight = side === 0 ? holds : 1 - smooth((since - .4) / .3);
+            const target = carried.localToWorld(rail.set(0, side === 0 ? 2.0 : 2.65, -0.34));
+            rig.reach(side, target, weight);
+            if (rig.hold && rig.socket) {
+              const miss = rig.socket(side, RUNG, socketAt).distanceTo(target);
+              rig.hold(side, RUNG, weight * (1 - Math.min(1, Math.max(0, (miss - 0.1) / 0.3))));
+            }
           }
         }
       }
@@ -415,12 +423,6 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       let shown = true;
       for (let node: Object3D | null = group; node; node = node.parent) if (!node.visible) shown = false;
       if (shown) { rig.mouth(faceAt); talk.place(who, faceAt.x, faceAt.y, faceAt.z); }
-
-      if (carried) {
-        const angle = ladderAngle(since);
-        carried.rotation.set(0, LADDER_TURN * (1 - Math.min(1, angle / (Math.PI / 2))), -angle);
-        carried.visible = !laid;
-      }
 
       if (lantern) {
         // A pendulum on the hand: it lags behind what the hand does, and settles.

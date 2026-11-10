@@ -1,3 +1,4 @@
+import { stubCanvas } from './canvas-stub';
 import { InstancedMesh, Matrix4, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
@@ -11,8 +12,7 @@ import { talk } from '../../src/render/talk';
  * allt helt stilla", and "Går det även lägga till lip-sync för den som pratar?").
  */
 beforeEach(() => {
-  const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
-  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  stubCanvas();
   talk.reset();
 });
 afterEach(() => { vi.unstubAllGlobals(); talk.reset(); });

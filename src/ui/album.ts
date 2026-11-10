@@ -1,3 +1,6 @@
+import { findPicture } from '../content/collection-items';
+import { KEEPSAKES, type KeepsakeId } from '../content/collections';
+import { STORM_SWEETS } from '../content/storm-sweets';
 import { albumComplete, KINDS } from '../content/kinds';
 import { LOST, type LostThing } from '../content/lost';
 import { sv } from '../content/sv';
@@ -13,7 +16,7 @@ import { stickerStyle } from './sticker';
  */
 
 /** The album's chapters: the four that hide candy. */
-const STRIPS = ['garden', 'granskog', 'myren', 'berget'] as const;
+const STRIPS = ['garden', 'granskog', 'myren', 'berget', ...Object.values(STORM_SWEETS).map(sweet => sweet.chapter)];
 
 /** Hittegods, drawn as stickers (menus.md row 13): plain things, no brand on any of them. */
 const LOST_PICTURE: Record<LostThing, string> = {
@@ -36,19 +39,20 @@ export function albumHtml(found: readonly string[], lost: readonly string[] = []
   const count = sv.album.count.replace('{found}', String(kinds.filter(([kind]) => has.has(kind)).length)).replace('{total}', String(kinds.length));
   const strips = STRIPS.map((chapter) => {
     const own = kinds.filter(([, kind]) => kind.chapter === chapter);
-    const place = sv.explore.chapters[chapter] ?? chapter;
+    const place = sv.explore.chapters[chapter] ?? sv.collection.places[chapter] ?? chapter;
     const tally = sv.album.chapterCount.replace('{found}', String(own.filter(([kind]) => has.has(kind)).length)).replace('{total}', String(own.length));
     const slots = own.map(([kind]) =>
       has.has(kind)
         ? `<li class="got"><i class="kind" style="${stickerStyle(kind)}"></i><span>${sv.kinds[kind] ?? kind}</span></li>`
         : '<li><i class="missing"></i></li>',
     );
-    return `<section class="album-chapter" aria-label="${place}: ${tally}"><p class="album-place">${chapterPicture(chapter)}<b>${place}</b><small>${tally}</small></p><ul class="album-grid">${slots.join('')}</ul></section>`;
+    const adventure = chapter === 'garden' ? `<h4>${sv.collection.first}</h4>` : chapter === 'stormgard' ? `<h4>${sv.collection.second}</h4>` : '';
+    return adventure + `<section class="album-chapter" aria-label="${place}: ${tally}"><p class="album-place">${chapterPicture(({stormgard:'garden',stormskog:'granskog',stormbyn:'byn',olympia:'byn',flarken:'myren',alven:'myren',billsta:'garden',stormoga:'norrsken'} as Record<string,string>)[chapter] ?? chapter)}<b>${place}</b><small>${tally}</small></p><ul class="album-grid">${slots.join('')}</ul></section>`;
   });
   // Hittegods: what he has found under the deck, drawn and named. What is still lost keeps its name to itself.
-  const things = LOST.map((thing) => (lost.includes(thing) ? `<li class="got" data-thing="${thing}">${drawn(LOST_PICTURE[thing])}<span>${sv.lost[thing]}</span></li>` : '<li><i class="missing"></i></li>'));
+  const things = LOST.map((thing) => (lost.includes(thing) ? `<li class="got" data-thing="${thing}">${drawn(LOST_PICTURE[thing] ?? findPicture(thing))}<span>${sv.lost[thing]}</span></li>` : '<li><i class="missing"></i></li>'));
   return `<h3>${sv.album.title}</h3><p class="album-count">${count}</p><div class="album-chapters">${strips.join('')}</div>`
     + (albumComplete(found) ? `<figure class="golden-reward" data-reward="golden"><svg viewBox="0 0 120 76" aria-hidden="true"><path d="m40 25-28-12 5 25-5 25 28-12m40-26 28-12-5 25 5 25-28-12" fill="#e8b636" stroke="#9c691d" stroke-width="2"/><path d="m18 22 17 12m-17 20 17-12m67-20-17 12m17 20-17-12" fill="none" stroke="#fff0a8" stroke-width="3"/><rect x="33" y="13" width="54" height="50" rx="18" fill="#f6d363" stroke="#9c691d" stroke-width="2"/><path d="m44 21 5 32m6-35 5 36m6-36 5 34m7-29 3 23" stroke="#fff0a8" stroke-width="2"/><path d="M48 43c-4-7 1-15 8-14 4-6 13-3 13 3 7 1 8 10 3 14-7 6-18 4-24-3" fill="#d8345a" stroke="#a52443" stroke-width="2"/><path d="m10 4 2 5 5 2-5 2-2 5-2-5-5-2 5-2m98 48 2 5 5 2-5 2-2 5-2-5-5-2 5-2" fill="#b47d20"/></svg><figcaption>${sv.album.golden}</figcaption></figure>` : '')
     + `<h3>${sv.lostTitle}</h3><ul class="album-grid lost-list">${things.join('')}</ul>`
-    + (keepsakes.includes('vittra') ? `<h3>${sv.keepsakes}</h3><ul class="album-grid"><li class="got" data-keepsake="vittra">${drawn(VITTRA)}<span>${sv.vittraSticker}</span></li></ul>` : '');
+    + (keepsakes.length ? `<h3>${sv.keepsakes}</h3><ul class="album-grid">${keepsakes.filter(id=>Object.hasOwn(KEEPSAKES,id)).map(id=>`<li class="got" data-keepsake="${id}">${drawn(id === 'vittra' ? VITTRA : findPicture(KEEPSAKES[id as KeepsakeId].picture))}<span>${sv.collection.keepsakes[id]}</span></li>`).join('')}</ul>` : '');
 }

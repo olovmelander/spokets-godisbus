@@ -70,6 +70,8 @@ export interface Ledge {
   look: LedgeLook;
   /** It is there only once this flag is set: something a helper's hands, or his own, put in place. */
   needs?: string;
+  /** Its branch is already present at this height and rises as the named counterweight rolls to its last stop. */
+  counterweight?: { mover: string; fromY: number };
 }
 
 /**
@@ -98,10 +100,14 @@ export interface Mover {
   needs?: string;
   /** It goes to its last stop by itself when this flag is set, and Använd never moves it: a helper's hands lift it. */
   on?: string;
+  /** Seconds for one move; a helper may need time to bend, lift and set it down. */
+  seconds?: number;
+  /** A cast or a grip before the object starts moving, within seconds. */
+  wait?: number;
   /** What it is, for the picture. Left out: a plain box. */
   look?: MoverLook;
   /** For Dra: where the ring sits, from the middle of its bottom. */
-  ring?: Vec;
+  ring?: Vec & { z?: number };
   /** An optional path: the story helper never sends him here from the main trail. */
   extra?: boolean;
   /** A toy/side puzzle: keep its final placement in saves, but do not steer the main hint trail into it. */
@@ -407,13 +413,13 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
-export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
+export type MoverLook = 'none' | 'owl-twig' | 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   // Flärken's round stone, which rolls off the planks and sinks.
   | 'fieldstone'
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door' | 'barn-door';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
-export type SpotLook = 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
+export type SpotLook = 'souvenir' | 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'cocoa' | 'breakfast' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
@@ -702,6 +708,8 @@ export interface ChapterData {
  * over a rise. The picture's business only, as all of `Storm` is.
  */
 export interface Flyby {
+  /** A wooden figure walking on the path between these ground heights, never airborne. */
+  walk?: boolean;
   on: string;
   from: Vec;
   to: Vec;

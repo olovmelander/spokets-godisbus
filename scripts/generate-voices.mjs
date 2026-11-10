@@ -64,12 +64,12 @@ async function listVoices() {
 }
 
 /**
- * All dialogue and narration lines in Swedish with situation-specific ElevenLabs v4 tags.
+ * Future dialogue and narration metadata in Swedish with situation-specific ElevenLabs v4 tags.
+ * The A1 literal catalog is checked against the story by tests/unit/aventyr1-voices.test.ts.
+ * WRITE_A1_VOICES=1 npx vitest run tests/unit/aventyr1-voices.test.ts updates metadata only; it never runs this generator.
  */
 export const VOICE_LINES = [
-  // ==========================================
-  // ELOF (6-7 year old boy, young child protagonist)
-  // ==========================================
+  // ELOF
   { key: 'again', speaker: 'elof', situation: 'Finishing a challenge', tag: '[cute 6-year-old boy, excited and happy]', text: 'En stjärna till. Nu handlar vi!' },
   { key: 'lake', speaker: 'elof', situation: 'Seeing a puddle while tiny', tag: '[cute little boy in wonder, excited]', text: 'En sjö! Mitt på gatan.' },
   { key: 'shop', speaker: 'elof', situation: 'Arriving at the candy store', tag: '[joyful little boy, sniffing sweet candy]', text: 'Framme! Det luktar godis.' },
@@ -98,11 +98,21 @@ export const VOICE_LINES = [
   { key: 'snuck', speaker: 'elof', situation: 'Ghost runs away with candy', tag: '[alert little boy, shouting to family]', text: 'Det smiter!' },
   { key: 'stolenBag', speaker: 'elof', situation: 'Calling for dad\'s help', tag: '[calling out loudly, urgent little boy]', text: 'Pappa! Spöket tog min godispåse!' },
   { key: 'named', speaker: 'elof', situation: 'Naming ghost at the end', tag: '[joyful, affectionate declaration from a little boy]', text: 'Du ska heta Klonk!' },
-  { key: 'carved', speaker: 'elof', situation: 'Finishing his first carving', tag: '[proud little boy, beaming with joy]', text: 'Jag kan tälja!' },
+  { key: 'carved', speaker: 'elof', situation: 'Showing Pappa his completed first Lillgubben carving', tag: '[proud little boy, eager and beaming]', text: 'Titta, Pappa! Min egen Lillgubbe!' },
+  { key: 'bogFamilyHome', speaker: 'elof', situation: 'Crane chick home; Elof asks the mother crane for a ride', tag: '[cute little boy, hopeful and excited]', text: 'Tranungen är hemma! Får jag åka med dig?' },
+  { key: 'cobbles1', speaker: 'elof', situation: 'Asking Pappa why the mountain\'s stones were round', tag: '[curious little boy, thoughtful wonder]', text: 'Varför var stenarna på berget så runda?' },
+  { key: 'cobbles3', speaker: 'elof', situation: 'Realising that the high mountain was once a beach', tag: '[amazed little boy, delighted understanding]', text: 'En gammal strand, så högt uppe!' },
+  { key: 'gardenLandedElof', speaker: 'elof', situation: 'Landing safely after Moa\'s paper-plane flight', tag: '[relieved, excited little boy, warm thanks]', text: 'Ja! Jag landade mjukt! Tack, Moa!' },
+  { key: 'mountainThanks', speaker: 'elof', situation: 'Reaching the top after climbing Mamma\'s braid', tag: '[grateful little boy, slightly breathless and happy]', text: 'Tack för hjälpen! Nu är jag uppe.' },
+  { key: 'nrFoundYou', speaker: 'elof', situation: 'Finding the old carving in the crack and promising to help', tag: '[gentle little boy, relieved and determined]', text: 'Där är du ju! Jag ska hjälpa dig.' },
+  { key: 'nrAllRight', speaker: 'elof', situation: 'Reassuring Mamma at the reunion on the summit', tag: '[happy, relieved little boy, answering eagerly]', text: 'Bra! Vi hittade honom!' },
+  { key: 'nrGhostHelped', speaker: 'elof', situation: 'Telling the family how the ghost helped throughout the adventure', tag: '[affectionate little boy, proud of his friend]', text: 'Spöket hjälpte mig hela vägen hit.' },
+  { key: 'nrStuck', speaker: 'elof', situation: 'Explaining where the old carving was trapped', tag: '[thoughtful little boy, explaining carefully]', text: 'Trägubben satt fast i sprickan.' },
+  { key: 'nrLonely', speaker: 'elof', situation: 'Remembering the old carving waiting alone in the crack', tag: '[quiet, tender little boy, gentle sadness]', text: 'Han var alldeles ensam.' },
+  { key: 'nrBothHome', speaker: 'elof', situation: 'Deciding that both wooden friends will come home', tag: '[caring, determined little boy, warm certainty]', text: 'Båda ska få följa med hem.' },
+  { key: 'brushNow', speaker: 'elof', situation: 'Going to brush his teeth after the candy party', tag: '[contented little boy, calm bedtime voice]', text: 'Nu ska jag borsta tänderna.' },
 
-  // ==========================================
-  // MOA (Big sister, girl)
-  // ==========================================
+  // MOA
   { key: 'clipBack', speaker: 'moa', situation: 'Getting lost hair clip back', tag: '[delighted, hugging brother]', text: 'Mitt hårspänne! Tack, lillebror!' },
   { key: 'tiny', speaker: 'moa', situation: 'Sees brother shrank', tag: '[startled, gasping in shock]', text: 'Lillebror?! Du är ju pytteliten!' },
   { key: 'rootFingers', speaker: 'moa', situation: 'Ghost creeps into the hole under the birch root', tag: '[surprised, pointing]', text: 'Spöket kröp ner under roten!' },
@@ -117,24 +127,23 @@ export const VOICE_LINES = [
   { key: 'starMagic', speaker: 'moa', situation: 'Explaining why he shrunk', tag: '[gentle explanation, understanding]', text: 'Du smakade på stjärnan. Då blev du liten.' },
   { key: 'mapForYou', speaker: 'moa', situation: 'Drawing a map for brother', tag: '[enthusiastic, creative]', text: 'Jag ritar en karta åt dig!' },
   { key: 'fallenStar', speaker: 'moa', situation: 'Star drops on the deck', tag: '[calling out, pointing excitedly]', text: 'Där! Stjärnan trillade ur spökets påse.' },
+  { key: 'gardenLandedMoa', speaker: 'moa', situation: 'Checking that her little brother landed safely', tag: '[warm big sister, caring and gently concerned]', text: 'Gick det bra, lillebror?' },
+  { key: 'nrBrave', speaker: 'moa', situation: 'Praising Elof and the ghost for helping each other', tag: '[warm big sister, proud and impressed]', text: 'Ni hjälptes åt. Vad modigt!' },
+  { key: 'partyMoaThanks', speaker: 'moa', situation: 'Receiving a favourite sweet from her little brother', tag: '[pleased, affectionate big sister]', text: 'Tack, lillebror! Den här tycker jag om.' },
 
-  // ==========================================
-  // BERTIL (Older brother, boy)
-  // ==========================================
-  { key: 'marbleBack', speaker: 'bertil', situation: 'Getting his lost marble back', tag: '[excited older brother, shouting happily]', text: 'Kula! Min kula!' },
+  // BERTIL
+  { key: 'marbleBack', speaker: 'bertil', situation: 'Recognising his lost glass marble returned by Elof', tag: '[relieved older brother, warm thanks]', text: 'Du hittade min glaskula också! Tack!' },
   { key: 'familyBertil', speaker: 'bertil', situation: 'Offering cap as boat', tag: '[proud, cheerful older brother]', text: 'Min keps blir din båt, lillebror.' },
   { key: 'familyCapReady', speaker: 'bertil', situation: 'Cap floating in stream', tag: '[encouraging, supportive older brother]', text: 'Kliv i när du vill. Jag hejar på dig.' },
-  { key: 'heja', speaker: 'bertil', situation: 'Cheering for brother from shore', tag: '[loud cheering, enthusiastic older brother]', text: 'Heja lillebror!' },
+  { key: 'heja', speaker: 'bertil', situation: 'Cheering for brother from shore', tag: '[loud cheering, enthusiastic older brother]', text: 'Heja, lillebror!' },
+  { key: 'partyBertilThanks', speaker: 'bertil', situation: 'Celebrating the candy party after Elof shares with him', tag: '[joyful older brother, friendly excitement]', text: 'Tack! Nu är det ett riktigt godiskalas.' },
 
-  // ==========================================
-  // MAMMA SOFIE (Mom, warm woman)
-  // ==========================================
+  // MAMMA
   { key: 'familyMamma', speaker: 'mamma', situation: 'Building log bridge over puddle', tag: '[warm, maternal, calm]', text: 'Jag lägger en stock över vattnet.' },
   { key: 'familyBridgeReady', speaker: 'mamma', situation: 'Bridge ready', tag: '[encouraging, reassuring mother]', text: 'Så! Följ stocken över. Jag är nära.' },
   { key: 'familyBraid', speaker: 'mamma', situation: 'Offering hair braid to climb', tag: '[warm, playful and gentle]', text: 'Min fläta blir en stege upp till mig.' },
   { key: 'familyBraidReady', speaker: 'mamma', situation: 'Holding braid steady', tag: '[supportive, encouraging]', text: 'Ta tag i flätan och klättra upp.' },
   { key: 'spangen', speaker: 'mamma', situation: 'Reminder about boardwalk on bog', tag: '[gentle motherly reminder]', text: 'På myren går vi på spången.' },
-  { key: 'bogFamilyHome', speaker: 'elof', situation: 'Crane chick home; Elof asks the mother crane for a ride', tag: '[cute little boy, hopeful and excited]', text: 'Tranungen är hemma! Får jag åka med dig?' },
   { key: 'bogBridgeReady', speaker: 'mamma', situation: 'Spång finished over mist', tag: '[warm, satisfied]', text: 'Spången är klar! Gå över när du vill.' },
   { key: 'notYet', speaker: 'mamma', situation: 'Catching Bertil sneaking candy', tag: '[loving reprimand, gentle smile]', text: 'Bertil! Godiset öppnar vi ikväll.' },
   { key: 'jayWindow', speaker: 'mamma', situation: 'Bird lands on window sill', tag: '[delighted whisper, looking out]', text: 'Titta! En lavskrika!' },
@@ -142,14 +151,14 @@ export const VOICE_LINES = [
   { key: 'dropped', speaker: 'mamma', situation: 'Carving dropped', tag: '[gentle, playful]', text: 'Hoppsan! Vem tappade spöket?' },
   { key: 'hurt', speaker: 'mamma', situation: 'Checking if tiny son is hurt', tag: '[caring, concerned mother]', text: 'Gör det ont?' },
   { key: 'nearYou', speaker: 'mamma', situation: 'Promising to stay close', tag: '[warm promise, soothing]', text: 'Vi är nära dig hela tiden.' },
+  { key: 'nrHowAreYou', speaker: 'mamma', situation: 'Finding Elof on the summit and checking that he is well', tag: '[relieved mother, loving concern]', text: 'Elof! Hur mår du?' },
+  { key: 'nrGoHome', speaker: 'mamma', situation: 'Bringing everyone safely home together after the reunion', tag: '[warm mother, relieved and reassuring]', text: 'Ja. Nu går vi hem tillsammans.' },
+  { key: 'partyMammaThanks', speaker: 'mamma', situation: 'Receiving a sweet from Elof at the family party', tag: '[warm mother, pleased and grateful]', text: 'Tack, Elof! Vad gott med en godis.' },
+  { key: 'goodnight', speaker: 'mamma', situation: 'Saying goodnight to Elof at the end of the day', tag: '[soft, loving mother, gentle bedtime voice]', text: 'Godnatt, Elof!' },
 
-  // ==========================================
-  // PAPPA EMIL (Dad, craftsman, warm man)
-  // ==========================================
-  { key: 'coinBack', speaker: 'pappa', situation: 'Coin found under deck', tag: '[warm chuckle, generous dad]', text: 'En krona! Den får du behålla.' },
-  { key: 'cobbles1', speaker: 'pappa', situation: 'Explaining beach stones on mountain', tag: '[storytelling, gentle dad voice]', text: 'Stenarna på berget var en strand.' },
-  { key: 'cobbles2', speaker: 'pappa', situation: 'Explaining ancient ocean', tag: '[calm, educational, gentle]', text: 'Havet nådde ända dit en gång.' },
-  { key: 'cobbles3', speaker: 'pappa', situation: 'Explaining round stones', tag: '[gentle, educational]', text: 'Vågorna gjorde dem runda.' },
+  // PAPPA
+  { key: 'coinBack', speaker: 'pappa', situation: 'Recognising his lost coin when Elof returns it', tag: '[warm father, pleased recognition and thanks]', text: 'Där är mitt mynt! Tack, Elof.' },
+  { key: 'cobbles2', speaker: 'pappa', situation: 'Explaining how waves shaped the mountain\'s old beach stones', tag: '[warm father, clear and gentle explanation]', text: 'Havets vågor slipade dem på en strand.' },
   { key: 'familyPappa', speaker: 'pappa', situation: 'Ravine too wide to jump', tag: '[calm, caring father]', text: 'Här är för långt att hoppa, Elof.' },
   { key: 'familySeesaw', speaker: 'pappa', situation: 'Building seesaw bridge', tag: '[steady, guiding craftsman]', text: 'Jag håller brädan. Rulla hit en kotte.' },
   { key: 'familySeesawReady', speaker: 'pappa', situation: 'Seesaw ready to launch', tag: '[encouraging, cheerful]', text: 'Bra! Ställ dig på änden som är nere.' },
@@ -159,48 +168,40 @@ export const VOICE_LINES = [
   { key: 'first4', speaker: 'pappa', situation: 'Where it got lost years ago', tag: '[gentle sadness, lingering regret]', text: 'Vi tappade den här uppe.' },
   { key: 'newGhost', speaker: 'pappa', situation: 'Offering freshly carved ghost for eyes', tag: '[proud craftsman, warm invitation]', text: 'Jag har täljt ett spöke. Måla ögonen!' },
   { key: 'goldHope', speaker: 'pappa', situation: 'Offering hope to get big again', tag: '[reassuring, gentle confidence]', text: 'Guldgodiset kan göra dig stor igen.' },
-  { key: 'onlyWood', speaker: 'pappa', situation: 'Examining ghost before it wakes', tag: '[matter of fact, calm]', text: 'Det är ju bara trä.' },
+  { key: 'onlyWood', speaker: 'pappa', situation: 'Moving to catch the escaped wooden ghost', tag: '[alert, steady father, firm but reassuring]', text: 'Jag fångar honom. Stanna där!' },
   { key: 'followTrail', speaker: 'pappa', situation: 'Guiding Elof along candy trail', tag: '[encouraging guidance, warm]', text: 'Följ godisspåret, Elof.' },
   { key: 'away', speaker: 'pappa', situation: 'Teaching woodcarving safety', tag: '[kind teacher, careful instruction]', text: 'Alltid bort från kroppen.' },
+  { key: 'nrTogether', speaker: 'pappa', situation: 'Promising that the rescued carving will never be alone again', tag: '[tender father, quiet and reassuring]', text: 'Nu behöver han aldrig vara ensam.' },
+  { key: 'partyPappaThanks', speaker: 'pappa', situation: 'Thanking Elof for sharing his sweets', tag: '[warm father, grateful and quietly proud]', text: 'Tack, Elof. Vad fint att du delar.' },
+  { key: 'carvingProud', speaker: 'pappa', situation: 'Admiring the little figure Elof has carved himself', tag: '[loving father, warm pride and encouragement]', text: 'Den har du gjort själv. Vad fin den blev!' },
 
-  // ==========================================
-  // SPÖKET KLONK (Ghost)
-  // ==========================================
+  // SPOKET
   { key: 'klonk', speaker: 'spoket', situation: 'Ghost says its name happily', tag: '[playful wooden voice, cheerful]', text: 'Klonk, klonk!' },
+  { key: 'partyGhostThanks', speaker: 'spoket', situation: 'Thanking Elof for a sweet at the party', tag: '[playful wooden voice, grateful and cheerful]', text: 'Klonk, klonk!' },
 
-  // ==========================================
-  // BERÄTTAREN / STORYTELLER (Warm Swedish fairytale narrator)
-  // ==========================================
-  // Scene cards / Time cards
-  { key: 'scene_title', speaker: 'storyteller', situation: 'Game title', tag: '[warm storyteller, inviting, slow pace]', text: 'Elof och det stora godisäventyret.' },
-  { key: 'scene_morning', speaker: 'storyteller', situation: 'Prologue opens', tag: '[cozy morning storytelling, soft]', text: 'Lördagsmorgon.' },
-  { key: 'scene_garden', speaker: 'storyteller', situation: 'Chapter 1 opens', tag: '[fairytale narrator, peaceful]', text: 'Gården. Klockan tio.' },
-  { key: 'scene_granskog', speaker: 'storyteller', situation: 'Chapter 2 opens', tag: '[fairytale narrator, atmospheric]', text: 'Granskogen. Halv tolv.' },
-  { key: 'scene_myren', speaker: 'storyteller', situation: 'Chapter 3 opens', tag: '[mysterious, gentle mist narrator]', text: 'Myren. Halv fem.' },
-  { key: 'scene_berget', speaker: 'storyteller', situation: 'Chapter 4 opens', tag: '[grand, quiet mountain narrator]', text: 'Berget. Klockan sex.' },
-  { key: 'scene_norrsken', speaker: 'storyteller', situation: 'Finale opens', tag: '[magical, awe-inspiring narrator]', text: 'Norrskenet. I skymningen.' },
-  { key: 'scene_epilog', speaker: 'storyteller', situation: 'Epilogue opens', tag: '[warm, cozy home narrator]', text: 'Godiskalaset. Klockan nio.' },
-  { key: 'scene_byn', speaker: 'storyteller', situation: 'Bonus chapter opens', tag: '[cheerful village stroll narrator]', text: 'Byn. En vecka senare.' },
-
-  // Pappas minnen (Memories captions)
+  // STORYTELLER
+  { key: 'scene_title', speaker: 'storyteller', situation: 'Game title', tag: '[warm storyteller, inviting, slow pace]', text: 'Elof och det stora godisäventyret' },
+  { key: 'scene_morning', speaker: 'storyteller', situation: 'Prologue opens', tag: '[cozy morning storytelling, soft]', text: 'Lördagsmorgon' },
+  { key: 'scene_garden', speaker: 'storyteller', situation: 'Chapter 1 opens', tag: '[fairytale narrator, peaceful]', text: 'Gården. klockan tio' },
+  { key: 'scene_granskog', speaker: 'storyteller', situation: 'Chapter 2 opens', tag: '[fairytale narrator, atmospheric]', text: 'Granskogen. halv tolv' },
+  { key: 'scene_myren', speaker: 'storyteller', situation: 'Chapter 3 opens', tag: '[mysterious, gentle mist narrator]', text: 'Myren. halv fem' },
+  { key: 'scene_berget', speaker: 'storyteller', situation: 'Chapter 4 opens', tag: '[grand, quiet mountain narrator]', text: 'Berget. klockan sex' },
+  { key: 'scene_norrsken', speaker: 'storyteller', situation: 'Finale opens', tag: '[magical, awe-inspiring narrator]', text: 'Norrskenet. i skymningen' },
+  { key: 'scene_epilog', speaker: 'storyteller', situation: 'Epilogue opens', tag: '[warm, cozy home narrator]', text: 'Godiskalaset. klockan nio' },
+  { key: 'scene_byn', speaker: 'storyteller', situation: 'Bonus chapter opens', tag: '[cheerful village stroll narrator]', text: 'Byn. en vecka senare' },
   { key: 'memory_garden_1', speaker: 'storyteller', situation: 'Memory 1, slide 1', tag: '[warm nostalgia, gentle pace]', text: 'Pappa täljer en liten trägubbe. Elof tittar på.' },
   { key: 'memory_garden_2', speaker: 'storyteller', situation: 'Memory 1, slide 2', tag: '[warm nostalgia, gentle pace]', text: 'Pappa ger trägubben till Elof. Den är gjord bara för honom.' },
   { key: 'memory_garden_3', speaker: 'storyteller', situation: 'Memory 1, slide 3', tag: '[warm nostalgia, smiling]', text: 'Det är Elof som liten! Trägubben blir hans vän.' },
-
   { key: 'memory_granskog_1', speaker: 'storyteller', situation: 'Memory 2, slide 1', tag: '[warm nostalgia, storytelling]', text: 'Elof tar med trägubben på familjens skogspromenad.' },
   { key: 'memory_granskog_2', speaker: 'storyteller', situation: 'Memory 2, slide 2', tag: '[warm nostalgia, cozy]', text: 'Elof sätter sin vän på en stubbe. De delar på lördagsgodiset.' },
   { key: 'memory_granskog_3', speaker: 'storyteller', situation: 'Memory 2, slide 3', tag: '[warm nostalgia, tender]', text: 'En godis till dig, en till mig. Pappa tar ett foto.' },
-
   { key: 'memory_myren_1', speaker: 'storyteller', situation: 'Memory 3, slide 1', tag: '[warm nostalgia, storytelling]', text: 'Familjen går över myren. Elof åker på Pappas axlar.' },
   { key: 'memory_myren_2', speaker: 'storyteller', situation: 'Memory 3, slide 2', tag: '[warm nostalgia, tender]', text: 'Elof lyfter trägubben så att den också får se.' },
   { key: 'memory_myren_3', speaker: 'storyteller', situation: 'Memory 3, slide 3', tag: '[warm nostalgia, looking into distance]', text: 'Långt borta syns berget med den gamla tallen. Dit är de på väg.' },
-
   { key: 'memory_berget_1', speaker: 'storyteller', situation: 'Memory 4, slide 1', tag: '[gentle storytelling, quiet tone]', text: 'Vid den gamla tallen ställer Elof trägubben på en sten.' },
   { key: 'memory_berget_2', speaker: 'storyteller', situation: 'Memory 4, slide 2', tag: '[soft, slight suspense, dramatic]', text: 'En vindpust! Trägubben faller ner i en djup spricka.' },
   { key: 'memory_berget_3', speaker: 'storyteller', situation: 'Memory 4, slide 3', tag: '[tender sadness, quiet child kindness]', text: 'Elof lämnar sin sista godis vid sprickan, till sin vän.' },
   { key: 'memory_berget_4', speaker: 'storyteller', situation: 'Memory 4, slide 4', tag: '[poignant, gentle and wistful]', text: 'Familjen måste gå hem. Trägubben blir ensam kvar på berget.' },
-
-  // Story endings
   { key: 'end_epilog', speaker: 'storyteller', situation: 'Story closing card', tag: '[tender, emotionally resonant fairytale conclusion]', text: 'Klonk kunde inte säga det med ord. Men Elof förstod.' },
   { key: 'end_window', speaker: 'storyteller', situation: 'Final moonlight card', tag: '[gentle, magical bedtime ending]', text: 'Elofs lilla trägubbe står i månljuset. Hans målade ögon blinkar.' },
   { key: 'end_byn', speaker: 'storyteller', situation: 'Bonus chapter closing', tag: '[cheerful, contented stroll home]', text: 'Lördagsgodiset är köpt. Nu går vi hem.' },

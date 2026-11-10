@@ -56,38 +56,36 @@ try {
       // The cliff's picture is immediately available. Hold it in a hop for the warmup test.
       if (!gate) sim.ghost.t = 0.7;
       const view = f.createView(document.getElementById('game'), chapter, tier, true);
-      const draw = (dt = 0) => view.render({ prev: sim.prev, curr: sim.curr, alpha: 1, dt,
+      const draw = (dt = 0, reading = false) => view.render({ prev: sim.prev, curr: sim.curr, alpha: 1, dt,
         atGoal: false, collected: sim.collected, checkpoint: sim.checkpoint, movers: sim.movers,
         drips: sim.drips, flags: sim.flags, ghost: sim.ghost, rollers: sim.rollers, tussocks: sim.tussocks,
-        gusts: sim.gusts, help: sim.help, berries: sim.berries });
+        gusts: sim.gusts, help: sim.help, berries: sim.berries, talk: { who: null, text: '', seconds: 0, reading } });
       await view.ready;
       for (let i = 0; i < 4; i++) draw(0.25);
       const scene = f.renderedScene(), card = scene.getObjectByName('ghost-thought');
-      const snapshot = () => ({ ...view.info(), opacity: card.material.opacity, at: card.position.toArray(),
+      const snapshot = () => ({ ...view.info(), opacity: card.material.opacity, depthTest: card.material.depthTest, at: card.position.toArray(),
         corners: f.corners(card), scale: card.scale.x, version: card.material.map.version,
         sim: JSON.stringify({ curr: sim.curr, flags: [...sim.flags], ghost: sim.ghost }) });
-      const pixels = card.material.map.image.getContext('2d').getImageData(0, 0, 256, 192).data;
-      const colours = { green: 0, grey: 0, smile: 0 };
-      for (let i = 0; i < pixels.length; i += 4) {
-        if (pixels[i] === 95 && pixels[i+1] === 109 && pixels[i+2] === 87) colours.green++;
-        if (pixels[i] === 170 && pixels[i+1] === 169 && pixels[i+2] === 159) colours.grey++;
-        if (pixels[i] === 93 && pixels[i+1] === 90 && pixels[i+2] === 83) colours.smile++;
-      }
+      const pixels = card.material.map.image.getContext('2d').getImageData(0, 0, 512, 384).data;
+      let ink = 0; const shades = new Set();
+      for (let i = 0; i < pixels.length; i += 4) if (pixels[i+3] > 200) { ink++; shades.add(`${pixels[i] >> 4},${pixels[i+1] >> 4},${pixels[i+2] >> 4}`); }
+      const colours = { ink, shades: shades.size };
       window.probe = { f, chapter, sim, view, draw, scene, card, snapshot };
-      return { ...snapshot(), colours, canvas: [card.material.map.image.width, card.material.map.image.height] };
+      return { ...snapshot(), colours, canvas: [card.material.map.image.width, card.material.map.image.height], illustrations: card.userData.illustrations };
     }, { course, x, y, tier, gate });
     check(`${name}: early or travelling ghost reveals no picture`, early.opacity === 0 && early.scale === 0);
     check(`${name}: one bounded pre-drawn atlas shows only its authored symbols`,
-      early.canvas[0] === (course === 'granskog' ? 512 : 256) && early.canvas[1] === 192 &&
-      (expected === 'mountain' ? early.colours.green === 0 && early.colours.grey === 0 && early.colours.smile === 0 :
-        expected === 'pine-crack' ? early.colours.green > 100 && early.colours.grey > 50 && early.colours.smile === 0 : early.colours.green > 100 && early.colours.smile > 5));
+      early.canvas[0] === (course === 'granskog' ? 1024 : 512) && early.canvas[1] === 384 &&
+      early.colours.ink > 100000 && early.colours.shades > 50 &&
+      early.illustrations.includes(expected === 'lonely-figure' ? 'lonely-hollow' : expected));
     const shown = await page.evaluate((gate) => {
       const p = window.probe;
       if (gate) p.sim.flags.add(gate); else p.sim.ghost.t = 1;
-      for (let i = 0; i < 10; i++) p.draw(0.1);
+      for (let i = 0; i < 10; i++) p.draw(0.1, true);
       return p.snapshot();
     }, gate);
-    check(`${name}: story progress reveals a legible picture inside the viewport`, shown.opacity > 0.9 && shown.scale === 1 && shown.corners.every((point) => Math.abs(point[0]) <= 0.99 && Math.abs(point[1]) <= 0.99));
+    check(`${name}: scenery cannot hide the floating story painting`, shown.depthTest === false);
+    check(`${name}: a held reading line reveals its complete picture inside the viewport`, shown.opacity > 0.9 && shown.scale === 1 && shown.corners.every((point) => Math.abs(point[0]) <= 0.99 && Math.abs(point[1]) <= 0.99));
     check(`${name}: thought shader was warmed and draw calls remain bounded`, shown.programs === early.programs && withinDraws(shown.drawCalls, shown.tier));
     await picture(page, join(shots, `${name}.png`));
     const paused = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 20; i++) p.draw(0); return p.snapshot(); });

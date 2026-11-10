@@ -18,7 +18,7 @@ describe('Kapitel 4, Berget, in greybox', () => {
       expect(result.checkpoint).toBe(berget.checkpoints!.length - 1);
       // The flight, the five cobbles, and the ghost lifted up the cliff.
       expect(result.flags).toEqual(expect.arrayContaining(['flight', 'note:1', 'note:2', 'note:3', 'note:4', 'note:5', 'lift', 'goal']));
-      expect(result.said).toEqual(['fetch']);
+      expect(result.said).toEqual(['mountain:thanks', 'fetch']);
       expect(result.bubbles).toBe(0);
       // It waits in the lee of each boulder, and no gust catches it.
       expect(result.blown).toBe(0);

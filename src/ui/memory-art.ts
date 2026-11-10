@@ -1,34 +1,22 @@
+import { carvingArt, storyPerson, storySpruce, storyPine, storyShoulderCarry } from './story-illustrations';
 /** The memories are little illustrated theatres: warm paper, a blue shirt and one clear action per page.
  * They remain illustrations rather than likeness assets. The wooden friend never moves by itself. */
 const INK = '#543c35';
-const LIGHT = '#f1c795';
-const BLUE = '#9cc4e4';
 const stroke = `fill="none" stroke="${INK}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"`;
 const motion = (kind: string, inside: string) => `<g data-memory-motion="${kind}">${inside}</g>`;
 const shadow = (x: number, y: number, r: number) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * .17}" fill="${INK}" opacity=".15"/>`;
 
 function grownUp(x: number, y: number, h: number, mark: 'cap' | 'braid' = 'cap', lean = 0): string {
-  const r = h * .105, head = y - h + r;
-  const hair = mark === 'cap'
-    ? `<path d="M${x - r * 1.1} ${head - r * .4}q${r * .3} ${-r * 1.7} ${r * 2.1} 0l${r} ${r * .3}h${-r * 3.1}z" fill="${INK}"/>`
-    : `<path d="M${x - r} ${head}q${-r} ${r * 2} 0 ${h * .3}" ${stroke} stroke-width="5"/>`;
-  return `${shadow(x, y + 1, h * .24)}<g transform="rotate(${lean} ${x} ${y})"><path d="M${x - h * .09} ${y - h * .35}l-2 ${h * .33}m${h * .19} ${-h * .33}l4 ${h * .33}" ${stroke} stroke-width="9"/><path d="M${x - h * .16} ${y - h * .3}l${h * .035} ${-h * .46}q${h * .13} ${-h * .07} ${h * .26} 0l${h * .035} ${h * .46}z" fill="${mark === 'cap' ? '#7b8874' : '#b97863'}" stroke="${INK}" stroke-width="1.4"/><path d="M${x} ${y - h * .73}v${h * .39}" stroke="#efd8ab" stroke-width="1.4"/><circle cx="${x}" cy="${head}" r="${r}" fill="${LIGHT}" stroke="${INK}" stroke-width="1.5"/>${hair}<circle cx="${x - r * .3}" cy="${head}" r="1.2" fill="${INK}"/><circle cx="${x + r * .4}" cy="${head}" r="1.2" fill="${INK}"/><path d="M${x - r * .15} ${head + r * .43}q${r * .3} ${r * .17} ${r * .55} ${-r * .1}" ${stroke} stroke-width="1.2"/></g>`;
+  return storyPerson(x, y, h, true, mark === 'cap', 'none', mark === 'braid', lean);
 }
-
 function littleElof(x: number, y: number, h: number, cap = false, arm: 'up' | 'out' | 'none' = 'none'): string {
-  const r = h * .19, head = y - h + r;
-  const hat = cap ? `<path d="M${x - r * 1.04} ${head - r * .5}q${r} ${-r * 1.25} ${r * 2.08} 0l${r * .8} ${r * .23}h${-r * 2.9}z" fill="${INK}"/>` : '';
-  const limb = arm === 'up' ? `<path d="M${x + h * .14} ${y - h * .42}l${h * .18} ${-h * .29}" ${stroke} stroke-width="5"/>` : arm === 'out' ? `<path d="M${x + h * .14} ${y - h * .43}l${h * .32} ${-h * .08}" ${stroke} stroke-width="5"/>` : '';
-  return `${shadow(x, y + 1, h * .29)}<g><path d="M${x - h * .1} ${y - h * .16}v${h * .15}m${h * .21} ${-h * .15}v${h * .15}" ${stroke} stroke-width="7"/><path d="M${x - h * .22} ${y - h * .13}l${h * .06} ${-h * .43}q${h * .16} ${-h * .09} ${h * .32} 0l${h * .06} ${h * .43}z" fill="${BLUE}" stroke="${INK}" stroke-width="1.6"/>${!cap ? `<path d="M${x - h * .17} ${y - h * .4}h${h * .34}m${-h * .36} ${h * .12}h${h * .38}" stroke="#e8edf0" stroke-width="3"/>` : ''}${limb}<circle cx="${x}" cy="${head}" r="${r}" fill="${LIGHT}" stroke="${INK}" stroke-width="1.5"/>${hat}<path d="M${x - r} ${head - r * .3}l${r * .35} ${-r * .8}l${r * .3} ${r * .46}l${r * .4} ${-r * .6}l${r * .3} ${r * .46}l${r * .35} ${-r * .45}l${r * .28} ${r * .9}z" fill="#e8b93a"/><circle cx="${x - r * .36}" cy="${head + r * .05}" r="${h * .026}" fill="${INK}"/><circle cx="${x + r * .4}" cy="${head + r * .05}" r="${h * .026}" fill="${INK}"/><ellipse cx="${x - r * .6}" cy="${head + r * .34}" rx="${r * .21}" ry="${r * .12}" fill="#dc8d73"/><path d="M${x - r * .2} ${head + r * .42}q${r * .3} ${r * .25} ${r * .6} 0" ${stroke} stroke-width="1.4"/></g>`;
+  return storyPerson(x, y, h, false, cap, arm);
 }
-
-function figure(x: number, y: number, h: number): string {
-  return `<g class="tragubbe"><path d="M${x - h * .2} ${y}l${h * .04} ${-h * .43}h${h * .32}l${h * .04} ${h * .43}z" fill="#ba7f50" stroke="${INK}" stroke-width="1.5"/><path d="M${x - h * .06} ${y - h * .35}v${h * .23}m${h * .15} ${-h * .14}v${h * .2}" stroke="#e3b887" stroke-width="1.2"/><circle cx="${x}" cy="${y - h * .57}" r="${h * .19}" fill="#f0d5a4" stroke="${INK}" stroke-width="1.5"/><path d="M${x - h * .2} ${y - h * .68}l${h * .2} ${-h * .35}l${h * .2} ${h * .35}z" fill="#bb704e" stroke="${INK}" stroke-width="1.5"/><circle cx="${x - h * .07}" cy="${y - h * .58}" r="${h * .023}" fill="${INK}"/><circle cx="${x + h * .07}" cy="${y - h * .58}" r="${h * .023}" fill="${INK}"/><path d="M${x - h * .07} ${y - h * .48}q${h * .07} ${h * .06} ${h * .14} 0" ${stroke} stroke-width="1.2"/></g>`;
-}
+function figure(x: number, y: number, h: number): string { return carvingArt('old', x, y, h); }
 const jelly = (x: number, y: number, r = 5) => `<path d="M${x - r} ${y}q0 ${-r * 1.8} ${r} ${-r}q${r} ${-r * .8} ${r} ${r}q${-r} ${r * 1.6} ${-r * 2} 0z" fill="#d94e62" stroke="#9e3948" stroke-width="1"/><path d="M${x - r * .45} ${y - r * .4}l${r * .35} ${-r * .2}" stroke="#ffcfb2" stroke-width="1.5" stroke-linecap="round"/>`;
 const ground = (y: number, color = '#c9ad7b') => `<path d="M0 ${y}q82 -10 160 0t160 0v${200 - y}H0z" fill="${color}"/><path d="M0 ${y + 14}q110 -8 206 3t114 -2M25 189q70 -5 112 0" stroke="#f3ddb1" stroke-width="2" opacity=".45" fill="none"/>`;
-const spruce = (x: number, y: number, h: number, color = '#687c67') => `<path d="M${x} ${y}v${-h * .65}" stroke="#675545" stroke-width="5"/>${motion('breeze', `<path d="M${x} ${y - h}l${h * .22} ${h * .44}h${-h * .08}l${h * .17} ${h * .34}h${-h * .12}l${h * .1} ${h * .17}h${-h * .58}l${h * .11} ${-h * .17}h${-h * .12}l${h * .17} ${-h * .34}h${-h * .08}z" fill="${color}"/><path d="M${x - h * .02} ${y - h * .76}l${h * .08} ${h * .16}m${-h * .16} ${h * .09}l${h * .2} ${h * .06}m${-h * .26} ${h * .13}l${h * .36} ${h * .08}" ${stroke} stroke="#d3d7a6" stroke-width="1.2" opacity=".45"/>`)}`;
-const pine = (x: number, y: number) => `<path d="M${x - 5} ${y}q-3 -40 8 -86h8q-7 50 -5 86z" fill="#866445"/><path d="M${x + 6} ${y - 38}l-20 -25m22 13 25 -18" ${stroke} stroke-width="4"/>${motion('breeze', `<path d="M${x - 43} ${y - 80}q-7 -14 13 -17q4 -19 31 -14q22 -10 34 9q31 -5 32 14q-18 20 -55 15q-31 12 -55 -7z" fill="#687b5e"/><path d="M${x - 26} ${y - 91}q18 -8 33 -4m12 -6 18 5" ${stroke} stroke="#adba84" opacity=".7"/>`)}`;
+const spruce = (x: number, y: number, h: number, color = '#687c67') => motion('breeze', storySpruce(x, y, h, color !== '#687c67'));
+const pine = (x: number, y: number) => motion('breeze', storyPine(x, y));
 const mountain = (x: number, y: number, w: number, h: number) => `<path d="M${x - w / 2} ${y}l${w * .34} ${-h}l${w * .14} ${h * .3}l${w * .1} ${-h * .16}l${w * .42} ${h * .86}z" fill="#7d8f89"/><path d="M${x - w * .16} ${y - h}l${w * .14} ${h * .3}l${w * .1} ${-h * .16}l${w * .12} ${h * .25}l${-w * .19} ${-h * .04}l${-w * .04} ${h * .18}z" fill="#d2cbae"/>`;
 const camera = (x: number, y: number) => `<rect x="${x - 9}" y="${y - 7}" width="18" height="13" rx="3" fill="${INK}"/><circle cx="${x}" cy="${y}" r="4" fill="#dacbb0"/><circle cx="${x}" cy="${y}" r="2" fill="#657c82"/>`;
 const stump = (x: number, y: number) => `<path d="M${x - 20} ${y}l3 -31h34l3 31z" fill="#98704f"/><ellipse cx="${x}" cy="${y - 31}" rx="20" ry="5" fill="#efd0a1" stroke="#866445" stroke-width="1.5"/><ellipse cx="${x}" cy="${y - 31}" rx="10" ry="2.5" fill="none" stroke="#b79365"/><path d="M${x - 10} ${y - 25}l-2 20m20 -22 2 24" stroke="#caa06c" stroke-width="2"/>`;
@@ -55,8 +43,8 @@ export const MEMORIES: Record<string, string[]> = {
     frame(`${spruce(19, 169, 161)}${spruce(296, 160, 132, '#899579')}${ground(157)}${stump(175, 162)}${figure(174, 127, 54)}${jelly(193, 126, 6)}${littleElof(104, 168, 91, true, 'up')}${jelly(133, 105, 6)}${grownUp(254, 163, 118, 'cap', -4)}<path d="M237 95l-14 -6" ${stroke} stroke-width="5"/>${camera(219, 88)}${motion('glint', '<path d="M203 82l-8 -5m6 13 -11 1m16 -17 -2 -8" stroke="#fff2c9" stroke-width="2"/>')}`),
   ],
   myren: [
-    frame(`${mountain(242, 116, 190, 75)}${ground(139, '#a8ad7e')}<path d="M0 147q68 -25 136 5t184 -8v22H0z" fill="#9bbabc"/><path d="M-5 176 323 151" stroke="#796d55" stroke-width="12"/><path d="M-5 172 323 147" stroke="#dcc49a" stroke-width="6"/>${motion('walk', `${littleElof(53, 165, 45, true)}${grownUp(104, 159, 79, 'braid')}${littleElof(139, 158, 54, true)}${grownUp(211, 153, 90)}${littleElof(211, 71, 49, true, 'up')}${figure(231, 41, 23)}`)}<path d="M21 197v-19m3 14 7 -9m251 5v-20m4 17 6 -8" ${stroke} stroke="#748563"/>`, 'marsh'),
-    frame(`${mountain(247, 139, 176, 88)}${ground(170, '#a8ad7e')}${grownUp(129, 217, 146)}${littleElof(129, 83, 72, true, 'up')}${motion('offer', figure(172, 57, 40))}<path d="M184 57q22 -8 37 -3" ${stroke} stroke="#f8edc5" stroke-width="2"/>`, 'marsh'),
+    frame(`${mountain(242, 116, 190, 75)}${ground(139, '#a8ad7e')}<path d="M0 147q68 -25 136 5t184 -8v22H0z" fill="#9bbabc"/><path d="M-5 176 323 151" stroke="#796d55" stroke-width="12"/><path d="M-5 172 323 147" stroke="#dcc49a" stroke-width="6"/>${motion('walk', `${littleElof(53, 165, 45, true)}${grownUp(104, 159, 79, 'braid')}${littleElof(139, 158, 54, true)}${storyShoulderCarry(211, 153, 90, 49)}${figure(231, 55, 23)}`)}<path d="M21 197v-19m3 14 7 -9m251 5v-20m4 17 6 -8" ${stroke} stroke="#748563"/>`, 'marsh'),
+    frame(`${mountain(247, 139, 176, 88)}${ground(170, '#a8ad7e')}${storyShoulderCarry(129, 217, 146, 72)}${motion('offer', figure(158, 66, 40))}<path d="M184 57q22 -8 37 -3" ${stroke} stroke="#f8edc5" stroke-width="2"/>`, 'marsh'),
     frame(`${mountain(222, 160, 246, 121)}<g transform="translate(184 40) scale(.16)">${pine(0, 0)}</g>${ground(168, '#a8ad7e')}<path d="M99 192q64 -10 108 -43" fill="none" stroke="#e5cf9c" stroke-width="12"/>${figure(73, 164, 99)}${motion('breeze', '<path d="M140 77q15 -7 29 -2m-20 12q16 -5 29 -1" stroke="#fbefd0" stroke-width="2" fill="none"/>')}`, 'marsh'),
   ],
   berget: [

@@ -13,12 +13,12 @@ export type Tone = 'call' | 'worry' | 'soft' | 'think';
 export const TONES: Readonly<Record<string, Tone>> = {
   // Shouted.
   stomp: 'call', tiny: 'call', stolenBag: 'call', snuck: 'call', jayWindow: 'call', fallenStar: 'call', heja: 'call',
-  marbleBack: 'call', named: 'call', carved: 'call',
+  named: 'call', carved: 'call',
   // Anxious.
   hurt: 'worry', sameSize: 'worry', rootFingers: 'worry', gardenPocket: 'worry',
   // Gently: Pappa on the summit, Mamma's promise, the way home.
   first1: 'soft', first2: 'soft', first3: 'soft', first4: 'soft', nearYou: 'soft', goldHope: 'soft', followTrail: 'soft',
-  bogChickLight: 'soft',
+  bogChickLight: 'soft', carvingProud: 'soft', goodnight: 'soft',
   // Elof working something out.
   givesAway: 'think', thanked: 'think', fetch: 'think', forestVittraClue: 'think', mountainLoop: 'think',
 };
@@ -27,4 +27,4 @@ export const TONES: Readonly<Record<string, Tone>> = {
  * Lines that go on from the line before, the same speaker's: added under it in the same bubble, two lines at most,
  * so that a sentence said in two bubbles is read whole ("Den täljde jag till dig / när du var liten, Elof.").
  */
-export const GOES_ON: ReadonlySet<string> = new Set(['first3', 'cobbles2', 'cobbles3']);
+export const GOES_ON: ReadonlySet<string> = new Set(['first3']);

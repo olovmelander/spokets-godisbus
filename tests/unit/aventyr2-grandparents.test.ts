@@ -87,16 +87,16 @@ describe('Äventyr 2: mormor and morfar', () => {
     expect(head.rotation.y + head.rotation.x + head.rotation.z).not.toBe(0);
   });
 
-  it('lays morfar\'s ladder down flat over the ditch, with a small bounce, in the time the story holds him', () => {
+  it('guides morfar\'s ladder down gently before the story releases him', () => {
     expect(ladderAngle(0)).toBe(0);
     expect(ladderAngle(0.5)).toBeLessThan(0.4);
-    expect(ladderAngle(1.3)).toBeCloseTo(Math.PI / 2, 5);
-    expect(ladderAngle(1.42)).toBeLessThan(Math.PI / 2);
-    expect(ladderAngle(1.6)).toBeCloseTo(Math.PI / 2, 1);
+    expect(ladderAngle(2.2)).toBeCloseTo(Math.PI / 2, 5);
+    expect(ladderAngle(2.32)).toBeLessThan(Math.PI / 2);
+    expect(ladderAngle(2.7)).toBeCloseTo(Math.PI / 2, 1);
     expect(ladderAngle(3)).toBeCloseTo(Math.PI / 2, 3);
     const figure = place('morfar');
     expect(figure.ladder).not.toBeNull();
-    run(figure, true, 1.8);
+    run(figure, true, 2.8);
     expect(figure.ladder!.rotation.z).toBeCloseTo(-Math.PI / 2, 1);
     expect(figure.ladder!.rotation.y).toBeCloseTo(0, 1);
     // It stays until the ledge is there, however long the story holds him first.
@@ -104,6 +104,22 @@ describe('Äventyr 2: mormor and morfar', () => {
     expect(figure.ladder!.visible).toBe(true);
     figure.update(true, 9, 1 / 30, 0, true);
     expect((figure.ladder as Mesh).visible).toBe(false);
+  });
+
+  it('starts the lowering from his kneel with both hands on the ladder, then guides it with the nearer hand', () => {
+    const figure = place('morfar');
+    run(figure, false, 3);
+    for (let frame = 0; frame < 45; frame++) {
+      const time = frame / 60;
+      figure.update(true, time, 1 / 60, 0);
+      figure.group.updateWorldMatrix(true, true);
+      const guide = figure.ladder!.localToWorld(new Vector3(0, 2, -.34));
+      expect(figure.rig.hand(0, new Vector3()).distanceTo(guide), `guide at ${time}`).toBeLessThan(.06);
+      if (frame < 24) {
+        const upper = figure.ladder!.localToWorld(new Vector3(0, 2.65, -.34));
+        expect(figure.rig.hand(1, new Vector3()).distanceTo(upper), `upper at ${time}`).toBeLessThan(.06);
+      }
+    }
   });
 
   it('hangs mormor\'s lantern from her hand and lifts it when she is called', () => {

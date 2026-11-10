@@ -1012,7 +1012,7 @@ export function paintStreetMirror(chapter: ChapterData, c: CanvasRenderingContex
   for (const { x, foot } of postsOf(chapter)) {
     box(x - 1.2, x + 1.2, foot, foot + 2.3, MIRRORED.lamp);
     box(x - 0.6, x + 0.6, foot + 2.3, foot + 2.9, MIRRORED.lamp);
-    box(x - 0.5, x + 0.5, foot + 2.9, foot + 24, MIRRORED.lamp);
+    box(x - 0.5, x + 0.5, foot + 2.9, foot + LAMP_POST.tall, MIRRORED.lamp);
   }
 }
 
@@ -1030,7 +1030,8 @@ export const LAMP_POST = {
   /** The hatch towards the street: how wide and how tall it is, and how high its middle is. */
   door: { wide: 0.62, tall: 1.3, up: 1.22 },
   /** The shaft: half across at its foot and at its top, its flutes up to the ring, and how tall it goes. */
-  shaft: [0.5, 0.42], flutes: 8, ring: 9, tall: 22,
+  // The wider church crossing still sees a continuous shaft, never an abruptly cut-off top.
+  shaft: [0.5, 0.42], flutes: 8, ring: 9, tall: 32,
 } as const;
 
 export function lampPostShape(): BufferGeometry {
@@ -1099,6 +1100,19 @@ export function lampPosts(chapter: ChapterData): Mesh | null {
   return posts;
 }
 
+/** The far pavement supports the lamps and the feet of the houses, beyond the road's back edge. */
+export function farPavement(chapter: ChapterData): Mesh | null {
+  const shapes = (chapter.street ?? []).filter(part => part.depth === 'far').map(part => {
+    const foot = footOf(chapter, part);
+    return new BoxGeometry(part.to - part.from, 0.9, 5.4).translate((part.from + part.to) / 2, foot - 0.45, -17.8);
+  });
+  if (!shapes.length) return null;
+  const mesh = new Mesh(mergeGeometries(shapes), new MeshStandardMaterial({ color: '#777b76', roughness: 0.95 }));
+  mesh.name = 'far-pavement';
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
 /**
  * Everything that stands behind the street: its houses and its yard, the far village beyond them, the dark
  * under the street, the bicycle and the shop's room. `install` puts the houses together again from the kit
@@ -1141,6 +1155,8 @@ export function fronts(chapter: ChapterData, from: number, _to: number): { group
   group.add(bicycle(chapter), shopInterior(chapter));
   const posts = lampPosts(chapter);
   if (posts) group.add(posts);
+  const pavement = farPavement(chapter);
+  if (pavement) group.add(pavement);
   return {
     group,
     install(model) {
@@ -1468,6 +1484,10 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
   // A grown-up's legs in a long coat, from Blender (art/blender/a2-street.py), walked by ./passerby.ts: until they have
   // come, the plain shoes stand in.
   shoes.userData.model = 'fotgangare';
+  // Shared with the storm street: Byn does not enter the storm renderer, so the modeled car belongs here.
+  car.userData.model = 'bil-gra';
+  car.userData.fit = 3.8;
+  car.userData.lift = -0.45;
   let walker: Walker | null = null;
   shoes.userData.onModelInstalled = (copy: Object3D) => { walker = rigWalker(copy); };
   // The car's wheels turn as it rolls, where its model has them on pivots of their own (art/blender/a2-props.py), and
@@ -1505,7 +1525,8 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
       const driven = clock * CAR_SPEED + 104;
       car.position.set(lo + (driven % span), 0.45, -13.4);
       const walked = clock * STRIDE.speed + 45;
-      shoes.position.set(lo + (walked % span), 2, -12.2);
+      // The road behind the crossing is at zero. The old fixed two-EL lift left both soles in the air.
+      shoes.position.set(lo + (walked % span), 0, -12.2);
       if (walker) walker.pose(walked);
       else {
         for (const [i, leg] of legs.entries()) {

@@ -49,6 +49,22 @@ async function until(read, accepts, name, timeout = 12000) {
   } while (Date.now() < end);
   assert.fail(`${name}: timed out; last value ${JSON.stringify(value)}`);
 }
+/** Wait for an authored scene while it advances, with a separate guard against a stuck scene. */
+async function untilScene(read, accepts, name) {
+  const started = Date.now(), absoluteLimit = 180000, inactivityLimit = 20000;
+  let value, previous, advanced = started;
+  do {
+    value = await read();
+    if (accepts(value)) return value;
+    // Body motion and ordinary simulation steps do not count: the scene clock or its dialogue must advance.
+    const progress = JSON.stringify([value.scene?.id, value.scene?.seconds, value.said, value.storyReading]);
+    if (progress !== previous) { previous = progress; advanced = Date.now(); }
+    assert.ok(Date.now() - advanced < inactivityLimit, `${name}: no scene/dialogue progress for 20 s; last value ${JSON.stringify(value)}`);
+    if (value.storyReading && read.page) await continueDialogue(read.page);
+    await sleep(35);
+  } while (Date.now() - started < absoluteLimit);
+  assert.fail(`${name}: exceeded the 180 s scene limit; last value ${JSON.stringify(value)}`);
+}
 /**
  * Runs him right until Använd offers `word`. Watching in the page's own RAF catches the first offered frame,
  * with room to release the key and stop. Holding Shift for the whole trip instead made long walks time out on
@@ -244,7 +260,8 @@ try {
     await page.evaluate(installPad);
     await padPress(page, 0);
     await until(state, (s) => s.flags.includes('paint'), 'gamepad paints with help');
-    await until(state, (s) => s.flags.includes('blink'), 'the ghost blinks', 90000);
+    // The wake-up scene ends at 18 authored seconds; slow CI can still be making progress after 90 wall seconds.
+    await untilScene(state, (s) => s.flags.includes('blink'), 'the ghost blinks');
     check('gamepad painting releases the prologue chase', (await state()).flags.includes('blink'));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('finished eyes persist with this player', saved.flags.prolog.includes('eye') && saved.flags.prolog.includes('paint'));
@@ -253,7 +270,7 @@ try {
   if (!filter || filter === 'carving') {
     console.log('story: carving safely with Pappa');
     const { page, state, finish } = await open('carving', { hasTouch: true }, '?dev&debug&standin&tier=low&course=epilog', () => {
-      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife'] }, playMs: 0 }));
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife', 'beat:partyThanks:mamma', 'beat:partyThanks:pappa', 'beat:partyThanks:moa', 'beat:partyThanks:bertil', 'beat:partyThanks:spoket', 'beat:klonk', 'beat:named', 'beat:away'] }, playMs: 0 }));
     });
     await reach(page, 'carve', 'the wood becomes reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
@@ -282,9 +299,13 @@ try {
     await page.keyboard.press('Enter'); await until(state, (s) => s.flags.includes('dots'), 'the new figure gets both eyes');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('three cuts and both eyes are saved', ['cut1', 'cut2', 'cut3', 'dots'].every((flag) => saved.flags.epilog.includes(flag)));
-    await reach(page, 'brush', 'toothbrush is reachable');
-    await page.keyboard.press('e'); await until(state, (s) => s.flags.includes('goal'), 'the epilogue reaches bedtime', 20000);
-    check('the epilogue can finish after carving', (await state()).flags.includes('teeth'));
+    await until(state, (s) => s.flags.includes('scene:first-carving'), 'Pappa admires the completed Lillgubben', 30000);
+    await reach(page, 'brush', 'bathroom door is reachable');
+    await page.keyboard.press('e');
+    // Walking in, brushing and walking out take 11.6 authored seconds even when software frames are slow.
+    await untilScene(state, (s) => s.flags.includes('goal'), 'the epilogue reaches bedtime after brushing');
+    const finished = await state();
+    check('the epilogue finishes only after brushing', finished.flags.includes('teeth') && finished.flags.includes('bedtime'));
     await finish();
   }
   if (!filter || filter === 'party') {
@@ -292,6 +313,12 @@ try {
     const { page, state, finish } = await open('party', { hasTouch: true, viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: { berget: ['note:1'] }, playMs: 0 }));
     });
+    const thanks = async (friend) => {
+      await until(state, s => s.said.includes(`partyThanks:${friend}`) && s.storyReading, `${friend} thanks Elof`);
+      const line = await page.locator('#bubbleLine').textContent();
+      check(`${friend} acknowledges the gift before the next choice`, friend === 'spoket' ? /Klonk/.test(line) : /Tack/.test(line));
+      if (friend !== 'pappa') await until(state, s => !s.storyReading, `${friend} finishes thanking Elof`);
+    };
     await reach(page, 'giveMamma', 'first guest is reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     check('the family party offers three candies and five guests', await page.locator('[data-sweet]:visible').count() === 3 && await page.locator('[data-friend]:visible').count() === 5);
@@ -300,18 +327,22 @@ try {
     await picture(page, '/tmp/godisbus-party.png');
     await page.locator('[data-friend="bertil"]').tap(); await until(state, (s) => s.flags.includes('party:bertil'), 'touch choice for Bertil');
     check('a guest can be chosen before the nearby guest', !(await state()).flags.includes('party:mamma') && (await state()).flags.includes('party-gift:bertil:karamell'));
+    await thanks('bertil');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     await page.focus('[data-sweet="gelehallon"]'); await page.keyboard.press('Enter');
     await page.focus('[data-friend="mamma"]'); await page.keyboard.press('Enter'); await until(state, (s) => s.flags.includes('party:mamma'), 'keyboard choice for Mamma');
+    await thanks('mamma');
     await reach(page, 'givePappa', 'next guest is reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     await page.evaluate(installPad); await padFocus(page, '[data-sweet="skumbanan"]'); await padPress(page, 0);
     await padFocus(page, '[data-friend="moa"]'); await padPress(page, 0); await until(state, (s) => s.flags.includes('party:moa'), 'gamepad choice for Moa');
     check('the controller chooses a different candy for Moa', (await state()).flags.includes('party-gift:moa:skumbanan'));
+    await thanks('moa');
     for (const [friend, sweet] of [['spoket', 'karamell'], ['pappa', 'gelehallon']]) {
       await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
       await page.locator(`[data-sweet="${sweet}"]`).tap(); await page.locator(`[data-friend="${friend}"]`).tap();
       await until(state, (s) => s.flags.includes(`party:${friend}`), `choice for ${friend}`);
+      await thanks(friend);
     }
     // Each line now finishes before the next begins. Bound progress between the authored lines, rather than
     // giving the whole cobbles explanation and Klonk's reply the deadline for a single line.

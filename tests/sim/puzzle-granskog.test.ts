@@ -234,6 +234,7 @@ describe('the cone on the bough: how it is laid', () => {
     expect(tip.x).toBeGreaterThan(home.x);
     expect(home.x).toBeGreaterThan(bough.x);
     expect(tip.y).toBe(bough.y);
+    expect(twig.counterweight).toEqual({ mover: cone.id, fromY: bough.y });
     expect(home.y).toBe(bough.y);
   });
 

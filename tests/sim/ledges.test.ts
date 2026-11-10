@@ -225,7 +225,7 @@ describe('"Jag har fastnat" after a ride', () => {
     const sim = new Sim(granskog, {}, { checkpoint: before });
     walkTo(sim, cap.at.x);
     sim.step({ ...idle, act: true });
-    run(sim, 1.3);
+    run(sim, 2.6); // Bertil lowers the cap with both hands before Elof can board it.
     expect(sim.curr.word).toBe('capBoard');
     sim.step({ ...idle, act: true });
     for (let i = 0; i < 3000 && sim.curr.mode !== 'free'; i++) sim.step(idle);

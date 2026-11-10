@@ -230,7 +230,7 @@ export const granskog: ChapterData = {
     { x: 84.55, y: -1.1, width: 4.5, look: 'branch' },
     // The twig over the long bough's near end: the missing step. It is there once the cone weighs on the
     // bough's tip, and the two steps up to the hearts are one jump each, straight up.
-    { x: 82.55, y: -0.2, width: 1.1, look: 'branch', needs: 'placed:cone-bough' },
+    { x: 82.55, y: -0.2, width: 1.1, look: 'branch', needs: 'placed:cone-bough', counterweight: { mover: 'cone-bough', fromY: -1.1 } },
     // The hearts' bough: two steps over the long one, which is more than a jump, and its sweets hang out of
     // reach of the highest jump from the long bough and from the cone's top.
     { x: 81.9, y: 0.7, width: 1.8, look: 'branch' },
@@ -362,7 +362,7 @@ export const granskog: ChapterData = {
   later: [
     { flag: 'seesaw:trial:landed', after: 'seesaw:trial', seconds: TRIAL.time },
     { flag: 'family:seesaw-ready', after: 'seesaw', until: 'launch', within: [103, 118], seconds: 1, hold: true },
-    { flag: 'family:cap-ready', after: 'cap:ready', until: 'cap', within: [149, 158], seconds: 1.2, hold: true },
+    { flag: 'family:cap-ready', after: 'cap:ready', until: 'cap', within: [149, 158], seconds: 2.4, hold: true },
   ],
   cameras: [
     // Up on the boughs and in the nest the picture is wider and looks down a little, so that the ring over

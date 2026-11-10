@@ -200,8 +200,8 @@ export const sv = {
       carveStart: { purpose: 'Ta kniven. Pappa lär dig tälja.', recap: 'Alla har fått godis. Nu vill jag göra en egen trägubbe.' },
       carve: { purpose: 'Tälj min trägubbe med Pappa.', recap: 'Pappa hjälper min hand. Jag täljer alltid bort från kroppen.' },
       paintOwn: { purpose: 'Måla min trägubbes två ögon.', recap: 'Jag har täljt min första figur. Nu får den sina ögon.' },
-      teeth: { purpose: 'Borsta tänderna före läggdags.', recap: 'Min trägubbe står i fönstret. Nu är det läggdags.' },
-      bed: { purpose: 'Gå och lägg dig.', recap: 'Godiskalas och en egen trägubbe. Nu är det dags att sova.' },
+      teeth: { purpose: 'Gå in i badrummet och borsta tänderna.', recap: 'Min egen Lillgubbe är klar. Nu är det snart läggdags.' },
+      bed: { purpose: 'Borsta klart vid handfatet.', recap: 'Godiskalas och en egen trägubbe. Efter tandborstningen är det godnatt.' },
       village: { purpose: 'Gå till godisbutiken med min vän.', recap: 'Lördagen efter gör vi en ny liten utflykt tillsammans.' },
       shop: { purpose: 'Gå in i butiken och hitta påsen.', recap: 'Vi har kommit fram. Där inne väntar godis att dela.' },
       shopDone: { purpose: 'Hämta en påse att dela på.', recap: 'Vi handlar tillsammans. Sedan går vi hem igen.' },
@@ -302,14 +302,31 @@ export const sv = {
 
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {
+    gardenLandedMoa: 'Gick det bra, lillebror?',
+    gardenLandedElof: 'Ja! Jag landade mjukt! Tack, Moa!',
+    nrFoundYou: 'Där är du ju! Jag ska hjälpa dig.',
+    nrHowAreYou: 'Elof! Hur mår du?',
+    nrAllRight: 'Bra! Vi hittade honom!',
+    nrGhostHelped: 'Spöket hjälpte mig hela vägen hit.',
+    nrStuck: 'Trägubben satt fast i sprickan.',
+    nrLonely: 'Han var alldeles ensam.',
+    nrTogether: 'Nu behöver han aldrig vara ensam.',
+    nrBrave: 'Ni hjälptes åt. Vad modigt!',
+    nrBothHome: 'Båda ska få följa med hem.',
+    nrGoHome: 'Ja. Nu går vi hem tillsammans.',
     // The extra chapter, Byn: a Saturday later, on the way to the candy shop.
     // At the party, when what he found under the deck is given back (plan §4.8).
     clipBack: 'Mitt hårspänne! Tack, lillebror!',
-    marbleBack: 'Kula! Min kula!',
-    coinBack: 'En krona! Den får du behålla.',
-    cobbles1: 'Stenarna på berget var en strand.',
-    cobbles2: 'Havet nådde ända dit en gång.',
-    cobbles3: 'Vågorna gjorde dem runda.',
+    marbleBack: 'Du hittade min glaskula också! Tack!',
+    coinBack: 'Där är mitt mynt! Tack, Elof.',
+    cobbles1: 'Varför var stenarna på berget så runda?',
+    cobbles2: 'Havets vågor slipade dem på en strand.',
+    cobbles3: 'En gammal strand, så högt uppe!',
+    partyMammaThanks: 'Tack, Elof! Vad gott med en godis.',
+    partyPappaThanks: 'Tack, Elof. Vad fint att du delar.',
+    partyMoaThanks: 'Tack, lillebror! Den här tycker jag om.',
+    partyBertilThanks: 'Tack! Nu är det ett riktigt godiskalas.',
+    partyGhostThanks: 'Klonk, klonk!',
     again: 'En stjärna till. Nu handlar vi!',
     lake: 'En sjö! Mitt på gatan.',
     shop: 'Framme! Det luktar godis.',
@@ -347,6 +364,7 @@ export const sv = {
     bogFamilyHome: 'Tranungen är hemma! Får jag åka med dig?',
     bogBridgeReady: 'Spången är klar! Gå över när du vill.',
     bogLightReturn: 'Nu går spången åt båda hållen!',
+    mountainThanks: 'Tack för hjälpen! Nu är jag uppe.',
     fetch: 'Spöket vill hämta hem min trägubbe!',
     mountainLoop: 'Snöret runt röset. En väg ner!',
     // Pappa on the summit: one thing said, in four bubbles.
@@ -373,7 +391,7 @@ export const sv = {
     goldHope: 'Guldgodiset kan göra dig stor igen.',
     goldInBag: 'Det ligger kvar i spökets påse!',
     findBag: 'Jag följer godiset och hittar påsen!',
-    onlyWood: 'Det är ju bara trä.',
+    onlyWood: 'Jag fångar honom. Stanna där!',
     snuck: 'Det smiter!',
     nearYou: 'Vi är nära dig hela tiden.',
     mapForYou: 'Jag ritar en karta åt dig!',
@@ -384,7 +402,10 @@ export const sv = {
     klonk: 'Klonk, klonk!',
     named: 'Du ska heta Klonk!',
     away: 'Alltid bort från kroppen.',
-    carved: 'Jag kan tälja!',
+    carved: 'Titta, Pappa! Min egen Lillgubbe!',
+    carvingProud: 'Den har du gjort själv. Vad fin den blev!',
+    brushNow: 'Nu ska jag borsta tänderna.',
+    goodnight: 'Godnatt, Elof!',
   },
 
   // The sixteen kinds of hidden candy (plan §4.3): plain names of sorts, never a brand.
@@ -405,22 +426,41 @@ export const sv = {
     graddkola: 'Gräddkola',
     salmiakruta: 'Salmiakruta',
     chokladpralin: 'Chokladpralin',
+    lingonhjarta: 'Lingonhjärta', blabarspastill: 'Blåbärspastill', citronstjarna: 'Citronstjärna', fotbollspralin: 'Fotbollspralin',
+    apelsinklyfta: 'Apelsinklyfta', mintfisk: 'Mintfisk', kolaknapp: 'Kolaknapp', norrskensruta: 'Norrskensruta',
   } as Record<string, string>,
   // Said at the top of the screen when a new kind is found, and under the stickers on a chapter's card.
   found: 'Ny sort: {name}!',
   stickers: 'Gömt godis',
   // Hittegods (plan §4.8): the small things lost under the deck. Said at the top of the screen when he
   // finds one, and shown in the album. Plain things, and never a brand.
-  lost: { marble: 'Bertils kula', clip: 'Moas hårspänne', brick: 'En leksakskloss', coin: 'En krona' } as Record<string, string>,
+  lost: { marble: 'Bertils kula', clip: 'Moas hårspänne', brick: 'En leksakskloss', coin: 'En krona', redbutton: 'En röd knapp', ribbon: 'Ett mjukt band', bell: 'En liten bjällra', pencil: 'En röd penna', paperboat: 'En pappersbåt', spool: 'En trådrulle', reflector: 'En stjärnreflex', whistle: 'En visselpipa', shell: 'En liten snäcka', float: 'Ett flöte', peg: 'En klädnypa', lanternstar: 'En pappersstjärna' } as Record<string, string>,
   lostFound: '{name}! Du hittade något.',
   lostTitle: 'Hittegods',
   // Daggklockspelet (plan §4.8): said when the drops play the opening theme in order.
   dewSong: 'Hela gräsmattan glittrar!',
   keepsakes: 'Små minnen',
+  collection: {
+    first: 'Äventyr 1', second: 'Äventyr 2 · Stormnatten', stormTitle: 'Stormens spår', stormWhen: 'Under stormnatten',
+    stormHint: 'Bilderna berättar varför de båda trägubbarna följde varandra. Nya spår samlas när du hittar dem på vägen.',
+    stormFound: 'Ett nytt spår i godispåsen!', keepsakeFound: 'Ett litet minne i godispåsen!',
+    places: { stormkvall:'Stormkvällen', stormgard:'Stormgården', stormskog:'Stormskogen', stormbyn:'Byn i stormen', olympia:'Olympia', flarken:'Flärken', alven:'Älven', billsta:'Billsta', stormoga:'Stormens öga', morgonen:'Morgonen efter' } as Record<string,string>,
+    keepsakes: { vittra:'Vittrornas tack', paperwing:'Flygturen med Moa', capboat:'Bertils kepsbåt', cranefriend:'Tranungen hittade hem', highflight:'På tranans rygg', together:'Godis till tre vänner', firstcarving:'Min första trägubbe', leafboat:'Ett löv över sjön', owlhelp:'Ugglan blev fri', capfound:'Lillgubbens mössa', lampfriends:'Alla lamporna lyste', homeagain:'Varm choklad hemma' } as Record<string,string>,
+    stories: {
+      'storm:window': {title:'Ut i stormen',captions:['Fönstret blåser upp. Lillgubben följer med vinden, och den gamla trägubben ger sig av efter honom.']},
+      'storm:yard': {title:'Ingen ska vara ensam',captions:['Klonk visar Elof en trägubbe som blev ensam.','Nu har Lillgubben kommit bort. Den gamla trägubben vill hitta honom.']},
+      'storm:forest': {title:'Den gamla vännen minns',captions:['Den gamla trägubben vet hur det känns att vänta alldeles ensam.','Vinden bär Lillgubben vidare. Den gamla trägubben följer hans spår genom skogen.']},
+      'storm:north': {title:'Två spår norrut',captions:['En vindpust tar Lillgubben förbi fotbollsplanen. Den gamla trägubben följer efter.','Elof och Klonk söker skydd, men tappar inte bort riktningen.']},
+      'storm:water': {title:'Där sjön blir en å',captions:['Mellan stolparna får Elof en stunds lä från vinden.','Vid utloppet får strömmen tag i trägubbarna. Elof måste följa vattnet.']},
+      'storm:raft': {title:'Vi följer strömmen',captions:['Elof och Klonk tar flotten vidare längs ån.','Framför dem finns de båda trägubbarna. Den gamla lämnar inte Lillgubben ensam.']},
+      'storm:harbour': {title:'En vän att hålla i',captions:['Ute i sundet driver trägubbarna tillsammans.','Den gamla trägubben håller Lillgubben kvar. Nu är de inte ensamma.']},
+      'storm:lights': {title:'Vi hittade er',captions:['Familjens lampor lyser över vattnet. Elof kommer fram till sina vänner.','Lillgubben får tillbaka sin mössa. Alla kan följa med hem.']},
+    } as Record<string,{title:string;captions:string[]}>,
+  },
   vittraSticker: 'Vittrornas tack',
   vittraFound: 'Ett klistermärke! Tack för lingonet.',
   // The album in the pause panel: every kind, found or not.
-  album: { title: 'Godisalbumet', count: '{found} av {total} sorter', chapterCount: '{found} av {total}', golden: 'Det gyllene geléhallonet', goldenFound: 'Alla sorter! Ett geléhallon i guld.' },
+  album: { title: 'Godisalbumet', count: '{found} av {total} sorter', chapterCount: '{found} av {total}', golden: 'Det gyllene geléhallonet', goldenFound: 'Alla sorter i Äventyr 1! Ett geléhallon i guld.' },
   photos: {
     title: 'Foton', journey: 'Vårt äventyr', empty: 'Här samlas bilder från ditt äventyr.',
     open: 'Titta på {name}', previous: 'Förra', next: 'Nästa', back: 'Tillbaka', done: 'Klart',
@@ -429,6 +469,7 @@ export const sv = {
     moments: {
       shrinking: 'Liten som en godis', swing: 'Första svingen', plane: 'Moas flygplan', cap: 'Bertils kepsbåt',
       crane: 'På tranans rygg', aurora: 'Under norrskenet', carving: 'Min första trägubbe',
+      stormtiny:'Liten igen', hedge:'Över häcken i vinden', umbrella:'Under Moas paraply', football:'Rakt mot mål', outlet:'Där ån börjar', raft:'På flotten', nightowl:'Ugglan visar vägen', lamps:'Familjens lampor', reunion:'Tillsammans igen', cocoa:'Varm choklad efter stormen',
     },
   },
   explore: {

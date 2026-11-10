@@ -54,7 +54,7 @@ describe('family help has time to prepare and a deliberate next action', () => {
   });
 
   it.each([
-    [garden, 208, 0, ['moa', 'plane:board']],
+    [garden, 208, 0, ['moa', 'plane:board', 'scene:landat']],
     [granskog, 179, -8, ['seesaw', 'placed:cone', 'launch', 'cap']],
     [myren, 139, 0, ['mamma', 'placed:pine', 'braid', 'light']],
   ] as const)('does not replay completed help at an older far checkpoint in %s', (chapter, x, y, flags) => {
@@ -77,7 +77,7 @@ describe('family help has time to prepare and a deliberate next action', () => {
     wait(game, .8, 1);
     expect(game.sim.curr.x).toBeCloseTo(where, 2);
     expect(game.sim.curr.mode).toBe('free');
-    wait(game, .7);
+    wait(game, 1.7);
     expect(game.sim.flags.has('beat:family:cap-ready')).toBe(true);
     expect(game.sim.held).toBe(false);
     wait(game, 4);
@@ -103,7 +103,9 @@ describe('family help has time to prepare and a deliberate next action', () => {
     [granskog, 108.2, -8, 'seesaw', 'family:seesaw-ready'],
     [myren, 102.2, 0, 'braid', 'family:braid-ready'],
   ] as const)('gives %s a short visible preparation before the held explanation', (chapter, x, y, flag, ready) => {
-    const game = start(chapter, x, y);
+    // At the braid, Mamma has already laid the pine and walked to the ledge.
+    const arrived = chapter.id === 'myren' ? ['mamma', 'placed:pine', 'family:pine-released', 'family:braid-arrived'] : [];
+    const game = start(chapter, x, y, arrived);
     act(game);
     expect(game.sim.flags.has(flag)).toBe(true);
     expect(game.sim.held).toBe(true);

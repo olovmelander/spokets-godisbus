@@ -1,3 +1,4 @@
+import { stubCanvas } from './canvas-stub';
 import { InstancedMesh, Matrix4, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
@@ -6,8 +7,7 @@ import type { Rig, Role } from '../../src/render/rig';
 import type { ActorKey } from '../../src/sim/scene';
 
 beforeEach(() => {
-  const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
-  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  stubCanvas();
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -31,11 +31,15 @@ function arm(rig: Rig) {
   return { shoulder, elbow, hand: rig.hand(1, new Vector3()) };
 }
 const rigFor = (stage: Stage, who: Role = 'pappa') => stage.actors.get(who)!.rig;
+/** A flat supporting palm is in front of its wrist; imported fingers expose that surface as a socket. */
+const supportingPalm = (rig: Rig) => rig.socket
+  ? rig.socket(1, { kind: 'flat' }, new Vector3())
+  : rig.grip(1, new Vector3(), new Vector3(0, 0, 1), new Vector3(), 0);
 
 describe('3D story interactions', () => {
   it.each([
     ['vaknar', .55, 'mamma', [11.2, 3.55, -9]],
-    ['prologue:pappa', 2.6, 'bertil', [50, -.3, 0]],
+    ['prologue:pappa', 4.2, 'bertil', [50, -.3, 0]],
   ] as const)('points %s’s actual forearm at its lateral story target', (id, seconds, who, target) => {
     const stage = createStage(prolog, () => 0);
     show(stage, id, seconds);
@@ -50,26 +54,26 @@ describe('3D story interactions', () => {
     const stage = createStage(prolog, () => 0);
     show(stage, 'handen', 3);
     const target = prolog.scenes!.find(scene => scene.id === 'handen')!.stage!.actors!.pappa!.find(key => key.act === 'lift')!.aim!;
-    expect(rigFor(stage).hand(1, new Vector3()).distanceTo(new Vector3(target.x, target.y, target.z))).toBeLessThan(1e-6);
+    expect(supportingPalm(rigFor(stage)).distanceTo(new Vector3(target.x, target.y, target.z))).toBeLessThan(1e-6);
   });
 
   it.each([false, true])('supports Elof through his pointing cue, then lowers him continuously (calm=%s)', calm => {
     const stage = createStage(prolog, () => 0), rig = rigFor(stage);
     show(stage, 'handen', 3, calm);
-    const held = rig.hand(1, new Vector3());
+    const held = supportingPalm(rig);
     for (const seconds of [8.2, 8.3, 8.75, 9.2]) {
       const directions = show(stage, 'handen', seconds, calm);
-      const hand = rig.hand(1, new Vector3());
+      const hand = supportingPalm(rig);
       expect(hand.distanceTo(held)).toBeLessThan(1e-6);
       expect(directions.elof!.ontoWeight).toBe(1);
-      expect(directions.elof!.onto.y).toBeCloseTo(hand.y + .1, 6);
+      expect(directions.elof!.onto.y).toBeCloseTo(hand.y + .035, 6);
     }
     let previous = held;
     for (let frame = 1; frame <= 30; frame++) {
       const directions = show(stage, 'handen', 9.2 + frame / 60, calm);
-      const hand = rig.hand(1, new Vector3());
+      const hand = supportingPalm(rig);
       expect(hand.distanceTo(previous)).toBeLessThan(.25);
-      expect(directions.elof!.onto.y).toBeCloseTo(hand.y + .1, 6);
+      expect(directions.elof!.onto.y).toBeCloseTo(hand.y + .035, 6);
       previous = hand;
     }
     expect(previous.y).toBeLessThan(held.y - 1);

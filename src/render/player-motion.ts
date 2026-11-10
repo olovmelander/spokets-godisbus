@@ -718,7 +718,7 @@ export function createPlayerStandIn() {
       materials.forEach(material => material.dispose());
     },
     hand(side: 0 | 1, out: Vector3) { return arms[side]!.elbow.localToWorld(out.copy(handTip)); },
-    mouth(out: Vector3) { return neck.localToWorld(out.set(.17, .1, 0)); },
+    mouth(out: Vector3) { return mouth.getWorldPosition(out); },
     /** His mouth open (0 shut, 1 wide) and round; the stand-in has no lids to close. */
     face(open: number, round: number, _lids: number) {
       mouth.scale.set(0.25, Math.max(1e-3, 0.5 * open), 1 - 0.35 * round);

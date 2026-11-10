@@ -38,7 +38,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
     // Mown openings let the garden buildings meet the lawn; taller grass stays between them.
     // A narrow mown margin keeps Elof and the sweets readable against the taller lawn behind him.
     const edgeHeight = z > -1.25 && z < 0.5 ? Math.min(tall, 0.45) : tall;
-    const high = chapter.id === 'garden' && gardenViewGap(x) ? Math.min(edgeHeight, 1) : edgeHeight;
+    const high = (chapter.id === 'garden' || chapter.id === 'stormgard') && gardenViewGap(x, chapter.id) ? Math.min(edgeHeight, 1) : edgeHeight;
     place.scale.set(0.06 + next() * 0.07, high, 1);
     place.updateMatrix();
     grass.setMatrixAt(n, place.matrix);
@@ -130,7 +130,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
   for (let i = 0; i < (birches ? 2 : 0); i++) {
     const x = from + next() * length;
     const z = -8 - next() * 9;
-    if (next() > 0.4 || !grows(chapter, x) || (chapter.id === 'garden' && gardenViewGap(x))) continue;
+    if (next() > 0.4 || !grows(chapter, x) || ((chapter.id === 'garden' || chapter.id === 'stormgard') && gardenViewGap(x, chapter.id))) continue;
     const radius = 0.8 + next() * 0.4;
     place.rotation.set(0, next() * 6.28, (next() - 0.5) * 0.06);
     place.position.set(x, heightAt(chapter, x) - 0.5, z);
@@ -193,7 +193,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
   }
 
   // Tall grass in the back rows and where the lawn ends, but not in the openings kept for the buildings.
-  tallGrass(grass, chapter, from, to, seed, top, clumps, [2, 3.4], 0.12, ['#6e8e48', '#879c5a', '#a7a970'], (x) => !(chapter.id === 'garden' && gardenViewGap(x)));
+  tallGrass(grass, chapter, from, to, seed, top, clumps, [2, 3.4], 0.12, ['#6e8e48', '#879c5a', '#a7a970'], (x) => !((chapter.id === 'garden' || chapter.id === 'stormgard') && gardenViewGap(x, chapter.id)));
 
   for (const mesh of [grass, dew, stalks, heads, clover, fallen, trunks]) {
     mesh.instanceMatrix.needsUpdate = true;

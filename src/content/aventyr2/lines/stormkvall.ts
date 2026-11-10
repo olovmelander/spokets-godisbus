@@ -21,6 +21,10 @@ export const words: ChapterWords = {
     skStarPlan: 'Blir jag liten kan jag hitta dem!',
     skSmall: 'Liten igen! Kom, Klonk. Vi hjälps åt.',
     skMoaSmall: 'Små kan hitta små, lillebror!',
+    skWhereElof: 'Men var tog Elof vägen?',
+    skBertilFound: 'Här nere! Elof, du är ju jätteliten igen!',
+    skTinyAnswer: 'Här är jag! Jag kan leta i små skrymslen.',
+    skTinyTogether: 'Då hjälps vi åt. Ropa när du behöver oss.',
     skTogether: 'Regnrockar på! Vi går ut med lampor.',
     skPappaLamp: 'Ropa på mig när du behöver ljus.',
     skBoots: 'Jag tar mina största stövlar!',
@@ -51,6 +55,6 @@ export const words: ChapterWords = {
   },
   moments: {
     kvall: 'Stormkvällen', fonstret: 'Fönstret slår upp', klonkstar: 'Klonks stjärna', krymper: 'Stjärnans magi',
-    tillsammans: 'Vi letar tillsammans', regnrock: 'Dockans regnrock', stormtitel: 'Äventyret börjar',
+    upptackt: 'Där är Elof!', tillsammans: 'Vi letar tillsammans', regnrock: 'Dockans regnrock', stormtitel: 'Äventyret börjar',
   },
 };

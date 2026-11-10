@@ -1,3 +1,4 @@
+import { addCollections } from '../collections';
 import type { ChapterData } from '../../sim/types';
 import { CHAPTER_IDS, RELEASED_CHAPTER, type ChapterId } from '../world';
 import { berget } from './berget';
@@ -16,6 +17,8 @@ import { testbana } from './testbana';
 export const COURSES: Record<string, ChapterData> = {
   testbana, prolog, garden, granskog, myren, berget, norrsken, epilog, byn,
 };
+
+for (const chapter of Object.values(COURSES)) addCollections(chapter);
 
 /**
  * The look-development courses (./look.ts) are a chunk of their own: only `?dev&course=look-…` asks for them, so the
@@ -52,6 +55,7 @@ const ADVENTURE2_AFTER = 'byn';
 export function addAdventure2(chapters: readonly ChapterData[]): void {
   for (const chapter of chapters) {
     if (Object.hasOwn(COURSES, chapter.id)) continue;
+    addCollections(chapter);
     COURSES[chapter.id] = chapter;
     ADVENTURE2.push(chapter);
   }

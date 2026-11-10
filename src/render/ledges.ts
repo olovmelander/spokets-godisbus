@@ -5,7 +5,7 @@ import {
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { BARK_ALONG, BARK_UP, PLANK, barkDetail, barky, notBark } from './bark-detail';
 import { LEDGE_THICK } from '../sim/constants';
-import type { Ledge, LedgeLook, PlaceId } from '../sim/types';
+import type { Ledge, LedgeLook, Mover, PlaceId } from '../sim/types';
 import { drawnWhile } from './idle';
 import { ROD_COLOUR, rodShape, type Rod } from './lines';
 
@@ -414,7 +414,7 @@ export function ledgePlaces(ledges: readonly Ledge[], rods: readonly Rod[] = [])
   return places;
 }
 
-export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [], site?: PlaceId) {
+export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [], site?: PlaceId, movers: readonly Mover[] = []) {
   const group = new Group();
   group.name = 'ledges';
   const place = new Object3D();
@@ -424,6 +424,38 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
   const solid = new MeshStandardMaterial({ vertexColors: true, roughness: 0.88 });
   // The stems and boughs among them are bark seen close (./bark-detail.ts).
   barkDetail(solid);
+  // A weighted bough is a lever that was there all along. Its left twig rises while the cone settles on its
+  // right end; unlike an ordinary revealed ledge, neither a trunk nor a platform grows out of empty air.
+  const weighted = ledges.flatMap(ledge => {
+    const motion = ledge.counterweight;
+    const index = movers.findIndex(mover => mover.id === motion?.mover);
+    const mover = movers[index];
+    if (!motion || !mover) return [];
+    const home = mover.stops[0]!, tip = mover.stops.at(-1)!;
+    const holder = new Group(); holder.name = `counterweight:${mover.id}`;
+    const twig = new Mesh(painted(LOOKS.branch.shape(site).scale(ledge.width, 1, 1), LOOKS.branch.colour), solid);
+    twig.name = 'weighted-step';
+    const lever = new Mesh(painted(barky(new CylinderGeometry(0.075, 0.12, 1, 9), BARK_UP), '#6e5238'), solid);
+    lever.name = 'weighted-bough';
+    // The two arms meet at the existing long bough, below the cone's path. The round end shows its pivot.
+    // A short loaded arm and a long lifting arm: the tapered branch stays in contact with the cone's base.
+    const rise = ledge.y - motion.fromY, drop = Math.max(0.025, motion.fromY - tip.y);
+    const pivotX = ledge.x + (tip.x - ledge.x) * rise / (rise + drop);
+    const pivot = new Mesh(painted(new CylinderGeometry(0.2, 0.2, 0.48, 10).rotateX(Math.PI / 2), '#8c7252'), solid);
+    pivot.position.set(pivotX, motion.fromY - 0.12, -0.32);
+    holder.add(twig, lever, pivot); group.add(holder);
+    const direction = new Vector3(), up = new Vector3(0, 1, 0);
+    const pose = (k: number) => {
+      const left = motion.fromY + rise * k, right = motion.fromY - drop * k;
+      twig.position.set(ledge.x, left, 0);
+      lever.position.set((ledge.x + tip.x) / 2, (left + right) / 2 - 0.05, -0.32);
+      direction.set(tip.x - ledge.x, right - left, 0);
+      lever.scale.y = direction.length();
+      lever.quaternion.setFromUnitVectors(up, direction.normalize());
+    };
+    pose(0);
+    return [{ index, home, tip, ledge, pose }];
+  });
   const waiting: { mesh: InstancedMesh; at: number[] }[] = [];
   const solids: { mesh: Mesh; always: number[]; rods: Rod[] }[] = [];
   /** A place's one shape: its ledges that are always there, each as the kit has it or as its look, and its rods. */
@@ -455,7 +487,7 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
     }
     // Those that wait for a flag grow out when it is set: instances, one mesh for each look among them.
     for (const look of LEDGE_LOOKS) {
-      const at = here.ledges.filter((i) => ledges[i]!.needs !== undefined && ledges[i]!.look === look);
+      const at = here.ledges.filter((i) => ledges[i]!.needs !== undefined && !weighted.some(weight => weight.ledge === ledges[i]) && ledges[i]!.look === look);
       if (at.length === 0) continue;
       const how = LOOKS[look];
       // Their colours are on their corners too: what holds the ledge has its own.
@@ -490,13 +522,21 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
   write();
 
   /** A ledge that waits for a flag grows out once the flag is set. Nothing is written while nothing changes. */
-  function update(flags: ReadonlySet<string>, dt: number): void {
+  function update(flags: ReadonlySet<string>, dt: number, positions: readonly { x: number; y: number }[] = []): void {
+    for (const weight of weighted) {
+      const at = positions[weight.index];
+      const k = at ? Math.min(1, Math.max(0, (at.x - weight.home.x) / (weight.tip.x - weight.home.x))) : flags.has(weight.ledge.needs!) ? 1 : 0;
+      weight.pose(k);
+    }
     let changed = false;
     for (const { at } of waiting) {
       for (const i of at) {
         const want = flags.has(ledges[i]!.needs!) ? 1 : 0;
         if (there[i] === want) continue;
-        there[i] = want > there[i]! ? Math.min(1, there[i]! + dt / GROW) : Math.max(0, there[i]! - dt / GROW);
+        // Morfar has just lowered the full ladder into this exact place. Its physical ledge takes over in
+        // the same frame; shrinking away then growing from its middle broke the landing animation.
+        there[i] = ledges[i]!.look === 'ladder' ? want
+          : want > there[i]! ? Math.min(1, there[i]! + dt / GROW) : Math.max(0, there[i]! - dt / GROW);
         changed = true;
       }
     }

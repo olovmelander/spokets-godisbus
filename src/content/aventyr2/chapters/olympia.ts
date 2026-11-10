@@ -124,7 +124,8 @@ const BENCHES = { from: 92, to: 113 };
 
 /** The flooded centre circle, and Bertil's free kick over it into the far goal (Granskog's seesaw, as a ball). */
 const CIRCLE = { from: 125, to: 146, bottom: -5, water: -0.3 };
-const KICK = { from: { x: 123.4, y: 0 }, to: { x: 149.4, y: 0 }, rise: 5, time: 3, corridor: 0.4 };
+// He arrives on top of the ball, then steps down as it rolls farther into the net: never through the turf.
+const KICK = { from: { x: 123.4, y: 0 }, to: { x: 149.4, y: 1.7 }, rise: 5, time: 3, corridor: 0.4 };
 /** The far goal: a full one, as high as sixteen Elofs, its mouth towards him where the kick comes down. */
 const FAR_GOAL = { x: 147.8, depth: 10, height: 16 };
 
@@ -332,7 +333,8 @@ export const olympia: ChapterData = {
       // The long timber stand on the far side, the forest straight behind it.
       { kind: 'stand', x: 118, z: -29, width: 44, model: 'olympia-stand' },
       { kind: 'floodlight', x: 136, z: -38, height: 90 },
-      { kind: 'goal', x: FAR_GOAL.x, z: -9, width: FAR_GOAL.depth, height: FAR_GOAL.height },
+      // The kick runs on z=0. Put that path inside the twelve-EL mouth, rather than beside its near post.
+      { kind: 'goal', x: FAR_GOAL.x, z: -4.2, width: FAR_GOAL.depth, height: FAR_GOAL.height },
       { kind: 'floodlight', x: 164, z: -28, height: 70 },
       { kind: 'birch', x: 174, z: -16, height: 60 },
       { kind: 'birch', x: 183, z: -24, height: 70 },
@@ -433,6 +435,8 @@ export const olympia: ChapterData = {
     { from: 62, to: 80, zoom: 1.35, lift: 0.4 },
     { from: 80, to: 90, zoom: 1.3, lift: 1 },
     { from: 92, to: 114, zoom: 1.25, lead: 3.2 },
+    // As he comes down, the near upright and the back net frame the scoring ball together.
+    { from: 141, to: 154, zoom: 1.3, lift: 0, lead: 2.4 },
     // The centre circle: wide, so that the far goal is in the picture before he flies.
     { from: 115, to: 153, zoom: 1.6, lift: 1.2 },
     { from: 154, to: 168, zoom: 1.25 },

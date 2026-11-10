@@ -61,7 +61,7 @@ describe('a berry for the vittra neighbours', () => {
     expect(sim.flags.has('keepsake:vittra')).toBe(true);
     const html = albumHtml([], [], ['vittra']);
     expect(html).toContain('data-keepsake="vittra"');
-    expect(html).toContain('0 av 16 sorter');
+    expect(html).toContain('0 av 24 sorter');
     expect(albumHtml([])).not.toContain('data-keepsake="vittra"');
   });
 });

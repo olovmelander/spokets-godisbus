@@ -31,6 +31,12 @@ try {
     const store = createPhotoStore(indexedDB, localStorage);
     await store.put(frame('elof', 'crane'));
     await store.put(frame('other', 'cap'));
+    await store.put(frame('mixed', 'cap'));
+    await store.put(frame('mixed', 'raft'));
+    const mixed = await store.list('mixed');
+    check('both adventures share one ordered photo album', mixed.map(photo => photo.moment).join(',') === 'cap,raft');
+    check('second-adventure photos keep the first captured frame', !await store.put(frame('mixed', 'raft', 'replacement')));
+    await store.clear('mixed');
     const oldTab = createPhotoStore(indexedDB, localStorage);
     await oldTab.list('elof'); // Bind the old player's generation before a delayed encoder finishes.
 

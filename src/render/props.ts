@@ -1,3 +1,5 @@
+import { souvenir } from './souvenir';
+import { owlTwig } from './owl-trap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
@@ -16,6 +18,7 @@ import { craneFlying, craneKneeling } from './crane';
 import { wingbeat } from './wingbeat';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
+import { streetLeaf } from './village';
 import { PACK } from './extensions';
 
 /**
@@ -64,10 +67,13 @@ function headOf(bird: Object3D): Object3D | null {
 
 /** A thing on a rail, as what it is. Its origin is the middle of its bottom, as the simulation's. Null: a plain box. */
 export function moverProp(mover: Mover): Group | null {
+  // Collision for an existing piece of scenery; its picture is supplied separately.
+  if (mover.look === 'none') return new Group();
   const w = mover.width;
   const h = mover.height;
   const group = new Group();
   switch (mover.look) {
+    case 'owl-twig': return owlTwig();
     case 'plank':
     case 'block': {
       const wood = solid(mover.look === 'plank' ? '#c9ae84' : '#d7a65e', 0.75);
@@ -699,6 +705,14 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.position.z = 0.25;
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
     }
+    case 'souvenir': {
+      const thing = souvenir(spot.id.replace('lost:', ''));
+      group.add(thing);
+      return { group, update(used, clock, dt) {
+        thing.rotation.y = Math.sin(clock * .8) * .12;
+        vanish(used, dt);
+      } };
+    }
     case 'memory': {
       // A minnesspån: a curl of Pappa's shaving that glows where the ghost has stopped. Touched, it has been seen.
       const glow = solid('#ffe6a8', 0.5, { emissive: '#ffbf4a', emissiveIntensity: 1, side: DoubleSide });
@@ -1102,17 +1116,29 @@ export function rideProp(look: RideLook): Object3D | null {
     }
     case 'leaf': {
       // A birch leaf on the water: yellow, a little cupped, with its stalk pointing back the way he came.
+      group.name = 'leaf-boat';
       const yellow = solid('#e8b63a', 0.7, { side: DoubleSide });
-      const blade = new Mesh(new SphereGeometry(0.9, 18, 8), yellow);
-      blade.scale.set(1.3, 0.07, 0.85);
-      const rib = new Mesh(new CylinderGeometry(0.03, 0.03, 2.3, 6), solid('#a9781f', 0.8));
+      // Its curled far half catches the eye above the water even in the low, tiny-player camera.
+      const blade = new Mesh(streetLeaf().scale(7.2, 18, 6.4), yellow);
+      const veins = solid('#946422', 0.8);
+      const rib = new Mesh(new CylinderGeometry(0.035, 0.035, 2.9, 6), veins);
       rib.rotation.z = Math.PI / 2;
       rib.position.y = 0.06;
-      const stalk = new Mesh(new CylinderGeometry(0.025, 0.035, 0.7, 6), solid('#a9781f', 0.8));
+      const stalk = new Mesh(new CylinderGeometry(0.025, 0.035, 0.7, 6), veins);
       stalk.rotation.z = Math.PI / 2 - 0.5;
-      stalk.position.set(-1.4, 0.2, 0);
-      group.add(blade, rib, stalk);
+      stalk.position.set(-1.7, 0.2, 0);
+      const ribs = [rib, stalk];
+      for (const side of [-1, 1]) for (const x of [-0.8, -0.2, 0.4]) {
+        const vein = new Mesh(new CylinderGeometry(0.018, 0.018, 0.8, 4), veins);
+        vein.rotation.set(Math.PI / 2, 0, -side * 0.65);
+        vein.position.set(x + 0.23, 0.08, side * 0.32);
+        ribs.push(vein);
+      }
+      const ribShapes = ribs.map(part => { part.updateMatrix(); return part.geometry.applyMatrix4(part.matrix); });
+      group.add(blade, new Mesh(mergeGeometries(ribShapes), veins));
+      for (const shape of ribShapes) shape.dispose();
       group.position.y = 0.02;
+      group.rotation.x = 0.32;
       break;
     }
     case 'crane':

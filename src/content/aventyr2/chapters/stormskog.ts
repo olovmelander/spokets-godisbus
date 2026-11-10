@@ -69,6 +69,13 @@ export const stormskog: ChapterData = {
   scenes: [
     // Where and when, as the chapter opens (src/content/chapters/cards.ts).
     timeCard('stormskog', 1),
+    {
+      id: 'ss:old-downhill', at: 182, seconds: 4.8, hold: true,
+      cues: [{ at: .8, flag: 'ss:old-appears' }], lines: [],
+      stage: { shots: [{ at: 0, x: 185.5, y: 4.6, height: 7.5, width: 11.5, move: .6 },
+        { at: 2.2, x: 189.5, y: 3.6, height: 7.5, width: 12, move: 1.1 }],
+        elof: [{ at: 0, act: 'look', aim: { x: 186, y: 4.2, z: -.6 } }] },
+    },
     // Called, Pappa finds him at the edge with his lamp. Its light falls on Klonk, who is wood at once and lies across
     // the gap; to Pappa a toy has fallen over, and Elof, thinking, sees why. The picture takes in Pappa's face.
     {
@@ -115,7 +122,7 @@ export const stormskog: ChapterData = {
       // At the forest's edge: the little one, tumbling over the treetops ahead.
       { on: 'beat:ss:flash', from: { x: 4, y: 9 }, to: { x: 26, y: 7 }, seconds: 2.6, who: 'lillgubbe' },
       // From the high root: the old one, far down the hill, hurrying on towards the village.
-      { on: 'beat:ss:see-old', from: { x: 192, y: 2.6 }, to: { x: 216, y: 0.6 }, seconds: 3.4, who: 'tragubbe' },
+      { on: 'ss:old-appears', from: { x: 186, y: hill(186) }, to: { x: 194, y: hill(194) }, seconds: 4, who: 'tragubbe', walk: true, z: -.6, size: 1.7, lit: [] },
     ],
   },
   ground: [
@@ -129,8 +136,8 @@ export const stormskog: ChapterData = {
     // A storm-felled pole across the path, between the cones and the ravine, to hop over.
     { x: 39.4, y: 0 },
     { x: 39.4, y: 0.8 },
-    { x: 41, y: 0.8 },
-    { x: 41, y: 0 },
+    { x: 44.4, y: 0.8 },
+    { x: 44.4, y: 0 },
     // 3. the ravine: down its near bank, and up its far side in two steps
     { x: 46, y: 0 },
     { x: 49, y: -2 },
@@ -180,8 +187,9 @@ export const stormskog: ChapterData = {
     { x: 212, y: 12 },
   ],
   // What two of the blocks above are, for the picture only: fallen spruces across the path.
+  treeGaps: [{ from: 69, to: 76, back: -8 }, { from: 182, to: 196, back: -8 }],
   landmarks: [
-    { look: 'log', from: 39.4, to: 41, base: 0 },
+    { look: 'log', from: 39.4, to: 44.4, base: 0 },
     { look: 'log', from: 84, to: 88, base: 0 },
     { look: 'log', from: 145.5, to: 149.5, base: 0 },
   ],
@@ -219,7 +227,7 @@ export const stormskog: ChapterData = {
     // The twig in the owl's nest hole, 2.7 over the path: out of every jump's reach, its red ring in the lace's
     // from about three EL before the trunk. Pulled, it drops into the moss at the trunk's foot, low enough to
     // walk over (as the twig on the ants' road in Äventyr 1).
-    { id: 'owl-twig', look: 'twig', width: 1.8, height: 0.5, verb: 'pull', ring: { x: -0.7, y: 0.3 }, stops: [{ x: 72.2, y: 2.7 }, { x: 71.5, y: -0.25 }] },
+    { id: 'owl-twig', look: 'owl-twig', width: 1.8, height: 0.5, verb: 'pull', seconds: 2.4, wait: .5, ring: { x: -0.7, y: 0.3, z: 1 }, stops: [{ x: 72.2, y: 3.9 }, { x: 71.5, y: -0.25 }] },
   ],
   // Ledges: the optional layers. Up a trunk each is one held jump over the last, 0.9 at most.
   ledges: [
@@ -252,7 +260,7 @@ export const stormskog: ChapterData = {
   ],
   decor: [
     // The owl in its hole, behind the twig, until it is free...
-    { look: 'owl', at: { x: 72.6, y: 2.8 }, until: 'placed:owl-twig' },
+    { look: 'owl', at: { x: 72.6, y: 2.8 }, z: -.1, until: 'placed:owl-twig' },
     // ...and at the widest gap's edge, waiting for him, until it flies.
     { look: 'owl', at: { x: 110.3, y: 0 }, after: 'placed:owl-twig', until: 'owl' },
   ],
@@ -287,7 +295,7 @@ export const stormskog: ChapterData = {
     { at: { x: 31.2, y: 0 } },
     { at: { x: 36, y: 0 } },
     { at: { x: 40, y: 0.8 } },
-    { at: { x: 42, y: 0 } },
+    { at: { x: 42, y: 0.8 } },
     { at: { x: 52.5, y: -2 } },
     { at: { x: 60.5, y: 0 } },
     { at: { x: 66, y: 0 } },
@@ -345,7 +353,7 @@ export const stormskog: ChapterData = {
     { id: 'ss:jay', at: 165, until: 'jay', who: 'elof', line: 'ssJaySeen' },
     { id: 'ss:jay-glad', on: 'jay', who: 'elof', line: 'ssJayGlad' },
     // 9. the hill down to the dark village
-    { id: 'ss:see-old', at: 182, who: 'elof', line: 'ssSeeOld' },
+    { id: 'ss:see-old', on: 'ss:old-appears', who: 'elof', line: 'ssSeeOld', read: true },
     { id: 'ss:village', at: 190, who: 'elof', line: 'ssVillage' },
     { id: 'ss:onward', at: 199, who: 'spoket', line: 'ssOnward' },
   ],
@@ -358,8 +366,8 @@ export const stormskog: ChapterData = {
     // The cone rain: the shadows on the ground and the boughs they fall from.
     { from: 14, to: 36, zoom: 1.25, lead: 3.2 },
     { from: 40, to: 62, zoom: 1.3, lift: 0.3 },
-    // The owl's hole is in the picture from the path.
-    { from: 63, to: 77, zoom: 1.3, lift: 0.9 },
+    // Fit the entire owl and its crossbar above Elof, including on a phone held sideways.
+    { from: 63, to: 77, zoom: 1.55, lift: 1.3 },
     // The flight, and the far rim it lands on.
     { from: 105, to: 126, zoom: 1.5, lift: 0.9, lead: 3.4 },
     { from: 125, to: 143, zoom: 1.35, lift: 0.4 },
@@ -380,7 +388,7 @@ export const stormskog: ChapterData = {
     // 3. to the ravine, down its bank, along its floor and up its far side
     ...row(35.5, 37.5, 0),
     { x: 40.2, y: 1.25 },
-    ...row(41.5, 45.5, 0),
+    ...row(41.5, 45.5, 0).map(c => c.x < 44.4 ? { ...c, y: 1.25 } : c),
     ...slopeRow(46.8, 48.8, 46, 0, 49, -2),
     ...row(50.6, 54.6, -2),
     ...hopUp(56.2, -1),

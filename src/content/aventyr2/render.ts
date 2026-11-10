@@ -9,6 +9,7 @@ import { PLACES } from '../../render/dressing';
 import { heightAt, type PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
 import { roomThings } from '../../render/home-room';
+import { littleCarving } from '../../render/little-carving';
 import { glowTexture } from '../../render/glow';
 import { wingbeat } from '../../render/wingbeat';
 import { kitLife } from '../../render/kit-life';
@@ -29,6 +30,8 @@ import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { morgonen } from './chapters/morgonen';
+import { openWaterAt } from '../../render/water';
+import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -280,8 +283,6 @@ const DIM: Record<string, number> = { stormkvall: 0.34, stormgard: 0.42, stormsk
 
 const RAIN_MAX = 420;
 const RAIN_FOR = { low: 150, mid: 290, high: RAIN_MAX } as const;
-/** The box of rain round the camera: how wide, how tall, and from how far behind the play plane to how near. */
-const BOX = { x: 34, y: 22, back: -8, front: 4 };
 /** How near the play plane the camera comes in play, at the least: nearer than this, the box goes with it. */
 const RAIN_OUT = 6;
 
@@ -458,13 +459,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   // 6 November 2026: they were flat bars of one brightness), and each falls at its own length.
   const streak = new Uint8Array(4 * 32);
   for (let k = 0; k < 32; k++) {
-    const along = k / 31;
-    streak.set([255, 255, 255, Math.round(255 * Math.pow(along, 1.6) * (1 - Math.pow(along, 14)))], k * 4);
+    streak.set([255, 255, 255, Math.round(255 * rainStreakAlpha(k / 31))], k * 4);
   }
   const streakMap = new DataTexture(streak, 1, 32);
   streakMap.magFilter = streakMap.minFilter = LinearFilter;
   streakMap.needsUpdate = true;
   const drops = new InstancedMesh(new PlaneGeometry(0.024, 0.95), new MeshBasicMaterial({ color: '#d8e3ff', map: streakMap, transparent: true, opacity: 0.3, depthWrite: false, fog: false }), RAIN_MAX);
+  drops.name = 'storm-rain-drops';
   drops.instanceMatrix.setUsage(DynamicDrawUsage);
   drops.frustumCulled = false;
   drops.renderOrder = 4;
@@ -475,6 +476,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const LANDINGS = 36;
   const landings = new InstancedMesh(new RingGeometry(0.05, 0.075, 16).rotateX(-Math.PI / 2),
     new MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }), LANDINGS);
+  landings.name = 'storm-rain-landings';
   landings.instanceMatrix.setUsage(DynamicDrawUsage);
   landings.instanceColor = new InstancedBufferAttribute(new Float32Array(LANDINGS * 3), 3);
   landings.instanceColor.setUsage(DynamicDrawUsage);
@@ -482,6 +484,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   landings.renderOrder = 4;
   landings.userData.rich = true;
   const landingSeeds = Array.from({ length: LANDINGS }, () => ({ x: random() * 16 - 8, z: -1.6 + random() * 2.4, phase: random(), every: 0.5 + random() * 0.6 }));
+  const landingAnchors: (LandingAnchor | undefined)[] = [];
   if (rain > 0) group.add(landings);
   const landingTint = new Color();
   // Rain on the still water of a ground's puddles (Olympia's flooded goalmouth and centre circle): rings that open and
@@ -501,8 +504,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   })));
   if (puddles.length) group.add(puddleRings);
   const place = new Object3D();
-  const SLANT = 0.32;
-  place.rotation.z = -SLANT * 0.6;
+  place.rotation.z = RAIN_ANGLE;
 
   // Lightning: a bolt far behind, the sky and the lights brightening with it.
   const bolts = [bolt(3), bolt(11)];
@@ -537,7 +539,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
     let halo: Mesh | null = null;
     if (lit) {
-      figure.position.y = -FIGURE_MIDDLE[def.who];
+      if (!def.walk) figure.position.y = -FIGURE_MIDDLE[def.who];
       halo = glow('#dde4ff', 2.4, 0);
       halo.position.z = -0.3;
       holder.add(halo);
@@ -905,7 +907,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       // out with it, still falling in front of it.
       const cz = Math.min(0, camera.position.z - RAIN_OUT);
 
-      // The rain falls through its box and starts again at the top; the box goes with the camera.
+      // The camera chooses the visible part of a world field. Drops inside it never follow camera motion.
       const count = rain > 0 ? Math.round(RAIN_FOR[tier] * rain * (1 - calm)) : 0;
       drops.count = count;
       drawnWhile(drops, count > 0);
@@ -913,9 +915,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const t = still ? 0 : clock;
         for (let i = 0; i < count; i++) {
           const s = seeds[i]!;
-          const fall = (s.y + t * s.speed) % BOX.y;
-          const x = ((s.x + fall * SLANT - cx) % BOX.x + BOX.x) % BOX.x;
-          place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z + cz);
+          const at = rainDropAt(s, t, cx, cy);
+          place.position.set(at.x, at.y, s.z + cz);
           // No rain falls indoors: only out of doors, beyond the house's corner.
           const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
           place.scale.set(out, out * s.long, out);
@@ -925,19 +926,19 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         drops.instanceMatrix.needsUpdate = true;
         (drops.material as MeshBasicMaterial).opacity = 0.42 * (1 - calm) * (0.6 + 0.4 * rain);
       }
-      // The landings: each opens over a short while, fades, and lands again somewhere else near him.
+      // An impact remains at its birth point for its whole expanding/fading life, even as Elof walks.
       const landing = rain > 0 && count > 0 && tier !== 'low';
       drawnWhile(landings, landing);
       if (landing) {
         const t = still ? 0 : clock;
         for (let i = 0; i < LANDINGS; i++) {
           const s = landingSeeds[i]!;
-          const round = (t / s.every + s.phase);
-          const k = round - Math.floor(round);
-          const where = Math.floor(round) * 7.31 + i * 3.7;
-          const x = cx + s.x + Math.sin(where) * 2.5;
+          const at = rainLandingAt(s, i, t, cx, landingAnchors[i]);
+          landingAnchors[i] = at;
+          const { x, age: k } = at;
           const out = chapter.outdoors !== undefined && x < chapter.outdoors;
-          place.position.set(x, heightAt(chapter, x) + 0.02, s.z + Math.cos(where) * 0.4);
+          const ground = heightAt(chapter, x), water = openWaterAt(chapter, x);
+          place.position.set(x, Math.max(ground, water ?? ground) + 0.02, at.z);
           place.rotation.set(0, 0, 0);
           place.scale.setScalar(out ? 0 : 0.8 + k * 3.2);
           place.updateMatrix();
@@ -945,7 +946,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const light = (1 - k) * (1 - k) * 0.9 * (1 - calm) * rain;
           landings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
         }
-        place.rotation.set(0, 0, -SLANT * 0.6);
+        place.rotation.set(0, 0, RAIN_ANGLE);
         landings.instanceMatrix.needsUpdate = true;
         landings.instanceColor!.needsUpdate = true;
       }
@@ -966,7 +967,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const light = (1 - k) * (1 - k) * 0.8 * (1 - calm) * rain;
           puddleRings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
         }
-        place.rotation.set(0, 0, -SLANT * 0.6);
+        place.rotation.set(0, 0, RAIN_ANGLE);
         puddleRings.instanceMatrix.needsUpdate = true;
         puddleRings.instanceColor!.needsUpdate = true;
       }
@@ -1045,7 +1046,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const floating = afloat(f.def);
         const at = flightAt(f.def, k);
         f.figure.position.set(at.x, at.y + (floating ? 0.12 * Math.sin(clock * 3) : 0), at.z);
-        f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
+        f.figure.rotation.z = f.def.walk ? (still ? 0 : Math.sin(clock * 9) * .065) : still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
         // Its glow comes up as the flash finds it, breathes with each flash, and goes as it is lost in the dark.
         if (f.halo) (f.halo.material as MeshBasicMaterial).opacity = (0.42 + 0.5 * flash) * smooth(k / 0.06) * (1 - smooth((k - 0.82) / 0.18));
       }
@@ -1246,23 +1247,7 @@ function oldFigure(silhouette = false): Group {
 
 /** Elof's own first carving: pale linden, round and small, with the two eyes he painted. Its cap is lost in the storm. */
 function littleFigure(silhouette = false): Group {
-  const group = new Group();
-  const wood = silhouette ? solid('#4a4640', 1, { emissive: '#3a4260', emissiveIntensity: 0.7 }) : solid('#e6cfa2', 0.9);
-  const dark = solid('#2c2420', 0.6);
-  const body = new Mesh(new CylinderGeometry(0.1, 0.14, 0.3, 9), wood);
-  body.position.y = 0.15;
-  group.add(body, ball(0.12, wood, 0, 0.4));
-  for (const x of [-0.045, 0.045]) group.add(ball(0.02, dark, x, 0.42, 0.11));
-  // The knife's marks: three facets, a little crooked, as a first carving's are.
-  for (const [y, turn] of [[0.08, 0.3], [0.2, -0.4]] as const) {
-    const cut = new Mesh(new BoxGeometry(0.2, 0.012, 0.012), solid('#c9b07e', 1));
-    cut.position.set(0, y, 0.135);
-    cut.rotation.z = turn;
-    group.add(cut);
-  }
-  group.name = 'little-trägubbe';
-  if (!silhouette) group.userData.model = 'lillgubbe';
-  return group;
+  return littleCarving(silhouette);
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
@@ -2641,6 +2626,7 @@ function waterSplash(size: number) {
   const white = new MeshBasicMaterial({ color: '#e4edf2', transparent: true, opacity: 0, depthWrite: false });
   // The drops: one draw for them all.
   const drops = new InstancedMesh(new SphereGeometry(0.055 * size, 6, 4), white.clone(), 12);
+  drops.name = 'storm-rain-drops';
   drops.instanceMatrix.setUsage(DynamicDrawUsage);
   drops.frustumCulled = false;
   group.add(drops);
@@ -2919,7 +2905,7 @@ function barkRaft(mover: Mover): Group {
 const TIPPED = -0.16;
 
 /** The barn door at the top of the planks in Billsta: how wide and tall it is drawn, and where it hangs, behind the path. */
-const BARN_DOOR = { wide: 2.4, tall: 5.4, back: -1.6, thick: 0.18, swing: 1.62 };
+const BARN_DOOR = { wide: 2.4, tall: 5.4, back: -1.6, thick: 0.18, swing: -1.62 };
 
 /**
  * The loft door of mormor's barn, at the top of the planks up to it (Billsta; Olov, 9 November 2026: "Mormor ska gå fram
@@ -2950,9 +2936,17 @@ function barnDoor(mover: Mover): Group {
     if (i > 0) frame.push(box(0.2, wall.top, 0.09, 0.02, wall.top / 2, z + (wall.from - wall.to) / boards / 2, '#6e251d'));
   }
   frame.push(box(0.16, wall.top - tall - 0.33, wide + 0.6, -0.02, (wall.top + tall + 0.33) / 2, back + wide / 2, RED[2]!));
+  // An overhanging eave and the loft's small window join the door to a barn front, not a freestanding panel.
+  frame.push(box(1.05, 0.18, front - wall.to + 0.7, 0, wall.top + 0.1, (front + wall.to) / 2, '#464640'));
+  const windowZ = (wall.to + wall.from) / 2;
+  frame.push(box(0.2, 1.25, 1.35, 0, 3.6, windowZ, WHITE));
+  frame.push(box(0.23, 1.01, 1.11, 0, 3.6, windowZ, '#b8a46b'));
+  frame.push(box(0.25, 1.05, 0.08, 0, 3.6, windowZ, WHITE));
+  frame.push(box(0.25, 0.08, 1.15, 0, 3.6, windowZ, WHITE));
   const frameMaterial = solid('#ffffff', 0.85, { vertexColors: true });
   paintedWood(frameMaterial);
   const frameMesh = new Mesh(mergeGeometries(frame), frameMaterial);
+  frameMesh.name = 'barn-door-frame';
   frameMesh.castShadow = true;
   // The door, on its hinges at its back edge: upright boards, a white frame on its face, the white Z of its braces.
   const leaf: BufferGeometry[] = [];
@@ -2977,12 +2971,16 @@ function barnDoor(mover: Mover): Group {
   const leafMaterial = solid('#ffffff', 0.85, { vertexColors: true });
   paintedWood(leafMaterial);
   const leafMesh = new Mesh(mergeGeometries(leaf), leafMaterial);
+  leafMesh.name = 'barn-door-leaf';
   leafMesh.castShadow = true;
   const hinge = new Group();
   hinge.name = 'barn-door-hinge';
   hinge.position.z = back;
   hinge.add(leafMesh);
   const held = new Group();
+  // The old YZ plane showed only its narrow edge from the game's camera. The facade faces the yard;
+  // its right hinge opens away into the loft and Mormor reaches its free edge from the planks.
+  held.rotation.y = -Math.PI / 2;
   held.add(frameMesh, hinge);
   const group = new Group();
   group.add(held);

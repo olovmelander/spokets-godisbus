@@ -89,6 +89,9 @@ async function open(start, width, height, tier, gentle = false) {
       opacity: card.material.opacity, at: card.position.toArray(), corners: f.corners(card), uv: card.material.map.offset.x,
       texturesVersion: card.material.map.version, hint: f.hintFor(sim, chapter),
       atlas: [card.material.map.image.width, card.material.map.image.height],
+      tile: [card.material.map.image.width * card.material.map.repeat.x, card.material.map.image.height],
+      illustrations: card.userData.illustrations,
+      illustration: card.userData.illustrations[Math.round(card.material.map.offset.x / card.material.map.repeat.x)],
       heavy: f.projected(sim.movers.find((m) => m.def.id === 'cone').x, -7),
       ghosts: scene.children.filter((object) => object.name === 'chase-ghost').length,
       sim: JSON.stringify({ curr: sim.curr, flags: [...sim.flags], ghost: sim.ghost, placed: sim.placed }) });
@@ -144,7 +147,8 @@ try {
     const name = `door-return-${width}x${height}-${tier}`;
     if (filter && !name.includes(filter)) continue;
     const { page, errors, initial } = await open({ checkpoint: 3, flags: ['berry', 'jay', 'antlift', 'vittra:berry'], placed: ['twig'] }, width, height, tier);
-    check(`${name}: no clue before a real gift and revisit`, initial.opacity === 0 && initial.atlas[0] === 512 && initial.atlas[1] === 192);
+    check(`${name}: no clue before a real gift and revisit`, initial.opacity === 0 && !initial.flags.includes('keepsake:vittra'));
+    check(`${name}: authored pictures use bounded 512×384 tiles prepared before discovery`, initial.tile[0] === 512 && initial.tile[1] === 384 && initial.atlas[0] === initial.tile[0] * initial.illustrations.length && initial.illustrations.length === 2);
     const below = await page.evaluate(() => {
       const p = window.probe; p.walkTo(64.4); p.step({ act: true }); p.run(1);
       p.walkTo(65.8); p.step({ act: true }); p.run(3); p.draw(0.25);
@@ -163,25 +167,29 @@ try {
       const before = p.snapshot(); for (let i = 0; i < 10; i++) p.draw(0);
       const paused = p.snapshot();
       p.run(0.2); for (let i = 0; i < 10; i++) p.draw(0.1);
-      // Inspect the displayed tile, not an assumed slot or atlas resolution. The silhouette now uses
-      // darker ink, while eyes, the pine and mountain colours belong only to later story pictures.
+      // Inspect the displayed doorway illustration, not the old silhouette's exact palette.
+      // Artwork fidelity is covered by story-illustrations; here the earned card must contain
+      // painted content and remain distinct from the still-unrevealed mountain picture.
       const map = p.card.material.map, canvas = map.image;
       const width = Math.round(canvas.width * map.repeat.x), height = canvas.height;
       const pixels = canvas.getContext('2d').getImageData(Math.round(canvas.width * map.offset.x), 0, width, height).data;
-      const symbols = { paper: 0, figure: 0, eyes: 0, pine: 0, mountain: 0, area: width * height };
+      const mountainSlot = p.card.userData.illustrations.indexOf('mountain');
+      const mountain = canvas.getContext('2d').getImageData(mountainSlot * width, 0, width, height).data;
+      const paint = { opaque: 0, different: 0, colours: 0, area: width * height }, colours = new Set();
       for (let i = 0; i < pixels.length; i += 4) {
-        if (pixels[i] === 255 && pixels[i+1] === 246 && pixels[i+2] === 226) symbols.paper++;
-        if (pixels[i] === 117 && pixels[i+1] === 99 && pixels[i+2] === 79) symbols.figure++;
-        if (pixels[i] === 93 && pixels[i+1] === 90 && pixels[i+2] === 83) symbols.eyes++;
-        if (pixels[i] === 95 && pixels[i+1] === 109 && pixels[i+2] === 87) symbols.pine++;
-        if (pixels[i] === 139 && pixels[i+1] === 129 && pixels[i+2] === 114) symbols.mountain++;
+        if (pixels[i+3] > 240) {
+          paint.opaque++;
+          colours.add(`${pixels[i] >> 4},${pixels[i+1] >> 4},${pixels[i+2] >> 4}`);
+        }
+        if (Math.max(...[0,1,2,3].map(channel => Math.abs(pixels[i+channel] - mountain[i+channel]))) > 20) paint.different++;
       }
-      return { before, paused, returned: p.snapshot(), symbols };
+      paint.colours = colours.size;
+      return { before, paused, returned: p.snapshot(), paint };
     });
     const { returned } = arrival;
     check(`${name}: pausing a newly discovered picture freezes its entrance and clock`, arrival.before.opacity > 0 && arrival.before.opacity < 0.9 && arrival.before.opacity === arrival.paused.opacity && arrival.before.sim === arrival.paused.sim && JSON.stringify(arrival.before.at) === JSON.stringify(arrival.paused.at));
-    check(`${name}: folded-paper clue contains only a small silhouette, without eyes or later mountain clues (${JSON.stringify(arrival.symbols)})`, arrival.symbols.paper / arrival.symbols.area > 0.3 && arrival.symbols.figure / arrival.symbols.area > 0.05 && arrival.symbols.eyes === 0 && arrival.symbols.pine === 0 && arrival.symbols.mountain === 0);
-    check(`${name}: actual climb back reveals the persisted vittra picture beside the keepsake`, returned.flags.includes('keepsake:vittra') && returned.flags.includes('beat:vittra-clue') && returned.opacity > 0.9 && returned.uv === 0.5);
+    check(`${name}: earned doorway picture is painted and distinct from the unrevealed mountain (${JSON.stringify(arrival.paint)})`, returned.illustration === 'vittror' && arrival.paint.opaque / arrival.paint.area > 0.65 && arrival.paint.different / arrival.paint.area > 0.2 && arrival.paint.colours > 24);
+    check(`${name}: actual climb back reveals the persisted vittra picture beside the keepsake`, returned.flags.includes('keepsake:vittra') && returned.flags.includes('beat:vittra-clue') && returned.opacity > 0.9 && returned.illustration === 'vittror');
     check(`${name}: actual ghost remains at its next lower perch, with one chase mesh`, returned.ghost.perch === 9 && Math.abs(returned.ghost.x - 76) < 0.1 && returned.ghost.y < 0.1 && returned.ghosts === 1);
     check(`${name}: card stays legible inside portrait/landscape framing`, returned.corners.every((point) => Math.abs(point[0]) <= 0.99 && Math.abs(point[1]) <= 0.99));
     check(`${name}: atlas/card stay bounded and all shaders were warmed early`, returned.programs === initial.programs && returned.textures === initial.textures && returned.texturesVersion === initial.texturesVersion && returned.drawCalls <= 125);

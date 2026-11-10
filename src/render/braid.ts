@@ -7,8 +7,8 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 /**
  * Mamma's braid on Myren, which he climbs (the graphics pass of 6 November 2026; Olov: "I äventyr ett så klättrar
  * Elof på mammas hår, det kan vi göra snyggare"). It was a brown rod. Now it is a braid: three blonde strands
- * plaited over and under each other, thinning towards its end, a red hair tie and a soft tuft below it. It comes
- * from her hand, which she holds up high (family-motion.ts, purpose 'braid'), over the edge, and hangs straight
+ * plaited over and under each other, thinning towards its end, a red hair tie and a soft tuft below it. It
+ * continues the model's own short plait, over the edge, and hangs straight
  * down the line he climbs. Let down, it unrolls, eases to its length and swings out the last of its fall; then it
  * stirs a little, as hair does.
  */
@@ -61,10 +61,30 @@ function plait(length: number): BufferGeometry {
   return mergeGeometries(strands);
 }
 
+/** The section over the edge has the same woven strands as the hanging section. */
+function overPlait(curve: CatmullRomCurve3): BufferGeometry {
+  const length = curve.getLength(), parts: BufferGeometry[] = [];
+  for (let k = 0; k < 3; k++) {
+    const points: Vector3[] = [];
+    for (let i = 0; i <= 32; i++) {
+      const t = i / 32, at = curve.getPoint(t), tangent = curve.getTangent(t);
+      const normal = new Vector3(0, 0, 1).cross(tangent).normalize();
+      const binormal = tangent.clone().cross(normal).normalize();
+      const phase = t * length * Math.PI * 2 / ROUND + k * Math.PI * 2 / 3;
+      at.addScaledVector(normal, Math.sin(phase) * WIDE).addScaledVector(binormal, Math.sin(2 * phase) * WIDE * .55);
+      points.push(at);
+    }
+    parts.push(coloured(new TubeGeometry(new CatmullRomCurve3(points), 64, .047, 7, false), BLONDE[k]!, .12));
+  }
+  const merged = mergeGeometries(parts); for (const part of parts) part.dispose(); return merged;
+}
+
 export interface Braid {
   group: Group;
   /** `down` is how far it is let down, 0 to 1. */
   update(down: number, clock: number, dt: number, still: boolean): void;
+  /** Continues the short plait on her own head; the point follows the same bone as its tip. */
+  attach(tip: Vector3): void;
 }
 
 export function buildBraid(x: number, bottom: number, top: number): Braid {
@@ -87,8 +107,17 @@ export function buildBraid(x: number, bottom: number, top: number): Braid {
   hanging.add(new Mesh(mergeGeometries([plait(length - 0.36), tie, tuft]), material));
   group.add(hanging);
   let swing = 0, swingVelocity = 0, was = 0;
+  const attached = new Vector3(Infinity, Infinity, Infinity);
   return {
     group,
+    attach(tip) {
+      if (tip.distanceToSquared(attached) < .000025) return;
+      attached.copy(tip);
+      const bend = tip.clone().lerp(edge, .45); bend.y -= .12;
+      const curve = new CatmullRomCurve3([tip, bend, edge]);
+      head.geometry.dispose();
+      head.geometry = overPlait(curve);
+    },
     update(down, clock, dt, still) {
       // It unrolls with its weight: quickly, slowing to its length.
       const eased = 1 - (1 - down) ** 3;

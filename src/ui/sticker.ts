@@ -1,3 +1,4 @@
+import { stormSticker } from '../content/storm-sweets';
 import { KINDS } from '../content/kinds';
 
 /**
@@ -14,6 +15,8 @@ export const STICKER_SHEET = { across: 6, down: 3 };
 export function stickerStyle(kind: string): string {
   const look = KINDS[kind];
   if (!look) return '';
+  const picture = stormSticker(kind);
+  if (picture) return `--colour:${look.colour};--mark:${look.mark};--sx:0;--sy:0;--sheet-size:100% 100%;--sticker:url('data:image/svg+xml,${encodeURIComponent(picture).replaceAll("'", '%27')}')`;
   const at = Object.keys(KINDS).indexOf(kind);
   return `--colour:${look.colour};--mark:${look.mark};--sx:${at % STICKER_SHEET.across};--sy:${Math.floor(at / STICKER_SHEET.across)}`;
 }

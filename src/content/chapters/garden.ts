@@ -95,7 +95,19 @@ export const garden: ChapterData = {
   landmarks: [{ look: 'stone', from: 101, to: 105, base: 0 }],
   spawn: { x: 1, y: 6.01 },
   // Where and when, as the chapter opens (./cards.ts).
-  scenes: [timeCard('garden', 1)],
+  scenes: [timeCard('garden', 1), {
+    // The call comes after the seven-second flight, with his feet on the grass. Moa is still back at
+    // the hedge: her voice carries, while the picture stays with Elof on the grass.
+    id: 'landat', on: 'plane:board', from: 205.8, before: 211, seconds: 1.5, hold: true,
+    lines: [
+      { at: .2, who: 'moa', line: 'gardenLandedMoa' },
+      { at: .9, who: 'elof', line: 'gardenLandedElof' },
+    ],
+    stage: {
+      shots: [{ at: 0, x: 206, y: 1.1, height: 4.2, width: 5.5, move: .6 }],
+      elof: [{ at: 0, face: .5, act: 'wave', aim: { x: 166, y: 3, z: 0 } }],
+    },
+  }],
   goalX: 210,
   // For the picture only (content/life.ts): on the morning's first stretch a roe deer comes out on the neighbours'
   // meadow beyond the hedge, stops and looks this way; geese cross the sky in a V where the lawn opens after the

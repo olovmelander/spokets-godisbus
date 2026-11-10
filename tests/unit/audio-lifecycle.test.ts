@@ -76,7 +76,7 @@ describe('audio pause lifecycle', () => {
     expect(ambience!.gain.target).toBeCloseTo(0.6);
   });
 
-  it.each(['bird', 'blink', 'paper', 'taste', 'swell', 'poff', 'breath'] as const)('cancels the opening %s sound on pause and never plays it muted or hidden', sound => {
+  it.each(['bird', 'blink', 'paper', 'taste', 'swell', 'poff', 'breath', 'wind'] as const)('cancels the opening %s sound on pause and never plays it muted or hidden', sound => {
     vi.stubGlobal('window', { AudioContext: Context });
     const audio = createAudio();
     const cue = { kind: 'story', sound } as const;

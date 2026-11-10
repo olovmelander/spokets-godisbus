@@ -1,3 +1,4 @@
+import { STORM_SWEETS } from '../../src/content/storm-sweets';
 import { readFileSync } from 'node:fs';
 import { BoxGeometry, BufferGeometry, Color, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
@@ -37,13 +38,13 @@ function drawn(group: Group): { size: number; x: number }[] {
 describe('the candy kit from Blender', () => {
   it('has a sweet for everything the game asks it for', () => {
     for (const shape of TRAIL_SHAPES) expect(built, shape).toContain(shape);
-    for (const kind of Object.keys(KINDS)) expect(built, kind).toContain(kind);
+    for (const kind of Object.keys(KINDS).filter(kind => !STORM_SWEETS[kind])) expect(built, kind).toContain(kind);
     for (const other of ['burk', 'guldhallon', 'lysklubba', 'stjarna', 'lordagspase', 'reva']) expect(built, other).toContain(other);
     expect(new Set(built).size).toBe(built.length);
   });
 
   it('paints every hidden kind in the colours its sticker has', () => {
-    for (const [kind, { colour, mark }] of Object.entries(KINDS)) {
+    for (const [kind, { colour, mark }] of Object.entries(KINDS).filter(([kind]) => !STORM_SWEETS[kind])) {
       expect(generator, `${kind} ${colour}`).toContain(`'${colour}'`);
       expect(generator, `${kind} ${mark}`).toContain(`'${mark}'`);
     }

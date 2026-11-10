@@ -19,7 +19,8 @@ import { DOLL_Z, TAKE } from '../../../render/elof-coat';
  * 5. **Klonks stjärna** (a held scene): Pappa shuts the window and Mamma looks out after them, so no grown-up sees
  *    the shelf. Klonk wakes, hops down to Elof's feet and opens its carved bag: one star left, and it rises out of
  *    the bag. It is nowhere to be seen before (`Spot.after`). *Smaka på stjärnan*: POFF.
- * 6. **Vi letar tillsammans:** the family pull on raincoats and take their lamps. A candy lies on the floor, then
+ * 6. **Vi letar tillsammans:** Moa misses Elof; Bertil finds him tiny on the floor. Once they have
+ *    reacted and promised to help, the family pull on raincoats and take their lamps. A candy lies on the floor, then
  *    another: the old trägubbe's trail. Tiny, he crosses the giant room, the door sill and the veranda. The trail
  *    is laid only now, its big candies too (`Checkpoint.after`): nothing lies on the floor before the gust.
  *    None of their raincoats fits him now; at the foot of the toy shelf a doll sits in a small yellow one. *Ta
@@ -95,10 +96,10 @@ const SCENES: SceneDef[] = [
           { at: 3.4, act: 'stand' },
         ],
         pappa: [{ at: 0, ...PAPPA, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW }, { at: 3.6, act: 'shrug' }],
-        // He points at the window that creaks, then turns back to the room as Elof answers him.
+        // He looks at the creaking window with relaxed arms, then turns back as Elof answers.
         bertil: [
-          { at: 0, ...BERTIL, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW },
-          { at: 5.6, act: 'point', aim: WINDOW },
+          { at: 0, ...BERTIL, y: 0, face: 0.7, move: 0.01, act: 'stand', aim: WINDOW },
+          { at: 5.6, act: 'look', aim: WINDOW },
           { at: 7.6, face: 0.4, act: 'look', aim: { x: 2.6, y: 2.6, z: 0 } },
         ],
         moa: [{ at: 0, ...MOA, y: 0, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
@@ -116,7 +117,7 @@ const SCENES: SceneDef[] = [
     seconds: 12.4,
     hold: true,
     cues: [{ at: 1.4, flag: 'gust' }],
-    sounds: [{ at: 1.2, sound: 'swell' }, { at: 3.6, sound: 'breath' }],
+    sounds: [{ at: 1.4, sound: 'wind' }, { at: 5.6, sound: 'wind' }, { at: 9.2, sound: 'wind' }],
     lines: [
       { at: 0.3, who: 'elof', line: 'skGoodnightLine' },
       { at: 2.6, who: 'moa', line: 'skWindow' },
@@ -132,6 +133,7 @@ const SCENES: SceneDef[] = [
         { at: 4.2, x: 7.2, y: 3.6, height: 7, width: 11, move: 1.2 },
       ],
       fx: [
+        { at: 1.4, kind: 'wind', from: WINDOW, to: { x: 3.6, y: 2.0, z: -0.8 }, seconds: 11 },
         { at: 1.3, kind: 'stream', from: { x: OLD.x, y: OLD.y + 0.5, z: OLD.z }, to: { x: WINDOW.x + 2, y: WINDOW.y + 1.4, z: WINDOW.z }, seconds: 1.8 },
         { at: 1.4, kind: 'sparkle', from: { x: WINDOW.x, y: WINDOW.y, z: WINDOW.z + 0.3 }, seconds: 1.4 },
       ],
@@ -171,14 +173,15 @@ const SCENES: SceneDef[] = [
         { at: 3.0, x: STAR + 0.4, y: 1.5, height: 4.6, width: 6.6, move: 1.4 },
       ],
       fx: [
+        { at: 0, kind: 'wind', from: WINDOW, to: { x: 3.6, y: 2.0, z: -0.8 }, seconds: 2.0 },
         { at: 4.4, kind: 'sparkle', from: { x: KLONK.x - 0.3, y: 0.6, z: 0.2 }, seconds: 1.6 },
         { at: 4.6, kind: 'glow', from: { x: STAR, y: STAR_Y + 0.55, z: 0.1 }, seconds: 3.8 },
       ],
       actors: {
         pappa: [{ at: 0.2, x: WINDOW.x, y: 0, z: -7.2, face: 0.75, move: 1.2, act: 'reach', aim: WINDOW }],
         mamma: [{ at: 0.5, x: WINDOW.x + 1.8, y: 0, z: -6.8, face: 0.75, move: 1.3, act: 'look', aim: { x: WINDOW.x + 0.6, y: WINDOW.y - 0.4, z: WINDOW.z - 1 } }],
-        bertil: [{ at: 0.6, act: 'look', aim: WINDOW }],
-        moa: [{ at: 0.8, act: 'look', aim: WINDOW }],
+        bertil: [{ at: 0.6, face: 0.75, act: 'look', aim: WINDOW }],
+        moa: [{ at: 0.8, face: 0.75, act: 'look', aim: WINDOW }],
         ghost: [
           { at: 0, ...KLONK_SHELF, face: 0.25, move: 0.01, act: 'peek' },
           // A look at Elof: the grown-ups have turned away.
@@ -201,13 +204,12 @@ const SCENES: SceneDef[] = [
     id: 'krymper',
     resumeAt: { x: STAR, y: 0 },
     on: 'star',
-    seconds: 10.4,
+    seconds: 7.8,
     hold: true,
     soundQuiet: [1.6, 7],
     sounds: [{ at: 2.4, sound: 'taste' }, { at: 3.3, sound: 'swell' }, { at: 3.7, sound: 'poff' }, { at: 6.2, sound: 'breath' }],
     lines: [
       { at: 6.8, who: 'elof', line: 'skSmall' },
-      { at: 8.6, who: 'moa', line: 'skMoaSmall' },
     ],
     stage: {
       // The star he took from Klonk is in his hand, and at his lips, as in the first adventure's POFF.
@@ -215,23 +217,14 @@ const SCENES: SceneDef[] = [
       shots: [
         { at: 0, x: STAR, y: 1.4, height: 4.6, width: 5.2, move: 0.8 },
         { at: 3.4, x: STAR, y: 0.2, height: 3.2, width: 4.2, eye: -0.1, move: 2.6 },
-        { at: 7.6, x: STAR + 1, y: 1.4, height: 6.4, width: 9, eye: -1.2, move: 1.2 },
       ],
       actors: {
-        // The POFF turns them round from the window, and they come to kneel round him, at a walk: each kneels as
-        // they arrive.
-        mamma: [{ at: 3.8, face: 0.3, act: 'gasp' }, { at: 4.0, x: STAR - 1.6, y: 0, z: -1.4, face: 0.15, move: 2.2 }, { at: 6.2, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
-        pappa: [{ at: 3.8, face: 0.35, act: 'gasp' }, { at: 4.0, x: STAR + 2.2, y: 0, z: -1.2, face: 0.4, move: 1.8 }, { at: 5.8, act: 'kneel', aim: { x: STAR, y: 0.3, z: 0 } }],
-        // Moa comes from her chair at the table's end, round the front of the table, not through it.
-        moa: [
-          { at: 3.8, act: 'startle' },
-          { at: 3.9, x: MOA.x - 0.5, y: 0, z: 0.3, move: 0.4 },
-          { at: 4.3, x: 11, y: 0, z: 0.3, move: 1.4 },
-          { at: 5.7, x: STAR + 0.6, y: 0, z: -2.6, face: 0.3, move: 1.1 },
-          { at: 6.8, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } },
-        ],
-        bertil: [{ at: 3.8, act: 'cheer' }, { at: 5.2, x: STAR + 3.4, y: 0, z: -2.8, face: 0.35, move: 1.2 }, { at: 6.4, act: 'crouch', aim: { x: STAR, y: 0.3, z: 0 } }],
-        // One glad hop at the POFF, before they have turned; then still wood while the grown-ups look.
+        // Everyone is still looking at the window. They discover the result afterwards; none sees the star or the POFF.
+        mamma: [{ at: 0, face: 0.75, act: 'look', aim: WINDOW }],
+        pappa: [{ at: 0, face: 0.75, act: 'look', aim: WINDOW }],
+        moa: [{ at: 0, face: 0.75, act: 'look', aim: WINDOW }],
+        bertil: [{ at: 0, face: 0.75, act: 'stand', aim: WINDOW }],
+        // One glad hop while nobody looks, then still wood.
         ghost: [{ at: 0, ...KLONK, face: 0.5, move: 0.01, act: 'stand' }, { at: 3.75, act: 'hop' }, { at: 4.27, act: 'freeze' }],
       },
       elof: [
@@ -239,7 +232,6 @@ const SCENES: SceneDef[] = [
         { at: 1.8, act: 'eat' },
         { at: 3.6, act: 'startle', size: 1, move: 2.4 },
         { at: 6.2, act: 'hands' },
-        { at: 8.0, act: 'watch', aim: { x: STAR + 0.6, y: 2.4, z: -2.6 } },
       ],
       fx: [
         { at: 0, kind: 'glow', from: { x: STAR + 0.3, y: 1.7, z: 0.3 }, seconds: 3.4 },
@@ -249,13 +241,50 @@ const SCENES: SceneDef[] = [
     },
   },
   {
+    id: 'upptackt', on: 'scene:krymper', until: 'scene:tillsammans', resumeAt: { x: STAR, y: 0 }, seconds: 9.4, hold: true,
+    lines: [
+      { at: 0.8, who: 'moa', line: 'skWhereElof' },
+      { at: 2.8, who: 'bertil', line: 'skBertilFound' },
+      { at: 5.0, who: 'elof', line: 'skTinyAnswer' },
+      { at: 7.2, who: 'pappa', line: 'skTinyTogether' },
+    ],
+    stage: {
+      shots: [
+        { at: 0, x: 10.4, y: 2.3, height: 7.2, width: 15.2, move: 0.6 },
+        { at: 1.1, x: STAR + 1.2, y: 1.8, height: 6.8, width: 10, eye: -1.1, move: 1.5 },
+      ],
+      actors: {
+        moa: [
+          { at: 0, x: MOA.x - 0.5, y: 0, z: 0.3, face: 0.4, move: 0.6, act: 'stand' },
+          { at: 3.0, x: 11, y: 0, z: 0.3, move: 0.9, act: 'walk' },
+          { at: 3.9, x: STAR + 0.6, y: 0, z: -2.6, face: 0.286, move: 0.9 },
+          { at: 4.8, face: 0.286, act: 'crouch', aim: { x: STAR, y: 0.6, z: 0 } },
+        ],
+        bertil: [
+          { at: 1.0, x: STAR + 3.4, y: 0, z: -2.8, face: 0.39, move: 1.2, act: 'walk' },
+          { at: 2.2, act: 'crouch', aim: { x: STAR, y: 0.6, z: 0 } },
+        ],
+        mamma: [
+          { at: 3.1, x: STAR - 1.6, y: 0, z: -1.4, face: 0.11, move: 1.6, act: 'walk' },
+          { at: 4.7, act: 'kneel', aim: { x: STAR, y: 0.6, z: 0 } },
+        ],
+        pappa: [
+          { at: 3.1, x: STAR + 2.2, y: 0, z: -1.2, face: 0.42, move: 1.6, act: 'walk' },
+          { at: 4.7, act: 'kneel', aim: { x: STAR, y: 0.6, z: 0 } },
+        ],
+      },
+      elof: [{ at: 0, act: 'watch', aim: { x: STAR + 3.4, y: 1.8, z: -2.8 } },
+        { at: 4.7, act: 'wave' }, { at: 6.5, act: 'watch', aim: { x: STAR + 2.2, y: 2.4, z: -1.2 } }],
+    },
+  },
+  {
     // 5. The giants get ready around him: up off their knees, each pulls on a raincoat and rubber boots in their own way
     // and rhythm (the act `dress`: src/render/rain-gear.ts, art/blender/motion.py), the coat and the boots going on with
     // the hands and feet that put them on. Mamma first, as she says it; Pappa shows the flashlight, and dresses with it
     // in his hand; Bertil his biggest boots first, stamped down; Moa last.
     id: 'tillsammans',
     resumeAt: { x: STAR, y: 0 },
-    on: 'scene:krymper',
+    on: 'scene:upptackt',
     seconds: 11.6,
     hold: true,
     lines: [

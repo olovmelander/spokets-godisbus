@@ -11,6 +11,17 @@ const player = (more: Partial<PlayerState> = {}): PlayerState => ({ x: 0, y: 0, 
 const target = (state: PlayerState, phase = 0, pace = 0, landing = 0) => playerPose(state, phase, pace, landing, { ...STANDING });
 
 describe('the player’s shared motion', () => {
+  it('keeps the stand-in mouth target at its visible lips through growth and head turns', () => {
+    const body = createPlayerStandIn(), lips = body.group.getObjectByName('player-mouth')!;
+    body.group.position.set(7, 3, -2); body.group.rotation.y = -.35;
+    for (const size of [1, 8 / 3]) for (const nod of [-.25, 0, .3]) {
+      body.group.scale.setScalar(size);
+      body.pose({ ...STANDING, nod, turn: .4, lean: .1 });
+      expect(body.mouth(new Vector3()).distanceTo(lips.getWorldPosition(new Vector3()))).toBeLessThan(1e-8);
+    }
+    body.dispose();
+  });
+
   it('releases every owned stand-in resource once when the model takes its place', () => {
     const elof = createPlayerStandIn(), geometries = new Set<Mesh['geometry']>(), materials = new Set<Material>();
     elof.group.traverse(object => {

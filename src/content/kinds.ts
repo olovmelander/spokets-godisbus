@@ -1,3 +1,4 @@
+import { STORM_SWEETS } from './storm-sweets';
 /**
  * The hidden candy for the album (plan §4.3): four kinds in each chapter, sixteen in Version 1.0. Their
  * names are in `sv.kinds`: plain names of sorts of candy, never a brand (plan §0).
@@ -27,15 +28,16 @@ export const KINDS: Record<string, Kind> = {
   graddkola: { chapter: 'berget', colour: '#d9b382', mark: '#fff0d0' },
   salmiakruta: { chapter: 'berget', colour: '#2a2a2e', mark: '#d8d8e0' },
   chokladpralin: { chapter: 'berget', colour: '#5a3620', mark: '#d9a93a' },
+  ...STORM_SWEETS,
 };
 
 /** The flag a found candy sets in its chapter: what the save keeps, and what the album is read from. */
 export const foundFlag = (kind: string) => `found:${kind}`;
 
-/** The final album piece belongs to all sixteen discoveries; duplicate or unknown flags never count. */
+/** The first adventure’s golden piece still belongs to its sixteen discoveries; duplicate or unknown flags never count. */
 export function albumComplete(found: readonly string[]): boolean {
   const known = new Set(found);
-  return Object.keys(KINDS).every((kind) => known.has(kind));
+  return Object.keys(KINDS).filter((kind) => !STORM_SWEETS[kind]).every((kind) => known.has(kind));
 }
 
 /** The kinds found so far, read from a save's flags for every chapter. */

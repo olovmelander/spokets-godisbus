@@ -1,12 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { Box3, Group, Mesh, MeshStandardMaterial } from 'three';
+import { Box3, Group, Mesh, MeshStandardMaterial, Raycaster, Vector3 } from 'three';
 import { bredbynStreet } from '../../art/procedural/bredbyn-street';
 import { BRED_BYN_CHIMNEYS, BRED_BYN_SMOKE_Z } from '../../src/content/bredbyn';
 import { COURSES } from '../../src/content/chapters';
 import { createLife } from '../../src/render/life';
 import { lifePlan } from '../../src/render/life-plan';
+import { farPavement, LAMP_POST, villageLife } from '../../src/render/village';
 
 describe('the Köpmangatan-inspired distant street', () => {
+  it('supports the lamps with real pavement and plants the passing walker on the road', () => {
+    const chapter = COURSES.byn;
+    const pavement = farPavement(chapter)!;
+    pavement.updateMatrixWorld(true);
+    for (const x of chapter.lampPosts!) {
+      const hit = new Raycaster(new Vector3(x, 10, LAMP_POST.z), new Vector3(0, -1, 0)).intersectObject(pavement)[0];
+      expect(hit, `pavement under lamp at ${x}`).toBeDefined();
+      expect(hit.point.y).toBeCloseTo(1);
+    }
+    const life = villageLife(chapter);
+    life.update(6);
+    expect(life.group.getObjectByName('passing-shoes')!.position.y).toBe(0);
+    const car = life.group.getObjectByName('passing-car')!;
+    expect(car.userData.model).toBe('bil-gra');
+    expect(car.position.y + car.userData.lift).toBe(0);
+  });
+
   it('uses bounded opaque lit geometry, without photograph textures or extra draw calls', () => {
     const street = bredbynStreet();
     const meshes = street.children as Mesh[];

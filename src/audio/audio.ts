@@ -433,6 +433,11 @@ export function createAudio(): Audio {
           case 'breath':
             puff('bandpass', 550, 950, 0.7, 0.026, 0, 0.5);
             break;
+          case 'wind':
+            // Air enters through the open window: a low rush with a thinner whistle over it.
+            puff('lowpass', 420, 950, 2.8, 0.11, 0, 0.6);
+            puff('bandpass', 760, 1500, 2.3, 0.055, 0.18, 0.5);
+            break;
         }
         break;
       case 'step':

@@ -88,9 +88,9 @@ export function built(chapter: ChapterData, indoors = false): Group {
     roomFloor.position.set((house.from + roomTo) / 2, floor - 0.015, depth / 2 + 0.44);
     group.add(roomFloor);
     // The same recognisable furniture as Stormkvällen. It stands behind the actors and the walking plane;
-    // the epilogue leaves the final windowsill clear, so Fjun's first blink cannot disappear behind a sofa.
+    // the sofa stays beside the hall; the shelf and final windowsill remain clear in the same home.
     if (chapter.id === 'prolog') group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 5.5, blanket: false }));
-    if (chapter.id === 'epilog') group.add(roomThings({ sofa: 8.5, lamp: 16.4, plant: 24.5, drawings: -6, rug: 13, blanket: false }));
+    if (chapter.id === 'epilog') group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: false }));
     // Where the chapter goes out of doors the house ends: its white corner board, and the garden beyond it.
     if (chapter.outdoors !== undefined) {
       const corner = new Mesh(new BoxGeometry(0.7, 26, 0.5), new MeshStandardMaterial({ color: '#efe8da', roughness: 0.8 }));

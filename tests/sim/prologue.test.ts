@@ -104,12 +104,12 @@ describe('the prologue freeze jokes', () => {
     expect(sim.prologue!.frame?.kind).toBe('pappa');
     expect(sim.flags.has('pappa:noticed')).toBe(true);
     const start = sim.curr.x;
-    tick(sim, 1.45, { ...go, hop: true, act: true });
+    tick(sim, 2.85, { ...go, hop: true, act: true });
     const placed = prologuePose(layout, sim.prologue!.frame!);
     expect(placed.x).toBeCloseTo(layout.railing.x);
     expect(placed.y).toBeCloseTo(layout.railing.y);
     expect(sim.curr.x).toBeCloseTo(start);
-    tick(sim, 1.6);
+    tick(sim, 2.4);
     expect(sim.flags.has('pappa:done')).toBe(true);
     // The railing is empty: the ghost is at the deck's edge, and waits there for him.
     expect(sim.ghost!.gone).toBe(false);

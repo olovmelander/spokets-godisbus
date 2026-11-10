@@ -161,11 +161,32 @@
     "text": "Liten igen! Kom, Klonk. Vi hjälps åt."
   },
   {
-    "key": "skMoaSmall",
+    "key": "skWhereElof",
     "speaker": "moa",
     "situation": "Äventyr 2, stormkvall",
     "tag": "[warm big sister, lively]",
-    "text": "Små kan hitta små, lillebror!"
+    "text": "Men var tog Elof vägen?"
+  },
+  {
+    "key": "skBertilFound",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Här nere! Elof, du är ju jätteliten igen!"
+  },
+  {
+    "key": "skTinyAnswer",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Här är jag! Jag kan leta i små skrymslen."
+  },
+  {
+    "key": "skTinyTogether",
+    "speaker": "pappa",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[warm, steady father]",
+    "text": "Då hjälps vi åt. Ropa när du behöver oss."
   },
   {
     "key": "skTogether",
@@ -501,7 +522,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Där springer gamla trägubben ner!"
+    "text": "Där vandrar gamla trägubben ner!"
   },
   {
     "key": "ssVillage",
@@ -558,6 +579,34 @@
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Tack, Klonk! Du är världens bästa bro."
+  },
+  {
+    "key": "ssConeOuch",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Aj!"
+  },
+  {
+    "key": "ssConeHey",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Oj, en kotte!"
+  },
+  {
+    "key": "ssConeBonk",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Aj då!"
+  },
+  {
+    "key": "ssConeDuck",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Hoppsan!"
   },
   {
     "key": "scene_stormskog",
@@ -1446,7 +1495,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En bro med trappsteg! Tack, morfar!"
+    "text": "Tack, morfar!"
   },
   {
     "key": "biToMormor",
@@ -1652,6 +1701,13 @@
     "text": "Ugglan! Nu ser du var vi är!"
   },
   {
+    "key": "soOwlThanks",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Tack, ugglan!"
+  },
+  {
     "key": "soGoldLine",
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
@@ -1733,7 +1789,14 @@
     "speaker": "bertil",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cheerful older brother, excited]",
-    "text": "Elof! Vi lyser åt dig!"
+    "text": "Det var Elof som tände lamporna."
+  },
+  {
+    "key": "soLampBertilShine",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Vi lyser åt dig!"
   },
   {
     "key": "soQuiet",
@@ -1789,7 +1852,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Här är din mössa, lillgubben."
+    "text": "Här är din mössa, Lillgubben."
   },
   {
     "key": "soMamma",
@@ -1915,7 +1978,7 @@
     "speaker": "moa",
     "situation": "Äventyr 2, morgonen",
     "tag": "[warm big sister, lively]",
-    "text": "Det var du som tände min lampa, va?"
+    "text": "Tack för att du tände min lampa."
   },
   {
     "key": "moAnswerLine",

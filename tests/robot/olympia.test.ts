@@ -391,10 +391,15 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(kick.look).toBe('football');
       expect(kick.rise).toBeGreaterThanOrEqual(4);
       expect(heightAt(olympia, kick.from.x)).toBe(kick.from.y);
-      expect(heightAt(olympia, kick.to.x)).toBe(kick.to.y);
+      // His feet finish on the ball, whose diameter is 1.6 EL, then he drops softly to the turf.
+      expect(kick.to.y - heightAt(olympia, kick.to.x)).toBeCloseTo(1.7);
       const far = olympia.storm!.buildings!.filter((b) => b.kind === 'goal').find((b) => b.x > circle.to)!;
       expect(kick.to.x).toBeGreaterThan(far.x);
       expect(kick.to.x).toBeLessThan(far.x + far.width!);
+      // The full ball, which travels on the play plane, must pass between the goalposts in depth too.
+      // Previously its x landed inside the goal while z=0 ran beside the entire goal at z=-9.
+      expect(far.z - 6).toBeLessThan(-0.8);
+      expect(far.z + 6).toBeGreaterThan(0.8);
       expect(board).toMatchObject({ verb: 'take', word: 'olRideBall', needs: 'ol:kick-ready', ride: 'kick', at: kick.from });
       expect(call).toMatchObject({ verb: 'call', word: 'callBertil', look: 'sign' });
     });

@@ -28,7 +28,7 @@ function setup() {
 }
 
 describe('the two rescued figures in Stormens öga', () => {
-  it('keeps both original toys on Elof’s actual palms as he turns and walks home', () => {
+  it('holds both original toys around their bodies as he turns and walks home', () => {
     const { decor, player, root, show } = setup();
     const originals = decor.map(d => d.prop!.group.children[0]);
     for (const [x, turn] of [[48, 0], [62, -.35], [70, Math.PI + .35]]) {
@@ -38,9 +38,13 @@ describe('the two rescued figures in Stormens öga', () => {
         expect(toy.visible).toBe(true);
         expect(toy.userData.idle).toBe(false);
         expect(toy.scale.toArray()).toEqual([1, 1, 1]);
-        expect(toy.position.distanceTo(player.hand(side, new Vector3()))).toBeLessThan(1e-8);
+        const middle = toy.localToWorld(new Vector3(0, side === 0 ? .27 : .18, 0));
+        // The gripping hand meets the middle of the toy, with its feet below and its face above the fingers.
+        expect(middle.distanceTo(player.hand(side, new Vector3()))).toBeLessThan(1e-8);
+        expect(toy.position.y).toBeLessThan(middle.y);
+        expect(middle.distanceTo(player.group.localToWorld(new Vector3(.23, .54, side === 0 ? -.16 : .16)))).toBeLessThan(.3);
       }
-      expect(root('tiny-cap').position.clone().sub(root('lillgubbe').position).toArray()).toEqual([0, .48, 0]);
+      expect(root('tiny-cap').position.distanceTo(root('lillgubbe').localToWorld(new Vector3(0, .48, 0)))).toBeLessThan(1e-8);
       expect(root('tiny-cap').visible).toBe(true);
     }
     expect(decor.map(d => d.prop!.group.children[0])).toEqual(originals);

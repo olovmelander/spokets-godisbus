@@ -1,5 +1,53 @@
 # Handover
 
+## State (10 November 2026): Olov's next full playthrough, both adventures
+
+[PR #253](https://github.com/olovmelander/spokets-godisbus/pull/253) contains this follow-up.
+
+- **The new request is the 62-point list, plus collecting across both adventures.** Its exact wording is preserved in
+  [the request](docs/verification/2026-11-10-playthrough-request.md); the item-by-item implementation and evidence are
+  in [the verification record](docs/verification/2026-11-10-playthrough.md). This continuation started from
+  `origin/main` at `e1a7978`, after PR #252, with six parallel building/review worktrees. The older saved patches
+  below have already been integrated and must not be reapplied.
+- **Äventyr 1:** Moa's drawing faces the viewer; Pappa supports Elof and visibly tries to catch the ghost; Moa checks
+  on the paper-plane landing. The cone lowers an existing bough, Bertil lowers his cap by hand, and Mamma lays the
+  log, walks across and climbs to her attached braid. Elof thanks the ghost, lowers a rope for the first carving,
+  and carries its weight. The family runs in and discovers what happened before the supported shoulder ride.
+  Each sweet gets a thank-you; the coin and marble dialogue fits the objects. Elof shows the same Lillgubben as in
+  Äventyr 2, then walks through a real bathroom doorway and brushes his teeth. All home chapters share the doorway
+  and a plain TV with an original animated rabbit-and-bird programme. Byn's feet, lamps, car wheels and leaf are grounded.
+- **Äventyr 2:** the family discovers tiny Elof after his unwitnessed shrinking, with wind at the open window. Rain
+  strikes fixed world positions and falls in the wind direction. The pumpkin is solid, the fjällkåta follows the
+  playhouse, cone bumps have varied uninterrupted reactions, and the log and owl rescue read clearly. The leaf and
+  church buildings are visible in Stormbyn and its stairs climb toward Olympia. The ball scores between the posts;
+  Flärken's outlet holds the carvings in view before the current carries them away. Lillgubben remains visible at
+  Älven's line, Morfar lays a supported ladder and receives Elof's thanks, and the barn has a proper framed door.
+  Stormens öga has dry footing for the grandparents, Bertil's lamp credit, thanks during the owl ride, an actual
+  cap handover, supported carvings and a grounded walk home. Its background church is removed. Moa thanks Elof in Morgonen.
+- **Pictures and collecting:** shared authored illustrations replace the small story clues and memory pictures.
+  The bag now has 24 sweet kinds (the original 16 and eight storm sweets), 16 found objects, small keepsakes in both
+  adventures, eight replayable **Stormens spår** picture stories and 17 photo moments. All remain visible from either
+  adventure. Persistent collection receipts survive replay and migrate existing discoveries; the original 16-kind
+  golden reward still works. New SVG album pictures and game models share their silhouettes.
+  In short landscape views, the complete goal and story reminder now fit between the upper buttons, clear of the
+  family's faces; ordinary and larger text were checked at 844×390 and 780×360, with portrait layout retained.
+- **Models and voices:** `art/private` stays linked to the unchanged private repository at `fd8c283`. No family model
+  or private picture is committed. A fresh Blender Python module, `bpy` 5.2.3, was available in this cloud session;
+  it baked only the new public bathroom/TV/toothbrush geometry. No existing `.blend` was opened or changed. Both
+  future voice catalogs match the final script; no recording or external voice API was used. Changed lines never
+  play a stale recording.
+- **Validation:** final automated results and the CI merge gate are recorded in the verification record. Actual
+  private-model scenes were inspected in phone-sized portrait and landscape views; the record identifies exceptions
+  and sampled animation captures. These are browser viewport checks, not physical-phone performance measurements.
+  All 2,403 unit/robot tests in 248 files pass. CI's public stand-in check also found an inaccurate mouth anchor that put carried
+  carvings too near the face; its anchor now matches the visible lips. Nightfall follows the actual family arrival
+  and the finale retains its physical contact bounds (64 and 99 browser checks passed locally). Shared-home and
+  epilogue checks also pass (54 and 20). The final CI gate includes every registered browser suite.
+  Interrupted reunions resume the unread line, retain old `first1`–`first4` reading receipts, and restore the safe
+  summit position; an already-rescued old save does not replay the rescue introduction.
+- **Next:** continue from this section and its verification record. Nothing in this request needs Olov's computer.
+  Existing broader motion/likeness work remains separate below. No new question for Olov was needed.
+
 ## State (10 November 2026): the saved Äventyr 2 work integrated
 
 [PR #252](https://github.com/olovmelander/spokets-godisbus/pull/252) contains this work.
@@ -5138,11 +5186,10 @@
 
 ## Next
 
-**The 9 November Äventyr 2 list is integrated (10 November).** Continue from the newest State section above,
-not the historical saved-patch instructions. The eight patches were applied and completed in this session; the
-patch folder has been removed. The private exports remain in their own repository. No work from this list needs
-Blender or Olov's computer. Device judgement of the completed scenes and facial motion can follow the checklist
-in `docs/verification/2026-11-10-adventure2.md`.
+**The next full-playthrough list covers both adventures (10 November).** Continue from the newest State section
+and `docs/verification/2026-11-10-playthrough.md`. The earlier 32-item list and saved patches were completed in
+PR #252; do not reapply them. The private exports remain in their own repository. No work from either list needs
+Olov's computer. The new verification record gives the scene-by-scene evidence and device-review limits.
 
 **The whole body (9 November, evening), left in the cloud:** a walk under an act slips as a walk does, the free arms
 there do not swing, Elof's running landings and his walking toe, and the children's steady run (see "State"). For Olov
@@ -5159,8 +5206,7 @@ storm (rain rings, the lights' streaks, the shore) and Älven's current; Billsta
 Olympia's hall; the birds that come by themselves, the ravens and crows, Norrsken's bats, and the storm's torn leaves.
 
 **Proposals 3 and 4 (8 November, late evening), for Olov to judge on the family devices, on High:** Flärkenbadet's
-tower, huts (he walks on their roofs now), chess, sun board and jetty, and the water under its jetties; Själevad's church
-far down the lake from Stormens öga's jetty, in a flash and in the eye's moonlight; Älven's beaver lodge, Olympia's store
+tower, huts (he walks on their roofs now), chess, sun board and jetty, and the water under its jetties; Älven's beaver lodge, Olympia's store
 and masts, Billsta's poles; the soft shade under Bredbyn church's eaves and between the parts of Byn's houses.
 
 **Left in the cloud:** the shade along the foot of Byn's houses, its signs, wall, fence and hedge, and the forest's and
@@ -5543,6 +5589,11 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Both adventures share the candy bag (Olov, 10 November 2026):** keep all earlier sweets, finds, memories and
+  photos visible while playing either adventure. Eight storm sweets and the witnessed picture stories **Stormens
+  spår** extend collecting without changing Äventyr 1's sixteen-kind golden reward.
+- **The home and finale (Olov, 10 November 2026):** the same bathroom doorway in every home chapter, an original
+  animated children's programme on a plain TV, a real walk in to brush teeth, and no church behind Stormens öga.
 - **"Flärken" on Flärkenbadet's big sun board (Olov, 9 November 2026: "Det ska stå 'Flärken' på den stora
   solskylten"):** a third exception to the rule against lettering, beside Olympia on the red hall and the crest on
   Bertil's cap, in the game's own Playpen Sans. Implemented on 10 November; recorded in CLAUDE.md's exceptions
@@ -5632,6 +5683,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Olov's full playthrough of both adventures (10 Nov) | Fix 62 chronological notes and extend the shared candy bag | One continuation with six parallel building/review worktrees | — / 1 new playthrough after PR #252 | Chapter staging, contacts, scenery, illustrations, world-anchored rain and shared collections; exact request and evidence in the new 10 November verification record. |
 | Olov's Äventyr 2 playthrough list (9–10 Nov) | Olov's request: fix 32 things he noted, let every line finish, life while someone speaks, lip-sync | Eight builders saved their work on 9 November; one continuation on 10 November with six parallel worktrees integrated and finished it | — / 0 so far | All eight patches applied in the requested order, chapter fixes plus speech sequencing and speaking animation; visual review and regression evidence in the 10 November State and verification checklist. |
 | The rest of the whole body (9 Nov, evening) | Olov's request: "Fix this!" to the five things left | Part of the same cloud session, with two building agents | — / 0 so far | Turning on the spot in steps; the trunk alive under a held act; the weight over before a step and the trunk following the hips; Elof's jumps, landings and turns without snaps; Billsta's children at a child's sprint. |
 | The whole body moving smoothly (9 Nov, late afternoon) | Olov's request: the joints and movement of the whole body, made in Blender, smooth | Part of the same cloud session, with two building agents | — / 0 so far | A fuller skeleton in Blender (collarbones, neck, three spine bones, twist bones, hip correctives; private PR #8) driven by the game; no snaps in the upper body; running legs at their source; the head leading a turn. |
@@ -5678,6 +5730,9 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Limits of the 10 November review:** private models were checked in built-game browser viewports, including
+  390×844 and 844×390. Sampled action captures establish poses and story sequencing, not native frame rate on a
+  phone. Existing whole-body sliding/likeness work below is not declared finished by this playthrough pass.
 - **Norrsken's trail looks walkable before the taste (8 November):** it starts at the summit's edge, a little behind
   him. Walking he still stops at the edge; running off it he falls in front of the trail and the glitter bubble brings
   him back, as before. If Elof tries it, the trail could start lower, behind a boulder.
@@ -5704,9 +5759,12 @@ The older list, still true where it is not struck:
   pull requests' runs queued; #202 runs the same code and the same test and is green.
 - **`challenges` timed out once on GitHub** (PR #193, 4 November): "c2-prize-844-low: root returns". Nothing in that PR touches it,
   and it passed locally and in #194's run of the same code, so it looks like software rendering's timing. Watch for it again.
-- **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
+- **`settings`' historical touch-check failure, fixture corrected 10 November:** "portrait, left-handed: a held finger walks towards its position"
   wants `vx` at most 1.3 and gets about −3.4 on this computer, on `main` (eb13ed5) as well as with PR #189, which
-  touches no input or simulation code. It passed on GitHub on PR #188. Not looked into further.
+  touches no input or simulation code. It passed on GitHub on PR #188. The same intermittent CI failure on PR #253
+  came from aiming only five pixels inside the run threshold before the camera turned. The fixture now aims safely
+  inside the walk range; the direction and speed assertions remain, and the full 66-check suite passes. Game input
+  behavior is unchanged.
 - **Äventyr 2's pictures, from the 4 November sweeps (none blocks play), updated 10 November:** the strait now
   has a close cutaway for its two figures, flybys support authored depth, and Älven's logs have modeled bark and
   tops aligned with Elof's soles. Remaining: the garden's painted backdrop (lawn, a white house) shows even in
@@ -5867,19 +5925,20 @@ The older list, still true where it is not struck:
   with separate fingers were made on 9 November.)
 - The kneel's back foot stepping back about 0.4 of the height, and Granskogen's seesaw kneel and Moa's at the root hole
   played on each body's legs as the other kneels are. (Crouching was keyed in Blender on 9 November.)
-- Äventyr 2's own hidden candy kinds and stickers (its chapters have none, so the album's totals and the golden
-  geléhallon of Äventyr 1 keep their meaning). (Moa's map of its places was built on 4 November.)
+- Äventyr 2's hidden sweets, stickers, finds, photos and picture memories are now implemented (10 November);
+  further collecting content can use the same shared bag and persistent receipts.
 - Äventyr 2 from real pictures: Olympia, Flärkenbadet and Billsta are built from the research text and, for
   mormor and morfar's house, one picture; a session that can open photographs (see "Frågor till Olov", 21) could
   match the pitch, the bathing place and the narrow more closely.
 - The dark underwater frames in the light pass's measurements cannot happen in play: the glitter bubble catches him at
   the surface.
-- Tried and taken back: Elof holding the old trägubbe on Pappa's shoulders in Norrsken. The carving is nearly as tall
-  as he is, so in his hand it rose over his face, and the finale suite keeps both carvings below it.
+- Further shoulder/carry polish can build on Norrsken's revised supported staging (10 November); keep the large
+  first carving clear of Elof's face.
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
 
+The 10 November full-playthrough work adds no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
