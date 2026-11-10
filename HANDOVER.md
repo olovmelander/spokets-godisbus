@@ -1,5 +1,25 @@
 # Handover
 
+## State (10 November 2026): bark on the owl's tree
+
+- **Olov asked:** “Trädet där ugglan fastnat måste göras lika snyggt som de andra träden när det kommer till
+  texturen.” His phone capture showed the smooth brown trunk beside textured forest trees.
+- **Fixed:** Stormskog's owl tree, opening rim, branch stubs and removable branch now use the forest's existing
+  tiled bark texture. Grain has the same physical scale as nearby trunks and runs upwards around the opening.
+  The trunk and rim also enable the existing close bark detail on Mid/High; the base texture remains on Low.
+  Local warm tints keep the foreground tree and removable branch readable. The moving branch uses UV detail
+  so its grain follows it when pulled. The dark hollow, pale broken end and red pull loop remain distinct.
+- **Scope:** material and UV changes only; no puzzle positions, collisions, story, family export or recording
+  changed. The local materials share the chapter's existing texture without altering it or adding a download.
+- **Checked:** typecheck and all 2,403 tests in 248 files; production build and size gates; built-in privacy
+  scan (local exiftool and optional denylist unavailable). The Äventyr 2 browser suite passed all 42 checks.
+  In the built game with private models, the trapped owl, rope cast, pull and released owl were inspected at
+  390×844 and 844×390 on Low and High. Final tint captures use the same production bundle and both phone
+  orientations/tiers. These checks establish the sampled appearance and working rescue, not physical-device
+  frame rate. Private captures stay in ignored scratch; no likeness image or reference screenshot is committed.
+- **Next:** this focused request is complete locally; green CI gates merging, followed by Pages deployment.
+  No work needs Olov's computer.
+
 ## State (10 November 2026): living northern lights on the summit
 
 - **Olov asked:** “Kan vi göra så att norrskenet rör sig på ett snyggt visuellt sätt!” The outdoor northern
@@ -18,8 +38,9 @@
   Three native-browser captures per size/tier in the built game with actual private family models show the same
   held “Elof! Hur mår du?” line and scene time while the curtains move. These establish visual changes in the
   sampled views, not physical-device frame rate. Private captures stay in ignored scratch; no likeness image is committed.
-- **Next:** this request is complete locally; the full CI suite gates merging and Pages deployment. No step needs
-  Olov's computer. Preserve the separation between nightfall's event time and the lights' presentation time.
+- **Delivered:** [PR #254](https://github.com/olovmelander/spokets-godisbus/pull/254) merged as `d2203bc`;
+  all 14 CI jobs and Pages run `42842572266` passed. The live bundle was checked. Preserve the separation
+  between nightfall's event time and the lights' presentation time.
 
 ## State (10 November 2026): Olov's next full playthrough, both adventures
 
@@ -5207,6 +5228,9 @@
 
 ## Next
 
+**Owl-tree bark (10 November).** The newest State records the screenshot follow-up. Preserve the shared bark
+texture, foreground readability and texture visible on Low; no further art work is deferred.
+
 **Living northern lights (10 November).** The newest State section records the summit aurora's motion and
 validation. Keep the nightfall transition on story time while the curtains follow presentation time; Pause
 and reduced motion hold the picture. The indoor window illustrations are a separate existing drawing.
@@ -5614,6 +5638,7 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **The owl's tree (Olov, 10 November 2026):** its bark must match the visual detail of the surrounding trees.
 - **Living northern lights (Olov, 10 November 2026):** visibly flowing, soft curtains on the summit, including
   during dialogue; preserve Pause and Mindre rörelse, and avoid whole-sky flashing.
 - **Both adventures share the candy bag (Olov, 10 November 2026):** keep all earlier sweets, finds, memories and
@@ -5710,6 +5735,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Owl-tree bark (10 Nov) | Match nearby tree textures | One focused cloud follow-up with independent code review | — / 1 screenshot report | Shared bark texture on every tier, correctly scaled UVs, close trunk/rim detail and an attached grain on the moving branch. |
 | Living northern lights (10 Nov) | Make the aurora move beautifully | One focused cloud follow-up with independent browser validation | — / 0 so far | Flowing folds/rays and separate presentation time; 100 nightfall checks and private built portrait/landscape sequences on Low/High. |
 | Olov's full playthrough of both adventures (10 Nov) | Fix 62 chronological notes and extend the shared candy bag | One continuation with six parallel building/review worktrees | — / 1 new playthrough after PR #252 | Chapter staging, contacts, scenery, illustrations, world-anchored rain and shared collections; exact request and evidence in the new 10 November verification record. |
 | Olov's Äventyr 2 playthrough list (9–10 Nov) | Olov's request: fix 32 things he noted, let every line finish, life while someone speaks, lip-sync | Eight builders saved their work on 9 November; one continuation on 10 November with six parallel worktrees integrated and finished it | — / 0 so far | All eight patches applied in the requested order, chapter fixes plus speech sequencing and speaking animation; visual review and regression evidence in the 10 November State and verification checklist. |
@@ -5758,6 +5784,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Owl-tree screenshot follow-up (10 November):** the missing base bark and inactive close-detail attribute
+  are corrected; browser viewport review does not establish physical-device performance.
 - **Aurora follow-up (10 November):** no new defect found in the focused checks. Native browser captures establish
   the curtain motion in the sampled phone viewports; they do not measure the family's physical-device performance.
 - **Limits of the 10 November review:** private models were checked in built-game browser viewports, including
@@ -5951,6 +5979,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The owl-tree texture request is implemented (10 November); no part of it is deferred.
 - The summit aurora's requested flowing motion is implemented (10 November); evening-window illustrations remain
   a separate static depiction if a future request extends the effect indoors.
 - Finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt. (Hands
@@ -5970,7 +5999,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough and aurora work add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora and owl-tree work add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
