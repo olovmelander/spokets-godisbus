@@ -63,7 +63,7 @@ export function createFootwork() {
   let lowered = 0;
   /** Walking off: how far each foot stands from where the stride has it (world units), which way it points, and how much of
    * that is left (1 until the stride lifts it). */
-  type Carried = { x: number; z: number; yaw: number; k: number; heel: number };
+  type Carried = { x: number; z: number; yaw: number; bodyYaw: number; k: number; heel: number; placed: Foot };
   const carried: [Carried | null, Carried | null] = [null, null];
 
   /** Where each foot stands under its hip, for hips facing `yaw`: its ankle in the world. */
@@ -106,16 +106,21 @@ export function createFootwork() {
         const left = (s * (legs.width + a.out)) * at.height, ahead = a.ahead * at.height, c = Math.cos(at.yaw), sn = Math.sin(at.yaw);
         const x = at.x + left * c + ahead * sn, z = at.z - left * sn + ahead * c;
         const f = feet[side];
-        if (f && !carried[side]) carried[side] = { x: f.x - x, z: f.z - z, yaw: f.yaw, k: 1, heel: f.heel };
+        if (f && !carried[side]) carried[side] = { x: f.x - x, z: f.z - z, yaw: wrap(f.yaw - at.yaw), bodyYaw: at.yaw, k: 1, heel: f.heel, placed: { ...f } };
         const kept = carried[side];
         if (!kept) continue;
+        // Keep the relative turn continuous before fading it. Wrapping the faded angle's input at ±π would
+        // turn an equivalent full-weight angle into two different partial turns, snapping the whole leg.
+        kept.yaw -= wrap(at.yaw - kept.bodyYaw);
+        kept.bodyYaw = at.yaw;
         if (!down[side]) kept.k = Math.max(0, kept.k - dt / 0.25);
         // A heel up on its toe comes down about the toe, and the hips come up, as the weight goes onto it.
         kept.heel *= Math.exp(-8 * dt);
         const k = smooth(kept.k);
         if (k <= 0) { carried[side] = null; if (side === 0) pose.yawL = 0; else pose.yawR = 0; continue; }
         const b = body(at.x + kept.x * k, at.z + kept.z * k, at);
-        const yaw = wrap(kept.yaw - at.yaw) * k, heel = kept.heel * k;
+        const yaw = kept.yaw * k, heel = kept.heel * k;
+        Object.assign(kept.placed, { x: x + kept.x * k, z: z + kept.z * k, yaw: at.yaw + yaw, heel });
         const mx = s * a.out + b.left, mz = a.ahead + b.ahead, cy = Math.cos(yaw), sy = Math.sin(yaw);
         const fore = legs.toe * (1 - Math.cos(heel)) - legs.ankle * Math.sin(heel), rise = -legs.toe * Math.sin(heel) + legs.ankle * (Math.cos(heel) - 1);
         reachWith(mx * sy + mz * cy + fore, a.down - lowered - rise, s * (mx * cy - mz * sy), a.pitch + heel, legs, pose, side);
@@ -130,7 +135,18 @@ export function createFootwork() {
      */
     stand(pose: Pose, legs: Legs, at: Standing): void {
       const dt = Math.max(0, at.dt);
-      for (const side of [0, 1] as const) if (!feet[side]) { const h = home(side, at, at.yaw); feet[side] = { x: h.x, z: h.z, yaw: at.yaw, heel: 0 }; }
+      for (const side of [0, 1] as const) if (!feet[side]) {
+        const h = home(side, at, at.yaw), kept = carried[side];
+        if (kept) {
+          // A short walk can stop before both feet have left their old places. Start the standing turn
+          // from the last carried ankle, rather than resetting that still-turned foot straight ahead.
+          const a = ankleOf(pose, side, legs), s = side === 0 ? 1 : -1, c = Math.cos(at.yaw), sn = Math.sin(at.yaw);
+          const left = s * (legs.width + a.out) * at.height, ahead = a.ahead * at.height;
+          feet[side] = { ...kept.placed, x: h.x + kept.placed.x - (at.x + left * c + ahead * sn),
+            z: h.z + kept.placed.z - (at.z - left * sn + ahead * c) };
+          carried[side] = null;
+        } else feet[side] = { x: h.x, z: h.z, yaw: at.yaw, heel: 0 };
+      }
       const turned = lastYaw === null ? 0 : wrap(at.yaw - lastYaw);
       lastYaw = at.yaw;
       const left = wrap(at.target - at.yaw);

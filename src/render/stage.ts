@@ -1149,6 +1149,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             pose[joint] = shown[joint] + Math.max(-most, Math.min(most, caught - shown[joint]));
             speed[joint] = (pose[joint] - shown[joint]) / dt;
           }
+          // Footwork owns these optional hip turns outside JOINTS. Returning a stride to standing, or a
+          // turn to a crouch, releases them at the same bounded speed as the rest of each leg. Standing
+          // wraps a direction that carry kept continuous: take its nearest equivalent, not another full turn.
+          for (const joint of ['yawL', 'yawR'] as const) {
+            const from = shown[joint] ?? 0, difference = (pose[joint] ?? 0) - from, most = LEG_RATE * dt;
+            const step = Math.atan2(Math.sin(difference), Math.cos(difference));
+            pose[joint] = from + Math.max(-most, Math.min(most, step));
+          }
         } else if (paused && shown) {
           // Pause holds the motion's memory as well as its picture. Losing an unfinished blend's
           // offset or velocity here would make the first resumed frame jump toward its target.
