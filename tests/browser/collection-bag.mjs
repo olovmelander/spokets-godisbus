@@ -64,6 +64,46 @@ try {
   assert.equal(await page.locator('[data-memory="storm:forest"]').count(),1,'Storm discoveries stay visible when returning to Äventyr 1');
   assert.equal(await page.locator('[data-thing="paperboat"]').count(),1);
   assert.equal(await page.locator('.album-count').textContent(),'2 av 24 sorter');
+
+  // The review sheets used save IDs as captions. In the actual bag and HUD, every pictured sweet/find
+  // must keep its Swedish name, including accents, whichever adventure is currently being played.
+  const sweets = {
+    stormgard:['lingonhjarta','Lingonhjärta'], stormskog:['blabarspastill','Blåbärspastill'],
+    stormbyn:['citronstjarna','Citronstjärna'], olympia:['fotbollspralin','Fotbollspralin'],
+    flarken:['apelsinklyfta','Apelsinklyfta'], alven:['mintfisk','Mintfisk'],
+    billsta:['kolaknapp','Kolaknapp'], stormoga:['norrskensruta','Norrskensruta'],
+  };
+  const finds = {
+    granskog:['redbutton','En röd knapp'], myren:['ribbon','Ett mjukt band'],
+    berget:['bell','En liten bjällra'], byn:['pencil','En röd penna'],
+    stormgard:['paperboat','En pappersbåt'], stormskog:['spool','En trådrulle'],
+    stormbyn:['reflector','En stjärnreflex'], olympia:['whistle','En visselpipa'],
+    flarken:['shell','En liten snäcka'], alven:['float','Ett flöte'],
+    billsta:['peg','En klädnypa'], stormoga:['lanternstar','En pappersstjärna'],
+  };
+  await page.addInitScript(({sweets,finds})=>{
+    const key='godisbus.v1.player.elof', save=JSON.parse(localStorage.getItem(key));
+    for(const [catalogue,prefix] of [[sweets,'found'],[finds,'lost']]) {
+      for(const [chapter,[id]] of Object.entries(catalogue)) {
+        save.flags[chapter]=[...new Set([...(save.flags[chapter]??[]),`${prefix}:${id}`])];
+      }
+    }
+    save.updated=Date.now(); localStorage.setItem(key,JSON.stringify(save));
+  },{sweets,finds});
+  for(const [course,width,height] of [['stormgard',390,844],['garden',844,390]]) {
+    await page.setViewportSize({width,height}); await open(course);
+    const labels=await page.locator('.album-chapter .got > span').allTextContents();
+    const titles=await page.locator('#bagStickers .kind').evaluateAll(elements=>elements.map(el=>el.title));
+    for(const [id,name] of Object.values(sweets)) {
+      assert.ok(labels.includes(name),`${course}: album calls ${id} ${name}`);
+      assert.ok(titles.includes(name),`${course}: bag sticker calls ${id} ${name}`);
+    }
+    for(const [id,name] of Object.values(finds)) {
+      assert.equal(await page.locator(`[data-thing="${id}"] > span`).textContent(),name,`${course}: Swedish find name`);
+    }
+    assert.equal(await page.locator('.album-count').textContent(),'9 av 24 sorter');
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'Swedish names fit the phone view');
+  }
   assert.deepEqual(errors,[]);
-  console.log('Collection bag: both adventures, persisted finds, original stickers, phone/landscape and story replay passed.');
+  console.log('Collection bag: both adventures, Swedish names for all new sweets/finds, persisted finds, original stickers, phone/landscape and story replay passed.');
 } finally {await browser.close();await new Promise(resolve=>server.close(resolve));}
