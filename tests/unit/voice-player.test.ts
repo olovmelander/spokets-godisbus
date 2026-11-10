@@ -126,12 +126,47 @@ describe('spoken-line lifecycle', () => {
     expect(player.playingVoice()).toBeNull();
   });
 
-  it('cancels a queued line on page exit, including a back-forward-cache entry', async () => {
+  it.each([false, true])('cancels a queued autoplay retry on page exit (persisted %s)', async persisted => {
     player.playVoice('tiny');
     Voice.made[0]!.reject(blocked()); await flush();
-    gestures.dispatchEvent(new Event('pagehide'));
+    gestures.dispatchEvent(Object.assign(new Event('pagehide'), { persisted }));
     gestures.dispatchEvent(new Event('pointerdown'));
     expect(Voice.made).toHaveLength(1);
+  });
+
+  it('retains the active recording and its position in the back-forward cache, resuming only when the app permits', () => {
+    player.playVoice('tiny');
+    const voice = Voice.made[0]!;
+    voice.currentTime = 1.7;
+    gestures.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }));
+    expect(voice.paused).toBe(true);
+    expect(voice.currentTime).toBe(1.7);
+    expect(player.playingVoice()).toBe('tiny');
+    // Restoring the page is not permission to resume over a visible Pause menu.
+    gestures.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+    player.resumeVoice(false);
+    expect(voice.paused).toBe(true);
+    expect(voice.play).toHaveBeenCalledTimes(1);
+    player.resumeVoice(true);
+    expect(voice.paused).toBe(false);
+    expect(voice.play).toHaveBeenCalledTimes(2);
+    expect(voice.currentTime).toBe(1.7);
+    expect(player.playingVoice()).toBe('tiny');
+    expect(Voice.made).toHaveLength(1);
+    voice.onended!();
+    expect(player.playingVoice()).toBeNull();
+  });
+
+  it('discards the active recording on an actual departure so returning cannot revive the abandoned line', () => {
+    player.playVoice('tiny');
+    const voice = Voice.made[0]!;
+    voice.currentTime = 1.7;
+    gestures.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: false }));
+    expect(voice.paused).toBe(true);
+    expect(voice.currentTime).toBe(0);
+    expect(player.playingVoice()).toBeNull();
+    player.resumeVoice(true);
+    expect(voice.play).toHaveBeenCalledTimes(1);
   });
 
   it('holds the line being said under Pause, and lets it finish after, not again from its start', () => {

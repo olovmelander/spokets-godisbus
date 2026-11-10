@@ -29,7 +29,12 @@ if (typeof window !== 'undefined') {
   for (const event of ['pointerdown', 'keydown', 'touchstart']) {
     window.addEventListener(event, unlock, { capture: true });
   }
-  window.addEventListener('pagehide', stopVoice);
+  window.addEventListener('pagehide', (event) => {
+    // Back/forward cache retains the HUD and its unfinished receipt. Keep that recording at its position;
+    // the app decides on return whether a menu or platform interruption still holds play.
+    if (event.persisted) pauseVoice();
+    else stopVoice();
+  });
 }
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
