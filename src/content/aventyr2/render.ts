@@ -18,7 +18,10 @@ import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
 import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
+import { GRAVITY } from '../../sim/constants';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
+import { stepLength } from '../../render/acting';
+import { paintedWood } from '../../render/painted-wood';
 import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Going, type Grandparent } from './grandparents';
 import { afloat, flightAt, elderWalk } from './kit';
@@ -72,6 +75,14 @@ function scatter(seed: number): () => number {
 
 /** Where Elof is, for those who look at him, how far the story has come, and whether the picture keeps still. */
 const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean } = { x: 0, flags: null, still: false };
+/** The chapter in the picture, for the things on rails that draw their own way there: Flärken's stone and bark. */
+const playing: { chapter: ChapterData | null } = { chapter: null };
+/** For the tests: where the storm says which chapter is in the picture. */
+export const DRAWN_IN = playing;
+/** The open water of the chapter being drawn, for what swims in it. */
+let pools: NonNullable<ChapterData['water']> = [];
+/** The chapter whose picture this is, for where its ground is: set as its storm is made. */
+let course: ChapterData | null = null;
 
 /**
  * The owls that carry him, one to a chapter (Olov, 8 November 2026: the owl he climbed onto vanished, or flew off by
@@ -415,6 +426,10 @@ const PUDDLES = new Set(['olympia']);
  * with less motion the rain hangs still and there are none.
  */
 function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtra | null {
+  playing.chapter = chapter;
+  // The chapter's open water, for what swims in it (./beaver.ts).
+  pools = chapter.water ?? [];
+  course = chapter;
   // The owl rides of this chapter, and the flag that boards each: the spot that starts it.
   owlRides.length = 0;
   for (const ride of chapter.rides ?? []) {
@@ -506,7 +521,10 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if (def.who === 'tragubbe' && afloat(def)) {
       const log = new Mesh(new CylinderGeometry(0.22, 0.25, 2.2, 8), solid('#5a4632', 0.9));
       log.rotation.z = Math.PI / 2;
-      log.position.y = -0.1;
+      log.position.y = -0.25;
+      log.name = 'flyby-log';
+      // The family's carving replaces this socket's stand-in; the log stays under its feet.
+      log.userData.keep = 0;
       figure.add(log);
     }
     let halo: Mesh | null = null;
@@ -564,6 +582,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     group.add(root);
     return { def, root, figure, halo, rings, streaks, lanes, seen: false };
   });
+  const streakAt = new Object3D();
+  const streakTint = new Color();
 
   // Candles and lamps in windows: warm, a little alive.
   const glows = (storm?.glows ?? []).map((def, i) => {
@@ -836,6 +856,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         scene.traverse((object) => { if (object.name === 'owl-wing') owlWings.push(object); });
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
+        for (const s of sightings) if (flags.has(s.def.on)) s.seen = true;
         // The boulders the gusts' shelters stand in for are put away, where something else is drawn: one mesh a gust.
         for (const [i, stone] of scene.getObjectsByProperty('name', 'shelters').entries()) if (shelterOf(i) !== 'stones') stone.visible = false;
         // The garden's far pictures are drawn by day: beyond the door they are the same garden in the storm's night.
@@ -955,10 +976,39 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         else {
           f.seen = true;
           f.start = clock;
+        }
+        flashAt = clock;
+        flashBolt = (flashBolt + 1) % bolts.length;
+        bolts[flashBolt]!.position.set(cx + (random() - 0.5) * 30, cy + 22, -60);
+      }
+      // And one where someone is seen far off, behind them; then they stay, rocking on their stone in the current.
+      for (const s of sightings) {
+        const shown = flags.has(s.def.on) && !flags.has(s.def.until);
+        if (shown && !s.seen) {
+          s.seen = true;
           flashAt = clock;
           flashBolt = (flashBolt + 1) % bolts.length;
-          bolts[flashBolt]!.position.set(cx + (random() - 0.5) * 30, cy + 22, -60);
+          bolts[flashBolt]!.position.set(s.def.at.x + (random() - 0.5) * 12, cy + 20, -60);
         }
+        drawnWhile(s.root, shown);
+        if (!shown) continue;
+        s.figure.rotation.z = still ? 0 : Math.sin(clock * 1.6) * 0.07 + Math.sin(clock * 2.9 + 1) * 0.025;
+        s.figure.position.y = 0.4 + (still ? 0 : Math.sin(clock * 1.3) * 0.03);
+        (s.halo.material as MeshBasicMaterial).opacity = still ? 0.4 : 0.36 + 0.06 * Math.sin(clock * 1.7);
+        for (const [i, ring] of s.rings.entries()) {
+          const k = still ? 0.3 + 0.4 * i : (clock * 0.45 + i * 0.5) % 1;
+          ring.scale.setScalar(0.9 + 1.6 * k);
+          (ring.material as MeshBasicMaterial).opacity = 0.32 * (1 - k) * Math.min(1, k * 6);
+        }
+        for (const [i, z] of s.lanes.entries()) {
+          const k = still ? 0.5 : (clock * 0.28 + i * 0.27) % 1;
+          streakAt.position.set(-2.4 + 4.8 * k, 0.02, z);
+          streakAt.updateMatrix();
+          s.streaks.setMatrixAt(i, streakAt.matrix);
+          s.streaks.setColorAt(i, streakTint.setScalar(Math.sin(Math.PI * k)));
+        }
+        s.streaks.instanceMatrix.needsUpdate = true;
+        s.streaks.instanceColor!.needsUpdate = true;
       }
       if (!still && storm?.lightning && calm === 0 && clock >= nextFlash) {
         flashAt = clock;
@@ -2387,6 +2437,290 @@ const gladHop = (t: number) => {
   return Math.sin((beat - n) * Math.PI) ** 6 * height;
 };
 
+/**
+ * A splash where something heavy goes into the water, `since` seconds after it did (before that, none): drops thrown
+ * up and out, a crown of white that rises and falls back, and rings that spread on the water. Its origin is the
+ * water's surface where it went in. With less motion only the rings.
+ */
+function waterSplash(size: number) {
+  const group = new Group();
+  const white = new MeshBasicMaterial({ color: '#e4edf2', transparent: true, opacity: 0, depthWrite: false });
+  // The drops: one draw for them all.
+  const drops = new InstancedMesh(new SphereGeometry(0.055 * size, 6, 4), white.clone(), 12);
+  drops.instanceMatrix.setUsage(DynamicDrawUsage);
+  drops.frustumCulled = false;
+  group.add(drops);
+  const thrown = Array.from({ length: 12 }, (_, i) => {
+    const a = (i / 12) * Math.PI * 2 + 0.3 * Math.sin(i * 7.1);
+    return { vx: Math.cos(a) * (0.8 + 0.8 * ((i * 0.37) % 1)) * size, vz: Math.sin(a) * 0.5 * size, vy: (2.4 + 1.8 * ((i * 0.61) % 1)) * size };
+  });
+  const place = new Object3D();
+  const crown = new Mesh(new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true).translate(0, 0.21 * size, 0), white.clone());
+  group.add(crown);
+  const rings = [0, 0.3, 0.65].map((delay) => {
+    const mesh = new Mesh(new RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2), white.clone());
+    mesh.position.y = 0.015;
+    group.add(mesh);
+    return { mesh, delay };
+  });
+  drawnWhile(group, false);
+  return {
+    group,
+    update(since: number, still: boolean) {
+      const on = since >= 0 && since < 2.6;
+      drawnWhile(group, on);
+      if (!on) return;
+      drops.visible = !still && since < 0.7;
+      if (drops.visible) {
+        for (const [i, d] of thrown.entries()) {
+          place.position.set(d.vx * since, d.vy * since - 0.5 * GRAVITY * since * since, d.vz * since);
+          place.scale.setScalar(place.position.y > -0.02 ? 1 : 0);
+          place.updateMatrix();
+          drops.setMatrixAt(i, place.matrix);
+        }
+        drops.instanceMatrix.needsUpdate = true;
+        (drops.material as MeshBasicMaterial).opacity = 0.85 * (1 - since / 0.7);
+      }
+      const c = since / 0.45;
+      crown.visible = !still && c < 1;
+      crown.scale.set(1 + c * 0.8, 0.02 + Math.sin(Math.PI * Math.min(1, c)) * 1.2, 1 + c * 0.8);
+      (crown.material as MeshBasicMaterial).opacity = 0.7 * (1 - c);
+      for (const r of rings) {
+        const k = (since - r.delay) / 1.9;
+        r.mesh.visible = k > 0 && k < 1;
+        r.mesh.scale.setScalar((0.5 + 2.4 * k) * size);
+        (r.mesh.material as MeshBasicMaterial).opacity = 0.5 * (1 - k);
+      }
+    },
+  };
+}
+
+/**
+ * How far behind or in front of the play plane Flärken's stone and bark lie on the planks: the stone at the front, the
+ * bark at the back, so that the stone rolls past the bark and not through it. In the water the bark floats under him.
+ */
+const STONE_Z = 0.6;
+const BARK_Z = -0.6;
+/** Where the stone sinks, a little nearer the play plane than where it lay. */
+const STONE_Z_IN = 0.25;
+/** How long the stone takes to roll to the edge, and how fast it sinks once the water has slowed it, in EL a second. */
+const ROLL = 1.55;
+const SINK = 1.3;
+
+/** Where a thing standing on a chapter's ground at `x` comes to its edge going right, and the water's level beyond. */
+function edgeAhead(chapter: ChapterData | null, x: number, y: number, to: number): { edge: number; water: number } {
+  let edge = x;
+  if (chapter) while (edge < to && heightAt(chapter, edge + 0.05) > y - 0.3) edge += 0.05;
+  const water = chapter?.water?.find((w) => w.from <= to && w.to >= to)?.y ?? y - 0.6;
+  return { edge: Math.min(edge, to), water };
+}
+
+/**
+ * Flärken's round field stone (Olov, 9 November 2026: "Uppdraget med stenen som ska fylla luckan måste se bättre ut"),
+ * art/blender/flarken.py's `grasten`: Elof's own idea, pushed out to fill the gap, where it sinks. The simulation takes
+ * it from where it lies to where it ends, under the water, straight and in a moment; drawn so, it went through the
+ * planks. Here it has its weight: it gathers way slowly, rolls along the planks turning as it goes, tips over the edge,
+ * falls in with a splash, and sinks more slowly through the water to the bottom, bubbles coming up after it. Its shadow
+ * lies on the planks under it. The chapter says the plop once it has gone under (`sjon:sunk`). With less motion it goes
+ * the same way, without the splash's drops.
+ */
+function fieldStone(mover: Mover): Group {
+  const outer = new Group();
+  const r = mover.height / 2;
+  const first = mover.stops[0]!;
+  const last = mover.stops[mover.stops.length - 1]!;
+  const holder = new Group();
+  holder.userData.model = 'grasten';
+  // Wet in the rain: its granite a little glossy.
+  holder.userData.onModelInstalled = (model: Group) => model.traverse((node) => {
+    const mesh = node as Mesh;
+    const material = mesh.material as MeshStandardMaterial | undefined;
+    if (!material?.isMeshStandardMaterial) return;
+    mesh.material = material.clone();
+    (mesh.material as MeshStandardMaterial).roughness = 0.42;
+    mesh.castShadow = true;
+  });
+  // Until the kit's has come: a smooth grey stone as big.
+  const standIn = new Mesh(new SphereGeometry(1, 24, 16).scale(mover.width / 2, r, r * 0.86), solid('#7a7974', 0.45));
+  standIn.castShadow = true;
+  holder.add(standIn);
+  glowMap ??= glowTexture(32);
+  const shade = new Mesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: '#000000', map: glowMap, transparent: true, opacity: 0.5, depthWrite: false }));
+  shade.scale.set(mover.width * 1.7, 1, r * 2.1);
+  const splash = waterSplash(1.1);
+  // The bubbles that come up after it, one draw for them all.
+  const air = new InstancedMesh(new SphereGeometry(0.075, 8, 6), new MeshBasicMaterial({ color: '#d8e6f0', transparent: true, opacity: 0.75, depthWrite: false }), 7);
+  air.instanceMatrix.setUsage(DynamicDrawUsage);
+  air.frustumCulled = false;
+  drawnWhile(air, false);
+  const bubbles = Array.from({ length: 7 }, (_, i) => ({ at: 0.15 + i * 0.32, size: 0.6 + 0.6 * ((i * 0.47) % 1), x: 0, y: 0 }));
+  const place = new Object3D();
+  outer.add(holder, shade, splash.group, air);
+
+  let ready = false, edge = first.x, water = first.y - 0.6, span = 0, speed = 0, fall = 0, inAt = 0, entered = 0, start = 0;
+  let state: 'unknown' | 'rest' | 'going' | 'sunk' = 'unknown';
+  const at = { x: 0, y: 0, z: 0, turn: 0, planks: 1 };
+  /** Where its middle is drawn `t` seconds after the push, how far it has turned, and how much of it is on the planks. */
+  const path = (t: number) => {
+    let rolled: number;
+    if (t < ROLL) {
+      // Gathering way: slowly at first, and rolling on at the edge.
+      const u = Math.max(0, t) / ROLL;
+      at.x = first.x + span * (2 * u * u - u * u * u);
+      at.y = first.y + r;
+      at.z = STONE_Z;
+      at.planks = 1;
+      rolled = at.x - first.x;
+    } else if (t < inAt) {
+      // Over the edge and falling, as he falls; while it still touches the planks' end it turns about it.
+      const k = t - ROLL;
+      at.x = edge + 0.85 * speed * k;
+      at.y = first.y + r - 0.5 * GRAVITY * k * k;
+      const off = Math.hypot(at.x - edge, at.y - first.y);
+      if (off < r) {
+        at.x = edge + ((at.x - edge) / off) * r;
+        at.y = first.y + ((at.y - first.y) / off) * r;
+      }
+      at.z = STONE_Z + (STONE_Z_IN - STONE_Z) * (k / fall);
+      at.planks = Math.max(0, 1 - k / 0.12);
+      rolled = at.x - first.x;
+    } else {
+      // In the water: slowed at once, then sinking steadily to the bottom, drifting on a little and turning less.
+      const k = t - inAt;
+      const drop = SINK * k + (GRAVITY * fall - SINK) * 0.25 * (1 - Math.exp(-k / 0.25));
+      at.x = entered + (last.x - entered) * (1 - Math.exp(-k / 0.6));
+      at.y = Math.max(last.y + r, water + r - drop);
+      at.z = STONE_Z_IN;
+      at.planks = 0;
+      rolled = entered - first.x + 0.85 * speed * 0.7 * (1 - Math.exp(-k / 0.7));
+    }
+    at.turn = -rolled / r;
+    return at;
+  };
+  outer.userData.tick = (clock: number) => {
+    const mesh = outer.parent;
+    if (!mesh) return;
+    if (!ready) {
+      ({ edge, water } = edgeAhead(playing.chapter, first.x, first.y, last.x));
+      span = edge - first.x;
+      speed = span / ROLL;
+      fall = Math.sqrt((2 * Math.max(0.05, first.y - water)) / GRAVITY);
+      inAt = ROLL + fall;
+      entered = edge + 0.85 * speed * fall;
+      // Each bubble rises from where the stone was when it let it go.
+      for (const b of bubbles) { path(inAt + b.at); b.x = at.x; b.y = at.y + r * 0.4; }
+      ready = true;
+    }
+    const sx = mesh.position.x, sy = mesh.position.y;
+    const atFirst = Math.abs(sx - first.x) < 1e-3 && Math.abs(sy - first.y) < 1e-3;
+    if (state === 'unknown') state = Math.abs(sx - last.x) < 1e-3 && Math.abs(sy - last.y) < 1e-3 ? 'sunk' : 'rest';
+    if (state === 'rest' && !atFirst) { state = 'going'; start = clock; }
+    if (state !== 'rest' && atFirst) state = 'rest';
+    const t = state === 'rest' ? 0 : state === 'sunk' ? 60 : clock - start;
+    path(t);
+    // It draws its own way: the simulation's lean and squash are not its.
+    mesh.rotation.z = 0;
+    mesh.scale.set(1, 1, 1);
+    holder.position.set(at.x - sx, at.y - sy, at.z);
+    holder.rotation.set(0, 0, at.turn);
+    shade.position.set(at.x - sx, first.y + 0.015 - sy, at.z);
+    shade.visible = at.planks > 0;
+    (shade.material as MeshBasicMaterial).opacity = 0.5 * at.planks;
+    splash.group.position.set(entered - sx, water - sy, STONE_Z_IN);
+    splash.update(state === 'going' ? t - inAt : -1, elof.still);
+    let rising = false;
+    for (const [i, b] of bubbles.entries()) {
+      const since = state === 'going' ? t - inAt - b.at : -1;
+      const rise = b.y + since * 1.7;
+      const up = since > 0 && rise < water;
+      rising ||= up;
+      place.position.set(b.x - sx + Math.sin(since * 9 + b.at * 5) * 0.06, rise - sy, STONE_Z_IN + 0.1);
+      place.scale.setScalar(up ? b.size : 0);
+      place.updateMatrix();
+      air.setMatrixAt(i, place.matrix);
+    }
+    air.instanceMatrix.needsUpdate = true;
+    drawnWhile(air, rising);
+  };
+  return outer;
+}
+
+/**
+ * Flärken's bark (art/blender/flarken.py, `barkbit`), which fills the gap once the stone has sunk: it lies at the back
+ * of the planks, behind the stone, and is pushed along them. The simulation's last push takes it straight from the
+ * planks to where it floats in the gap, through the planks' end; drawn here, it slides to the edge, tips over it, goes
+ * in with a splash, bobs up again and floats under him, mostly under the water, rocking a little.
+ */
+function barkRaft(mover: Mover): Group {
+  const outer = new Group();
+  const holder = new Group();
+  holder.name = 'bark-holder';
+  holder.userData.model = 'barkbit';
+  const splash = waterSplash(0.9);
+  outer.add(holder, splash.group);
+  const before = mover.stops[mover.stops.length - 2]!;
+  const last = mover.stops[mover.stops.length - 1]!;
+  /** How long it slides to the edge, and how long it takes from tipping to being in the water. */
+  const SLIDE = 0.32, DROP = 0.3;
+  let ready = false, edge = before.x, water = last.y + mover.height * 0.6, start = 0;
+  let state: 'unknown' | 'planks' | 'going' | 'afloat' = 'unknown';
+  outer.userData.tick = (clock: number) => {
+    const mesh = outer.parent;
+    if (!mesh) return;
+    if (!ready) {
+      ({ edge, water } = edgeAhead(playing.chapter, before.x, before.y, last.x));
+      ready = true;
+    }
+    const sx = mesh.position.x, sy = mesh.position.y;
+    // On the planks, give or take the little way past a stop that a push settles back from.
+    const onPlanks = sx <= before.x + 0.2 && sy >= before.y - 0.05;
+    if (state === 'unknown') state = Math.abs(sx - last.x) < 1e-3 && Math.abs(sy - last.y) < 1e-3 ? 'afloat' : 'planks';
+    if (state === 'planks' && !onPlanks) { state = 'going'; start = clock; }
+    if (state !== 'planks' && onPlanks) state = 'planks';
+    if (state === 'planks') {
+      // On the planks it slides as the simulation has it, at the back.
+      holder.position.set(0, 0, BARK_Z);
+      holder.rotation.set(0, 0, 0);
+      splash.update(-1, elof.still);
+      return;
+    }
+    const t = state === 'afloat' ? 60 : clock - start;
+    // Where its middle is when it tips: a little over the edge.
+    const over = edge + mover.width * 0.12;
+    const tipped = over + (last.x - over) * 0.7;
+    let x: number, y: number, tip: number;
+    if (t < SLIDE) {
+      const u = t / SLIDE;
+      x = before.x + (over - before.x) * (1.6 * u - 0.6 * u * u);
+      y = before.y;
+      tip = 0;
+    } else if (t < SLIDE + DROP) {
+      const k = (t - SLIDE) / DROP;
+      x = over + (tipped - over) * k;
+      y = before.y + (last.y - 0.22 - before.y) * k * k;
+      tip = -0.45 * Math.sin(Math.PI * k);
+    } else {
+      // Under, and up again: it bobs a few times and settles where it floats.
+      const k = t - SLIDE - DROP;
+      x = tipped + (last.x - tipped) * (1 - Math.exp(-k / 0.3));
+      y = last.y - 0.22 * Math.exp(-k / 0.28) * Math.cos(k * 6.5);
+      tip = 0.07 * Math.exp(-k / 0.35) * Math.sin(k * 8);
+    }
+    const z = BARK_Z * (1 - smooth(t / (SLIDE + DROP)));
+    // Afloat, it rocks a little on the water.
+    const bob = elof.still ? 0 : Math.sin(clock * 1.9) * 0.02;
+    const rock_ = elof.still ? 0 : Math.sin(clock * 1.3 + 1) * 0.015;
+    mesh.rotation.z = 0;
+    mesh.scale.set(1, 1, 1);
+    holder.position.set(x - sx, y + bob - sy, z);
+    holder.rotation.set(0, 0, tip + rock_);
+    // In it goes where its foot meets the water as it tips.
+    splash.group.position.set(over + (tipped - over) * 0.6 - sx, water - sy, 0);
+    splash.update(t - SLIDE - DROP * 0.6, elof.still);
+  };
+  return outer;
+}
+
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
 const TIPPED = -0.16;
 
@@ -2434,9 +2768,12 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       }
       return group;
     },
+    fieldstone: (mover) => fieldStone(mover),
     bark: (mover) => {
-      const group = new Group();
-      // Pine bark, grey-brown and furrowed: pale enough to be told in the storm's dark.
+      const outer = barkRaft(mover);
+      const group = outer.getObjectByName('bark-holder')!;
+      // Until the kit's has come (art/blender/flarken.py, `barkbit`): pine bark, grey-brown and furrowed, pale enough to
+      // be told in the storm's dark.
       const slab = new Mesh(new BoxGeometry(mover.width, mover.height, 1.2, 6, 2, 3), solid('#9a7656', 1, { flatShading: true, emissive: '#3a2614', emissiveIntensity: 0.5 }));
       const at = slab.geometry.getAttribute('position');
       const r = scatter(Math.round(mover.width * 100));
@@ -2459,7 +2796,7 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       const top = new Mesh(new BoxGeometry(mover.width * 0.86, 0.06, 0.9), solid('#b8966e', 1));
       top.position.y = mover.height + 0.02;
       group.add(top);
-      return group;
+      return outer;
     },
     'swing-sign': (mover) => {
       // A shop's sign on two chains: a plain painted board with a border, and no letter on it.

@@ -6,8 +6,8 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  * Kapitel 5: Flärken (docs/aventyr-2.md, docs/aventyr-2-reference-study.md §2): Flärkenbadet, the villages' bathing
  * place on the lake Flärken between Kubbe and Norrflärke, at eleven o'clock on the storm's night. The strongest gust
  * at Olympia took the little one north up the valley; here the lake runs out into Norra Anundsjöån, south again.
- * In late October the bath is empty: no sign, no club name, no letter anywhere. Units: EL. The places, from the
- * left:
+ * In late October the bath is empty: no club name, no letter anywhere but the place's own name on its painted sun
+ * board (Olov's decision, 9 November 2026). Units: EL. The places, from the left:
  *
  * 1. **The playground,** from the parking down to the bay. Two lace rings hang under the swings' seats: the first
  *    over the sand, where a miss costs nothing, the second over the puddle that feet have worn under the swing. Up
@@ -26,11 +26,12 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  *    paddle board (Olov, 6 November 2026: the family has them, in place of a rowboat) and holds it against both
  *    broken ends, and its deck is the way on.
  * 7. **Hopptornet:** the diving tower stands in the water between two stretches of jetty. Up its ladder to the top,
- *    the lookout: a flash shows the little one far out, where the river begins. A run off its far side lands him
- *    on the jetty beyond.
- * 8. **Vad flyter?** (the puzzle): the last planks are gone, and the gap is too wide to jump. A stone lies first on the
- *    planks, and Elof has an idea of his own: he pushes it out. Plopp: it sinks. Only then can he think what floats:
- *    Klonk does, and bark is wood. Pushed three times, the bark slides into the gap and floats there, a stepping stone.
+ *    the lookout: he points, the picture goes out over the lake with him, and a flash shows the little one far out,
+ *    caught on a stone where the river begins. A run off its far side lands him on the jetty beyond.
+ * 8. **Vad flyter?** (the puzzle): the last planks are gone, their ends broken off, and the gap is too wide to jump. A
+ *    round stone lies first on the planks, and Elof has an idea of his own: he pushes it out. It rolls to the edge, tips
+ *    in and sinks: plopp, and he watches it go. Only then can he think what floats: Klonk does, and bark is wood.
+ *    Pushed three times, the bark slides off the edge into the gap and floats there, a stepping stone.
  * 9. **The jetty's end:** a flash, and the outlet takes the little one down the river; the old trägubbe leaps onto
  *    a log after him. "Trä flyter!" Mamma: "Vi följer ån med bilen."
  *
@@ -176,6 +177,14 @@ const OUTER = { from: BREAK.to, to: 154 };
 const TOWER = { ladder: 153.75, from: 154, to: 159, y: 3.3 };
 /** The tower's model (art/blender/flarken.py) has its platform's planks and its ladder exactly here. */
 const PLATFORM: Ledge = { x: (TOWER.from + TOWER.to) / 2, y: TOWER.y, width: TOWER.to - TOWER.from, look: 'shelf' };
+/**
+ * The lookout (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): halfway over the platform he points,
+ * and the picture goes out over the lake with him to where it runs out into the river, beyond the jetty's end and
+ * behind it. A flash, and there is the little one, caught on a stone in the current, pale, drawn half as big again for
+ * the distance; the picture waits on it while he says so, and then comes back to him.
+ */
+const LOOKOUT_AT = 155.6;
+const SEEN = { x: 186.6, y: WATER, z: -5 };
 /** The jetty beyond the tower, its far end pushed down into the water by the waves, and the bark lying on it. */
 const BEYOND = { from: 159.6, to: 163.4 };
 const SAG = { from: BEYOND.to, to: 166.4 };
@@ -188,6 +197,16 @@ const RAFT: Stone = { from: 174.7, to: 176.7, y: 0 };
 const FAR: Stone = { from: 178, to: 180.4, y: 0 };
 /** The jetty's last stretch, on its stone crib: a step up again, out to the end post. */
 const END = { from: FAR.to, to: 191 };
+/**
+ * Past the jetty's end the lake runs out into Norra Anundsjöån, between two banks, out of the picture: the outlet that
+ * takes the little one, and the old one after him on a log. It is the lake's water to the simulation, and a fall into
+ * it is the water's; its banks, its stones and its running water are the picture's (`outlet`, and its foam). It was a
+ * wall of ground nine of him high at the jetty's end, which hid where they went (Olov: "När ån tar med sig lillgubben
+ * vill jag se en riktig å").
+ */
+const OUTLET = { from: END.to, to: END.to + 36 };
+/** Where the å leaves the lake: behind the jetty's last stretch, so that its mouth is in the picture with him. */
+const MOUTH = END.to - 7;
 /** Where the old trägubbe waits on the end post, until he leaps after the little one. */
 const END_POST = { x: 189.4, y: DECK };
 
@@ -198,11 +217,21 @@ const END_POST = { x: 189.4, y: DECK };
  * jump climbs it, as on Granskogen's cone.
  */
 const BARK_HIGH = 1.5;
-/** The wrong idea, which is the puzzle's first half: a stone, pushed out along the planks, rolls in and sinks. */
+/**
+ * The wrong idea, which is the puzzle's first half: a round field stone, pushed out along the planks, rolls in and
+ * sinks. The picture rolls it along the front of the planks, past the bark lying at their back, tips it over the edge
+ * and sinks it (src/content/aventyr2/render.ts, `fieldstone`); he stands and watches it go under, and then he says so.
+ */
 const STONE: Mover = {
-  id: 'sjon-stone', look: 'boulder', width: 1.4, height: BARK_HIGH, verb: 'push',
+  id: 'sjon-stone', look: 'fieldstone', width: 1.4, height: BARK_HIGH, verb: 'push',
   stops: [{ x: 167.5, y: 0 }, { x: (RAFT.from + RAFT.to) / 2, y: -3.6 }],
 };
+/**
+ * Set when the stone has gone under, as the picture has it: it is in place to the simulation 0.6 s after the push, and
+ * in the water 1.8 s after it.
+ */
+const SUNK = 'sjon:sunk';
+const SUNK_AFTER = 1.45;
 const BARK: Mover = {
   id: 'sjon-bark', look: 'bark', width: RAFT.to - RAFT.from, height: BARK_HIGH, verb: 'push', needs: `placed:${STONE.id}`,
   stops: [{ x: 169, y: 0 }, { x: 170.8, y: 0 }, { x: 172.4, y: 0 }, { x: (RAFT.from + RAFT.to) / 2, y: RAFT.y - BARK_HIGH }],
@@ -241,8 +270,51 @@ export const flarken: ChapterData = {
   // Its water and its reed mats are the bog's, at the lake's edge.
   place: 'bog',
   spawn: { x: 1, y: 0.01 },
-  // Where and when, as the chapter opens (src/content/chapters/cards.ts).
-  scenes: [timeCard('flarken', 1)],
+  scenes: [
+    // Where and when, as the chapter opens (src/content/chapters/cards.ts).
+    timeCard('flarken', 1),
+    // At the top of the diving tower he points out over the lake, and the picture goes with him: a flash, and the
+    // little one is there on its stone (`sightings`). His words wait for Fortsätt with the picture on it (`sjon:lookout`).
+    {
+      id: 'sjon:utkik', at: LOOKOUT_AT, before: TOWER.to, seconds: 3.4, hold: true, quiet: true,
+      cues: [{ at: 1.25, flag: 'sjon:seen' }],
+      stage: {
+        shots: [{ at: 0.1, x: SEEN.x - 1.2, y: 0.4, z: SEEN.z, height: 5.6, width: 5.2, eye: 4.5, move: 1.1 }],
+        elof: [{ at: 0.2, act: 'point', aim: SEEN }, { at: 3.1, act: null }],
+      },
+    },
+    // At the outlet, look down the actual stream before the current carries him away. The first line holds this
+    // close view; the next event waits until his passage is over. Each camera follows the same unhurried crossing.
+    {
+      id: 'sjon:strommen', at: 184, before: 188, until: 'sjon:downstream', seconds: 6.9, hold: true, quiet: true,
+      cues: [{ at: 0.7, flag: 'sjon:current' }, { at: 6.8, flag: 'sjon:downstream' }],
+      stage: {
+        shots: [
+          { at: 0, x: 187.8, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 0.65 },
+          { at: 0.7, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 5.8 },
+        ],
+        elof: [{ at: 0.2, act: 'point', aim: { x: 190, y: 0.5 } }],
+      },
+    },
+    {
+      id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: 6.9, hold: true,
+      cues: [{ at: 0.7, flag: 'sjon:log-run' }, { at: 6.8, flag: 'sjon:both-downstream' }],
+      stage: {
+        shots: [
+          { at: 0, x: 189.6, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 0.65 },
+          { at: 0.7, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 5.8 },
+        ],
+        elof: [{ at: 0.2, act: 'look', aim: { x: 195, y: 0.5 } }],
+      },
+    },
+    // The stone rolls along the planks, tips over their end and goes under: he watches it go, and the picture goes with
+    // it to the gap, where it waits on the rings and the bubbles while he says the plop (`sjon:plop`, on `SUNK`).
+    {
+      id: 'sjon:plopp', on: `placed:${STONE.id}`, before: LOW.to - 1, until: SUNK, seconds: 2.6, hold: true,
+      cues: [{ at: SUNK_AFTER, flag: SUNK }],
+      stage: { shots: [{ at: 0, x: LOW.to - 0.2, y: 0.5, height: 6, width: 16, eye: 0.6, move: 0.75 }] },
+    },
+  ],
   goalX: 188,
   // Mamma answers from the boat in the coda.
   coda: 'mamma',
@@ -310,11 +382,13 @@ export const flarken: ChapterData = {
     { x: LOW.to, y: DEEP },
     { x: FAR.from, y: DEEP },
     { x: FAR.from, y: FAR.y },
-    // 9. up onto the last stretch, out to the end post
+    // 9. up onto the last stretch, out to the end post, and the outlet past it
     { x: END.from, y: FAR.y },
     { x: END.from, y: DECK },
     { x: END.to, y: DECK },
-    { x: END.to, y: 9 },
+    { x: OUTLET.from, y: DEEP },
+    { x: OUTLET.to, y: DEEP },
+    { x: OUTLET.to, y: 9 },
   ],
   water: [
     { from: PUDDLE.from, to: PUDDLE.to, y: PUDDLE_WATER },
@@ -323,6 +397,7 @@ export const flarken: ChapterData = {
     { from: BREAK.from, to: BREAK.to, y: WATER },
     { from: OUTER.to, to: BEYOND.from, y: WATER },
     { from: LOW.to, to: FAR.from, y: WATER },
+    { from: OUTLET.from, to: OUTLET.to, y: WATER },
   ],
   tussocks: [...MATS_A, ...MATS_B].map(mat),
   // The slide and the picnic table are things on the sand, whatever he goes over.
@@ -403,12 +478,13 @@ export const flarken: ChapterData = {
       { on: 'beat:sjon:flash', from: { x: 102, y: 9 }, to: { x: 140, y: 12 }, seconds: 2.6, who: 'lillgubbe' },
       // The old one, far out on the planks, leaps on into the dark when he comes.
       { on: 'beat:sjon:old-one', from: { x: OLD_ONE.x, y: 1.4 }, to: { x: 170, y: 6 }, seconds: 2.2, who: 'tragubbe' },
-      // From the top of the diving tower: the little one, far out where the lake runs out into the river.
-      { on: 'beat:sjon:lookout', from: { x: 166, y: 7 }, to: { x: 200, y: 2 }, seconds: 3, who: 'lillgubbe' },
       // At the end: the outlet takes the little one, and the old one leaps after him onto a log.
-      { on: 'beat:sjon:outlet', from: { x: 186.4, y: 2.4 }, to: { x: 206, y: 0 }, seconds: 2.6, who: 'lillgubbe' },
-      { on: 'beat:sjon:log', from: { x: END_POST.x, y: END_POST.y + 0.8 }, to: { x: 206, y: 0 }, seconds: 2.4, who: 'tragubbe' },
+      { on: 'sjon:current', from: { x: SEEN.x, y: 0.2 }, to: { x: 206, y: -0.15 }, z: -4, seconds: 5.8, size: 1.5, who: 'lillgubbe', lit: [] },
+      { on: 'sjon:log-run', from: { x: END_POST.x, y: 0.25 }, to: { x: 206, y: 0.25 }, z: -4, seconds: 5.8, size: 1.3, who: 'tragubbe', lit: [] },
     ],
+    // From the top of the diving tower: the little one, far out where the lake runs out into the river, in the lookout's
+    // flash, until he has gone on past the tower and out of sight of it.
+    sightings: [{ on: 'sjon:seen', until: 'beat:sjon:gap', at: { x: SEEN.x, y: SEEN.y }, z: SEEN.z, who: 'lillgubbe', size: 1.5 }],
     // Mamma's lantern in the boat, once she has rowed up.
     // Mamma's boat, rowed in from out on the bay, and the lantern in its bow.
     boat: { spot: 'sjon:mamma', after: 'sjon:mamma', y: -0.6, from: { x: 150, z: -13 }, to: { x: (BREAK.from + BREAK.to) / 2, z: -1.1 } },
@@ -433,12 +509,25 @@ export const flarken: ChapterData = {
       { kind: 'jettyArm', x: 126.4, z: -1.2, y: DECK - 0.3, width: 24 },
       // The small tarred hut with its white trim, in among the birches.
       { kind: 'hut', x: 26, z: -22, width: 9, height: 10, tar: true },
-      { kind: 'sunboard', x: 70, z: -30, width: 13, height: 8.5 },
+      // The painted board with the smiling sun and the place's name, Flärken, in white across its lake (Olov's decision,
+      // 9 November 2026): behind the stones in the shallows, its name above the high stone and clear of the reminder
+      // in the corner on a phone either way up. The decorative reed in front of its name is omitted.
+      { kind: 'sunboard', x: 75.2, y: 2.3, z: -30, width: 10, height: 8.5 },
       { kind: 'birch', x: 6, z: -22, height: 64 },
       { kind: 'birch', x: 40, z: -26, height: 72 },
       { kind: 'birch', x: 64, z: -18, height: 58 },
       { kind: 'birch', x: 88, z: -30, height: 70 },
+      // The outlet: the å's two banks and the stones in its bed, its mouth behind the jetty's last stretch and on out
+      // of the picture, its middle where what it carries floats (the flybys' z), its near bank from past the jetty's
+      // end. Spruces and a birch on its far bank.
+      { kind: 'outlet', x: MOUTH, y: WATER, z: -4, width: OUTLET.to - MOUTH, height: 1.3, opens: OUTLET.from + 1.5 - MOUTH },
+      { kind: 'spruce', x: 200, y: 0.4, z: -11, height: 42 },
+      { kind: 'birch', x: 208, y: 0.4, z: -11.2, height: 50 },
+      { kind: 'spruce', x: 216, y: 0.4, z: -11, height: 44 },
     ],
+    // The å runs out of the lake past the jetty's end, and its foam drifts down it: there the lake's water runs too
+    // (../../../render/water.ts).
+    foam: [{ from: MOUTH, to: OUTLET.to, y: WATER, speed: 1.8, dense: 4 }],
   },
   decor: [
     // A pair of mallards, sheltering behind the reeds.
@@ -447,13 +536,21 @@ export const flarken: ChapterData = {
     // The rocks at the water, where he climbs.
     ...[68, 69.4, 72].map((x, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x, y: i === 0 ? 1.85 : 2.75 }, z: -0.5, scale: 0.55 })),
     // Reeds along the shore, among the mats and at the foot of the jetty. Two of them are climbed.
-    ...[58.6, 60.8, 73.6, HIGH.from - 0.3, 86.4, 89.4, 109.6, 112.2].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
+    ...[58.6, 60.8, HIGH.from - 0.3, 86.4, 89.4, 109.6, 112.2].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
     { look: 'reed', at: { x: BENT_REED.x, y: HIGH.y } },
     ...[90.6, 93.9, 97.3, 103, 106.3].map((x) => ({ look: 'reed' as const, at: { x, y: WATER } })),
+    // Where the last planks have gone: their broken ends on both sides of the gap, one plank hanging into the water on
+    // each (art/blender/flarken.py, `bryggbrott`). Nothing of it is over the gap where he could think to stand.
+    { look: 'kit', word: 'bryggbrott', at: { x: LOW.to, y: LOW.y }, z: 0 },
     // The old trägubbe, far out on the planks after the last post: gone when he comes, in a leap.
     { look: 'tragubbe', at: OLD_ONE, until: 'beat:sjon:old-one' },
     // And on the jetty's end post, until he leaps after the little one.
-    { look: 'tragubbe', at: END_POST, until: 'beat:sjon:log' },
+    { look: 'tragubbe', at: END_POST, until: 'sjon:log-run' },
+    // The outlet: where the lake spills into the å it breaks white over the stones in its bed, and reeds stand along
+    // the far bank, leaving the carried carvings and their log in view across the near bank.
+    { look: 'whiteWater', at: { x: OUTLET.from + 5, y: WATER }, z: -7.2 },
+    ...[OUTLET.from + 2.4, OUTLET.from + 9.5, OUTLET.from + 16].map((x) => ({ look: 'reed' as const, at: { x, y: WATER }, z: -7.1 })),
+    ...[OUTLET.from + 4.6, OUTLET.from + 12.8].map((x) => ({ look: 'reed' as const, at: { x, y: WATER }, z: -7.1 })),
   ],
   // Klonk is always a little ahead, on firm ground: under the picnic table out of the rain, over the mats it never
   // stops, and it is never on one.
@@ -516,19 +613,21 @@ export const flarken: ChapterData = {
     { id: 'sjon:near', at: 151.4, who: 'mamma', line: 'sjNear' },
     // 7. the diving tower
     { id: 'sjon:tower', at: 152.6, who: 'elof', line: 'sjTower' },
-    { id: 'sjon:lookout', at: 155.6, who: 'elof', line: 'sjLookout', read: true },
+    // Said once the lookout's picture has gone out to the little one (`sjon:utkik`), and read with it there.
+    { id: 'sjon:lookout', at: LOOKOUT_AT, needs: 'sjon:seen', who: 'elof', line: 'sjLookout', read: true },
     // 8. the bark raft
     { id: 'sjon:gap', at: 165.4, who: 'elof', line: 'sjGap' },
     { id: 'sjon:stone-idea', at: 165.9, until: `placed:${STONE.id}`, who: 'elof', line: 'sjStoneIdea', read: true },
-    { id: 'sjon:plop', on: `placed:${STONE.id}`, who: 'elof', line: 'sjPlop', read: true },
+    // Said when he has seen it go under, not when he has pushed it.
+    { id: 'sjon:plop', on: SUNK, who: 'elof', line: 'sjPlop', read: true },
     { id: 'sjon:plop-klonk', on: 'beat:sjon:plop', who: 'spoket', line: 'sjPlopKlonk' },
     { id: 'sjon:bark-idea', at: 167.6, needs: `placed:${STONE.id}`, until: `placed:${BARK.id}`, who: 'elof', line: 'sjBarkIdea', read: true },
     { id: 'sjon:raft', on: `placed:${BARK.id}`, who: 'elof', line: 'sjRaft' },
     { id: 'sjon:klonk-raft', on: `placed:${BARK.id}`, who: 'spoket', line: 'sjKlonkRaft' },
     // 9. the jetty's end: the outlet takes them both, and the family will follow the river by car
-    { id: 'sjon:outlet', at: 184, who: 'elof', line: 'sjOutlet', read: true },
-    { id: 'sjon:log', on: 'beat:sjon:outlet', who: 'elof', line: 'sjLog' },
-    { id: 'sjon:floated', on: 'beat:sjon:log', who: 'elof', line: 'sjFloated' },
+    { id: 'sjon:outlet', on: 'sjon:current', who: 'elof', line: 'sjOutlet', read: true },
+    { id: 'sjon:log', on: 'sjon:log-run', who: 'elof', line: 'sjLog' },
+    { id: 'sjon:floated', on: 'sjon:both-downstream', who: 'elof', line: 'sjFloated' },
     { id: 'sjon:car', on: 'beat:sjon:floated', who: 'mamma', line: 'sjCar' },
     { id: 'sjon:follow', on: 'beat:sjon:car', who: 'elof', line: 'sjFollow', read: true },
     { id: 'sjon:klonk-cheer', on: 'beat:sjon:follow', who: 'spoket', line: 'sjKlonkCheer' },
@@ -556,8 +655,8 @@ export const flarken: ChapterData = {
     // The tower: the platform, the jetty below it, and the lake beyond.
     { from: 152, to: 161, zoom: 1.5, lift: 1.2 },
     { from: 161, to: END.from, zoom: 1.3 },
-    // At the end the picture opens out over the lake, towards the river's mouth.
-    { from: END.from, to: END.to, zoom: 1.6, lift: 0.8 },
+    // At the end the picture opens out over the lake, and looks ahead into the outlet, where the å takes them.
+    { from: END.from, to: END.to, zoom: 1.6, lift: 0.8, lead: 3.4 },
   ],
   candy: [
     // 1. the parking, and along both swings: the ramp of candy out of the puddle
@@ -678,7 +777,7 @@ export const context: Chooser = (has, player) => {
   if (has('beat:sjon:car')) return ['sjonRiver', 'sjonRoad', 'water'];
   if (has(`placed:${BARK.id}`)) return [at < FAR.from ? 'sjonRaft' : 'sjonEnd', 'sjonMamma', 'water'];
   // Back on the tower once the stone has sunk, the tower's own lines say what to do there.
-  if (has(`placed:${STONE.id}`) && at >= TOWER.to) return ['sjonBark', 'sjonMamma', 'water'];
+  if (has(SUNK) && at >= TOWER.to) return ['sjonBark', 'sjonMamma', 'water'];
   if (at >= TOWER.to) return ['sjonGap', 'sjonMamma', 'water'];
   if (at >= TOWER.ladder - 0.6) return has('beat:sjon:lookout') ? ['sjonDive', 'sjonMamma', 'water'] : ['sjonTower', 'sjonMamma'];
   if (has('sjon:boat')) return at < BREAK.to + 0.5 ? ['sjonBoat', 'sjonMamma', 'water', 'mamma'] : ['sjonOut', 'sjonMamma'];

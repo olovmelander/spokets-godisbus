@@ -6,7 +6,8 @@ Sent to Blender by scripts/bake/send-kit.mjs, after kit-tools.py. A name in ONLY
 its origin, which is where the chapter puts it (src/content/aventyr2/chapters/flarken.ts), at the size the chapter gives
 it in EL, with its front towards -Y, towards the camera. Where Elof walks on one of them, its top is exactly where his
 ledge is: the tower's platform at 2.7 over its origin from x -2.65 to 2.35, with its ladder at x -2.9; a hut's roof at
-2.9 where it crosses the play plane, 4.5 in front of the hut's origin, from x -3.1 to 3.1. No letters, numbers or marks.
+2.9 where it crosses the play plane, 4.5 in front of the hut's origin, from x -3.1 to 3.1. No letters, numbers or marks,
+but the place's own name on the sun board (Olov's decision, 9 November 2026).
 """
 
 for obj in list(bpy.data.objects):
@@ -596,14 +597,19 @@ if wanted('schack'):
 
 # --- the painted board with the smiling sun -----------------------------------------------------------------------------------
 # The bathing place's board, hand-painted: a pale sky, the dark ridge across the lake, the lake with its ripples painted
-# in, and a smiling sun of wood fixed on it, its rays cut out round it. No word, letter or mark on it. A frame of rough
-# boards, two peeled posts behind it and a little roof of boards over it. 13 wide and 8.5 high, its foot 5 up.
+# in, and a smiling sun of wood fixed on it, its rays cut out round it. Across the lake the place's name in white letters,
+# Flarken with its a-umlaut (Olov's decision, 9 November 2026: the second exception to the game's rule of no lettering,
+# after the name Olympia on the red hall), in the game's own Playpen Sans; no other word, letter or mark. A frame of
+# rough boards, two peeled posts behind it and a little roof of boards over it. 13 wide and 8.5 high, its foot 3 up: low
+# enough that the name is in the picture on a phone held sideways, where the camera looks down onto the water.
+
+SIGN_LOW = 3.0
 
 if wanted('solskylt'):
     part = new_part()
     W = 6.5
-    LOW = 5.0
-    HIGH = 13.5
+    LOW = SIGN_LOW
+    HIGH = LOW + 8.5
     FRAME_WOOD = tone('#6a4a2c')
     POST = tone('#7a6450')
     SKY = tone('#b8d0dc')
@@ -620,6 +626,11 @@ if wanted('solskylt'):
     block(part, (-W - 0.1, -0.08, LOW - 0.1), (W + 0.1, 0.0, HIGH + 0.1), lit(FRAME_WOOD, 0.85), 1.0, grain=0.05)
     # The painting, a little in front of the boards: the sky down to the ridge, the ridge's wavy top, the lake below it.
     HORIZON = LOW + 8.5 * 0.42
+    # The name across the lake: Playpen Sans is 2.4 times as wide as its size, and its tallest letters, the l and the
+    # k, stand 0.52 of it over the line. Wide enough to read from the shore, with the lake round it.
+    NAME_SIZE = 4.3
+    NAME_TALL = 0.52 * NAME_SIZE
+    NAME_BASE = LOW + (HORIZON - LOW - NAME_TALL) * 0.5
     COLUMNS = 20
     ridge_top = []
     for c in range(COLUMNS + 1):
@@ -632,20 +643,19 @@ if wanted('solskylt'):
         x0 = -W + 2.0 * W * c / COLUMNS
         x1 = -W + 2.0 * W * (c + 1) / COLUMNS
         plate(part, [(x0, HORIZON), (x1, HORIZON), (x1, ridge_top[c + 1]), (x0, ridge_top[c])], FRONT - 0.03, FRONT - 0.005, lit(RIDGE, 0.9 + 0.1 * rnd(c, 7.0)))
-    # The lake, its ripples painted as paler strokes.
+    # The lake, its ripples painted as paler strokes over the name and under it, never behind its letters.
     block(part, (-W, FRONT - 0.03, LOW), (W, FRONT + 0.05, HORIZON), LAKE, 3.0, grain=0.0, top=0.0)
-    for k in range(9):
-        z = LOW + 0.5 + 0.38 * k
-        x = -W + 1.0 + (2.0 * W - 3.0) * rnd(k, 3.0)
+    for (k, z) in enumerate((LOW + 0.18, LOW + 0.36, NAME_BASE + NAME_TALL + 0.16, NAME_BASE + NAME_TALL + 0.36)):
+        x = -W + 0.5 + (2.0 * W - 2.6) * rnd(k, 3.0)
         long_ = 0.8 + 1.6 * rnd(k, 4.0)
-        block(part, (x, FRONT - 0.06, z), (min(W - 0.3, x + long_), FRONT - 0.03, z + 0.08), LAKE_PALE, k, grain=0.0, top=0.0)
-    # The sun's glitter on the lake, under it.
+        block(part, (x, FRONT - 0.06, z), (min(W - 0.3, x + long_), FRONT - 0.03, z + 0.07), LAKE_PALE, k, grain=0.0, top=0.0)
+    # The sun's glitter on the lake, under it, between the name and the far shore.
     sun_x = 2.0 * W * 0.22
     sun_z = LOW + 8.5 * 0.74
-    for k in range(4):
-        z = HORIZON - 0.5 - 0.6 * k
-        half = 0.9 - 0.18 * k
-        block(part, (sun_x - half, FRONT - 0.06, z), (sun_x + half, FRONT - 0.03, z + 0.1), lit(SUN, 0.9), k, grain=0.0, top=0.0)
+    for k in range(2):
+        z = HORIZON - 0.2 - 0.24 * k
+        half = 0.9 - 0.3 * k
+        block(part, (sun_x - half, FRONT - 0.06, z), (sun_x + half, FRONT - 0.03, z + 0.09), lit(SUN, 0.9), k, grain=0.0, top=0.0)
     # The wooden sun, cut out and fixed on: a thick disc, its rays round it, and its smiling face.
     R = 8.5 * 0.17
     disc = Matrix.Translation(Vector((sun_x, FRONT - 0.03, sun_z))) @ Matrix.Rotation(math.radians(90.0), 4, 'X')
@@ -676,6 +686,35 @@ if wanted('solskylt'):
              lit(FRAME_WOOD, 0.8), up=Vector((0.0, side * 0.45, 1.0)))
     block(part, (-W - 0.85, -0.08, HIGH + 0.82), (W + 0.85, 0.08, HIGH + 0.98), lit(FRAME_WOOD, 0.7), 5.0, grain=0.0)
     finish(part, 'solskylt', sharp=40.0, strength=0.5, reach=0.6, floor=0.0, leaf=True)
+    # The name, made as the name on Olympia's hall is (art/blender/olympia.py): Playpen Sans's letters as Blender sets
+    # them, flat, a little in front of the lake's paint. A thing of its own, `solskylt-name`, which the game keeps white
+    # in the night (src/render/shared-models.ts); none of the kit's shade is baked on it.
+    letters = bpy.data.curves.new('solskylt-name', 'FONT')
+    letters.body = 'Fl' + chr(0xE4) + 'rken'
+    letters.size = NAME_SIZE
+    letters.resolution_u = 3
+    letters.align_x = 'CENTER'
+    letters.font = bpy.data.fonts.load(ROOT + '/public/fonts/playpen-sans-700-sv.woff2')
+    name = bpy.data.objects.new('solskylt-name', letters)
+    bpy.context.scene.collection.objects.link(name)
+    name.rotation_euler = (math.pi / 2, 0.0, 0.0)
+    name.location = (0.0, FRONT - 0.1, NAME_BASE)
+    bpy.ops.object.select_all(action='DESELECT')
+    name.select_set(True)
+    bpy.context.view_layer.objects.active = name
+    bpy.ops.object.convert(target='MESH')
+    name = bpy.context.view_layer.objects.active
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    name.name = 'solskylt-name'
+    name.data.name = 'solskylt-name'
+    white = name.data.color_attributes.new('Color', 'FLOAT_COLOR', 'CORNER')
+    for item in white.data:
+        item.color = (1.0, 1.0, 1.0, 1.0)
+    name.data.materials.clear()
+    name.data.materials.append(MATERIAL)
+    name['shade'] = 0.0
+    name['reach'] = 0.0
+    name['floor'] = -1000.0
 
 
 # --- the jetty's other leg ---------------------------------------------------------------------------------------------------
@@ -729,3 +768,182 @@ if wanted('bryggarm'):
     tube(part, ring_, [0.17] * 25, bands, 8, twist=0.0)
     beam(part, Vector((HALF + 0.1, LONG - 0.62, 1.95)), Vector((HALF + 0.1, LONG - 0.82, 1.95)), 0.06, 0.06, tone('#2a2a2c'))
     finish(part, 'bryggarm', sharp=40.0, strength=0.5, reach=0.6, leaf=True)
+
+
+# --- the stone, the bark and the gap at the jetty's end -------------------------------------------------------------------
+# What the puzzle at the jetty's end is made of (src/content/aventyr2/chapters/flarken.ts, "Vad flyter?"), each as big as it
+# is to the game. The stone Elof pushes out, thinking it will fill the gap, rolls and sinks; the bark, which is wood,
+# floats there. The game moves them both itself, so neither has the ground's shade baked under it.
+
+# A round field stone of grey granite, rounded by the ice: 1.4 across and 1.5 high, as the stone is to the game. It
+# rolls, so it is round every way, and its origin is its middle, where the game turns it. Mottled grey with dark and
+# rosy grains, a white vein of quartz round it, crusts of pale lichen and a few orange spots on one side; wet.
+if wanted('grasten'):
+    part = new_part()
+    GRANITE = tone('#a3a19a')
+    GRANITE_DARK = tone('#7f7d77')
+    GRAIN_DARK = tone('#3a3a3d')
+    GRAIN_ROSE = tone('#a8948a')
+    QUARTZ = tone('#dcd8cc')
+    LICHEN = tone('#a2aa8e')
+    LICHEN_ORANGE = tone('#c49a3e')
+    made = lump(part, Vector((0.0, 0.0, 0.0)), (1.0, 1.0, 1.0), 5, GRANITE)
+    VEIN = Vector((0.5, 0.32, 0.8))
+    VEIN.normalize()
+    for v in made:
+        d = v.co.normalized()
+        # Round, a little longer than it is wide, with soft swells and dents, as no two field stones are alike.
+        swell = 1.0 + 0.11 * (noise(d.x * 1.3 + 4.0, d.y * 1.3, d.z * 1.3) - 0.5) + 0.05 * (noise(d.x * 3.1, d.y * 3.1 + 2.0, d.z * 3.1) - 0.5)
+        v.co = Vector((d.x * 0.7, d.y * 0.64, d.z * 0.75)) * swell
+        # Its paint: the granite's mottle, its grains, the vein, the lichen; all of it darker for the rain.
+        mottle = noise(d.x * 2.2 + 9.0, d.y * 2.2, d.z * 2.2)
+        colour = blend(GRANITE_DARK, GRANITE, mottle * 1.3 - 0.15)
+        grain = rnd(v.co.x * 41.0 + v.co.z * 7.0, v.co.y * 37.0 + v.co.z * 13.0)
+        if grain < 0.14:
+            colour = blend(colour, GRAIN_DARK, 0.45)
+        elif grain < 0.26:
+            colour = blend(colour, GRAIN_ROSE, 0.4)
+        across = abs(d.dot(VEIN) - 0.16 - 0.16 * (noise(d.x * 1.6, d.y * 1.6, d.z * 1.6 + 5.0) - 0.5))
+        wide = 0.012 + 0.03 * noise(d.x * 3.0 + 2.0, d.y * 3.0, d.z * 3.0)
+        colour = blend(colour, QUARTZ, 0.8 * (1.0 - max(0.0, min(1.0, (across - wide) / 0.03))))
+        crust = noise(d.x * 2.6 + 3.0, d.y * 2.6 + 1.0, d.z * 2.6)
+        if d.z > -0.2 and crust > 0.6:
+            colour = blend(colour, LICHEN, min(1.0, (crust - 0.6) * 5.0) * 0.8)
+        if d.z > 0.25 and noise(d.x * 7.0, d.y * 7.0 + 3.0, d.z * 7.0) > 0.8:
+            colour = blend(colour, LICHEN_ORANGE, 0.7)
+        part['paint'][v] = lit(colour, 0.88)
+    finish(part, 'grasten', sharp=180.0, strength=0.3, reach=0.4)
+
+
+# A thick piece of old pine bark, as the bark is to the game: 2 long, 1.5 high and 1 deep, its origin the middle of its
+# bottom. It stands on its edge with its outside to the camera: old pine bark's plates, grey-brown and each its own, a
+# little domed, between deep fissures that are rust-red where they open; its broken ends and its top show the bark's
+# layers, red-brown, and its back is the inside, smoother and darker. Its top is level, where he stands when it floats.
+
+BARK_SEEDS = [(-1.15 + 2.3 * rnd(k, 1.3), -0.15 + 1.8 * rnd(k, 2.9)) for k in range(54)]
+
+
+def bark_plate(x, z):
+    """Where on old pine bark (x, z) is: (how far into its plate, from 0 in a fissure to 1, which plate it is). The
+    plates are cells round scattered middles, a little longer than they are high."""
+    near = 9.0
+    second = 9.0
+    which = 0
+    for k in range(len(BARK_SEEDS)):
+        dx = (x - BARK_SEEDS[k][0]) / 2.1
+        dz = z - BARK_SEEDS[k][1]
+        d = math.sqrt(dx * dx + dz * dz)
+        if d < near:
+            second = near
+            near = d
+            which = k
+        elif d < second:
+            second = d
+    return (max(0.0, min(1.0, (second - near - 0.012) / 0.07)), which)
+
+
+if wanted('barkbit'):
+    part = new_part()
+    PLATE = tone('#7a573a')
+    PLATE_PALE = tone('#a08468')
+    LICHEN_ = tone('#7f8468')
+    FISSURE = tone('#24140d')
+    FISSURE_RED = tone('#9a4a24')
+    LAYER = (tone('#7a4228'), tone('#94552f'))
+    INSIDE = tone('#5c4636')
+    NX = 36
+    NZ = 27
+    FRONT_Y = -0.36
+    BACK_Y = 0.5
+
+    def outline_at(u, v):
+        """Where on its face (u, v) from 0 to 1 is: its ends broken off unevenly, its bottom uneven, its top level."""
+        left = -1.0 + 0.1 * noise(v * 4.0, 1.0, 2.0) + (0.06 if v > 0.55 and v < 0.75 else 0.0) + 0.08 * v * v
+        right = 1.0 - 0.12 * noise(v * 3.6, 4.0, 1.0) - 0.1 * v * v
+        bottom = 0.05 * noise(u * 5.0, 2.0, 3.0)
+        return (left + (right - left) * u, bottom + (1.5 - bottom) * v)
+
+    front = []
+    back = []
+    for i in range(NX + 1):
+        row_f = []
+        row_b = []
+        for j in range(NZ + 1):
+            (x, z) = outline_at(i / NX, j / NZ)
+            (inside, which) = bark_plate(x, z)
+            edge = min(i, NX - i, j, NZ - j) / 3.0
+            dome = inside * (0.1 + 0.05 * rnd(which, 4.0)) * min(1.0, edge + 0.35)
+            colour = blend(lit(PLATE, 0.82 + 0.3 * rnd(which, 5.0)), PLATE_PALE, max(0.0, inside - 0.75) * 2.0)
+            if rnd(which, 6.0) < 0.2:
+                colour = blend(colour, LICHEN_, 0.45 * inside)
+            if inside < 0.55:
+                colour = blend(FISSURE, FISSURE_RED, inside / 0.3) if inside < 0.3 else blend(FISSURE_RED, colour, (inside - 0.3) / 0.25)
+            # Its face bulges a little, as a piece of a round trunk's bark does.
+            row_f.append(put(part, Vector((x, FRONT_Y - dome - 0.1 * math.sin(math.pi * i / NX), z)), colour))
+            row_b.append(put(part, Vector((x, BACK_Y - 0.06 * noise(x * 2.0, z * 2.0, 5.0), z)), INSIDE))
+        front.append(row_f)
+        back.append(row_b)
+    for i in range(NX):
+        for j in range(NZ):
+            face(part, (front[i][j], front[i + 1][j], front[i + 1][j + 1], front[i][j + 1]))
+            face(part, (back[i][j], back[i][j + 1], back[i + 1][j + 1], back[i + 1][j]))
+    # Round its edge, from the face to the back: the bark's layers, bands of red-brown from the outside in, each its own.
+    rim = [(i, 0) for i in range(NX)] + [(NX, j) for j in range(NZ)] + [(i, NZ) for i in range(NX, 0, -1)] + [(0, j) for j in range(NZ, 0, -1)]
+    rings = []
+    for (i, j) in rim:
+        a = front[i][j]
+        b = back[i][j]
+        rings.append([a] + [put(part, a.co.lerp(b.co, t_), LAYER[m]) for (m, t_) in enumerate((0.22, 0.5))] + [b])
+    for k in range(len(rim)):
+        here = rings[k]
+        on = rings[(k + 1) % len(rim)]
+        for m in range(3):
+            made = face(part, (here[m], on[m], on[m + 1], here[m + 1]))
+            part['flat'][made] = lit(LAYER[m] if m < 2 else INSIDE, 0.94 + 0.1 * rnd(k, m))
+    finish(part, 'barkbit', sharp=60.0, strength=0.6, reach=0.3)
+
+
+# Where the jetty's last planks have gone: the ends of its three rows of planks broken off, splintered and paler where
+# the wood is new, and one plank on each side snapped and hanging down into the water at the back. The jetty's own
+# planks are the game's (src/render/dressing/spang.ts: 0.76 wide and 0.22 thick, their tops on the line he walks, at
+# 0.8 behind him, under him and 0.8 in front). Its origin is the near edge of the gap, its far edge 4.6 on; nothing of it
+# is over the gap at the height he stands, so it is never something to stand on.
+if wanted('bryggbrott'):
+    part = new_part()
+    SILVER = (tone('#aca79c'), tone('#b9b4a8'), tone('#c6c1b5'))
+    FRESH = tone('#cdb48a')
+    WIDE = 0.76
+    THICK = 0.22
+    GAP = 4.6
+    for (edge, way) in ((0.0, 1.0), (GAP, -1.0)):
+        for (row, y) in enumerate((0.8, 0.0, -0.8)):
+            # The broken end: splinters of uneven length, pale where they broke, over the plank's thickness.
+            wood = SILVER[(row + int(edge)) % 3]
+            count = 4
+            for k in range(count):
+                y0 = y - WIDE * 0.5 + WIDE * k / count + 0.01
+                y1 = y - WIDE * 0.5 + WIDE * (k + 1) / count - 0.01
+                reach = 0.06 + 0.24 * rnd(k + row * 5.0, edge + 3.0)
+                tip_z = -THICK * (0.3 + 0.5 * rnd(k, row + edge))
+                base = [Vector((edge - way * 0.02, y0, 0.0)), Vector((edge - way * 0.02, y1, 0.0)),
+                        Vector((edge - way * 0.02, y1, -THICK)), Vector((edge - way * 0.02, y0, -THICK))]
+                tip = Vector((edge + way * reach, (y0 + y1) * 0.5, tip_z))
+                corners = [put(part, p, wood) for p in base]
+                point = put(part, tip, FRESH)
+                for m in range(4):
+                    face(part, (corners[m], corners[(m + 1) % 4], point))
+        # The back row's plank, snapped and hanging down into the water, its far end under it: a board 0.84 of a plank
+        # wide and a plank thick, from just under the deck's edge down to under the water.
+        start = Vector((edge + way * 0.05, 0.8, -0.06))
+        end = Vector((edge + way * 1.05, 0.8, -0.95))
+        ahead = end - start
+        ahead.normalize()
+        down = Vector((ahead.z, 0.0, -ahead.x)) if way > 0 else Vector((-ahead.z, 0.0, ahead.x))
+        rings = []
+        for at in (start, end):
+            rings.append([at + Vector((0.0, -WIDE * 0.42, 0.0)), at + Vector((0.0, WIDE * 0.42, 0.0)),
+                          at + Vector((0.0, WIDE * 0.42, 0.0)) + down * THICK, at + Vector((0.0, -WIDE * 0.42, 0.0)) + down * THICK])
+        board = skin(part, rings, [SILVER[1], lit(SILVER[1], 0.7)])
+        face(part, list(reversed(board[0])), FRESH)
+        face(part, board[1], lit(FRESH, 0.8))
+    finish(part, 'bryggbrott', sharp=40.0, strength=0.4, reach=0.4)

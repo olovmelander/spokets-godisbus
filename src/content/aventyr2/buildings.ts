@@ -7,6 +7,7 @@ import type { Storm } from '../../sim/types';
 import { paintedWood } from '../../render/painted-wood';
 import { groundDetail } from '../../render/ground-detail';
 import { PLANK, STONE, barkDetail, barky, notBark } from '../../render/bark-detail';
+import { outletShape } from './outlet';
 
 /**
  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
@@ -794,13 +795,15 @@ function chess(def: BuildingDef) {
 }
 
 function sunboard(def: BuildingDef) {
-  // The bathing place's painted board: the lake, the ridge and a smiling wooden sun. No word on it.
+  // The bathing place's painted board: the lake, the ridge and a smiling wooden sun, standing low (3 up), as the model
+  // from Blender does. The place's name across its lake is the model's alone (art/blender/flarken.py, `solskylt-name`).
   const w = def.width ?? 12;
   const h = def.height ?? 8;
-  const parts: BufferGeometry[] = [box(w + 0.8, h + 0.8, 0.5, 0, h / 2 + 5, -0.1, '#6a4a2c'), box(w, h * 0.45, 0.3, 0, 5 + h * 0.225, 0.2, '#3f6a8a')];
-  parts.push(box(w, h * 0.55, 0.3, 0, 5 + h * 0.725, 0.2, '#b8d0dc'), box(w, h * 0.16, 0.34, 0, 5 + h * 0.5, 0.2, '#3a5a40'));
-  for (const x of [-w / 2 + 0.6, w / 2 - 0.6]) parts.push(post(0.3, 5.4, x, 2.7, -0.3, '#5a3e22'));
-  const sun = { x: w * 0.22, y: 5 + h * 0.74, r: h * 0.17 };
+  const foot = 3;
+  const parts: BufferGeometry[] = [box(w + 0.8, h + 0.8, 0.5, 0, h / 2 + foot, -0.1, '#6a4a2c'), box(w, h * 0.45, 0.3, 0, foot + h * 0.225, 0.2, '#3f6a8a')];
+  parts.push(box(w, h * 0.55, 0.3, 0, foot + h * 0.725, 0.2, '#b8d0dc'), box(w, h * 0.16, 0.34, 0, foot + h * 0.5, 0.2, '#3a5a40'));
+  for (const x of [-w / 2 + 0.6, w / 2 - 0.6]) parts.push(post(0.3, foot + 0.4, x, 0, -0.3, '#5a3e22'));
+  const sun = { x: w * 0.22, y: foot + h * 0.74, r: h * 0.17 };
   parts.push(paint(new CircleGeometry(sun.r, 16).translate(sun.x, sun.y, 0.4), '#d9a84e'));
   for (let i = 0; i < 10; i++) {
     const a = (i / 10) * Math.PI * 2;
@@ -985,9 +988,18 @@ function store(def: BuildingDef) {
   return { parts, panes };
 }
 
+/**
+ * Where a lake runs out into its å (Flärken's end): the stream's two banks and the stones in its bed (./outlet.ts),
+ * its middle at the building's z and its foot at the water (`y`), as long as `width`, its banks `height` high, and its
+ * near bank from `opens` on.
+ */
+function outlet(def: BuildingDef) {
+  return { parts: [outletShape({ long: def.width ?? 34, wide: 6, high: def.height ?? 1.2, opens: def.opens ?? 1.5 })], panes: [] };
+}
+
 const BUILD: Record<BuildingDef['kind'], (def: BuildingDef) => { parts: BufferGeometry[]; panes: BufferGeometry[] }> = {
   jettyArm, pole, store, trestleTable, pitch, chess, sunboard, villa, barn, goal, floodlight, stand, clubhouse, tower, hut, birch, car, kota,
-  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce, gardenset,
+  church, bridge, woodshed, rowboat, swings, slide, picnic, volleyball, lodge, mailbox, cliff, spruce, gardenset, outlet,
 };
 
 /**

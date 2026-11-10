@@ -16,7 +16,9 @@ const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel',
 const YARD = ['vedbod', 'roddbat-vinter', 'brevlada', 'gungor', 'utemobler', 'fotbollsmal', 'fotbollsmal-stort', 'kitbord'];
 /** Äventyr 2's buildings: Själevad's church, the beaver's lodge, Olympia's store and floodlight masts, Billsta's poles. */
 const BUILDINGS = ['kyrka', 'baverhydda', 'kiosk', 'belysningsmast', 'elstolpe'];
-const FLARKEN = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'bryggarm'];
+const FLARKEN = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'bryggarm', 'bryggbrott'];
+/** Flärken's stone and bark, which roll, slide and float: no weather laid on them where they stand, or it would swim. */
+const FLARKEN_MOVING = ['grasten', 'barkbit'];
 const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme', 'leksakshylla', 'docka', 'docka-rock'];
 const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
@@ -29,7 +31,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
   ...Object.fromEntries(YARD.map((name) => [name, ['aventyr2', 'yard'] as const])),
   ...Object.fromEntries(BUILDINGS.map((name) => [name, ['aventyr2', 'buildings'] as const])),
-  ...Object.fromEntries(FLARKEN.map((name) => [name, ['aventyr2', 'flarken'] as const])),
+  ...Object.fromEntries([...FLARKEN, ...FLARKEN_MOVING].map((name) => [name, ['aventyr2', 'flarken'] as const])),
   ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],

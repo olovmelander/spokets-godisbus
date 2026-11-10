@@ -398,7 +398,9 @@ export interface SimStart {
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door';
+  // Flärken's round stone, which rolls off the planks and sinks.
+  | 'fieldstone'
+  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door' | 'barn-door';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
 export type SpotLook = 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
@@ -720,7 +722,14 @@ export interface Storm {
   /** Once this flag is set the storm has passed: no rain, no flashes, and the sky clears. */
   calm?: string;
   /** A flash when the flag is set, and a figure blown across the dark sky, from one place to another. */
-  flybys?: { on: string; from: Vec; to: Vec; seconds: number; who: 'lillgubbe' | 'tragubbe' }[];
+  flybys?: Flyby[];
+  /**
+   * Someone seen far off in a flash once `on` is set, until `until` is: the little one caught on a stone where the river
+   * begins, seen from the top of the diving tower. Drawn as the carving itself, pale, on its stone in the water, with a
+   * little light of its own so that it reads in the dark; `size` is how much bigger than its own it is drawn, for the
+   * distance. `z` is behind the play plane.
+   */
+  sightings?: { on: string; until: string; at: Vec; z: number; who: 'lillgubbe' | 'tragubbe'; size?: number }[];
   /**
    * The flag of a ledge that is Klonk himself, frozen stiff as a plank in a grown-up's lamp (the Toy Story rule):
    * while it is set and Elof has not crossed, Klonk lies across, and the ghost is not drawn standing anywhere else.
@@ -773,7 +782,7 @@ export interface Storm {
   buildings?: {
     kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce'
-      | 'gardenset';
+      | 'gardenset' | 'outlet';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; model?: string; size?: number;
     /**
      * A pitch's lines (../content/aventyr2/buildings.ts): its halfway line and circle, a goal's box, how far it runs on
@@ -789,6 +798,8 @@ export interface Storm {
     slider?: { top: number; rise: number };
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
     turn?: number;
+    /** An outlet's near bank begins this far along it, past the end of a jetty that runs out into its mouth. */
+    opens?: number;
   }[];
   /** Warm windows of lit candles and lanterns, which glow through the rain. */
   glows?: { at: Vec; z?: number; size?: number; after?: string }[];

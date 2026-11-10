@@ -61,12 +61,12 @@ const ledges = flarken.ledges!;
 
 describe('Flärkenbadet, made in Blender', () => {
   it('has the tower, the three huts, the chess, the sun board and the jetty\'s other leg, each in its stand-in\'s place at the chapter\'s size', () => {
-    const names = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'bryggarm'];
+    const names = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'solskylt-name', 'bryggarm', 'grasten', 'barkbit', 'bryggbrott'];
     for (const name of names) expect(kit.has(name), name).toBe(true);
     const own = ['tower', 'hut', 'chess', 'sunboard', 'jettyArm'];
     const models = buildings.filter((def) => own.includes(def.kind)).map((def) => building(def).group.userData);
     expect(models.map((data) => data.model)).toEqual(['hydda', 'hydda-skjutdorr', 'hopptorn', 'schack', 'bryggarm', 'hydda-tjarad', 'solskylt']);
-    for (const data of models) expect(data.fit).toBeCloseTo(1, 5);
+    for (const data of models) expect(data.fit).toBeCloseTo(data.model === 'solskylt' ? 10 / 13 : 1, 5);
   });
 
   it('lays the jetty\'s other leg level with the jetty, a little lower, from just behind the planks he walks on', () => {
@@ -120,6 +120,68 @@ describe('Flärkenbadet, made in Blender', () => {
     }
   });
 
+  it('writes the place\'s name across the sun board\'s lake, and nothing else (Olov\'s decision, 9 November 2026)', () => {
+    // The name is a thing of its own, which the game keeps white in the night (src/render/shared-models.ts).
+    const board = new Box3().setFromObject(kit.get('solskylt')!);
+    const name = new Box3().setFromObject(kit.get('solskylt-name')!);
+    // On the board, flat in front of its paint, and wide enough to read: most of the board's width.
+    expect(name.min.x).toBeGreaterThan(board.min.x + 0.5);
+    expect(name.max.x).toBeLessThan(board.max.x - 0.5);
+    expect(name.max.x - name.min.x).toBeGreaterThan(9);
+    expect(name.max.z - name.min.z).toBeLessThan(0.01);
+    const front = hit('solskylt', new Vector3(name.getCenter(new Vector3()).x, (name.min.y + name.max.y) / 2, 20), new Vector3(0, 0, -1));
+    expect(front).not.toBeNull();
+    expect(name.max.z).toBeGreaterThan(front!.z);
+    // Across the lake, under the far shore: in the board's lower half, which is low enough to be in the picture.
+    const sunboard = buildings.find((def) => def.kind === 'sunboard')!;
+    const foot = name.min.y - 0.4;
+    expect(foot).toBeGreaterThan(2);
+    expect(name.max.y).toBeLessThan(foot + 0.4 + (sunboard.height ?? 8.5) * 0.5);
+    // Seen from the stones in the shallows, where the board stands behind them.
+    expect(sunboard.x).toBeGreaterThan(flarken.surfaces!.find((s) => s.kind === 'stone')!.from);
+  });
+
+  it('has the stone and the bark of the puzzle at the jetty\'s end as big as they are to the game', () => {
+    const size = (name: string) => new Box3().setFromObject(kit.get(name)!);
+    const stone = flarken.movers!.find((mover) => mover.id === 'sjon-stone')!;
+    const bark = flarken.movers!.find((mover) => mover.id === 'sjon-bark')!;
+    // The stone rolls, so it is round, its middle at its origin, where the game turns it.
+    const round = size('grasten');
+    expect(round.getCenter(new Vector3()).length()).toBeLessThan(0.08);
+    expect(round.max.x - round.min.x).toBeCloseTo(stone.width, 0);
+    expect(round.max.y - round.min.y).toBeCloseTo(stone.height, 0);
+    expect(Math.abs((round.max.x - round.min.x) - stone.width)).toBeLessThan(0.15);
+    expect(Math.abs((round.max.y - round.min.y) - stone.height)).toBeLessThan(0.15);
+    // The bark stands on the middle of its bottom, its top level where he stands on it.
+    const piece = size('barkbit');
+    expect(Math.abs(piece.min.y)).toBeLessThan(0.02);
+    expect(Math.abs(piece.max.y - bark.height)).toBeLessThan(0.06);
+    expect(Math.abs((piece.max.x - piece.min.x) - bark.width)).toBeLessThan(0.15);
+  });
+
+  it('breaks the jetty\'s planks off at both sides of the gap, and puts nothing over it where he could stand', () => {
+    const broken = flarken.decor!.find((d) => d.word === 'bryggbrott')!;
+    const pits = flarken.ground.flatMap((p, i) => {
+      const next = flarken.ground[i + 1];
+      return next && next.x > p.x && p.y < -1 && next.y < -1 ? [{ from: p.x, to: next.x }] : [];
+    });
+    const gap = pits.find((pit) => Math.abs(pit.from - broken.at.x) < 1e-6)!;
+    expect(gap).toBeDefined();
+    const mesh = kit.get('bryggbrott')!;
+    const at = mesh.geometry.getAttribute('position');
+    let near = 0;
+    let far = 0;
+    for (let i = 0; i < at.count; i++) {
+      const p = new Vector3(at.getX(i), at.getY(i), at.getZ(i)).add(mesh.position);
+      // Each side's splinters are at its edge; more than a splinter's length out over the gap, only what hangs down.
+      if (p.x > 0.35 && p.x < gap.to - gap.from - 0.35) expect(p.y + broken.at.y, `x ${p.x}`).toBeLessThan(-0.2);
+      if (p.x < 0.4) near++;
+      if (p.x > gap.to - gap.from - 0.4) far++;
+    }
+    expect(near).toBeGreaterThan(10);
+    expect(far).toBeGreaterThan(10);
+  });
+
   it('hangs the second hut\'s rail where its door slides, rising as the door does', () => {
     const door = flarken.movers!.find((mover) => mover.look === 'hut-door')!;
     const hut = buildings.find((def) => def.kind === 'hut' && def.slider)!;
@@ -141,9 +203,12 @@ describe('Flärken\'s jetty, standing in the lake', () => {
   it('draws the lake under the jetty, as one with the water it meets, and leaves the simulation\'s water as it is', () => {
     expect(jetties.map((j) => [j.from, j.to])).toEqual([[113, 144], [150, 154], [159.6, 173.4], [178, 191]]);
     const drawn = drawnPools(flarken.water!, jetties);
-    // The puddle and the first pools as they were; the lake from the jetty's foot to its end, one water.
+    // The puddle and the first pools as they were; the lake from the jetty's foot to its end, one water, and on past
+    // the end into the outlet, where the å takes the little one.
     expect(drawn[0]).toEqual(flarken.water![0]);
-    expect(drawn.find((w) => w.from === 113)).toEqual({ from: 113, to: 191, y: lake.y });
+    const outlet = flarken.water![flarken.water!.length - 1]!;
+    expect(outlet.from).toBe(191);
+    expect(drawn.find((w) => w.from === 113)).toEqual({ from: 113, to: outlet.to, y: lake.y });
     expect(drawnPools(flarken.water!)).toEqual(flarken.water);
     // A chapter with no jetty draws the pools it has.
     expect(jettiesOf(flarken, 'sphagnum')).toEqual([]);
