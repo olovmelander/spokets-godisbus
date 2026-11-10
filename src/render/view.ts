@@ -1,3 +1,4 @@
+import { holdFlashlight } from './lamp-hold';
 import { stormSweet } from './storm-sweet';
 import { lessMotion } from '../platform/motion';
 import { owlHollow } from './owl-trap';
@@ -5,7 +6,7 @@ import { buildBraid } from './braid';
 import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } from './myren-helper';
 import { createPaddle, type Paddle } from './paddle';
 import { createScarves } from './scarf';
-import { heldInOther, rainGearFor } from './rain-gear';
+import { rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
@@ -1001,9 +1002,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Granskogen's seesaw board, which Pappa holds (props.ts); found the first time it is wanted. */
   let seesawPlank: Object3D | null | undefined;
   const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0, hold: 0, stoop: 0 }); return g; };
-  const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3(), lampLocal = new Vector3();
+  const lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3(), lampLocal = new Vector3();
   const lampHeld = new Vector3(), upright = new Vector3(0, 1, 0);
-  const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
   /** A berry or a sweet between his thumb and his finger, and a sheet's corner (./fingers.ts). */
   const BERRY = { kind: 'pinch' as const, size: 0.05 }, PAPER = { kind: 'pinch' as const, size: 0.008 };
@@ -1072,7 +1072,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const heldCoat = holdsCoat(chapter) ? createHeldCoat(chapter) : null;
   if (heldCoat) scene.add(heldCoat.group);
   /** Stormkvällen's flashlight: Elof carries it from the table, and Pappa has it from then on. */
-  let carriedLamp: Mesh | null = null, pappasLamp: Mesh | null = null;
+  let carriedLamp: Mesh | null = null;
+  const pappasLampBeam = chapter.id === 'stormkvall' ? stage.group.getObjectByName('stage-thing:lamp-pappa')?.getObjectByName('lamp-beam') : undefined;
   const holdLamp = (lamp: Mesh, rig: Pick<Rig, 'hand' | 'grasp' | 'socket'>, side: 0 | 1, facing: number, size: number) => {
     lampAim.set(Math.sin(facing), -0.3, Math.cos(facing)).normalize();
     if (rig.grasp && rig.socket) {
@@ -1834,19 +1835,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       carriedLamp.visible = carries;
       if (carries && playerBody) holdLamp(carriedLamp, playerBody, 1, turn, 1.6 * tall / 5.2);
     }
-    const pappa = chapter.id === 'stormkvall' ? stage.actors.get('pappa') : undefined;
-    const pappaHas = !!pappa && flags.has('lamp:give') && pappa.visible();
-    if (pappaHas && !pappasLamp) { pappasLamp = litLamp(); scene.add(pappasLamp); }
-    if (pappasLamp) {
-      pappasLamp.visible = pappaHas;
-      if (pappaHas && pappa) {
-        pappa.rig.group.updateWorldMatrix(true, false);
-        pappa.rig.group.getWorldQuaternion(lampTurn);
-        // In his left hand; while he puts his coat on, in his right for a while (./rain-gear.ts heldInOther).
-        const side = heldInOther(chapter, 'pappa', sceneFrame, calmStory) ? 1 : 0;
-        holdLamp(pappasLamp, pappa.rig, side, 2 * Math.atan2(lampTurn.y, lampTurn.w), Math.max(0.7, pappa.rig.height / 5.2));
-      }
-    }
+    if (pappasLampBeam) pappasLampBeam.visible = tier !== 'low';
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
 
     playerGroundY = curr.groundY;
@@ -2255,39 +2244,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         } else if (lit) {
           const u = one.rig.height / 5.2;
           one.rig.group.updateWorldMatrix(true, false);
-          one.rig.group.getWorldPosition(lampFrom);
-          lampFrom.y += 3.1 * u;
           const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
             && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
           if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
           else lampTo.set(x, y + tall * 0.4, 0);
-          lampAim.subVectors(lampTo, lampFrom);
-          // Never into the lens: held level or down, along the path.
-          lampAim.z = Math.min(lampAim.z, Math.hypot(lampAim.x, lampAim.y) * 0.3);
-          lampAim.normalize();
           // Held in the hand on his side, out in front of the body and of a raincoat over it, so that the arm never
           // crosses the chest through the coat; the lamp itself turns to him (Olov: the arms went through the coats).
           lampLocal.copy(lampTo);
           one.rig.group.worldToLocal(lampLocal);
           // While Moa has her umbrella in her left hand, the lamp is in her right.
           const side: 0 | 1 = lampLocal.x >= 0 && !umbrellaUp ? 0 : 1;
-          // At the waist, out in front of the coat, the elbow bent: a light held to see by, not an arm held straight.
-          lampHand.set((side === 0 ? 1 : -1) * 0.62 * u, 2.95 * u, 0.85 * u);
-          one.rig.group.localToWorld(lampHand);
-          one.rig.reach(side, lampHand, 0.9);
-          const size = Math.max(0.7, u);
-          if (one.rig.grasp && one.rig.socket) {
-            // Closed round the lamp's body, the hand turned with its light, out past the thumb (./fingers.ts).
-            const grip = { kind: 'power' as const, size: 0.075 * size };
-            one.rig.grasp(side, grip, one.rig.socket(side, grip, lampHand), lampAim, lampHand, 1, lampHeld);
-            one.lamp.position.copy(lampHand).addScaledVector(lampHeld, -0.06 * size);
-            one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampHeld);
-          } else {
-            one.rig.hand(side, lampHand);
-            one.lamp.position.copy(lampHand);
-            one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim);
-          }
-          one.lamp.scale.setScalar(size);
+          holdFlashlight(one.rig, one.lamp, side, lampTo, Math.max(.7, u));
           one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
         }
       }

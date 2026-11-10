@@ -202,6 +202,8 @@ export interface Rig {
   pose(pose: Pose): void;
   /** Where a hand is in the world after the last pose: the body's left is 0. */
   hand(side: 0 | 1, out: Vector3): Vector3;
+  /** Actual arm joints in world space, after posing; used to place held things within this body's reach. */
+  arm?(side: 0 | 1, shoulder: Vector3, elbow: Vector3, wrist: Vector3): void;
   /** Where a knee is in the world after the last pose (the joint): the body's left is 0. A hand rests on it, kneeling. */
   knee?(side: 0 | 1, out: Vector3): Vector3;
   /** The lips in world space, following the head's nod and turn. */
@@ -555,6 +557,12 @@ export function createRehearsalRig(who: Role): Rig {
     hand(side, out) {
       group.updateWorldMatrix(true, false);
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
+    },
+    arm(side, shoulder, elbow, wrist) {
+      group.updateWorldMatrix(true, true);
+      contacts[side].upper.getWorldPosition(shoulder);
+      contacts[side].lower.getWorldPosition(elbow);
+      contacts[side].wrist.getWorldPosition(wrist);
     },
     knee(side, out) {
       group.updateWorldMatrix(true, false);
@@ -1060,6 +1068,12 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (!lower) return group.localToWorld(out.set(0, height * 0.45, 0));
       // Blender's bones lie along their own +y: the hand is a forearm's length along it from the elbow.
       return lower.node.localToWorld(out.set(0, fore[side]!, 0));
+    },
+    arm(side, shoulder, elbow, wrist) {
+      const upper = side === 0 ? bones.armL : bones.armR, lower = side === 0 ? bones.elbowL : bones.elbowR;
+      if (upper && lower) { upper.node.getWorldPosition(shoulder); lower.node.getWorldPosition(elbow); }
+      else { group.localToWorld(shoulder.set((side === 0 ? 1 : -1) * height * .13, height * .75, 0)); elbow.copy(shoulder); }
+      this.hand(side, wrist);
     },
     knee(side, out) {
       const knee = side === 0 ? bones.kneeL : bones.kneeR;

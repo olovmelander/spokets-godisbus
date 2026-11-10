@@ -1,3 +1,5 @@
+import { holdFlashlight } from './lamp-hold';
+import { heldInOther } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
@@ -30,8 +32,6 @@ const FAMILY: readonly Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const SEATED: readonly Act[] = ['sit', 'carve', 'draw'];
 /** Acts whose aim the whole body turns to. */
 const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
-/** The way a lamp shines in its own space (litLamp). */
-const LAMP_AXIS = new Vector3(0, 0, 1);
 /** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
 const OFFER_REACH = 0.82;
 /**
@@ -529,6 +529,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       holders.add(mesh);
     }
   }
+  if (chapter.id === 'stormkvall') {
+    const lamp = litLamp(); lamp.name = 'stage-thing:lamp-pappa'; drawnWhile(lamp, false);
+    things.set('lamp-pappa', lamp); holders.add(lamp);
+  }
   /** The chairs and stools, and who sits on each (below): getting up, they push it back from the table, and draw it in sitting down. */
   const chairs: { made: Group; x: number; y: number; z: number; face: number; top: number; owner: string | null; near: number }[] = [];
   for (const piece of chapter.furniture ?? []) {
@@ -794,6 +798,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // Gone in: coming back is a cut, not a walk from where they went.
           live.delete(who);
           continue;
+        }
+        // The lamp Elof gave Pappa is a real held prop, so neither walking nor speech reuses that hand.
+        if (chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give')) {
+          state = { ...state };
+          if (heldInOther(chapter, who, frame, calm)) state.holds = 'lamp-pappa';
+          else state.holdsLeft = 'lamp-pappa';
         }
         const was = live.get(who);
         let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
@@ -1276,6 +1286,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (current) holding.add(mesh);
           rig.hand(side, hand);
           if (held === 'drawing') continue;
+          if (held.startsWith('lamp-')) {
+            const aim = state.aim;
+            lampAim.set(aim?.x ?? elof.x, aim?.y ?? elof.y + .4, aim?.z ?? 0);
+            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), state.act !== 'dress');
+            continue;
+          }
           const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);
           if (held === 'mug') {
             const sip = sippingAt(state.act === 'sip' ? since(state.actAt) : 0, calm, who);
@@ -1317,16 +1333,6 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             mesh.position.copy(hand);
             if (carved) mesh.quaternion.setFromUnitVectors(up, knifeHeld);
             else if (drawn) mesh.quaternion.setFromUnitVectors(up, crayonHeld);
-            else if (held.startsWith('lamp-') && state.aim) {
-              // A lamp shines where its holder looks for something: the road ahead of him, the way up to a house.
-              lampAim.set(state.aim.x, state.aim.y, state.aim.z ?? 0).sub(hand).normalize();
-              if (rig.grasp) {
-                // The hand turns with it, closed round its body, the light out past the thumb.
-                rig.grasp(side, GRIPS[held], aimed.copy(hand), lampAim, hand, closing, heldAxis);
-                mesh.position.copy(hand).addScaledVector(heldAxis, -.06);
-                mesh.quaternion.setFromUnitVectors(LAMP_AXIS, heldAxis);
-              } else mesh.quaternion.setFromUnitVectors(LAMP_AXIS, lampAim);
-            }
             else if (rig.socket) mesh.quaternion.setFromUnitVectors(up, heldAxis);
             else mesh.rotation.set(0, yaw(face), held === 'knife' || held === 'brush' || held === 'crayon' ? -0.6 : 0);
           }
