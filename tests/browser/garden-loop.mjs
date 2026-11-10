@@ -147,9 +147,13 @@ try {
     // The gift commits before its reply: Moa waits for any preceding line to finish.
     await until(s => s.said.includes('garden:thanks'), 'Moa thanks him after the preceding line');
     check(`${name}: the family reward is optional and precedes departure`, (await state()).said.includes('garden:thanks') && !(await state()).flags.includes('plane:board'));
+    // The gift is already committed, but seeing Moa's timed reply is not a completed reading receipt.
+    // Finish it before checking that a completed line stays past after reload; unfinished words replay.
+    await until(s => s.said.includes('garden:thanks') && !s.pendingDialogue.includes('garden:thanks'), 'Moa finishes her thanks before saving');
     await page.locator('#pauseBtn').click();
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check(`${name}: saving preserves candy indices, checkpoint and lost property`, [0, 30, 60].every(i => saved.candy.garden.includes(i)) && saved.checkpoint === 10 && saved.flags.garden.includes('lost:clip') && saved.flags.garden.includes('garden:shared-paper'));
+    check(`${name}: saving retains the completed thanks receipt`, saved.flags.garden.includes('beat:garden:thanks'));
     await page.reload(); await run.ready();
     check(`${name}: the optional reward survives reload at the existing checkpoint`, (await state()).flags.includes('garden:shared-paper') && !(await state()).said.includes('garden:thanks') && (await state()).checkpoint === 10);
     await move(1, s => s.word === 'gardenBoard', 'boarding choice after reload');
