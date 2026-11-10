@@ -77,7 +77,7 @@ describe('family help has time to prepare and a deliberate next action', () => {
     wait(game, .8, 1);
     expect(game.sim.curr.x).toBeCloseTo(where, 2);
     expect(game.sim.curr.mode).toBe('free');
-    wait(game, .7);
+    wait(game, 1.7);
     expect(game.sim.flags.has('beat:family:cap-ready')).toBe(true);
     expect(game.sim.held).toBe(false);
     wait(game, 4);

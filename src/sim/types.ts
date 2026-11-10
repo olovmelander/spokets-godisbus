@@ -70,6 +70,8 @@ export interface Ledge {
   look: LedgeLook;
   /** It is there only once this flag is set: something a helper's hands, or his own, put in place. */
   needs?: string;
+  /** Its branch is already present at this height and rises as the named counterweight rolls to its last stop. */
+  counterweight?: { mover: string; fromY: number };
 }
 
 /**

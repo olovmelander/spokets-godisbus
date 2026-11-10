@@ -361,7 +361,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Side candy, off the trail: hearts and lollipops, where the trail is sweets in wrappers.
   const sideTrail = createTrail(chapter.side ?? [], 'side');
   const noSide: readonly boolean[] = [];
-  const ledges = buildLedges(chapter.ledges ?? [], rods(chapter), chapter.place);
+  const ledges = buildLedges(chapter.ledges ?? [], rods(chapter), chapter.place, chapter.movers);
   const glitter = buildGlitter();
   const lace = buildLace();
   // A scarf held down to him from above for a ride, in the hands of whoever lowers it (./scarf.ts): Pappa's in Älven.
@@ -971,6 +971,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let blownAt = -1, blownSeen = false;
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
+  /** Bertil removes his cap, turns it over and sets it on the pool during the chapter's held preparation. */
+  const capGift = chapter.id === 'granskog' ? carriers.find(carrier => carrier.ride.id === 'cap') : undefined;
+  const capTime = chapter.later?.find(wait => wait.flag === 'family:cap-ready')?.seconds ?? 2.4;
+  let capSince = -1;
+  const capFrom = new Vector3(), capAt = new Vector3(), capHand = new Vector3();
+  const capKneel: Pose = { ...STANDING };
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
   const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number; hold: number; stoop: number }>();
   /** Granskogen's seesaw board, which Pappa holds (props.ts); found the first time it is wanted. */
@@ -1083,7 +1089,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // "Min keps blir din båt, lillebror.": Bertil's cap is off his head once he has lent it, in Granskogen.
   const bared = new WeakMap<object, boolean>();
   const bareFor = (rig: Pick<Rig, 'bareHead'>, who: string, flags: ReadonlySet<string>) => {
-    const bare = who === 'bertil' && chapter.id === 'granskog' && flags.has('cap:ready');
+    const bare = who === 'bertil' && chapter.id === 'granskog' && (flags.has('family:cap-ready') || capSince >= capTime * 0.12);
     if (!rig.bareHead || (bared.get(rig) ?? false) === bare) return;
     bared.set(rig, bare);
     rig.bareHead(bare);
@@ -1207,6 +1213,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (onShoulders) homeJourney = true;
     const wantShoulders = onShoulders ? 4.25 : 0;
     const calmStory = lessMotion();
+    if (capGift) capSince = !flags.has('cap:ready') ? -1 : flags.has('family:cap-ready') || calmStory ? capTime : capSince < 0 ? 0 : Math.min(capTime, capSince + dt);
     // Up onto Pappa's shoulders and down again in half a second, starting and stopping softly.
     const shoulderWant = wantShoulders > 0 ? 1 : 0;
     shoulderT = calmStory ? shoulderWant : shoulderT + Math.sign(shoulderWant - shoulderT) * Math.min(Math.abs(shoulderWant - shoulderT), dt / 0.5);
@@ -1225,7 +1232,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     trail.update(collected, flags, x, y, dt, clock, reaction?.kind === 'candy' ? reaction.index : undefined, response,
       chapter.prologue && ghostState ? ghostState.x : Infinity);
     sideTrail.update(side ?? noSide, flags, x, y, dt, clock);
-    ledges.update(flags, dt);
+    ledges.update(flags, dt, movers);
     glints.update(flags, clock, lessMotion());
     lawnSong.update(flags, clock);
     for (const hit of noteHits ?? []) noteStrikes.set(hit.id, hit.serial);
@@ -1931,6 +1938,21 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
         ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined, one.rig.legs);
+      const offersCap = !!capGift && one.who === 'bertil' && !flags.has('cap') && Math.abs(x - one.at) < 8;
+      const holdsCap = offersCap && capSince >= 0 && capSince < capTime * 0.82;
+      if (offersCap) {
+        // One hand on the brim while he explains the idea; after being called, two hands on the cap.
+        // Suppress the generic high greeting arms, which fought the practical reach and twisted his wrists.
+        posed.armL = holdsCap ? 1.1 : 0.12; posed.armR = capSince < 0 ? 1.9 : holdsCap ? 1.1 : 0.18;
+        posed.elbowL = holdsCap ? 0.8 : 0.25; posed.elbowR = capSince < 0 ? 1.05 : holdsCap ? 0.8 : 0.3;
+        posed.spread = 0.08;
+        const low = smooth((capSince / capTime - 0.25) / 0.4) * (1 - smooth((capSince / capTime - 0.82) / 0.18));
+        if (low > 0) {
+          actPose('kneel', { t: 3, aim: null, stride: 0, pace: 0, calm: calmStory, role: 'bertil', legs: one.rig.legs }, capKneel);
+          for (const joint of JOINTS) if (joint !== 'turn' && joint !== 'nod' && !joint.startsWith('arm') && !joint.startsWith('elbow')) posed[joint] += (capKneel[joint] - posed[joint]) * low;
+          posed.lean = Math.max(posed.lean, 0.85 * low);
+        }
+      }
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.
         const w = one.walk, p = w.pace;
@@ -2033,10 +2055,32 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const said = talk.lookAt(one.who), there = said ? talk.face(said) : null;
       if (there) one.rig.mouth(faceAt);
       one.talker.update(talk, there ? lookAt(one.rig.group, faceAt, there, heard) : null, lifeDt, calmStory,
-        one.seated || one.paddle || carrying || !!(scarf && scarf.weight > 0.001) || gesture.hold > 0.001 || gesture.lift > 0.001 || gesture.pull > 0.001 ? NO_HANDS : BOTH_HANDS);
+        one.seated || one.paddle || carrying || offersCap && (capSince < 0 || holdsCap) || !!(scarf && scarf.weight > 0.001) || gesture.hold > 0.001 || gesture.lift > 0.001 || gesture.pull > 0.001 ? NO_HANDS : BOTH_HANDS);
       one.talker.pose(Object.assign(spokenPose, posed));
       one.rig.pose(one.seated ? sitting(spokenPose, one.rig.legs) : one.paddle ? one.paddle.stance(spokenPose) : spokenPose);
       one.rig.face?.(one.talker.mouth.open, one.talker.mouth.round, one.talker.lids);
+      if (offersCap) {
+        one.rig.group.updateWorldMatrix(true, false);
+        const tall = one.rig.height;
+        if (capSince < 0) {
+          capHand.set(-0.12 * tall, 0.95 * tall, 0.14 * tall).applyMatrix4(one.rig.group.matrixWorld);
+          one.rig.reach(1, capHand, 0.9, 0.96);
+          one.rig.hold?.(1, CAP_PINCH, 0.65);
+        } else if (capGift!.prop && capSince < capTime * 0.82) {
+          if (capSince <= dt) capFrom.set(0, tall * 0.98, tall * 0.13).applyMatrix4(one.rig.group.matrixWorld);
+          const k = smooth((capSince / capTime - 0.12) / 0.7);
+          capAt.set(capGift!.ride.from.x, capGift!.ride.from.y - 0.05, 0).lerp(capFrom, 1 - k);
+          capAt.y += Math.sin(Math.PI * k) * 0.25;
+          capGift!.prop.position.copy(capAt);
+          capGift!.prop.rotation.set(Math.PI * (1 - smooth(k / 0.55)), 0, 0);
+          drawnWhile(capGift!.prop, capSince >= capTime * 0.12);
+          for (const side of [0, 1] as const) {
+            capHand.copy(capAt).add(lampLocal.set(side === 0 ? 0.5 : -0.5, 0.04, 0));
+            one.rig.reach(side, capHand, 1, 0.97);
+            one.rig.hold?.(side, CAP_PINCH, 0.75);
+          }
+        }
+      }
       if (scarf && scarf.weight > 0.001 && one.walk) {
         // Both hands on it, out over the railing, the one over the other; the scarf hangs from the lower (./scarf.ts).
         scarf.hands(one.walk.place.position, scarfLower, scarfUpper);
