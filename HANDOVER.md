@@ -1,5 +1,41 @@
 # Handover
 
+## State (10 November 2026): illustrations, shared props and natural character motion
+
+- **Olov asked:** improve every car's orange windows and every football; use Swedish collection names; make all
+  drawn family members match their game models and all pictures fit the story; fix Pappa's flashlight arms.
+  He then explicitly extended the task to every character's unnatural arms, backwards heads, odd motion and
+  body parts passing through the body. The flashlight screenshot's exact line identifies Stormkvällen in Äventyr 2.
+  This continuation started from `origin/main` at `1746342`, after PR #255, with six parallel worktrees.
+- **Visual changes:** shared reflective car glass replaces opaque orange covers in both adventures; footballs
+  have curved panels and shallow seams, including the small table balls. Eighteen story pictures, thirteen
+  memory pages, dialogue portraits and family icons share a cast matching the approved game models. Distinct
+  pictures preserve the window escape, forest trail, rescue and cap-return sequence. The bag already translated
+  the internal IDs in the reference sheet; remaining raw-ID fallbacks are now Swedish too. A built-context SVG
+  gradient collision found during album review is corrected.
+- **Motion:** cached poses no longer accumulate practical gestures while reading, helper turns advance once
+  on event time, and walking's first frame cannot generate NaN. Cap and lamp acquisition/release blend instead
+  of snapping; free arms follow the stride while the working hand stays reserved. The shared arm solver keeps
+  its elbow plane and wrist orientation continuous. Scene head turns retain a natural range and speed, and
+  Pause preserves unfinished motion blends. Moa's shown paper follows her shoulders; her hands ease back into
+  drawing after a gesture. Elof's recovering toe clears the ground and the first landing frame resumes his
+  stride; the public stand-in now respects ankle poses. Legs counter the pelvis's twist without suppressing
+  torso motion. Helpers keep their torch in the same hand when Elof passes; lamp aim and roll turn smoothly.
+  Kneeling palms use the visible knee surface and an outward elbow, with the lamp hand reserved.
+- **Evidence:** [the verification record](docs/verification/2026-11-10-visual-followup.md) separates actual built
+  views, native recordings, lab courses, private CPU geometry and automated checks. All seven private models
+  were included in the motion screen; all 18 chapters and 75 authored scenes were inventoried. Subsequent
+  full-3D head checks cover 174 staged actor/scene groups. Raw diagnostic candidates are not automatically
+  accepted as visible defects. The record includes concrete reproductions and remaining review limits.
+- **Models and scope:** `art/private` remains linked to unchanged private exports at `fd8c283`. No private model,
+  reference picture or likeness capture is committed. Only the public yard kit's three footballs were rebaked,
+  using the available `bpy` 5.2.3; no existing `.blend` was opened. No recording, release boundary or save ID changes.
+- **Validation and next:** integration `b3b41d3` passes typecheck, all 2,497 tests in 260 files, the build/size gates
+  (644.9 KB gzipped JS; 5,760.8 KB boot) and the built-in privacy scan. Final acceptance also requires the combined
+  private motion review in both phone orientations, green CI for the exact PR head and Pages deployment; those
+  results are recorded in the PR before delivery. No part of this runtime/artwork task needs Olov's computer.
+  Physical-device review remains distinct from the browser viewport and software-renderer evidence.
+
 ## State (10 November 2026): bark on the owl's tree
 
 - **Olov asked:** “Trädet där ugglan fastnat måste göras lika snyggt som de andra träden när det kommer till
@@ -17,8 +53,8 @@
   390×844 and 844×390 on Low and High. Final tint captures use the same production bundle and both phone
   orientations/tiers. These checks establish the sampled appearance and working rescue, not physical-device
   frame rate. Private captures stay in ignored scratch; no likeness image or reference screenshot is committed.
-- **Next:** this focused request is complete locally; green CI gates merging, followed by Pages deployment.
-  No work needs Olov's computer.
+- **Delivered:** [PR #255](https://github.com/olovmelander/spokets-godisbus/pull/255) merged as `1746342`;
+  all 14 CI jobs and Pages deployment passed, and the live implementation was checked. No work needs Olov's computer.
 
 ## State (10 November 2026): living northern lights on the summit
 
@@ -5228,6 +5264,11 @@
 
 ## Next
 
+**Visual details and character motion (10 November).** The newest State and
+`docs/verification/2026-11-10-visual-followup.md` describe the current follow-up. Preserve the single owner of each
+held hand, event-time contact transitions, bounded head motion and exact Pause/resume state. Continue from the
+record's final gates; do not reapply earlier saved patches. This work needs no local Blender session.
+
 **Owl-tree bark (10 November).** The newest State records the screenshot follow-up. Preserve the shared bark
 texture, foreground readability and texture visible on Low; no further art work is deferred.
 
@@ -5240,10 +5281,10 @@ and `docs/verification/2026-11-10-playthrough.md`. The earlier 32-item list and 
 PR #252; do not reapply them. The private exports remain in their own repository. No work from either list needs
 Olov's computer. The new verification record gives the scene-by-scene evidence and device-review limits.
 
-**The whole body (9 November, evening), left in the cloud:** a walk under an act slips as a walk does, the free arms
-there do not swing, Elof's running landings and his walking toe, and the children's steady run (see "State"). For Olov
-on the devices: turns on the spot, the running in the prologue and Billsta, Elof's jumps and landings, shoulders and
-necks in the gestures, the hips in a stride and a kneel.
+**The historical whole-body notes (9 November, evening):** the 10 November follow-up now restores free-arm swing
+under acts, clears Elof's recovering toes, corrects the first landing step and counters the pelvis's turn in the legs.
+Its measured remaining foot slip is recorded explicitly; the older percentages below are historical, not the latest
+result. On the family devices, judge turns, running in the prologue/Billsta, jumps/landings and the feel of the gestures.
 
 **The family's movements and Elof's raincoat (9 November), for Olov:** on the devices, judge the coats going on in
 Stormkvällen, the doll and Elof's coat through the storm, the kneeling, the cheer and the hug, and the sleeves when they
@@ -5735,6 +5776,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Shared visual details and all-character motion (10 Nov) | Olov's five screenshot requests, then natural arms, heads and whole-body movement throughout the game | One continuing cloud session with six parallel implementation/review worktrees | — / 1 screenshot round plus expanded motion request | Cars, footballs, Swedish labels and consistent illustrated cast; shared pose/turn/grip/contact/head/Pause fixes, actual private geometry and phone-view checks. Evidence and limits in the visual follow-up record. |
 | Owl-tree bark (10 Nov) | Match nearby tree textures | One focused cloud follow-up with independent code review | — / 1 screenshot report | Shared bark texture on every tier, correctly scaled UVs, close trunk/rim detail and an attached grain on the moving branch. |
 | Living northern lights (10 Nov) | Make the aurora move beautifully | One focused cloud follow-up with independent browser validation | — / 0 so far | Flowing folds/rays and separate presentation time; 100 nightfall checks and private built portrait/landscape sequences on Low/High. |
 | Olov's full playthrough of both adventures (10 Nov) | Fix 62 chronological notes and extend the shared candy bag | One continuation with six parallel building/review worktrees | — / 1 new playthrough after PR #252 | Chapter staging, contacts, scenery, illustrations, world-anchored rain and shared collections; exact request and evidence in the new 10 November verification record. |
@@ -5784,6 +5826,10 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Current motion review (10 November):** the verified pose accumulation, head over-rotation, joint singularities
+  and Pause/resume defects are corrected in the current follow-up. Foot sliding is reduced, not eliminated:
+  the verification record distinguishes measured contact improvements from a complete foot-lock rewrite.
+  Browser viewport/lab checks do not establish physical-phone frame rate or every possible interaction.
 - **Owl-tree screenshot follow-up (10 November):** the missing base bark and inactive close-detail attribute
   are corrected; browser viewport review does not establish physical-device performance.
 - **Aurora follow-up (10 November):** no new defect found in the focused checks. Native browser captures establish
@@ -5979,6 +6025,10 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 10 November car/football/illustration/collection-label requests and confirmed runtime motion defects belong
+  to the current follow-up. Its final review still includes the continuous painting-to-waking transition and the
+  boot-pull release. Finer model sculpting and physical-device judgment remain separate; residual foot-slip
+  measurements are recorded explicitly rather than claiming perfectly locked feet.
 - The owl-tree texture request is implemented (10 November); no part of it is deferred.
 - The summit aurora's requested flowing motion is implemented (10 November); evening-window illustrations remain
   a separate static depiction if a future request extends the effect indoors.
@@ -5999,7 +6049,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora and owl-tree work add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree and visual/motion work add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
