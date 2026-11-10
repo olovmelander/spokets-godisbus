@@ -279,7 +279,7 @@ export const sv = {
   },
 
   dialogue: {
-    next: 'Fortsätt', pace: 'Läs i lugn och ro', keyboard: 'E / Enter', gamepad: 'X',
+    next: 'Fortsätt', pace: 'Fortsätter automatiskt', keyboard: 'E / Enter', gamepad: 'X',
     moments: {
       morgon: 'Lördagsmorgon', vaknar: 'Ett litet liv i trä', stjarnan: 'Stjärnan från påsen',
       poff: 'Stjärnans magi', familj: 'Du är inte ensam', handen: 'Vi hjälps åt', titel: 'Äventyret börjar',
