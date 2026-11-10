@@ -1,6 +1,6 @@
-// Shared authored vectors must remain the same picture in a canvas thought and an SVG memory page.
+// Run after npm run build. Shared authored vectors must remain the same picture in a canvas thought and an SVG memory page.
 import assert from 'node:assert/strict';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
@@ -11,6 +11,43 @@ const server = await createServer({ root, server: { host: '127.0.0.1', port: 0, 
 await server.listen();
 const browser = await chromium.launch();
 try {
+  // index.html contains drawings made in Node during the build. Their gradient IDs share the document with
+  // later album pictures, whose module starts a fresh counter in the browser. Test the actual combined DOM:
+  // standalone SVG images have their own ID scope and would conceal a skin gradient replacing a room wash.
+  const mixed = await browser.newPage({ viewport: { width: 640, height: 400 } });
+  await mixed.route('**/mixed-art', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><style>body{margin:0}#live svg{display:block;width:640px;height:400px}</style><svg width="0" height="0" style="position:absolute"><defs id="printed"></defs></svg><div id="live"></div>' }));
+  await mixed.goto(`http://127.0.0.1:${server.httpServer.address().port}/spokets-godisbus/mixed-art`);
+  const printedCount = await mixed.evaluate(async html => {
+    const printed = new DOMParser().parseFromString(html, 'text/html');
+    const roots = [printed];
+    for (let i=0;i<roots.length;i++) for (const template of roots[i].querySelectorAll('template')) roots.push(template.content);
+    const gradients = roots.flatMap(root => [...root.querySelectorAll('linearGradient[id]')]);
+    for (const gradient of gradients) document.getElementById('printed').append(document.importNode(gradient, true));
+    window.mixedArt = await import('/spokets-godisbus/src/ui/story-illustrations.ts');
+    return gradients.length;
+  }, readFileSync(join(root, 'dist/index.html'), 'utf8'));
+  assert.ok(printedCount > 0, 'The regression uses the real pre-rendered drawing gradients from the built index');
+  for (const key of ['window-escape','old-window','family-breakfast','family-lamps','safe-harbour','cap-return']) {
+    await mixed.evaluate(key => { document.getElementById('live').innerHTML = window.mixedArt.storyIllustration(key); }, key);
+    const png = await mixed.locator('#live svg').screenshot();
+    const compared = await mixed.evaluate(async ({key,png}) => {
+      const actual = document.createElement('canvas'), expected = document.createElement('canvas');
+      actual.width = expected.width = 640; actual.height = expected.height = 400;
+      const image = new Image(); image.src = 'data:image/png;base64,' + png; await image.decode();
+      actual.getContext('2d').drawImage(image,0,0);
+      const c = expected.getContext('2d'); c.scale(2,2); window.mixedArt.paintStoryIllustration(c,key);
+      const a=actual.getContext('2d').getImageData(0,0,640,400).data, b=c.getImageData(0,0,640,400).data;
+      let changed=0;
+      for(let y=16;y<384;y++)for(let x=16;x<624;x++){const i=(y*640+x)*4;if(Math.max(...[0,1,2].map(n=>Math.abs(a[i+n]-b[i+n])))>32)changed++;}
+      const printed=new Set([...document.querySelectorAll('#printed [id]')].map(node=>node.id));
+      const collisions=[...document.querySelectorAll('#live linearGradient')].filter(node=>printed.has(node.id)).map(node=>node.id);
+      return {different:changed/(608*368),collisions};
+    }, {key,png:png.toString('base64')});
+    assert.ok(compared.different < .03, `${key}: built inline SVG changed its paint ${JSON.stringify(compared)}`);
+    assert.deepEqual(compared.collisions, [], `${key}: build-time and runtime gradient IDs must not overlap`);
+    console.log('PASS built inline paint',key,compared);
+  }
+  await mixed.close();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   const errors = []; page.on('pageerror', e => errors.push(String(e)));
   await page.route('**/art-review', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head></head><body></body></html>' }));

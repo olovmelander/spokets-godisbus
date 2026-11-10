@@ -378,6 +378,10 @@ function scene(key: StoryIllustrationKey): Art[] {
   return [];
 }
 
+// The build embeds some drawings in HTML templates; the browser later evaluates this module again.
+// Their call orders differ, so a fresh numeric counter alone can accidentally reuse a portrait's gradient
+// for an album scene. Keep those two document-wide ID namespaces separate.
+const paintScope = typeof document === 'undefined' ? 'printed' : 'live';
 let serial = 0;
 function svgArt(art: Art, prefix: string, defs: string[]): string {
   const opacity = art.opacity === undefined ? '' : ` opacity="${art.opacity}"`;
@@ -393,7 +397,7 @@ function svgArt(art: Art, prefix: string, defs: string[]): string {
   return `<path d="${art.d}" fill="${fill}"${art.stroke ? ` stroke="${art.stroke}" stroke-width="${art.width}" stroke-linecap="round" stroke-linejoin="round"` : ''}${opacity}${tag}/>`;
 }
 function fragment(art: Art): string {
-  const defs: string[] = [], body = svgArt(art, `story-art-${serial++}`, defs);
+  const defs: string[] = [], body = svgArt(art, `story-art-${paintScope}-${serial++}`, defs);
   return `${defs.length ? `<defs>${defs.join('')}</defs>` : ''}${body}`;
 }
 function paint(c: CanvasRenderingContext2D, art: Art): void {
