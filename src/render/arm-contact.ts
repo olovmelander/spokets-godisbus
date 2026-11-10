@@ -122,11 +122,14 @@ export function createHandGrip(lower: Object3D, hand: Object3D, reach: (target: 
  * choosing its sign from the moving palm would flip the hand as that palm passed a right angle. Weight blends from the hand as
  * posed. Returns the socket where it is (a reach too far is clamped), and the thing's axis as held in `axisOut`.
  */
-export function createHandHold(_lower: Object3D, hand: Object3D, reach: (target: Vector3) => void) {
+export function createHandHold(_lower: Object3D, hand: Object3D, reach: (target: Vector3) => void,
+  fingerAxis = new Vector3(0, 1, 0)) {
   const scale = new Vector3(), now = new Vector3(), wrist = new Vector3();
   const along = new Vector3(), want = new Vector3(), side = new Vector3();
   const current = new Quaternion(), turned = new Quaternion(), parent = new Quaternion();
-  return (socketLocal: Vector3, axisLocal: Vector3, target: Vector3, axis: Vector3, out: Vector3, weight = 1, axisOut?: Vector3): Vector3 => {
+  const fingers = new Vector3(), localFingers = new Vector3(), cross = new Vector3(), from = new Matrix4(), to = new Matrix4();
+  return (socketLocal: Vector3, axisLocal: Vector3, target: Vector3, axis: Vector3, out: Vector3, weight = 1,
+    axisOut?: Vector3, fingerDirection?: Vector3): Vector3 => {
     weight = Math.max(0, Math.min(1, weight));
     hand.updateWorldMatrix(true, false);
     if (weight === 0) {
@@ -142,6 +145,18 @@ export function createHandHold(_lower: Object3D, hand: Object3D, reach: (target:
     want.copy(axis).normalize();
     if (want.lengthSq() < 1e-8) want.copy(along);
     turned.setFromUnitVectors(along, want).multiply(current);
+    // A tool can own its roll as well as its axis (a torch, fingers below the barrel). Use the measured hand frame,
+    // rather than choosing a half-turn from an almost opposite authored palm. Other grips keep their authored roll.
+    if (fingerDirection) {
+      fingers.copy(fingerDirection).addScaledVector(want, -fingerDirection.dot(want));
+      localFingers.copy(fingerAxis).addScaledVector(axisLocal, -fingerAxis.dot(axisLocal));
+      if (fingers.lengthSq() > 1e-8 && localFingers.lengthSq() > 1e-8) {
+        fingers.normalize(); localFingers.normalize();
+        from.makeBasis(axisLocal, localFingers, cross.crossVectors(axisLocal, localFingers));
+        to.makeBasis(want, fingers, cross.crossVectors(want, fingers));
+        turned.setFromRotationMatrix(to.multiply(from.transpose()));
+      }
+    }
     current.slerp(turned, weight);
     // The wrist where the socket comes to the target, and the arm to it.
     reach(wrist.copy(now).lerp(target, weight).sub(side.copy(socketLocal).multiplyScalar(size).applyQuaternion(current)));

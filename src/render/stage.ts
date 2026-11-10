@@ -670,7 +670,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
 
   const place = new Object3D();
-  const hand = new Vector3(), lampAim = new Vector3(), kneeAt = new Vector3();
+  const hand = new Vector3(), lampAim = new Vector3(), lampBefore = new Vector3(), kneeAt = new Vector3();
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
   const walking: Pose = { ...STANDING };
@@ -1169,6 +1169,16 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const free = HANDS_FREE[(hangs && !state.holdsLeft ? 0 : 2) + (hangs && !state.holds ? 0 : 1)]!;
         talker.update(talk, there ? lookAt(rig.group, faceAt, there, heard) : null, dt, calm, free);
         talker.pose(pose);
+        // A carrying hand cannot also wave or point underneath its torch solve: that moving palm would roll the
+        // wrist around a steady beam. Keep this arm's base quiet, sharing the acquisition blend with the held prop.
+        for (const side of [0, 1] as const) {
+          const held = side === 0 ? state.holdsLeft : state.holds;
+          if (!held?.startsWith('lamp-') || state.act === 'dress') continue;
+          const persistent = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
+          const weight = calm || persistent || !state.before || state.before.held[side] === held ? 1 : smooth(elapsed / .45);
+          for (const joint of side === 0 ? ['armL', 'elbowL', 'wristL', 'outL'] as const : ['armR', 'elbowR', 'wristR', 'outR'] as const)
+            pose[joint] = mix(pose[joint], STANDING[joint], weight);
+        }
         rig.pose(pose);
         rig.face?.(talker.mouth.open, talker.mouth.round, talker.lids);
         rig.mouth(faceAt);
@@ -1197,12 +1207,15 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         reach(state.act, elapsed, state.aim, state.before, 1);
         // Pointing uses the whole arm; an offer keeps an elbow bend. Each retained act carries its own limit
         // through the blend, so starting or ending an offer cannot suddenly shorten or straighten the arm.
-        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, rightLimit / rightWeight);
+        const rightTorch = state.holds?.startsWith('lamp-'), leftTorch = state.holdsLeft?.startsWith('lamp-');
+        // A torch points with its beam. Its carrying solve owns that arm, rather than first stretching the same
+        // elbow towards the thing and then solving it a second time back down beside the body.
+        if (rightWeight > 0 && !rightTorch) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, rightLimit / rightWeight);
         // And the hand points with its first finger as the arm comes up, and lets it go as the arm comes down (./fingers.ts).
         const points = state.act === 'point' ? smooth((calm ? 3 : elapsed) / .3)
           : state.before?.act === 'point' ? 1 - smooth(elapsed / .45) : 0;
-        if (points > 1e-3) rig.hold?.(1, POINTING, points);
-        if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
+        if (points > 1e-3 && !rightTorch) rig.hold?.(1, POINTING, points);
+        if (leftWeight > 0 && !leftTorch) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
         // Kneeling, the right hand rests on the right knee, and crouching both hands on the knees, with the real arms: as they
         // go down, while they look about down there, and as they push up off them getting up.
         const lowered = (stance: Stance) => stance === 'kneel' ? CLIPS.kneel : stance === 'crouch' ? CLIPS.crouch : null;
@@ -1331,11 +1344,18 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (held.startsWith('lamp-')) {
             const aim = state.aim;
             lampAim.set(aim?.x ?? elof.x, aim?.y ?? elof.y + .4, aim?.z ?? 0);
+            // Looking to a new person turns the held torch over the same authored interval as the body.
+            // A raw aim here would snap the wrist even while the head/arms were still blending. Use scene time,
+            // so a reading hold or Pause keeps this turn where it was, without accumulating presentation frames.
+            const from = state.glance?.from ?? state.before?.aim;
+            const aimWeight = state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
+            lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
             // Newly taking a torch must follow the same event-time blend as the authored arms.
             // Pappa's persistent indoor torch is already in hand across every later act.
             const persistent = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
             const taking = calm || persistent || had === current || !state.before ? 1 : smooth(elapsed / .45);
-            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), state.act !== 'dress', taking);
+            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), state.act !== 'dress', taking,
+              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused));
             continue;
           }
           const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);

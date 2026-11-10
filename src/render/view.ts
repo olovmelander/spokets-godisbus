@@ -2247,7 +2247,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         } else if (lit) {
           const u = one.rig.height / 5.2;
           one.rig.group.updateWorldMatrix(true, false);
-          holdFlashlight(one.rig, one.lamp, lampSide, lampTo, Math.max(.7, u));
+          holdFlashlight(one.rig, one.lamp, lampSide, lampTo, Math.max(.7, u), true, 1, null, 1, calmStory ? undefined : clock);
           one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
         }
       }

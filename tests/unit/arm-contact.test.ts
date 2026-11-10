@@ -176,6 +176,30 @@ describe('contact on posed arm joints', () => {
 });
 
 describe('holding a tool in the palm', () => {
+  it.each([-1, 1])('keeps the %s socket and measured finger roll on a complete tool frame', side => {
+    const root = new Group(), upper = new Bone(), lower = new Bone(), hand = new Bone();
+    root.add(upper); upper.add(lower); lower.add(hand);
+    upper.position.set(side * .45, 2, 0); lower.position.y = -.7; hand.position.y = -.6;
+    const socket = new Vector3(.04, -.07, .02), localAxis = new Vector3(side, 0, 0);
+    // Imported hands can have arbitrary rest roll; use their measured finger direction, not a presumed bone +Y.
+    const localFingers = new Vector3(0, 1, 0).applyAxisAngle(localAxis, .37);
+    const hold = createHandHold(lower, hand, createArmContact(upper, lower, hand), localFingers);
+    const target = new Vector3(side * .4, 1.2, .5), axis = new Vector3(), fingers = new Vector3(), held = new Vector3(), out = new Vector3();
+    let previous: Quaternion | null = null;
+    for (let i = -90; i <= 90; i++) {
+      const turn = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), i * Math.PI / 120);
+      axis.set(0, 0, 1).applyQuaternion(turn); fingers.set(0, -1, 0).applyQuaternion(turn);
+      upper.quaternion.identity(); lower.quaternion.identity(); hand.quaternion.identity();
+      hold(socket, localAxis, target, axis, out, 1, held, fingers);
+      const rotation = hand.getWorldQuaternion(new Quaternion());
+      if (previous) expect(rotation.angleTo(previous)).toBeLessThan(.03);
+      previous = rotation;
+      expect(out.distanceTo(target)).toBeLessThan(1e-8);
+      expect(held.dot(axis)).toBeGreaterThan(1 - 1e-8);
+      expect(localFingers.clone().applyQuaternion(rotation).dot(fingers)).toBeGreaterThan(1 - 1e-8);
+    }
+  });
+
   it.each([-1, 1])('keeps the %s hand continuous as a held axis passes parallel to its forearm', (side) => {
     const root = new Group(), upper = new Bone(), lower = new Bone(), hand = new Bone();
     root.add(upper); upper.add(lower); lower.add(hand);

@@ -1,4 +1,4 @@
-import { Group, Vector3 } from 'three';
+import { Group, Matrix4, Quaternion, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actPose } from '../../src/render/acting';
 import { holdFlashlight } from '../../src/render/lamp-hold';
@@ -14,6 +14,67 @@ afterEach(() => { vi.unstubAllGlobals(); talk.reset(); });
 const v = () => new Vector3();
 
 describe('a flashlight carried in front of a posed body', () => {
+  it('carries the palm continuously as moving Elof passes directly under the hand, with stable Pause and seek', () => {
+    const trace = (rate: number, timed = true) => {
+      const rig = createRehearsalRig('pappa'), lamp = new Group(), socket = v(), ray = v(), fingers = v();
+      rig.grasp = (_side, _grip, target, axis, out, _weight, axisOut, fingerDirection) => {
+        socket.copy(target); ray.copy(axis); fingers.copy(fingerDirection!); axisOut!.copy(axis); return out.copy(target);
+      };
+      rig.pose({ ...STANDING }); holdFlashlight(rig, lamp, 1, null, 1);
+      const origin = socket.clone(), matrix = new Matrix4(), side = v(), up = v();
+      const frame = (x: number, time: number, reset = false) => {
+        rig.pose({ ...STANDING });
+        holdFlashlight(rig, lamp, 1, origin.clone().add(new Vector3(x, -2, 0)), 1, true, 1, null, 1, timed ? time : undefined, reset);
+        expect(ray.dot(fingers)).toBeCloseTo(0, 8);
+        up.copy(fingers).negate(); side.crossVectors(up, ray);
+        return new Quaternion().setFromRotationMatrix(matrix.makeBasis(side, up, ray));
+      };
+      let previous = frame(1, 0, true);
+      for (let i = 1; i <= 2 * rate; i++) {
+        const current = frame(1 - i / rate, i / rate);
+        expect(current.angleTo(previous)).toBeLessThan(3 / rate);
+        previous = current;
+        if (i === rate) for (let redraw = 0; redraw < 100; redraw++) expect(frame(0, 1).angleTo(current)).toBeLessThan(1e-7);
+      }
+      const completed = previous.clone(), rewound = frame(1, 0);
+      expect(rewound.angleTo(frame(1, 4, true))).toBeLessThan(1e-7);
+      return completed;
+    };
+    const at30 = trace(30), at60 = trace(60), at120 = trace(120);
+    expect(at30.angleTo(at120)).toBeLessThan(.06);
+    expect(at60.angleTo(at120)).toBeLessThan(.03);
+    trace(60, false); // Reduced motion has no timed roll recovery, but the geometric transport stays continuous.
+  });
+
+  it.each([
+    [0, -.3, 1], [1, .2, 0], [0, 0, -1], [0, 1, 0], [0, -1, 0],
+  ])('turns the entire grip smoothly towards %s,%s,%s from a downward beam at Elof', (x, y, z) => {
+    const rig = createRehearsalRig('pappa'), lamp = new Group(), socket = v(), ray = v(), fingers = v();
+    rig.grasp = (_side, _grip, target, axis, out, _weight, axisOut, fingerDirection) => {
+      socket.copy(target); ray.copy(axis); fingers.copy(fingerDirection!);
+      axisOut!.copy(axis); return out.copy(target);
+    };
+    rig.pose({ ...STANDING }); holdFlashlight(rig, lamp, 1, null, 1);
+    const from = socket.clone().add(new Vector3(-4, -3, .3)), aim = socket.clone().add(new Vector3(x, y, z).multiplyScalar(5));
+    const matrix = new Matrix4(), side = v(), up = v();
+    const pose = (weight: number) => {
+      rig.pose({ ...STANDING }); holdFlashlight(rig, lamp, 1, aim, 1, true, 1, from, weight);
+      expect(ray.dot(fingers)).toBeCloseTo(0, 8);
+      expect(ray.length()).toBeCloseTo(1, 8); expect(fingers.length()).toBeCloseTo(1, 8);
+      expect(lamp.position.clone().addScaledVector(ray, .06).distanceTo(socket)).toBeLessThan(1e-8);
+      up.copy(fingers).negate(); side.crossVectors(up, ray);
+      return new Quaternion().setFromRotationMatrix(matrix.makeBasis(side, up, ray));
+    };
+    let previous = pose(0);
+    for (let i = 1; i <= 120; i++) {
+      const current = pose(i / 120);
+      expect(current.angleTo(previous)).toBeLessThan(.03);
+      previous = current;
+      if (i === 42) for (let paused = 0; paused < 30; paused++) expect(pose(i / 120).angleTo(current)).toBeLessThan(1e-7);
+    }
+    expect(ray.angleTo(new Vector3(x, y, z).normalize())).toBeLessThan(1e-7);
+  });
+
   it.each(['pappa', 'mamma', 'moa', 'bertil'] as Role[])('%s keeps the carrying elbow outside the torso and below its shoulder in every stance', who => {
     const rig = createRehearsalRig(who), lamp = new Group();
     rig.group.position.set(6, 1, -2); rig.group.rotation.y = -1.1;
@@ -125,6 +186,66 @@ describe('a flashlight carried in front of a posed body', () => {
       expect(rig.hand(1, v()).distanceTo(reduced)).toBeLessThan(1e-8);
       expect(lamp.position.distanceTo(reduced)).toBeLessThan(1e-8);
     }
+  });
+
+  it.each([
+    ['pappa', 5.6], // A new act and a new person to look at.
+    ['mamma', 9.2], // A glance while continuing the existing act.
+  ] as const)('turns %s’s held beam continuously at the real stor key at %s', (who, at) => {
+    const stage = createStage(stormoga, () => 0), rig = stage.actors.get(who)!.rig;
+    const index = stormoga.scenes!.findIndex(s => s.id === 'stor');
+    const flags = new Set(stormoga.scenes!.slice(0, index).map(s => `scene:${s.id}`));
+    flags.add('taste');
+    for (const role of ['jetty', 'mamma', 'pappa', 'moa', 'bertil']) flags.add(`so:${role}`);
+    const scene = stormoga.scenes![index]!, player = scene.resumeAt!;
+    const lamp = stage.group.getObjectByName(`stage-thing:lamp-${who}`)!;
+    let clock = 0;
+    const frame = (t: number, dt = 1 / 120) => {
+      clock += dt;
+      stage.update({ id: 'stor', seconds: t }, flags, player, clock, dt, false);
+      expect(lamp.visible).toBe(true);
+      expect(lamp.position.distanceTo(rig.hand(1, v()))).toBeLessThan(1e-8);
+      return new Vector3(0, 0, 1).applyQuaternion(lamp.quaternion);
+    };
+    for (let i = 0; i < at * 120; i++) frame(i / 120);
+    let previous = frame(at - 1e-6, 0);
+    expect(frame(at, 0).angleTo(previous)).toBeLessThan(1e-4);
+    for (let i = 1; i <= 72; i++) {
+      const axis = frame(at + i / 120);
+      expect(axis.angleTo(previous)).toBeLessThan(.12);
+      previous = axis;
+      if (i === 18) {
+        const heldBeam = axis.clone();
+        for (let reading = 0; reading < 120; reading++) {
+          const beam = frame(at + i / 120, 1 / 60);
+          // Breathing continues, but the turn to the next person waits with the story.
+          expect(beam.angleTo(heldBeam)).toBeLessThan(.04);
+        }
+        previous = new Vector3(0, 0, 1).applyQuaternion(lamp.quaternion);
+        const position = lamp.position.clone(), turn = lamp.quaternion.clone();
+        for (let redraw = 0; redraw < 60; redraw++) {
+          frame(at + i / 120, 0);
+          expect(lamp.position.distanceTo(position)).toBeLessThan(1e-8);
+          expect(lamp.quaternion.angleTo(turn)).toBeLessThan(1e-7);
+        }
+      }
+    }
+    const aim = scene.stage!.actors![who]!.find(key => key.at === at)!.aim!;
+    expect(previous.angleTo(new Vector3(aim.x, aim.y, aim.z ?? 0).sub(lamp.position).normalize())).toBeLessThan(1e-7);
+  });
+
+  it.each([0, 1] as const)('reserves only the torch-owned hand (%s) when both hands reach', (side) => {
+    const chapter = { ...stormoga, scenes: [{ id: 'hands', seconds: 2, stage: { actors: { pappa: [
+      { at: 0, x: 0, y: 0, z: 0, face: .25, act: 'reach' as const, aim: { x: 0, y: 2, z: 8 },
+        holds: side === 1 ? 'lamp-pappa' as const : null, holdsLeft: side === 0 ? 'lamp-pappa' as const : null },
+    ] } } }] };
+    const stage = createStage(chapter, () => 0), rig = stage.actors.get('pappa')!.rig;
+    const reach = vi.spyOn(rig, 'reach');
+    stage.update({ id: 'hands', seconds: 1 }, new Set(), { x: 1, y: 0 }, 1, 1 / 60, false);
+    // One contact for the carrying arm, one for the free hand's authored reach. Never solve the torch arm twice.
+    expect(reach.mock.calls.filter(call => call[0] === side)).toHaveLength(1);
+    expect(reach.mock.calls.filter(call => call[0] !== side)).toHaveLength(1);
+    expect(rig.hand(side === 0 ? 1 : 0, v()).z).toBeGreaterThan(rig.hand(side, v()).z + .3);
   });
 
 });
