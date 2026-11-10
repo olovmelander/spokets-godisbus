@@ -107,7 +107,9 @@ try {
     const first = await state(page), words = await text(page);
     await until(page, s => s.x >= 13.2, 'walk through queued route dialogue', 4);
     const queued = await state(page);
-    check(`${label}: held movement crosses all three hints without a backlog stop`, queued.steps > first.steps && queued.said.includes('ol:klonk') && queued.said.includes('ol:lights') && await text(page) === words && !queued.held && !queued.storyReading);
+    // Later hints are due but stay in the simulation queue until this line's receipt.
+    // Crossing their triggers continuously catches the old backlog movement hold.
+    check(`${label}: held movement crosses all three hints without a backlog stop`, queued.steps > first.steps && queued.x >= 13.2 && queued.pendingDialogue.includes('ol:arrive') && await text(page) === words && !queued.held && !queued.storyReading);
     check(`${label}: ordinary dialogue does not cover play with a Continue control`, await page.locator('#sceneReading').isHidden());
     if (controls) await controls.release(); else await page.keyboard.up('ArrowRight');
     // Separate complete touch gestures: ending one contact in a CDP multi-touch
