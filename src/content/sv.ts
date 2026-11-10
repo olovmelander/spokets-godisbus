@@ -347,6 +347,7 @@ export const sv = {
     bogFamilyHome: 'Tranungen är hemma! Får jag åka med dig?',
     bogBridgeReady: 'Spången är klar! Gå över när du vill.',
     bogLightReturn: 'Nu går spången åt båda hållen!',
+    mountainThanks: 'Tack för hjälpen! Nu är jag uppe.',
     fetch: 'Spöket vill hämta hem min trägubbe!',
     mountainLoop: 'Snöret runt röset. En väg ner!',
     // Pappa on the summit: one thing said, in four bubbles.

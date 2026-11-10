@@ -225,6 +225,8 @@ export const berget: ChapterData = {
   ],
   // He understands when he has seen it.
   beats: [
+    // He thanks the ghost after climbing its lace onto the ledge, not while still below it.
+    { id: 'mountain:thanks', at: 146.8, needs: 'lift', who: 'elof', line: 'mountainThanks' },
     { id: 'fetch', on: 'memory', who: 'elof', line: 'fetch' },
     { id: 'cairn-loop', on: 'found:chokladpralin', who: 'elof', line: 'mountainLoop' },
   ],
