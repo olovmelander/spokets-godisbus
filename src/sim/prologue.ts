@@ -21,9 +21,16 @@ export const PAPPA_TIME = 3;
  */
 export class PrologueSequence {
   frame: PrologueFrame | null = null;
+  /** A joke is due and waits for what is being said to finish: he stands and listens meanwhile. */
+  listening = false;
   constructor(readonly layout: PrologueLayout, private readonly perches: readonly GhostPerch[] = []) {}
 
-  tick(player: PlayerState, ghost: GhostState | null, flags: Set<string>): void {
+  /**
+   * One step. `talking`: a line is still being read, or waits to be said, so a joke that is due waits. The simulation
+   * waits for the page to finish the line (./sim.ts).
+   */
+  tick(player: PlayerState, ghost: GhostState | null, flags: Set<string>, talking = false): void {
+    this.listening = false;
     if (!ghost) return;
     if (flags.has('pappa:done') && !this.layout.edge) { ghost.gone = true; return; }
     if (!this.frame && player.mode === 'free' && player.grounded) {
@@ -31,12 +38,13 @@ export class PrologueSequence {
       const pappaDue = this.layout.pappaAfter
         ? (flags.has(this.layout.pappaAfter) || flags.has('pappa:noticed')) && player.x >= (this.layout.pappaFrom ?? -Infinity)
         : player.x >= 44.4;
-      if (flags.has('blink') && !flags.has('mamma:passed') && ghost.x >= this.layout.doorway.x - 1.2) {
-        flags.add('mamma:noticed');
-        this.frame = { kind: 'mamma', seconds: 0, ghost: { x: ghost.x, y: ghost.y } };
-      } else if (flags.has('star') && !flags.has('pappa:done') && pappaDue) {
-        flags.add('pappa:noticed');
-        this.frame = { kind: 'pappa', seconds: 0, ghost: { x: ghost.x, y: ghost.y } };
+      const kind = flags.has('blink') && !flags.has('mamma:passed') && ghost.x >= this.layout.doorway.x - 1.2 ? 'mamma'
+        : flags.has('star') && !flags.has('pappa:done') && pappaDue ? 'pappa' : null;
+      // Its line is said as it begins: the words before it are let finish first.
+      if (kind && talking) this.listening = true;
+      else if (kind) {
+        flags.add(`${kind}:noticed`);
+        this.frame = { kind, seconds: 0, ghost: { x: ghost.x, y: ghost.y } };
       }
     }
     if (this.frame) {
@@ -67,7 +75,7 @@ export class PrologueSequence {
     ghost.gone = false;
   }
 
-  cancel(): void { this.frame = null; }
+  cancel(): void { this.frame = null; this.listening = false; }
 }
 
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;

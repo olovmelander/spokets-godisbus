@@ -172,27 +172,31 @@ try {
   const page=await browser.newPage({viewport:{width:390,height:844}});
   await page.goto(`${origin}/spokets-godisbus/`);
   const speech=await page.evaluate(async()=>{const f=await import('/spokets-godisbus/finale-stage-fixture.js');
+    // This fixture advances its own clock synchronously; real recordings cannot finish inside the same JS task.
+    const {setVoiceSettings}=await import('/spokets-godisbus/src/audio/voice-player.ts');setVoiceSettings(false,0);
     const host=document.createElement('div');document.body.replaceChildren(host);f.mountShell(host);const hud=f.createHud(document,100);
     const state=()=>({bubble:!document.getElementById('bubble').hidden,notice:!document.getElementById('notice').hidden,line:document.getElementById('bubbleLine').textContent});
-    hud.say('pappa','tinyElof',true);hud.tick(0);const initial=state();hud.notice('Hittat!');hud.tick(1);const find=state();hud.tick(2.6);const resumed=state();hud.tick(1);const readable=state();
-    hud.say('elof','stolenBag',true);hud.tick(0);const priority=state();
+    hud.say('pappa','tinyElof');hud.tick(0);const initial=state();hud.notice('Hittat!');hud.tick(1);const find=state();hud.tick(2.6);const resumed=state();hud.tick(1);const readable=state();
+    // A line said while another is on the page waits its turn: the one on the page keeps its whole time (Olov, 9 November 2026).
+    hud.say('elof','stolenBag');hud.tick(0);const waited=state();hud.tick(1.5);const turn=state();
     // Pappa's sentence in two bubbles is read whole: the second half goes on under the first (story-presentation.md row 22).
-    hud.say('pappa','first2',true);hud.tick(0);hud.say('pappa','first3');hud.tick(20);const bubble=document.getElementById('bubble');
+    hud.say('pappa','first2');hud.tick(0);hud.say('pappa','first3');hud.tick(20);hud.tick(20);const bubble=document.getElementById('bubble');
     const more={shown:!bubble.hidden,lines:[...document.querySelectorAll('#bubbleLine .said')].map((said)=>said.textContent),tone:bubble.dataset.tone};
-    hud.say('elof','stomp',true);hud.tick(0);const shout=bubble.dataset.tone;
-    hud.say('pappa','first1',false,true);hud.tick(0);const manual=state(),guard=!hud.advance();
-    hud.say('pappa','first2',false,true);hud.say('pappa','first3',false,true);hud.hush();hud.tick(120);
+    hud.say('elof','stomp');hud.tick(5);const shout=bubble.dataset.tone;
+    hud.say('pappa','first1',true);hud.tick(0);const remark=state(),waits=hud.reading();
+    hud.tick(5);const manual=state(),guard=!hud.advance();
+    hud.say('pappa','first2',true);hud.say('pappa','first3',true);hud.hush();hud.tick(120);
     const held=state(),stillReading=hud.reading();hud.advance();hud.tick(0);const second=state();
     hud.tick(.3);hud.advance();hud.tick(0);const third=state();hud.clear();
     const cleared=!hud.reading()&&!hud.speaking()&&document.getElementById('bubble').hidden;
-    return{initial,find,resumed,readable,priority,more,shout,manual,guard,held,stillReading,second,third,cleared};});
+    return{initial,find,resumed,readable,waited,turn,more,shout,remark,waits,manual,guard,held,stillReading,second,third,cleared};});
   // A find hangs from the bag now, so what is being said goes on beside it (docs/ux-audit/in-play.md row 18).
   check('Portrait: a find leaves speech where it is',speech.initial.bubble && speech.find.notice && speech.find.bubble && speech.find.line===speech.initial.line);
   check('Portrait: the causal line keeps its reading time after the find',speech.resumed.bubble && !speech.resumed.notice && speech.resumed.line===speech.initial.line && speech.readable.bubble);
-  check('Portrait: a new causal priority line replaces stale dialogue',speech.priority.bubble && speech.priority.line!==speech.initial.line);
+  check('Portrait: a new line waits for the one being said, then takes its turn',speech.waited.line===speech.initial.line && speech.turn.bubble && speech.turn.line==='Pappa! Spöket tog min godispåse!');
   check('Portrait: a line that goes on stands under the one before, said gently',speech.more.shown && speech.more.lines.join(' / ')==='Den täljde jag till dig / när du var liten, Elof.' && speech.more.tone==='soft');
   check('Portrait: a shout is drawn as one',speech.shout==='call');
-  check('Reading: essential dialogue immediately replaces passing remarks',speech.manual.line==='Min allra första trägubbe …');
+  check('Reading: essential dialogue waits while a passing remark is read to its end, then takes the floor',speech.remark.line==='Ge tillbaka mitt godis!' && speech.waits && speech.manual.line==='Min allra första trägubbe …');
   check('Reading: a fresh input cannot dismiss a new line immediately',speech.guard);
   check('Reading: a story line survives two minutes and scene hush',speech.held.line===speech.manual.line && speech.held.bubble && speech.stillReading);
   check('Reading: each press shows exactly one unread line in order',speech.second.line==='Den täljde jag till dig' && speech.third.line==='när du var liten, Elof.');

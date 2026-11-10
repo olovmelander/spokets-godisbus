@@ -6,7 +6,7 @@ import type { Speaker, Verb } from '../sim/types';
 import { faceSvg } from './faces';
 import { verbIcon } from './verbs';
 import { candyRows } from './rolls';
-import { playVoice, stopVoice } from '../audio/voice-player';
+import { playingVoice, playVoice, stopVoice } from '../audio/voice-player';
 
 /**
  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
@@ -34,23 +34,34 @@ export interface Hud {
   notice(text: string, seconds?: number): void;
   /** While paused the bag says its number; in play only for a while after a candy (in-play.md row 2). */
   paused(on: boolean): void;
-  /** Story lines wait for Fortsätt; incidental lines stay for a few seconds. */
-  say(who: Speaker, line: string, priority?: boolean, read?: boolean): void;
+  /**
+   * Story lines wait for Fortsätt; incidental lines stay for a few seconds. Whatever is said waits its turn: a line on
+   * the page is never cut short or replaced by a later one, which comes when it has been read (Olov, 9 November 2026).
+   */
+  say(who: Speaker, line: string, read?: boolean): void;
   /** A story line is being read, or waits next. Its picture and the game wait with it. */
   reading(): boolean;
-  /** A fresh press advances one story line, after the short accidental-press guard. */
+  /** A fresh press advances a story line after its recording and the accidental-press guard. */
   advance(): boolean;
   /** A deliberate checkpoint restart discards the interrupted dialogue, which its scene tells again. */
   clear(): void;
   /**
-   * A scene takes the floor: lines still waiting are dropped, and so is one a find has hidden. A line being read
-   * is let stay a little longer, so the scene's own lines come when they are acted.
+   * A scene takes the floor: a find's tag comes down. What is being said is let finish: the scene waited for quiet
+   * before it began (src/sim/scene.ts), and its own lines wait their turn as every line does.
    */
   hush(): void;
   /** Moves the bubbles on. `dt` is the time since the last frame, in seconds: 0 while the game is paused. */
   tick(dt: number): void;
-  /** Whether someone is saying something, or will: a bubble shows or waits its turn. */
+  /**
+   * Whether someone is saying something, or will: a bubble shows or waits its turn, or a recorded voice still speaks (a
+   * line's, or a card's), so that nothing said after it cuts it.
+   */
   speaking(): boolean;
+  /**
+   * Who says the line in the bubble now and its words, for the picture (their mouth, the others' looks: src/render/talk.ts);
+   * `at` counts the lines shown, so that a new line, even the same words again, is told from the last. Null: no bubble.
+   */
+  saying(): { who: Speaker; text: string; key: string; at: number } | null;
   /**
    * Shows the card at the end of a chapter: its title, and the candy in rows of ten with the number.
    * With `onNext` it leads on to the next chapter; without, it says that the story goes on later, or `closing`
@@ -69,14 +80,20 @@ const SPARKLE = '<svg class="i" aria-hidden="true"><use href="#i-sparkle"/></svg
 // Long enough to read at a child's pace: 12 letters 3.6 s, 40 letters 6.1 s (docs/ux-audit/in-play.md row 17).
 const BUBBLE_TIME = 2.5;
 const BUBBLE_TIME_PER_LETTER = 0.09;
-/** How long a line being read stays when a scene begins. */
-const HUSH_TIME = 1.6;
+/** How long a line takes to read at a child's pace, before *Lugnare tempo* and *Större text* stretch it. */
+export const readingTime = (text: string) => BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER;
+/**
+ * A bubble whose time is up stays this long for a line that goes on from it: the simulation says the next line only
+ * once this one has been read (src/sim/sim.ts), so it comes a frame after, and is added under it.
+ */
+const GOES_ON_TIME = 0.3;
 
 /**
- * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*.
+ * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*. `spoke` hears
+ * each line as it is shown, so its speaker's wordless sound goes with its bubble, not ahead of it.
  */
 export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false, reading: () => number = () => 1,
-  arrived: () => void = () => {}): Hud {
+  arrived: () => void = () => {}, spoke: (who: Speaker) => void = () => {}): Hud {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const bag = byId('bag');
   const number = byId('bagCount');
@@ -94,10 +111,14 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   let wordShown: string | undefined;
   const queue: { who: Speaker; line: string; read: boolean }[] = [];
   let left = 0;
+  /** A bubble whose time is up, kept for a line that goes on from it (`GOES_ON_TIME`). */
+  let lingers = 0;
   let manual = false;
   let readFor = 0;
   /** Whose the bubble is and the lines in it now, so that a line which goes on from them is added under them. */
   let spoken: { who: Speaker; texts: string[] } | null = null;
+  /** The line shown last, for the picture: who says it, its words, and how many lines have been shown. */
+  const said = { who: 'elof' as Speaker, text: '', key: '', at: 0 };
   let ended = false;
   // Nothing bounces or slaps on when the device asks for less motion, or the player does (*Mindre rörelse*).
   const still = { get matches() { return lessMotion(doc); } };
@@ -218,25 +239,20 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       pausedNow = on;
       bag.classList.toggle('quiet', !on && countFor <= 0);
     },
-    say(who, line, priority = false, read = false) {
+    say(who, line, read = false) {
       if (!lines[line]) return;
-      // A later event cannot replace a line the player has not finished reading.
-      if ((priority || read) && !manual) {
-        const unread = queue.filter((next) => next.read);
-        queue.splice(0, queue.length, ...unread);
-        left = 0;
-        spoken = null;
-      }
+      // It waits its turn, a story line too: nothing is cut short or dropped to make room for it.
       queue.push({ who, line, read });
     },
     reading() {
       return manual || queue.some((next) => next.read);
     },
     advance() {
-      if (!manual || readFor < 0.25) return false;
+      if (!manual || readFor < 0.25 || playingVoice() !== null) return false;
       stopVoice();
       manual = false;
       left = 0;
+      lingers = 0;
       bubble.hidden = true;
       spoken = null;
       return true;
@@ -246,23 +262,22 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       queue.length = 0;
       manual = false;
       left = 0;
+      lingers = 0;
       spoken = null;
       bubble.hidden = true;
     },
     hush() {
-      stopVoice();
-      // Scene transitions may remove passing remarks, never unread story lines.
-      const unread = queue.filter((next) => next.read);
-      queue.splice(0, queue.length, ...unread);
-      // A scene takes the floor: the tag comes down, and a line being read gets a little longer.
+      // A scene takes the floor: the tag comes down. Nothing said is cut or dropped (it waited for quiet).
       if (noticeFor > 0) {
         noticeFor = 0;
         tag.hidden = true;
       }
-      if (!manual) left = Math.min(left, HUSH_TIME);
     },
     speaking() {
-      return manual || left > 0 || queue.length > 0;
+      return manual || left > 0 || queue.length > 0 || playingVoice() !== null;
+    },
+    saying() {
+      return bubble.hidden || said.at === 0 ? null : said;
     },
     tick(dt) {
       if (noticeFor > 0) {
@@ -283,18 +298,34 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         bubble.hidden = false;
         left -= dt;
         if (left > 0) return;
+        // Its time is up. It stays a moment for a line that goes on from it, which the simulation says now.
+        lingers = GOES_ON_TIME;
+        if (queue.length === 0) return;
+      }
+      // A recording can outlast its reading estimate: keep its bubble until the actual sound ends.
+      if (playingVoice() !== null) return;
+      if (lingers > 0) {
         // A line that goes on from this one is added under it, not put in its place (story-presentation.md row 22).
         const after = queue[0];
-        if (!after || !GOES_ON.has(after.line) || after.who !== spoken?.who) {
+        if (!after) {
+          lingers -= dt;
+          if (lingers <= 0) {
+            bubble.hidden = true;
+            spoken = null;
+          }
+          return;
+        }
+        lingers = 0;
+        if (!GOES_ON.has(after.line) || after.who !== spoken?.who) {
           bubble.hidden = true;
           spoken = null;
-          return;
         }
       }
       const next = queue.shift();
       if (!next) return;
       playVoice(next.line);
       const text = lines[next.line]!;
+      said.who = next.who; said.text = text; said.key = next.line; said.at++;
       const goesOn = GOES_ON.has(next.line) && !bubble.hidden && spoken?.who === next.who;
       spoken = { who: next.who, texts: goesOn ? [...spoken!.texts, text].slice(-2) : [text] };
       byId('bubbleWho').textContent = next.who === 'spoket' && ghostNamed() ? sv.ghostName : sv.who[next.who];
@@ -313,7 +344,9 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       bubble.hidden = false;
       manual = next.read;
       readFor = 0;
-      left = (BUBBLE_TIME + text.length * BUBBLE_TIME_PER_LETTER) * reading();
+      left = readingTime(text) * reading();
+      // The speaker's wordless sound goes with the bubble.
+      spoke(next.who);
     },
     end(title, count, onAgain, onNext, closing, hidden, code, onwardWord, kicker) {
       if (ended) return;

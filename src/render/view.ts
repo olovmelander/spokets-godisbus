@@ -164,6 +164,8 @@ export interface Frame {
   alpha: number;
   /** The time since the last frame, in seconds. 0 while the game is paused. */
   dt: number;
+  /** Seconds actually advanced by the simulation; left out in a render-only fixture: dt. */
+  eventDt?: number;
   atGoal: boolean;
   /** Which trail candies are in the bag. */
   collected: readonly boolean[];

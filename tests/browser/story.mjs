@@ -313,6 +313,11 @@ try {
       await page.locator(`[data-sweet="${sweet}"]`).tap(); await page.locator(`[data-friend="${friend}"]`).tap();
       await until(state, (s) => s.flags.includes(`party:${friend}`), `choice for ${friend}`);
     }
+    // Each line now finishes before the next begins. Bound progress between the authored lines, rather than
+    // giving the whole cobbles explanation and Klonk's reply the deadline for a single line.
+    for (const id of ['cobbles1', 'cobbles2', 'cobbles3', 'klonk']) {
+      await until(state, (s) => s.said.includes(id), `the party says ${id}`);
+    }
     await until(state, (s) => s.flags.includes('beat:named'), 'the party reaches the naming');
     const afterParty = await state();
     check('Pappa remembers the saved musical cobbles at the party', ['cobbles1', 'cobbles2', 'cobbles3'].every((id) => afterParty.said.includes(id)));

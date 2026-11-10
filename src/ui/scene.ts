@@ -1,7 +1,7 @@
 import { sv } from '../content/sv';
 import type { SceneDef, SceneFrame, SceneStage } from '../sim/scene';
 import type { Device } from '../input/input';
-import { playVoice } from '../audio/voice-player';
+import { playingVoice, playVoice } from '../audio/voice-player';
 import './scene.css';
 export { sceneUiHtml } from './scene-html';
 
@@ -73,7 +73,8 @@ export function createSceneUi(doc: Document, advance: () => void) {
           captionOn = on;
           if (word.text && word.text !== voicedWord && age > 0.05 && !covered) {
             voicedWord = word.text;
-            playVoice(`scene_${word.text}`);
+            // Read aloud, unless someone is already speaking: a card's voice never cuts a line (Olov, 9 November 2026).
+            if (playingVoice() === null) playVoice(`scene_${word.text}`);
           }
         }
         else { titleText = words[word.text] ?? ''; titleOn = on; }

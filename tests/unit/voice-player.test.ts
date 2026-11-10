@@ -5,13 +5,16 @@ class Voice {
   static throws = false;
   volume = 1;
   currentTime = 0;
+  duration = NaN;
   onended: (() => void) | null = null;
   onerror: (() => void) | null = null;
   reject!: (error: Error) => void;
   attempt = new Promise<void>((_resolve, reject) => { this.reject = reject; });
-  pause = vi.fn();
+  paused = true;
+  pause = vi.fn(() => { this.paused = true; });
   play = vi.fn(() => {
     if (Voice.throws) throw new Error('Playback unavailable');
+    this.paused = false;
     return this.attempt;
   });
   constructor(readonly url: string) { Voice.made.push(this); }
@@ -94,10 +97,32 @@ describe('spoken-line lifecycle', () => {
     expect(player.playingVoice()).toBe('tiny');
   });
 
-  it('stops an audible line when the page is hidden', () => {
+  it('holds an audible line when the page is hidden', () => {
     player.playVoice('tiny');
     page.hidden = true; page.dispatchEvent(new Event('visibilitychange'));
     expect(Voice.made[0]!.pause).toHaveBeenCalledOnce();
+    expect(player.playingVoice()).toBe('tiny');
+  });
+
+  it('continues a backgrounded recording when play resumes, while a visible Pause menu keeps it held', () => {
+    player.playVoice('tiny');
+    const voice = Voice.made[0]!;
+    voice.currentTime = 1.7;
+    page.hidden = true;
+    page.dispatchEvent(new Event('visibilitychange'));
+    expect(voice.paused).toBe(true);
+    expect(player.playingVoice()).toBe('tiny');
+    // The page's visible handler supplies whether a menu or a platform interruption still holds play.
+    page.hidden = false;
+    player.resumeVoice(false);
+    expect(voice.paused).toBe(true);
+    expect(voice.play).toHaveBeenCalledTimes(1);
+    player.resumeVoice(true);
+    expect(voice.paused).toBe(false);
+    expect(voice.play).toHaveBeenCalledTimes(2);
+    expect(voice.currentTime).toBe(1.7);
+    voice.onended!();
+    // The HUD can advance again: the finished recording no longer holds its bubble or the next event.
     expect(player.playingVoice()).toBeNull();
   });
 
@@ -107,6 +132,36 @@ describe('spoken-line lifecycle', () => {
     gestures.dispatchEvent(new Event('pagehide'));
     gestures.dispatchEvent(new Event('pointerdown'));
     expect(Voice.made).toHaveLength(1);
+  });
+
+  it('holds the line being said under Pause, and lets it finish after, not again from its start', () => {
+    player.playVoice('tiny');
+    player.pauseVoice();
+    const voice = Voice.made[0]! as Voice & { paused?: boolean };
+    expect(voice.pause).toHaveBeenCalledOnce();
+    expect(player.playingVoice()).toBe('tiny');
+    voice.paused = true;
+    voice.currentTime = 1.2;
+    player.resumeVoice();
+    expect(voice.play).toHaveBeenCalledTimes(2);
+    expect(voice.currentTime).toBe(1.2);
+    expect(Voice.made).toHaveLength(1);
+    // Nothing to go on with once the line is gone.
+    player.stopVoice();
+    player.resumeVoice();
+    expect(voice.play).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports the recording clock for lip-sync, including metadata loading and Pause', () => {
+    expect(player.voicePosition()).toBeNull();
+    player.playVoice('tiny');
+    const voice = Voice.made[0]!;
+    expect(player.voicePosition()).toEqual({ key: 'tiny', seconds: 0, duration: 0 });
+    voice.duration = 8.4; voice.currentTime = 2.1;
+    player.pauseVoice();
+    expect(player.voicePosition()).toEqual({ key: 'tiny', seconds: 2.1, duration: 8.4 });
+    voice.onended!();
+    expect(player.voicePosition()).toBeNull();
   });
 
   it('does not report a playing line when play() throws synchronously', () => {

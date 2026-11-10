@@ -10,7 +10,7 @@ export interface Held {
   /** Up and down, for climbing. Left out, it is 0. */
   y?: number;
   hopHeld: boolean;
-  /** Someone is still speaking on the page (src/sim/scene.ts, `quiet`). */
+  /** Someone is still speaking on the page. Left out: nobody listens, as for the robot (src/sim/types.ts, StepInput). */
   talking?: boolean;
 }
 
@@ -35,11 +35,14 @@ export class Game {
   /** One frame: dt seconds have passed. Presses go to the first step that runs. */
   frame(dt: number, held: Held, edges: Readonly<Edges>): number {
     this.queue.push(edges);
+    // The page hears what is said only after the frame: a line said in one of its steps is being said in the rest.
+    const told = this.sim.said.length;
     this.lastSteps = this.loop.advance(dt * this.tempo, (first) => {
       const e = first ? this.queue.take() : NO_EDGES;
+      const talking = held.talking === undefined ? undefined : held.talking || this.sim.said.length > told;
       // Hoppa's held state is read each frame. A tap that begins and ends inside one frame therefore
       // arrives as a press with hopHeld false, which is a hop.
-      this.sim.step({ x: held.x, y: held.y ?? 0, hopHeld: held.hopHeld, hop: e.hop, act: e.act, help: e.helper, talking: held.talking });
+      this.sim.step({ x: held.x, y: held.y ?? 0, hopHeld: held.hopHeld, hop: e.hop, act: e.act, help: e.helper, talking });
     });
     return this.lastSteps;
   }

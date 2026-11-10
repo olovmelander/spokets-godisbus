@@ -182,7 +182,8 @@ export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket'
 
 /**
  * Something said, in a bubble (plan §3.7): the game has no voices. It comes when Elof first passes `at`, or
- * when the flag `on` is set, and only once.
+ * when the flag `on` is set, and only once. While someone is still speaking it waits its turn, and its flag
+ * (`beat:<id>`), and whatever waits for that, comes when it is said (src/sim/sim.ts, `tell`).
  */
 export interface Beat {
   id: string;
@@ -190,8 +191,6 @@ export interface Beat {
   on?: string;
   /** Context that must exist even when Elof reaches the position first. */
   needs?: string;
-  /** A new causal scene replaces stale queued dialogue. */
-  priority?: boolean;
   /** An explanation is no longer useful once this next action is complete. */
   until?: string;
   /** A local explanation waits until Elof is back at its help encounter. */
@@ -786,7 +785,11 @@ export interface StepInput {
   act: boolean;
   /** He asks the helper. Left out: no. */
   help?: boolean;
-  /** Someone is still speaking on the page: a scene that waits for quiet waits. Left out: no. */
+  /**
+   * Someone is still speaking on the page, or a line was said earlier in this frame: what is to be said next waits
+   * its turn, and so do a held scene and a freeze joke (src/sim/scene.ts). Left out: nobody listens (the robot and
+   * the tests, which have no page), and lines are said as their moments come, all at once, as the page queues them.
+   */
   talking?: boolean;
 }
 

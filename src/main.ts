@@ -5,10 +5,11 @@ import { createTutorial } from './ui/tutorial';
 import { createFingerMarks } from './ui/finger';
 import { MOTION_QUERY, applyMotion, lessMotion } from './platform/motion';
 import { Game } from './app/game';
+import { STEP } from './sim/constants';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
-import { setVoiceSettings, stopVoice } from './audio/voice-player';
+import { pauseVoice, resumeVoice, setVoiceSettings, stopVoice, voicePosition } from './audio/voice-player';
 import { ADVENTURE2, BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, isAdventure2, loadAdventure2, loadLookCourses, LOOK_IDS, nextAvailable } from './content/chapters';
 import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
@@ -33,7 +34,7 @@ import { createPhotoStore } from './save/photos';
 import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
 import { markOnward, takeOnward } from './save/onward';
 import { keysLearned, learnKeys } from './save/keys';
-import type { SimStart, Vec } from './sim/types';
+import type { SimStart, Speaker, Vec } from './sim/types';
 import type { Debug } from './ui/debug';
 import { createHud } from './ui/hud';
 import { createPause, type PausePage } from './ui/pause';
@@ -288,11 +289,14 @@ async function start(): Promise<void> {
   const fingerMarks = createFingerMarks(document);
   // In Äventyr 2 he has had his name all along.
   const isKlonk = () => ghostNamed(save.flags) || !!chapter.named || (chapter.id === 'epilog' && game.sim.flags.has('beat:named'));
+  // Who has said each line, as its bubble shows: their wordless sound goes with it (src/audio/cues.ts).
+  const voiced: Speaker[] = [];
   // The bag counts all the candy there is: the trail's, and the side candy off it.
   const hud = createHud(document, chapter.candy.length + (chapter.side?.length ?? 0), isKlonk,
     () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1),
     // Something to use has come in reach: one soft knock of wood (in-play.md row 7).
-    () => audio.ui('press'));
+    () => audio.ui('press'),
+    (who) => voiced.push(who));
   const story = createStoryPanel(document, {
     named: isKlonk,
     answer(answer) {
@@ -377,7 +381,7 @@ async function start(): Promise<void> {
       noteHits: game.sim.noteHits,
       found: [...game.sim.flags].filter((flag) => flag.startsWith('found:') || flag.startsWith('lost:')).length,
       footing: footingAt(chapter, p.x),
-      said: game.sim.said.flatMap((id) => beats.get(id)?.who ?? []),
+      said: [...voiced],
       ghostPerch: game.sim.ghost?.perch ?? 0,
       ghostAway: game.sim.ghost ? Math.hypot(game.sim.ghost.x - p.x, game.sim.ghost.y - p.y) : 99,
       helpStep: game.sim.help.step,
@@ -485,7 +489,8 @@ async function start(): Promise<void> {
   function openPause(page?: PausePage): void {
     if (menuOpen() || platformBlocked()) return;
     paused = true;
-    stopVoice();
+    // What is being said waits under Pause, its sound with its bubble.
+    pauseVoice();
     // The world stops, and the tune goes on under the paper (docs/ux-audit/style-and-sound.md rows 20 and 21).
     audio.menu(true);
     audio.ui('open');
@@ -509,6 +514,7 @@ async function start(): Promise<void> {
     pause.hide();
     input.release();
     game.resume();
+    resumeVoice();
     audio.menu(false);
     audio.sleep(document.hidden);
     audio.unlock();
@@ -850,7 +856,12 @@ async function start(): Promise<void> {
     devicePlay.setPlaying(!platformBlocked() && !menuOpen());
     memories.suspend(platformBlocked());
     if (document.hidden) { input.release(); pointing.cancel(); askedForUse = askedForHelp = false; story.interrupt(); writeSave(); }
-    else { game.resume(); devicePlay.visible(); }
+    else {
+      game.resume();
+      devicePlay.visible();
+      // The hidden page held its recording. Continue with its bubble, unless a menu still holds the game.
+      resumeVoice(!menuOpen() && !platformBlocked());
+    }
   });
   window.addEventListener('pagehide', () => { devicePlay.setPlaying(false); writeSave(); });
 
@@ -895,6 +906,7 @@ async function start(): Promise<void> {
     location.replace(`${location.pathname}${courseQuery(params, chapter.id)}`);
   }
   let endFor = 0;
+  /** At the end: how long since a line was last shown, and how many had been. Only a line that never ends is let go. */
   // The coda before the last page (docs/narrative-audit/threads.md §5.4): the tune closes, and one of the family
   // answers from afar. Not where a scene is the chapter's end, nor in the epilogue, which has its own.
   const coda = !endsInScene(chapter) && !chapter.epilogue;
@@ -1018,6 +1030,7 @@ async function start(): Promise<void> {
     devicePlay.setPlaying(!platformBlocked() && !menuOpen());
     if (document.hidden) { lastTime = time; return; }
     const dt = Math.min(timer.getDelta(), 0.25);
+    const beforeSteps = game.sim.steps;
     const blocked = platformBlocked();
     memories.suspend(blocked);
     storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen(), isKlonk());
@@ -1121,7 +1134,9 @@ async function start(): Promise<void> {
     }
     view.render({
       // Under the title the place lives on (first-minutes.md row 4); under any other menu it stands still.
-      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() && !title.open ? 0 : dt, atGoal,
+      prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() && !title.open ? 0 : dt,
+      // Visual events share the steps the story actually ran, including the catch-up cap and slower tempo.
+      eventDt: title.open ? dt : (game.sim.steps - beforeSteps) * STEP, atGoal,
       collected: game.sim.collected, side: game.sim.collectedSide, checkpoint: game.sim.checkpoint, movers: game.sim.movers, drips: game.sim.drips,
       prologue: game.sim.prologue?.frame, scene: tableau ? { id: 'title', seconds: tableauSeconds } : game.sim.sceneFrame, ending: ending.seconds,
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
@@ -1214,11 +1229,10 @@ async function start(): Promise<void> {
     for (; told < game.sim.said.length; told++) {
       const id = game.sim.said[told]!;
       const beat = beats.get(id);
-      const sceneLine = !!scene && id.startsWith(`${scene.id}:`) && game.sim.scene?.holding === true;
       // The opening's causes and the final reveal wait for the reader; passing remarks remain timed.
       const read = readingBeats.has(id);
       if (read) unreadBeats.push(id);
-      if (beat) hud.say(beat.who, beat.line, beat.priority || sceneLine, read);
+      if (beat) hud.say(beat.who, beat.line, read);
       if (beat?.line === 'safeHere') audio.play({ kind: 'motif', who: 'mamma' });
     }
     // What is said waits while a memory plays: its line comes after it.
@@ -1226,9 +1240,11 @@ async function start(): Promise<void> {
     sceneUi.reading(hud.reading() && !menuOpen() && !platformBlocked(), device,
       sv.dialogue.moments[scene?.id ?? ''] ?? (readingBeats.has(unreadBeats[0] ?? '') ? sv.storyContext.family : ''));
     hud.paused(menuOpen());
-    // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish
-    // first, for a few seconds at most: a chapter must not end over what someone is saying.
-    if (atGoal) endFor += menuOpen() ? 0 : dt;
+    // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish first,
+    // and the lines still waiting their turn: a chapter must not end over what someone is saying.
+    if (atGoal) {
+      endFor += menuOpen() ? 0 : dt;
+    }
     if (atGoal && coda && !closing) {
       closing = true;
       audio.cadence();
@@ -1242,7 +1258,7 @@ async function start(): Promise<void> {
       audio.play({ kind: 'motif', who: codaWho });
     }
     const wait = coda ? CODA : 1.4;
-    if (endFor > wait && !hud.reading() && (!hud.speaking() || endFor > wait + 5.6) && !benchOn && !ended) {
+    if (endFor > wait && !hud.reading() && !hud.speaking() && !game.sim.unsaid && !benchOn && !ended) {
       ended = true;
       paused = true;
       if (!coda) audio.menu(true);
