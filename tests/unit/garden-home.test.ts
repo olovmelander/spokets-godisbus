@@ -1,7 +1,7 @@
 import { Box3, BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Assets, Manifest } from '../../src/render/assets';
-import { GARDEN_HOME, installGardenHome } from '../../src/render/garden-home';
+import { GARDEN_HOME, STORM_KOTA, installGardenHome } from '../../src/render/garden-home';
 
 const PRIVATE = 'garden/home-landmarks';
 const GENERIC = 'boot/garden-fallback';
@@ -81,6 +81,15 @@ describe('garden home installation', () => {
     });
     expect(placeholder.visible).toBe(false);
     expect(assets.model).toHaveBeenCalledExactlyOnceWith('garden', 'home-landmarks');
+  });
+
+  it('places only the shared fjällkåta beyond the storm playhouse', async () => {
+    const { model } = buildings();
+    const { assets, scene } = fixture([PRIVATE], { [PRIVATE]: model });
+    expect(await installGardenHome(scene, assets, false, STORM_KOTA)).toBe(PRIVATE);
+    expect(scene.getObjectByName('home-house')).toBeUndefined();
+    expect(scene.getObjectByName('home-playhouse')).toBeUndefined();
+    expect(scene.getObjectByName('home-kota')!.position.toArray()).toEqual([156, 0.2, -14]);
   });
 
   it('never requests private architecture in repository-safe stand-in mode', async () => {

@@ -65,6 +65,8 @@ function headOf(bird: Object3D): Object3D | null {
 
 /** A thing on a rail, as what it is. Its origin is the middle of its bottom, as the simulation's. Null: a plain box. */
 export function moverProp(mover: Mover): Group | null {
+  // Collision for an existing piece of scenery; its picture is supplied separately.
+  if (mover.look === 'none') return new Group();
   const w = mover.width;
   const h = mover.height;
   const group = new Group();

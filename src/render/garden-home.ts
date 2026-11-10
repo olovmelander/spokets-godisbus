@@ -8,13 +8,18 @@ export const GARDEN_HOME = [
   { name: 'home-kota', x: 120, y: 0.2, z: -24, scale: 1 },
 ] as const;
 
+export type HomePlacement = { name: typeof GARDEN_HOME[number]['name']; x: number; y: number; z: number; scale: number };
+
+/** The same fjällkåta, beyond the playhouse in Stormgården. */
+export const STORM_KOTA: readonly HomePlacement[] = [{ name: 'home-kota', x: 156, y: 0.2, z: -14, scale: 1 }];
+
 /** Leave clear views through the nearer birches to each landmark's entrance and silhouette. */
-export function gardenViewGap(x: number): boolean {
-  return GARDEN_HOME.some(at => Math.abs(x - at.x) < (at.name === 'home-house' ? 28 : 14));
+export function gardenViewGap(x: number, chapter = 'garden'): boolean {
+  return (chapter === 'stormgard' ? STORM_KOTA : GARDEN_HOME).some(at => Math.abs(x - at.x) < (at.name === 'home-house' ? 28 : 14));
 }
 
 /** Private architecture stays removable; builds without it carry an original, generic garden. */
-export async function installGardenHome(scene: Object3D, assets: Assets, standIns = false): Promise<string | null> {
+export async function installGardenHome(scene: Object3D, assets: Assets, standIns = false, placements: readonly HomePlacement[] = GARDEN_HOME): Promise<string | null> {
   const manifest = await assets.manifest();
   const choices = [['garden', 'home-landmarks'], ['boot', 'garden-fallback']] as const;
   for (const [pack, name] of choices) {
@@ -22,12 +27,12 @@ export async function installGardenHome(scene: Object3D, assets: Assets, standIn
     if (!manifest.packs[pack]?.files[`${name}.glb`]) continue;
     try {
       const model = await assets.model(pack, name);
-      const roots = GARDEN_HOME.map(at => model.getObjectByName(at.name));
+      const roots = placements.map(at => model.getObjectByName(at.name));
       if (roots.some(root => !root)) continue;
       // Packed glTF may express quantization through each mesh's scale and translation. Keep
       // those authored transforms intact; the scenic placement belongs to a separate parent.
       model.updateMatrixWorld(true);
-      GARDEN_HOME.forEach((at, i) => {
+      placements.forEach((at, i) => {
         const root = roots[i]!;
         root.name = `${at.name}-model`;
         const anchor = new Group();
@@ -37,6 +42,7 @@ export async function installGardenHome(scene: Object3D, assets: Assets, standIn
         anchor.position.set(at.x, at.y, at.z);
         anchor.scale.setScalar(at.scale);
       });
+      for (const old of GARDEN_HOME) if (!placements.some(at => at.name === old.name)) model.getObjectByName(old.name)?.removeFromParent();
       model.name = 'garden-home';
       scene.add(model);
       const placeholder = scene.getObjectByName('garden-home-placeholder');

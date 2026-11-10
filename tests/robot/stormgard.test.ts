@@ -112,7 +112,7 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
     expect(game.sim.bubbles).toBe(0);
     expect(game.sim.knocks).toBe(0);
     expect(hops).toBe(0);
-    expect(game.sim.candyCount).toBe(stormgard.candy.length);
+    expect(game.sim.candyCount, `missed ${stormgard.candy.filter((_c, i) => !game.sim.collected[i]).map(c => `${c.x},${c.y}`).join(';')}`).toBe(stormgard.candy.length);
   });
 
   it('keeps Klonk out of reach, a friend ahead of him, through every puzzle and the boot ride', () => {
@@ -143,6 +143,16 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
     // In the gusts it is blown into a flowerpot, behind the path, in one of the pots' lee.
     const pot = stormgard.ghost!.find((perch) => perch.z !== undefined)!;
     expect(stormgard.gusts![0]!.shelters).toContain(pot.at.x);
+  });
+
+  it('the pumpkin stops Elof on the step and supports him when he climbs over it', () => {
+    const sim = new Sim({ ...stormgard, spawn: { x: 29, y: 2.4 }, scenes: [], beats: [] });
+    run(sim, 1, { x: 1 });
+    expect(sim.curr.x).toBeLessThan(29.6);
+    const above = new Sim({ ...stormgard, spawn: { x: 30.6, y: 5 }, scenes: [], beats: [] });
+    run(above, 1);
+    expect(above.curr.grounded).toBe(true);
+    expect(above.curr.y).toBeCloseTo(4.3, 1);
   });
 
   describe('Regntunnan', () => {

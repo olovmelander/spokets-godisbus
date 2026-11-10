@@ -17,7 +17,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { Reaction } from '../app/pointing';
 import { createAssets } from './assets';
-import { installGardenHome } from './garden-home';
+import { installGardenHome, STORM_KOTA } from './garden-home';
 import { installSharedModels } from './shared-models';
 import { windWisp } from './wind-wisp';
 import { createAfloat } from './afloat';
@@ -597,7 +597,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       modelInstallations++;
     })
     .catch(error => console.error('The Bredbyn environment could not be loaded.', error)) : Promise.resolve();
-  const gardenReady = chapter.id === 'garden' ? installGardenHome(scene, assets, standIns)
+  const gardenReady = chapter.id === 'garden' || chapter.id === 'stormgard' ? installGardenHome(scene, assets, standIns, chapter.id === 'stormgard' ? STORM_KOTA : undefined)
     .then(model => {
       if (!model) return;
       models.push(model);
