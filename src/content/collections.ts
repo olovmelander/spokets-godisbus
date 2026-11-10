@@ -51,14 +51,14 @@ export function keepsakesFound(flags: Record<string, readonly string[]>): Keepsa
 }
 
 export const STORM_MEMORIES = {
-  'storm:window': {chapter:'stormkvall',flag:'scene:fonstret',pictures:['old-window']},
+  'storm:window': {chapter:'stormkvall',flag:'scene:fonstret',pictures:['window-escape']},
   'storm:yard': {chapter:'stormgard',flag:'beat:sg:lonely',pictures:['lonely-hollow','old-window']},
-  'storm:forest': {chapter:'stormskog',flag:'beat:ss:alone',pictures:['lonely-hollow','northbound']},
+  'storm:forest': {chapter:'stormskog',flag:'beat:ss:alone',pictures:['lonely-hollow','forest-trail']},
   'storm:north': {chapter:'olympia',flag:'scene:norrut',pictures:['northbound','wind-posts']},
   'storm:water': {chapter:'flarken',flag:'beat:sjon:floated',pictures:['wind-posts','outlet-pair']},
   'storm:raft': {chapter:'alven',flag:'beat:al:old-one',pictures:['raft','outlet-pair']},
   'storm:harbour': {chapter:'billsta',flag:'beat:bi:not-alone',pictures:['outlet-pair','safe-harbour']},
-  'storm:lights': {chapter:'stormoga',flag:'scene:motet',pictures:['family-lamps','safe-harbour']},
+  'storm:lights': {chapter:'stormoga',flag:'scene:motet',pictures:['family-lamps','cap-return']},
 } as const;
 export type StormMemoryId = keyof typeof STORM_MEMORIES;
 export const isStormMemory = (id:string): id is StormMemoryId => Object.hasOwn(STORM_MEMORIES,id);

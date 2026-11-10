@@ -4,6 +4,7 @@ import { alven } from '../../src/content/aventyr2/chapters/alven';
 import { billsta } from '../../src/content/aventyr2/chapters/billsta';
 import { thoughtAt, thoughtIllustrationKey } from '../../src/render/ghost-thought';
 import { MEMORIES } from '../../src/ui/memory-art';
+import { STORM_MEMORIES } from '../../src/content/collections';
 import { strokeHtml } from '../../src/ui/story-stroke';
 
 describe('illustrated memories keep their story and their wooden friends', () => {
@@ -45,4 +46,34 @@ describe('illustrated memories keep their story and their wooden friends', () =>
     expect(strokeHtml).toContain('little-carving');
     expect(strokeHtml).toContain('id="paintEye0" cx="116" cy="86"'); expect(strokeHtml).toContain('id="paintEye1" cx="204" cy="86"');
   });
+  it('shows each of the five family members once on the childhood boardwalk, with only toddler Elof carried', () => {
+    const page = MEMORIES.myren![0]!;
+    for (const who of ['mamma','pappa','moa','bertil']) expect(page.match(new RegExp(`data-illustration-part="person-${who}"`, 'g'))).toHaveLength(1);
+    expect(page.match(/data-illustration-part="person-elof-toddler-outdoors"/g)).toHaveLength(1);
+    expect(page).toContain('shoulder-carry'); expect(page).toContain('held-carving');
+    for (const page of MEMORIES.garden!) expect(page).toContain('person-elof-toddler-indoors');
+    for (const pages of Object.values(MEMORIES)) for (const page of pages) expect(page).not.toContain('weathering');
+  });
+  it('keeps the window escape and late cap return separate from their earlier clues', () => {
+    expect(STORM_MEMORIES['storm:window'].pictures).toEqual(['window-escape']);
+    expect(storyIllustration('window-escape')).toContain('old-carving');
+    expect(storyIllustration('window-escape')).toContain('little-carving');
+    expect(storyIllustration('old-window')).not.toContain('little-carving');
+    expect(STORM_MEMORIES['storm:forest'].pictures[1]).toBe('forest-trail');
+    expect(STORM_MEMORIES['storm:lights'].pictures[1]).toBe('cap-return');
+    expect(storyIllustration('safe-harbour')).toContain('held-pair');
+    expect(storyIllustration('safe-harbour')).not.toContain('little-red-cap');
+    expect(storyIllustration('cap-return')).toContain('little-red-cap');
+  });
+  it('includes the protagonists and the right people in the travel and family pictures', () => {
+    for (const key of ['wind-posts','raft'] as const) {
+      expect(storyIllustration(key)).toContain('person-elof-rain'); expect(storyIllustration(key)).toContain('klonk');
+    }
+    const lamps = storyIllustration('family-lamps');
+    for (const who of ['elof','mamma','pappa','moa','bertil']) expect(lamps).toContain(`person-${who}-rain`);
+    expect(lamps).toContain('flashlight');
+    const breakfast = storyIllustration('family-breakfast');
+    for (const who of ['elof','mamma','pappa','moa','bertil','mormor','morfar']) expect(breakfast).toContain(`person-${who}`);
+  });
+
 });
