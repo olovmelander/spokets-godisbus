@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { Group, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import { Group, Mesh, MeshStandardMaterial, Raycaster, Vector3 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { carGlass } from '../../src/render/car-glass';
@@ -53,6 +53,32 @@ describe('the cars’ own glass', () => {
     expect(selected.every(point => point.y > .9 && Math.abs(point.x) < (name === 'bil' ? 2.1 : 2.25))).toBe(true);
     expect(styled.geometry.getAttribute('color').array).toEqual(originalGeometry.getAttribute('color').array);
     expect(originalGeometry.hasAttribute('carPane')).toBe(false);
+    // Only the windows move, in the car's own metre space even under a transformed parent. Their fine grid must
+    // stand clear of the differently tessellated black surrounds without moving the body, lenses or wheels.
+    const moved = styled.geometry.getAttribute('position'), previous = originalGeometry.getAttribute('position');
+    for (let i = 0; i < moved.count; i++) {
+      const a = new Vector3().fromBufferAttribute(moved, i).applyMatrix4(styled.matrix);
+      const b = new Vector3().fromBufferAttribute(previous, i).applyMatrix4(styled.matrix);
+      expect(a.distanceTo(b)).toBeCloseTo(mask.getX(i) ? .006 : 0, 5);
+    }
+    // Inspect the actual surface between vertices: the old coarse surround crossed seven estate glass triangles.
+    // A mirror can legitimately be in front of the pane, so count only intersections within 3 cm of its surface.
+    const index = styled.geometry.index!, blocked: number[] = [];
+    for (let face = 0; face < index.count; face += 3) {
+      if (!mask.getX(index.getX(face))) continue;
+      const centre = new Vector3();
+      for (let k = 0; k < 3; k++) centre.add(new Vector3().fromBufferAttribute(moved, index.getX(face + k)));
+      centre.multiplyScalar(1 / 3).applyMatrix4(styled.matrixWorld); root.worldToLocal(centre);
+      // The sloping rear windscreen is legitimately behind the C-pillar when viewed from the side.
+      if (centre.z < .65) continue;
+      const origin = root.localToWorld(centre.clone().add(new Vector3(0, 0, 1)));
+      const direction = new Vector3(0, 0, -1).transformDirection(root.matrixWorld);
+      const hit = new Raycaster(origin, direction).intersectObject(root, true)[0];
+      if (hit?.object !== styled || mask.getX(hit.face!.a)) continue;
+      const separation = root.worldToLocal(hit.point.clone()).z - centre.z;
+      if (separation > -.001 && separation < .03) blocked.push(face / 3);
+    }
+    expect(blocked).toEqual([]);
     expect(body.material).toBe(originalMaterial);
     expect((copy.getObjectByName(`${name}-hjul-fram`)!.children.find(object => (object as Mesh).isMesh) as Mesh).material).toBe(wheel.material);
     expect((styled.material as MeshStandardMaterial).transparent).toBe(false);

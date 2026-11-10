@@ -1,4 +1,4 @@
-import { Float32BufferAttribute, Matrix4, Mesh, MeshStandardMaterial, Vector3, type Object3D } from 'three';
+import { Float32BufferAttribute, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Vector3, type Object3D } from 'three';
 
 /** The cars are closed, opaque shells. Give their actual glass a shaded cabin and a soft sky reflection,
  * rather than using transmission through the silver body behind it. The baked blue glass is the mask;
@@ -29,6 +29,25 @@ export function carGlass(root: Object3D, wet: boolean, metres = 1): void {
     }
     if (!windows) return;
     mesh.geometry = mesh.geometry.clone();
+    if (!explicit) {
+      // The export's curved black surrounds and glass use different triangle grids. At the beltline the coarser
+      // surround can cross the glass between its vertices. Separate only the glass by six millimetres in car space;
+      // this is smaller than its inset from the frame and preserves the silhouette, pillars and painted body.
+      const normals = mesh.geometry.getAttribute('normal'), normal = new Vector3();
+      const normalMatrix = new Matrix3().getNormalMatrix(matrix), back = matrix.clone().invert();
+      const separated = new Float32Array(position.count * 3);
+      for (let i = 0; i < position.count; i++) {
+        point.fromBufferAttribute(position, i);
+        if (mask[i]) {
+          normal.fromBufferAttribute(normals, i).applyMatrix3(normalMatrix).normalize();
+          point.applyMatrix4(matrix).addScaledVector(normal, .006 / metres).applyMatrix4(back);
+        }
+        point.toArray(separated, i * 3);
+      }
+      // Decoded GLBs can have normalised integer positions; preserve their decoded coordinates in the new buffer.
+      mesh.geometry.setAttribute('position', new Float32BufferAttribute(separated, 3));
+      mesh.geometry.computeBoundingBox(); mesh.geometry.computeBoundingSphere();
+    }
     mesh.geometry.setAttribute('carPoint', new Float32BufferAttribute(at, 3));
     mesh.geometry.setAttribute('carPane', new Float32BufferAttribute(mask, 1));
     const material = source.clone();
