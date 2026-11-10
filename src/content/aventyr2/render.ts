@@ -1089,7 +1089,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       for (const b of buildings) {
         if (!b.panes) continue;
         const lit = b.def.lit !== undefined && (b.def.lit === '' || flags.has(b.def.lit));
-        b.panes.color.copy(lit ? (b.def.kind === 'car' ? PANE.cabin : PANE.lit) : PANE.dark);
+        b.panes.color.copy(lit ? PANE.lit : PANE.dark);
         if (lit && !still) b.panes.color.multiplyScalar(0.92 + 0.08 * Math.sin(clock * 2.1 + b.def.x));
       }
       starMaterial.opacity = calm;

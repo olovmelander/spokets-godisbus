@@ -8,6 +8,7 @@ import { paintedWood } from '../../render/painted-wood';
 import { groundDetail } from '../../render/ground-detail';
 import { PLANK, STONE, barkDetail, barky, notBark } from '../../render/bark-detail';
 import { outletShape } from './outlet';
+import { carGlass } from '../../render/car-glass';
 
 /**
  * The big things of Äventyr 2's places, built in code (docs/aventyr-2.md): Billsta's white house with its two
@@ -612,7 +613,7 @@ export const FAMILY_CAR = {
     [[-1.94, 1.054], [-1.767, 1.043], [-1.593, 1.024], [-1.42, 1.003], [-1.42, 1.406], [-1.487, 1.393], [-1.553, 1.378], [-1.62, 1.36]],
   ],
 } as const;
-/** How far out from its middle the lit panes stand, in metres: just out from the model's side glass. */
+/** How far out from its middle the fallback panes stand, in metres: just out from the body. */
 const PANES_OUT = FAMILY_CAR.glass + 0.012;
 
 function car(def: BuildingDef) {
@@ -639,7 +640,7 @@ function car(def: BuildingDef) {
     for (const z of [-1, 1]) parts.push(paint(new CylinderGeometry(FAMILY_CAR.wheel * metre, FAMILY_CAR.wheel * metre, 0.2 * metre, 20).rotateX(Math.PI / 2).translate(x * metre, FAMILY_CAR.wheel * metre, z * (near - 0.08 * metre)), '#14161a'));
     parts.push(paint(new CylinderGeometry(0.22 * metre, 0.22 * metre, 0.02 * metre, 16).rotateX(Math.PI / 2).translate(x * metre, FAMILY_CAR.wheel * metre, near + 0.02 * metre), '#9aa2ac'));
   }
-  // Its side windows, where the model's glass is, a little out from it: they light up when the car does.
+  // Its fallback side glass sits clear of the body. The installed model replaces these panes with its own glass.
   const pane = (points: readonly (readonly [number, number])[]) => {
     const glass = new Shape();
     glass.moveTo(points[0]![0] * metre, points[0]![1] * metre);
@@ -1058,15 +1059,16 @@ export function building(def: BuildingDef): Building {
   if (panes.length) {
     // Where its windows are, for what their light falls on (../../render/lift/materials/puddles.ts), which has
     // no business with this pack. A building turned sideways shines past the path.
-    if (def.lit !== undefined && !def.turn) {
+    if (def.kind !== 'car' && def.lit !== undefined && !def.turn) {
       group.userData.lamps = panes.map((pane) => {
         pane.computeBoundingBox();
         const middle = pane.boundingBox!.getCenter(new Vector3());
         return { x: def.x + (def.flip ? -middle.x : middle.x), z: def.z + middle.z, on: def.lit };
       });
     }
-    paneMaterial = glass();
-    group.add(new Mesh(mergeGeometries(panes.map((p) => { p.deleteAttribute('uv'); return p; })), paneMaterial));
+    const surface = def.kind === 'car' ? new MeshStandardMaterial({ name: 'car-window', color: '#263e50', roughness: .2 }) : glass();
+    if (def.kind !== 'car') paneMaterial = surface as MeshBasicMaterial;
+    group.add(new Mesh(mergeGeometries(panes.map((p) => { p.deleteAttribute('uv'); return p; })), surface));
   }
   // A tree of the nature kit, one of a few by where it stands, as tall as the chapter says: art/blender/a2-nature.py.
   if (def.kind === 'spruce' || def.kind === 'birch') {
@@ -1081,11 +1083,13 @@ export function building(def: BuildingDef): Building {
     group.userData.fit = 2;
     group.userData.shift = -6;
   }
-  // The car takes the model's place, and keeps its windows where they are, on its glass, so that they can light up.
+  // The model has its own glass. Do not retain opaque cabin-light overlays over its shaped windows.
   if (def.kind === 'car') {
     group.userData.model = 'bil';
     group.userData.fit = (def.width ?? 29) / FAMILY_CAR.long;
-    group.children[1]!.userData.keep = 0;
+    group.userData.carWet = true;
+    group.userData.disposeFallback = true;
+    carGlass(group, true, 1 / (group.userData.fit as number));
   }
   // Olympia's goals: the training goal, and the big one at the far end.
   if (def.kind === 'goal') {
@@ -1124,4 +1128,4 @@ export function building(def: BuildingDef): Building {
 }
 
 /** The warm colour of a lit pane, and the dark of one with nobody home. */
-export const PANE = { lit: new Color('#ffc870'), cabin: new Color('#8a6a44'), dark: new Color('#141a24') };
+export const PANE = { lit: new Color('#ffc870'), dark: new Color('#141a24') };

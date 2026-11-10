@@ -73,7 +73,7 @@ describe('the cars made in Blender', () => {
     expect(car.getObjectByName('bil-hjul-fram')!.userData.radius).toBeCloseTo(FAMILY_CAR.wheel, 3);
   });
 
-  it("lays the game's lit panes over the car's side glass, just out from it, and nowhere else", async () => {
+  it("fits the fallback panes to the modeled car's side glass, just out from it, and nowhere else", async () => {
     const scene = await kit();
     const width = 29;
     const fit = width / FAMILY_CAR.long;

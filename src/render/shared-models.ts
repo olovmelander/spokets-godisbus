@@ -4,6 +4,7 @@ import { concrete } from './concrete';
 import { firewood } from './firewood';
 import { forestKit } from './forest-kit';
 import { weathered } from './weathered';
+import { carGlass } from './car-glass';
 
 /** Authored models shared by both adventures. Only files actually used in this scene are fetched. */
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
@@ -151,6 +152,7 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
     // The kit's firewood and concrete have more of their own seen close, their own weather with it (./firewood.ts,
     // ./concrete.ts); the rest of its outdoor things have a little weather on them (./weathered.ts).
     builtDetail(copy, name);
+    if (name === 'bil' || name === 'bil-gra') carGlass(copy, place.userData.carWet === true);
     if (WEATHERED.has(name)) weathered(copy);
     if (place.userData.warm) warmed(copy);
     // Clone these too: repeated houses must not steal each other's sign or lit windows.
