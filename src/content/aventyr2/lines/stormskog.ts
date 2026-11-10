@@ -20,13 +20,16 @@ export const words: ChapterWords = {
     ssWindthrow: 'Stormen fällde granar som tändstickor!',
     ssOwlWaits: 'Du väntar på oss! Får jag åka med?',
     ssOwlFly: 'Hu-hu! Vad mjukt det är att flyga!',
-    // 6. Pappa's flashlight
-    ssPappaHere: 'Elof? Jag hör dig! Var är du?',
-    ssTooWide: 'För brett att hoppa. Och så mörkt!',
-    ssBeam: 'Där är Klonk! Nu ser jag honom.',
-    ssStiff: 'Pappa ser dig! Då blir du ju stel!',
+    // 6. Pappa's flashlight. Something tiny moves in Pappa's light: is it him? Called, he knows, and sees him at the
+    // edge. To him Klonk is a toy that fell over: only Elof knows that a grown-up's look makes Klonk stiff, and he
+    // only thinks it.
+    ssTooWide: 'För brett att hoppa. Hur kommer vi över?',
+    ssPappaHere: 'Något rör sig i ljuset. Är det du, Elof?',
+    ssBeam: 'Där är du ju! Akta dig för kanten!',
+    ssFell: 'Oj! Klonk föll rakt över klyftan.',
+    ssStiff: 'Han blir stel när Pappa tittar. En bro!',
     ssTiptoe: 'Förlåt, Klonk! Jag går lätt, lätt.',
-    ssPappaAway: 'Jag lyser på stigen framför dig.',
+    ssPappaAway: 'Bra, Elof! Nu lyser jag på stigen.',
     ssAwake: 'Klonk!',
     ssThanks: 'Tack, Klonk! Du är världens bästa bro.',
     // 7. the old one's memory
@@ -54,14 +57,15 @@ export const words: ChapterWords = {
     ssWindthrow: { purpose: 'Följ spåret över vindfällen.', recap: 'Ugglan är fri. Den flög före mig in bland de fallna granarna.' },
     ssOwlBoard: { purpose: 'Flyg på ugglan över de fallna granarna.', recap: 'Här är det för brett att hoppa. Ugglan väntar på mig.' },
     ssOwlRide: { purpose: 'Flyg på ugglan.', recap: 'Ugglan bär mig högt över vindfällen.' },
-    ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa har ficklampan.' },
-    ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappa fick syn på Klonk i lampskenet. När en vuxen ser honom blir han alldeles stel.' },
+    ssPappa: { purpose: 'Ropa på Pappa vid klyftan.', recap: 'Här är för brett att hoppa, och så mörkt. Pappa letar med ficklampan.' },
+    ssPlank: { purpose: 'Gå över bron. Det är Klonk!', recap: 'Pappas lampa lyste på Klonk. När en vuxen ser honom blir han alldeles stel.' },
     ssFollow: { purpose: 'Följ Klonk vidare in i skogen.', recap: 'Pappa tittade bort, och då vaknade Klonk igen.' },
     ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben vet hur det är att vara ensam i mörkret. Därför skyndar han efter lillgubben.' },
     ssJay: { purpose: 'Plocka ett lingon och ge det till lavskrikan.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
     ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig vägen upp längs laven.' },
     ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },
   },
+  moments: { 'ss:ljuset': 'Pappas ficklampa', 'ss:vaknar': 'Klonk vaknar' },
   helpers: {
     ssLamps: 'Familjen letar med sina lampor. Klonk är med mig.',
     ssOwl: 'Ugglan är fri. Den hjälper mig över vindfällen.',

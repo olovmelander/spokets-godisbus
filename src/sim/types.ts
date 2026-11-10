@@ -703,6 +703,11 @@ export interface Storm {
    */
   frozen?: string;
   /**
+   * The flag on which the frozen one wakes: the grown-up looks away. Pappa's lamp leaves him, and he is himself again
+   * where the ghost waits. Left out: once Elof is over.
+   */
+  wakes?: string;
+  /**
    * The chapter's ledges that are always there are drawn as a goal's white frame bar: the crossbar he walks along,
    * where Äventyr 1 would have drawn a trestle.
    */

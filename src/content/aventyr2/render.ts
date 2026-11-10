@@ -908,8 +908,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       if (coneDrops) for (const splash of splashes) splash.visible = false;
       if (frozenLedge && storm?.frozen) {
-        // Once he is over, Pappa looks away and Klonk is himself again, on the far side.
-        if (flags.has(storm.frozen) && x > frozenLedge.x + frozenLedge.width / 2 + 0.8) crossed = true;
+        // Once he is over, Pappa looks away and Klonk is himself again, on the far side: on its flag, where it has one.
+        if (flags.has(storm.frozen) && (storm.wakes ? flags.has(storm.wakes) : x > frozenLedge.x + frozenLedge.width / 2 + 0.8)) crossed = true;
         const lying = flags.has(storm.frozen) && !crossed;
         if (lying && !frozenKlonk) {
           const ghost = scene.getObjectByName('chase-ghost')?.children[0];

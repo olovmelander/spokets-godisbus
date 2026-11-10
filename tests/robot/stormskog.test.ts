@@ -7,6 +7,7 @@ import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
+import { sceneBeats } from '../../src/sim/scene';
 import { Sim } from '../../src/sim/sim';
 import type { Ledge, SimStart } from '../../src/sim/types';
 import { idle, jump, leap, run, runPast, use, walkTo } from '../sim/drive';
@@ -21,8 +22,8 @@ import { decide, heightAt, playThrough } from './robot';
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
   'ss:dark', 'ss:klonk', 'ss:flash', 'ss:cones', 'ss:owl', 'ss:owl-free', 'ss:windthrow',
-  'ss:owl-waits', 'ss:owl-fly', 'ss:pappa', 'ss:wide', 'ss:beam', 'ss:stiff', 'ss:tiptoe', 'ss:away', 'ss:awake',
-  'ss:thanks', 'ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why', 'ss:both', 'ss:jay', 'ss:jay-glad', 'ss:see-old',
+  'ss:owl-waits', 'ss:owl-fly', 'ss:wide', 'ss:pappa', 'ss:ljuset:0', 'ss:ljuset:1', 'ss:ljuset:2', 'ss:tiptoe',
+  'ss:vaknar:0', 'ss:vaknar:1', 'ss:vaknar:2', 'ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why', 'ss:both', 'ss:jay', 'ss:jay-glad', 'ss:see-old',
   'ss:village', 'ss:onward',
 ];
 /** The big candies by name: their places in stormskog.checkpoints. */
@@ -123,7 +124,7 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
     }
     expect(game.sim.flags.has('goal')).toBe(true);
     expect(game.sim.bubbles).toBe(0);
-    expect(game.sim.said).toEqual(SAID.slice(SAID.indexOf('ss:pappa')));
+    expect(game.sim.said).toEqual(SAID.slice(SAID.indexOf('ss:wide')));
     // And every trail candy is in the bag at the end, the ones before the big candy from the save.
     expect(game.sim.collected.every((got) => got)).toBe(true);
   });
@@ -196,7 +197,7 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       expect(sim.bubbles).toBe(1);
     });
 
-    it('calling Pappa freezes Klonk at the edge into the bridge, and he walks over his friend', () => {
+    it('calling Pappa: his lamp finds him at the edge, its light freezes Klonk into the bridge, and he walks over his friend', () => {
       const sim = new Sim(stormskog, {}, saveAt(CP.pappa));
       run(sim, 0.2);
       // Klonk waits at the edge of the gap.
@@ -207,8 +208,9 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       expect(sim.curr.word).toBe('callPappa');
       use(sim);
       expect(sim.flags.has('ss:beam')).toBe(true);
-      // A short held beat while the beam finds him: the stick does nothing.
+      // A held moment while the lamp finds him, and Klonk: the stick does nothing.
       run(sim, 0.6, { x: 1 });
+      expect(sim.sceneFrame?.id).toBe('ss:ljuset');
       expect(sim.held).toBe(true);
       expect(Math.abs(sim.curr.x - 131)).toBeLessThan(0.1);
       run(sim, 1, { x: 1 });
@@ -218,17 +220,54 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       // Across on foot, without a jump.
       expect(runPast(sim, 139)).toBe(true);
       expect(sim.bubbles).toBe(0);
-      expect(sim.said).toEqual(['ss:pappa', 'ss:wide', 'ss:beam', 'ss:stiff', 'ss:tiptoe', 'ss:away']);
-      run(sim, 0.1);
+      expect(sim.said).toEqual(['ss:wide', 'ss:pappa', 'ss:ljuset:0', 'ss:ljuset:1', 'ss:ljuset:2', 'ss:tiptoe']);
+      // On the far side he stands while Pappa turns his lamp to the path, and Klonk wakes beside him and waits there.
+      expect(sim.flags.has('ss:woke')).toBe(false);
+      for (let i = 0; i < 5 / STEP && !sim.sceneFrame; i++) sim.step({ ...idle, x: 1 });
+      expect(sim.sceneFrame?.id).toBe('ss:vaknar');
+      run(sim, 2, { x: 1 });
+      expect(sim.flags.has('ss:woke')).toBe(true);
+      expect(sim.ghost!.x).toBeCloseTo(141.5, 1);
       runPast(sim, 143);
-      expect(sim.said.slice(-2)).toEqual(['ss:awake', 'ss:thanks']);
+      expect(sim.said.slice(-3)).toEqual(['ss:vaknar:0', 'ss:vaknar:1', 'ss:vaknar:2']);
     });
 
-    it('Pappa speaks in short lines: the beam, and Klonk stiff as a plank', () => {
-      expect(words.lines.ssBeam).toBe('Där är Klonk! Nu ser jag honom.');
-      expect(words.lines.ssStiff).toBe('Pappa ser dig! Då blir du ju stel!');
-      const pappa = (stormskog.beats ?? []).filter((beat) => beat.who === 'pappa');
-      expect(pappa.map((beat) => beat.line)).toEqual(['ssPappaHere', 'ssBeam', 'ssPappaAway']);
+    it('says what each of them sees: Pappa searching, finding him, a toy fallen over; Elof knowing why; Klonk waking', () => {
+      const scene = (id: string) => stormskog.scenes!.find((one) => one.id === id)!;
+      const said = (id: string) => scene(id).lines!.map((line) => `${line.who}: ${words.lines[line.line]}`);
+      // Something tiny in his light: Pappa is not sure it is him, and Elof answers by calling (the way over).
+      expect((stormskog.beats ?? []).filter((beat) => beat.who === 'pappa').map((beat) => words.lines[beat.line]))
+        .toEqual(['Något rör sig i ljuset. Är det du, Elof?']);
+      expect(said('ss:ljuset')).toEqual([
+        'pappa: Där är du ju! Akta dig för kanten!',
+        'pappa: Oj! Klonk föll rakt över klyftan.',
+        'elof: Han blir stel när Pappa tittar. En bro!',
+      ]);
+      expect(said('ss:vaknar')).toEqual([
+        'pappa: Bra, Elof! Nu lyser jag på stigen.',
+        'spoket: Klonk!',
+        'elof: Tack, Klonk! Du är världens bästa bro.',
+      ]);
+      // Klonk stiffens only after Pappa has found Elof, and wakes only after Pappa has turned his lamp away.
+      for (const id of ['ss:ljuset', 'ss:vaknar']) {
+        const one = scene(id);
+        expect(one.hold, id).toBe(true);
+        expect(one.lines![0]!.at, id).toBeLessThan(one.cues![0]!.at);
+        expect(one.cues![0]!.at, id).toBeLessThan(one.lines![1]!.at);
+        for (const line of one.lines!) expect(words.lines[line.line]!.length, line.line).toBeLessThanOrEqual(40);
+      }
+      expect(scene('ss:ljuset').cues).toEqual([{ at: expect.any(Number), flag: 'ss:frozen' }]);
+      expect(scene('ss:vaknar').cues).toEqual([{ at: expect.any(Number), flag: stormskog.storm!.wakes }]);
+      // That a grown-up's look stiffens Klonk is Elof's secret: he thinks it, and the grown-ups never say it.
+      expect(words.lines.ssStiff).toMatch(/Pappa tittar/);
+      expect(said('ss:ljuset').filter((line) => line.startsWith('pappa')).join(' ')).not.toMatch(/stel|lever|vaken/);
+    });
+
+    it('wakes Klonk in a game taken up beyond the gap, as in one that saw him wake', () => {
+      const sim = new Sim(stormskog, {}, { checkpoint: CP.hollow, flags: ['placed:owl-twig', 'owl', 'ss:beam', 'ss:frozen'] });
+      run(sim, 0.1);
+      expect(sim.flags.has('ss:woke')).toBe(true);
+      expect(sim.flags.has('scene:ss:ljuset')).toBe(true);
     });
   });
 
@@ -371,8 +410,8 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       expect(text.length, key).toBeLessThanOrEqual(40);
       expect(key, key).toMatch(/^ss[A-Z]/);
     }
-    // Every line of the chapter's words is said somewhere in it.
-    const said = new Set((stormskog.beats ?? []).map((beat) => beat.line));
+    // Every line of the chapter's words is said somewhere in it: along the way, or in one of its scenes.
+    const said = new Set([...(stormskog.beats ?? []), ...sceneBeats(stormskog.scenes)].map((beat) => beat.line));
     for (const key of Object.keys(words.lines)) expect(said.has(key), key).toBe(true);
     const verbs: Record<string, string> = sv.verbs;
     for (const spot of stormskog.spots ?? []) expect(verbs[spot.word ?? spot.verb], spot.id).toBeTruthy();

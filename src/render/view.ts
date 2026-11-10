@@ -1908,7 +1908,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           one.rig.group.getWorldPosition(lampFrom);
           lampFrom.y += 3.1 * u;
           const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
-            && x < frozenLedge.x + frozenLedge.width / 2 + 3;
+            && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
           if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
           else lampTo.set(x, y + tall * 0.4, 0);
           lampAim.subVectors(lampTo, lampFrom);
