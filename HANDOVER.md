@@ -1,5 +1,39 @@
 # Handover
 
+## State (10 November 2026): the saved Äventyr 2 work integrated
+
+[PR #252](https://github.com/olovmelander/spokets-godisbus/pull/252) contains this work.
+
+- **Olov’s 32 items and the three speech rules are implemented together.** Started from `origin/main` at `81e09ea`
+  after PR #251, applied the eight saved patches with `git apply --3way` in order 01, 04, 03, 02, 05, 06, 07, 08,
+  resolved their shared renderer/simulation changes and completed the remaining work with six builders in worktrees.
+  The historical 9 November section below preserves Olov’s exact list; its “none in the game” status and instructions
+  to apply the patches are superseded by this section. `docs/wip/2026-11-09/` is removed.
+- **The chapters:** clearer held flights over the hedge and north from Olympia; Pappa’s bridge dialogue matches the
+  picture; modeled walking legs, rolling car wheels, Moa’s umbrella and a slower cap moment; uphill Olympia and its
+  puddle; the Flärken sign, stone/bark/splash and a river carrying the figures at water level; continuous water and
+  feet on log tops; knitted scarf, modeled beaver and family car, reachable owl sweets and children approaching;
+  Mormor visible, walking to open the barn, and a close strait view; a visible golden sweet, Bertil dreaming of
+  Thailand, a walk home on the ground, and a lively breakfast with Mormor, chocolate, cups and thermos. The improved
+  latch and the figures’ shelf stay by the evening’s window; the final card returns to the map.
+- **Speech:** queued lines and events wait for the whole bubble/recording, without the old ten-second timeout.
+  Continue cannot truncate a recording; Pause and page visibility suspend/resume it. Reading holds the story and
+  simulation while bodies, gaze and the speaker’s mouth keep moving subtly. Visual event time follows simulation
+  steps at low frame rates and on Lugnt; Pause holds every clock. Runtime lip motion uses Swedish text and voice
+  playback position when present. All seven private faces were inspected; no private likeness model changed.
+  The voice script was regenerated, but no voice recording was generated or replaced.
+- **Review:** the private repository was linked at `art/private` (unchanged `fd8c283`). Built-game and renderer
+  checks used its models at 390×844 and 844×390. Private pictures remain outside version control. The item-by-item
+  evidence, browser suites and limits are in [the verification record](docs/verification/2026-11-10-adventure2.md).
+- **Checks:** typecheck; `npm test` (236 files, the chapter robots and full-story dialogue listener included); production build and size gates (JS 612.4 KB/1,000,
+  boot 5,646.7 KB/10,240); built-in privacy scan. Browser checks and the final CI gate are listed in the verification record.
+- **Decision:** “Flärken” on the big sun board is the third lettering/crest exception, recorded in CLAUDE.md and
+  plan §0 row 13, alongside Olympia and Bertil’s cap. The user explicitly requested this multi-chapter PR and its
+  merge after green CI, including the rule edit.
+- **Next:** no unfinished item from this list needs Olov’s computer or Blender. The older whole-body polish,
+  environmental art wishes and physical-device judgement below remain separate follow-up work. No new question
+  was added for Olov. Commits are grouped per chapter, with separate speech, life/lip-sync and handover commits.
+
 ## State (9 November 2026, night): Olov's list from playing Äventyr 2 through, saved unfinished
 
 - **Olov played Äventyr 2 through and wrote down 32 things to improve** (his list is below), and asked that a line
@@ -5104,30 +5138,11 @@
 
 ## Next
 
-**Olov's list from playing Äventyr 2 through (9 November, night): start here.** The work of eight builders is saved,
-unfinished, in `docs/wip/2026-11-09/` (see "State"). Put it together, finish it, check each item against Olov's words,
-commit per chapter, delete the folder, and update this handover. Olov's prompt for that session:
-
-```text
-Continue Elof's game from where the 9 November session stopped. Read CLAUDE.md, then HANDOVER.md's section
-"State (9 November 2026, night)" and the first paragraph of "Next".
-
-Yesterday I played Äventyr 2 through and listed 32 things to fix, plus three about speech: a line must be let
-finish before the next line or event; the characters must keep moving subtly while someone speaks; and lip-sync
-for whoever speaks. Eight builders worked on them, but the work was stopped before it was put together, so none of
-it is in the game. It is saved as eight patches in docs/wip/2026-11-09/, all made against 2e3454f.
-
-1. Attach the private repository olovmelander/spokets-godisbus-familj and link it at art/private, so the family's
-   models are in the game while you check.
-2. On your session branch from main, apply the patches one at a time with git apply --3way, in the order 01, 04,
-   03, 02, 05, 06, 07, 08, and resolve where they overlap.
-3. Finish what each one left, as the handover's table says, using building agents in worktrees in parallel where
-   it helps. Check every item in the built game against my words in the handover, on a phone-sized screen too.
-4. "Flärken" on the big sun board is my decision: add it to CLAUDE.md's exceptions and to plan §0, row 13.
-5. Run typecheck, npm test, npm run build and the privacy check, and the browser suites for the chapters touched.
-   Make one commit per chapter, plus one for the speech rules and one for the life and lip-sync while speaking.
-6. Delete docs/wip/2026-11-09/, update HANDOVER.md, open a PR, and merge it to main when CI is green.
-```
+**The 9 November Äventyr 2 list is integrated (10 November).** Continue from the newest State section above,
+not the historical saved-patch instructions. The eight patches were applied and completed in this session; the
+patch folder has been removed. The private exports remain in their own repository. No work from this list needs
+Blender or Olov's computer. Device judgement of the completed scenes and facial motion can follow the checklist
+in `docs/verification/2026-11-10-adventure2.md`.
 
 **The whole body (9 November, evening), left in the cloud:** a walk under an act slips as a walk does, the free arms
 there do not swing, Elof's running landings and his walking toe, and the children's steady run (see "State"). For Olov
@@ -5530,8 +5545,8 @@ The older list, still true where it is not struck:
 
 - **"Flärken" on Flärkenbadet's big sun board (Olov, 9 November 2026: "Det ska stå 'Flärken' på den stora
   solskylten"):** a third exception to the rule against lettering, beside Olympia on the red hall and the crest on
-  Bertil's cap, in the game's own Playpen Sans. It is in `docs/wip/2026-11-09/03-flarken.patch`; add it to CLAUDE.md's
-  exceptions and plan §0 row 13 when the sign lands.
+  Bertil's cap, in the game's own Playpen Sans. Implemented on 10 November; recorded in CLAUDE.md's exceptions
+  and plan §0 row 13.
 - **Bertil dreams of Thailand at the finale (Olov, 9 November 2026),** where the family is going soon, instead of "Nästa
   äventyr får vara i tofflor". Olov's own request; no dates.
 - **Lip-sync is made in game code (9 November 2026):** the speaker's painted mouth opens with the line as each model is
@@ -5617,7 +5632,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| Olov's Äventyr 2 playthrough list (9 Nov, night) | Olov's request: fix 32 things he noted, let every line finish, life while someone speaks, lip-sync | Part of the same cloud session, with eight building agents; stopped at Olov's word before integration | — / 0 so far | Saved unfinished as eight patches in `docs/wip/2026-11-09/`; the speech rule and the water and logs were done and unit-tested by their builders. |
+| Olov's Äventyr 2 playthrough list (9–10 Nov) | Olov's request: fix 32 things he noted, let every line finish, life while someone speaks, lip-sync | Eight builders saved their work on 9 November; one continuation on 10 November with six parallel worktrees integrated and finished it | — / 0 so far | All eight patches applied in the requested order, chapter fixes plus speech sequencing and speaking animation; visual review and regression evidence in the 10 November State and verification checklist. |
 | The rest of the whole body (9 Nov, evening) | Olov's request: "Fix this!" to the five things left | Part of the same cloud session, with two building agents | — / 0 so far | Turning on the spot in steps; the trunk alive under a held act; the weight over before a step and the trunk following the hips; Elof's jumps, landings and turns without snaps; Billsta's children at a child's sprint. |
 | The whole body moving smoothly (9 Nov, late afternoon) | Olov's request: the joints and movement of the whole body, made in Blender, smooth | Part of the same cloud session, with two building agents | — / 0 so far | A fuller skeleton in Blender (collarbones, neck, three spine bones, twist bones, hip correctives; private PR #8) driven by the game; no snaps in the upper body; running legs at their source; the head leading a turn. |
 | Hands with separate fingers (9 Nov, afternoon) | Olov's request: new hands with separate fingers in Blender | Part of the same cloud session, with one building agent | — / 0 so far | New hands on all seven (private PR #7) and grips that use them: a pointing finger, a pinch, fingers through the mug's handle. |
@@ -5692,11 +5707,10 @@ The older list, still true where it is not struck:
 - **`settings`' touch check fails on Windows:** "portrait, left-handed: a held finger walks towards its position"
   wants `vx` at most 1.3 and gets about −3.4 on this computer, on `main` (eb13ed5) as well as with PR #189, which
   touches no input or simulation code. It passed on GitHub on PR #188. Not looked into further.
-- **Äventyr 2's pictures, from the 4 November sweeps (none blocks play):** from Billaberget's brow the narrow is
-  only a dark band at the horizon (the garden's nearest far picture and the lawn's bank behind the path leave it
-  little room) and the two figures on the far stone are tiny; flybys cannot land on far decor (they are fixed at
-  z −4); the garden's painted backdrop (lawn, a white house) shows even in Billsta's forest; the `root` climb is a
-  thin rod outside the forest and the `log` mover is grey and bare; the barn is a full-size backdrop, so the loft
+- **Äventyr 2's pictures, from the 4 November sweeps (none blocks play), updated 10 November:** the strait now
+  has a close cutaway for its two figures, flybys support authored depth, and Älven's logs have modeled bark and
+  tops aligned with Elof's soles. Remaining: the garden's painted backdrop (lawn, a white house) shows even in
+  Billsta's forest; the `root` climb is a thin rod outside the forest; the barn is a full-size backdrop, so the loft
   and roof Elof walks read as a lean-to in front of it; Billaberget's rock shelves stand on the ledge look's own
   pillars; the family's car at Billsta and Flärken is very large (a real car's size to him). The `volleyball`
   building kind is unused (Flärken's net is its bouncer).
