@@ -1301,7 +1301,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (held.startsWith('lamp-')) {
             const aim = state.aim;
             lampAim.set(aim?.x ?? elof.x, aim?.y ?? elof.y + .4, aim?.z ?? 0);
-            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), state.act !== 'dress');
+            // Newly taking a torch must follow the same event-time blend as the authored arms.
+            // Pappa's persistent indoor torch is already in hand across every later act.
+            const persistent = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
+            const taking = calm || persistent || had === current || !state.before ? 1 : smooth(elapsed / .45);
+            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), state.act !== 'dress', taking);
             continue;
           }
           const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);

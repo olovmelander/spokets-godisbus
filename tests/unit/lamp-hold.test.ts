@@ -5,6 +5,7 @@ import { holdFlashlight } from '../../src/render/lamp-hold';
 import { createRehearsalRig, STANDING, type Role } from '../../src/render/rig';
 import { createStage } from '../../src/render/stage';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
+import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { talk } from '../../src/render/talk';
 import { stubCanvas } from './canvas-stub';
 
@@ -90,4 +91,40 @@ describe('a flashlight carried in front of a posed body', () => {
     flags.add('scene:upptackt');
     for (let i = 0; i <= 180; i++) frame('tillsammans', i / 60);
   });
+
+  it('takes Bertil’s newly lit torch continuously, keeps its contact, and freezes acquisition with the scene clock', () => {
+    const stage = createStage(stormoga, () => 0), rig = stage.actors.get('bertil')!.rig;
+    const index = stormoga.scenes!.findIndex(s => s.id === 'lampa:bertil');
+    const flags = new Set(stormoga.scenes!.slice(0, index).map(s => `scene:${s.id}`));
+    for (const who of ['jetty', 'mamma', 'pappa', 'moa', 'bertil']) flags.add(`so:${who}`);
+    const lamp = stage.group.getObjectByName('stage-thing:lamp-bertil')!;
+    let previous: Vector3 | undefined, maxStep = 0;
+    for (let i = 0; i <= 120; i++) {
+      const t = i / 120;
+      stage.update({ id: 'lampa:bertil', seconds: t }, flags, { x: 9.4, y: 0 }, t, 1 / 120, false);
+      const hand = rig.hand(1, v());
+      if (previous) maxStep = Math.max(maxStep, hand.distanceTo(previous));
+      if (t >= .4) expect(lamp.position.distanceTo(hand)).toBeLessThan(1e-8);
+      previous = hand;
+    }
+    // The old full-weight IK jumped by nearly an EL at the 0.4-second key.
+    expect(maxStep).toBeLessThan(.12);
+    stage.update({ id: 'lampa:bertil', seconds: .5 }, flags, { x: 9.4, y: 0 }, 1, 0, false);
+    const paused = rig.hand(1, v()), heldLamp = lamp.position.clone();
+    for (let i = 0; i < 120; i++) {
+      stage.update({ id: 'lampa:bertil', seconds: .5 }, flags, { x: 9.4, y: 0 }, 1, 0, false);
+      expect(rig.hand(1, v()).distanceTo(paused)).toBeLessThan(1e-8);
+      expect(lamp.position.distanceTo(heldLamp)).toBeLessThan(1e-8);
+    }
+    // Reduced motion completes the acquisition immediately and is stable on repeated paused draws.
+    stage.update({ id: 'lampa:bertil', seconds: .4 }, flags, { x: 9.4, y: 0 }, 1, 0, true);
+    const reduced = rig.hand(1, v());
+    expect(Number.isFinite(reduced.length())).toBe(true);
+    for (let i = 0; i < 20; i++) {
+      stage.update({ id: 'lampa:bertil', seconds: .4 }, flags, { x: 9.4, y: 0 }, 1, 0, true);
+      expect(rig.hand(1, v()).distanceTo(reduced)).toBeLessThan(1e-8);
+      expect(lamp.position.distanceTo(reduced)).toBeLessThan(1e-8);
+    }
+  });
+
 });
