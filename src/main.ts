@@ -864,7 +864,7 @@ async function start(): Promise<void> {
       game.resume();
       devicePlay.visible();
       // The hidden page held its recording. Continue with its bubble, unless a menu still holds the game.
-      resumeVoice(!menuOpen() && !platformBlocked());
+      resumeVoice((memories.open || !menuOpen()) && !platformBlocked());
     }
   });
   window.addEventListener('pagehide', () => {
@@ -877,7 +877,7 @@ async function start(): Promise<void> {
     game.resume();
     input.release();
     // BFCache keeps the current bubble and its recording. A menu still owns the pause on return.
-    resumeVoice(!menuOpen() && !platformBlocked());
+    resumeVoice((memories.open || !menuOpen()) && !platformBlocked());
   });
 
   const debug: Debug | null = devtools ? devtools.createDebug(byId('debug')) : null;
@@ -950,7 +950,7 @@ async function start(): Promise<void> {
       } else canvas.focus();
       audio.sleep(platformBlocked());
       audio.menu(menuOpen());
-      resumeVoice(!menuOpen() && !platformBlocked());
+      resumeVoice((memories.open || !menuOpen()) && !platformBlocked());
       if (!menuOpen()) audio.unlock();
       if (title.open) offline.check();
     });
@@ -1286,10 +1286,12 @@ async function start(): Promise<void> {
       }
     }
     // What is said waits while a memory plays: its line comes after it.
+    // Establish ownership before tick: even a zero-time tick may present an idle queued line.
+    // Opening Pause or a memory must not start that line's recording under the panel.
+    hud.paused(menuOpen());
     hud.tick(menuOpen() ? 0 : dt);
     sceneUi.reading(hud.reading() && !menuOpen() && !platformBlocked(), device,
       sv.dialogue.moments[scene?.id ?? ''] ?? (hud.reading() ? sv.storyContext.family : ''));
-    hud.paused(menuOpen());
     // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish first,
     // and the lines still waiting their turn: a chapter must not end over what someone is saying.
     if (atGoal) {

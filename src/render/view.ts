@@ -1532,7 +1532,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Out in the storm the ground is wet, and where it is looked along it gives back the sky (./ground-detail.ts).
     GROUND_WET.value = wetOutside ? 1 : 0;
     GROUND_SKY.value.copy(hemisphere.color).multiplyScalar(hemisphere.intensity);
-    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', revealPaused: sceneFrame?.waiting });
+    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', revealPaused: sceneFrame?.waiting, scene: sceneFrame });
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
