@@ -1,4 +1,4 @@
-// Player-paced opening with real keyboard/touch choices and saved-progress recovery. Run after a build.
+// Timed opening with optional Continue, real keyboard/touch choices and saved-progress recovery. Run after a build.
 // PROLOGUE_SOURCE=1 serves current sources; PROLOGUE_SCENE=full follows the whole chapter in one visit.
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, mkdirSync } from 'node:fs';
@@ -63,7 +63,7 @@ async function walk(page, state, accepts, name, timeout = 120000) {
   let down = false;
   const moving = Object.assign(async () => {
     const value = await state();
-    if (value.held || value.storyReading) {
+    if (value.held) {
       await page.keyboard.up('ArrowRight');
       down = false;
     } else if (!down) {
@@ -78,43 +78,49 @@ async function walk(page, state, accepts, name, timeout = 120000) {
   finally { await page.keyboard.up('ArrowRight'); }
 }
 async function readStop(page, state, id, words) {
-  await until(state, s => s.storyReading && s.said.includes(id), `${id}: waits for the reader`, 120000);
+  await until(state, s => s.storyReading && s.said.includes(id), `${id}: protected dialogue appears`, 120000);
   await page.waitForFunction(text => document.getElementById('bubbleLine').textContent === text, words);
   const before = await state();
   await frames(page, 5);
-  check(`${id}: the settled moment waits for Fortsätt`, (await state()).steps === before.steps &&
+  check(`${id}: the protected moment holds while its full line is read`, before.held && (await state()).steps === before.steps &&
     (await state()).scene?.seconds === before.scene?.seconds &&
     await page.locator('#bubbleLine').textContent() === words && await page.locator('#sceneNext').isVisible());
   return before;
 }
 async function capture(page, name) {
-  await page.evaluate(() => { document.getElementById('debug').hidden = true; });
-  await picture(page, join(SHOTS, `${name}.png`));
+  // A software-rendered screenshot may take longer than a line's reading time. Only capture/layout work
+  // freezes the test clock; live reading, movement and Pause assertions all run at normal speed.
+  await page.evaluate(() => { window.__prologueClock.hold(); document.getElementById('debug').hidden = true; });
+  try { await picture(page, join(SHOTS, `${name}.png`)); }
+  finally { await page.evaluate(() => window.__prologueClock.release()); }
 }
 async function familyCaptures(page) {
-  for (const [width, height] of [[390, 844], [844, 390], [780, 360], [1180, 820], [1440, 900]]) {
-    await page.setViewportSize({ width, height });
-    await frames(page, 3);
-    check(`${width}×${height}: the reassurance and continuation fit without covering each other`,
-      await page.evaluate(() => {
-        const bubble = document.getElementById('bubble'), button = document.getElementById('sceneNext');
-        const b = bubble.getBoundingClientRect(), c = button.getBoundingClientRect();
-        return b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= c.top &&
-          c.left >= 0 && c.right <= innerWidth && c.bottom <= innerHeight && !document.getElementById('sceneReading').hidden;
+  await page.evaluate(() => window.__prologueClock.hold());
+  try {
+    for (const [width, height] of [[390, 844], [844, 390], [780, 360], [1180, 820], [1440, 900]]) {
+      await page.setViewportSize({ width, height });
+      await frames(page, 3);
+      check(`${width}×${height}: the reassurance and continuation fit without covering each other`,
+        await page.evaluate(() => {
+          const bubble = document.getElementById('bubble'), button = document.getElementById('sceneNext');
+          const b = bubble.getBoundingClientRect(), c = button.getBoundingClientRect();
+          return b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= c.top &&
+            c.left >= 0 && c.right <= innerWidth && c.bottom <= innerHeight && !document.getElementById('sceneReading').hidden;
+        }));
+      check(`${width}×${height}: Elof stays visible above or beside the reading controls`, await page.evaluate(() => {
+        const state = window.__godis.state(), center = state.playerScreen;
+        const head = window.__godis.screen({ x: state.x, y: state.y + 1.1 });
+        const foot = window.__godis.screen({ x: state.x, y: state.y });
+        if (!center || !head || !foot) return false;
+        const reading = document.getElementById('sceneReading').getBoundingClientRect();
+        const halfWidth = Math.abs(foot.y - head.y) * .35;
+        return head.y >= 0 && foot.y <= innerHeight && center.x >= halfWidth && center.x + halfWidth <= innerWidth &&
+          (foot.y < reading.top || head.y > reading.bottom || center.x + halfWidth < reading.left || center.x - halfWidth > reading.right);
       }));
-    check(`${width}×${height}: Elof stays visible above or beside the reading controls`, await page.evaluate(() => {
-      const state = window.__godis.state(), center = state.playerScreen;
-      const head = window.__godis.screen({ x: state.x, y: state.y + 1.1 });
-      const foot = window.__godis.screen({ x: state.x, y: state.y });
-      if (!center || !head || !foot) return false;
-      const reading = document.getElementById('sceneReading').getBoundingClientRect();
-      const halfWidth = Math.abs(foot.y - head.y) * .35;
-      return head.y >= 0 && foot.y <= innerHeight && center.x >= halfWidth && center.x + halfWidth <= innerWidth &&
-        (foot.y < reading.top || head.y > reading.bottom || center.x + halfWidth < reading.left || center.x - halfWidth > reading.right);
-    }));
-    await capture(page, `family-reassurance-${width}x${height}`);
-  }
-  await page.setViewportSize({ width: 844, height: 390 });
+      await capture(page, `family-reassurance-${width}x${height}`);
+    }
+    await page.setViewportSize({ width: 844, height: 390 });
+  } finally { await page.evaluate(() => window.__prologueClock.release()); }
 }
 async function frames(page, count = 3) {
   await page.evaluate((left) => new Promise((resolve) => {
@@ -131,6 +137,16 @@ async function ready(page) {
 }
 async function open(name, options = {}, query = '?debug&standin&tier=low', init) {
   const context = await browser.newContext({ viewport: { width: 844, height: 390 }, ...options });
+  await context.addInitScript(() => {
+    const request = window.requestAnimationFrame.bind(window);
+    let holds = 0, offset = 0, previous = performance.now();
+    window.__prologueClock = { hold: () => { holds++; }, release: () => { holds--; } };
+    window.requestAnimationFrame = callback => request(time => {
+      if (holds) offset += time - previous;
+      previous = time;
+      callback(time - offset);
+    });
+  });
   if (init) await context.addInitScript(init);
   const page = await context.newPage();
   const errors = [];
@@ -182,11 +198,11 @@ try {
     check('morning: a pause holds the scene\'s clock', (await state()).scene.seconds === paused.scene.seconds);
     await page.keyboard.press('Escape');
     check('morning: draw budget', withinDraws((await info()).drawCalls, (await info()).tier));
-    await until(state, (s) => s.storyReading, 'Mamma waits for the reader', 120000);
+    await until(state, (s) => s.storyReading, 'Mamma’s protected line appears', 120000);
     const reading = await state();
     const line = await page.locator('#bubbleLine').textContent();
     await sleep(1300);
-    check('morning: words and story time never advance without Fortsätt',
+    check('morning: the protected line keeps its reading time and authored moment',
       (await state()).scene.seconds === reading.scene.seconds && await page.locator('#bubbleLine').textContent() === line);
     await page.keyboard.press('Escape');
     await sleep(300);
@@ -299,18 +315,35 @@ try {
     await page.keyboard.up('ArrowRight');
     await until(state, (s) => s.flags.includes('pappa:done'), 'Pappa\'s freeze joke', 120000);
     check('shrinking: the walk to the edge is still his', !(await state()).flags.includes('goal'));
-    // Each promise stops the player and waits. A fresh move after reading resumes the walk.
-    for (const [id, words] of [
+    // Ordinary promises keep their full words in order while he walks. Only the authored title scene
+    // stops him at the edge, after every promise has finished without needing Continue.
+    const promises = [
       ['nearYou', 'Vi är nära dig hela tiden.'], ['mapForYou', 'Jag ritar en karta åt dig!'],
       ['heja', 'Heja, lillebror!'], ['followTrail', 'Följ godisspåret, Elof.'],
-    ]) {
-      await walk(page, state, s => s.storyReading && s.said.includes(id), `${id}: the family's promise`);
-      await readStop(page, state, id, words);
-      await continueDialogue(page);
-    }
-    await walk(page, state, s => s.x > 51.4 && s.held, 'he stops at the edge');
+    ];
+    await page.keyboard.down('ArrowRight');
+    try {
+      for (const [id, words] of promises) {
+        await page.waitForFunction(([id, words]) => window.__godis.state().said.includes(id) &&
+          !document.getElementById('bubble').hidden && document.getElementById('bubbleLine').textContent === words,
+        [id, words], { timeout: 120000 });
+        check(`${id}: the full promise appears without mandatory Continue`,
+          !(await state()).storyReading && await page.locator('#sceneNext').isHidden());
+        if (id === 'nearYou') {
+          const before = await state();
+          await page.waitForFunction(x => window.__godis.state().x > x + .2, before.x, { timeout: 60000 });
+          const moved = await state();
+          check('the first promise preserves held movement and its complete words', moved.x > before.x + .2 &&
+            moved.steps > before.steps && await page.locator('#bubble').isVisible() &&
+            await page.locator('#bubbleLine').textContent() === words);
+        }
+      }
+    } finally { await page.keyboard.up('ArrowRight'); }
+    await until(state, s => promises.every(([id]) => s.said.includes(id) && !s.pendingDialogue.includes(id)),
+      'all four promises finish automatically', 120000);
     await until(state, (s) => s.scene?.id === 'titel', 'the title scene', 120000);
     const promised = await state();
+    check('shrinking: the authored title holds Elof at the edge', promised.held && promised.x >= 51.4);
     check('shrinking: all four promises were said before the title', ['nearYou', 'mapForYou', 'heja', 'followTrail'].every((id) => promised.said.includes(id)));
     await until(state, (s) => s.scene?.id === 'titel' && s.scene.seconds > 7.7, 'the title shows', 120000);
     check('shrinking: the game\'s title over the garden', await page.locator('#sceneTitle').textContent() === 'Elof och det stora godisäventyret'

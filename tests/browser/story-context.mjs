@@ -294,6 +294,16 @@ try {
   if (!process.env.STORY_FAST_ONLY) {
   // The arriving family first asks how Elof is. Saving or restarting must not mark unread words as read.
   const reading = await open({ width: 844, height: 390 }, saved('norrsken', 1, { norrsken: ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste'] }));
+  await reading.page.addInitScript(() => {
+    const request = window.requestAnimationFrame.bind(window);
+    let held = false, offset = 0, previous = performance.now();
+    window.__readingCaptureClock = { hold: () => { held = true; }, release: () => { held = false; } };
+    window.requestAnimationFrame = callback => request(time => {
+      if (held) offset += time - previous;
+      previous = time;
+      callback(time - offset);
+    });
+  });
   await reading.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low`);
   await ready(reading.page);
   for (const words of ['Elof! Hur mår du?', 'Bra! Vi hittade honom!']) {
@@ -301,11 +311,16 @@ try {
     await continueDialogue(reading.page);
   }
   await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Min allra första trägubbe …');
-  await picture(reading.page, join(shots, 'reading-844x390.png'));
-  await reading.page.setViewportSize({ width: 390, height: 844 });
-  await frames(reading.page);
-  check('turning the phone preserves the current reading without opening pause', !(await state(reading.page)).paused && (await state(reading.page)).storyReading);
-  await picture(reading.page, join(shots, 'reading-390x844.png'));
+  // Capture/layout work can outlast a timed line on a software renderer. Keep that work outside its
+  // reading budget; Continue, saving and every reload below still use the live frame clock.
+  await reading.page.evaluate(() => window.__readingCaptureClock.hold());
+  try {
+    await picture(reading.page, join(shots, 'reading-844x390.png'));
+    await reading.page.setViewportSize({ width: 390, height: 844 });
+    await frames(reading.page);
+    check('turning the phone preserves the current reading without opening pause', !(await state(reading.page)).paused && (await state(reading.page)).storyReading);
+    await picture(reading.page, join(shots, 'reading-390x844.png'));
+  } finally { await reading.page.evaluate(() => window.__readingCaptureClock.release()); }
   await continueDialogue(reading.page);
   await reading.page.waitForFunction(() => document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
   await reading.page.keyboard.press('Escape');
