@@ -2980,6 +2980,24 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }
 body.big-text .story-purpose { font-size: 21px; }
+/* Short landscape screens have room between the corner buttons, above the people in the scene. */
+@media (max-height: 500px) and (orientation: landscape) {
+  .story-purpose {
+    left: calc(env(safe-area-inset-left) + 120px);
+    right: calc(env(safe-area-inset-right) + 82px);
+    top: calc(env(safe-area-inset-top) + 10px);
+    width: auto;
+    max-width: none;
+    padding-block: 3px;
+  }
+  .story-purpose > span:last-child {
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 8px;
+    align-items: baseline;
+    min-width: 0;
+  }
+  .story-purpose-reveal { grid-column: 1 / -1; }
+}
 .story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background-color: var(--paper-2); line-height: 1.4; }
 .story-recap { margin: 14px 0; }
 .story-recap h3, .story-recap h4 { margin: 0 0 6px; }
