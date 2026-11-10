@@ -70,6 +70,7 @@ import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING,
 import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
+import { facingBetween, turnFamily } from './family-turning';
 import { createSharedSweets } from './shared-sweets';
 import { createRescuedFigures } from './rescued-figures';
 import { goldSweet } from './gold-sweet';
@@ -1988,7 +1989,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const now = one.glad !== undefined && flags.has(one.glad);
       // Called, they walk over to where they help from (Spot.goesTo): an easy walk, slowing as they come. On the first
       // frame (a game taken up) and without motion they are simply there.
-      let heading: number | null = null;
+      let heading: number | null = one.walk?.heading ?? null;
       // A scarf in their hands (./scarf.ts): while it carries him they walk along with him, so that it hangs straight down.
       const scarf = scarves && one.walk ? scarves.holder(one.glad) : null;
       if (one.walk) {
@@ -2004,7 +2005,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           w.gait = speed / one.rig.height;
           w.stride += step / stepLength(Math.max(w.gait, 0.3), one.rig.height, one.rig.legs);
           w.pace += (1 - w.pace) * ease(8, dt);
-          heading = Math.atan2(dx, dz);
+          heading = w.heading = Math.atan2(dx, dz);
         } else if (dt > 0) w.pace += (0 - w.pace) * ease(8, dt);
         w.seen = true;
         one.at = place.x;
@@ -2017,10 +2018,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const towards = clamp((x - one.at) * 0.22, -0.75, 0.75);
       const carrying = onShoulders && one.who === 'pappa';
       // A paddler faces the board's nose, turning only a little towards him.
-      const facing = carrying ? Math.PI / 2 - .35 : one.paddle ? towards * 0.25 : towards;
-      const turn = facing - one.rig.group.rotation.y;
-      if (calmStory && dt > 0) one.rig.group.rotation.y = facing;
-      else one.rig.group.rotation.y += Math.atan2(Math.sin(turn), Math.cos(turn)) * ease(4, dt);
+      // Author the direction from stable inputs, then turn once after the practical gestures below.
+      // Mixing those gestures into last frame's drawn yaw would keep rotating a held reading/Pause frame.
+      let facing = carrying ? Math.PI / 2 - .35 : one.paddle ? towards * 0.25 : towards;
+      let turnRate = 4;
       one.rig.group.position.set(0, 0, 0);
       const posed = one.motion.update(dt, clock, one.joy, towards - one.rig.group.rotation.y, carrying ? x : null, calmStory, {
         ahead: Math.abs(x - one.at) * 5.2 / one.rig.height,
@@ -2049,7 +2050,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         actPose('walk', { t: clock, aim: null, stride: w.stride, gait: w.gait, pace: p, calm: calmStory, role: one.who, legs: one.rig.legs }, walkPose);
         for (const key of JOINTS) if (key !== 'turn') posed[key] = posed[key] * (1 - p) + walkPose[key] * p;
         posed.bounce = posed.bounce * (1 - p) + walkPose.bounce * p;
-        if (heading !== null) one.rig.group.rotation.y += Math.atan2(Math.sin(heading - one.rig.group.rotation.y), Math.cos(heading - one.rig.group.rotation.y)) * p;
+        if (heading !== null) facing = facingBetween(facing, heading, p);
       }
       // Bertil pulls off his right boot for Elof (Olov: "på riktigt"): in the moment between being called and the
       // boot lying on the water, he leans down, lifts that foot and tugs at the boot with both hands.
@@ -2090,7 +2091,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.lean += (-0.18 * swing - posed.lean) * on;
         posed.armL = Math.max(posed.armL, 0.9 * on);
         posed.armR = Math.max(posed.armR, 0.5 * on);
-        one.rig.group.rotation.y += (1.2 - one.rig.group.rotation.y) * on * ease(16, dt);
+        facing = facingBetween(facing, 1.2, on);
+        turnRate += 12 * on;
       }
       // On Myren, called, Mamma's hands lift the dead pine across the pool: she bends to its end and holds it while it
       // rises, and lets go once it lies across (the mover `pine`, which goes up by itself as her hands lift it).
@@ -2112,7 +2114,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       gesture.lift = calmStory ? (gesture.liftFor > 0 ? 1 : 0) : gesture.lift + ((gesture.liftFor > 0 ? 1 : 0) - gesture.lift) * ease(6, dt);
       if (gesture.lift > 0.001) {
         const w = gesture.lift;
-        one.rig.group.rotation.y += (.9 - one.rig.group.rotation.y) * w;
+        facing = facingBetween(facing, .9, w);
         mammaLogPose(posed, one.rig.legs, w);
       }
       const kneels = holding || beside;
@@ -2124,7 +2126,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.lean = mixTo(posed.lean, 0.85);
         posed.legL = mixTo(posed.legL, 1.35); posed.kneeL = mixTo(posed.kneeL, 1.55);
         posed.legR = mixTo(posed.legR, 0.1); posed.kneeR = mixTo(posed.kneeR, 1.65);
-        one.rig.group.rotation.y = mixTo(one.rig.group.rotation.y, board ? -0.95 : -1.15);
+        facing = facingBetween(facing, board ? -0.95 : -1.15, w);
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
       // kröp spöket in. Jag får inte plats!"); her fingers will not go in.
@@ -2137,10 +2139,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.lean += (Math.max(posed.lean, 0.85) - posed.lean) * w;
         posed.legL += (1.35 - posed.legL) * w; posed.kneeL += (1.55 - posed.kneeL) * w;
         posed.legR += (0.1 - posed.legR) * w; posed.kneeR += (1.65 - posed.kneeR) * w;
-        one.rig.group.rotation.y += (-0.5 - one.rig.group.rotation.y) * w;
+        facing = facingBetween(facing, -0.5, w);
       }
       // Lowering the scarf and holding it, they lean out over the railing a little, unless they walk with him.
       if (scarf) posed.lean += 0.3 * scarf.weight * (1 - (one.walk?.pace ?? 0));
+      one.rig.group.rotation.y = turnFamily(one.rig.group.rotation.y, facing, dt, calmStory, turnRate);
       // What is said (./talk.ts): they look at whoever speaks, from where their face was a moment ago, and speak with their
       // mouths, their heads and a free hand; drawn on a copy, which their own motion never keeps.
       const said = talk.lookAt(one.who), there = said ? talk.face(said) : null;
@@ -2514,7 +2517,7 @@ interface Relative {
    * Where they walk once called (Spot.goesTo), the place they are drawn at (moved as they walk), where it stood at
    * first, how far they have walked in strides, how briskly, and whether a frame has placed them yet.
    */
-  walk?: { to: { x: number; y: number; z: number }; when?: string | undefined; place: Object3D; home: Vector3; stride: number; pace: number; gait: number; seen: boolean } | undefined;
+  walk?: { to: { x: number; y: number; z: number }; when?: string | undefined; place: Object3D; home: Vector3; stride: number; pace: number; gait: number; seen: boolean; heading?: number } | undefined;
   /** Their part in what is said (./talk.ts). */
   talker: Talker;
 }
