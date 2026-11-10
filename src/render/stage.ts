@@ -1108,7 +1108,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         if (flowing && !cut && shown && target) {
           const handing = had !== undefined && had !== legs;
           for (const joint of LIMBS) {
-            const step = pose[joint] - target[joint], excess = step - targetStep[joint], jump = Math.abs(excess) > JUMP;
+            const step = pose[joint] - target[joint], excess = step - targetStep[joint];
+            // A stopped or slowly moving target is not another jump. Otherwise a remembered fast step can keep
+            // injecting the same offset forever, even while a held pose is completely still.
+            const jump = Math.abs(step) > JUMP && Math.abs(excess) > JUMP;
             targetStep[joint] = jump ? targetStep[joint] : step;
             // The legs are the stride's, a clip's or a stance's own, which put the feet where they stand (and the trunk is the
             // stride's while it walks): they are drawn as asked, at most at LEG_RATE, the weight's shift at SLOW_RATE.
