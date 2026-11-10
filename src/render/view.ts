@@ -589,7 +589,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (!model) return;
       const landmarks = model.getObjectByName('bredbyn-landmarks');
       if (landmarks) {
-        landmarks.position.set(chapter.id === 'look-street' ? 13 : 46, 2.3, -29);
+        // In Stormbyn the river's yard is narrow: the church's belfry was buried inside the sweet shop.
+        // Its wider crossing has room for the same church and separate wooden belfry side by side.
+        const stormStreet = chapter.id === 'stormbyn';
+        landmarks.position.set(chapter.id === 'look-street' ? 13 : stormStreet ? 97.8 : 46, 2.3, -29);
         landmarks.scale.setScalar(0.53);
       }
       scene.add(model);

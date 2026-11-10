@@ -356,10 +356,13 @@ export const stormbyn: ChapterData = {
   cameras: [
     // Up under the awning the picture rises with him, so that the stands and the hearts are in it.
     { from: 18, to: 30, above: 4.2, zoom: 1.35, lift: 0.8 },
+    // Show the pointed yellow leaf below the kerb before he steps down to it.
+    // The gutter is two EL below his kerb: keep the waiting leaf above the landscape controls too.
+    { from: 33, to: 39, zoom: 1.25, lift: -1.4, lead: 2.4 },
     { from: 36, to: 66, zoom: 1.5, lift: 0.6 },
     { from: 66, to: 86, zoom: 1.2 },
     // From the steps over the crossing the picture is wide, so that the far side is in it before he floats.
-    { from: 90, to: 122, zoom: 1.55, lift: 1.2 },
+    { from: 90, to: 122, zoom: 1.9, lift: 2.5 },
     { from: 124, to: 136, zoom: 1.25, lift: 0.5 },
     { from: 143, to: 162, zoom: 1.25, lead: 3.2 },
     { from: 164, to: 186, zoom: 1.3 },

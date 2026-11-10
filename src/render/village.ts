@@ -1012,7 +1012,7 @@ export function paintStreetMirror(chapter: ChapterData, c: CanvasRenderingContex
   for (const { x, foot } of postsOf(chapter)) {
     box(x - 1.2, x + 1.2, foot, foot + 2.3, MIRRORED.lamp);
     box(x - 0.6, x + 0.6, foot + 2.3, foot + 2.9, MIRRORED.lamp);
-    box(x - 0.5, x + 0.5, foot + 2.9, foot + 24, MIRRORED.lamp);
+    box(x - 0.5, x + 0.5, foot + 2.9, foot + LAMP_POST.tall, MIRRORED.lamp);
   }
 }
 
@@ -1030,7 +1030,8 @@ export const LAMP_POST = {
   /** The hatch towards the street: how wide and how tall it is, and how high its middle is. */
   door: { wide: 0.62, tall: 1.3, up: 1.22 },
   /** The shaft: half across at its foot and at its top, its flutes up to the ring, and how tall it goes. */
-  shaft: [0.5, 0.42], flutes: 8, ring: 9, tall: 22,
+  // The wider church crossing still sees a continuous shaft, never an abruptly cut-off top.
+  shaft: [0.5, 0.42], flutes: 8, ring: 9, tall: 32,
 } as const;
 
 export function lampPostShape(): BufferGeometry {
