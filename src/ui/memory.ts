@@ -4,7 +4,7 @@ import { lessMotion } from '../platform/motion';
 import { sv } from '../content/sv';
 import { use } from './icons';
 import './memory.css';
-import { playVoice, stopVoice } from '../audio/voice-player';
+import { playVoice, suspendVoice } from '../audio/voice-player';
 
 import { MEMORIES } from './memory-art';
 export { MEMORIES } from './memory-art';
@@ -171,9 +171,12 @@ export function createMemory(doc: Document): Memory {
     }
   };
   let finish: (() => void) | null = null;
+  let restoreVoice: (() => void) | null = null;
   const close = () => {
     if (!open) return;
-    stopVoice();
+    const restore = restoreVoice;
+    restoreVoice = null;
+    restore?.();
     open = false;
     returning = false;
     advance = null;
@@ -222,6 +225,7 @@ export function createMemory(doc: Document): Memory {
         done();
         return;
       }
+      restoreVoice = suspendVoice();
       open = true;
       returning = false;
       calm = !!options.calm || lessMotion(doc);

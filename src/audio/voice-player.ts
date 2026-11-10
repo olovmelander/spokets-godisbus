@@ -14,6 +14,9 @@ const recordedVoices = new Set(typeof __VOICE_KEYS__ === 'undefined' ? [] : __VO
 let userUnlocked = false;
 let pendingKey: string | null = null;
 let pendingAt = 0;
+// An interrupted play() promise must not discard the same recording after a temporary channel restores it.
+let playAttempt = 0;
+const suspendedVoices = new Set<{ audio: HTMLAudioElement | null; key: string | null }>();
 
 if (typeof window !== 'undefined') {
   const unlock = () => {
@@ -62,8 +65,8 @@ export function setVoiceSettings(enabled: boolean, volume: number): void {
 export function playVoice(key: string): void {
   if (!soundEnabled || currentVolume <= 0 || typeof Audio === 'undefined') return;
 
-  // Stop any currently playing voice line
-  stopVoice();
+  // Replace this channel's line, preserving dialogue suspended beneath a memory.
+  stopCurrentVoice();
   if (!recordedVoices.has(key)) return;
 
   try {
@@ -72,6 +75,7 @@ export function playVoice(key: string): void {
     audio.volume = currentVolume;
     currentAudio = audio;
     currentKey = key;
+    const attempt = ++playAttempt;
 
     audio.onended = () => {
       if (currentAudio === audio) {
@@ -91,7 +95,7 @@ export function playVoice(key: string): void {
     if (promise !== undefined) {
       promise.catch((err) => {
         // A dismissed or replaced line no longer owns the autoplay retry.
-        if (currentAudio !== audio) return;
+        if (currentAudio !== audio || attempt !== playAttempt) return;
         currentAudio = null;
         currentKey = null;
         // Autoplay restriction: queue line to play on player's first interaction
@@ -103,7 +107,7 @@ export function playVoice(key: string): void {
     }
   } catch {
     // Audio constructor or environment error
-    stopVoice();
+    stopCurrentVoice();
   }
 }
 
@@ -112,6 +116,7 @@ export function playVoice(key: string): void {
  * discarded only when the player deliberately leaves or restarts the chapter.
  */
 export function pauseVoice(): void {
+  playAttempt++;
   pendingKey = null;
   try {
     currentAudio?.pause();
@@ -124,32 +129,65 @@ export function pauseVoice(): void {
 export function resumeVoice(canPlay = true): void {
   const audio = currentAudio;
   if (!canPlay || !audio || !audio.paused || !soundEnabled || currentVolume <= 0) return;
+  const attempt = ++playAttempt;
   try {
     audio.play()?.catch(() => {
-      if (currentAudio !== audio) return;
+      if (currentAudio !== audio || attempt !== playAttempt) return;
       currentAudio = null;
       currentKey = null;
     });
   } catch {
-    stopVoice();
+    stopCurrentVoice();
   }
 }
 
-/** Stops any currently playing voice line. */
-export function stopVoice(): void {
+function discard(audio: HTMLAudioElement | null): void {
+  if (!audio) return;
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+  } catch {
+    // ignore
+  }
+}
+
+function stopCurrentVoice(): void {
+  playAttempt++;
   pendingKey = null;
   pendingAt = 0;
-  if (currentAudio) {
-    const stopped = currentAudio;
-    currentAudio = null;
-    currentKey = null;
-    try {
-      stopped.pause();
-      stopped.currentTime = 0;
-    } catch {
-      // ignore
+  const stopped = currentAudio;
+  currentAudio = null;
+  currentKey = null;
+  discard(stopped);
+}
+
+/**
+ * Temporarily lend the voice channel to a memory. Its idempotent close callback restores the original line at the
+ * same position, still paused; the app grants permission to resume after the memory and any Pause menu close.
+ */
+export function suspendVoice(): () => void {
+  pauseVoice();
+  const saved = { audio: currentAudio, key: currentKey };
+  currentAudio = null;
+  currentKey = null;
+  suspendedVoices.add(saved);
+  return () => {
+    // A chapter exit, mute or real page departure has abandoned this line, not merely borrowed its channel.
+    if (!suspendedVoices.delete(saved)) return;
+    stopCurrentVoice();
+    currentAudio = saved.audio;
+    currentKey = saved.key;
+    if (currentAudio) {
+      try { currentAudio.volume = currentVolume; } catch { /* ignore */ }
     }
-  }
+  };
+}
+
+/** Discards the active line and any dialogue suspended beneath a temporary memory channel. */
+export function stopVoice(): void {
+  stopCurrentVoice();
+  for (const saved of suspendedVoices) discard(saved.audio);
+  suspendedVoices.clear();
 }
 
 /** Returns the currently playing line key, or null if none. */

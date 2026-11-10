@@ -204,4 +204,124 @@ describe('spoken-line lifecycle', () => {
     expect(() => player.playVoice('newGhost')).not.toThrow();
     expect(player.playingVoice()).toBeNull();
   });
+
+  it('lets a paused player open and page through a memory, then finish the same spoken line before its receipt', async () => {
+    const { createHud } = await import('../../src/ui/hud');
+    const { fakePage } = await import('../robot/listener');
+    const { createMemory } = await import('../../src/ui/memory');
+    const doc = fakePage({ show() {}, hide() {} });
+    // Memory's DOM shell without animations: this exercises its real play/page/close ownership, not a substitute lease.
+    vi.stubGlobal('HTMLElement', class {});
+    Object.assign(doc, { activeElement: null, addEventListener() {} });
+    const bounds = { left: 0, top: 0, right: 390, bottom: 844, width: 390, height: 844 };
+    for (const id of ['memory', 'memoryPanel', 'memoryCard']) Object.assign(doc.getElementById(id)!, {
+      animate: undefined,
+      getBoundingClientRect: () => bounds,
+      insertAdjacentHTML() { Object.assign(this, { lastElementChild: {} }); },
+    });
+    doc.getElementById('memory')!.querySelector = () => doc.getElementById('memoryPanel') as never;
+    const completed = vi.fn(), done = vi.fn();
+    const hud = createHud(doc, 0, undefined, undefined, undefined, undefined, completed);
+    const memory = createMemory(doc);
+    hud.say('elof', 'tiny', true, 'unread'); hud.tick(0); hud.tick(.5);
+    const spoken = Voice.made[0]!;
+    spoken.currentTime = 1.7;
+    hud.paused(true); player.pauseVoice();
+    memory.play('garden', done, { calm: true });
+    expect(memory.open).toBe(true);
+    expect(player.playingVoice()).toBe('memory_garden_1');
+    expect(spoken.paused).toBe(true);
+    expect(spoken.currentTime).toBe(1.7);
+    const next = doc.getElementById('memoryNext')!;
+    next.onclick!.call(next, {} as PointerEvent);
+    expect(player.playingVoice()).toBe('memory_garden_2');
+    const narration = Voice.made.at(-1)!;
+    narration.currentTime = .8;
+    hud.tick(100);
+    expect(completed).not.toHaveBeenCalled();
+    memory.close(); memory.close();
+    expect(done).toHaveBeenCalledOnce();
+    expect(narration.paused).toBe(true);
+    expect(narration.currentTime).toBe(0);
+    expect(player.playingVoice()).toBe('tiny');
+    expect(spoken.currentTime).toBe(1.7);
+    expect(spoken.paused).toBe(true);
+    player.resumeVoice(false); hud.tick(100);
+    expect(spoken.play).toHaveBeenCalledTimes(1);
+    expect(completed).not.toHaveBeenCalled();
+    hud.paused(false); player.resumeVoice(true); hud.tick(100);
+    expect(spoken.play).toHaveBeenCalledTimes(2);
+    expect(completed).not.toHaveBeenCalled();
+    spoken.onended!(); hud.tick(1 / 60); hud.tick(1 / 60);
+    expect(completed.mock.calls).toEqual([['unread']]);
+  });
+
+  it.each(['leave', 'mute', 'clear'] as const)('cancels both the temporary voice and its suspended line on %s', reason => {
+    player.playVoice('tiny');
+    const spoken = Voice.made[0]!;
+    spoken.currentTime = 1.7;
+    const restore = player.suspendVoice();
+    player.playVoice('memory_garden_1');
+    const narration = Voice.made[1]!;
+    narration.currentTime = .8;
+    if (reason === 'leave') gestures.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: false }));
+    else if (reason === 'mute') player.setVoiceSettings(false, .7);
+    else player.stopVoice();
+    expect(spoken.paused).toBe(true);
+    expect(narration.paused).toBe(true);
+    expect(spoken.currentTime).toBe(0);
+    expect(narration.currentTime).toBe(0);
+    expect(player.playingVoice()).toBeNull();
+    player.setVoiceSettings(true, .7);
+    player.playVoice('first1');
+    restore();
+    // Closing an abandoned memory cannot resurrect its old dialogue or stop a new chapter's voice.
+    expect(player.playingVoice()).toBe('first1');
+  });
+
+  it('preserves both a memory and its suspended dialogue across a back-forward cache interruption', () => {
+    player.playVoice('tiny');
+    const spoken = Voice.made[0]!;
+    spoken.currentTime = 1.7;
+    const restore = player.suspendVoice();
+    player.playVoice('memory_garden_1');
+    const narration = Voice.made[1]!;
+    narration.currentTime = .8;
+    gestures.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }));
+    expect(player.playingVoice()).toBe('memory_garden_1');
+    expect(narration.paused).toBe(true);
+    expect(narration.currentTime).toBe(.8);
+    expect(spoken.currentTime).toBe(1.7);
+    restore();
+    expect(player.playingVoice()).toBe('tiny');
+    expect(spoken.paused).toBe(true);
+    expect(spoken.currentTime).toBe(1.7);
+    player.resumeVoice(true);
+    expect(spoken.play).toHaveBeenCalledTimes(2);
+  });
+
+  it('closes a temporary channel with no prior recording and restores each lease only once', () => {
+    const restore = player.suspendVoice();
+    player.playVoice('memory_garden_1');
+    restore();
+    expect(player.playingVoice()).toBeNull();
+    player.playVoice('first1');
+    restore();
+    expect(player.playingVoice()).toBe('first1');
+  });
+
+  it('ignores a play rejection from before a line was suspended, even if the same recording is already restored', async () => {
+    player.playVoice('tiny');
+    const spoken = Voice.made[0]!;
+    spoken.currentTime = 1.7;
+    const restore = player.suspendVoice();
+    player.playVoice('memory_garden_1');
+    restore();
+    spoken.reject(blocked()); await flush();
+    gestures.dispatchEvent(new Event('pointerdown'));
+    expect(player.playingVoice()).toBe('tiny');
+    expect(player.voicePosition()?.seconds).toBe(1.7);
+    expect(spoken.paused).toBe(true);
+    expect(Voice.made).toHaveLength(2);
+  });
 });
