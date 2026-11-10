@@ -1536,6 +1536,10 @@ function umbrella(): Group {
   return group;
 }
 
+/** How far in front of his feet the little one's cap comes to lie, found in the gutter, and the flag of his hand on it. */
+const CAP_AT_FEET = 0.42;
+const CAP_PICKED = 'sb:cap-picked';
+
 function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
   return {
     // He leaps away, as he does all night, except where Elof lifts him up.
@@ -1779,7 +1783,38 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       cap.rotation.z = worn ? 0 : 1.2;
       cap.position.y = worn ? 0.15 : 0.1;
       group.add(cap, ball(0.06, solid('#f4efe4', 0.9), worn ? 0 : 0.17, worn ? 0.32 : 0.2, 0));
-      return standing(spot, group, (clock) => { group.position.y = worn ? gladHop(clock) : 0.04 * Math.sin(clock * 3); });
+      if (worn) return standing(spot, group, (clock) => { group.position.y = home ? 0 : gladHop(clock); });
+      // Lost in the gutter in Byn i stormen, it bobs where it lies. Found, a gust tumbles it the last step to his feet,
+      // and it lies there until his hand has it (the scene `mossan`, ./chapters/stormbyn.ts): then it is in his hand
+      // (../../render/view.ts). In a game taken up after that it is gone.
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y, -0.2);
+      root.add(group);
+      let since = -1, to = spot.at.x;
+      return {
+        group: root,
+        update(used, clock, dt) {
+          if (!used) {
+            since = -1;
+            root.position.x = spot.at.x;
+            group.rotation.z = 0;
+            group.position.y = 0.04 * Math.sin(clock * 3);
+            drawnWhile(root, true);
+            return;
+          }
+          if (since < 0) {
+            since = 0;
+            to = elof.x + (Math.sign(spot.at.x - elof.x) || 1) * CAP_AT_FEET;
+          }
+          since += dt;
+          const k = elof.still ? 1 : smooth(since / 0.5);
+          root.position.x = spot.at.x + (to - spot.at.x) * k;
+          // It rolls over the stones as it goes, and lies still.
+          group.rotation.z = (spot.at.x - root.position.x) / 0.16;
+          group.position.y = 0;
+          drawnWhile(root, !(elof.flags?.has(CAP_PICKED) || elof.flags?.has('scene:mossan')));
+        },
+      };
     },
     casement: (spot) => casement(spot),
     latch: (spot) => {

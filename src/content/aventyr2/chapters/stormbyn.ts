@@ -1,3 +1,4 @@
+import type { SceneDef } from '../../../sim/scene';
 import type { Candy, ChapterData, Jump, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
 import { alongAll, round, row, slopeRow, timeCard } from '../kit';
@@ -20,7 +21,8 @@ import { alongAll, round, row, slopeRow, timeCard } from '../kit';
  *    it he can ride it up to the hearts over it and on to a stand. A toy too.
  * 6. **The little one's cap:** Elof keeps it for him. The candy trail leads on towards Olympia.
  * 7. **Under the bakery's awnings** the rain pours off their scalloped edges. He reads the drops from their
- *    shadows, with a dry pier between the two runs. Then **the steps** lead down towards Olympia.
+ *    shadows, with a dry pier between the two runs. Then **the steps** lead up towards Olympia, which lies up on
+ *    its hill (Olov, 9 November 2026: "Man ska gå upp till Olympia, inte ner.").
  *
  * Nothing here is a real shop, and no house has a number: a shop is told by the wares in its window, and
  * nothing on the street is a letter (plan §0, §2.6). To the simulation the river and the crossing are pits,
@@ -32,8 +34,8 @@ const DEEP = -6;
 /** The pavement over the gutter, and the high wall's top. */
 const PAVEMENT = 2;
 const WALL = 5;
-/** The shore path, three steps under the street. */
-const SHORE = -3;
+/** The road up towards Olympia, three steps over the street, from the bakery's corner. */
+const UP = 3;
 
 /** A place to stand, from one side to the other, at one height. */
 interface Stone {
@@ -80,6 +82,36 @@ const LEAF = { from: { x: 36.4, y: 0 }, to: { x: 63.6, y: 0 }, rise: 0.15, time:
 /** Moa's umbrella: from the wall's edge, down over the flooded crossing, to the street on its far side. */
 const UMBRELLA = { from: { x: 102.7, y: WALL }, to: { x: 119.6, y: 0 }, rise: 0.5, time: 4.5, corridor: 0.4 };
 
+/**
+ * The little one's cap in the gutter by the shoemaker's (Olov, 9 November 2026: "När man hittar lillgubbens mössa går
+ * det alldeles för fort."). Coming close is finding it, and Elof stops: a gust tumbles it the last step to his feet
+ * (../render.ts), he bends and picks it up, holds it up in both hands to look at it, and only then says what it is;
+ * then he looks to Klonk, who is thinking of the little one. Before, it was gone as he ran over it, and the words came
+ * over nothing. `CAP_PICKED` is when his hand has it: from then it is in his hand (src/render/view.ts).
+ */
+const CAP = { x: 139.4, y: 0 };
+const CAP_PICKED = 'sb:cap-picked';
+const CAP_SEEN = 'sb:cap-seen';
+/** Where it comes to lie: a little in front of where he stops, coming along the street from the left. */
+const CAP_LIES = { x: CAP.x - 0.62, y: 0.14, z: -0.1 };
+const CAP_SCENE: SceneDef = {
+  id: 'mossan', on: 'cap', before: CAP.x + 6, seconds: 3.8, hold: true,
+  cues: [{ at: 0.85, flag: CAP_PICKED }, { at: 1.9, flag: CAP_SEEN }],
+  stage: {
+    // Read the cap close to Elof first; only then open the frame to Klonk farther along the street.
+    // One wide shot left the discovery small against an empty shop wall on a portrait phone.
+    shots: [
+      { at: 0, x: CAP.x - 0.35, y: 0.9, height: 3.2, width: 3.8, move: 0.8 },
+      { at: 2.7, x: CAP.x + 1.6, y: 1.15, height: 4.2, width: 7.6, move: 0.8 },
+    ],
+    elof: [
+      { at: 0, act: 'reach', aim: CAP_LIES },
+      { at: 0.95, act: 'show' },
+      { at: 2.7, act: 'look', aim: { x: 144, y: 0.9, z: 0 } },
+    ],
+  },
+};
+
 /** The high wall's stone steps: four risers, each a little under his reach, so he pulls himself up each. */
 const STEP_RISE = 1.25;
 const STEP_TREAD = 1.6;
@@ -96,7 +128,7 @@ export const stormbyn: ChapterData = {
   id: 'stormbyn',
   place: 'village',
   // The forest path's earth, the pavement's slabs, the grate's iron, the wall's stone and its steps, the steps
-  // down, and the shore path. The rest is the street's own asphalt.
+  // up, and the road up the hill. The rest is the street's own asphalt.
   surfaces: [
     { from: -3, to: 9, kind: 'earth' },
     { from: 9, to: 34, kind: 'paving' },
@@ -134,8 +166,8 @@ export const stormbyn: ChapterData = {
       // Six scallops each: the drops fall from their tips.
       awnings: [{ from: 144.25, to: 150.85 }, { from: 154.6, to: 161.2 }],
     },
-    // Down the steps: the shore, with a low fence, and the lake's sky over it.
-    { from: 164, to: 186, depth: 'far', kind: 'yard', foot: -2, lowFence: true },
+    // Up the steps: the road up the hill towards Olympia, with a low fence along it.
+    { from: 164, to: 186, depth: 'far', kind: 'yard', foot: UP, lowFence: true },
   ],
   // Two lamp posts on the far pavement, dark tonight: one in the yard across the river, one at the far end of
   // the flooded crossing, out of the tall picture from the wall's top. Neither stands behind a big candy.
@@ -152,8 +184,8 @@ export const stormbyn: ChapterData = {
   },
   coda: 'moa',
   spawn: { x: 1, y: 3.01 },
-  // Where and when, as the chapter opens.
-  scenes: [timeCard('stormbyn', 1)],
+  // Where and when, as the chapter opens; and the little one's cap, found.
+  scenes: [timeCard('stormbyn', 1), CAP_SCENE],
   goalX: 180,
   // Elof returns the cap in the finale: he must take it with him, even if he jumped over it at first.
   goalNeeds: 'cap',
@@ -182,14 +214,15 @@ export const stormbyn: ChapterData = {
     { x: WALL_TO, y: -5 },
     { x: 118, y: -5 },
     { x: 118, y: 0 },
-    // 5. the swinging sign, 6. the cap in the gutter, 7. the awnings, and the steps down to the shore
+    // 5. the swinging sign, 6. the cap in the gutter, 7. the awnings, and the steps up to the road up the hill: each a
+    // pull-up, as the wall's are
     { x: 164, y: 0 },
-    { x: 164, y: -1 },
-    { x: 166, y: -1 },
-    { x: 166, y: -2 },
-    { x: 168, y: -2 },
-    { x: 168, y: SHORE },
-    { x: 186, y: SHORE },
+    { x: 164, y: 1 },
+    { x: 166, y: 1 },
+    { x: 166, y: 2 },
+    { x: 168, y: 2 },
+    { x: 168, y: UP },
+    { x: 186, y: UP },
     { x: 186, y: 12 },
   ],
   water: [
@@ -206,7 +239,7 @@ export const stormbyn: ChapterData = {
     { x: 137, y: 0 },
     // The dry pier between the awnings.
     { x: 152.6, y: 0 },
-    { x: 172, y: SHORE },
+    { x: 172, y: UP },
   ],
   // The loose flap of the awning: down on it from a jump, it bounces him up under the awning.
   bouncers: [{ x: 19, y: PAVEMENT + 0.5, lift: 2.8 }],
@@ -268,11 +301,12 @@ export const stormbyn: ChapterData = {
     { id: 'sb:bell-bread', look: 'bellCord', at: { x: 153.2, y: 0 }, verb: 'call', word: 'sbRing', extra: true },
     // The birch leaf at the river's shore: he steps on, and the current carries him.
     { id: 'leaf', at: LEAF.from, verb: 'take', word: 'board', ride: 'leaf' },
-    // On the wall: he calls Moa, and she holds her umbrella out; then he takes hold of it at the edge.
-    { id: 'umbrella:ready', look: 'sign', at: { x: 99.6, y: WALL }, verb: 'call', word: 'callMoa' },
+    // On the wall: Moa waits there with her umbrella open over her head (src/render/view.ts). He calls her, and she steps
+    // to the edge and sets it down open for him there; then he takes hold of it at the edge.
+    { id: 'umbrella:ready', look: 'sign', at: { x: 99.6, y: WALL }, goesTo: { x: 101.3, y: WALL, z: -0.9 }, verb: 'call', word: 'callMoa' },
     { id: 'umbrella', at: { x: 102.6, y: WALL }, verb: 'take', word: 'sbUmbrella', needs: 'family:umbrella-ready', ride: 'umbrella' },
     // The little one's carved cap, in the gutter: he finds it by coming close.
-    { id: 'cap', look: 'tiny-cap', at: { x: 139.4, y: 0 }, verb: 'take', touch: true },
+    { id: 'cap', look: 'tiny-cap', at: CAP, verb: 'take', touch: true },
   ],
   rides: [
     { id: 'leaf', look: 'leaf', ...LEAF },
@@ -297,9 +331,9 @@ export const stormbyn: ChapterData = {
     { at: { x: 133.6, y: 0 } },
     { at: { x: 144, y: 0 }, thought: { picture: 'small-figure', after: 'cap' } },
     { at: { x: 156, y: 0 } },
-    { at: { x: 165, y: -1 } },
-    { at: { x: 175.6, y: SHORE } },
-    { at: { x: 183.4, y: SHORE } },
+    { at: { x: 165, y: 1 } },
+    { at: { x: 175.6, y: UP } },
+    { at: { x: 183.4, y: UP } },
   ],
   beats: [
     { id: 'sbDark', at: 1.6, who: 'elof', line: 'sbDark' },
@@ -313,9 +347,10 @@ export const stormbyn: ChapterData = {
     { id: 'family:umbrella', on: 'family:umbrella-ready', until: 'umbrella', within: [95, 104], who: 'moa', line: 'sbMoaHold', read: true },
     { id: 'sbFloat', on: 'umbrella', within: [100, 120], who: 'elof', line: 'sbFloat' },
     { id: 'sbLanded', at: 120.6, needs: 'umbrella', who: 'moa', line: 'sbMoaLanded' },
-    { id: 'sbCap', on: 'cap', who: 'elof', line: 'sbCap', read: true },
-    { id: 'sbToLake', on: 'cap', who: 'elof', line: 'sbToLake', read: true },
-    { id: 'sbKlonkCap', on: 'cap', who: 'spoket', line: 'sbKlonkCap' },
+    // Said once he holds the cap up and looks at it (`mossan`).
+    { id: 'sbCap', on: CAP_SEEN, who: 'elof', line: 'sbCap', read: true },
+    { id: 'sbToLake', on: CAP_SEEN, who: 'elof', line: 'sbToLake', read: true },
+    { id: 'sbKlonkCap', on: CAP_SEEN, who: 'spoket', line: 'sbKlonkCap' },
     { id: 'sbShore', at: 176, who: 'elof', line: 'sbShore' },
   ],
   cameras: [
@@ -348,7 +383,7 @@ export const stormbyn: ChapterData = {
     ...alongAll(UMBRELLA, [0.12, 0.24, 0.36, 0.48, 0.6, 0.72, 0.84, 0.94]),
     // 5. past the swinging sign, and 6. to the cap
     ...row(121.6, 141.6, 0),
-    // 7. under the awnings, between the drops, and down the steps to the shore
+    // 7. under the awnings, between the drops, and up the steps to the road up the hill
     { x: 143.6, y: 0.45 },
     { x: 144.8, y: 0.45 },
     { x: 147, y: 0.45 },
@@ -360,10 +395,10 @@ export const stormbyn: ChapterData = {
     { x: 159.55, y: 0.45 },
     { x: 161.75, y: 0.45 },
     { x: 163.4, y: 0.45 },
-    { x: 165, y: -0.55 },
-    { x: 167, y: -1.55 },
-    { x: 169, y: SHORE + 0.45 },
-    ...row(171, 179, SHORE),
+    { x: 165, y: 1.45 },
+    { x: 167, y: 2.45 },
+    { x: 169, y: UP + 0.45 },
+    ...row(171, 179, UP),
   ],
 };
 

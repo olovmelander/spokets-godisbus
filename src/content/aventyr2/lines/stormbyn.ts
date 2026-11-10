@@ -21,7 +21,7 @@ export const words: ChapterWords = {
     sbCap: 'Lillgubbens mössa! Jag tar med den.',
     sbToLake: 'Godisspåret går mot fotbollsplanen!',
     sbKlonkCap: 'Klonk, klonk!',
-    // The awnings pour, and the steps go down to the shore.
+    // The awnings pour, and the steps go up towards Olympia.
     sbShore: 'Vi är på väg, lillgubben!',
   },
   verbs: { sbUmbrella: 'Håll i paraplyet', sbRing: 'Dra i klocksnöret' },
@@ -33,7 +33,7 @@ export const words: ChapterWords = {
     sbBoard: { purpose: 'Håll i Moas paraply och sväva över.', recap: 'Moa håller ut sitt paraply åt mig över korsningen.' },
     sbGutter: { purpose: 'Följ godisspåret längs rännstenen.', recap: 'Moas paraply bar mig över den översvämmade korsningen.' },
     sbFindCap: { purpose: 'Hämta mössan vid skomakaren.', recap: 'Lillgubbens mössa ligger vid skomakaren. Jag tar med den till honom.' },
-    sbLake: { purpose: 'Gå nerför trappan mot Olympia.', recap: 'Jag har lillgubbens mössa. Gamla trägubbens godisspår fortsätter mot fotbollsplanen.' },
+    sbLake: { purpose: 'Gå uppför trappan mot Olympia.', recap: 'Jag har lillgubbens mössa. Gamla trägubbens godisspår fortsätter mot fotbollsplanen.' },
   },
   helpers: {
     sbFamily: 'Familjen letar på gatan med sina lampor.',

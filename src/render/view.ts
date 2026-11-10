@@ -923,6 +923,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** The root hole in the garden that the ghost crept into, where Moa reaches. */
   const ROOT_HOLE = { x: 163.4, y: 0 };
   const rootReach = new Vector3();
+  /**
+   * Moa's umbrella in Byn i stormen (the ride that floats him over the crossing): she holds it until she has set it down
+   * for him at the wall's edge (below), where it waits as the ride's own picture. When she was called, on the clock.
+   */
+  const umbrellaRide = chapter.id === 'stormbyn' ? carriers.find((c) => c.ride.look === 'umbrella' && c.prop) : undefined;
+  const umbrellaBoard = umbrellaRide ? chapter.spots?.find((spot) => spot.ride === umbrellaRide.ride.id) : undefined;
+  const umbrellaHand = new Vector3(), umbrellaHeld = new Vector3();
+  let umbrellaCalled = -1;
+  /** Where on the umbrella her hand holds it, over its foot (./props.ts `rideProp`): the shaft, a little over its hook. */
+  const UMBRELLA_HANDLE = 1.25;
+  /** Her fist round the umbrella's thin shaft (./fingers.ts). */
+  const UMBRELLA_GRIP = { kind: 'power' as const, size: 0.035 };
   const creepTo = new Vector3();
   /**
    * Moa's leaf drawing, blown out of her hand and back under the shaving bridge as the plane is ready (garden.ts,
@@ -934,16 +946,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Seconds since the ball he rides in Olympia was kicked; -1 when he is not on it. */
   let kickSince = -1;
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
-  const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number; hold: number }>();
+  const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number; hold: number; stoop: number }>();
   /** Granskogen's seesaw board, which Pappa holds (props.ts); found the first time it is wanted. */
   let seesawPlank: Object3D | null | undefined;
-  const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0, hold: 0 }); return g; };
+  const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0, hold: 0, stoop: 0 }); return g; };
   const lampFrom = new Vector3(), lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3(), lampLocal = new Vector3();
   const lampHeld = new Vector3(), upright = new Vector3(0, 1, 0);
   const lampTurn = new Quaternion();
   const LAMP_POINTS = new Vector3(0, 0, 1);
   /** A berry or a sweet between his thumb and his finger, and a sheet's corner (./fingers.ts). */
   const BERRY = { kind: 'pinch' as const, size: 0.05 }, PAPER = { kind: 'pinch' as const, size: 0.008 };
+  /** The little one's knitted cap, held by its brim. */
+  const CAP_PINCH = { kind: 'pinch' as const, size: 0.04 };
   // The little one's knitted cap ("Lillgubbens mössa! Jag tar med den."): from the gutter in Stormbyn Elof carries
   // it, tucked in at his back, through every chapter until he gives it back in the storm's eye (scene "motet").
   const carriedBerry = new Group();
@@ -1545,10 +1559,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         lanternHand.y -= .1 * tall;
       } else playerBody.hand(1, lanternHand);
     }
-    const hasCap = (chapter.id === 'stormbyn' && flags.has('cap')) || ['olympia', 'flarken', 'alven', 'billsta'].includes(chapter.id)
+    // Found in Byn i stormen, it is in his hand while he picks it up and holds it up to look at it (the scene `mossan`,
+    // its cue `sb:cap-picked`), and tucked in at his back from then on.
+    const capInHand = chapter.id === 'stormbyn' && flags.has('sb:cap-picked') && !flags.has('scene:mossan') && !curr.hook;
+    const hasCap = (chapter.id === 'stormbyn' && flags.has('cap') && (capInHand || flags.has('scene:mossan')))
+      || ['olympia', 'flarken', 'alven', 'billsta'].includes(chapter.id)
       || (chapter.id === 'stormoga' && !flags.has('scene:motet'));
     carriedCap.visible = hasCap && elof.group.visible;
-    if (carriedCap.visible) {
+    if (carriedCap.visible && capInHand) {
+      // Between his right thumb and fingers, its point up (./fingers.ts).
+      playerBody.hold?.(1, CAP_PINCH);
+      if (playerBody.socket) playerBody.socket(1, CAP_PINCH, carriedCap.position);
+      else playerBody.hand(1, carriedCap.position);
+      carriedCap.position.y -= 0.1 * tall;
+      elof.group.getWorldQuaternion(carriedCap.quaternion);
+      carriedCap.scale.setScalar(0.8 * tall);
+    } else if (carriedCap.visible) {
       elof.group.updateWorldMatrix(true, false);
       carriedCap.position.set(-0.17, 0.5, 0.05).applyMatrix4(elof.group.matrixWorld);
       elof.group.getWorldQuaternion(carriedCap.quaternion).multiply(capTilt);
@@ -1807,6 +1833,23 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         const toward = (joint: 'lean' | 'legR' | 'kneeR' | 'kneeL', v: number) => { posed[joint] += (v - posed[joint]) * w; };
         toward('lean', 0.55 + tug); toward('legR', 0.95); toward('kneeR', 1.35 + tug); toward('kneeL', Math.max(posed.kneeL, 0.25));
       }
+      // Moa holds her umbrella in Byn i stormen (Olov, 9 November 2026: "Moa ska hålla i ett paraply redan innan Elof
+      // ropar på henne och får det."): open over her head in the rain while she waits on the wall; called, she steps to
+      // its edge, bends and sets it down open there for him (`down`, 0 to 1), lets go as it is ready, and straightens.
+      const umbrellaUp = one.who === 'moa' && !!umbrellaRide && !!umbrellaBoard
+        && !flags.has(umbrellaBoard.needs ?? umbrellaBoard.id) && !flags.has(umbrellaBoard.id);
+      const umbrellaAsked = umbrellaUp && one.glad !== undefined && flags.has(one.glad);
+      if (!umbrellaAsked) umbrellaCalled = -1;
+      // A game taken up after the call: it is down already.
+      else if (umbrellaCalled < 0) umbrellaCalled = hasFrame ? clock : clock - 9;
+      const down = umbrellaAsked ? (calmStory ? 1 : smooth((clock - umbrellaCalled - 0.35) / 0.95)) : 0;
+      gesture.stoop = calmStory ? down : gesture.stoop + (down - gesture.stoop) * ease(6, dt);
+      if (gesture.stoop > 0.001) {
+        const w = gesture.stoop, mixTo = (from: number, to: number) => from * (1 - w) + to * w;
+        posed.lean = mixTo(posed.lean, 0.62);
+        posed.legL = mixTo(posed.legL, 0.55); posed.kneeL = mixTo(posed.kneeL, 0.95);
+        posed.legR = mixTo(posed.legR, 0.4); posed.kneeR = mixTo(posed.kneeR, 0.8);
+      }
       // Bertil kicks the ball Elof rides ("Upp på bollen! Jag skjuter, du flyger!"): turned to it, a wind-up, the
       // swing through, arms out, and back to standing.
       if (one.who === 'bertil' && kickSince >= 0 && kickSince < 0.9) {
@@ -1919,7 +1962,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           // crosses the chest through the coat; the lamp itself turns to him (Olov: the arms went through the coats).
           lampLocal.copy(lampTo);
           one.rig.group.worldToLocal(lampLocal);
-          const side: 0 | 1 = lampLocal.x >= 0 ? 0 : 1;
+          // While Moa has her umbrella in her left hand, the lamp is in her right.
+          const side: 0 | 1 = lampLocal.x >= 0 && !umbrellaUp ? 0 : 1;
           // At the waist, out in front of the coat, the elbow bent: a light held to see by, not an arm held straight.
           lampHand.set((side === 0 ? 1 : -1) * 0.62 * u, 2.95 * u, 0.85 * u);
           one.rig.group.localToWorld(lampHand);
@@ -1939,6 +1983,23 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           one.lamp.scale.setScalar(size);
           one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
         }
+      }
+      if (umbrellaUp && shown && umbrellaRide?.prop) {
+        // Her umbrella by its handle in her left hand, its shaft upright: over her head, or on its way down to where it
+        // waits for him at the wall's edge (the ride's start), until it is there and the ride's own picture has it.
+        const u = one.rig.height / 5.2, start = umbrellaRide.ride.from;
+        one.rig.group.updateWorldMatrix(true, false);
+        umbrellaHand.set(0.34 * u, 4.15 * u, 0.42 * u);
+        one.rig.group.localToWorld(umbrellaHand);
+        umbrellaHand.lerp(umbrellaHeld.set(start.x, start.y + UMBRELLA_HANDLE, 0), down);
+        one.rig.reach(0, umbrellaHand, 1);
+        if (one.rig.grasp && one.rig.socket) {
+          one.rig.grasp(0, UMBRELLA_GRIP, one.rig.socket(0, UMBRELLA_GRIP, umbrellaHeld), upright, umbrellaHeld, 1);
+        } else one.rig.hand(0, umbrellaHeld);
+        umbrellaRide.prop.position.set(umbrellaHeld.x, umbrellaHeld.y - UMBRELLA_HANDLE, umbrellaHeld.z);
+        umbrellaRide.prop.rotation.set(0, 0, 0);
+        umbrellaRide.prop.scale.setScalar(1);
+        drawnWhile(umbrellaRide.prop, true);
       }
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
     }

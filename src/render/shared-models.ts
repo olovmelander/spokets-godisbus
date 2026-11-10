@@ -10,6 +10,8 @@ import { weathered } from './weathered';
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
 const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
+/** The street's life: a grown-up walking past behind Byn's houses (art/blender/a2-street.py). */
+const STREET = ['fotgangare'];
 const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
 const YARD = ['vedbod', 'roddbat-vinter', 'brevlada', 'gungor', 'utemobler', 'fotbollsmal', 'fotbollsmal-stort', 'kitbord'];
 /** Äventyr 2's buildings: Själevad's church, the beaver's lodge, Olympia's store and floodlight masts, Billsta's poles. */
@@ -23,6 +25,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
   ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
   ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
+  ...Object.fromEntries(STREET.map((name) => [name, ['aventyr2', 'street'] as const])),
   ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
   ...Object.fromEntries(YARD.map((name) => [name, ['aventyr2', 'yard'] as const])),
   ...Object.fromEntries(BUILDINGS.map((name) => [name, ['aventyr2', 'buildings'] as const])),

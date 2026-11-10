@@ -10,6 +10,7 @@ import { sweetSocket } from './candy';
 import { drainsOf } from './dressing/ground';
 import { glowTexture } from './glow';
 import { paperBag, SATURDAY_BAG_TALL } from './saturday-bag';
+import { rigWalker, STRIDE, type Walker } from './passerby';
 import { BRED_BYN_CHIMNEYS, BRED_BYN_SMOKE_Z } from '../content/bredbyn';
 
 /**
@@ -1462,6 +1463,38 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
   };
   shade(car, 10, 2.8); shade(shoes, 3.5, 1.6);
   group.add(car, shoes);
+  // The shadows stay when the models made in Blender take the stand-ins' place (./shared-models.ts).
+  for (const holder of [car, shoes]) holder.children[holder.children.length - 1]!.userData.keep = 0;
+  // A grown-up's legs in a long coat, from Blender (art/blender/a2-street.py), walked by ./passerby.ts: until they have
+  // come, the plain shoes stand in.
+  shoes.userData.model = 'fotgangare';
+  let walker: Walker | null = null;
+  shoes.userData.onModelInstalled = (copy: Object3D) => { walker = rigWalker(copy); };
+  // The car's wheels turn as it rolls, where its model has them on pivots of their own (art/blender/a2-props.py), and
+  // in the rain they throw up spray from the wet road behind them.
+  const wheels: Object3D[] = [];
+  /** Where the near wheels meet the road, in the car's own frame, once its model has come: rear, then front. */
+  const tyres: Wheel[] = [];
+  /** Where its near headlamp and tail lamp are, in the car's frame, where its model marks them: lit in the storm. */
+  const lamps: { head: Vector3 | null; tail: Vector3 | null } = { head: null, tail: null };
+  let fit = 1;
+  car.userData.onModelInstalled = (copy: Object3D) => {
+    copy.traverse((object) => { if (/-hjul-(fram|bak)$/.test(object.name) && typeof object.userData.radius === 'number') wheels.push(object); });
+    fit = copy.scale.x;
+    car.updateWorldMatrix(true, true);
+    for (const wheel of [...wheels].sort((a, b) => a.position.x - b.position.x)) {
+      const at = car.worldToLocal(wheel.getWorldPosition(new Vector3()));
+      tyres.push({ x: at.x, y: at.y, radius: (wheel.userData.radius as number) * fit, out: ((wheel.userData.track as number | undefined) ?? 0.85) * fit });
+    }
+    copy.traverse((object) => {
+      if (/-lykta-fram$/.test(object.name)) lamps.head = car.worldToLocal(object.getWorldPosition(new Vector3()));
+      if (/-lykta-bak$/.test(object.name)) lamps.tail = car.worldToLocal(object.getWorldPosition(new Vector3()));
+    });
+    const shadow = car.children.find((child) => child.userData.keep === 0);
+    if (shadow) shadow.position.y = copy.position.y + 0.025;
+  };
+  const spray = (chapter.storm?.rain ?? 0) > 0 ? wheelSpray() : null;
+  if (spray) car.add(spray.mesh);
   const lo = chapter.ground[0]!.x - 36;
   const hi = (chapter.shop?.to ?? chapter.goalX) + 40;
   const span = hi - lo;
@@ -1469,17 +1502,94 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
     group,
     update(clock) {
       // The loop resets beyond the playable view. Inside the shop its wall hides both lanes.
-      car.position.set(lo + ((clock * 4 + 104) % span), 0.45, -13.4);
-      shoes.position.set(lo + ((clock * 2.8 + 45) % span), 2, -12.2);
-      for (const [i, leg] of legs.entries()) {
-        const stride = clock * 3.2 + i * Math.PI;
-        leg.position.x = Math.sin(stride) * 1.15;
-        leg.position.y = Math.max(0, Math.cos(stride)) * 0.75;
-        leg.rotation.z = -Math.sin(stride) * 0.08;
+      const driven = clock * CAR_SPEED + 104;
+      car.position.set(lo + (driven % span), 0.45, -13.4);
+      const walked = clock * STRIDE.speed + 45;
+      shoes.position.set(lo + (walked % span), 2, -12.2);
+      if (walker) walker.pose(walked);
+      else {
+        for (const [i, leg] of legs.entries()) {
+          const stride = clock * 3.2 + i * Math.PI;
+          leg.position.x = Math.sin(stride) * 1.15;
+          leg.position.y = Math.max(0, Math.cos(stride)) * 0.75;
+          leg.rotation.z = -Math.sin(stride) * 0.08;
+        }
       }
+      // Rolling: as far round as it has gone along, in the model's own metres. Forward is clockwise, seen from here.
+      for (const wheel of wheels) wheel.rotation.z = -(driven / fit) / (wheel.userData.radius as number);
+      spray?.update(clock, tyres.length === 2 ? tyres : STAND_IN_TYRES, lamps);
     },
   };
 }
+
+/** How fast the car goes by, in EL a second: slowly, as in a village street. */
+const CAR_SPEED = 4;
+/** A near wheel of the car going by, in its frame: its middle, its radius and how far out its tyre's face is. */
+interface Wheel { x: number; y: number; radius: number; out: number }
+/** The stand-in car's near wheels, until the model has come. */
+const STAND_IN_TYRES: readonly Wheel[] = [{ x: -6, y: 1.9, radius: 2.2, out: 2.3 }, { x: 6, y: 1.9, radius: 2.2, out: 2.3 }];
+
+/**
+ * Spray from the wet road, thrown up behind the near wheels of the car going by: soft puffs and drops that fly back and
+ * up off the tyre, spread and fade. One draw for all of it, every puff's place a function of the clock alone, so that
+ * a paused clock holds it still. Until the car's model has come it rises behind the stand-in's wheels.
+ */
+function wheelSpray(): { mesh: InstancedMesh; update(clock: number, tyres: readonly Wheel[], lamps: { head: Vector3 | null; tail: Vector3 | null }): void } {
+  const PER_WHEEL = 22;
+  const LIFE = 0.62;
+  const mesh = new InstancedMesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({
+    color: '#ffffff', map: glowTexture(32), transparent: true, depthWrite: false, blending: AdditiveBlending,
+  }), PER_WHEEL * 2 + LAMPS);
+  mesh.name = 'wheel-spray';
+  mesh.frustumCulled = false;
+  const place = new Object3D();
+  const tint = new Color();
+  // Its colours exist from the start, so that the first frames' warm-up draws it as it will be drawn.
+  for (let i = 0; i < PER_WHEEL * 2 + LAMPS; i++) mesh.setColorAt(i, tint.setRGB(0, 0, 0));
+  const seed = (i: number, k: number) => { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return s - Math.floor(s); };
+  return {
+    mesh,
+    update(clock, tyres, lamps) {
+      for (let w = 0; w < 2; w++) {
+        // From where the tyre meets the road, behind its middle, on the near side.
+        const { x: cx, y: cy, radius, out } = tyres[w]!;
+        const centre = { x: cx, y: cy };
+        for (let i = 0; i < PER_WHEEL; i++) {
+          const n = w * PER_WHEEL + i;
+          const age = (((clock + seed(n, 1) * LIFE) % LIFE) + LIFE) % LIFE;
+          const k = age / LIFE;
+          // Thrown back off the tread and up, falling again: a drop is small and bright, a puff grows and thins.
+          const drop = i % 3 === 0;
+          const back = (1.6 + 2.2 * seed(n, 2)) * (drop ? 1.3 : 0.8);
+          const up = (1.2 + 2.0 * seed(n, 3)) * (drop ? 1.1 : 0.55);
+          const x = centre.x - radius * 0.55 - back * age;
+          const y = centre.y - radius * 0.9 + up * age - (drop ? 7 : 2) * age * age;
+          place.position.set(x, Math.max(centre.y - radius + 0.05, y), out + 0.3 * (seed(n, 4) - 0.2) + 0.6 * k);
+          const size = drop ? 0.18 + 0.1 * seed(n, 5) : (0.5 + 1.1 * k) * radius * 0.55;
+          place.scale.set(size * (drop ? 0.8 : 1.4), size, 1);
+          place.updateMatrix();
+          mesh.setMatrixAt(n, place.matrix);
+          // In, quickly, and out slowly: drops brighter than the mist.
+          const light = Math.min(1, k * 8) * (1 - k) ** 1.2 * (drop ? 1.1 : 0.5);
+          mesh.setColorAt(n, tint.setRGB(light * 0.82, light * 0.9, light));
+        }
+      }
+      // Its lamps lit in the storm, steady: a warm glow at the headlamp, a smaller dim red one at the tail.
+      for (const [i, at, size, colour] of [[0, lamps.head, 2.2, [0.95, 0.85, 0.6]], [1, lamps.tail, 1.1, [0.5, 0.08, 0.05]]] as const) {
+        const n = PER_WHEEL * 2 + i;
+        if (at) place.position.copy(at).setZ(at.z + 0.2);
+        place.scale.setScalar(at ? size : 0);
+        place.updateMatrix();
+        mesh.setMatrixAt(n, place.matrix);
+        mesh.setColorAt(n, tint.setRGB(colour[0], colour[1], colour[2]));
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    },
+  };
+}
+/** The car's lamps, lit, after its spray's drops and puffs. */
+const LAMPS = 2;
 
 /**
  * A bicycle leaning by the wall, at the chapter's first hook: its wheel is a great ring over him, and the
