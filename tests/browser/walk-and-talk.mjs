@@ -146,19 +146,24 @@ try {
     const lines = await page.evaluate(() => window.walkTalkClock.lines);
     assert.deepEqual(lines.map(line => line.text), ['Olympia! Hela planen är mörk.', 'Klonk!', 'Inte ens strålkastarna lyser!'], `${label}: every full line is shown once, in order, without a Continue click`); checks++;
     check(`${label}: queued replies keep their own readable display time`, lines[1].at - lines[0].at >= 3 && lines[2].at - lines[1].at >= 2.5);
-    if (controls) await controls.right(); else await page.keyboard.down('ArrowRight');
-    await until(page, s => s.x >= 21.6, 'reach the formerly mandatory wind remark', 5);
-    if (controls) await controls.release(); else await page.keyboard.up('ArrowRight');
-    await until(page, async () => (await text(page)) === 'Vinden rullar bollar efter oss!', 'the complete legacy read:true world line', 35);
-    const wind = await state(page);
-    if (controls) await controls.right(); else await page.keyboard.down('ArrowRight');
-    await advance(page, .4);
-    if (controls) await controls.release(); else await page.keyboard.up('ArrowRight');
-    const walkingWind = await state(page);
-    check(`${label}: a formerly mandatory world line now permits movement without Continue`, walkingWind.x > wind.x + .25
-      && !walkingWind.held && !walkingWind.storyReading && await page.locator('#sceneReading').isHidden()
-      && await text(page) === 'Vinden rullar bollar efter oss!');
     await controls?.close(); assert.deepEqual(route.errors, []); await page.close();
+
+    // Start beyond the authored fence: this regression targets the former read:true
+    // remark, while traversal of the separate climbing puzzle has its own chapter suite.
+    const windRoute = await open(width, height, 'olympia', '21.6,.01',
+      ['scene:card', ...['ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top', 'ol:little'].map(id => `beat:${id}`)]);
+    const windPage = windRoute.page, windControls = touch ? await touchControls(windPage) : null;
+    await until(windPage, async () => (await text(windPage)) === 'Vinden rullar bollar efter oss!', 'the complete legacy read:true world line', 5);
+    const wind = await state(windPage);
+    if (windControls) await windControls.right(); else await windPage.keyboard.down('ArrowRight');
+    await advance(windPage, .4);
+    if (windControls) await windControls.release(); else await windPage.keyboard.up('ArrowRight');
+    const walkingWind = await state(windPage);
+    check(`${label}: a formerly mandatory world line now permits movement without Continue`, walkingWind.x > wind.x + .25
+      && !walkingWind.held && !walkingWind.storyReading && await windPage.locator('#sceneReading').isHidden()
+      && await text(windPage) === 'Vinden rullar bollar efter oss!');
+    await until(windPage, s => s.said.includes('ol:wind') && !s.pendingDialogue.includes('ol:wind'), 'wind remark completes automatically', 15);
+    await windControls?.close(); assert.deepEqual(windRoute.errors, []); await windPage.close();
 
     const staged = await open(width, height, 'stormkvall', '2.6,.01');
     await until(staged.page, async s => s.scene?.id === 'kvall' && (await text(staged.page)) === 'Strömmen gick! Jag tänder ljusen.', 'protected opening line', 10);
