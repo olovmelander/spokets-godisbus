@@ -40,6 +40,23 @@ export function along(ride: Arc, t: number): Candy {
   };
 }
 
+/**
+ * How mormor and morfar walk where a chapter sends them (`Spot.goesTo`, ./grandparents.ts): at an easy pace for their age,
+ * in EL a second along the ground, and eased in and out over `ease` seconds more.
+ */
+export const ELDER_WALK = { pace: 2.6, ease: 0.5 };
+
+/** How many seconds their walk from `from` to `to` takes, over ground whose height at x is `ground(x)`. */
+export function elderWalk(from: number, to: number, ground: (x: number) => number): number {
+  let long = 0;
+  const parts = 40;
+  for (let i = 0; i < parts; i++) {
+    const a = from + ((to - from) * i) / parts, b = from + ((to - from) * (i + 1)) / parts;
+    long += Math.hypot(b - a, ground(b) - ground(a));
+  }
+  return long / ELDER_WALK.pace + ELDER_WALK.ease;
+}
+
 /** Candy all along a ride, at these shares of the way. */
 export const alongAll = (ride: Arc, at: readonly number[]): Candy[] => at.map((t) => along(ride, t));
 

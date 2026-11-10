@@ -149,6 +149,11 @@ export interface ShotKey {
   width?: number;
   /** The camera's own height over `y`: below zero it looks up, as Elof does at a giant. */
   eye?: number;
+  /**
+   * For something further back than the play plane (the two on their stone far out in Billsta's narrow): how far behind
+   * it the middle of the picture is, and `height` is measured there. Left out: 0, the play plane.
+   */
+  z?: number;
   /** How long the camera takes to get here, in seconds. Left out: 1. */
   move?: number;
 }

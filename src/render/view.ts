@@ -922,8 +922,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** A relative's legs and arms walking over to where they help from (Spot.goesTo). */
   const walkPose: Pose = { ...STANDING };
   /** The last scene shot, and how much of it the camera takes now: 1 in the scene, easing to 0 after it. */
-  let lastShot: { x: number; y: number; height: number; width: number; eye: number } | null = null;
+  let lastShot: { x: number; y: number; z: number; height: number; width: number; eye: number } | null = null;
   let shotWeight = 0;
+  /** How far behind the play plane the lens is focused: on it in play, further back for a shot of something there. */
+  let focusBack = 0;
   /** Where Bertil's hands are at his boot while he pulls it off. */
   const bootAt = new Vector3();
   /** The root hole in the garden that the ghost crept into, where Moa reaches. */
@@ -1139,8 +1141,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         if (hdr.scene.depthTexture) contactShade?.render(renderer, hdr.scene.depthTexture, camera);
         const shade = contactShade?.texture ?? null;
         gradePass.setShade(shade, SHADE_STRENGTH);
-        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera, sharpDeep, { texture: shade, strength: SHADE_STRENGTH });
-        gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z, sharpDeep);
+        if (!inEndingShot) depthBlur?.render(renderer, hdr.scene, camera, sharpDeep, { texture: shade, strength: SHADE_STRENGTH }, camera.position.z + focusBack);
+        gradePass.setDepthBlur(inEndingShot ? null : depthBlur?.texture ?? null, hdr.scene.depthTexture, camera.near, camera.far, camera.position.z + focusBack, sharpDeep);
         lightShafts?.render(renderer, hdr.scene, camera, scene, gradePass, warm > 0);
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
@@ -1422,9 +1424,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const away = tall / 2 / Math.tan(FOV * Math.PI / 360);
       const w = shotWeight * shotWeight * (3 - 2 * shotWeight);
       playAim.set(camera.position.x, camera.position.y, 0);
-      camera.position.set(lerp(camera.position.x, s.x, w), lerp(camera.position.y, s.y + s.eye, w), lerp(camera.position.z, away, w));
-      camera.lookAt(lerp(playAim.x, s.x, w), lerp(playAim.y, s.y, w), 0);
-    }
+      // A shot of something further back (`z`) looks at it from as far in front of it, and the lens focuses there.
+      camera.position.set(lerp(camera.position.x, s.x, w), lerp(camera.position.y, s.y + s.eye, w), lerp(camera.position.z, s.z + away, w));
+      camera.lookAt(lerp(playAim.x, s.x, w), lerp(playAim.y, s.y, w), s.z * w);
+      focusBack = -s.z * w;
+    } else focusBack = 0;
     // The lens pulls its focus back to the family, who stand behind the plane he plays in, while a shot is on them.
     const onFamily = Math.max(shotWeight, nearbyFamily && !chapter.epilogue ? 1 : 0);
     sharpDeep += (DOF_DEEP + DOF_DEEPER * onFamily - sharpDeep) * (calmStory ? 1 : ease(3, dt));

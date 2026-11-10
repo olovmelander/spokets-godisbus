@@ -4,6 +4,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { lessMotion } from '../../platform/motion';
+import { actPose } from '../../render/acting';
 import { KNEE_HAND, kneelPose, sample, stand } from '../../render/gait';
 import { CLIPS, STANDS } from '../../render/motion-data';
 import { JOINTS, STANDING, createModelRig, heightOf, type Pose, type Rig } from '../../render/rig';
@@ -202,14 +203,35 @@ export function ladderAngle(since: number): number {
   return after <= 0 ? down : Math.PI / 2 - Math.abs(Math.sin(after * 11)) * 0.06 * Math.exp(-after * 5);
 }
 
+/**
+ * Where one of them walks, from the picture (./render.ts): Mormor up the planks to the barn's door, which she opens.
+ * Picture only.
+ */
+export interface Going {
+  /** How fast they walk now, in their own heights a second, how far into the walk's pace they are (0 to 1), and how far
+   * they have walked, in their own strides. */
+  gait: number;
+  pace: number;
+  stride: number;
+  /** Which way they face now, about the vertical (0: towards the picture, a quarter turn the way he goes), or null: as
+   * they would. */
+  heading: number | null;
+  /** Their left hand on something (the door), in the world, and how far it has gone out to it. */
+  touch: Vector3 | null;
+  weight: number;
+}
+
 export interface Figure {
   group: Group;
   rig: Rig;
   ladder: Mesh | null;
   /** Takes the model from Blender in place of the figure built in code: it is the family's own hand. */
   dress(model: Object3D): void;
-  /** `used`: he has called them. `elof`: where he is. `laid`: the ledge lies over the ditch now, and takes the ladder's place. */
-  update(used: boolean, clock: number, dt: number, elof: number, laid?: boolean): void;
+  /**
+   * `used`: he has called them. `elof`: where he is. `laid`: the ledge lies over the ditch now, and takes the ladder's
+   * place. `going`: where they walk and what their hand does, when they go somewhere.
+   */
+  update(used: boolean, clock: number, dt: number, elof: number, laid?: boolean, going?: Going): void;
 }
 
 /**
@@ -239,7 +261,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   }
   let hand: Object3D = bones.handR!;
 
-  const pose: Pose = { ...STANDING }, wanted: Pose = { ...STANDING }, kneeling: Pose = { ...STANDING };
+  const pose: Pose = { ...STANDING }, wanted: Pose = { ...STANDING }, kneeling: Pose = { ...STANDING }, walking: Pose = { ...STANDING };
   const phase = who === 'mormor' ? 0.7 : 2.1;
   /** Going down on a knee, keyed in Blender (art/blender/motion.py): how far through it they are, 0 standing to 1 down. */
   const clip = CLIPS.kneelElder;
@@ -269,12 +291,12 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       delete (bones as Partial<typeof bones>).eyeL;
       delete (bones as Partial<typeof bones>).eyeR;
     },
-    update(used, clock, dt, elof, laid = false) {
+    update(used, clock, dt, elof, laid = false, going) {
       const still = lessMotion();
       since = used ? since + dt : 0;
       group.getWorldPosition(now);
       const off = elof - now.x;
-      const close = !decor && !used && Math.abs(off) < 5.5;
+      const close = !decor && !used && Math.abs(off) < 5.5 && !(going && going.pace > 0);
       // Down at their own pace, and up again the same way back; without motion they are simply there.
       kneel = still ? (close ? 1 : 0) : Math.min(1, Math.max(0, kneel + (close ? 1 : -1) * dt / clip.seconds));
 
@@ -304,15 +326,36 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         pose.bounce = 0;
       }
       if (who === 'mormor' && used) pose.armR = wanted.armR;
+      if (going && going.pace > 0.001) {
+        // Walking: the legs go by the ground covered, at their own pace (./acting.ts), and the lantern arm stays up.
+        actPose('walk', { t: clock, aim: null, stride: going.stride, gait: going.gait, pace: going.pace, calm: still, legs: rig.legs }, walking);
+        const p = going.pace;
+        for (const joint of JOINTS) {
+          if (joint === 'turn' || (who === 'mormor' && used && (joint === 'armR' || joint === 'elbowR'))) continue;
+          pose[joint] = pose[joint] * (1 - p) + walking[joint] * p;
+        }
+        pose.bounce = pose.bounce * (1 - p) + walking.bounce * p;
+      }
 
-      // Head first, and the body after it: slowly, and only so far.
+      // Head first, and the body after it: slowly, and only so far. Walking, they face the way they go.
       const lookAt = Math.abs(off) < 18 ? clamp(off * 0.2, -1, 1) : 0;
-      const wish = (who === 'morfar' && used && since > LADDER_DOWN ? 0.9 : lookAt) * 0.55;
-      facing += (wish - facing) * Math.min(1, dt * 1.6);
-      gaze += (lookAt - facing - gaze) * Math.min(1, dt * 4);
+      if (going?.heading != null) {
+        const turn = Math.atan2(Math.sin(going.heading - facing), Math.cos(going.heading - facing));
+        facing = still ? going.heading : facing + turn * Math.min(1, dt * 4);
+      } else {
+        const wish = (who === 'morfar' && used && since > LADDER_DOWN ? 0.9 : lookAt) * 0.55;
+        facing += (wish - facing) * Math.min(1, dt * 1.6);
+      }
+      // Walking, they look where they go.
+      gaze += ((going && going.pace > 0.3 ? 0 : lookAt - facing) - gaze) * Math.min(1, dt * 4);
       rig.group.rotation.y = facing;
       pose.turn = clamp(gaze, -0.7, 0.7);
       rig.pose(pose);
+      if (going?.touch && going.weight > 0.001) {
+        // A hand on the door, as far out to it as it has come, the fingers open on its boards.
+        rig.reach(0, going.touch, going.weight);
+        rig.hold?.(0, { kind: 'flat' }, going.weight);
+      }
       if (lantern && rig.hold && rig.socket) {
         // Her lantern hangs by its bail in the crook of her fingers.
         rig.hold(1, BAIL);

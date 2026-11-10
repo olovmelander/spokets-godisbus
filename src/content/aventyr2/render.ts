@@ -282,6 +282,8 @@ const RAIN_MAX = 420;
 const RAIN_FOR = { low: 150, mid: 290, high: RAIN_MAX } as const;
 /** The box of rain round the camera: how wide, how tall, and from how far behind the play plane to how near. */
 const BOX = { x: 34, y: 22, back: -8, front: 4 };
+/** How near the play plane the camera comes in play, at the least: nearer than this, the box goes with it. */
+const RAIN_OUT = 6;
 
 /** The flag at which the storm blows the window open: the gust in Stormkvällen's `fonstret`. */
 const WINDOW_BURST = 'gust';
@@ -699,12 +701,14 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
   }
 
-  // A figure seen far out in the lake stands on a stone of its own, dark and wet, the waves round it.
+  // A figure seen far out in the lake stands on a stone of its own, dark and wet, the waves round it: as big as the figure
+  // is drawn, its top under its feet.
   for (const d of (chapter.water ?? []).length > 0 ? chapter.decor ?? [] : []) {
     if ((d.look !== 'tragubbe' && d.look !== 'lillgubbe') || (d.z ?? 0) > -6) continue;
+    const size = d.scale ?? 1;
     const rock = new Mesh(new SphereGeometry(1.4, 12, 8), solid('#3c4048', 0.9, { flatShading: true }));
-    rock.scale.set(1.3, 0.55, 1);
-    rock.position.set(d.at.x, d.at.y - 0.45, d.z ?? 0);
+    rock.scale.set(1.3 * size, 0.55 * size, size);
+    rock.position.set(d.at.x, d.at.y - (size === 1 ? 0.45 : 0.72 * size), d.z ?? 0);
     group.add(rock);
   }
 
@@ -893,6 +897,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       if (still && calmFlag && flags.has(calmFlag)) calm = 1;
       const cx = camera.position.x;
       const cy = camera.position.y;
+      // Where a scene's shot takes the camera out beyond the play plane (to the stone in Billsta's narrow), the rain goes
+      // out with it, still falling in front of it.
+      const cz = Math.min(0, camera.position.z - RAIN_OUT);
 
       // The rain falls through its box and starts again at the top; the box goes with the camera.
       const count = rain > 0 ? Math.round(RAIN_FOR[tier] * rain * (1 - calm)) : 0;
@@ -904,7 +911,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const s = seeds[i]!;
           const fall = (s.y + t * s.speed) % BOX.y;
           const x = ((s.x + fall * SLANT - cx) % BOX.x + BOX.x) % BOX.x;
-          place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z);
+          place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z + cz);
           // No rain falls indoors: only out of doors, beyond the house's corner.
           const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
           place.scale.set(out, out * s.long, out);
@@ -1432,16 +1439,66 @@ function lantern(): { group: Group; light: Mesh } {
   return { group, light };
 }
 
-/** Mormor or Morfar in the picture: no longer a thing he uses up, so they stay when he calls. */
+/** How far behind its group a grandparent's body stands (./grandparents.ts). */
+const RIG_BACK = 1.9;
+/**
+ * At the door she walked to (Mormor's at the barn): where her hand goes on it from where she stands, which way she turns
+ * meanwhile (a little towards him), when the door opens after she has come (the simulation's `bi:door`, ./chapters/
+ * billsta.ts), how long she pushes it in, and when she has let go.
+ */
+const AT_DOOR = { ahead: 0.75, up: 2.55, out: 0.4, heading: -0.35, open: 0.55, push: 0.4, let: 1.1 };
+
+/**
+ * Mormor or Morfar in the picture: no longer a thing he uses up, so they stay when he calls. Where the chapter sends one
+ * (`Spot.goesTo`, once `goesWhen` is set), they walk there over the ground at their own pace, and at the end put a hand
+ * on what is before them and push it (Mormor, up the planks to the barn's door, which swings in as the simulation opens
+ * it: `ELDER_WALK` times both).
+ */
 function figure(spot: Spot, who: Grandparent, lit = who === 'mormor'): SpotProp {
   const carried = lit ? lantern() : null;
   const made = createGrandparent(who, carried?.group ?? null, spot.id.startsWith('decor:'));
   made.group.userData.dress = (model: Object3D) => made.dress(model);
-  made.group.position.set(spot.at.x, spot.at.y, -0.6);
+  const home = spot.standsAt, to = spot.goesTo;
+  const put = (x: number, y: number, z: number) => made.group.position.set(x, y, z + RIG_BACK);
+  if (home) put(home.x, home.y, home.z); else made.group.position.set(spot.at.x, spot.at.y, -0.6);
+  const going: Going = { gait: 0, pace: 0, stride: 0, heading: null, touch: null, weight: 0 };
+  const touch = new Vector3();
+  const ground = (x: number) => (course ? heightAt(course, x) : home && to ? home.y + ((to.y - home.y) * (x - home.x)) / (to.x - home.x || 1) : 0);
+  let goneFor = -1, seconds = 1, first = true, wasX = 0, wasY = 0;
   return {
     group: made.group,
     update(used, clock, dt) {
-      made.update(used, clock, dt, elof.x, elof.flags?.has(LADDER_LAID));
+      const goes = !!home && !!to && !!elof.flags?.has(spot.goesWhen ?? spot.id);
+      let ongoing: Going | undefined;
+      if (goes && home && to) {
+        if (goneFor < 0) {
+          seconds = elderWalk(home.x, to.x, ground);
+          // A game taken up after the walk finds them there, and so does one without motion.
+          goneFor = first || elof.still ? seconds + AT_DOOR.open + AT_DOOR.let + 1 : 0;
+          wasX = home.x; wasY = home.y;
+        } else goneFor += dt;
+        const k = smooth(goneFor / seconds);
+        const x = home.x + (to.x - home.x) * k, z = home.z + (to.z - home.z) * k, y = ground(x);
+        put(x, y, z);
+        const moved = Math.hypot(x - wasX, y - wasY);
+        wasX = x; wasY = y;
+        const walking = goneFor < seconds;
+        going.gait = dt > 0 ? moved / dt / made.rig.height : 0;
+        // The stride goes by the ground covered, a step of the body's own length at its gait, so the planted foot holds.
+        if (moved > 0) going.stride += moved / stepLength(Math.max(going.gait, 0.3), made.rig.height, made.rig.legs);
+        going.pace = elof.still ? (walking ? 1 : 0) : going.pace + ((walking && moved > 1e-4 ? 1 : 0) - going.pace) * Math.min(1, dt * 8);
+        // The way she goes; at the door, turned a little to him; once it is open and she has let go, as she will.
+        const at = goneFor - seconds;
+        going.heading = walking ? Math.atan2(to.x - home.x, to.z - home.z) : at < AT_DOOR.open + AT_DOOR.let ? AT_DOOR.heading : null;
+        // Her hand goes out to the door as she comes to it, stays on it while it opens, pushing it a little way in, and
+        // comes back.
+        const open = at - AT_DOOR.open;
+        going.weight = elof.still || at < -0.3 ? 0 : open < AT_DOOR.push ? smooth((at + 0.3) / 0.5) : 1 - smooth((open - AT_DOOR.push) / (AT_DOOR.let - AT_DOOR.push));
+        going.touch = touch.set(to.x + AT_DOOR.ahead + smooth(open / AT_DOOR.push) * 0.35, to.y + AT_DOOR.up, to.z + AT_DOOR.out);
+        ongoing = going;
+      }
+      first = false;
+      made.update(used, clock, dt, elof.x, elof.flags?.has(LADDER_LAID), ongoing);
       if (carried) (carried.light.material as MeshBasicMaterial).opacity = 0.55 + 0.08 * Math.sin(clock * 6.3);
     },
   };
@@ -2705,6 +2762,85 @@ function barkRaft(mover: Mover): Group {
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
 const TIPPED = -0.16;
 
+/** The barn door at the top of the planks in Billsta: how wide and tall it is drawn, and where it hangs, behind the path. */
+const BARN_DOOR = { wide: 2.4, tall: 5.4, back: -1.6, thick: 0.18, swing: 1.62 };
+
+/**
+ * The loft door of mormor's barn, at the top of the planks up to it (Billsta; Olov, 9 November 2026: "Mormor ska gå fram
+ * och öppna ladan"): Falu red boards with a white frame and the white Z of its braces, iron straps on its hinges and a
+ * ring to pull it by, in a white door frame with a piece of the barn's red wall going back from it. The simulation lifts
+ * the door's block up out of his way when it opens (`DOOR`, ./chapters/billsta.ts); the picture keeps the frame where
+ * it stands and swings the door in on its hinges as the block goes up. Two draws: the frame, and the door.
+ */
+function barnDoor(mover: Mover): Group {
+  const { wide, tall, back, thick, swing } = BARN_DOOR;
+  const closed = mover.stops[0]!.y;
+  const travel = Math.max(1e-3, mover.stops[mover.stops.length - 1]!.y - closed);
+  const front = back + wide;
+  const RED = ['#8a2f25', '#7c2a21', '#93342a', '#842c23'];
+  const WHITE = '#e6e1d4';
+  const IRON = '#202022';
+  // The frame and the wall: they stay where they stand.
+  const frame: BufferGeometry[] = [];
+  for (const z of [back - 0.12, front + 0.12]) frame.push(box(0.26, tall + 0.36, 0.24, 0, (tall + 0.36) / 2 - 0.05, z, WHITE));
+  frame.push(box(0.28, 0.26, wide + 0.6, 0, tall + 0.2, back + wide / 2, WHITE));
+  frame.push(box(0.34, 0.12, wide + 0.3, 0, 0.03, back + wide / 2, '#9a8a70'));
+  // The wall going back from the door, boards with battens over their joints, and a little of it over the lintel.
+  const wall = { from: back - 0.24, to: -4.4, top: tall + 1.2 };
+  const boards = Math.round((wall.from - wall.to) / 0.55);
+  for (let i = 0; i < boards; i++) {
+    const z = wall.from - (i + 0.5) * ((wall.from - wall.to) / boards);
+    frame.push(box(0.16, wall.top, (wall.from - wall.to) / boards - 0.03, -0.02, wall.top / 2, z, RED[i % RED.length]!));
+    if (i > 0) frame.push(box(0.2, wall.top, 0.09, 0.02, wall.top / 2, z + (wall.from - wall.to) / boards / 2, '#6e251d'));
+  }
+  frame.push(box(0.16, wall.top - tall - 0.33, wide + 0.6, -0.02, (wall.top + tall + 0.33) / 2, back + wide / 2, RED[2]!));
+  const frameMaterial = solid('#ffffff', 0.85, { vertexColors: true });
+  paintedWood(frameMaterial);
+  const frameMesh = new Mesh(mergeGeometries(frame), frameMaterial);
+  frameMesh.castShadow = true;
+  // The door, on its hinges at its back edge: upright boards, a white frame on its face, the white Z of its braces.
+  const leaf: BufferGeometry[] = [];
+  const planks = 5;
+  for (let i = 0; i < planks; i++) {
+    leaf.push(box(thick, tall - 0.04, wide / planks - 0.04, 0, tall / 2, (i + 0.5) * (wide / planks), RED[i % RED.length]!));
+  }
+  for (const side of [-1, 1]) {
+    const x = side * (thick / 2 + 0.03);
+    for (const y of [0.16, tall - 0.16]) leaf.push(box(0.06, 0.24, wide - 0.08, x, y, wide / 2, WHITE));
+    for (const z of [0.12, wide - 0.12]) leaf.push(box(0.06, tall - 0.08, 0.2, x, tall / 2, z, WHITE));
+    leaf.push(box(0.06, 0.2, wide - 0.3, x, tall * 0.52, wide / 2, WHITE));
+    // The diagonals of the Z, in the lower and the upper half.
+    for (const [low, high] of [[0.3, tall * 0.52], [tall * 0.52, tall - 0.3]] as const) {
+      const run = wide - 0.5, rise = high - low;
+      leaf.push(paint(new BoxGeometry(0.06, Math.hypot(run, rise), 0.18).rotateX(-Math.atan2(run, rise) * side).translate(x, (low + high) / 2, wide / 2), WHITE));
+    }
+  }
+  // Iron straps over the hinges, and the ring to pull it by, near its free edge.
+  for (const y of [0.9, tall - 0.9]) leaf.push(box(thick + 0.1, 0.16, wide * 0.42, 0, y, wide * 0.21, IRON));
+  leaf.push(paint(new TorusGeometry(0.16, 0.035, 6, 14).rotateY(Math.PI / 2).translate(-thick / 2 - 0.08, tall * 0.45, wide - 0.32), IRON));
+  const leafMaterial = solid('#ffffff', 0.85, { vertexColors: true });
+  paintedWood(leafMaterial);
+  const leafMesh = new Mesh(mergeGeometries(leaf), leafMaterial);
+  leafMesh.castShadow = true;
+  const hinge = new Group();
+  hinge.name = 'barn-door-hinge';
+  hinge.position.z = back;
+  hinge.add(leafMesh);
+  const held = new Group();
+  held.add(frameMesh, hinge);
+  const group = new Group();
+  group.add(held);
+  // Each frame: the simulation's block has gone up `lift`; the picture stays where it stood and the door swings in.
+  group.userData.tick = () => {
+    const lift = (group.parent?.position.y ?? closed) - closed;
+    held.position.y = -lift;
+    if (group.parent) { group.parent.rotation.z = 0; group.parent.scale.set(1, 1, 1); }
+    const open = Math.min(1, Math.max(0, lift / travel));
+    hinge.rotation.y = swing * open * open * (3 - 2 * open);
+  };
+  return group;
+}
+
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
     boulder: (mover) => {
@@ -2833,6 +2969,7 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       group.add(door, metal);
       return group;
     },
+    'barn-door': (mover) => barnDoor(mover),
     'jetty-plank': (mover) => {
       const group = new Group();
       const plank = new Mesh(new BoxGeometry(mover.width, mover.height, 1.4), solid('#8c7a62', 0.9));

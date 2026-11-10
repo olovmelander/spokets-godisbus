@@ -176,11 +176,12 @@ export function createDepthBlur() {
     },
     /** `deep`: how far behind the play plane is sharp, in EL (DOF_DEEP in play). */
     /** `shade`: the shade where things meet and how strong it is (./contact-shade.ts), if there is one. */
-    render(renderer: WebGLRenderer, read: WebGLRenderTarget, camera: PerspectiveCamera, deep = DOF_DEEP, shade: { texture: Texture | null; strength: number } | null = null) {
+    /** `focus`: how far in front of the camera it is focused; on the play plane unless a scene's shot looks further back. */
+    render(renderer: WebGLRenderer, read: WebGLRenderTarget, camera: PerspectiveCamera, deep = DOF_DEEP, shade: { texture: Texture | null; strength: number } | null = null, focus = camera.position.z) {
       if (!target || !coc || !read.depthTexture) return;
       prepare.material.uniforms.tDiffuse!.value = read.texture;
       prepare.material.uniforms.tDepth!.value = read.depthTexture;
-      (prepare.material.uniforms.depthCamera!.value as Vector3).set(camera.near, camera.far, camera.position.z);
+      (prepare.material.uniforms.depthCamera!.value as Vector3).set(camera.near, camera.far, focus);
       prepare.material.uniforms.deep!.value = deep;
       prepare.material.uniforms.tShade!.value = shade?.texture ?? null;
       prepare.material.uniforms.shade!.value = shade?.texture ? shade.strength : 0;

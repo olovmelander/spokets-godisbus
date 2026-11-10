@@ -61,6 +61,7 @@ export const words: ChapterWords = {
     billstaLadder: { purpose: 'Gå över diket på morfars stege.', recap: 'Morfar har lagt sin stege över diket åt mig.' },
     billstaYard: { purpose: 'Följ Moas och Bertils spår över gården.', recap: 'Morfar hjälpte mig över diket. Mormor väntar vid ladan.' },
     billstaMormor: { purpose: 'Ropa på mormor vid ladan.', recap: 'Ladan är stängd. Mormor har sin lykta med sig.' },
+    billstaOpens: { purpose: 'Titta! Mormor öppnar ladan.', recap: 'Mormor går upp och öppnar ladan åt mig.' },
     billstaBarn: { purpose: 'Gå genom ladan mot Billaberget.', recap: 'Mormor har öppnat dörren. Från berget kan vi spana efter trägubbarna nere i sundet.' },
     billstaLoft: { purpose: 'Ta dig genom höloftet upp på taket.', recap: 'Mormors lykta visar vägen genom ladan till berget där vi ska spana.' },
     billstaRoof: { purpose: 'Gå över taket. Göm dig när det blåser.', recap: 'På andra sidan ladan fortsätter vägen upp till utsikten på Billaberget.' },

@@ -260,7 +260,7 @@ function play(state: State, keys: readonly ActorKey[], t: number): void {
 function shotAt(keys: readonly ShotKey[], t: number): { shot: Required<Omit<ShotKey, 'at' | 'move'>>; blend: number } | null {
   if (keys.length === 0 || keys[0]!.at > t) return null;
   const first = keys[0]!;
-  const shot = { x: first.x, y: first.y, height: first.height, width: first.width ?? 0, eye: first.eye ?? 0 };
+  const shot = { x: first.x, y: first.y, z: first.z ?? 0, height: first.height, width: first.width ?? 0, eye: first.eye ?? 0 };
   const blend = smooth((t - first.at) / (first.move ?? 1));
   for (let i = 1; i < keys.length; i++) {
     const key = keys[i]!;
@@ -270,6 +270,7 @@ function shotAt(keys: readonly ShotKey[], t: number): { shot: Required<Omit<Shot
     const p = smooth((until - key.at) / (key.move ?? 1));
     shot.x = mix(shot.x, key.x, p);
     shot.y = mix(shot.y, key.y, p);
+    shot.z = mix(shot.z, key.z ?? 0, p);
     shot.height = mix(shot.height, key.height, p);
     shot.width = mix(shot.width, key.width ?? 0, p);
     shot.eye = mix(shot.eye, key.eye ?? 0, p);
@@ -308,7 +309,7 @@ function elofAt(keys: readonly ElofKey[], t: number) {
 /** What the view does with a frame of the stage. */
 export interface Directions {
   /** The camera's shot while a scene asks for one, and how much of it to take over the play camera. */
-  shot: { x: number; y: number; height: number; width: number; eye: number; blend: number } | null;
+  shot: { x: number; y: number; z: number; height: number; width: number; eye: number; blend: number } | null;
   /** Thin bars above and below: a scene is telling. */
   bars: boolean;
   /** The ghost, staged by the scene: where it is, how it is turned and tilted, and its eyes. Null: as the simulation has it. */
