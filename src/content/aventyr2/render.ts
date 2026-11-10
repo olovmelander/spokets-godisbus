@@ -20,7 +20,8 @@ import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { box, building, paint, PANE, rock } from './buildings';
-import { createGrandparent, type Grandparent } from './grandparents';
+import { createGrandparent, type Going, type Grandparent } from './grandparents';
+import { afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
 
 /**
@@ -406,6 +407,8 @@ function bolt(seed: number): Mesh {
 
 /** The storm's night outside a lit house. */
 const OUT_OF_DOORS = { sky: new Color('#7488b8'), ground: new Color('#2c3830'), sun: new Color('#a8bce8'), far: new Color('#6a7088') };
+/** The chapters whose pools are rain water standing on a ground, with the rain's rings all over them. */
+const PUDDLES = new Set(['olympia']);
 
 /**
  * The storm round the camera. Its flashes are soft and seldom (Harding's rule: never more than three a second);
@@ -458,6 +461,22 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const landingSeeds = Array.from({ length: LANDINGS }, () => ({ x: random() * 16 - 8, z: -1.6 + random() * 2.4, phase: random(), every: 0.5 + random() * 0.6 }));
   if (rain > 0) group.add(landings);
   const landingTint = new Color();
+  // Rain on the still water of a ground's puddles (Olympia's flooded goalmouth and centre circle): rings that open and
+  // fade all over each, a few at a time, wherever he is, so that the water reads as water standing in the rain. The
+  // landings near him fall on the ground under a pool, at its bottom. Added light, one draw; on Low none.
+  const puddles = rain > 0 && PUDDLES.has(chapter.id) ? chapter.water ?? [] : [];
+  const PUDDLE_RINGS = 8;
+  const puddleRings = new InstancedMesh(landings.geometry, landings.material, Math.max(1, puddles.length * PUDDLE_RINGS));
+  puddleRings.instanceMatrix.setUsage(DynamicDrawUsage);
+  puddleRings.instanceColor = new InstancedBufferAttribute(new Float32Array(puddleRings.count * 3), 3);
+  puddleRings.instanceColor.setUsage(DynamicDrawUsage);
+  puddleRings.frustumCulled = false;
+  puddleRings.renderOrder = 4;
+  puddleRings.userData.rich = true;
+  const puddleSeeds = puddles.flatMap((pool) => Array.from({ length: PUDDLE_RINGS }, () => ({
+    pool, x: pool.from + 0.35 + random() * (pool.to - pool.from - 0.7), z: -1.6 + random() * 2, phase: random(), every: 0.7 + random() * 0.7,
+  })));
+  if (puddles.length) group.add(puddleRings);
   const place = new Object3D();
   const SLANT = 0.32;
   place.rotation.z = -SLANT * 0.6;
@@ -474,20 +493,76 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   let flashBolt = 0;
   const flashOf = (since: number) => since < 0 ? 0 : Math.exp(-since * 7) * smooth(since / 0.04) + 0.55 * Math.exp(-Math.max(0, since - 0.22) * 9) * smooth((since - 0.18) / 0.04);
 
-  // Figures blown across the sky: lit by their own flash.
+  // Figures blown across the sky: lit by their own flash. A flight meant to be watched (`lit`) is the figure itself,
+  // its model where the pack has it, in a soft pale glow that brightens with each flash, tumbling about its middle.
   const flybys = (storm?.flybys ?? []).map((def) => {
-    const figure = (def.who === 'lillgubbe' ? littleFigure : oldFigure)(true);
-    figure.scale.setScalar(1.2);
+    const lit = !!def.lit;
+    const figure = (def.who === 'lillgubbe' ? littleFigure : oldFigure)(!lit);
+    const holder = new Group();
+    holder.name = `flyby:${def.on}`;
+    holder.add(figure);
+    holder.scale.setScalar(def.size ?? 1.2);
     // Floating down the water, the old one rides a log.
-    if (def.who === 'tragubbe' && Math.max(def.from.y, def.to.y) < 1.5) {
+    if (def.who === 'tragubbe' && afloat(def)) {
       const log = new Mesh(new CylinderGeometry(0.22, 0.25, 2.2, 8), solid('#5a4632', 0.9));
       log.rotation.z = Math.PI / 2;
       log.position.y = -0.1;
       figure.add(log);
     }
-    figure.visible = false;
-    group.add(figure);
-    return { def, figure, start: -1, seen: false };
+    let halo: Mesh | null = null;
+    if (lit) {
+      figure.position.y = -FIGURE_MIDDLE[def.who];
+      halo = glow('#dde4ff', 2.4, 0);
+      halo.position.z = -0.3;
+      holder.add(halo);
+    }
+    holder.visible = false;
+    group.add(holder);
+    return { def, figure: holder, halo, start: -1, seen: false, flashed: 0 };
+  });
+
+  // Someone seen far off (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): the carving itself, pale and
+  // a little warm, standing on its stone in the water where a flash shows it, with a soft light about it so that it
+  // reads against the dark lake, rings round the stone and the current going by. Drawn bigger than it is, for the
+  // distance; a scene's shot looks out to it (the chapter's own business).
+  const sightings = (storm?.sightings ?? []).map((def) => {
+    const root = new Group();
+    root.name = 'sighting';
+    root.position.set(def.at.x, def.at.y, def.z);
+    const size = def.size ?? 1;
+    const stone = new Mesh(rock(def.at.x * 7, 0.95, 0.5, 0.8), solid('#363a40', 0.35));
+    stone.position.y = -0.05;
+    const figure = def.who === 'lillgubbe' ? littleFigure() : oldFigure();
+    // Lit a little from within, as the meeting's pair are: pale wood that holds what light there is.
+    figure.userData.warm = true;
+    figure.traverse((node) => {
+      const material = (node as Mesh).material as MeshStandardMaterial | undefined;
+      if (material?.isMeshStandardMaterial) { material.emissive.set('#6a5236'); material.emissiveIntensity = 0.55; }
+    });
+    figure.scale.setScalar(size);
+    figure.position.y = 0.4;
+    const halo = glow('#dfe8ff', 2.6 * size, 0.42);
+    halo.position.set(0, 0.4 + 0.35 * size, -0.5);
+    const water = new MeshBasicMaterial({ color: '#cfe0f0', transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending, fog: false });
+    const rings = [0, 1].map(() => {
+      const ring = new Mesh(new RingGeometry(0.92, 1, 40).rotateX(-Math.PI / 2), water.clone());
+      ring.position.y = 0.02;
+      root.add(ring);
+      return ring;
+    });
+    // The current going by on its way to the river: pale streaks on the water, past the stone and on. One draw; each
+    // fades in and out by its colour, the light being added.
+    const lanes = [0.55, -0.7, 0.95, -0.35];
+    const streaks = new InstancedMesh(new PlaneGeometry(0.9, 0.05).rotateX(-Math.PI / 2),
+      new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.22, depthWrite: false, blending: AdditiveBlending, fog: false }), lanes.length);
+    streaks.instanceMatrix.setUsage(DynamicDrawUsage);
+    streaks.instanceColor = new InstancedBufferAttribute(new Float32Array(lanes.length * 3), 3);
+    streaks.instanceColor.setUsage(DynamicDrawUsage);
+    streaks.frustumCulled = false;
+    root.add(stone, figure, halo, streaks);
+    drawnWhile(root, false);
+    group.add(root);
+    return { def, root, figure, halo, rings, streaks, lanes, seen: false };
   });
 
   // Candles and lamps in windows: warm, a little alive.
@@ -849,10 +924,35 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         landings.instanceMatrix.needsUpdate = true;
         landings.instanceColor!.needsUpdate = true;
       }
+      const puddling = puddles.length > 0 && rain > 0 && tier !== 'low';
+      drawnWhile(puddleRings, puddling);
+      if (puddling) {
+        const t = still ? 0 : clock;
+        place.rotation.set(0, 0, 0);
+        for (const [i, s] of puddleSeeds.entries()) {
+          const round = t / s.every + s.phase;
+          const k = round - Math.floor(round);
+          const where = Math.floor(round) * 5.17 + i * 2.3;
+          const x = Math.min(s.pool.to - 0.3, Math.max(s.pool.from + 0.3, s.x + Math.sin(where) * 0.6));
+          place.position.set(x, s.pool.y + 0.015, s.z + Math.cos(where) * 0.3);
+          place.scale.setScalar(0.7 + k * 2.6);
+          place.updateMatrix();
+          puddleRings.setMatrixAt(i, place.matrix);
+          const light = (1 - k) * (1 - k) * 0.8 * (1 - calm) * rain;
+          puddleRings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
+        }
+        place.rotation.set(0, 0, -SLANT * 0.6);
+        puddleRings.instanceMatrix.needsUpdate = true;
+        puddleRings.instanceColor!.needsUpdate = true;
+      }
 
-      // Lightning, now and then; and one at every flyby's moment.
+      // Lightning, now and then; and one at every flyby's moment, and again through a flight meant to be watched.
       for (const f of flybys) {
-        if (!f.seen && flags.has(f.def.on)) {
+        const again = f.def.lit ?? [];
+        const due = !f.seen ? flags.has(f.def.on) : f.flashed < again.length && clock - f.start >= again[f.flashed]!;
+        if (!due) continue;
+        if (f.seen) f.flashed++;
+        else {
           f.seen = true;
           f.start = clock;
           flashAt = clock;
@@ -887,12 +987,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const k = f.start < 0 ? 1 : (clock - f.start) / f.def.seconds;
         f.figure.visible = k < 1 && f.start >= 0;
         if (!f.figure.visible) continue;
-        const e = smooth(k);
         // On the water a figure floats, bobbing along; in the air it tumbles across the sky.
-        const floating = Math.max(f.def.from.y, f.def.to.y) < 1.5;
-        const lift = floating ? 0.12 * Math.sin(clock * 3) : Math.sin(Math.PI * k) * 2.2;
-        f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + lift, -4);
+        const floating = afloat(f.def);
+        const at = flightAt(f.def, k);
+        f.figure.position.set(at.x, at.y + (floating ? 0.12 * Math.sin(clock * 3) : 0), at.z);
         f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
+        // Its glow comes up as the flash finds it, breathes with each flash, and goes as it is lost in the dark.
+        if (f.halo) (f.halo.material as MeshBasicMaterial).opacity = (0.42 + 0.5 * flash) * smooth(k / 0.06) * (1 - smooth((k - 0.82) / 0.18));
       }
       for (const b of beams) {
         b.lamp.visible = x >= b.def.within[0] && x <= b.def.within[1];
@@ -1077,6 +1178,9 @@ function awningFlap(): Group {
 }
 
 // --- the figures ---------------------------------------------------------------------------------------------
+
+/** How high each figure's middle is over its feet: a watched flight tumbles about it. */
+const FIGURE_MIDDLE = { lillgubbe: 0.26, tragubbe: 0.5 } as const;
 
 /** Pappa's very first trägubbe: grey old wood, a pointed cap, a crooked smile and the crowberry eyes Elof gave it. */
 function oldFigure(silhouette = false): Group {

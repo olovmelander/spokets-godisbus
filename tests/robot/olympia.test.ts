@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Game } from '../../src/app/game';
 import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
 import { context, olympia } from '../../src/content/aventyr2/chapters/olympia';
+import { flightAt } from '../../src/content/aventyr2/kit';
 import { words } from '../../src/content/aventyr2/lines/olympia';
 import { nextAfter } from '../../src/content/chapters';
 import { storyContext } from '../../src/content/story-context';
@@ -30,7 +31,7 @@ const SAID = [
   'ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top', 'ol:little',
   'ol:wind', 'ol:jump', 'ol:klonk-balls', 'ol:phew',
   'ol:puddle', 'ol:splash', 'ol:klonk-ball', 'ol:in-goal', 'ol:crowd', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks',
-  'ol:range', 'ol:all-white', 'ol:gust', 'ol:north', 'ol:follow', 'ol:car', 'ol:klonk-end',
+  'ol:range', 'ol:all-white', 'ol:gust', 'ol:follow', 'ol:north', 'ol:car', 'ol:klonk-end',
 ];
 /** The ball floated, Bertil called, his ball ready and ridden, and the end. */
 const PUZZLES = ['placed:ol-ball', 'ol:bertil', 'ol:kick-ready', 'ol:kick', 'goal'];
@@ -150,8 +151,15 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
   });
 
   describe('Trappan och staketet', () => {
-    it('comes down soft steps to a fence higher than a jump, with a net up its near side and one down its far side', () => {
-      for (let x = -2.9; x < 15; x += 0.1) expect(heightAt(olympia, x) - heightAt(olympia, x + 0.1)).toBeLessThan(FALL_LIMIT);
+    it('goes up stone steps from the road to a fence higher than a jump, with a net up its near side and one down its far side', () => {
+      // Up to Olympia, not down (Olov, 9 November 2026: "Man ska gå upp till Olympia, inte ner."): the ground lies over the
+      // road he comes along, each step up is a pull-up, and nothing on the way drops further than a soft landing.
+      expect(heightAt(olympia, fenceUp.x - 1) - heightAt(olympia, olympia.spawn.x)).toBeGreaterThanOrEqual(3);
+      for (let x = -2.9; x < 15; x += 0.1) {
+        expect(heightAt(olympia, x) - heightAt(olympia, x + 0.1)).toBeLessThan(FALL_LIMIT);
+        expect(heightAt(olympia, x + 0.1) - heightAt(olympia, x)).toBeLessThanOrEqual(LEDGE_REACH);
+      }
+      expect(olympia.beats!.find((b) => b.id === 'ol:arrive')!.at!).toBeGreaterThan(Math.max(...olympia.ground.filter((p) => p.x < 12 && p.y < 0).map((p) => p.x)));
       const top = heightAt(olympia, fenceUp.x + 0.65);
       expect(top - heightAt(olympia, fenceUp.x - 0.5)).toBeGreaterThan(JUMP_APEX + LEDGE_REACH);
       expect(top - heightAt(olympia, fenceDown.x + 0.5)).toBeGreaterThan(FALL_LIMIT);
@@ -458,16 +466,61 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     });
   });
 
+  it('frames the little one before its flight is announced, after the previous line is finished', () => {
+    const sim = new Sim({ ...olympia, spawn: { x: 172.6, y: 0.52 } });
+    // Approach while a previous line still owns the floor: neither flight nor camera may jump ahead.
+    for (let i = 0; i < 120; i++) sim.step({ ...idle, x: 1, talking: true });
+    expect(sim.flags.has('beat:ol:gust')).toBe(false);
+    expect(sim.sceneFrame).toBeNull();
+    for (let i = 0; i < 360 && !sim.flags.has('beat:ol:gust'); i++) sim.step({ ...idle, x: 1, talking: false });
+    expect(sim.flags.has('beat:ol:gust')).toBe(true);
+    expect(sim.sceneFrame?.id).toBe('norrut');
+    expect(sim.sceneFrame!.seconds).toBeGreaterThanOrEqual(0.79);
+    expect(sim.sceneFrame!.seconds).toBeLessThan(0.9);
+    expect(sim.held).toBe(true);
+  });
+
   describe('Elljusspåret', () => {
-    it('in a flash the strongest gust takes the little one north, and the old trägubbe follows: Elof reads it before he goes on', () => {
+    it('in a flash the strongest gust takes the little one north, and the old trägubbe follows: Elof stops and watches it', () => {
       const gust = olympia.beats!.find((b) => b.id === 'ol:gust')!;
-      expect(gust.read).toBe(true);
-      expect(gust.at!).toBeLessThan(olympia.goalX);
-      expect(gust.at!).toBeGreaterThan(olympia.checkpoints![olympia.checkpoints!.length - 1]!.x);
-      const flybys = olympia.storm!.flybys!.filter((f) => f.on === 'beat:ol:gust' || f.on === 'beat:ol:follow');
+      const moment = olympia.scenes!.find((scene) => scene.id === 'norrut')!;
+      expect(moment.at!).toBeLessThan(olympia.goalX);
+      expect(moment.at!).toBeGreaterThan(olympia.checkpoints![olympia.checkpoints!.length - 1]!.x);
+      expect(gust.on).toBe('ol:north-flight');
+      expect(moment.cues).toContainEqual({ at: 0.8, flag: gust.on! });
+      const follow = olympia.beats!.find((b) => b.id === 'ol:follow')!;
+      const flybys = olympia.storm!.flybys!.filter((f) => f.on === 'beat:ol:gust' || f.on === follow.on);
       expect(flybys.map((f) => f.who)).toEqual(['lillgubbe', 'tragubbe']);
-      // North, up over the treetops.
-      for (const f of flybys) expect(f.to.y - f.from.y).toBeGreaterThan(10);
+      // North, up over the treetops: slowly, from near the path, and lit, so that it is seen (Olov, 9 November 2026: "Man
+      // ser inte när vinden tar lillgubben norrut, för det går alldeles för fort.").
+      const end = olympia.ground[olympia.ground.length - 1]!;
+      for (const f of flybys) {
+        expect(f.to.y - f.from.y).toBeGreaterThan(10);
+        // Over the forest's edge where the ground ends, and never into it.
+        for (let k = 0; k <= 1; k += 0.01) if (flightAt(f, k).x > end.x - 0.6) expect(flightAt(f, k).y).toBeGreaterThan(end.y + 0.5);
+        expect(f.seconds).toBeGreaterThanOrEqual(4.5);
+        expect(f.z!).toBeGreaterThan(-1.5);
+        // The canopy is behind the play plane; do not let the flight retreat into it.
+        expect(f.toZ!).toBeGreaterThanOrEqual(f.z!);
+        expect(f.lit?.length).toBeGreaterThan(0);
+      }
+      // He stands and watches the whole of it (`norrut`): the old one leaps after the little one has gone, while he
+      // still watches, and the words are said along the way.
+      expect(moment.hold).toBe(true);
+      expect(moment.seconds).toBeGreaterThanOrEqual(flybys[0]!.seconds);
+      // The old one leaps, and Elof says so, as the little one is all but lost, while he still watches.
+      const follows = moment.cues!.find((cue) => cue.flag === follow.on)!;
+      expect(follows.at).toBeGreaterThanOrEqual(0.75 * flybys[0]!.seconds);
+      expect(moment.seconds - follows.at).toBeGreaterThanOrEqual(3);
+      const sim = new Sim(olympia, {}, { checkpoint: olympia.checkpoints!.length - 1, placed: [ball.id], flags: [`placed:${ball.id}`, 'ol:bertil', 'ol:kick-ready', 'ol:kick'] });
+      let heldFor = 0;
+      for (let i = 0; i < 20 / STEP && !sim.flags.has('goal'); i++) {
+        sim.step({ ...idle, x: 1 });
+        if (sim.held) heldFor += STEP;
+      }
+      expect(sim.flags.has('goal')).toBe(true);
+      expect(heldFor).toBeGreaterThanOrEqual(moment.seconds - 0.1);
+      expect(sim.said.slice(-5)).toEqual(['ol:gust', 'ol:follow', 'ol:north', 'ol:car', 'ol:klonk-end']);
       const lines: Record<string, string> = sv.lines;
       expect(lines.olNorth).toBe('Upp mot sjön vid Flärken!');
       expect(olympia.storm).toMatchObject({ rain: 0.9, lightning: 8, rollers: 'football' });
@@ -560,7 +613,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     expect(olympia.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(olympia.place).toBe('garden');
     expect(olympia.coda).toBe('bertil');
-    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card']);
+    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card', 'norrut']);
     expect(sv.end.kickers.olympia).toBe('Äventyr 2 · Kapitel 4');
   });
 });

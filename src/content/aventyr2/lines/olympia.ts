@@ -7,7 +7,7 @@ import type { ChapterWords } from './words';
  */
 export const words: ChapterWords = {
   lines: {
-    // 1. down the steps, the dark floodlights, and over the fence
+    // 1. up the steps, the dark floodlights, and over the fence
     olArrive: 'Olympia! Hela planen är mörk.',
     olKlonk: 'Klonk!',
     olKlonkKlonk: 'Klonk, klonk!',
@@ -51,7 +51,7 @@ export const words: ChapterWords = {
     olThrow: 'Kasta kotte',
   },
   purposes: {
-    olympiaArrive: { purpose: 'Följ godisspåret till fotbollsplanen.', recap: 'Vinden blåste lillgubben mot Olympia. Gamla trägubben lämnar godis åt mig.' },
+    olympiaArrive: { purpose: 'Följ godisspåret upp till fotbollsplanen.', recap: 'Vinden blåste lillgubben mot Olympia. Gamla trägubben lämnar godis åt mig.' },
     olympiaFence: { purpose: 'Klättra över staketet.', recap: 'Staketet runt planen är högt, men nätet går att klättra på.' },
     olympiaTrail: { purpose: 'Följ godisspåret över planen.', recap: 'Gamla trägubben lämnar godis åt mig, en bit i taget.' },
     olympiaBalls: { purpose: 'Hoppa över bollarna som rullar.', recap: 'Vinden rullar bollar över planen. De kommer bakifrån.' },

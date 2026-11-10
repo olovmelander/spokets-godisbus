@@ -683,6 +683,30 @@ export interface ChapterData {
 }
 
 /**
+ * A figure blown across the dark sky in a flash (Äventyr 2's storm): from `from` to `to` in `seconds`, eased, tumbling
+ * over a rise. The picture's business only, as all of `Storm` is.
+ */
+export interface Flyby {
+  on: string;
+  from: Vec;
+  to: Vec;
+  seconds: number;
+  who: 'lillgubbe' | 'tragubbe';
+  /** How far behind the play plane it flies at its start, and at its end. Left out: 4 behind, all the way. */
+  z?: number;
+  toZ?: number;
+  /** How big it is drawn. Left out: 1.2. */
+  size?: number;
+  /** How high its tumble rises over the straight line between its ends. Left out: 2.2 in the air. */
+  rise?: number;
+  /**
+   * A flight meant to be watched, not glimpsed: the figure as it is, pale wood in a soft glow, and the lightning
+   * flashes again at these seconds into it. Left out: a dark shape, lit by one flash.
+   */
+  lit?: readonly number[];
+}
+
+/**
  * Äventyr 2's weather and what is seen in its flashes (docs/aventyr-2.md). The picture's business only: the
  * simulation never reads it. Drawn by the adventure's own pack.
  */

@@ -861,18 +861,18 @@
     "text": "Där! Vinden tar lillgubben norrut!"
   },
   {
-    "key": "olNorth",
-    "speaker": "bertil",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Upp mot sjön vid Flärken!"
-  },
-  {
     "key": "olFollow",
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Gamla trägubben följer efter honom!"
+  },
+  {
+    "key": "olNorth",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, olympia",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Upp mot sjön vid Flärken!"
   },
   {
     "key": "olCar",
