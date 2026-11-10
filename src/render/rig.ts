@@ -1,7 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { kneeSupport } from './knee-support';
-import { createArmContact, createHandGrip, createHandHold } from './arm-contact';
+import { createArmContact, createHandGrip, createHandHold, type GripTurn } from './arm-contact';
 import { faceOf } from './face';
 import { copyShape, fingersOf, mixShape, REST, type Grip } from './fingers';
 import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
@@ -229,7 +229,7 @@ export interface Rig {
    * `axis`, and the fingers close round it as the hand arrives (`weight`). Returns the socket where it is (a reach too far
    * is clamped), and the thing's axis as held in `axisOut`. An optional `fingerDirection` also defines a tool's palm roll.
    */
-  grasp?(side: 0 | 1, grip: Grip, target: Vector3, axis: Vector3, out: Vector3, weight?: number, axisOut?: Vector3, fingerDirection?: Vector3): Vector3;
+  grasp?(side: 0 | 1, grip: Grip, target: Vector3, axis: Vector3, out: Vector3, weight?: number, axisOut?: Vector3, fingerDirection?: Vector3, gripTurn?: GripTurn): Vector3;
   /** Where a grip's socket is in the world now, and the held thing's axis: for a thing held wherever the hand is. */
   socket?(side: 0 | 1, grip: Grip, out: Vector3, axisOut?: Vector3): Vector3;
   /**
@@ -975,14 +975,14 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (axisOut) axisOut.copy(made.socket.axis).transformDirection(bone.matrixWorld);
       return bone.localToWorld(out.copy(made.socket.at));
     },
-    grasp(side, grip, target, axis, out, weight = 1, axisOut, fingerDirection) {
+    grasp(side, grip, target, axis, out, weight = 1, axisOut, fingerDirection, gripTurn) {
       const made = gripIn(side, grip), hold = holds[side];
       if (!made || !hold) {
         this.reach(side, target, weight);
         if (axisOut) axisOut.copy(axis);
         return this.hand(side, out);
       }
-      hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, fingerDirection);
+      hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, fingerDirection, gripTurn);
       // The fingers close as the hand comes, the last of the way, and only on what the hand gets to: an arm that falls
       // short of it leaves the hand open, not closed on the air.
       const hand = fingered[side]!, length = hand.layout.size * 0.112 * handScale.x;

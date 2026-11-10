@@ -5,6 +5,7 @@ import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from '.
 import { createFamilyMotion } from '../../src/render/family-motion';
 import { createRehearsalRig, STANDING, type Role } from '../../src/render/rig';
 import { createStage } from '../../src/render/stage';
+import { lampHandTransfer } from '../../src/render/rain-gear';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
 import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { talk } from '../../src/render/talk';
@@ -194,6 +195,60 @@ describe('a flashlight carried in front of a posed body', () => {
     expect(lamp.quaternion.angleTo(turn)).toBeLessThan(1e-7);
     flags.add('scene:upptackt');
     for (let i = 0; i <= 180; i++) frame('tillsammans', i / 60);
+  });
+
+  it.each([30, 60, 120])('keeps Pappa’s torch and receiving grip continuous at the coat handoffs (%s Hz)', rate => {
+    const stage = createStage(stormkvall, () => 0), rig = stage.actors.get('pappa')!.rig;
+    const index = stormkvall.scenes!.findIndex(s => s.id === 'tillsammans');
+    const flags = new Set(stormkvall.scenes!.slice(0, index).map(s => `scene:${s.id}`));
+    flags.add('lamp:give'); flags.add('star');
+    const lamp = stage.group.getObjectByName('stage-thing:lamp-pappa')!;
+    let clock = 0, last: Vector3[] | null = null, priorSupport = [1, 0], max = 0;
+    const frame = (seconds: number, dt: number) => {
+      clock += dt;
+      stage.update({ id: 'tillsammans', seconds }, flags, { x: 6.4, y: 0 }, clock, dt, false);
+      return [rig.hand(0, v()), rig.hand(1, v()), lamp.position.clone()];
+    };
+    for (let i = 0; i <= 9 * rate; i++) {
+      const t = i / rate; let points = frame(t, 1 / rate);
+      expect(lamp.visible).toBe(true);
+      expect(Math.min(points[0]!.distanceTo(points[2]!), points[1]!.distanceTo(points[2]!))).toBeLessThan(1e-8);
+      const transfer = lampHandTransfer(stormkvall, 'pappa', { id: 'tillsammans', seconds: t });
+      const smooth = (u: number) => { const k = Math.max(0, Math.min(1, u)); return k * k * (3 - 2 * k); };
+      const support = [1 - smooth(2 * transfer - 1), smooth(2 * transfer)];
+      // The receiving hand and held lamp have a bounded approach. The releasing hand returns to the authored
+      // sleeve-over-head gesture; its free motion is not a torch contact or a transfer of mesh ownership.
+      if (last && t >= 3.5 && t < 7) for (let j = 0; j < points.length; j++) {
+        if (j === 2 || (support[j]! > 0 && support[j]! >= priorSupport[j]!)) max = Math.max(max, points[j]!.distanceTo(last[j]!));
+      }
+      priorSupport = support;
+      if (i === Math.round(4.43 * rate) || i === Math.round(6.43 * rate)) {
+        for (let reading = 0; reading < rate; reading++) {
+          talk.hear({ who: 'pappa', text: 'Ficklampan följer med.', seconds: reading / rate, reading: true }, 1 / rate);
+          const next = frame(t, 1 / rate);
+          expect(next[2]!.distanceTo(points[2]!)).toBeLessThan(12 / rate);
+          expect(Math.min(next[0]!.distanceTo(next[2]!), next[1]!.distanceTo(next[2]!))).toBeLessThan(1e-8);
+          points = next;
+        }
+        for (let paused = 0; paused < 10; paused++) frame(t, 0).forEach((p, j) => expect(p.distanceTo(points[j]!)).toBeLessThan(1e-8));
+        talk.hear(null, 0);
+      }
+      last = points;
+    }
+    expect(max).toBeLessThan(12 / rate);
+  });
+
+  it('does not borrow Moa’s drawing when Pappa finishes showing the raincoat', () => {
+    const stage = createStage(stormkvall, () => 0), rig = stage.actors.get('pappa')!.rig;
+    const index = stormkvall.scenes!.findIndex(s => s.id === 'tillsammans');
+    const flags = new Set(stormkvall.scenes!.slice(0, index).map(s => `scene:${s.id}`));
+    flags.add('lamp:give'); flags.add('star');
+    const grip = vi.spyOn(rig, 'grip');
+    for (let i = 0; i <= 4.1 * 60; i++) {
+      grip.mockClear();
+      stage.update({ id: 'tillsammans', seconds: i / 60 }, flags, { x: 6.4, y: 0 }, i / 60, 1 / 60, false);
+      if (i >= 3.6 * 60) expect(grip).not.toHaveBeenCalled();
+    }
   });
 
   it('takes Bertil’s newly lit torch continuously, keeps its contact, and freezes acquisition with the scene clock', () => {

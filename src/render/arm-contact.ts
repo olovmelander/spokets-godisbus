@@ -45,6 +45,9 @@ export function solveArm(shoulder: Vector3, elbow: Vector3, hand: Vector3, targe
  */
 export interface ElbowGuide { direction: Vector3; weight: number }
 
+/** A tool's partial grip keeps the same rotation arc as its moving palm passes a half-turn. */
+export interface GripTurn { rotation: Quaternion; valid: boolean }
+
 export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3D | Vector3): (worldTarget: Vector3, weight?: number, most?: number, elbowGuide?: ElbowGuide) => void {
   const shoulder = new Vector3(), elbow = new Vector3(), wrist = new Vector3(), target = new Vector3();
   const wantedElbow = new Vector3(), wantedHand = new Vector3(), from = new Vector3(), to = new Vector3();
@@ -179,12 +182,14 @@ export function createHandHold(_lower: Object3D, hand: Object3D, reach: (target:
   const scale = new Vector3(), now = new Vector3(), wrist = new Vector3();
   const along = new Vector3(), want = new Vector3(), side = new Vector3();
   const current = new Quaternion(), turned = new Quaternion(), parent = new Quaternion();
+  const relative = new Quaternion();
   const fingers = new Vector3(), localFingers = new Vector3(), cross = new Vector3(), from = new Matrix4(), to = new Matrix4();
   return (socketLocal: Vector3, axisLocal: Vector3, target: Vector3, axis: Vector3, out: Vector3, weight = 1,
-    axisOut?: Vector3, fingerDirection?: Vector3): Vector3 => {
+    axisOut?: Vector3, fingerDirection?: Vector3, gripTurn?: GripTurn): Vector3 => {
     weight = Math.max(0, Math.min(1, weight));
     hand.updateWorldMatrix(true, false);
     if (weight === 0) {
+      if (gripTurn) gripTurn.valid = false;
       if (axisOut) axisOut.copy(axisLocal).transformDirection(hand.matrixWorld);
       return hand.localToWorld(out.copy(socketLocal));
     }
@@ -209,7 +214,21 @@ export function createHandHold(_lower: Object3D, hand: Object3D, reach: (target:
         turned.setFromRotationMatrix(to.multiply(from.transpose()));
       }
     }
-    current.slerp(turned, weight);
+    if (gripTurn) {
+      relative.copy(current).invert().premultiply(turned).normalize();
+      // Shortest-arc interpolation can change sides at 180 degrees while a hand is still taking a tool. Carry the
+      // chosen quaternion hemisphere through that acquisition instead; identical poses never advance anything.
+      const reverse = gripTurn.valid ? relative.dot(gripTurn.rotation) < 0 : relative.w < 0;
+      if (reverse) relative.set(-relative.x, -relative.y, -relative.z, -relative.w);
+      const length = Math.hypot(relative.x, relative.y, relative.z);
+      if (length > 1e-8) {
+        side.set(relative.x, relative.y, relative.z).divideScalar(length);
+      } else if (gripTurn.valid) {
+        side.set(gripTurn.rotation.x, gripTurn.rotation.y, gripTurn.rotation.z).normalize();
+      } else side.set(1, 0, 0);
+      gripTurn.rotation.copy(relative); gripTurn.valid = true;
+      current.premultiply(turned.setFromAxisAngle(side, 2 * Math.atan2(length, relative.w) * weight));
+    } else current.slerp(turned, weight);
     // The wrist where the socket comes to the target, and the arm to it.
     reach(wrist.copy(now).lerp(target, weight).sub(side.copy(socketLocal).multiplyScalar(size).applyQuaternion(current)));
     if (hand.parent) { hand.parent.updateWorldMatrix(true, false); hand.parent.getWorldQuaternion(parent); } else parent.identity();

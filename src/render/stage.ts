@@ -1,5 +1,5 @@
-import { holdFlashlight, quietLampArm } from './lamp-hold';
-import { heldInOther } from './rain-gear';
+import { flashlightCarryTarget, holdFlashlight, quietLampArm } from './lamp-hold';
+import { lampHandTransfer } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
@@ -673,6 +673,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
 
   const place = new Object3D();
   const hand = new Vector3(), lampAim = new Vector3(), lampBefore = new Vector3(), kneeAt = new Vector3();
+  const lampMeeting = new Vector3(), lampOther = new Vector3();
   const kneeOutside = new Vector3(), kneeNormal = new Vector3(0, -1, 0);
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
@@ -817,10 +818,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           continue;
         }
         // The lamp Elof gave Pappa is a real held prop, so neither walking nor speech reuses that hand.
-        if (chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give')) {
+        const persistentLamp = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
+        const transfer = persistentLamp ? lampHandTransfer(chapter, who, frame, calm) : 0;
+        if (persistentLamp) {
           state = { ...state };
-          if (heldInOther(chapter, who, frame, calm)) state.holds = 'lamp-pappa';
-          else state.holdsLeft = 'lamp-pappa';
+          state.holds = transfer > 0 ? 'lamp-pappa' : null;
+          state.holdsLeft = transfer < 1 ? 'lamp-pappa' : null;
         }
         const was = live.get(who);
         let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
@@ -1197,10 +1200,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // wrist around a steady beam. Keep this arm's base quiet, sharing the acquisition blend with the held prop.
         for (const side of [0, 1] as const) {
           const held = side === 0 ? state.holdsLeft : state.holds;
-          if (!held?.startsWith('lamp-') || state.act === 'dress') continue;
-          const persistent = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
-          const weight = calm || persistent || !state.before || state.before.held[side] === held ? 1 : smooth(elapsed / .45);
-          quietLampArm(pose, side, weight);
+          if (!held?.startsWith('lamp-')) continue;
+          const weight = calm || persistentLamp || !state.before || state.before.held[side] === held ? 1 : smooth(elapsed / .45);
+          const support = persistentLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
+          quietLampArm(pose, side, weight * support);
         }
         // Support begins with a relaxed, outward elbow. Carrying a raised gesture's roll into the knee solve can
         // turn the elbow through the torso during acquisition even though the final contact is correct.
@@ -1323,7 +1326,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         }
         const showsDrawing = state.holds === 'drawing' || state.holdsLeft === 'drawing';
-        const leavesShowing = state.before?.act === 'show' && elapsed < .45;
+        const leavesShowing = state.before?.act === 'show' && state.before.held.includes('drawing') && elapsed < .45;
         if (sheet && (showsDrawing || leavesShowing)) {
           rig.mouth(heldPoint);
           // Her head can turn toward a speaker without pulling the page, and an arm, across her abdomen.
@@ -1352,7 +1355,17 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         }
         // What they hold: in the right hand, and in the left. Moa's drawing is held up in both.
         const releasingMug = state.before && elapsed < .45 ? state.before.mug : null;
-        for (const [side, current] of [[1, state.holds], [0, state.holdsLeft]] as const) {
+        const handingLamp = persistentLamp && transfer > 0 && transfer < 1;
+        if (handingLamp) {
+          // Both hands meet at a reachable point ahead of the waist. Raw sleeve-gesture sockets can lie outside
+          // the other arm's reach. The receiving hand arrives before the giving hand lets go, so changing the
+          // fully supporting socket cannot jump the torch. The free arm keeps the authored sleeve movement.
+          flashlightCarryTarget(rig, 0, lampMeeting); flashlightCarryTarget(rig, 1, lampOther);
+          lampMeeting.lerp(lampOther, transfer);
+        }
+        const heldHands = handingLamp && transfer > .5 ? [[0, state.holdsLeft], [1, state.holds]] as const
+          : [[1, state.holds], [0, state.holdsLeft]] as const;
+        for (const [side, current] of heldHands) {
           // A hand that has just let something go opens over the blend, one that has just taken it closes.
           const had = state.before && elapsed < .45 ? state.before.held?.[side] ?? null : null;
           if (had && had !== current && had !== 'drawing' && !(had === 'mug' && side === releasingMug)) rig.hold?.(side, GRIPS[had], 1 - smooth(elapsed / .45));
@@ -1374,10 +1387,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
             // Newly taking a torch must follow the same event-time blend as the authored arms.
             // Pappa's persistent indoor torch is already in hand across every later act.
-            const persistent = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
-            const taking = calm || persistent || had === current || !state.before ? 1 : smooth(elapsed / .45);
-            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), state.act !== 'dress', taking,
-              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused));
+            const taking = calm || persistentLamp || had === current || !state.before ? 1 : smooth(elapsed / .45);
+            const support = handingLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
+            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), true, taking * support,
+              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused), handingLamp ? lampMeeting : undefined);
             continue;
           }
           const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);

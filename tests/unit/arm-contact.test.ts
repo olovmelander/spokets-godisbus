@@ -1,8 +1,38 @@
 import { Bone, Euler, Group, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { createArmContact, createHandGrip, createHandHold, solveArm } from '../../src/render/arm-contact';
+import { createArmContact, createHandGrip, createHandHold, solveArm, type GripTurn } from '../../src/render/arm-contact';
 
 describe('arm contact geometry', () => {
+  it.each([-1, 1])('keeps a partially acquired tool on one rotation arc through the %s half-turn', sign => {
+    const hand = new Bone(), parent = new Group(); parent.add(hand);
+    const localAxis = new Vector3(1, 1, 0).normalize(), fingers = new Vector3(0, 0, 1);
+    const target = new Vector3(.3, 1.5, .6), socket = new Vector3(.03, -.02, .08), out = new Vector3(), held = new Vector3();
+    const turn: GripTurn = { rotation: new Quaternion(), valid: false };
+    const hold = createHandHold(parent, hand, point => { hand.position.copy(point); parent.updateMatrixWorld(true); }, fingers);
+    const desired = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), .4);
+    const axis = localAxis.clone().applyQuaternion(desired), down = fingers.clone().applyQuaternion(desired);
+    const pose = (degrees: number, weight: number) => {
+      hand.position.set(.3, 1.5, .6);
+      hand.quaternion.setFromAxisAngle(new Vector3(0, 0, 1), sign * degrees * Math.PI / 180).multiply(desired);
+      parent.updateMatrixWorld(true);
+      hold(socket, localAxis, target, axis, out, weight, held, down, turn);
+      expect(out.distanceTo(hand.localToWorld(socket.clone()))).toBeLessThan(1e-8);
+      return hand.getWorldQuaternion(new Quaternion());
+    };
+    let previous = pose(160, .2);
+    for (let i = 1; i <= 120; i++) {
+      const degrees = 160 + i / 3, weight = .2 + i / 300, current = pose(degrees, weight);
+      expect(current.angleTo(previous)).toBeLessThan(.02);
+      if (i === 60) for (let paused = 0; paused < 20; paused++) expect(pose(degrees, weight).angleTo(current)).toBeLessThan(1e-7);
+      previous = current;
+    }
+    expect(pose(200, 1).angleTo(desired)).toBeLessThan(1e-7);
+    expect(held.distanceTo(axis)).toBeLessThan(1e-8);
+    turn.valid = false;
+    const rewound = pose(160, .2); turn.valid = false;
+    expect(pose(160, .2).angleTo(rewound)).toBeLessThan(1e-7);
+  });
+
   it('reaches across the body in three dimensions while keeping both limb lengths', () => {
     const shoulder = new Vector3(.8, 3, 0), elbow = new Vector3(1, 2.2, .3), hand = new Vector3(.8, 2, 1);
     const target = new Vector3(-.1, 2.5, .8), nextElbow = new Vector3(), nextHand = new Vector3();
