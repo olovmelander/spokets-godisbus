@@ -547,7 +547,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
     holder.visible = false;
     group.add(holder);
-    return { def, figure: holder, halo, start: -1, seen: false, flashed: 0 };
+    return { def, figure: holder, halo, elapsed: -1, seen: false, flashed: 0 };
   });
 
   // Someone seen far off (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): the carving itself, pale and
@@ -820,7 +820,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   let boardedAt = 0, landedAt = -1;
   const setDown = new Vector3(), owlStart = new Vector3();
   return {
-    update({ dt, clock, flags, x, y, camera, still, tier, riding }: ExtraFrame) {
+    update({ dt, clock, flags, x, y, camera, still, tier, riding, revealPaused }: ExtraFrame) {
       elof.x = x;
       elof.flags = flags;
       elof.still = still;
@@ -975,13 +975,16 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
       // Lightning, now and then; and one at every flyby's moment, and again through a flight meant to be watched.
       for (const f of flybys) {
+        // The reveal owns this travel clock. Its line may outlast the flight, while rain, wingbeats and the
+        // ride continue on the world's clock. Neither an active reading hold nor Pause spends the remaining flight.
+        if (f.elapsed >= 0 && !revealPaused && dt > 0) f.elapsed += dt;
         const again = f.def.lit ?? [];
-        const due = !f.seen ? flags.has(f.def.on) : f.flashed < again.length && clock - f.start >= again[f.flashed]!;
+        const due = !f.seen ? flags.has(f.def.on) : f.elapsed >= 0 && f.flashed < again.length && f.elapsed >= again[f.flashed]!;
         if (!due) continue;
         if (f.seen) f.flashed++;
         else {
           f.seen = true;
-          f.start = clock;
+          f.elapsed = 0;
         }
         flashAt = clock;
         flashBolt = (flashBolt + 1) % bolts.length;
@@ -1040,8 +1043,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       for (const u of unlit) u.material.color.copy(u.base).multiply(tint).multiplyScalar(u.additive ? 0.25 : 1);
 
       for (const f of flybys) {
-        const k = f.start < 0 ? 1 : (clock - f.start) / f.def.seconds;
-        f.figure.visible = k < 1 && f.start >= 0;
+        const k = f.elapsed < 0 ? 1 : f.elapsed / f.def.seconds;
+        f.figure.visible = k < 1 && f.elapsed >= 0;
         if (!f.figure.visible) continue;
         // On the water a figure floats, bobbing along; in the air it tumbles across the sky.
         const floating = afloat(f.def);

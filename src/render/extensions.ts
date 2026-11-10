@@ -39,6 +39,8 @@ export interface ExtraFrame {
   tier: 'low' | 'mid' | 'high';
   /** He is on a ride now. */
   riding: boolean;
+  /** An authored reveal is waiting for its own dialogue; its story flyby waits while the rest of the world stays alive. */
+  revealPaused?: boolean;
   /** How he moves: his speed along and up, which way he faces, whether he stands, and his mode. */
   vx?: number;
   vy?: number;
