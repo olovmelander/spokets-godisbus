@@ -3,7 +3,9 @@ import { Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { actPose } from '../../src/render/acting';
-import { createPlayerStandIn } from '../../src/render/player-motion';
+import { createPlayerMotion, createPlayerStandIn } from '../../src/render/player-motion';
+import { carryGold, GOLD_HAND, goldCarryWeight, tasteGrowingGold } from '../../src/render/gold-contact';
+import type { PlayerState } from '../../src/sim/types';
 import { STANDING } from '../../src/render/rig';
 import { createStage } from '../../src/render/stage';
 
@@ -77,4 +79,61 @@ describe('the golden sweet that makes him big again', () => {
     // The sweet stays on the fingers while the grip, rather than the wrist, reaches the bite.
     expect(sweet.position.distanceTo(body.socket(1, null, new Vector3()).add(new Vector3(0, .07, 0)))).toBeLessThan(1e-6);
   });
+  it('retains one carrying hand into the taste, then releases mouth contact before growth without a snap', () => {
+    const stage = createStage(stormoga, () => at.y), body = createPlayerStandIn(), motion = createPlayerMotion();
+    const state: PlayerState = { ...at, vx: 0, vy: 0, facing: 1, grounded: true, groundY: at.y, standY: at.y,
+      atEdge: false, bubble: 0, mode: 'free', t: 0, verb: null, hook: null, word: null };
+    body.group.position.set(at.x, at.y, 0); body.group.rotation.y = -.35;
+    let before: Vector3[] = [], candy: Vector3 | null = null;
+    const sweet = stage.group.getObjectByName('gold-sweet')!;
+    for (let frame = -60; frame <= 240; frame++) {
+      const seconds = frame / 60, dt = 1 / 60;
+      const direction = seconds >= 0 ? stage.update({ id: 'stor', seconds }, new Set(['taste']), at, seconds + 1, dt, false).elof! : null;
+      const scripted = direction ? actPose(direction.act!, { t: direction.actT, calm: false, aim: null, stride: 0, pace: 0 }, { ...STANDING }) : null;
+      const size = direction?.size ?? 1;
+      body.pose(motion.update(state, at.x, dt, scripted));
+      body.group.scale.setScalar(size);
+      carryGold(body, body.group, seconds + 1, false, direction ? goldCarryWeight(seconds) : 1);
+      if (direction) stage.updateElof(body, direction, size, false);
+      const hands = [body.hand(0, new Vector3()), body.hand(1, new Vector3())];
+      if (before.length) for (const side of [0, 1]) expect(hands[side]!.distanceTo(before[side]!), `hand ${side} at ${seconds}`).toBeLessThan(.045);
+      // The scene begins exactly at the already-held fingertips; it does not change hands on the action frame.
+      if (frame === 0) expect(sweet.position.distanceTo(candy!)).toBeLessThan(.012);
+      if (frame === -1) candy = body.hand(GOLD_HAND, new Vector3()).add(new Vector3(0, .07, 0));
+      before = hands;
+    }
+  });
+
+  it.each([false, true])('holds the acquisition and release contacts fixed in Pause (reduced motion=%s)', calm => {
+    const stage = createStage(stormoga, () => at.y), body = createPlayerStandIn();
+    body.group.position.set(at.x, at.y, 0);
+    for (const seconds of [.2, 2.8, 3.05]) {
+      const direction = stage.update({ id: 'stor', seconds }, new Set(['taste']), at, seconds, 0, calm).elof!;
+      const pose = actPose(direction.act!, { t: direction.actT, calm, aim: null, stride: 0, pace: 0 }, { ...STANDING });
+      let hand: Vector3 | null = null;
+      for (let repeat = 0; repeat < 20; repeat++) {
+        body.pose(pose);
+        carryGold(body, body.group, seconds, calm, goldCarryWeight(seconds));
+        stage.updateElof(body, direction, 1, calm);
+        const now = body.hand(GOLD_HAND, new Vector3());
+        if (hand) expect(now.distanceTo(hand)).toBeLessThan(1e-9);
+        hand = now;
+      }
+    }
+  });
+
+  it('lets Norrsken’s swallowed sweet release its hand before the growth prop disappears', () => {
+    const body = createPlayerStandIn();
+    let previous: Vector3 | null = null;
+    for (let frame = 0; frame <= 66; frame++) {
+      const grown = frame / 120, size = 1 + 2 * grown;
+      body.pose(actPose('hands', { t: grown * 1.2, calm: false, aim: null, stride: 0, pace: 0 }, { ...STANDING }));
+      body.group.scale.setScalar(size);
+      if (grown < .45) tasteGrowingGold(body, body.group, grown);
+      const hand = body.hand(0, new Vector3());
+      if (previous) expect(hand.distanceTo(previous), `growth ${grown}`).toBeLessThan(.045);
+      previous = hand;
+    }
+  });
+
 });

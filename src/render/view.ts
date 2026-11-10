@@ -76,6 +76,7 @@ import { facingBetween, turnFamily } from './family-turning';
 import { createSharedSweets } from './shared-sweets';
 import { createRescuedFigures } from './rescued-figures';
 import { goldSweet } from './gold-sweet';
+import { carryGold, GOLD_GRIP, GOLD_HAND, goldCarryWeight, tasteGrowingGold } from './gold-contact';
 import { createHomeTrail } from './home-trail';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
@@ -1028,7 +1029,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     carriedBerry.visible = false;
     scene.add(carriedBerry);
   }
-  const berryHand = new Vector3(), goldMouth = new Vector3();
+  const berryHand = new Vector3();
   // The golden geléhallon of Norrsken, as he tastes it: a raspberry of golden beads (as props.ts 'gold').
   const carriedGold = new Group();
   carriedGold.name = 'carried-gold';
@@ -1612,7 +1613,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     const elofOther = talk.lookAt('elof'), elofThere = elofOther ? talk.face(elofOther) : null;
     if (elofThere) playerBody.mouth(faceAt);
-    const elofHands = (scripted?.act && !HANDS_HANG.includes(scripted.act)) || curr.hook || lanternHeld ? NO_HANDS : BOTH_HANDS;
+    const giftHeld = !!carriedGift && flags.has('gift') && !flags.has('taste') && !curr.hook && elof.group.visible;
+    const elofHands = (scripted?.act && !HANDS_HANG.includes(scripted.act)) || curr.hook || lanternHeld ? NO_HANDS : giftHeld ? FREE_WITH_LAMP[GOLD_HAND]! : BOTH_HANDS;
     elofTalker.update(talk, elofThere ? lookAt(elof.group, faceAt, elofThere, heard, true) : null, lifeDt, calmStory, elofHands);
     elofTalker.pose(Object.assign(spokenPose, playerPose));
     if (rescue && flags.has('placed:tragubbe') && !flags.has('taste') && x > 14) {
@@ -1666,6 +1668,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const k = smooth(clamp(scripted.actT / 0.6, 0, 1));
       playerBody.reach(1, boot.set(scripted.aim.x, scripted.aim.y, scripted.aim.z ?? 0), k);
     }
+    // Keep the same right-hand contact across the taste action. Scene pose blending cannot retain a post-pose
+    // grip by itself; dropping that grip here used to snap the left arm down and teleport the sweet to the right.
+    const carryingGold = giftHeld ? 1 : chapter.id === 'stormoga' && sceneFrame?.id === 'stor' ? goldCarryWeight(sceneFrame.seconds) : 0;
+    carryGold(playerBody, elof.group, clock, calmStory, carryingGold);
     stage.updateElof(playerBody, scripted, tall, calmStory);
     epilogueStage.updateElof(playerBody);
     homeRoutine?.updateElof(playerBody);
@@ -1806,26 +1812,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const bite = tasting && sized ? Math.min(1, Math.max(0, (tall - 1) / (sized.scale - 1))) : 1;
     carriedGold.visible = tasting && bite < 0.45 && !calmStory;
     if (carriedGold.visible && playerBody) {
-      elof.group.updateWorldMatrix(true, false);
-      playerBody.mouth(goldMouth);
-      berryHand.set(0.3, 0.62, 0.18).applyMatrix4(elof.group.matrixWorld).lerp(goldMouth, smooth(bite / 0.3));
-      playerBody.reach(0, berryHand, 1);
-      playerBody.hold?.(0, BERRY);
+      tasteGrowingGold(playerBody, elof.group, bite);
       if (playerBody.socket) playerBody.socket(0, BERRY, carriedGold.position);
       else playerBody.hand(0, carriedGold.position);
       carriedGold.scale.setScalar(tall * (1 - smooth((bite - 0.32) / 0.12)));
     }
-    // The old one's golden sweet in Stormens öga, held up before him in his left hand from when he takes it until he tastes
-    // it: it turns in the moonlight and its glow breathes.
-    const gift = !!carriedGift && flags.has('gift') && !flags.has('taste') && !curr.hook && !!playerBody && elof.group.visible;
-    if (carriedGift) drawnWhile(carriedGift, gift);
-    if (gift && carriedGift && playerBody) {
-      elof.group.updateWorldMatrix(true, false);
-      berryHand.set(0.34, 0.7, 0.2).applyMatrix4(elof.group.matrixWorld);
-      playerBody.reach(0, berryHand, calmStory ? 0.75 : 0.7 + 0.05 * Math.sin(clock * 2.1));
-      playerBody.hold?.(0, BERRY);
-      if (playerBody.socket) playerBody.socket(0, BERRY, carriedGift.position);
-      else playerBody.hand(0, carriedGift.position);
+    // The old one's golden sweet stays in the right hand from taking it through inspecting it and tasting it.
+    if (carriedGift) drawnWhile(carriedGift, giftHeld);
+    if (giftHeld && carriedGift) {
+      if (playerBody.socket) playerBody.socket(GOLD_HAND, GOLD_GRIP, carriedGift.position);
+      else playerBody.hand(GOLD_HAND, carriedGift.position);
       // On his fingertips, not in them.
       carriedGift.position.y += 0.07 * tall;
       carriedGift.scale.setScalar(tall);

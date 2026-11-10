@@ -16,6 +16,7 @@ import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
 import { goldSweet } from './gold-sweet';
+import { goldMouthWeight } from './gold-contact';
 import type { Grip } from './fingers';
 import { lookAt } from './look';
 import { createTalker, talk, type Free, type Look, type Talker } from './talk';
@@ -730,7 +731,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // The candy's centre meets the lips while its base stays between the fingertips. Reaching the wrist
         // here instead left the private model's grip socket above his eyes.
         heldPoint.y -= aboveFingers;
-        hand.lerp(heldPoint, bite.mouth);
+        // The sweet has vanished before growth begins. Release the empty hand's mouth contact while still
+        // in the eating act, so the next act inherits a hand already following the blended body pose.
+        hand.lerp(heldPoint, bite.mouth * (sweet ? goldMouthWeight(direction.actT) : 1));
         if (sweet && rig.grasp && rig.socket) rig.grasp(1, pinched, wristTarget.copy(hand), heldAxis, hand);
         else { rig.reach(1, hand); at(); }
       }
