@@ -1125,8 +1125,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] + off[joint] - shown[joint]));
             speed[joint] = (pose[joint] - shown[joint]) / dt;
           }
+        } else if (paused && shown) {
+          // Pause holds the motion's memory as well as its picture. Losing an unfinished blend's
+          // offset or velocity here would make the first resumed frame jump toward its target.
+          Object.assign(pose, shown);
         } else {
-          if (paused && shown) Object.assign(pose, shown);
           for (const joint of LIMBS) off[joint] = offSpeed[joint] = speed[joint] = targetStep[joint] = 0;
         }
         if (!paused) asking.set(who, wantedNow);
