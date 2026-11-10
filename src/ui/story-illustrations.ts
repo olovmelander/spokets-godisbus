@@ -157,8 +157,9 @@ function person(who: IllustrationPerson, options: PersonOptions = {}): Art {
     ...(who === 'bertil' ? [path('M-7-78Q2-74 11-79L8-74-1-73Z', '#fff5e6', I, .8)] : []),
     ...(who === 'pappa' ? [path('M-26-111Q-20-130 2-128Q21-128 25-112L40-107 37-102 9-106-25-105Z', '#2a2c32', '#1d1f24', 1.5), line('M-2-125 1-112M-22-109 18-108', '#64626a', 1)] : []),
     ...(who === 'bertil' ? [path('M-26-111Q-20-131 2-129Q23-127 27-112L39-106 36-101 8-105-25-105Z', '#c8242c', '#7f302f', 1.4), path('M-22-111-20-122Q0-133 20-122L23-109Z', '#f4f2ee', '#bfaaa0', .8),
-      // The approved cap has a small red/white/green shield; at story size its colours identify the same cap.
-      path('M-3-122H7V-114L2-110-3-114Z', '#f5eee0', '#7d5c4f', .8), path('M-2-121H6V-117H-2Z', '#c8242c'), path('M-2-116H6V-114L2-111-2-114Z', '#477547') ] : []),
+      // The approved cap's gold wings, tilted blue shield and white diagonal band stay legible at story size.
+      path('M-5-122Q-4-114 2-111Q8-114 9-122L7-121Q6-116 2-114Q-2-117-3-121Z', '#d8a823'),
+      path('M-1-122 6-124 8-119 4-114 0-117Z', '#28297a', '#d8a823', .85), path('M0-120 7-122 7-120 1-118Z', '#f3f1e8') ] : []),
     ...(jacket ? [path('M-27-110Q-16-128 7-124L26-113 34-108 31-104 3-107-26-105Z', '#8c978b', '#57665f', 1.3), line('M3-122 7-110M-19-109 20-108', '#c3cbba', 1)] : []),
     ...(options.crown ? [path('M-27-110-28-128-16-119-9-135 2-121 13-135 21-118 29-128 26-109Z', '#ebc25d', '#9b783f', 1.5)] : []),
   ];
