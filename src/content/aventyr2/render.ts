@@ -547,7 +547,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
     holder.visible = false;
     group.add(holder);
-    return { def, figure: holder, halo, elapsed: -1, seen: false, flashed: 0 };
+    const reveals = (chapter.scenes ?? []).flatMap(moment => {
+      if (!moment.dialogue?.length) return [];
+      const cue = moment.cues?.find(one => one.flag === def.on);
+      const words = moment.dialogue.some(id => `beat:${id}` === def.on);
+      return cue || words ? [{ id: moment.id, at: cue?.at ?? 0 }] : [];
+    });
+    return { def, figure: holder, halo, elapsed: -1, seen: false, flashed: 0, reveals, restored: false, resumed: false };
   });
 
   // Someone seen far off (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): the carving itself, pale and
@@ -820,7 +826,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   let boardedAt = 0, landedAt = -1;
   const setDown = new Vector3(), owlStart = new Vector3();
   return {
-    update({ dt, clock, flags, x, y, camera, still, tier, riding, revealPaused }: ExtraFrame) {
+    update({ dt, clock, flags, x, y, camera, still, tier, riding, revealPaused, scene: moment }: ExtraFrame) {
       elof.x = x;
       elof.flags = flags;
       elof.still = still;
@@ -859,7 +865,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       if (first) {
         scene.traverse((object) => { if (object.name === 'owl-wing') owlWings.push(object); });
         // A flyby whose moment has passed already (a game taken up later) is not played again.
-        for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
+        for (const f of flybys) if (flags.has(f.def.on)) { f.seen = true; f.restored = true; }
         for (const s of sightings) if (flags.has(s.def.on)) s.seen = true;
         // The boulders the gusts' shelters stand in for are put away, where something else is drawn: one mesh a gust.
         for (const [i, stone] of scene.getObjectsByProperty('name', 'shelters').entries()) if (shelterOf(i) !== 'stones') stone.visible = false;
@@ -975,6 +981,18 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
       // Lightning, now and then; and one at every flyby's moment, and again through a flight meant to be watched.
       for (const f of flybys) {
+        // A saved non-beat cue can precede its still-unread line. Ordinary past flights stay gone; only this
+        // active, unfinished picture may reconstruct its own flight, after the camera has reached its cue.
+        const resume = f.restored && !f.resumed && moment && !flags.has(`scene:${moment.id}`)
+          ? f.reveals.find(one => one.id === moment.id && moment.seconds >= one.at && moment.seconds < one.at + f.def.seconds)
+          : undefined;
+        if (resume && moment) {
+          f.resumed = true;
+          // A pending line may keep this phase for a long time: do not restore at the invisible start of its glow.
+          f.elapsed = Math.max(f.def.seconds * .06, moment.seconds - resume.at);
+          f.flashed = (f.def.lit ?? []).filter(at => at <= f.elapsed).length;
+          flashAt = clock;
+        }
         // The reveal owns this travel clock. Its line may outlast the flight, while rain, wingbeats and the
         // ride continue on the world's clock. Neither an active reading hold nor Pause spends the remaining flight.
         if (f.elapsed >= 0 && !revealPaused && dt > 0) f.elapsed += dt;

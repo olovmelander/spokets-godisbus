@@ -73,3 +73,64 @@ describe('a story reveal waits for its own line without stopping the storm', () 
     expect(figure.visible).toBe(false);
   });
 });
+
+describe('restoring the actual Älven reveal without replaying old flights', () => {
+  function saved(completed = false) {
+    const chapter = AVENTYR2.find(chapter => chapter.id === 'alven')!;
+    const flight = chapter.storm!.flybys!.find(f => f.on === 'al:little-seen')!;
+    const past = chapter.storm!.flybys![0]!;
+    const view = new Scene(), camera = new PerspectiveCamera();
+    camera.position.set(160, 4, 15);
+    const extras = PACK.extras.map(make => make({ chapter, scene: view, sky: new Color(), hemisphere: new HemisphereLight(), sun: new DirectionalLight() })).filter(extra => extra !== null);
+    // Save filtering removed the unfinished beat:al:see-little, but its earlier non-beat scene cue remains.
+    const flags = new Set([flight.on, past.on, ...(completed ? ['scene:al:little', 'beat:al:see-little'] : [])]);
+    let clock = 0;
+    const update = (dt: number, seconds: number | null, waiting = false) => {
+      clock += dt;
+      extras.forEach(extra => extra.update({ dt, clock, flags, x: 156, y: 3, camera, still: false, tier: 'low', riding: true,
+        revealPaused: waiting, scene: seconds === null ? null : { id: 'al:little', seconds, waiting } }));
+    };
+    update(0, null);
+    const figure = view.getObjectByName(`flyby:${flight.on}`)!;
+    const historical = view.getObjectByName(`flyby:${past.on}`)!;
+    const halo = figure.children.find(child => child.type === 'Mesh') as import('three').Mesh<import('three').BufferGeometry, import('three').MeshBasicMaterial>;
+    return { flags, flight, figure, historical, halo, update };
+  }
+
+  it('reconstructs a saved pending reveal at a visible phase, then continues only once', () => {
+    const { flags, flight, figure, historical, halo, update } = saved();
+    expect(figure.visible).toBe(false);
+    update(.05, .3, true); // the shot is still moving toward the figure
+    expect(figure.visible).toBe(false);
+    update(.05, .81, true);
+    expect(figure.visible).toBe(true);
+    expect(halo.material.opacity).toBeGreaterThan(.3);
+    const x = figure.position.x, z = figure.position.z;
+    expect(x).toBeGreaterThan(flight.from.x);
+    for (let i = 0; i < 200; i++) update(.05, .81, true);
+    expect(figure.visible).toBe(true);
+    expect(figure.position.x).toBe(x);
+    expect(figure.position.z).toBe(z);
+    expect(historical.visible).toBe(false);
+    // A resumed line cannot reset its flight every frame, and a later re-entry cannot resurrect it again.
+    flags.add('beat:al:see-little');
+    for (let i = 0; i < 120; i++) update(.05, .81 + i * .05);
+    expect(figure.visible).toBe(false);
+    update(.05, .81, true);
+    expect(figure.visible).toBe(false);
+    expect(historical.visible).toBe(false);
+  });
+
+  it('leaves a completed reveal hidden, even if an old caller supplies its scene frame', () => {
+    const { figure, historical, update } = saved(true);
+    for (let i = 0; i < 120; i++) update(.05, .81, true);
+    expect(figure.visible).toBe(false);
+    expect(historical.visible).toBe(false);
+  });
+
+  it('does not resurrect a restored flight after its authored passage is already over', () => {
+    const { figure, update } = saved();
+    update(.05, 6, true);
+    expect(figure.visible).toBe(false);
+  });
+});

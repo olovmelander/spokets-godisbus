@@ -1,5 +1,6 @@
 import type { Camera, Color, DirectionalLight, Group, HemisphereLight, Object3D, Scene } from 'three';
 import type { ChapterData, Mode, Mover, RideLook, Spot } from '../sim/types';
+import type { SceneFrame } from '../sim/scene';
 import type { Assets } from './assets';
 import type { PlaceLook } from './dressing/kit';
 import type { SpotProp } from './props';
@@ -41,6 +42,8 @@ export interface ExtraFrame {
   riding: boolean;
   /** An authored reveal is waiting for its own dialogue; its story flyby waits while the rest of the world stays alive. */
   revealPaused?: boolean;
+  /** The active authored picture, used to restore only an unfinished reveal after loading a save. */
+  scene?: SceneFrame | null;
   /** How he moves: his speed along and up, which way he faces, whether he stands, and his mode. */
   vx?: number;
   vy?: number;
