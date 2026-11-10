@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import '../../src/content/aventyr2/aventyr2';
 import { context, stormskog } from '../../src/content/aventyr2/chapters/stormskog';
-import { words } from '../../src/content/aventyr2/lines/stormskog';
+import { CONE_REACTIONS, words } from '../../src/content/aventyr2/lines/stormskog';
 import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
@@ -151,10 +151,14 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       const freed = new Sim(stormskog, {}, { checkpoint: CP.owl });
       run(freed, 0.2);
       // Its ring hangs out of every jump's reach: it is the lace that pulls it.
-      walkTo(freed, 69.5);
+      walkTo(freed, 70.5);
       expect(freed.curr.verb).toBe('pull');
       use(freed);
-      run(freed, 1);
+      run(freed, .2);
+      expect(mover(freed, 'owl-twig').y).toBeCloseTo(3.9);
+      run(freed, .5);
+      expect(freed.flags.has('placed:owl-twig')).toBe(false);
+      run(freed, 1.8);
       expect(freed.flags.has('placed:owl-twig')).toBe(true);
       expect(freed.said).toContain('ss:owl-free');
       // The twig lies in the moss, low enough to walk over.
@@ -405,13 +409,24 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
     });
   });
 
+  it('only offers the lingonberry line after Elof actually gives it to the jay', () => {
+    const sim = new Sim({ ...stormskog, spawn: { x: 167.5, y: 0 }, scenes: [] }, {}, { flags: ['ss:hollow'] });
+    run(sim, .2); use(sim);
+    expect(sim.flags.has('berry')).toBe(true);
+    run(sim, 8);
+    expect(sim.said).not.toContain('ss:jay-glad');
+    walkTo(sim, 172.5); use(sim); run(sim, 8);
+    expect(sim.flags.has('jay')).toBe(true);
+    expect(sim.said).toContain('ss:jay-glad');
+  });
+
   it('says every line in at most 40 characters, warm and plain, and every word it uses exists', () => {
     for (const [key, text] of Object.entries(words.lines)) {
       expect(text.length, key).toBeLessThanOrEqual(40);
       expect(key, key).toMatch(/^ss[A-Z]/);
     }
     // Every line of the chapter's words is said somewhere in it: along the way, or in one of its scenes.
-    const said = new Set([...(stormskog.beats ?? []), ...sceneBeats(stormskog.scenes)].map((beat) => beat.line));
+    const said = new Set([...CONE_REACTIONS, ...[...(stormskog.beats ?? []), ...sceneBeats(stormskog.scenes)].map((beat) => beat.line)]);
     for (const key of Object.keys(words.lines)) expect(said.has(key), key).toBe(true);
     const verbs: Record<string, string> = sv.verbs;
     for (const spot of stormskog.spots ?? []) expect(verbs[spot.word ?? spot.verb], spot.id).toBeTruthy();

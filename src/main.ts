@@ -1,4 +1,5 @@
 import { keepsakesFound, memoryFound, STORM_MEMORIES } from './content/collections';
+import { CONE_REACTIONS } from './content/aventyr2/lines/stormskog';
 import { Timer } from 'three';
 import { Pointing } from './app/pointing';
 import { Tutorial } from './app/tutorial';
@@ -344,6 +345,8 @@ async function start(): Promise<void> {
   const sceneUi = createSceneUi(document, advanceStory);
   // What was said before this game was taken up again is not said again.
   let told = game.sim.said.length;
+  let reactedToCone = game.sim.knocks;
+  let coneReaction = 0;
   let sceneHeard: string | null = null;
   let scoredScene = game.sim.sceneFrame;
   let bagTorn = game.sim.flags.has('bag:torn');
@@ -1265,6 +1268,13 @@ async function start(): Promise<void> {
       if (read) unreadBeats.push(id);
       if (beat) hud.say(beat.who, beat.line, read);
       if (beat?.line === 'safeHere') audio.play({ kind: 'motif', who: 'mamma' });
+    }
+    // A bumped head is an incidental remark: it never waits for Fortsätt, interrupts a line, or arrives late.
+    if (game.sim.knocks > reactedToCone) {
+      const count = game.sim.knocks; reactedToCone = count;
+      if (chapter.storm?.drips === 'cone' && !hud.speaking() && !scene && !menuOpen()) {
+        hud.say('elof', CONE_REACTIONS[coneReaction++ % CONE_REACTIONS.length]!, false);
+      }
     }
     // What is said waits while a memory plays: its line comes after it.
     hud.tick(menuOpen() ? 0 : dt);

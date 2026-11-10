@@ -229,6 +229,7 @@ export function plant(chapter: ChapterData, dressing: Group | null | undefined):
   const built = (chapter.storm?.buildings ?? []).filter((b) => b.kind !== 'birch' && b.kind !== 'spruce' && b.kind !== 'mailbox');
   const free = (x: number, z: number, wide: number) => (place === 'village' || (grows(chapter, x) && grows(chapter, x - wide / 2) && grows(chapter, x + wide / 2)))
     && !built.some((b) => Math.abs(x - b.x) < (b.width ?? 10) / 2 + wide / 2 + 1.5 && z > b.z - 14)
+    && !(chapter.treeGaps ?? []).some(gap => x + wide / 2 > gap.from && x - wide / 2 < gap.to && z > gap.back)
     && surfaceAt(chapter, x) !== 'turf'
     && !((chapter.id === 'garden' || chapter.id === 'stormgard') && gardenViewGap(x, chapter.id) && z > -29.5) && !(chapter.street ?? []).some((part) => part.kind === 'house' && x > part.from - 2 && x < part.to + 2);
   const tone = () => 0.85 + next() * 0.25;

@@ -501,7 +501,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Där springer gamla trägubben ner!"
+    "text": "Där vandrar gamla trägubben ner!"
   },
   {
     "key": "ssVillage",
@@ -558,6 +558,34 @@
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Tack, Klonk! Du är världens bästa bro."
+  },
+  {
+    "key": "ssConeOuch",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Aj!"
+  },
+  {
+    "key": "ssConeHey",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Oj, en kotte!"
+  },
+  {
+    "key": "ssConeBonk",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Aj då!"
+  },
+  {
+    "key": "ssConeDuck",
+    "speaker": "elof",
+    "situation": "Äventyr 2, falling cone reaction during play",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Hoppsan!"
   },
   {
     "key": "scene_stormskog",

@@ -980,8 +980,9 @@ export class Sim {
       const a = mover.def.stops[mover.from]!;
       const b = mover.def.stops[mover.stop]!;
       // It starts with a will and settles softly: a little past its stop, and back.
-      const k = mover.t;
-      const eased = 1 - (1 - k) ** 3 + Math.sin(Math.PI * k) * 0.06 * k;
+      const seconds = mover.def.seconds ?? MOVE_TIME;
+      const k = mover.def.wait ? Math.max(0, (mover.t * seconds - mover.def.wait) / (seconds - mover.def.wait)) : mover.t;
+      const eased = mover.def.wait ? smooth(k) : 1 - (1 - k) ** 3 + Math.sin(Math.PI * k) * 0.06 * k;
       mover.x = mix(a.x, b.x, eased);
       mover.y = mix(a.y, b.y, eased);
       this.moverBodies[i]!.setTransform(new Vec2(mover.x, mover.y), 0);

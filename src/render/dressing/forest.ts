@@ -508,6 +508,7 @@ function undergrowth(
       const size = small + next() * (big - small);
       const z = -0.4 - wide * size - next() ** 1.4 * far;
       const lies = [next() * 6.28, 0.85 + next() * 0.3, (next() - 0.5) * tilt, (next() - 0.5) * tilt];
+      if (shape === 'gran' && chapter.treeGaps?.some(gap => x + wide * size > gap.from && x - wide * size < gap.to && z > gap.back)) continue;
       if (grows(chapter, x) && grows(chapter, x + 0.5) && grows(chapter, x - 0.5)) put(shape, x, top(x, z) - sunk, z, lies[0]!, size, lies[1]!, [lies[2]!, lies[3]!]);
     }
   };

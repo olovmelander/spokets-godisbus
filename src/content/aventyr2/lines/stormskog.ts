@@ -4,6 +4,8 @@ import type { ChapterWords } from './words';
  * What is said in Stormskogen, the second adventure's Kapitel 2 (docs/aventyr-2.md): at most about 40 characters
  * a line, Swedish, no names but the family's. Klonk has no mouth: it says only *klonk*.
  */
+export const CONE_REACTIONS = ['ssConeOuch', 'ssConeHey', 'ssConeBonk', 'ssConeDuck'] as const;
+
 export const words: ChapterWords = {
   lines: {
     // 1. the forest's edge
@@ -11,6 +13,10 @@ export const words: ChapterWords = {
     ssKlonk: 'Klonk!',
     ssFlash: 'Blixten! Där blåste lillgubben förbi!',
     // 2. the cone rain
+    ssConeOuch: 'Aj!',
+    ssConeHey: 'Oj, en kotte!',
+    ssConeBonk: 'Aj då!',
+    ssConeDuck: 'Hoppsan!',
     ssCones: 'Kottar faller! Titta på skuggorna.',
     // 3. the boughs
     // 4. the owl
@@ -42,7 +48,7 @@ export const words: ChapterWords = {
     ssJaySeen: 'Lavskrikan! Den gömmer sig för regnet.',
     ssJayGlad: 'Ett lingon åt dig. Visa vägen, kompis!',
     // 9. the hill
-    ssSeeOld: 'Där springer gamla trägubben ner!',
+    ssSeeOld: 'Där vandrar gamla trägubben ner!',
     ssVillage: 'Byn är alldeles mörk. Inte ett ljus.',
     ssOnward: 'Klonk, klonk!',
   },

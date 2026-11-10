@@ -1,5 +1,6 @@
 import { stormSweet } from './storm-sweet';
 import { lessMotion } from '../platform/motion';
+import { owlHollow } from './owl-trap';
 import { buildBraid } from './braid';
 import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } from './myren-helper';
 import { createPaddle, type Paddle } from './paddle';
@@ -180,7 +181,7 @@ export interface Frame {
   /** The last big candy reached, or -1. */
   checkpoint: number;
   /** Where the things on rails are, in the chapter's order. */
-  movers: readonly { x: number; y: number }[];
+  movers: readonly { x: number; y: number; t?: number; stop?: number }[];
   /** The drips and their next drops, in the chapter's order. */
   drips: readonly { x: number; y: number; shadow: number; height: number }[];
   /** What has happened in the chapter. A candy that waits for a flag is drawn once the flag is set. */
@@ -760,6 +761,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // figures; a blank marker alone cannot explain who helped or connect these crossings to the opening.
   const family: Relative[] = [];
   if (chapter.id === 'myren') scene.add(mammaSteps());
+  if (chapter.id === 'stormskog') scene.add(owlHollow());
   /**
    * The rain gear and Bertil's own hair, made in Blender over each of the family's approved models (the private
    * repository's family/wardrobe.py): put on the model when it has come, if the private pack has it.
@@ -1568,9 +1570,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
     // Hang by his hands from the scarf; walk on his own feet on the way home.
     const moving = onScarf ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
+    const pullIndex = movers.findIndex((m, i) => m.t !== undefined && m.t < 1 && (m.stop ?? 0) > 0 && chapter.movers?.[i]?.verb === 'pull' && !chapter.movers[i]!.on);
+    const pullMover = pullIndex >= 0 ? movers[pullIndex]! : null;
     const playerPose = playerMotion.update(moving, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
     // What is said (./talk.ts): he looks at whoever speaks to him, from where his face was a moment ago, and speaks with his
     // mouth, his head and a free hand. It is drawn on a copy of his pose: his own motion never keeps it.
+    if (pullMover) {
+      const pulling = smooth((pullMover.t! - .15) / .25) * (1 - smooth((pullMover.t! - .9) / .1));
+      playerPose.lean += (-.24 - playerPose.lean) * pulling;
+      playerPose.kneeL += (.25 - playerPose.kneeL) * pulling; playerPose.kneeR += (.25 - playerPose.kneeR) * pulling;
+      if (pullMover.t! < .2) {
+        const cast = smooth(pullMover.t! / .2);
+        playerPose.armR = lerp(2.7, 1.1, cast); playerPose.elbowR = lerp(.35, 1, cast);
+      }
+    }
     const elofOther = talk.lookAt('elof'), elofThere = elofOther ? talk.face(elofOther) : null;
     if (elofThere) playerBody.mouth(faceAt);
     const elofHands = (scripted?.act && !HANDS_HANG.includes(scripted.act)) || curr.hook || lanternHeld ? NO_HANDS : BOTH_HANDS;
@@ -1638,7 +1651,22 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hold?.(1, { kind: 'power', size: .02 * tall });
       playerBody.hand(1, laceHand);
     }
-    lace.update(curr.hook, laceHand);
+    let pullTarget: { x: number; y: number; z?: number } | null = null;
+    if (pullMover) {
+      const def = chapter.movers![pullIndex]!, ring = def.ring ?? { x: 0, y: def.height };
+      const target = boot.set(pullMover.x + ring.x, pullMover.y + ring.y, ring.z ?? .2);
+      playerBody.hand(1, laceHand);
+      laceAlong.copy(target).sub(laceHand).normalize();
+      if (pullMover.t! >= .2) {
+        const reach = rootReach.copy(laceHand).addScaledVector(laceAlong, .24);
+        playerBody.reach(1, reach, .9); playerBody.reach(0, reach.clone().addScaledVector(laceAlong, -.12), .85);
+        playerBody.hold?.(0, { kind: 'power', size: .025 }); playerBody.hold?.(1, { kind: 'power', size: .025 });
+      }
+      playerBody.hand(1, laceHand);
+      const thrown = smooth(pullMover.t! / .2);
+      pullTarget = { x: lerp(laceHand.x, target.x, thrown), y: lerp(laceHand.y, target.y, thrown), z: lerp(laceHand.z, target.z, thrown) };
+    }
+    lace.update(curr.hook ?? pullTarget, laceHand);
     if (onScarf && scarves) {
       // Both hands closed round the scarf over his head, the one over the other along it; the lower holds just over its end.
       scarves.grip(x, y, tall, scarfLower, scarfUpper);
@@ -2955,7 +2983,7 @@ function buildMovers(chapter: ChapterData): Group[] {
       const at = mover.ring ?? { x: 0, y: mover.height };
       const ring = new Mesh(new TorusGeometry(0.17, 0.04, 10, 28), red);
       ring.name = 'pull-ring';
-      ring.position.set(at.x, at.y, 0.2);
+      ring.position.set(at.x, at.y, at.z ?? .2);
       group.add(ring);
     }
     group.position.set(mover.stops[0]!.x, mover.stops[0]!.y, 0);
@@ -2977,13 +3005,13 @@ function buildLace() {
   mesh.frustumCulled = false;
   mesh.scale.setScalar(0);
   drawnWhile(mesh, false);
-  function update(hook: { x: number; y: number } | null, hand: Vector3): void {
+  function update(hook: { x: number; y: number; z?: number } | null, hand: Vector3): void {
     drawnWhile(mesh, hook !== null);
     if (!hook) {
       mesh.scale.setScalar(0);
       return;
     }
-    const length = along.set(hook.x, hook.y, 0).sub(hand).length();
+    const length = along.set(hook.x, hook.y, hook.z ?? 0).sub(hand).length();
     mesh.position.copy(hand).addScaledVector(along, .5);
     mesh.quaternion.setFromUnitVectors(up, along.normalize());
     mesh.scale.set(1, length, 1);

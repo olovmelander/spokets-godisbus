@@ -1,4 +1,5 @@
 import { souvenir } from './souvenir';
+import { owlTwig } from './owl-trap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
@@ -72,6 +73,7 @@ export function moverProp(mover: Mover): Group | null {
   const h = mover.height;
   const group = new Group();
   switch (mover.look) {
+    case 'owl-twig': return owlTwig();
     case 'plank':
     case 'block': {
       const wood = solid(mover.look === 'plank' ? '#c9ae84' : '#d7a65e', 0.75);

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { CONE_REACTIONS } from '../../src/content/aventyr2/lines/stormskog';
 import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
 import { A2 } from '../../src/content/aventyr2/sv';
 import { sceneBeats } from '../../src/sim/scene';
@@ -33,6 +34,9 @@ function expected(): VoiceLine[] {
       const text = A2.lines[beat.line];
       if (text === undefined || out.has(beat.line)) continue;
       out.set(beat.line, { key: beat.line, speaker: beat.who, situation: `Äventyr 2, ${chapter.id}`, tag: TAGS[beat.who], text });
+    }
+    if (chapter.id === 'stormskog') for (const key of CONE_REACTIONS) {
+      out.set(key, { key, speaker: 'elof', situation: 'Äventyr 2, falling cone reaction during play', tag: TAGS.elof, text: A2.lines[key]! });
     }
     const card = chapter.scenes?.flatMap((scene) => scene.stage?.words ?? []) ?? [];
     for (const word of card) {

@@ -102,10 +102,12 @@ export interface Mover {
   on?: string;
   /** Seconds for one move; a helper may need time to bend, lift and set it down. */
   seconds?: number;
+  /** A cast or a grip before the object starts moving, within seconds. */
+  wait?: number;
   /** What it is, for the picture. Left out: a plain box. */
   look?: MoverLook;
   /** For Dra: where the ring sits, from the middle of its bottom. */
-  ring?: Vec;
+  ring?: Vec & { z?: number };
   /** An optional path: the story helper never sends him here from the main trail. */
   extra?: boolean;
   /** A toy/side puzzle: keep its final placement in saves, but do not steer the main hint trail into it. */
@@ -411,7 +413,7 @@ export interface SimStart {
 
 /** What a chapter file gives the simulation and the renderer. Units: EL. */
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
-export type MoverLook = 'none' | 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
+export type MoverLook = 'none' | 'owl-twig' | 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   // Flärken's round stone, which rolls off the planks and sinks.
   | 'fieldstone'
@@ -706,6 +708,8 @@ export interface ChapterData {
  * over a rise. The picture's business only, as all of `Storm` is.
  */
 export interface Flyby {
+  /** A wooden figure walking on the path between these ground heights, never airborne. */
+  walk?: boolean;
   on: string;
   from: Vec;
   to: Vec;

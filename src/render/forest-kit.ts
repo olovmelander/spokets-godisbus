@@ -292,7 +292,7 @@ export function forestLandmarks(chapter: ChapterData): Group {
     const width = mark.to - mark.from;
     const high = heightAt(chapter, (mark.from + mark.to) / 2) - mark.base;
     // A thing on the floor is no part of the forest's kit: the chapter's own pack puts it in.
-    const holder = isThing(mark.look) ? new Group() : forestSocket(new Group(), { shape: LANDMARKS[mark.look] });
+    const holder = isThing(mark.look) ? new Group() : forestSocket(new Group(), { shape: LANDMARKS[mark.look], ...(mark.look === 'log' ? { size: [width / 5, high / .8, 1] as const } : {}) });
     holder.name = `landmark:${mark.look}`;
     holder.position.set(mark.from, mark.base, 0);
     // A narrow solid support for the whole playable top; the anthill also holds the door's spruce behind it.

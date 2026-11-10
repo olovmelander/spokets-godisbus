@@ -538,7 +538,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
     let halo: Mesh | null = null;
     if (lit) {
-      figure.position.y = -FIGURE_MIDDLE[def.who];
+      if (!def.walk) figure.position.y = -FIGURE_MIDDLE[def.who];
       halo = glow('#dde4ff', 2.4, 0);
       halo.position.z = -0.3;
       holder.add(halo);
@@ -1045,7 +1045,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const floating = afloat(f.def);
         const at = flightAt(f.def, k);
         f.figure.position.set(at.x, at.y + (floating ? 0.12 * Math.sin(clock * 3) : 0), at.z);
-        f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
+        f.figure.rotation.z = f.def.walk ? (still ? 0 : Math.sin(clock * 9) * .065) : still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
         // Its glow comes up as the flash finds it, breathes with each flash, and goes as it is lost in the dark.
         if (f.halo) (f.halo.material as MeshBasicMaterial).opacity = (0.42 + 0.5 * flash) * smooth(k / 0.06) * (1 - smooth((k - 0.82) / 0.18));
       }
