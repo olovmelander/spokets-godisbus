@@ -1122,7 +1122,17 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             offSpeed[joint] = (offSpeed[joint] - w * k) * e;
             if (Math.abs(off[joint]) < 1e-6 && Math.abs(offSpeed[joint]) < 1e-5) off[joint] = offSpeed[joint] = 0;
             const most = rateOf(joint) * dt;
-            pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] + off[joint] - shown[joint]));
+            let caught = pose[joint] + off[joint];
+            if (joint === 'turn') {
+              // A delayed turn may keep momentum after its target changes, but cannot carry the head behind the chest.
+              // Bound the catch offset smoothly inside the remaining neck range: ordinary gaze (zero offset) stays
+              // exact, and velocity eases towards the limit instead of hitting a hard clamp. Speech adds only its small
+              // look/nod afterwards. Keep this inside the active catch; Pause retains the already drawn head unchanged.
+              const gaze = Math.max(-.9, Math.min(.9, pose.turn));
+              const room = 1.15 - Math.sign(off.turn) * gaze;
+              caught = gaze + room * Math.tanh(off.turn / room);
+            }
+            pose[joint] = shown[joint] + Math.max(-most, Math.min(most, caught - shown[joint]));
             speed[joint] = (pose[joint] - shown[joint]) / dt;
           }
         } else if (paused && shown) {
