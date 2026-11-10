@@ -324,4 +324,31 @@ describe('spoken-line lifecycle', () => {
     expect(spoken.paused).toBe(true);
     expect(Voice.made).toHaveLength(2);
   });
+
+  it.each(['onended', 'onerror'] as const)('does not restore a recording whose %s arrives while a memory owns the channel', async event => {
+    const { createHud } = await import('../../src/ui/hud');
+    const { fakePage } = await import('../robot/listener');
+    const completed = vi.fn();
+    const hud = createHud(fakePage({ show() {}, hide() {} }), 0, undefined, undefined, undefined, undefined, completed);
+    hud.say('elof', 'tiny', true, 'unread'); hud.tick(0); hud.tick(100);
+    const spoken = Voice.made[0]!;
+    hud.paused(true);
+    const restore = player.suspendVoice();
+    player.playVoice('memory_garden_1');
+    const narration = Voice.made[1]!;
+    // Media events are queued tasks: finishing just before suspension can deliver the event after detachment.
+    spoken[event]!();
+    expect(player.playingVoice()).toBe('memory_garden_1');
+    expect(narration.paused).toBe(false);
+    hud.tick(100);
+    expect(completed).not.toHaveBeenCalled();
+    restore();
+    expect(player.playingVoice()).toBeNull();
+    player.resumeVoice(true);
+    expect(spoken.play).toHaveBeenCalledTimes(1);
+    hud.paused(false); hud.tick(0);
+    expect(completed).not.toHaveBeenCalled();
+    hud.tick(1 / 60);
+    expect(completed.mock.calls).toEqual([['unread']]);
+  });
 });

@@ -77,19 +77,20 @@ export function playVoice(key: string): void {
     currentKey = key;
     const attempt = ++playAttempt;
 
-    audio.onended = () => {
+    const finished = () => {
       if (currentAudio === audio) {
         currentAudio = null;
         currentKey = null;
       }
-    };
-
-    audio.onerror = () => {
-      if (currentAudio === audio) {
-        currentAudio = null;
-        currentKey = null;
+      // Media events can arrive after suspension. A finished/failed original must not return as an active line,
+      // and its completion must leave the memory's current narration alone.
+      for (const saved of suspendedVoices) if (saved.audio === audio) {
+        saved.audio = null;
+        saved.key = null;
       }
     };
+    audio.onended = finished;
+    audio.onerror = finished;
 
     const promise = audio.play();
     if (promise !== undefined) {
