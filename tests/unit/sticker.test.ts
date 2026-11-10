@@ -1,3 +1,4 @@
+import { STORM_SWEETS } from '../../src/content/storm-sweets';
 import { readFileSync } from 'node:fs';
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial, type InstancedMesh } from 'three';
 import { describe, expect, it } from 'vitest';
@@ -12,14 +13,14 @@ const generator = readFileSync(new URL('../../art/blender/candy-stickers.py', im
 describe('the stickers of the hidden candy', () => {
   it('are rendered in the order the game looks them up in', () => {
     const order = [...generator.match(/ORDER = \[([^\]]+)\]/)![1]!.matchAll(/'([a-z]+)'/g)].map((match) => match[1]);
-    expect(order).toEqual(Object.keys(KINDS));
+    expect(order).toEqual(Object.keys(KINDS).filter(kind => !STORM_SWEETS[kind]));
     expect(Number(generator.match(/^ACROSS = (\d+)/m)![1])).toBe(STICKER_SHEET.across);
     expect(Number(generator.match(/^DOWN = (\d+)/m)![1])).toBe(STICKER_SHEET.down);
     expect(STICKER_SHEET.across * STICKER_SHEET.down).toBeGreaterThanOrEqual(order.length);
   });
 
   it('each has a place of its own in the sheet, and keeps its kind\'s colours', () => {
-    const places = Object.keys(KINDS).map((kind) => stickerStyle(kind).match(/--sx:(\d+);--sy:(\d+)/)!.slice(1).join(','));
+    const places = Object.keys(KINDS).filter(kind => !STORM_SWEETS[kind]).map((kind) => stickerStyle(kind).match(/--sx:(\d+);--sy:(\d+)/)!.slice(1).join(','));
     expect(new Set(places).size).toBe(16);
     expect(stickerStyle('gelehallon')).toContain('--sx:0;--sy:0');
     expect(stickerStyle('chokladkola')).toContain('--sx:0;--sy:1');

@@ -1,3 +1,4 @@
+import { souvenir } from './souvenir';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
@@ -698,6 +699,14 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.add(saturdayBag());
       group.position.z = 0.25;
       return { group, update: (used, _clock, dt) => vanish(used, dt) };
+    }
+    case 'souvenir': {
+      const thing = souvenir(spot.id.replace('lost:', ''));
+      group.add(thing);
+      return { group, update(used, clock, dt) {
+        thing.rotation.y = Math.sin(clock * .8) * .12;
+        vanish(used, dt);
+      } };
     }
     case 'memory': {
       // A minnesspån: a curl of Pappa's shaving that glows where the ghost has stopped. Touched, it has been seen.

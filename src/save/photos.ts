@@ -9,7 +9,7 @@ const resetKey = (player: string) => `godisbus.v1.photos.reset.${player}`;
 interface Reset { generation: string | null; pending: boolean }
 export interface PhotoStore {
   list(player: string): Promise<AlbumPhoto[]>;
-  /** Keeps the first picture of this moment. Seven authored IDs bound each player's collection. */
+  /** Keeps the first picture of this moment. Authored IDs from both adventures bound each player's collection. */
   put(photo: AlbumPhoto): Promise<boolean>;
   clear(player: string): Promise<boolean>;
 }

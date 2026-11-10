@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { STORY } from '../../src/content/chapters';
 import { epilog } from '../../src/content/chapters/ends';
 import { garden } from '../../src/content/chapters/garden';
-import { LOST, lostFlag, lostFound } from '../../src/content/lost';
+import { YARD_LOST, LOST, lostFlag, lostFound } from '../../src/content/lost';
 import { sv } from '../../src/content/sv';
 import { STEP } from '../../src/sim/constants';
 import { hintFor } from '../../src/sim/help';
@@ -18,14 +18,14 @@ const deck = garden.roofs![0]!;
 
 describe('the lost things under the deck', () => {
   it('are four, each with a name, and all of them in Kapitel 1', () => {
-    expect(things.map((spot) => spot.id)).toEqual(LOST.map(lostFlag));
+    expect(things.map((spot) => spot.id)).toEqual(YARD_LOST.map(lostFlag));
     for (const thing of LOST) {
       expect(sv.lost[thing], thing).toBeDefined();
       expect(sv.lost[thing]!.length).toBeLessThanOrEqual(18);
     }
     expect(Object.keys(sv.lost).sort()).toEqual([...LOST].sort());
-    for (const chapter of STORY) {
-      if (chapter.id !== 'garden') expect((chapter.spots ?? []).filter((spot) => spot.id.startsWith('lost:')), chapter.id).toEqual([]);
+    for (const chapter of STORY) if (chapter.id !== 'garden') {
+      expect((chapter.spots ?? []).filter(spot => YARD_LOST.some(id => spot.id === lostFlag(id))), chapter.id).toEqual([]);
     }
   });
 
@@ -71,7 +71,7 @@ describe('the lost things under the deck', () => {
     expect(some).toContain(sv.lost.coin);
     expect(some).not.toContain(sv.lost.marble);
     // The sixteen kinds are still sixteen, and each thing found is drawn.
-    expect(some.slice(some.indexOf('album-chapters'), some.indexOf(sv.lostTitle)).match(/<li/g)).toHaveLength(16);
+    expect(some.slice(some.indexOf('album-chapters'), some.indexOf(sv.lostTitle)).match(/<li/g)).toHaveLength(24);
     expect(some).toMatch(/data-thing="coin"><svg class="thing"/);
   });
 

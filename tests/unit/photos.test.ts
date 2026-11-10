@@ -4,14 +4,14 @@ import { captureFrame } from '../../src/render/capture';
 import { createPhotoStore, PHOTO_MAX_BYTES } from '../../src/save/photos';
 
 describe('authored photo moments', () => {
-  it('captures exactly the seven planned story moments, after they settle', () => {
+  it('preserves the seven first-adventure moments, after they settle', () => {
     const examples = [
       ['prolog', 'star', 'ride', 'shrinking', 0.55], ['garden', '', 'swing', 'swing', 0.25],
       ['garden', 'moa', 'ride', 'plane', 1.5], ['granskog', 'cap', 'ride', 'cap', 1.5],
       ['berget', 'flight', 'ride', 'crane', 2], ['norrsken', 'taste', 'free', 'aurora', 2.8],
       ['epilog', 'dots', 'free', 'carving', 0.3],
     ] as const;
-    expect(PHOTO_MOMENTS.length).toBeLessThanOrEqual(10);
+    expect(PHOTO_MOMENTS).toHaveLength(17);
     for (const [chapter, flag, mode, expected, delay] of examples) {
       const tick = createPhotoMoments(chapter, new Set());
       expect(tick({ mode }, new Set(flag ? [flag] : []), delay - 0.01)).toBeNull();

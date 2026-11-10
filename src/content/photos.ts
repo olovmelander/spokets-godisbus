@@ -1,7 +1,7 @@
 import type { PlayerState } from '../sim/types';
 
 /** Authored album frames, in story order. Only game renders can enter this collection. */
-export const PHOTO_MOMENTS = ['shrinking', 'swing', 'plane', 'cap', 'crane', 'aurora', 'carving'] as const;
+export const PHOTO_MOMENTS = ['shrinking', 'swing', 'plane', 'cap', 'crane', 'aurora', 'carving', 'stormtiny', 'hedge', 'umbrella', 'football', 'outlet', 'raft', 'nightowl', 'lamps', 'reunion', 'cocoa'] as const;
 export type PhotoMoment = (typeof PHOTO_MOMENTS)[number];
 export const isPhotoMoment = (id: unknown): id is PhotoMoment => PHOTO_MOMENTS.includes(id as PhotoMoment);
 
@@ -13,6 +13,16 @@ const moments: { id: PhotoMoment; chapter: string; flag?: string; mode?: PlayerS
   { id: 'crane', chapter: 'berget', flag: 'flight', mode: 'ride', delay: 2 },
   { id: 'aurora', chapter: 'norrsken', flag: 'taste', delay: 2.8 },
   { id: 'carving', chapter: 'epilog', flag: 'dots', delay: 0.3 },
+  { id: 'stormtiny', chapter: 'stormkvall', flag: 'scene:krymper', delay: .2 },
+  { id: 'hedge', chapter: 'stormgard', flag: 'sg:flight', delay: 2.4 },
+  { id: 'umbrella', chapter: 'stormbyn', flag: 'umbrella', mode: 'ride', delay: 1.2 },
+  { id: 'football', chapter: 'olympia', flag: 'ol:kick', mode: 'ride', delay: 1.1 },
+  { id: 'outlet', chapter: 'flarken', flag: 'sjon:downstream', delay: .8 },
+  { id: 'raft', chapter: 'alven', flag: 'al:raft', mode: 'ride', delay: 1.4 },
+  { id: 'nightowl', chapter: 'alven', flag: 'al:owl', mode: 'ride', delay: 2 },
+  { id: 'lamps', chapter: 'stormoga', flag: 'scene:lampa:bertil', delay: .2 },
+  { id: 'reunion', chapter: 'stormoga', flag: 'scene:motet', delay: .2 },
+  { id: 'cocoa', chapter: 'morgonen', flag: 'cocoa', delay: 2.5 },
 ];
 
 /** Let the picture settle during play. Loading an old flag must not take a picture of the wrong place. */

@@ -1,3 +1,4 @@
+import { keepsakesFound, memoryFound, STORM_MEMORIES } from './content/collections';
 import { Timer } from 'three';
 import { Pointing } from './app/pointing';
 import { Tutorial } from './app/tutorial';
@@ -413,7 +414,7 @@ async function start(): Promise<void> {
       candy: { ...save.candy, [chapter.id]: game.sim.collected.flatMap((got, i) => (got ? [i] : [])) },
       side: { ...save.side, [chapter.id]: game.sim.collectedSide.flatMap((got, i) => (got ? [i] : [])) },
       placed: { ...save.placed, [chapter.id]: game.sim.placed },
-      flags: { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags)
+      flags: { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags, chapter.id)
         .filter((flag) => !flag.startsWith('beat:') || !readingBeats.has(flag.slice(5)) || readBeats.has(flag.slice(5))) },
       playMs: save.playMs + (now - playedFrom),
     };
@@ -1010,7 +1011,7 @@ async function start(): Promise<void> {
   byId('pauseAlbum').addEventListener('click', (event) => {
     const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-memory]') : null;
     const id = button?.dataset.memory;
-    const found = id && (id === chapter.id ? game.sim.flags.has('memory') : save.flags[id]?.includes('memory'));
+    const found = id && memoryFound(id, { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags, chapter.id) });
     if (!button || platformBlocked() || !id || !found || !pause.open || memories.open || photoAlbum.open || story.open || explore.open) return;
     input.release();
     const rect = button.getBoundingClientRect();
@@ -1028,6 +1029,8 @@ async function start(): Promise<void> {
   // How many lost things were found when the page last looked, and which: -1 before it has looked.
   let lostSeen = -1;
   let lostKnown: readonly string[] = [];
+  let collectionSeen: number | null = null;
+  let stormSeen = 0;
   let shown = false;
   let lastTime = 0;
   let savedAt = game.sim.checkpoint;
@@ -1174,7 +1177,7 @@ async function start(): Promise<void> {
     // Copy this exact rendered frame now, before WebGL's drawing buffer is discarded. Encoding and
     // IndexedDB run afterwards; the ordinary render loop never keeps its drawing buffer alive.
     const moment = !photosStopped && !benchOn && !at
-      ? photoMoment(game.sim.curr, game.sim.flags, menuOpen() ? 0 : dt * game.tempo) : null;
+      ? photoMoment(game.sim.curr, game.sim.flags, menuOpen() ? 0 : (game.sim.steps - beforeSteps) * STEP) : null;
     if (moment) void view.capture().then(async (blob) => {
       if (blob && !photosStopped && await photoStore.put({ player: photoPlayer, moment, blob })) await photoAlbum.refresh();
     });
@@ -1204,7 +1207,7 @@ async function start(): Promise<void> {
     // The album: what earlier chapters hold in the save, and what this one holds now.
     if (game.sim.flags.size !== flagsSeen) {
       flagsSeen = game.sim.flags.size;
-      const all = { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags) };
+      const all = { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags, chapter.id) };
       byId('pauseMap').innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk());
       byId('endMap').innerHTML = mapSvg(mapState(chapter.id, canEnter), isKlonk(), true);
       const found = album(all);
@@ -1234,7 +1237,15 @@ async function start(): Promise<void> {
         audio.play({ kind: 'found' });
       }
       // The album's page, in the pause panel: in the story only.
-      const keepsakes = Object.values(all).some((flags) => flags.includes('keepsake:vittra')) ? ['vittra'] : [];
+      const keepsakes = keepsakesFound(all);
+      const stormCount = Object.keys(STORM_MEMORIES).filter(id => memoryFound(id, all)).length;
+      const collectionCount = keepsakes.length + stormCount;
+      if (collectionSeen !== null && collectionCount > collectionSeen) {
+        hud.notice(stormCount > stormSeen ? sv.collection.stormFound : sv.collection.keepsakeFound);
+        audio.play({ kind: 'found' });
+      }
+      collectionSeen = collectionCount;
+      stormSeen = stormCount;
       byId('pauseAlbum').innerHTML = storyCourse ? albumHtml(found, lost, keepsakes) + memoryAlbumHtml(all) : '';
       const kinds = Object.keys(KINDS).length;
       byId('pauseBagCount').textContent = sv.album.count.replace('{found}', String(found.length)).replace('{total}', String(kinds));

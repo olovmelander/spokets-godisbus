@@ -358,3 +358,12 @@ faceted granite and on the barn roof red ventilation hoods, and the narrow's wat
   flybys, glows, buildings (23 kinds, `src/content/aventyr2/buildings.ts`, with `turn` and `flip`), ropes, lakes,
   what the drips, the gusts' shelters (one for all, or one per gust), the rollers and the bouncers are, the goal's
   white bar, and the frozen-Klonk ledge. None of it is ground: the simulation never reads it.
+
+
+## Godispåsen genom båda äventyren (Olov, 10 november 2026)
+
+Den nya genomspelningen ber om en gemensam samling: allt från Äventyr 1 syns också under stormnatten och tvärtom. Åtta nya specialgodisar (en per utomhuskapitel), åtta hittegods under stormnatten och tio nya fototillfällen kompletterar den första resan. Fyra ytterligare hittegods ligger längs Äventyr 1, utöver de fyra under altanen.
+
+**Stormens spår** samlar åtta bildberättelser om hur den gamla trägubben följer Lillgubben för att ingen ska bli ensam. De öppnas när Elof faktiskt får se eller höra motsvarande del av berättelsen. Påsen låter honom se bilderna igen i egen takt. Pappas minnen finns kvar som en egen del. Små minneskort för flygturer, hjälpta vänner och hemkomsten fyller på samlingen utan att stoppa spelet.
+
+Samma lokala spelarprofil äger båda samlingarna. De får bestående fyndmarkeringar, så att en omspelning som nollställer repliker och scener behåller alla upptäckter. Foton är fortfarande små spelbilder som bara sparas på enheten.

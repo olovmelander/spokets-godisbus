@@ -1,3 +1,5 @@
+import { isStormMemory, memoryFound, STORM_MEMORIES } from '../content/collections';
+import { stormMemoryPictures } from './collection-art';
 import { lessMotion } from '../platform/motion';
 import { sv } from '../content/sv';
 import { use } from './icons';
@@ -16,7 +18,9 @@ export function memoryAlbumHtml(flags: Record<string, string[]>): string {
     flags[id]?.includes('memory')
       ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span>${use('play', 'memory-play')}</button>`
       : `<div class="memory-missing" role="img" aria-label="${sv.memories.waiting}">${CURL}</div>`,
-  ).join('')}</div>`;
+  ).join('')}</div><h3>${sv.collection.stormTitle}</h3><p class="setting-hint">${sv.collection.stormHint}</p><div class="memory-album">${Object.keys(STORM_MEMORIES).map(id => memoryFound(id, flags)
+    ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.collection.stories[id]!.title}">${stormMemoryPictures(id)![0]}<span>${sv.collection.stories[id]!.title}</span>${use('play', 'memory-play')}</button>`
+    : `<div class="memory-missing" role="img" aria-label="${sv.memories.waiting}">${CURL}</div>`).join('')}</div>`;
 }
 
 export interface Memory {
@@ -212,7 +216,7 @@ export function createMemory(doc: Document): Memory {
       return open;
     },
     play(chapter, done, options = {}) {
-      const pictures = MEMORIES[chapter];
+      const pictures = MEMORIES[chapter] ?? stormMemoryPictures(chapter);
       if (open) return;
       if (!pictures) {
         done();
@@ -232,9 +236,11 @@ export function createMemory(doc: Document): Memory {
         if (focus?.isConnected) focus.focus();
         done();
       };
-      const story = sv.memories.chapters[chapter];
+      const storm = isStormMemory(chapter);
+      const story = (storm ? sv.collection.stories[chapter] : sv.memories.chapters[chapter])!;
       doc.getElementById('memoryTitle')!.textContent = story.title;
-      doc.getElementById('memoryWhen')!.textContent = `${sv.memories.when} · ${sv.explore.chapters[chapter]}`;
+      const place = storm ? STORM_MEMORIES[chapter].chapter : chapter;
+      doc.getElementById('memoryWhen')!.textContent = `${storm ? sv.collection.stormWhen : sv.memories.when} · ${sv.explore.chapters[place] ?? sv.collection.places[place]}`;
       let at = -1;
       const show = (index: number) => {
         if ((suspended && at >= 0) || returning || index < 0) return;

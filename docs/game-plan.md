@@ -2046,7 +2046,7 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   - unknown IDs are dropped;
   - an unknown checkpoint maps to its chapter start;
   - a newer or corrupt format is never silently overwritten.
-- **IndexedDB, per player:** the album photos, about 10 small WebP game renders per playthrough. They are cleared
+- **IndexedDB, per player:** the album photos, at most 17 small WebP game renders across both adventures. They are cleared
   together with the player profile. If IndexedDB fails, the album simply has no photos.
 - **Backups.** `navigator.storage.persist()` is a bonus, not a safeguard. On iOS the real protection is the
   Home Screen install. (SHOULD) Each chapter card also shows a three-word code, e.g. "GRAN KOTTE MOSSA", that
@@ -2062,7 +2062,7 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   - the title: **Börja**/**Fortsätt**, *Byt spelare*, *Inställningar*, and the rotate picture in portrait;
   - pause: **Spela vidare**, *Godispåsen*, *Moas karta*, *Jag har fastnat*, *Inställningar*, *Till startsidan*;
   - settings (§4.1);
-  - Godispåsen: candy stickers by chapter, *Pappas minnen*, *Hittegods* and *Foton*;
+  - Godispåsen: candy stickers from both adventures by chapter, *Pappas minnen*, *Stormens spår*, *Hittegods*, *Små minnen* and *Foton*;
   - Moas karta and the chapter cards;
   - picture and speech bubbles, the helper prompt, and the HUD.
 - **Panels:**
@@ -2084,7 +2084,8 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   - draw calls, triangles and GL bytes.
 - **Album photos** are captured at authored moments (shrinking, the first swing, the plane, the cap, the crane,
   the aurora, the carving lesson). The renderer saves a small frame to IndexedDB, and the credits show them.
-  Elof can tap through the credits.
+  Elof can tap through the credits. Äventyr 2 adds ten authored pictures: tiny again, the hedge flight, Moa’s umbrella, the football shot, the outlet, the raft, the owl, the lamps, the reunion and the morning chocolate.
+- **Shared collection (Olov, 10 November 2026).** The bag always shows both adventures together. The original sixteen sweets and their golden reward remain; eight new special sweets lie on authored detours in Stormgården, Stormskogen, Stormbyn, Olympia, Flärken, Älven, Billsta and Stormens öga. Twelve new unbranded lost objects extend Hittegods beyond the yard into both journeys. Small keepsake cards commemorate kindness and travel moments. *Stormens spår* is eight replayable picture stories about the old carving following the little one, unlocked only by discoveries Elof has witnessed. Stable collection receipts survive resetting scene/dialogue flags during a replay. Existing local profiles and their photos are kept; no upload or new account is involved.
 - **Accessibility:**
   - all text is DOM text and can be resized;
   - every button has an accessible label;

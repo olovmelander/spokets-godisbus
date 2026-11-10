@@ -1,3 +1,4 @@
+import { STORM_SWEETS } from '../../src/content/storm-sweets';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { STORY, chapterNumber } from '../../src/content/chapters';
@@ -25,9 +26,9 @@ function jumpAt(chapter: ChapterData, x: number): Sim {
 
 describe('the hidden candy for the album', () => {
   it('is sixteen kinds, four in each numbered chapter, each hidden once and in its own chapter', () => {
-    expect(Object.keys(KINDS)).toHaveLength(16);
+    expect(Object.keys(KINDS).filter(kind => !STORM_SWEETS[kind])).toHaveLength(16);
     const hidden = numbered.flatMap((chapter) => (chapter.hidden ?? []).map((h) => ({ ...h, chapter: chapter.id })));
-    expect(hidden.map((h) => h.kind).sort()).toEqual(Object.keys(KINDS).sort());
+    expect(hidden.map((h) => h.kind).sort()).toEqual(Object.keys(KINDS).filter(kind => !STORM_SWEETS[kind]).sort());
     for (const chapter of numbered) expect(chapter.hidden, chapter.id).toHaveLength(4);
     for (const h of hidden) expect(KINDS[h.kind]!.chapter, h.kind).toBe(h.chapter);
     // The prologue, the final and the epilogue hide none.

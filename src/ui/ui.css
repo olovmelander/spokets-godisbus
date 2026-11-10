@@ -464,8 +464,8 @@ body.big-text {
 .notice-mark i.kind,
 .player-token.kind {
   border-radius: 0;
-  background: url('./kinds.webp') no-repeat;
-  background-size: 600% 300%;
+  background: var(--sticker, url('./kinds.webp')) no-repeat;
+  background-size: var(--sheet-size, 600% 300%);
   background-position: calc(var(--sx) * 20%) calc(var(--sy) * 50%);
   box-shadow: none;
   filter: drop-shadow(0 0.8px 0 var(--paper-bright)) drop-shadow(0 -0.8px 0 var(--paper-bright)) drop-shadow(0.8px 0 0 var(--paper-bright)) drop-shadow(-0.8px 0 0 var(--paper-bright))

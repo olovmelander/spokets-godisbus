@@ -1,3 +1,4 @@
+import { stormSweet } from './storm-sweet';
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
 import { createPaddle, type Paddle } from './paddle';
@@ -2811,7 +2812,9 @@ function buildHidden(chapter: ChapterData) {
     band.rotation.x = Math.PI / 2;
     const ring = new Mesh(new TorusGeometry(0.34, 0.022, 8, 30), gold);
     // The kit's sweet fills its ring: it is the prize, and bigger than anything on the trail.
-    sweet.add(sweetSocket(new Group().add(body, band), { shape: def.kind, scale: 1.25 }), ring);
+    const special = stormSweet(def.kind);
+    if (special) { body.geometry.dispose(); body.material.dispose(); band.geometry.dispose(); band.material.dispose(); }
+    sweet.add(special ?? sweetSocket(new Group().add(body, band), { shape: def.kind, scale: 1.25 }), ring);
     sweet.position.set(def.x, def.y, 0);
     sweet.visible = def.after === undefined;
     group.add(sweet);
