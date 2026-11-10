@@ -1,11 +1,11 @@
+import { stubCanvas } from './canvas-stub';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { billsta } from '../../src/content/aventyr2/chapters/billsta';
 import { heightOf } from '../../src/render/rig';
 import { createStage } from '../../src/render/stage';
 
 beforeEach(() => {
-  const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
-  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  stubCanvas();
 });
 afterEach(() => vi.unstubAllGlobals());
 

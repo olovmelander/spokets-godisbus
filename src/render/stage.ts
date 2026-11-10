@@ -1,3 +1,4 @@
+import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
   MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, SphereGeometry, SRGBColorSpace,
@@ -403,68 +404,11 @@ function thing(kind: Thing, drawing: CanvasTexture): Mesh {
  */
 function moasDrawing(): CanvasTexture {
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 202;
+  canvas.width = 512; canvas.height = 404;
   const c = canvas.getContext('2d')!;
-  c.fillStyle = '#fbf6e8';
-  c.fillRect(0, 0, 256, 202);
-  c.lineCap = 'round';
-  c.lineJoin = 'round';
-  const crayon = (colour: string, width: number, path: () => void) => {
-    c.strokeStyle = colour;
-    c.lineWidth = width;
-    c.beginPath();
-    path();
-    c.stroke();
-  };
-  const star = (x: number, y: number, r: number, fill: string) => {
-    c.beginPath();
-    for (let i = 0; i < 10; i++) {
-      const a = -Math.PI / 2 + (i * Math.PI) / 5;
-      const k = i % 2 === 0 ? r : r * 0.45;
-      c.lineTo(x + Math.cos(a) * k, y + Math.sin(a) * k);
-    }
-    c.closePath();
-    c.fillStyle = fill;
-    c.fill();
-    c.strokeStyle = '#a8741c';
-    c.lineWidth = 3;
-    c.stroke();
-  };
-  const sparkle = (x: number, y: number) => {
-    for (const [dx, dy] of [[-1, -1], [1, -1], [-1.3, 0.2], [1.3, 0.2], [0, -1.4]]) crayon('#e8b830', 3, () => {
-      c.moveTo(x + dx * 18, y + dy * 18);
-      c.lineTo(x + dx * 26, y + dy * 26);
-    });
-  };
-  /** A boy in a light blue shirt with a yellow fringe: tall or tiny. */
-  const boy = (x: number, ground: number, tall: number) => {
-    const head = tall * 0.22;
-    crayon('#2f4b7c', Math.max(3, tall * 0.08), () => { c.moveTo(x - tall * 0.08, ground); c.lineTo(x, ground - tall * 0.42); c.lineTo(x + tall * 0.08, ground); });
-    c.fillStyle = '#9db9e3';
-    c.fillRect(x - tall * 0.13, ground - tall * 0.72, tall * 0.26, tall * 0.32);
-    c.fillStyle = '#f2cba8';
-    c.beginPath();
-    c.arc(x, ground - tall * 0.72 - head, head, 0, Math.PI * 2);
-    c.fill();
-    crayon('#e8c64a', Math.max(3, tall * 0.07), () => { c.moveTo(x - head, ground - tall * 0.72 - head * 1.5); c.lineTo(x + head * 1.3, ground - tall * 0.72 - head * 2.1); });
-  };
-  const arrow = (x: number, y: number) => crayon('#6a5a4a', 4, () => { c.moveTo(x, y); c.lineTo(x + 46, y); c.moveTo(x + 34, y - 10); c.lineTo(x + 46, y); c.lineTo(x + 34, y + 10); });
-  // Above: the star, then a tiny boy.
-  star(54, 52, 30, '#f6dd6a');
-  sparkle(54, 52);
-  arrow(100, 52);
-  boy(196, 84, 30);
-  // Below: the golden sweet in its paper, glittering, then the boy as tall as he was.
-  c.fillStyle = '#e2a92a';
-  c.beginPath();
-  c.ellipse(54, 150, 26, 20, 0, 0, Math.PI * 2);
-  c.fill();
-  crayon('#a8741c', 3, () => { c.ellipse(54, 150, 26, 20, 0, 0, Math.PI * 2); });
-  crayon('#e2a92a', 6, () => { c.moveTo(28, 150); c.lineTo(12, 140); c.moveTo(28, 150); c.lineTo(12, 160); c.moveTo(80, 150); c.lineTo(96, 140); c.moveTo(80, 150); c.lineTo(96, 160); });
-  sparkle(54, 150);
-  arrow(104, 150);
-  boy(200, 196, 92);
+  c.fillStyle = '#fff3d4'; c.fillRect(0, 0, canvas.width, canvas.height);
+  c.translate(0, 42); c.scale(1.6, 1.6);
+  paintStoryIllustration(c, 'moa-drawing');
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   return texture;

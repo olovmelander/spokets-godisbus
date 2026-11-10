@@ -1,3 +1,4 @@
+import { carvingArt } from './story-illustrations';
 import { lessMotion } from '../platform/motion';
 import { sv } from '../content/sv';
 import type { StoryAction, StoryAnswer } from '../sim/story';
@@ -12,17 +13,31 @@ export const strokeHtml = `<div id="strokeBody" hidden>
   <svg id="strokePicture" viewBox="0 0 320 220" role="img" aria-label="${sv.painting.picture}">
     <g id="paintingPicture">
     <use id="paintGhost" href="#i-paint-ghost" x="0" y="-70" width="320" height="290"/>
-    <path id="paintShape" d="M101 136Q75 116 79 76Q86 17 165 17Q244 22 245 78Q245 119 220 136L239 190l-45 8-31-32-31 36-40-14z" fill="#d8b276" stroke="#906a40" stroke-width="4"/>
+    <g id="paintShape">
+      <path d="M111 127 97 147 92 184 110 205 207 205 224 186 218 151 205 128Z" fill="#e8d2a8" stroke="#967b57" stroke-width="3"/>
+      <path d="M103 143 84 147 79 166 90 177 102 167M216 144 234 148 240 167 229 179 218 166" fill="#e8d2a8" stroke="#967b57" stroke-width="3"/>
+      <path d="M91 54 111 23 149 14 191 19 222 43 237 79 231 111 204 134 162 140 122 133 96 111 83 80Z" fill="#f2dfb6" stroke="#967b57" stroke-width="3"/>
+      <path d="M91 54 111 23 149 14 191 19 222 43 204 37 166 29 127 36 101 64Z" fill="#fff0ce"/>
+      <path d="M96 111 122 133 162 140 204 134 231 111 207 123 165 128 124 122Z" fill="#cdb083"/>
+      <path d="M112 144 122 176 117 200 99 184 104 157M206 145 194 175 199 202 219 185 214 158" fill="#d4b88a"/>
+      <path d="M143 113q18 15 37-2" fill="none" stroke="#554332" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M139 150 144 174 141 193M170 154 175 185M99 67 97 85M219 63 226 83" fill="none" stroke="#b99a6b" stroke-width="1.5" opacity=".65"/>
+    </g>
     <circle id="paintEye0" cx="116" cy="86" r="21" fill="#373031" opacity=".15"/>
     <circle id="paintEye1" cx="204" cy="86" r="21" fill="#373031" opacity=".15"/>
     <circle id="strokeGuide" cx="116" cy="86" r="22" fill="none" stroke="#fff8dc" stroke-width="5" stroke-dasharray="5 5"/>
     <circle id="strokeStart" cx="116" cy="64" r="9" fill="#f5ce52" stroke="#563f28" stroke-width="2"/>
     </g>
     <g id="carvingPicture" visibility="hidden">
-      <path d="M83 180L112 81l101-47 69 42-22 104z" fill="#d8b276" stroke="#906a40" stroke-width="3"/>
-      <path id="carveFacet1" d="M83 180l48-69-19-30z" fill="#f0ce95"/>
-      <path id="carveFacet2" d="M213 34l-24 54 71 92 22-104z" fill="#bd915c"/>
-      <path id="carveFacet3" d="M131 111l58-23 37 75-30 17-42-4z" fill="#efcb8d"/>
+      <path d="M20 186Q154 166 302 190V220H20Z" fill="#b78d60"/>
+      <path d="M32 200q80-17 153-8m-115 18 180-9" fill="none" stroke="#e2bf84" stroke-width="2"/>
+      <g transform="rotate(56 179 130)">
+        ${carvingArt('little', 179, 174, 146, false)}
+        <path id="carveFacet1" d="M140 64 145 45 164 35 168 46 153 57Z" fill="#fff0cd"/>
+        <path id="carveFacet2" d="M205 105 218 135 218 162 201 167 197 140Z" fill="#c7a575"/>
+        <path id="carveFacet3" d="M162 107 182 101 190 132 183 170 165 171 169 139Z" fill="#f6e3b9"/>
+      </g>
+      <path d="M242 183q-12-13-20-3t-13-2m-92 17q-13-6-18 3t-12-1" fill="none" stroke="#f4d6a0" stroke-width="3"/>
       <path id="carveNotch1" class="notch" d="M136.9 69.4 147.7 64.4 146.5 76Z"/>
       <path id="carveNotch2" class="notch" d="M162.1 57.7 173 52.6 171.8 64.2Z"/>
       <path id="carveNotch3" class="notch" d="M187.4 45.9 198.2 40.9 197 52.5Z"/>

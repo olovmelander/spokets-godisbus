@@ -1,3 +1,4 @@
+import { stubCanvas } from './canvas-stub';
 import { Box3, InstancedMesh, Matrix4, Mesh, Vector3 } from 'three';
 import { OBB } from 'three/addons/math/OBB.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,8 +14,7 @@ import type { ActorKey } from '../../src/sim/scene';
  * were put and stands clear of it, and sitting down it goes down behind its feet and draws the chair in again.
  */
 beforeEach(() => {
-  const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
-  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  stubCanvas();
 });
 afterEach(() => vi.unstubAllGlobals());
 

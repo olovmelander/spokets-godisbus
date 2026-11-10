@@ -433,6 +433,8 @@ export const alven: ChapterData = {
     { look: 'reed', at: { x: 164.4, y: LAKE } },
   ],
   // Klonk is always a little ahead. Over open water he floats, being wood; elsewhere he waits on firm ground.
+  // Klonk hops onward before Elof can stand on the narrow bank. Leave the witnessed picture here to read.
+  thoughtClues: [{ at: { x: 31, y: GRAVEL.y + .5 }, picture: 'small-figure', after: 'beat:al:flash' }],
   ghost: [
     { at: { x: 6, y: 0 } },
     afloat(18, CURRENT),

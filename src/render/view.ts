@@ -1873,7 +1873,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
       ghostStaged = true;
     }
-    ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
+    // Its readable entrance belongs to the held line; event time may stop before the paper has faded in.
+    ghostThought?.update(ghostState, flags, { x, y }, camera, clock, lifeDt,
       lessMotion(), ghostPlace.visible);
     // The same jointed body greets him at help points and in the story; its outer root remains the place's.
     scarfHeld = false;

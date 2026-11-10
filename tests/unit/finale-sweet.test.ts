@@ -1,3 +1,4 @@
+import { stubCanvas } from './canvas-stub';
 import { Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
@@ -7,8 +8,7 @@ import { STANDING } from '../../src/render/rig';
 import { createStage } from '../../src/render/stage';
 
 beforeEach(() => {
-  const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
-  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  stubCanvas();
 });
 afterEach(() => vi.unstubAllGlobals());
 

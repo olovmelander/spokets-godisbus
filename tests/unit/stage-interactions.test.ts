@@ -1,3 +1,4 @@
+import { stubCanvas } from './canvas-stub';
 import { InstancedMesh, Matrix4, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
@@ -6,8 +7,7 @@ import type { Rig, Role } from '../../src/render/rig';
 import type { ActorKey } from '../../src/sim/scene';
 
 beforeEach(() => {
-  const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
-  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  stubCanvas();
 });
 afterEach(() => vi.unstubAllGlobals());
 

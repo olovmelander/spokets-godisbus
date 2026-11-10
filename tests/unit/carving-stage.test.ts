@@ -1,3 +1,4 @@
+import { stubCanvas } from './canvas-stub';
 import { InstancedMesh, Matrix4, Mesh, Raycaster, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { garden } from '../../src/content/chapters/garden';
@@ -6,8 +7,7 @@ import { createStage, type Stage } from '../../src/render/stage';
 import type { SceneDef } from '../../src/sim/scene';
 
 beforeEach(() => {
-  const context = Object.fromEntries(['fillRect', 'beginPath', 'lineTo', 'moveTo', 'closePath', 'fill', 'stroke', 'arc', 'ellipse'].map(name => [name, () => {}]));
-  vi.stubGlobal('document', { createElement: () => ({ getContext: () => context }) });
+  stubCanvas();
 });
 afterEach(() => vi.unstubAllGlobals());
 

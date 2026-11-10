@@ -557,6 +557,8 @@ export const billsta: ChapterData = {
   // for mormor; on the roof and the slope it hops from lee to lee; at the seesaw it waits over the stone until he
   // calls, jumps onto the high end and stays there until he flies, and then follows him over the brook; at the end
   // it thinks of the little one.
+  // After the cutaway, its picture remains at the lookout even though Klonk has hopped ahead.
+  thoughtClues: [{ at: { x: 195.6, y: BROW.y + .5 }, picture: 'small-figure', after: 'beat:bi:there' }],
   ghost: [
     { at: { x: 3.9, y: 0 } },
     { at: { x: 9.4, y: 0 } },
