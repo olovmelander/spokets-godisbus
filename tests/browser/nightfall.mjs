@@ -27,13 +27,48 @@ const server = await createServer({
         export { createView } from ${JSON.stringify(join(root, 'src/render/view.ts'))};
         export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
         export { COURSES } from ${JSON.stringify(join(root, 'src/content/chapters/index.ts'))};
-        let scene, renderer;
+        let scene, renderer, camera;
         const before = Scene.prototype.onBeforeRender;
         Scene.prototype.onBeforeRender = function (...args) {
-          if (this.getObjectByName('chase-ghost')) { scene = this; renderer = args[0]; }
+          if (this.getObjectByName('chase-ghost')) { scene = this; renderer = args[0]; camera = args[2]; }
           before.apply(this, args);
         };
         export const renderedScene = () => scene;
+        // A small, separate framebuffer isolates the actual aurora shader from moving faces, stars and
+        // post effects. It shares the production mesh/material and camera; this renderer is test-only.
+        let auroraRenderer, auroraScene, auroraCopy;
+        export function auroraPixels() {
+          const aurora = scene.getObjectByName('aurora');
+          if (!auroraRenderer) {
+            auroraRenderer = new WebGLRenderer({ antialias: false });
+            auroraRenderer.setSize(Math.round(192 * Math.min(1, camera.aspect)), Math.round(192 / Math.max(1, camera.aspect)), false);
+            auroraRenderer.setClearColor(0x000000, 1);
+            auroraScene = new Scene();
+            auroraCopy = aurora.clone();
+            auroraCopy.onBeforeRender = aurora.onBeforeRender;
+            auroraScene.add(auroraCopy);
+          }
+          auroraCopy.visible = aurora.visible;
+          auroraRenderer.render(auroraScene, camera);
+          const gl = auroraRenderer.getContext();
+          const pixels = new Uint8Array(gl.drawingBufferWidth * gl.drawingBufferHeight * 4);
+          gl.readPixels(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+          return pixels;
+        }
+        export function auroraFlow(before, after) {
+          let aa = 0, ab = 0, energy = 0, residual = 0, changed = 0;
+          const luminance = (pixels, i) => .2126 * pixels[i] + .7152 * pixels[i + 1] + .0722 * pixels[i + 2];
+          for (let i = 0; i < before.length; i += 4) {
+            const a = luminance(before, i), b = luminance(after, i);
+            aa += a * a; ab += a * b; energy += b;
+            if (before[i] !== after[i] || before[i + 1] !== after[i + 1] || before[i + 2] !== after[i + 2]) changed++;
+          }
+          // Remove the best-fitting whole-image brightness multiplier. A pulsing still picture has
+          // almost no residual; a flowing curtain changes where its light falls.
+          const gain = aa > 0 ? ab / aa : 1;
+          for (let i = 0; i < before.length; i += 4) residual += Math.abs(luminance(after, i) - gain * luminance(before, i));
+          return { changed, energy, spatialChange: residual / Math.max(1, energy), draws: auroraRenderer.info.render.calls };
+        }
         // Read the actual uploaded material uniform, without adding a production debug API.
         export function rimStrength() {
           let strength = null;
@@ -106,8 +141,8 @@ try {
       const chapter = { ...fixture.COURSES.norrsken, spawn: { x: 25, y: 0.01 } };
       const sim = new fixture.Sim(chapter, {}, { flags: ['lower', 'eyes', 'bag', 'shared', 'share:tragubbe', 'share:spoket', 'share:jay'] });
       const view = fixture.createView(document.getElementById('game'), chapter, tier, true);
-      const draw = (dt = 0) => view.render({
-        prev: sim.prev, curr: sim.curr, alpha: 1, dt, atGoal: false, collected: sim.collected, checkpoint: sim.checkpoint,
+      const draw = (dt = 0, eventDt = dt, talk = null) => view.render({
+        prev: sim.prev, curr: sim.curr, alpha: 1, dt, eventDt, talk, atGoal: false, collected: sim.collected, checkpoint: sim.checkpoint,
         movers: sim.movers, drips: sim.drips, flags: sim.flags, ghost: sim.ghost, rollers: sim.rollers,
         tussocks: sim.tussocks, gusts: sim.gusts, help: sim.help, berries: sim.berries, scene: sim.sceneFrame,
       });
@@ -126,12 +161,14 @@ try {
         });
         return shown;
       };
+      const aurora = scene.getObjectByName('aurora');
       const snapshot = () => ({
         ...view.info(), background: scene.backgroundIntensity,
         sky: scene.getObjectByName('place-sky').material.color.r, rim: fixture.rimStrength(),
         far: far.map((card) => card.material.color.r),
         fog: scene.fog.color.toArray(), state: JSON.stringify(sim.curr),
         family: shownFamily(), familyShown: shownFamily().length, scene: sim.sceneFrame,
+        aurora: { time: aurora.material.uniforms.time.value, strength: aurora.material.uniforms.strength.value },
       });
       window.probe = { fixture, sim, view, draw, scene, snapshot };
       return snapshot();
@@ -145,12 +182,17 @@ try {
       const p = window.probe;
       p.sim.flags.add('taste');
       const frames = [];
-      let beforePause, paused;
+      let beforePause, paused, beforeReading, reading;
       for (let i = 0; i < 7; i++) {
         p.draw(0.5); frames.push(p.snapshot());
-        if (i === 2) { beforePause = p.snapshot(); p.draw(0); paused = p.snapshot(); }
+        if (i === 2) {
+          beforePause = p.snapshot(); p.draw(0); paused = p.snapshot();
+          beforeReading = p.snapshot();
+          p.draw(.5, 0, { who: 'elof', text: 'Titta, norrskenet dansar!', seconds: .5, reading: true });
+          reading = p.snapshot();
+        }
       }
-      return { frames, paused, beforePause };
+      return { frames, paused, beforePause, beforeReading, reading };
     });
     check(`${name}: sky and hills darken together`, transition.frames.every((s) => s.sky === s.background && s.far.every((v) => Math.abs(v - s.background) < 1e-9)) && transition.frames.at(-1).background < 0.35);
     check(`${name}: night haze changes with the sky`, transition.frames.at(-1).fog.every((v, i) => v < early.fog[i]));
@@ -163,12 +205,63 @@ try {
     // Before the reunion starts, only uniforms change. The glitter leaves when he has grown back.
     check(`${name}: nightfall draw calls never rise, within budget`, transition.frames.every((s, i, all) => s.drawCalls <= (all[i - 1] ?? s).drawCalls && withinDraws(s.drawCalls, s.tier)));
     check(`${name}: pause holds nightfall still`, transition.paused.background === transition.beforePause.background);
+    check(`${name}: reading does not finish the story's nightfall transition early`,
+      transition.beforeReading.background > transition.frames.at(-1).background &&
+      transition.reading.background === transition.beforeReading.background &&
+      transition.reading.aurora.strength === transition.beforeReading.aurora.strength &&
+      Math.abs(transition.reading.aurora.time - transition.beforeReading.aurora.time - .5) < 1e-8);
     await picture(page, join(shots, `${name}-night.png`));
     const round = await page.evaluate(({ width, height }) => {
       const p = window.probe;
       return p.fixture.measureStars(p.scene.getObjectByName('dusk-stars'), width, height, p.view.info().pixelRatio);
     }, { width, height });
     check(`${name}: stars stay round in framebuffer pixels`, round.length > 50 && round.every((b) => Math.abs(b.width - b.height) <= 1));
+    const reading = await page.evaluate(() => {
+      const p = window.probe;
+      const held = { who: 'elof', text: 'Titta, norrskenet dansar!', seconds: .5, reading: true };
+      const before = p.snapshot(), pixels = p.fixture.auroraPixels();
+      // Timed keyframes, not a frame-rate benchmark: keep the software-rendered CI workload small.
+      for (let i = 0; i < 8; i++) p.draw(.25, 0, held);
+      const after = p.snapshot(), moved = p.fixture.auroraPixels();
+      const flow = p.fixture.auroraFlow(pixels, moved);
+      for (let i = 0; i < 4; i++) p.draw(0, 0, held);
+      const paused = p.snapshot(), pause = p.fixture.auroraFlow(moved, p.fixture.auroraPixels());
+      return { before, after, paused, flow, pause };
+    });
+    check(`${name}: reading holds the story and nightfall while the aurora clock continues`,
+      reading.before.state === reading.after.state && JSON.stringify(reading.before.scene) === JSON.stringify(reading.after.scene) &&
+      reading.before.background === reading.after.background && Math.abs(reading.after.aurora.time - reading.before.aurora.time - 2) < 1e-8);
+    check(`${name}: the rendered aurora flows instead of merely pulsing brighter`,
+      reading.flow.energy > 0 && reading.flow.spatialChange > .02 && reading.before.aurora.strength === reading.after.aurora.strength);
+    check(`${name}: aurora movement stays one draw without new production shaders or allocations`,
+      reading.flow.draws === 1 && reading.after.programs === reading.before.programs &&
+      reading.after.geometries === reading.before.geometries && reading.after.textures === reading.before.textures);
+    check(`${name}: Pause holds the aurora clock and every rendered aurora pixel exactly`,
+      reading.paused.aurora.time === reading.after.aurora.time && reading.pause.changed === 0);
+    console.log(`  aurora flow ${name}: residual ${reading.flow.spatialChange.toFixed(3)}, ${reading.flow.changed} changed pixels`);
+    for (const source of ['setting', 'device']) {
+      if (source === 'device') await page.emulateMedia({ reducedMotion: 'reduce' });
+      else await page.evaluate(() => { document.documentElement.dataset.motion = 'reduce'; });
+      const calm = await page.evaluate(() => {
+        const p = window.probe, before = p.snapshot(), pixels = p.fixture.auroraPixels();
+        // Let story time run too: reduced motion must hold the lights even outside a reading stop.
+        for (let i = 0; i < 4; i++) p.draw(.25);
+        return { before, after: p.snapshot(), flow: p.fixture.auroraFlow(pixels, p.fixture.auroraPixels()) };
+      });
+      check(`${name}: ${source} reduced motion holds the aurora exactly`,
+        calm.before.aurora.time === calm.after.aurora.time && calm.flow.changed === 0);
+      if (source === 'device') await page.emulateMedia({ reducedMotion: 'no-preference' });
+      else await page.evaluate(() => { delete document.documentElement.dataset.motion; });
+      const resumed = await page.evaluate(() => {
+        const p = window.probe, before = p.snapshot(), pixels = p.fixture.auroraPixels();
+        p.draw(0);
+        const sameFrame = p.fixture.auroraFlow(pixels, p.fixture.auroraPixels());
+        p.draw(1 / 30);
+        return { before, after: p.snapshot(), sameFrame };
+      });
+      check(`${name}: ${source} motion resumes from the held curtain without a clock jump`,
+        resumed.sameFrame.changed === 0 && Math.abs(resumed.after.aurora.time - resumed.before.aurora.time - 1 / 30) < 1e-8);
+    }
     const returned = await page.evaluate(() => {
       const p = window.probe;
       p.sim.flags.delete('taste');
