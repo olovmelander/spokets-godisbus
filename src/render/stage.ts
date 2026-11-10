@@ -96,6 +96,9 @@ const mixTurn = (a: number, b: number, t: number) => {
  * `height` tall on `legs`: its distance counted in steps of the length each moment's speed gives (acting.ts stepLength).
  */
 function stepsOf(way: number, seconds: number, height: number, u: number, legs: Legs): number {
+  // No interval has elapsed at the exact start key. Both speed and step length are zero there;
+  // integrating 0 / 0 would poison a previous stride still settling under the new action.
+  if (u <= 0) return 0;
   const n = 24;
   let steps = 0;
   for (let i = 0; i < n; i++) {

@@ -2,6 +2,7 @@ import { stubCanvas } from './canvas-stub';
 import { InstancedMesh, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { garden } from '../../src/content/chapters/garden';
+import { prolog } from '../../src/content/chapters/ends';
 import { createStage, type Stage } from '../../src/render/stage';
 import type { ActorKey } from '../../src/sim/scene';
 
@@ -21,6 +22,48 @@ function snapshot(stage: Stage) {
 }
 
 describe('story character motion', () => {
+  it('keeps Pappa finite at the exact first step after lifting Elof and standing from his knee', () => {
+    const ground = (x: number) => {
+      for (let i = 0; i < prolog.ground.length - 1; i++) {
+        const a = prolog.ground[i]!, b = prolog.ground[i + 1]!;
+        if (a.x !== b.x && x >= a.x && x <= b.x) return a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
+      }
+      return 0;
+    };
+    const stage = createStage(prolog, ground), scenes = prolog.scenes!;
+    const before = scenes.findIndex(scene => scene.id === 'handen');
+    const flags = new Set(scenes.slice(0, before).map(scene => scene.by?.done ?? `scene:${scene.id}`));
+    let clock = 0;
+    for (const id of ['handen', 'prologue:pappa']) {
+      const scene = scenes.find(scene => scene.id === id)!;
+      for (let frame = 0; frame <= Math.ceil(scene.seconds * 60); frame++) {
+        const seconds = Math.min(scene.seconds, frame / 60);
+        stage.update({ id, seconds }, flags, { x: 40.9, y: -.8 }, clock += 1 / 60, 1 / 60, false);
+        const rig = stage.actors.get('pappa')!.rig;
+        const mesh = rig.group.children[0] as InstancedMesh;
+        expect(Array.from(mesh.instanceMatrix.array).every(Number.isFinite), `${id} ${seconds}`).toBe(true);
+        expect(rig.hand(1, new Vector3()).toArray().every(Number.isFinite), `${id} ${seconds} hand`).toBe(true);
+      }
+      flags.add(scene.by?.done ?? `scene:${id}`);
+    }
+  });
+
+  it('does not invent a stride for a stationary key or an instantaneous move', () => {
+    const stage = stageFor([
+      { at: 0, x: 0, y: 0, z: 0, act: 'stand' },
+      { at: .5, x: 0, z: 0, move: 1, act: 'look' },
+      { at: 1, x: 3, move: 0, act: 'stand' },
+      { at: 1.5, x: 4, move: .5, act: 'walk' },
+    ]);
+    for (const t of [0, .5, .75, 1, 1.25, 1.5, 1.5 + 1 / 60, 2]) {
+      show(stage, t);
+      const current = snapshot(stage);
+      expect([...current.position, ...current.rotation, ...current.joints].every(Number.isFinite), `at ${t}`).toBe(true);
+      if (t < 1) expect(current.position[0]).toBe(0);
+      if (t >= 1 && t <= 1.5) expect(current.position[0]).toBe(3);
+    }
+  });
+
   it('keeps the old hand target at the reach-to-lift boundary', () => {
     const stage = stageFor([
       { at: 0, x: 0, y: 0, face: .25, move: .01, act: 'reach', aim: { x: 0, y: 2.8, z: 1.4 } },
