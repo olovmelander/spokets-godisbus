@@ -16,7 +16,8 @@ describe('Äventyr 2: Stormkvällen', () => {
     expect(result.flags).toEqual(expect.arrayContaining(['lamp:take', 'lamp:give', 'goodnight', 'gust', 'star', 'scene:krymper', 'scene:tillsammans', 'coat:take', 'scene:regnrock', 'a2titel']));
     // The doll's raincoat, after the family have put on theirs.
     expect(result.flags.indexOf('scene:tillsammans')).toBeLessThan(result.flags.indexOf('coat:take'));
-    const order = ['kvall:0', 'skLampThanks', 'fonstret:0', 'fonstret:2', 'klonkstar:1', 'krymper:0', 'tillsammans:0', 'skTrail', 'stormtitel:0'];
+    const order = ['kvall:0', 'skLampThanks', 'fonstret:0', 'fonstret:2', 'klonkstar:1', 'krymper:0',
+      'upptackt:0', 'upptackt:1', 'upptackt:2', 'upptackt:3', 'tillsammans:0', 'skTrail', 'stormtitel:0'];
     expect(result.said.filter((id) => order.includes(id))).toEqual(order);
     expect(result.bubbles).toBe(0);
   });

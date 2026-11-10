@@ -577,6 +577,16 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     drawnWhile(mesh, false);
     group.add(mesh);
   }
+  const wisps = new InstancedMesh(new CylinderGeometry(.018, .009, 1, 5),
+    new MeshBasicMaterial({ color: '#d2e1e7', transparent: true, opacity: .42, depthWrite: false }), 24);
+  wisps.name = 'window-wind';
+  wisps.instanceMatrix.setUsage(DynamicDrawUsage);
+  wisps.frustumCulled = false;
+  wisps.setMatrixAt(0, new Object3D().matrix.makeScale(0, 0, 0));
+  wisps.count = 1;
+  drawnWhile(wisps, false);
+  if (scenes.some(one => one.stage?.fx?.some(fx => fx.kind === 'wind'))) group.add(wisps);
+  const windAlong = new Vector3();
   const jay = windowJay();
   jay.scale.setScalar(0);
   drawnWhile(jay, false);
@@ -1320,7 +1330,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       for (const mesh of things.values()) drawnWhile(mesh, holding.has(mesh));
 
       // The scene's glitter, shavings, glows and the bird at the window.
-      let spark = 0, glow = 0, curl = 0;
+      let spark = 0, glow = 0, curl = 0, wind = 0;
       let jayOn = false;
       for (const fx of scene?.stage?.fx ?? []) {
         const age = t - fx.at;
@@ -1332,6 +1342,23 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const at = scene?.id === 'poff' && scene.resumeAt ? { ...fx.from,
           x: fx.from.x + elof.x - scene.resumeAt.x, y: fx.from.y + elof.y - scene.resumeAt.y } : fx.from;
         switch (fx.kind) {
+          case 'wind': {
+            const to = fx.to ?? at;
+            windAlong.set(to.x - at.x, to.y - at.y, (to.z ?? 0) - (at.z ?? 0)).normalize();
+            for (let i = 0; i < 24 && wind < 24; i++, wind++) {
+              // The room's air keeps moving while someone reads; Pause holds `waited` with the scene.
+              const k = (i / 24 + (calm ? .2 : age + waited) * .48) % 1;
+              const arc = Math.sin(k * Math.PI);
+              place.position.set(mix(at.x, to.x, k) + Math.sin(i * 2.4) * .65 * arc,
+                mix(at.y, to.y, k) + Math.sin(i * 1.7 + k * 8) * .7 * arc,
+                mix(at.z ?? 0, to.z ?? 0, k) + Math.sin(i * 3.1) * .8 * arc);
+              place.quaternion.setFromUnitVectors(up, windAlong);
+              place.scale.set(fade, fade * (.5 + (i % 4) * .18), fade);
+              place.updateMatrix();
+              wisps.setMatrixAt(wind, place.matrix);
+            }
+            break;
+          }
           case 'sparkle': {
             for (let i = 0; i < 16 && spark < SPARKS; i++, spark++) {
               const a = i * 2.39996 + motion * (1.4 + (i % 4) * 0.4);
@@ -1440,7 +1467,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         }
       }
-      for (const [mesh, used] of [[sparks, spark], [glows, glow], [curls, curl]] as const) {
+      for (const [mesh, used] of [[sparks, spark], [glows, glow], [curls, curl], [wisps, wind]] as const) {
         mesh.count = Math.max(1, used);
         mesh.instanceMatrix.needsUpdate = true;
         drawnWhile(mesh, used > 0);

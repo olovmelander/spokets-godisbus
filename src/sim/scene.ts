@@ -75,7 +75,7 @@ export interface SceneDef {
 
 /** Who acts in a scene. Elof is the player: in a held scene he acts too. */
 export type Actor = 'pappa' | 'mamma' | 'moa' | 'bertil' | 'ghost' | 'elof';
-export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath';
+export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath' | 'wind';
 
 /**
  * What an actor does from a moment on. Each is a movement made in code on the body's joints (src/render/acting.ts),
@@ -161,7 +161,7 @@ export interface ShotKey {
 /** Something that happens in the air: glitter, a stream of magic, the POFF, shavings, a bird at the window. */
 export interface FxKey {
   at: number;
-  kind: 'sparkle' | 'stream' | 'poff' | 'shavings' | 'glow' | 'jay';
+  kind: 'sparkle' | 'stream' | 'poff' | 'shavings' | 'glow' | 'jay' | 'wind';
   /** Where it is; a stream flows from here to `to`. */
   from: Point;
   to?: Point;
