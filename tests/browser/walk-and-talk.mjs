@@ -124,6 +124,7 @@ try {
       const rect = document.getElementById('bubble').getBoundingClientRect();
       const controls = ['stickBase', 'hopBtn', 'actBtn'].map(id => document.getElementById(id).getBoundingClientRect());
       return { bubble:rect.toJSON(), controls:controls.map(r => r.toJSON()), width:innerWidth,
+        fontSize:getComputedStyle(document.getElementById('bubble')).fontSize,
         pageWidth:document.documentElement.scrollWidth, bigText:document.body.classList.contains('big-text'),
         clear:controls.every(r => rect.bottom <= r.top || rect.top >= r.bottom || rect.right <= r.left || rect.left >= r.right) };
     });
@@ -131,7 +132,7 @@ try {
       && layout.pageWidth <= layout.width && layout.bigText && layout.clear;
     // Report every viewport before failing, so a layout regression does not hide the input/staging result.
     if (!fits) { layoutFailures.push({ viewport:label, ...layout }); console.error(`  layout failure ${label}: ${JSON.stringify(layout)}`); }
-    else check(`${label}: the visible big-text line fits and leaves play controls clear`, fits);
+    else check(`${label}: big text fits [${layout.bubble.left}, ${layout.bubble.right}], font ${layout.fontSize}, and leaves play controls clear`, fits);
     await page.locator('#pauseBtn').click({ force:true });
     await advance(page, .05);
     const paused = await state(page), pausedWords = await text(page);
