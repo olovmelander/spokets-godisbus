@@ -145,6 +145,18 @@ try {
     const lines = await page.evaluate(() => window.walkTalkClock.lines);
     assert.deepEqual(lines.map(line => line.text), ['Olympia! Hela planen är mörk.', 'Klonk!', 'Inte ens strålkastarna lyser!'], `${label}: every full line is shown once, in order, without a Continue click`); checks++;
     check(`${label}: queued replies keep their own readable display time`, lines[1].at - lines[0].at >= 3 && lines[2].at - lines[1].at >= 2.5);
+    if (controls) await controls.right(); else await page.keyboard.down('ArrowRight');
+    await until(page, s => s.x >= 21.6, 'reach the formerly mandatory wind remark', 5);
+    if (controls) await controls.release(); else await page.keyboard.up('ArrowRight');
+    await until(page, async () => (await text(page)) === 'Vinden rullar bollar efter oss!', 'the complete legacy read:true world line', 35);
+    const wind = await state(page);
+    if (controls) await controls.right(); else await page.keyboard.down('ArrowRight');
+    await advance(page, .4);
+    if (controls) await controls.release(); else await page.keyboard.up('ArrowRight');
+    const walkingWind = await state(page);
+    check(`${label}: a formerly mandatory world line now permits movement without Continue`, walkingWind.x > wind.x + .25
+      && !walkingWind.held && !walkingWind.storyReading && await page.locator('#sceneReading').isHidden()
+      && await text(page) === 'Vinden rullar bollar efter oss!');
     await controls?.close(); assert.deepEqual(route.errors, []); await page.close();
 
     const staged = await open(width, height, 'stormkvall', '2.6,.01');
