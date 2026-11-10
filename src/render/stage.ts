@@ -1176,7 +1176,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // Resolve authored interaction targets in 3D. Interrupted acts retain their contact share,
         // and unreachable targets stay at the real arm's limit rather than stretching the body.
         hand.set(0, 0, 0); otherHand.set(0, 0, 0);
-        let rightWeight = 0, leftWeight = 0;
+        let rightWeight = 0, leftWeight = 0, rightLimit = 0;
         const reach = (act: Act, age: number, target: Point | null, old: State['before'], share: number): void => {
           const k = old ? smooth(age / .45) : 1;
           if (old && k < 1) reach(old.act, old.t, old.aim, old.previous, share * (1 - k));
@@ -1185,6 +1185,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           heldPoint.set(target.x, target.y, target.z ?? 0);
           const right = weight * smooth(t / (act === 'lift' ? 1.1 : act === 'point' ? .3 : .5));
           hand.addScaledVector(heldPoint, right); rightWeight += right;
+          rightLimit += right * (act === 'offer' ? OFFER_REACH : 1);
           if (act === 'reach' || act === 'lift') {
             const left = weight * smooth((t - .08) / (act === 'lift' ? 1.02 : .42));
             heldPoint.x += .3 * Math.cos(yaw(face)) / unit;
@@ -1194,8 +1195,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         };
         reach(state.act, elapsed, state.aim, state.before, 1);
-        // Pointing uses the whole arm; something held out to be taken keeps a bend at the elbow, however far off he is.
-        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, state.act === 'offer' ? OFFER_REACH : 1);
+        // Pointing uses the whole arm; an offer keeps an elbow bend. Each retained act carries its own limit
+        // through the blend, so starting or ending an offer cannot suddenly shorten or straighten the arm.
+        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, rightLimit / rightWeight);
         // And the hand points with its first finger as the arm comes up, and lets it go as the arm comes down (./fingers.ts).
         const points = state.act === 'point' ? smooth((calm ? 3 : elapsed) / .3)
           : state.before?.act === 'point' ? 1 - smooth(elapsed / .45) : 0;
