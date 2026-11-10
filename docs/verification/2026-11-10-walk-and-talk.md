@@ -51,6 +51,9 @@ one required tap per sentence.
   hold the picture even when waiting behind another line. Unfinished saved reveals survive checkpoint and own
   terminal-cue recovery. Fresh and restored pictures enter a visible phase using the director's exact cue boundary;
   already completed historical flights stay hidden.
+- If Elof walks out of a free-moving reveal's authored area, its camera returns smoothly to following him
+  while the line and its completion rules stay intact. The release is latched for that scene so stepping back
+  across the boundary does not snap the camera back. Held physical scenes retain their authored shot.
 - A goal prerequisite unlocked after walking past it remains a valid return target for the helper. Optional distant
   activities retain their normal reach limit. This covers the carving knife and the morning cocoa.
 - Automatic memories wait for the active line, and recoverable interruptions retain voice ownership and position.
@@ -79,21 +82,37 @@ The following local browser results use the immutable production build at `027c0
 - **Family story: 9 native-browser checks**, source `6528e5e`. The cap offer permits movement with its complete
   text; boarding still requires a separate deliberate action. Mamma places the stock before the ready line.
 - **Dialogue UI suite:** automatic timing/receipts, optional Continue, Pause, touch and five larger-text layouts pass.
+- **Full prologue: 83 native-browser checks**, production `310f8ed`: all four ordinary promises permit movement;
+  the title waits for completion; transformation/reload and incomplete receipts remain correct; five reassurance
+  layouts and four Low/High tableaux pass.
+
+A subsequent continuous-Right test found Elof leaving the fixed owl-reveal camera after landing while his line
+was pending. The registered walk-and-talk regression reproduces the exact failure on `310f8ed`; the camera
+release above addresses it. The same registered production-browser regression passes all four checks on
+`d32307c`: 123 samples during the pending line, zero outside the viewport (previously 28), actual boarding,
+continued movement and automatic completion. A two-frame regression also covers a newly created flyby's visible glow when waiting
+begins one update after its cue. These changes have focused before/after tests and do not add a movement hold.
+
+The first CI run exposed an older garden-loop assertion that treated emission of Moa's thanks as completion.
+The fixture now waits for and saves the completed receipt before asserting that the line is not replayed;
+unfinished speech must remain replayable. The reward, checkpoint, sweets and found object already persisted. The corrected native 390×844 High
+keyboard garden route passes all 12 checks, including the explicit saved completion receipt, reload and the
+chosen plane landing, with no browser errors or shader recompiles.
 
 The first integrated full run passed 2,580 tests in 269 files. Production revision `310f8ed` additionally includes
 actual saved-reveal and queued-reveal regressions, including the two visible-phase defects that failed before
 repair.
 
-Final production code `310f8ed` passes:
+Final production code `d32307c` is validated by the checks below:
 
 - `npm run typecheck`;
-- all **2,586 unit/robot tests in 270 files**, including every full-dialogue chapter and saved-reveal regressions;
-- `npm run build` and size gates: **646.6 KB gzipped JS**, **5,762.6 KB boot**, **89.2 KB** deferred adventure pack;
-- `npm run privacy-check`: **1,027 tracked / 187 built / 439 media** files, built-in rules and metadata scan.
+- all **2,592 unit/robot tests in 271 files**, including every full-dialogue chapter and saved-reveal regressions;
+- `npm run build` and size gates: **646.7 KB gzipped JS**, **5,762.7 KB boot**, **89.2 KB** deferred adventure pack;
+- `npm run privacy-check`: **1,029 tracked / 187 built / 439 media** files, built-in rules and metadata scan.
   Local exiftool and the optional private denylist are unavailable; the CI check runs its configured tools.
 
 The final immutable production HTML SHA-256 is
-`47be3cf9156c890d64a293d7e733c84ee6c57fbd5fa306ffed719a0356fa37dc`.
+`c763e6b9cbbde8fe8f4cc3b1da4f707f44b206b844f9e3dd880cd45ac9b3b8fa`.
 The local private-model phone review established the visible figure while steering the owl and a framed first
 Billsta line before its automatic continuation; its actual saved-game failure led to the added recovery fixes.
 The continuation's PR records the final private replay review, exact-head browser CI and Pages deployment

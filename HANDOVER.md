@@ -11,13 +11,14 @@
   recording ends. Existing reading time, slower pace, larger text and Pause remain. Larger bubbles fit the phone.
 - **Story:** emitted words and completed words have separate receipts. Following events and saved progress wait
   for completion without freezing ordinary traversal. Reveals keep their matching picture through the words;
-  the owl can keep flying and steering. Required tasks unlocked after Elof passes remain helper return targets.
+  the owl can keep flying and steering. Walking beyond a free reveal returns the camera smoothly to Elof
+  without cutting the line. Required tasks unlocked after Elof passes remain helper return targets.
 - **Interruption:** Pause, hiding the page, recoverable graphics loss and opening a picture memory preserve the
   line and its recording position. Automatic memories wait for the current line. Deliberately returning to a
   checkpoint rearms unfinished speech. No existing voice recording or private family asset is changed.
 - **Evidence:** [the verification record](docs/verification/2026-11-10-walk-and-talk.md) explains the design,
   primary Firewatch/God of War references, implementation and exact validation scope. Baseline 2,529 tests passed;
-  production code `310f8ed` passes 2,586 tests in 270 files, typecheck, build/size gates and the built-in privacy scan.
+  production code `d32307c` passes 2,592 tests in 271 files, typecheck, build/size gates and the built-in privacy scan.
   The record details local browser checks; this continuation's PR records the remaining exact-head browser, CI
   and publication results before delivery.
   Phone viewport checks do not establish physical-device frame rate. This work needs no local Blender session.
