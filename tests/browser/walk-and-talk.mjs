@@ -10,6 +10,8 @@ import { chromium } from 'playwright';
 
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
 const base = '/spokets-godisbus/';
+const scenario = process.env.WALK_TALK_CASE ?? 'all';
+assert.ok(['all', 'owl'].includes(scenario), 'WALK_TALK_CASE must be all or owl.');
 const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.wasm':'application/wasm', '.webp':'image/webp', '.woff2':'font/woff2' };
 assert.ok(existsSync(resolve(dist, 'index.html')), 'Build the game before running walk-and-talk.');
 const server = createServer((req, res) => {
@@ -99,7 +101,7 @@ async function touchControls(page) {
 }
 
 try {
-  for (const [width, height] of [[390, 844], [844, 390]]) {
+  if (scenario === 'all') for (const [width, height] of [[390, 844], [844, 390]]) {
     const label = `${width}x${height}`, touch = width === 390;
     const route = await open(width, height, 'olympia', '7.5,.01', ['scene:card']);
     const page = route.page, controls = touch ? await touchControls(page) : null;
@@ -181,6 +183,40 @@ try {
     check(`${label}: movement returns after the protected scene, without an extra dismiss`, (await state(staged.page)).x > released.x + .3 && !(await state(staged.page)).held);
     assert.deepEqual(staged.errors, []); await staged.page.close();
   }
+  // A nonheld reveal must not strand the camera after Elof flies past its spatial
+  // range. Board the authored owl normally and keep Right held through landing
+  // until the owned line actually finishes; never replace the scene or camera.
+  const beforeOwl = ['arrive', 'klonk-floats', 'klonk', 'flash', 'raft-seen', 'current', 'old-one', 'logs-wait',
+    'leaf-seen', 'bredbyn', 'rapids', 'pappa-here', 'scarf-down', 'take-hold', 'up', 'over', 'thanks', 'follow',
+    'lodge', 'otter', 'lake', 'owl-seen', 'owl-here'];
+  const owl = await open(390, 844, 'alven', '132.6,.01', ['scene:card', 'scene:bron', 'al:pappa', 'al:scarf',
+    'al:lift', 'al:owl-call', 'al:owl-ready', ...beforeOwl.map(id => `beat:al:${id}`)]);
+  await owl.page.keyboard.down('ArrowRight');
+  try { await until(owl.page, s => s.x >= 136.16, 'reach the owl normally', 5); }
+  finally { await owl.page.keyboard.up('ArrowRight'); }
+  await owl.page.keyboard.press('KeyE');
+  await until(owl.page, s => s.flags.includes('al:owl') && s.mode === 'ride', 'board the owl with the real action', 5);
+  const reveal = 'Lillgubben! Långt fram på ån!';
+  await until(owl.page, async s => s.pendingDialogue.includes('al:see-little') && await text(owl.page) === reveal, 'the owl reveal waits for its full line', 20);
+  const preceding = await owl.page.evaluate(() => window.walkTalkClock.lines.map(line => line.text));
+  assert.deepEqual(preceding, ['Hu-hu! Vi flyger över sjön!', reveal], 'the real boarding line completes before the owl reveal'); checks++;
+  const samples = [];
+  await owl.page.keyboard.down('ArrowRight');
+  try {
+    for (let i = 0; i < 450; i++) {
+      const s = await state(owl.page), pending = s.pendingDialogue.includes('al:see-little');
+      samples.push({ x:s.x, y:s.y, mode:s.mode, held:s.held, scene:s.scene, screen:s.playerScreen, pending });
+      if (!pending) break;
+      assert.equal(await text(owl.page), reveal, 'walking never replaces the unfinished full owl line');
+      await advance(owl.page, .05);
+    }
+  } finally { await owl.page.keyboard.up('ArrowRight'); }
+  const last = samples.at(-1);
+  check('390x844 owl: Right continues through landing and the reveal completes automatically', last && !last.pending
+    && last.x > 170 && samples.some(s => s.mode === 'free' && s.pending) && samples.every(s => !s.held));
+  const outside = samples.filter(s => s.pending && (!s.screen || s.screen.x < 0 || s.screen.x > 390 || s.screen.y < 0 || s.screen.y > 844));
+  check(`390x844 owl: Elof remains visible through landing and the whole line (${samples.length} samples; first outside ${JSON.stringify(outside[0] ?? null)})`, outside.length === 0);
+  assert.deepEqual(owl.errors, []); await owl.page.close();
   assert.deepEqual(layoutFailures, [], 'visible big-text lines fit both viewports and leave play controls clear');
   console.log(`Walk and talk: ${checks} browser checks passed.`);
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
