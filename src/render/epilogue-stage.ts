@@ -1,6 +1,8 @@
-import { BoxGeometry, CircleGeometry, Color, CylinderGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, OctahedronGeometry, SphereGeometry, type BufferAttribute } from 'three';
+import { BoxGeometry, CircleGeometry, Color, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, OctahedronGeometry, Vector3, type BufferAttribute } from 'three';
 import type { ChapterData } from '../sim/types';
 import { drawnWhile } from './idle';
+import { littleCarving } from './little-carving';
+import type { Rig } from './rig';
 
 /** The carved model's dark painted eyes are part of one mesh. Animate only this copy's eye corners. */
 function paintedBlink(model: Group): (blink: number) => void {
@@ -47,34 +49,13 @@ function paintedBlink(model: Group): (blink: number) => void {
 export function createEpilogueStage(layout: ChapterData['epilogue']) {
   const group = new Group();
   group.name = 'epilogue-window';
-  if (!layout) return { group, update(_flags: ReadonlySet<string>, _seconds: number | null | undefined, _calm: boolean) {} };
-  const wood = new MeshStandardMaterial({ color: '#e6cfa2', roughness: 0.95, flatShading: true });
-  const dark = new MeshStandardMaterial({ color: '#211e27', roughness: 0.9 });
-  const figure = new Group();
+  if (!layout) return { group, update(_flags: ReadonlySet<string>, _seconds: number | null | undefined, _calm: boolean) {}, updateElof(_rig: Pick<Rig, 'hand' | 'socket' | 'hold'>) {} };
+  const figure = littleCarving();
   figure.name = 'epilogue-lillgubbe';
-  figure.userData.model = 'lillgubbe';
-  figure.userData.disposeFallback = true;
   figure.scale.setScalar(1.5);
   let blinkModel: ((blink: number) => void) | null = null;
   figure.userData.onModelInstalled = (model: Group) => { blinkModel = paintedBlink(model); };
-  const body = new Mesh(new CylinderGeometry(0.1, 0.14, 0.3, 9), wood);
-  body.position.set(0, 0.15, 0);
-  const head = new Mesh(new SphereGeometry(0.12, 10, 7), wood);
-  head.position.set(0, 0.4, 0);
-  figure.add(body, head);
-  const eyes = new Group();
-  for (const x of [-0.045, 0.045]) {
-    const eye = new Mesh(new SphereGeometry(0.02, 8, 6), dark);
-    eye.position.set(x, 0.42, 0.11);
-    eyes.add(eye);
-  }
-  for (const [y, turn] of [[0.08, 0.3], [0.2, -0.4]] as const) {
-    const cut = new Mesh(new BoxGeometry(0.2, 0.012, 0.012), new MeshStandardMaterial({ color: '#c9b07e', roughness: 1 }));
-    cut.position.set(0, y, 0.135);
-    cut.rotation.z = turn;
-    figure.add(cut);
-  }
-  figure.add(eyes);
+  const eyes = [-1, 1].map(side => figure.getObjectByName(`little-eye:${side}`)!);
   const sill = new Mesh(new BoxGeometry(2.6, 0.13, 0.95), new MeshStandardMaterial({ color: '#c2b18e', roughness: 0.9 }));
   sill.position.y = -0.065;
   // A small moonlit patch and the blink's glint use existing basic/standard shader variants.
@@ -86,18 +67,32 @@ export function createEpilogueStage(layout: ChapterData['epilogue']) {
   moon.position.set(1.0, 1.5, -0.5);
   group.add(sill, patch, figure, glint, moon);
   group.position.set(layout.window.x, layout.window.y, layout.window.z);
+  let held = false;
+  const hand = new Vector3();
   return {
     group,
     update(flags: ReadonlySet<string>, seconds: number | null | undefined, calm: boolean) {
       figure.visible = flags.has('dots');
+      held = figure.visible && !flags.has('scene:first-carving') && !flags.has('teeth') && seconds == null;
+      if (!held) figure.position.set(0, 0, 0);
       const time = seconds ?? -1;
       const blink = time >= 1.2 && time < 1.52 ? Math.sin((time - 1.2) / 0.32 * Math.PI) : 0;
-      for (const eye of eyes.children) eye.scale.y = 1 - blink * 0.96;
+      for (const eye of eyes) eye.scale.y = 1 - blink * 0.96;
       blinkModel?.(blink);
       const size = calm ? (time >= 1.2 && time <= 1.7 ? 0.6 : 0) : time >= 1.05 && time <= 1.95 ? Math.sin((time - 1.05) / 0.9 * Math.PI) : 0;
       glint.scale.setScalar(size);
       drawnWhile(glint, size > 0);
       glint.rotation.z = calm ? 0 : time * 0.8;
+    },
+    updateElof(rig: Pick<Rig, 'hand' | 'socket' | 'hold'>) {
+      if (!held) return;
+      const support = { kind: 'flat' as const, size: 0 };
+      rig.hold?.(1, support);
+      if (rig.socket) rig.socket(1, support, hand); else rig.hand(1, hand);
+      // The figure's feet sit on his palm, including the private fingers' socket beyond the wrist.
+      group.updateMatrixWorld(true);
+      figure.position.copy(group.worldToLocal(hand));
+      figure.position.y += .02;
     },
   };
 }

@@ -6,6 +6,7 @@ import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
+import { continueDialogue } from './dialogue.mjs';
 const base = '/spokets-godisbus/';
 const dist = fileURLToPath(new URL('../../dist/', import.meta.url));
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm' };
@@ -165,14 +166,19 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'game', 'Automatic memory returns to the world');
   await page.keyboard.press('KeyG');
   assert.ok(await page.locator('[data-memory="granskog"]').count(), 'The new discovery can now be replayed');
-  await page.goto(`${origin}${base}?dev&debug&standin&tier=low&course=epilog&at=22.4,0.01&flags=party:mamma,party:pappa,party:moa,party:bertil`);
+  await page.goto(`${origin}${base}?dev&debug&standin&tier=low&course=epilog&at=22.4,0.01&flags=party:mamma,party:pappa,party:moa,party:bertil,beat:partyThanks:mamma,beat:partyThanks:pappa,beat:partyThanks:moa,beat:partyThanks:bertil`);
   await ready();
   await page.waitForFunction(() => window.__godis.state().word === 'giveGhost');
   assert.equal(await page.locator('#actBtn').getAttribute('aria-label'), 'Ge spöket');
   await page.keyboard.press('KeyE');
   await page.locator('[data-sweet="gelehallon"]').tap();
   await page.locator('[data-friend="spoket"]').tap();
-  await page.waitForFunction(() => window.__godis.state().flags.includes('beat:named'));
+  const namingDeadline = Date.now() + 30000;
+  while (!(await state()).flags.includes('beat:named') && Date.now() < namingDeadline) {
+    if ((await state()).storyReading) await continueDialogue(page);
+    await page.waitForTimeout(40);
+  }
+  assert.ok((await state()).flags.includes('beat:named'), 'Klonk thanks Elof and receives its name before the map is reopened');
   await page.keyboard.press('Escape');
   assert.ok((await page.locator('#pauseMap').textContent()).includes('Klonk'), 'The real naming action changes the map immediately');
   assert.deepEqual(errors, []);

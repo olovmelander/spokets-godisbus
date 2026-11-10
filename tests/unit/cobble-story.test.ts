@@ -23,7 +23,7 @@ describe('Pappa remembers the mountain cobbles at the party', () => {
     party.step({ ...idle, act: true });
     expect(party.finishStory({ kind: 'party', friend: 'pappa', sweet: 'karamell' })).toBe(true);
     settle(party);
-    expect(party.said).toEqual(explanation);
+    expect(party.said).toEqual(['partyThanks:pappa', ...explanation]);
     const resumed = new Sim(epilog, {}, { flags: [...party.flags] });
     settle(resumed);
     expect(resumed.said).toEqual([]);
@@ -36,7 +36,7 @@ describe('Pappa remembers the mountain cobbles at the party', () => {
     }
     const party = new Sim(epilog, {}, { flags: ['party:pappa'] });
     settle(party);
-    expect(party.said).toEqual([]);
+    expect(party.said).toEqual(['partyThanks:pappa']);
     for (const line of explanation) expect(sv.lines[line as keyof typeof sv.lines].length).toBeLessThanOrEqual(40);
   });
 });

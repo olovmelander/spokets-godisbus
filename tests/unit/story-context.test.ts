@@ -153,8 +153,8 @@ describe('the current purpose follows Elof’s actual story progress', () => {
     expect(context('epilog', ['partied'], checkpoint(epilog, 25)).id).toBe('carveStart');
     expect(context('epilog', ['partied', 'knife'], { x: 32, y: 0 }).id).toBe('carve');
     expect(context('epilog', ['partied', 'knife', 'cut1', 'cut2', 'cut3'], { x: 32, y: 0 }).id).toBe('paintOwn');
-    expect(context('epilog', ['partied', 'knife', 'cut3', 'dots'], checkpoint(epilog, 38)).id).toBe('teeth');
-    expect(context('epilog', ['partied', 'knife', 'cut3', 'dots', 'teeth'], { x: 54, y: 3 }).id).toBe('bed');
+    expect(context('epilog', ['partied', 'knife', 'cut3', 'dots'], checkpoint(epilog, 33)).id).toBe('teeth');
+    expect(context('epilog', ['partied', 'knife', 'cut3', 'dots', 'teeth'], { x: 35.5, y: 0 }).id).toBe('bed');
   });
 
   it('gives the village outing its own purpose instead of restarting the theft', () => {
@@ -192,7 +192,7 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
     { chapter: myren, x: 169.5, flags: ['mamma', 'braid', 'light', 'chick'], id: 'chick' },
     { chapter: berget, x: 138.4, flags: ['flight'], id: 'mountain' },
     { chapter: norrsken, x: 17.8, flags: ['lower', 'placed:tragubbe'], id: 'eyes' },
-    { chapter: epilog, x: 38, flags: ['partied', 'knife', 'cut3', 'dots'], id: 'teeth' },
+    { chapter: epilog, x: 33, flags: ['partied', 'knife', 'cut3', 'dots'], id: 'teeth' },
   ])('$chapter.id checkpoint $x gives a useful next task', ({ chapter, x, flags, id }) => {
     const reminder = context(chapter.id, [...flags, 'beat:already-said'], checkpoint(chapter, x));
     expect(reminder.id).toBe(id);
@@ -282,8 +282,8 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
     const rescued = ['placed:tragubbe', 'eyes', 'bag'];
     const history = { berget: ['memory'], norrsken: rescued };
     for (const flags of [[], ['partied', 'knife', 'cut3'], ['dots', 'teeth']]) {
-      expect(context('epilog', flags, checkpoint(epilog, 38), history).recap).toMatch(motive);
-      const withoutMemory = context('epilog', flags, checkpoint(epilog, 38), { norrsken: rescued });
+      expect(context('epilog', flags, checkpoint(epilog, 33), history).recap).toMatch(motive);
+      const withoutMemory = context('epilog', flags, checkpoint(epilog, 33), { norrsken: rescued });
       expect(withoutMemory.recap).toContain(genericWelcome);
       expect(publicText(withoutMemory)).not.toMatch(firstFigureIdentity);
     }

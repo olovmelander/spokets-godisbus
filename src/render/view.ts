@@ -61,6 +61,7 @@ import { chooseTier, maxResolutionSteps, pixelRatioFor, type Tier } from './qual
 import { cameraIntent } from '../sim/camera-intent';
 import { songGlitter } from './song-glitter';
 import { createEpilogueStage } from './epilogue-stage';
+import { createHomeRoutine } from './home-routine';
 import { createPrologueStage } from './prologue-stage';
 import { createStage, litLamp } from './stage';
 import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
@@ -671,6 +672,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   scene.add(prologueStage.group);
   const epilogueStage = createEpilogueStage(chapter.epilogue);
   scene.add(epilogueStage.group);
+  const homeRoutine = chapter.place === 'home' ? createHomeRoutine(chapter) : null;
+  if (homeRoutine) scene.add(homeRoutine.group);
   let ghostMotion = createGhostMotion(ghost, true);
   // The stand-in faces +x, as the stand-in Elof does; the model from Blender faces the camera, and is turned to
   // face as the stand-in does (./ghost-model.ts).
@@ -1215,6 +1218,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // a door and its walker must stay with the scene's shot. Breathing and speech have their own time below.
     dt = words?.reading ? 0 : eventDt ?? dt;
     lifeClock += lifeDt;
+    homeRoutine?.update(flags, sceneFrame, lifeClock);
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips, dt);
     epilogueStage.update(flags, ending, lessMotion());
@@ -1225,6 +1229,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
+    const bathroom = homeRoutine?.body({ x, y });
     const onShoulders = chapter.id === 'norrsken' && curr.mode === 'ride' && flags.has('home');
     if (onShoulders) homeJourney = true;
     const wantShoulders = onShoulders ? 4.25 : 0;
@@ -1553,7 +1558,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const onHose = curr.mode === 'climb' || curr.mode === 'slide';
     // In a held scene the scene may turn him: towards his family, or out over the garden.
     const scripted = directions.elof;
-    const facingAngle = scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
+    const facingAngle = bathroom ? -bathroom.face * Math.PI * 2 : scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
     turn = turning.update(facingAngle, dt);
     // A held scene owns the pose. Otherwise actual travel drives the same articulated pose on both bodies.
     let scriptedPose: Pose | null = null;
@@ -1567,6 +1572,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Putting on the doll's raincoat, or taking it off: his arms go into its sleeves and out (./elof-coat.ts).
       if (sceneFrame) coatPose(sceneFrame.id, sceneFrame.seconds, scriptedPose);
     } else elofStance = 'stand';
+    if (bathroom?.brushing) {
+      scriptedPose = actPose('eat', { t: .7, aim: null, stride: 0, pace: 0, calm: calmStory, clock: lifeClock }, elofPose);
+      // One hand brushes; the other rests by his side instead of covering his face.
+      scriptedPose.armL = STANDING.armL; scriptedPose.elbowL = STANDING.elbowL; scriptedPose.wristL = STANDING.wristL;
+    }
+    else if (bathroom?.walking) scriptedPose = null;
     const waving = reaction?.kind === 'player' && curr.grounded;
     // The one wind (./wind.ts) as it reaches each of them where they stand: none indoors, and more in the storm.
     const gale = galeOf(chapter, flags);
@@ -1574,11 +1585,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // His model's own legs (Rig.legs), where it has come: its feet hold the ground as he walks.
     const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
     // Hang by his hands from the scarf; walk on his own feet on the way home.
-    const moving = onScarf ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
+    const moving = bathroom ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : onScarf ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
     // Norrsken's continuous rescue line already owns both grips and the loop around the carving.
     const pullIndex = rescue ? -1 : movers.findIndex((m, i) => m.t !== undefined && m.t < 1 && (m.stop ?? 0) > 0 && chapter.movers?.[i]?.verb === 'pull' && !chapter.movers[i]!.on);
     const pullMover = pullIndex >= 0 ? movers[pullIndex]! : null;
-    const playerPose = playerMotion.update(moving, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
+    const playerPose = playerMotion.update(moving, x + (bathroom?.travel ?? 0), dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
+
     // What is said (./talk.ts): he looks at whoever speaks to him, from where his face was a moment ago, and speaks with his
     // mouth, his head and a free hand. It is drawn on a copy of his pose: his own motion never keeps it.
     if (pullMover) {
@@ -1633,6 +1645,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       elof.group.position.y += (scripted.onto.y - y) * on;
       elof.group.position.z += ((scripted.onto.z ?? 0) - (lift?.z ?? 0)) * on;
     }
+    if (bathroom) elof.group.position.copy(bathroom.position);
     elof.group.rotation.set(0, turn, lying - hang, 'ZYX');
     elof.group.scale.set(tall / Math.sqrt(stretch), tall * stretch, tall / Math.sqrt(stretch));
     if (scriptedPose && scripted?.act === 'point' && scripted.aim) {
@@ -1642,6 +1655,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hold?.(1, { kind: 'point' }, k * k * (3 - 2 * k));
     }
     stage.updateElof(playerBody, scripted, tall, calmStory);
+    epilogueStage.updateElof(playerBody);
+    homeRoutine?.updateElof(playerBody);
     // Where his face is, for the others to look at as he speaks (as it was last drawn: near enough to look at).
     if (elof.group.visible) {
       playerBody.mouth(faceAt);
@@ -1957,6 +1972,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The same jointed body greets him at help points and in the story; its outer root remains the place's.
     scarfHeld = false;
     for (const one of family) {
+      // Pappa's authored carving/bathroom part replaces his candy-party helper, including its retained final pose.
+      if (chapter.id === 'epilog' && one.who === 'pappa') one.rig.group.visible = !stage.actors.get('pappa')?.visible();
       const now = one.glad !== undefined && flags.has(one.glad);
       // Called, they walk over to where they help from (Spot.goesTo): an easy walk, slowing as they come. On the first
       // frame (a game taken up) and without motion they are simply there.

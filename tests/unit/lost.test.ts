@@ -87,10 +87,10 @@ describe('the lost things under the deck', () => {
     // Moa sits at 15. With her hair clip found, she says so; without it, the party goes on as before.
     const found = give([lostFlag('clip')], 15);
     expect(found.flags.has('party:moa')).toBe(true);
-    expect(found.said).toEqual(['clipBack']);
+    expect(found.said).toEqual(['partyThanks:moa', 'clipBack']);
     const not = give([], 15);
     expect(not.flags.has('party:moa')).toBe(true);
-    expect(not.said).toEqual([]);
+    expect(not.said).toEqual(['partyThanks:moa']);
     // Each thing lies on the table by its owner, and only once it has been found.
     expect(epilog.decor!.map((d) => d.after)).toEqual(['lost:coin', 'lost:clip', 'lost:marble', 'lost:brick']);
     const lines: Record<string, string> = sv.lines;

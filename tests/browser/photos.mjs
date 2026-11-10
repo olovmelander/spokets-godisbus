@@ -187,7 +187,7 @@ try {
   }
 
   {
-    const { page, state, finish } = await open('epilogue credits', { viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog&at=52.8,3&flags=dots');
+    const { page, state, finish } = await open('epilogue credits', { viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog&at=35.5,0&flags=dots,scene:first-carving,teeth,scene:bathroom,bedtime');
     await page.keyboard.down('ArrowRight');
     await page.waitForSelector('#photoAlbum:not([hidden])', { timeout: 30000 });
     await page.keyboard.up('ArrowRight');

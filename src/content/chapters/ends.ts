@@ -153,8 +153,8 @@ const TABLE_HOP = { left: 11.4, middle: 13.4, right: 15.4, top: 1.68, z: -3.1 };
  * 1. **Elof hands out candy** (P18): he chooses a candy and then Mamma, Pappa, Moa, Bertil or the ghost.
  * 2. **The naming.** The ghost hops across the table: klonk, klonk. "Du ska heta Klonk!"
  * 3. **Elofs första trägubbe** (P19): *Ta kniven*, three outward strokes traced with Pappa, and two painted eyes.
- *    Pappa: "Alltid bort från kroppen." Elof: "Jag kan tälja!"
- * 4. **Teeth:** *Borsta tänderna*, and up to bed. The last card.
+ *    Pappa: "Alltid bort från kroppen." Elof: "Titta, Pappa! Min egen Lillgubbe!"
+ * 4. **Teeth:** he walks through the bathroom door and brushes at the basin before the last card.
  *
  * And **Hittegods** (O2): what he found under the deck in Kapitel 1 lies on the table beside its owner, and
  * the one who gets candy from him sees it: "Mitt hårspänne!"
@@ -169,10 +169,10 @@ export const epilog: ChapterData = {
   // He has grown back: a boy among small things, all through.
   size: { scale: 3 },
   // The first trägubbe has its place again, first in the row.
-  shelf: { x: 34, y: 5.4, filled: true },
+  shelf: { x: 7, y: 5.4, filled: true },
   // The party's table, behind the family where they stand to be given their candy.
   furniture: [{ look: 'table', at: { x: 13.4, y: 0 }, z: -3.1, cloth: '#f1ead8' }],
-  epilogue: { window: { x: 40, y: 3.43, z: -8.3 } },
+  epilogue: { window: { x: 9.4, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
   scenes: [
     // Where and when, as the evening opens (./cards.ts).
@@ -187,21 +187,39 @@ export const epilog: ChapterData = {
       { at: 3.4, x: 26.6, y: 0, z: 0, move: 2 },
       { at: 5.4, act: 'tilt' },
     ] } } },
+    // The panel closes onto the actual finished carving, supported in his open hand.
+    { id: 'first-carving', on: 'dots', until: 'teeth', resumeAt: { x: 32, y: 0 }, seconds: 6, hold: true,
+      lines: [{ at: .9, who: 'elof', line: 'carved' }, { at: 3.3, who: 'pappa', line: 'carvingProud' }],
+      stage: { shots: [{ at: 0, x: 33, y: 2.4, height: 5.7, width: 7.2, move: .001 }],
+        elof: [{ at: 0, face: .22, act: 'offer', aim: { x: 32.9, y: 1.65 } }],
+        actors: { pappa: [{ at: 0, x: 35.4, z: -2.2, act: 'kneel', face: .38, aim: { x: 32, y: 2.2 }, move: .001 }] } } },
+    // He opens the real bathroom door, walks in on his own feet, and brushes before the ending is allowed.
+    { id: 'bathroom', on: 'teeth', until: 'goal', resumeAt: { x: 35.5, y: 0 }, seconds: 11.6, hold: true,
+      lines: [{ at: .1, who: 'elof', line: 'brushNow' }, { at: 9.5, who: 'mamma', line: 'goodnight' }],
+      cues: [{ at: 11.4, flag: 'bedtime' }],
+      stage: { shots: [{ at: 0, x: 35.5, y: 3.05, z: -4.5, height: 7.3, width: 5.8, move: .001 },
+        { at: 3.2, x: 35.5, y: 1.9, z: -6.1, height: 4.5, width: 4.2, move: .7 }],
+        elof: [{ at: 0, act: 'stand', face: .75 }],
+        actors: { pappa: [
+          { at: .7, x: 31.8, y: 0, z: -2.4, face: .9, move: .8, act: 'walk' },
+          { at: 1.5, act: 'stand', aim: { x: 35.5, y: 2.2, z: -6.1 } },
+        ] } } },
   ],
-  goalX: 53,
+  goalX: 34.2,
+  goalNeeds: 'bedtime',
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
-    // the veranda, and the stairs up to bed: a wall to walk at, which only the last step carries him over
+    // The hall floor continues beyond the bathroom; the end waits for the complete brushing scene.
     { x: 47, y: 0 },
     { x: 47, y: 3 },
     { x: 62, y: 3 },
     { x: 62, y: 12 },
   ],
-  house: { from: -40, to: 76, windows: [4, 13, 22, 31, 40] },
+  house: { from: -40, to: 76, windows: [9.4, 21, 34] },
   // It is evening from the first moment: the lights are low, and the northern lights show in the windows.
   night: { after: null },
-  checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 38, y: 0 }],
+  checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 33, y: 0 }],
   spots: [
     ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const,
       // Pappa comes over to the carving once Elof has the knife, and kneels at his side, behind the line he walks.
@@ -214,11 +232,11 @@ export const epilog: ChapterData = {
     { id: 'cut2', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut1', story: 'carve' },
     { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
-    // Bedtime: the family's toothbrushes in their glass, and his own little one; he takes it, and goes up to bed.
-    { id: 'teeth', look: 'toothbrushes', at: { x: 44, y: 0 }, verb: 'take', word: 'brush', needs: 'dots', ride: 'bed' },
+    // A deliberate action at the bathroom door begins the walk to the basin and his toothbrush.
+    { id: 'teeth', at: { x: 35.5, y: 0 }, verb: 'take', word: 'brush', needs: 'scene:first-carving' },
   ],
   // What he found under the deck came with him: each thing lies by the one it belongs to, until it is given back
-  // ("Mitt hårspänne! Tack, lillebror!"); the coin Pappa lets him keep goes into his pocket.
+  // ("Mitt hårspänne! Tack, lillebror!"); the found coin is returned to Pappa.
   decor: [
     { look: 'coin', at: { x: 12.4, y: 0 }, after: 'lost:coin', until: 'back:coin' },
     { look: 'clip', at: { x: 16.4, y: 0 }, after: 'lost:clip', until: 'back:clip' },
@@ -234,25 +252,28 @@ export const epilog: ChapterData = {
     { flag: 'back:clip', when: ['party:moa', 'lost:clip'] },
     { flag: 'back:marble', when: ['party:bertil', 'lost:marble'] },
   ],
-  rides: [{ id: 'bed', look: 'none', from: { x: 44, y: 0 }, to: { x: 54, y: 3 }, rise: 1, time: 4, corridor: 0 }],
   ghost: [
     { at: { x: 23.4, y: 0 }, until: 'partied' },
     { at: { x: 26.6, y: 0 }, until: 'knife' },
     { at: { x: 34.4, y: 0 }, until: 'dots' },
-    { at: { x: 41, y: 0 }, near: 1.2 },
+    { at: { x: 33.7, y: 0 }, near: 1.2 },
   ],
   beats: [
-    { id: 'cobbles1', on: 'cobbles:explained', who: 'pappa', line: 'cobbles1' },
+    { id: 'partyThanks:mamma', on: 'party:mamma', who: 'mamma', line: 'partyMammaThanks', read: true },
+    { id: 'partyThanks:pappa', on: 'party:pappa', who: 'pappa', line: 'partyPappaThanks', read: true },
+    { id: 'partyThanks:moa', on: 'party:moa', who: 'moa', line: 'partyMoaThanks', read: true },
+    { id: 'partyThanks:bertil', on: 'party:bertil', who: 'bertil', line: 'partyBertilThanks', read: true },
+    { id: 'partyThanks:spoket', on: 'party:spoket', who: 'spoket', line: 'partyGhostThanks', read: true },
+    { id: 'cobbles1', on: 'cobbles:explained', who: 'elof', line: 'cobbles1' },
     { id: 'cobbles2', on: 'cobbles:explained', who: 'pappa', line: 'cobbles2' },
-    { id: 'cobbles3', on: 'cobbles:explained', who: 'pappa', line: 'cobbles3' },
+    { id: 'cobbles3', on: 'cobbles:explained', who: 'elof', line: 'cobbles3' },
     { id: 'coinBack', on: 'back:coin', who: 'pappa', line: 'coinBack' },
     { id: 'clipBack', on: 'back:clip', who: 'moa', line: 'clipBack' },
     { id: 'marbleBack', on: 'back:marble', who: 'bertil', line: 'marbleBack' },
     { id: 'klonk', on: 'partied', who: 'spoket', line: 'klonk' },
     { id: 'named', on: 'partied', who: 'elof', line: 'named' },
     { id: 'away', on: 'knife', who: 'pappa', line: 'away' },
-    { id: 'carved', on: 'cut3', who: 'elof', line: 'carved' },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],
-  candy: [...row(3, 43, 0)],
+  candy: [...row(3, 33, 0)],
 };

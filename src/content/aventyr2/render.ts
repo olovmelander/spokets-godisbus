@@ -9,6 +9,7 @@ import { PLACES } from '../../render/dressing';
 import { heightAt, type PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
 import { roomThings } from '../../render/home-room';
+import { littleCarving } from '../../render/little-carving';
 import { glowTexture } from '../../render/glow';
 import { wingbeat } from '../../render/wingbeat';
 import { kitLife } from '../../render/kit-life';
@@ -1246,23 +1247,7 @@ function oldFigure(silhouette = false): Group {
 
 /** Elof's own first carving: pale linden, round and small, with the two eyes he painted. Its cap is lost in the storm. */
 function littleFigure(silhouette = false): Group {
-  const group = new Group();
-  const wood = silhouette ? solid('#4a4640', 1, { emissive: '#3a4260', emissiveIntensity: 0.7 }) : solid('#e6cfa2', 0.9);
-  const dark = solid('#2c2420', 0.6);
-  const body = new Mesh(new CylinderGeometry(0.1, 0.14, 0.3, 9), wood);
-  body.position.y = 0.15;
-  group.add(body, ball(0.12, wood, 0, 0.4));
-  for (const x of [-0.045, 0.045]) group.add(ball(0.02, dark, x, 0.42, 0.11));
-  // The knife's marks: three facets, a little crooked, as a first carving's are.
-  for (const [y, turn] of [[0.08, 0.3], [0.2, -0.4]] as const) {
-    const cut = new Mesh(new BoxGeometry(0.2, 0.012, 0.012), solid('#c9b07e', 1));
-    cut.position.set(0, y, 0.135);
-    cut.rotation.z = turn;
-    group.add(cut);
-  }
-  group.name = 'little-trägubbe';
-  if (!silhouette) group.userData.model = 'lillgubbe';
-  return group;
+  return littleCarving(silhouette);
 }
 
 /** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
