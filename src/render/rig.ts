@@ -152,15 +152,15 @@ export function groundedHips(p: Pose): number {
  * The feet of a stride. A stiff ankle tips the foot with the shin; through the stance the ankle gives, so the sole stays near the
  * ground from heel to toe, and lets go as the leg swings through. `phase` is the stride's: the left leg leads at a quarter turn.
  */
-export function plantFeet(p: Pose, phase: number): void {
+export function plantFeet(p: Pose, phase: number, swingCancellation = .9): void {
   const stance = (side: number) => {
     const t = Math.min(1, Math.max(0, 0.5 - side * Math.cos(phase) * 2));
     return t * t * (3 - 2 * t);
   };
   // Swinging through, the foot is held up off the toe, nearly level, so the toe never catches the ground.
   const sL = stance(1), sR = stance(-1);
-  p.footL = -(p.legL - p.kneeL) * (0.55 * sL + 0.9 * (1 - sL));
-  p.footR = -(p.legR - p.kneeR) * (0.55 * sR + 0.9 * (1 - sR));
+  p.footL = -(p.legL - p.kneeL) * (0.55 * sL + swingCancellation * (1 - sL));
+  p.footR = -(p.legR - p.kneeR) * (0.55 * sR + swingCancellation * (1 - sR));
 }
 
 export function blendPose(a: Pose, b: Pose, t: number, out: Pose = { ...STANDING }, floor = false): Pose {

@@ -184,7 +184,8 @@ function airPose(vy: number, air: Air, out: Pose): void {
   const kneeLead = READY + 0.1 * m, kneeTrail = READY + 0.2 * m, legLead = READY / 2 + 0.55 * m, legTrail = READY / 2 - 0.35 * m;
   out.legL = mix(0.62 + 0.38 * top, legLead); out.legR = mix(0.05 + 0.45 * top, legTrail);
   out.kneeL = mix(0.75 + 0.6 * top, kneeLead); out.kneeR = mix(0.6 + 0.6 * top, kneeTrail);
-  out.footL = mix(-0.3, kneeLead - legLead); out.footR = mix(-0.45, (kneeTrail - legTrail) * (1 - m) - 0.15 * m);
+  // The trailing ankle opens too: pointing its toe down makes it touch before the leading heel and drag on landing.
+  out.footL = mix(-0.3, kneeLead - legLead); out.footR = mix(-0.45, kneeTrail - legTrail);
   out.armL = mix(1.25 + 0.15 * top, 1.65); out.armR = mix(1.4 + 0.1 * top, 1.85);
   out.elbowL = mix(0.5, 0.32); out.elbowR = mix(0.45, 0.28);
   out.spread = mix(0.22 + 0.2 * top, 0.42);
@@ -269,9 +270,10 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     // (Landing, the trunk gives a moment after the legs: createPlayerMotion adds it.)
     out.lean = (0.1 + 0.08 * run) * pace; out.nod = -0.05 * pace;
     out.twist = swing * (0.3 + 0.16 * run);
-    plantFeet(out, phase);
+    // Cancel the whole shin pitch during recovery; leaving ten percent tips the long toe into the ground.
+    plantFeet(out, phase, 1);
     // Giving on landing, the soles stay flat: the ankles take up what the shins tip that the stride's feet do not.
-    const flat = (side: number) => { const t = clamp(0.5 - side * Math.cos(phase) * 2), k = t * t * (3 - 2 * t); return 1 - 0.55 * k - 0.9 * (1 - k); };
+    const flat = (side: number) => { const t = clamp(0.5 - side * Math.cos(phase) * 2), k = t * t * (3 - 2 * t); return 1 - 0.55 * k - (1 - k); };
     out.footL += 0.5 * landing * flat(1); out.footR += 0.5 * landing * flat(-1);
   }
   return out;
@@ -471,7 +473,10 @@ export function createPlayerMotion() {
       const carried = player.mode === 'ride' || player.mode === 'fly' || player.mode === 'bubble';
       // (Taking hold of a hose or a ledge puts him a little way along to it: that is no teleport either.)
       const continuous = carried || distance <= Math.max(RUN_SPEED * 2, Math.abs(player.vx) * 1.5) * dt + 0.35;
-      const pace = walking && free && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
+      const touchesDown = walking && !grounded && (previousMode === 'free' || previousMode === 'fly') && impact > 0 && continuous;
+      // The first grounded frame already travels. Waiting for the previous frame to be free would leave pace zero here
+      // and make the heel-strike reset below unreachable on every running landing.
+      const pace = walking && (free || touchesDown) && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
       // Filter measured travel before taking acceleration, so interpolation does not shake the torso.
       const before = speed;
       speed = walking && free && continuous && !player.atEdge ? speed + (travel / dt - speed) * (1 - Math.exp(-16 * dt)) : 0;
@@ -491,7 +496,7 @@ export function createPlayerMotion() {
       } else if (airborne && !player.grounded) air.t += dt;
       air.rise = airborne && !player.grounded ? player.y - leftAt : 0;
       // Stepping off a ride, a hose or the finished clamber is not a fall onto the ground.
-      if (walking && !grounded && (previousMode === 'free' || previousMode === 'fly') && impact > 0 && continuous) {
+      if (touchesDown) {
         landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
         landed = 0;
         // Landing on the run, the leading foot is the one that comes down: the stride goes on from its heel strike.
