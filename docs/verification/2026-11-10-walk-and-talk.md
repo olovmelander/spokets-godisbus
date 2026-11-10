@@ -103,6 +103,15 @@ The first integrated full run passed 2,580 tests in 269 files. Production revisi
 actual saved-reveal and queued-reveal regressions, including the two visible-phase defects that failed before
 repair.
 
+Two CI attempts on `601bd774` hit Playwright's default 30-second click deadline at Granskog's High→Low
+switch; all 13 other jobs passed. The unchanged native GPU-memory first shard passed all 20 checks locally.
+Quality changes synchronously release the old pipeline and perform two uncullled compile/render warmups.
+The test now gives only those real UI clicks a bounded 120-second budget, logs duration and observed quality,
+and explicitly asserts the requested tier. Every original memory, peak, allocation and release assertion remains.
+The revised native first shard again passes all 20 checks; Granskog's switch measured 17.69 seconds locally.
+This supports load sensitivity but does not prove the exact CI dispatch/GL blocking phase. The failure path
+logs its cached previous tier and elapsed time and rethrows, without another browser call after a timeout.
+
 Final production code `d32307c` is validated by the checks below:
 
 - `npm run typecheck`;

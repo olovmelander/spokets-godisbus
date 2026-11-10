@@ -5863,6 +5863,10 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Software GPU test (10 November):** two CI attempts hit the old 30-second Granskog quality-click deadline,
+  while the full unchanged GPU-memory first shard passed locally. The test now allows a bounded 120 seconds
+  only for real quality clicks, logs elapsed/observed tier and retains every memory gate. This is test timing,
+  not a claimed physical-device performance improvement; the continuation's PR records the final exact-head CI.
 - **Playing while talking (10 November):** the dialogue policy retains explicit physical scene holds; their
   presence is intentional. Browser tests cover both phone orientations and interrupted speech, while the feel
   and frame rate on the family's physical devices remain separate from this automated evidence.
