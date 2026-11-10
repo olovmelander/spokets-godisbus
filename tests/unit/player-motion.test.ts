@@ -415,6 +415,26 @@ describe('the rounded public player', () => {
     }
   });
 
+  it('uses the requested ankle angles while preserving the stand-in boot dimensions and floor contact', () => {
+    const body = createPlayerStandIn();
+    for (const [left, right] of [[0, 0], [.45, -.2], [-.35, .6]]) {
+      body.pose({ ...STANDING, footL: left!, footR: right! }); body.group.updateMatrixWorld(true);
+      let low = Infinity;
+      for (const [side, requested] of [['left', left!], ['right', right!]] as const) {
+        const boot = body.group.getObjectByName(`player-boot-${side}`) as Mesh;
+        const heel = boot.localToWorld(new Vector3(-.1, -.045, 0)), toe = boot.localToWorld(new Vector3(.1, -.045, 0));
+        expect(Math.atan2(toe.y - heel.y, toe.x - heel.x)).toBeCloseTo(requested, 6);
+        boot.geometry.computeBoundingBox();
+        expect(boot.geometry.boundingBox!.getSize(new Vector3()).toArray()).toEqual([
+          expect.closeTo(.2, 6), expect.closeTo(.09, 6), expect.closeTo(.13, 6),
+        ]);
+        const vertices = boot.geometry.getAttribute('position');
+        for (let i = 0; i < vertices.count; i++) low = Math.min(low, boot.localToWorld(new Vector3().fromBufferAttribute(vertices, i)).y);
+      }
+      expect(low).toBeCloseTo(0, 6);
+    }
+  });
+
   it('places an explicit seat and bounce at the requested hip height, and bends knees opposite elbows', () => {
     const body = createPlayerStandIn();
     body.pose({ ...STANDING, seat: 1.5, bounce: 0.2 }); body.group.updateWorldMatrix(true, true);

@@ -627,13 +627,13 @@ export function createPlayerStandIn() {
   const shirt = material('#9db9e3'), jeans = material('#2f4b7c'), boot = material('#6b4a2e');
   const skin = material('#f2cba8'), hair = material('#ecc967');
   const leg = (z: number) => {
-    const hip = new Group(), knee = new Group();
-    hip.position.set(0, 0.4, z); knee.position.y = -0.19;
+    const hip = new Group(), knee = new Group(), ankle = new Group();
+    hip.position.set(0, 0.4, z); knee.position.y = -0.19; ankle.position.y = -0.165;
     const thigh = new Mesh(new BoxGeometry(0.12, 0.17, 0.12), jeans); thigh.position.y = -0.105;
     const shin = new Mesh(new BoxGeometry(0.12, 0.15, 0.12), jeans); shin.position.y = -0.085;
-    const foot = new Mesh(new BoxGeometry(0.2, 0.09, 0.13), boot); foot.position.set(0.035, -0.165, 0);
-    knee.add(shin, foot); hip.add(thigh, knee); figure.add(hip);
-    return { hip, knee };
+    const foot = new Mesh(new BoxGeometry(0.2, 0.09, 0.13), boot); foot.position.x = 0.035;
+    ankle.add(foot); knee.add(shin, ankle); hip.add(thigh, knee); figure.add(hip);
+    return { hip, knee, ankle, foot };
   };
   const legs = [leg(-0.075), leg(0.075)];
   const torso = new Mesh(new CapsuleGeometry(0.15, 0.16, 6, 14), shirt); torso.position.y = 0.14;
@@ -667,7 +667,7 @@ export function createPlayerStandIn() {
   const contacts = arms.map(arm => createArmContact(arm.shoulder, arm.elbow, handTip));
   for (const [i, side] of ['left', 'right'].entries()) {
     legs[i]!.hip.name = `player-hip-${side}`; legs[i]!.knee.name = `player-knee-${side}`;
-    legs[i]!.knee.children[1]!.name = `player-boot-${side}`;
+    legs[i]!.ankle.name = `player-ankle-${side}`; legs[i]!.foot.name = `player-boot-${side}`;
     arms[i]!.shoulder.name = `player-shoulder-${side}`; arms[i]!.elbow.name = `player-elbow-${side}`;
   }
   // The doll's raincoat in Stormnatten (./elof-coat.ts): over his body with its hood on his back, and over each arm's
@@ -753,12 +753,14 @@ export function createPlayerStandIn() {
         [0, p.legL, p.kneeL, p.armL, p.elbowL], [1, p.legR, p.kneeR, p.armR, p.elbowR],
       ] as const) {
         legs[i]!.hip.rotation.z = hipAngle; legs[i]!.knee.rotation.z = -kneeAngle;
+        const footAngle = i === 0 ? p.footL : p.footR;
+        legs[i]!.ankle.rotation.z = footAngle;
         arms[i]!.shoulder.rotation.set((i === 0 ? 1 : -1) * p.spread, 0, armAngle);
         arms[i]!.elbow.rotation.set(0, 0, elbowAngle);
-        const angle = hipAngle - kneeAngle;
+        const angle = hipAngle - kneeAngle, soleAngle = angle + footAngle;
         // The full boot's four sole corners, not just its ankle; a turned toe never enters the floor.
-        lowest = Math.min(lowest, 0.4 - 0.19 * Math.cos(hipAngle) + 0.035 * Math.sin(angle) - 0.165 * Math.cos(angle)
-          - 0.1 * Math.abs(Math.sin(angle)) - 0.045 * Math.abs(Math.cos(angle)));
+        lowest = Math.min(lowest, 0.4 - 0.19 * Math.cos(hipAngle) - 0.165 * Math.cos(angle) + 0.035 * Math.sin(soleAngle)
+          - 0.1 * Math.abs(Math.sin(soleAngle)) - 0.045 * Math.abs(Math.cos(soleAngle)));
       }
       figure.position.y = (p.seat === null ? -lowest : p.seat / 5.2 - 0.4) + p.bounce / 5.2;
     },
