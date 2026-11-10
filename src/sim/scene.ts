@@ -54,8 +54,8 @@ export interface SceneDef {
    */
   quiet?: boolean;
   /**
-   * World beat IDs belonging to this reveal. Its clock waits while one is being spoken, independently of
-   * player movement; a ride can keep going while its scenery remains visible for the accompanying words.
+   * World beat IDs belonging to this reveal, in spoken order. Its clock waits while one is queued or spoken,
+   * independently of player movement; a ride keeps going while its scenery remains visible for the words.
    */
   dialogue?: readonly string[];
   /** Flags the scene sets at its moments, in seconds from its start: the story's own steps. */
@@ -223,7 +223,7 @@ export interface ElofKey {
 export interface SceneFrame {
   id: string;
   seconds: number;
-  /** This reveal's owned world line is unfinished; hold its picture clock, not the rest of the world. */
+  /** This reveal's owned world line is queued or unfinished; hold its picture clock, not the rest of the world. */
   waiting?: boolean;
 }
 
@@ -247,9 +247,17 @@ export function endsInScene(chapter: { goalNeeds?: string; scenes?: readonly Sce
 /** The flag a finished scene leaves. */
 export const sceneDone = (id: string) => `scene:${id}`;
 
+/** An unfinished reveal's saved cues must not stand in for the words that accompanied them. */
+function unheardReveal(scene: SceneDef, flags: Pick<ReadonlySet<string>, 'has'>): boolean {
+  return !!scene.dialogue?.some((id) => !flags.has(`beat:${id}`)) && !!scene.cues?.some((cue) => flags.has(cue.flag));
+}
+
 /** Whether a scene still has something to tell: not finished, and the story not gone past it. */
 export function sceneWaits(scene: SceneDef, flags: Pick<ReadonlySet<string>, 'has'>): boolean {
-  return !flags.has(scene.by?.done ?? sceneDone(scene.id)) && (scene.until === undefined || !flags.has(scene.until));
+  // Some reveals end an action with their own until cue (the stone's plop). If its words are still unread,
+  // that saved cue must not skip the picture on recovery; an explicit completed scene remains completed.
+  const unreadEnding = unheardReveal(scene, flags) && scene.cues?.some((cue) => cue.flag === scene.until);
+  return !flags.has(scene.by?.done ?? sceneDone(scene.id)) && (scene.until === undefined || !flags.has(scene.until) || !!unreadEnding);
 }
 
 /** Keep an interrupted, triggered tableau in its authored place when a checkpoint lies elsewhere. */
@@ -273,11 +281,11 @@ export class SceneDirector {
 
   constructor(private readonly scenes: readonly SceneDef[], spawn: Vec, flags: Set<string>) {
     // A scene that waits for a place he starts beyond has been seen: the game was taken up after it.
-    for (const scene of scenes) if (scene.at !== undefined && scene.on === undefined && scene.at < spawn.x - 0.5) flags.add(sceneDone(scene.id));
+    for (const scene of scenes) if (scene.at !== undefined && scene.on === undefined && scene.at < spawn.x - 0.5 && !unheardReveal(scene, flags)) flags.add(sceneDone(scene.id));
     for (const scene of scenes) if (scene.before !== undefined && spawn.x > scene.before) flags.add(sceneDone(scene.id));
     // An older save can remember the later action without the scene added around it. Its until flag
     // already means the story has passed this scene; retain that completion for presentation too.
-    for (const scene of scenes) if (scene.until && flags.has(scene.until)) flags.add(sceneDone(scene.id));
+    for (const scene of scenes) if (scene.until && flags.has(scene.until) && !sceneWaits(scene, flags)) flags.add(sceneDone(scene.id));
   }
 
   /** The scene playing now, or null. */
@@ -296,12 +304,13 @@ export class SceneDirector {
    * read, or waits to be said; `listening`, whether a page hears them, so that its lines come one at a time.
    */
   tick(player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false,
-    conditions: Pick<ReadonlySet<string>, 'has'> = flags): void {
+    conditions: Pick<ReadonlySet<string>, 'has'> = flags, waiting?: Pick<ReadonlySet<string>, 'has'>): void {
     if (!this.playing) this.begin(player, flags, talking, conditions);
     this.dialogueWaiting = false;
     const playing = this.playing;
     if (!playing) return;
-    this.dialogueWaiting = (playing.def.dialogue ?? []).some((id) => flags.has(`beat:${id}`) && !conditions.has(`beat:${id}`));
+    this.dialogueWaiting = (playing.def.dialogue ?? []).some((id) => waiting?.has(id)
+      || (flags.has(`beat:${id}`) && !conditions.has(`beat:${id}`)));
     if (this.dialogueWaiting) return;
     const lines = playing.def.lines ?? [];
     // Story cues, another line and the ending wait for the current words, however long they take.

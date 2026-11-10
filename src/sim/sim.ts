@@ -17,7 +17,7 @@ import { rideY } from './ride-path';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
-import { SceneDirector, sceneResumeAt } from './scene';
+import { SceneDirector, sceneResumeAt, type SceneDef } from './scene';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -214,6 +214,8 @@ export class Sim {
   private readonly pending = new Set<string>();
   /** Story conditions use completed words; the public flags still expose their first visible moment. */
   private readonly conditions = { has: (flag: string) => this.ready(flag) };
+  /** World lines belonging to a reveal, their first cue time, and the words before them in that picture. */
+  private readonly dialogue = new Map<string, { scene: SceneDef; at: number; before: readonly string[] }>();
   private idle = 0;
   private progress = -1;
   private furthest = -Infinity;
@@ -293,6 +295,11 @@ export class Sim {
   constructor(readonly chapter: ChapterData, options: SimOptions = {}, start: SimStart = {}) {
     this.prologue = chapter.prologue ? new PrologueSequence(chapter.prologue, chapter.ghost ?? []) : null;
     this.options = options;
+    for (const scene of chapter.scenes ?? []) for (const [i, id] of (scene.dialogue ?? []).entries()) {
+      const beat = chapter.beats?.find((candidate) => candidate.id === id);
+      const at = Math.max(0, ...(scene.cues ?? []).filter((cue) => cue.flag === beat?.on || cue.flag === beat?.needs).map((cue) => cue.at));
+      this.dialogue.set(id, { scene, at, before: scene.dialogue!.slice(0, i) });
+    }
     this.checkpoints = chapter.checkpoints ?? [];
     this.jumps = chapter.jumps ?? [];
     // A saved game starts at its big candy. One the chapter doesn't know means the chapter's start.
@@ -510,7 +517,7 @@ export class Sim {
     const told = this.said.length;
     const talking = speaking || this.waiting.size > 0;
     this.prologue?.tick(this.curr, this.ghost, this.flags, talking, this.conditions);
-    this.scene?.tick(this.curr, this.flags, this.said, talking, listening, this.conditions);
+    this.scene?.tick(this.curr, this.flags, this.said, talking, listening, this.conditions, this.waiting);
     // A scene can emit before actions and physics this step. Register its words before any causal check.
     if (listening) for (let i = told; i < this.said.length; i++) this.pending.add(this.said[i]!);
     // While he watches a beat of the story, the stick and the buttons do nothing.
@@ -745,6 +752,14 @@ export class Sim {
       if (beat.until !== undefined && this.ready(beat.until)) return false;
       if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) return false;
       if (this.flags.has(`beat:${beat.id}`)) return false;
+      const owner = listening ? this.dialogue.get(beat.id) : undefined;
+      if (owner) {
+        // Saved cue flags describe what happened, not where the camera is now. Rejoin the actual reveal
+        // before narrating it, and let its framing reach the same cue even when that flag was restored.
+        const frame = this.scene?.frame;
+        if (frame?.id !== owner.scene.id || frame.seconds + STEP / 2 < owner.at) return false;
+        if (owner.before.some((id) => !this.ready(`beat:${id}`))) return false;
+      }
       const passed = beat.at !== undefined && this.curr.x >= beat.at;
       const happened = beat.on !== undefined && this.ready(beat.on);
       return passed || happened;
