@@ -29,6 +29,8 @@ import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { morgonen } from './chapters/morgonen';
+import { openWaterAt } from '../../render/water';
+import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -280,8 +282,6 @@ const DIM: Record<string, number> = { stormkvall: 0.34, stormgard: 0.42, stormsk
 
 const RAIN_MAX = 420;
 const RAIN_FOR = { low: 150, mid: 290, high: RAIN_MAX } as const;
-/** The box of rain round the camera: how wide, how tall, and from how far behind the play plane to how near. */
-const BOX = { x: 34, y: 22, back: -8, front: 4 };
 /** How near the play plane the camera comes in play, at the least: nearer than this, the box goes with it. */
 const RAIN_OUT = 6;
 
@@ -458,13 +458,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   // 6 November 2026: they were flat bars of one brightness), and each falls at its own length.
   const streak = new Uint8Array(4 * 32);
   for (let k = 0; k < 32; k++) {
-    const along = k / 31;
-    streak.set([255, 255, 255, Math.round(255 * Math.pow(along, 1.6) * (1 - Math.pow(along, 14)))], k * 4);
+    streak.set([255, 255, 255, Math.round(255 * rainStreakAlpha(k / 31))], k * 4);
   }
   const streakMap = new DataTexture(streak, 1, 32);
   streakMap.magFilter = streakMap.minFilter = LinearFilter;
   streakMap.needsUpdate = true;
   const drops = new InstancedMesh(new PlaneGeometry(0.024, 0.95), new MeshBasicMaterial({ color: '#d8e3ff', map: streakMap, transparent: true, opacity: 0.3, depthWrite: false, fog: false }), RAIN_MAX);
+  drops.name = 'storm-rain-drops';
   drops.instanceMatrix.setUsage(DynamicDrawUsage);
   drops.frustumCulled = false;
   drops.renderOrder = 4;
@@ -475,6 +475,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const LANDINGS = 36;
   const landings = new InstancedMesh(new RingGeometry(0.05, 0.075, 16).rotateX(-Math.PI / 2),
     new MeshBasicMaterial({ color: '#ffffff', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }), LANDINGS);
+  landings.name = 'storm-rain-landings';
   landings.instanceMatrix.setUsage(DynamicDrawUsage);
   landings.instanceColor = new InstancedBufferAttribute(new Float32Array(LANDINGS * 3), 3);
   landings.instanceColor.setUsage(DynamicDrawUsage);
@@ -482,6 +483,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   landings.renderOrder = 4;
   landings.userData.rich = true;
   const landingSeeds = Array.from({ length: LANDINGS }, () => ({ x: random() * 16 - 8, z: -1.6 + random() * 2.4, phase: random(), every: 0.5 + random() * 0.6 }));
+  const landingAnchors: (LandingAnchor | undefined)[] = [];
   if (rain > 0) group.add(landings);
   const landingTint = new Color();
   // Rain on the still water of a ground's puddles (Olympia's flooded goalmouth and centre circle): rings that open and
@@ -501,8 +503,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   })));
   if (puddles.length) group.add(puddleRings);
   const place = new Object3D();
-  const SLANT = 0.32;
-  place.rotation.z = -SLANT * 0.6;
+  place.rotation.z = RAIN_ANGLE;
 
   // Lightning: a bolt far behind, the sky and the lights brightening with it.
   const bolts = [bolt(3), bolt(11)];
@@ -905,7 +906,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       // out with it, still falling in front of it.
       const cz = Math.min(0, camera.position.z - RAIN_OUT);
 
-      // The rain falls through its box and starts again at the top; the box goes with the camera.
+      // The camera chooses the visible part of a world field. Drops inside it never follow camera motion.
       const count = rain > 0 ? Math.round(RAIN_FOR[tier] * rain * (1 - calm)) : 0;
       drops.count = count;
       drawnWhile(drops, count > 0);
@@ -913,9 +914,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const t = still ? 0 : clock;
         for (let i = 0; i < count; i++) {
           const s = seeds[i]!;
-          const fall = (s.y + t * s.speed) % BOX.y;
-          const x = ((s.x + fall * SLANT - cx) % BOX.x + BOX.x) % BOX.x;
-          place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z + cz);
+          const at = rainDropAt(s, t, cx, cy);
+          place.position.set(at.x, at.y, s.z + cz);
           // No rain falls indoors: only out of doors, beyond the house's corner.
           const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
           place.scale.set(out, out * s.long, out);
@@ -925,19 +925,19 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         drops.instanceMatrix.needsUpdate = true;
         (drops.material as MeshBasicMaterial).opacity = 0.42 * (1 - calm) * (0.6 + 0.4 * rain);
       }
-      // The landings: each opens over a short while, fades, and lands again somewhere else near him.
+      // An impact remains at its birth point for its whole expanding/fading life, even as Elof walks.
       const landing = rain > 0 && count > 0 && tier !== 'low';
       drawnWhile(landings, landing);
       if (landing) {
         const t = still ? 0 : clock;
         for (let i = 0; i < LANDINGS; i++) {
           const s = landingSeeds[i]!;
-          const round = (t / s.every + s.phase);
-          const k = round - Math.floor(round);
-          const where = Math.floor(round) * 7.31 + i * 3.7;
-          const x = cx + s.x + Math.sin(where) * 2.5;
+          const at = rainLandingAt(s, i, t, cx, landingAnchors[i]);
+          landingAnchors[i] = at;
+          const { x, age: k } = at;
           const out = chapter.outdoors !== undefined && x < chapter.outdoors;
-          place.position.set(x, heightAt(chapter, x) + 0.02, s.z + Math.cos(where) * 0.4);
+          const ground = heightAt(chapter, x), water = openWaterAt(chapter, x);
+          place.position.set(x, Math.max(ground, water ?? ground) + 0.02, at.z);
           place.rotation.set(0, 0, 0);
           place.scale.setScalar(out ? 0 : 0.8 + k * 3.2);
           place.updateMatrix();
@@ -945,7 +945,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const light = (1 - k) * (1 - k) * 0.9 * (1 - calm) * rain;
           landings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
         }
-        place.rotation.set(0, 0, -SLANT * 0.6);
+        place.rotation.set(0, 0, RAIN_ANGLE);
         landings.instanceMatrix.needsUpdate = true;
         landings.instanceColor!.needsUpdate = true;
       }
@@ -966,7 +966,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const light = (1 - k) * (1 - k) * 0.8 * (1 - calm) * rain;
           puddleRings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
         }
-        place.rotation.set(0, 0, -SLANT * 0.6);
+        place.rotation.set(0, 0, RAIN_ANGLE);
         puddleRings.instanceMatrix.needsUpdate = true;
         puddleRings.instanceColor!.needsUpdate = true;
       }
@@ -2641,6 +2641,7 @@ function waterSplash(size: number) {
   const white = new MeshBasicMaterial({ color: '#e4edf2', transparent: true, opacity: 0, depthWrite: false });
   // The drops: one draw for them all.
   const drops = new InstancedMesh(new SphereGeometry(0.055 * size, 6, 4), white.clone(), 12);
+  drops.name = 'storm-rain-drops';
   drops.instanceMatrix.setUsage(DynamicDrawUsage);
   drops.frustumCulled = false;
   group.add(drops);
