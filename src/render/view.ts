@@ -118,7 +118,7 @@ const CINEMA = 0.8;
  * in their dips and otherwise read as a thin band (Olov, 6 November 2026), less over the bog, which is all water.
  */
 const POOL_EYE = 1.6;
-/** The rides that lie ready where he boards them, in the storm. */
+/** The rides that lie ready where he boards them, in either adventure. */
 const WAITS_READY = new Set(['boot', 'umbrella', 'raft', 'leaf']);
 const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
@@ -1286,7 +1286,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
       // Granskogen, and in the storm Bertil's boot on the flooded lawn ("Min stövel blir din båt. Kliv i!"), Moa's
       // umbrella on the wall, the raft and the birch leaves on the water.
-      const boarding = chapter.storm && WAITS_READY.has(c.ride.look ?? '') ? chapter.spots?.find((spot) => spot.ride === c.ride.id && spot.look === undefined) : undefined;
+      const boarding = WAITS_READY.has(c.ride.look ?? '') ? chapter.spots?.find((spot) => spot.ride === c.ride.id && spot.look === undefined) : undefined;
       const waiting = (chapter.id === 'granskog' && c.ride.id === 'cap' && flags.has('cap:ready') && !flags.has('cap'))
         || (!!boarding && c !== carrier && !flags.has(boarding.id) && (boarding.needs === undefined || flags.has(boarding.needs)));
       const propSize = waiting ? 1 : c === carrier ? size : 0;

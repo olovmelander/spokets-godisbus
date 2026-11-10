@@ -246,6 +246,8 @@ export const byn: ChapterData = {
   ],
   cameras: [
     { from: 16, to: 36, zoom: 1.2 },
+    // The leaf must already be in the picture when he calls the puddle a lake, including on a phone.
+    { from: 36, to: 42, zoom: 1.25, lead: 2.4, lift: 0.35 },
     // The leaf's low riding camera opens upward over the water to reveal the church and clock tower.
     { from: 42, to: 62, zoom: 1.55, lift: 2.3 },
     { from: 40, to: 64, zoom: 1.55, lift: 0.65 },
