@@ -1285,7 +1285,16 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const showsDrawing = state.holds === 'drawing' || state.holdsLeft === 'drawing';
         const leavesShowing = state.before?.act === 'show' && elapsed < .45;
         if (sheet && (showsDrawing || leavesShowing)) {
-          rig.mouth(heldPoint).addScaledVector(up, -.64 / unit).addScaledVector(forward, .45 / unit);
+          rig.mouth(heldPoint);
+          // Her head can turn toward a speaker without pulling the page, and an arm, across her abdomen.
+          // Centre the page between the shoulders; only its height follows the face above it.
+          if (rig.arm) {
+            rig.arm(0, hand, otherHand, kneeAt);
+            rig.arm(1, otherHand, kneeAt, wristTarget);
+            heldPoint.x = (hand.x + otherHand.x) * .5;
+            heldPoint.z = (hand.z + otherHand.z) * .5;
+          }
+          heldPoint.addScaledVector(up, -.64 / unit).addScaledVector(forward, .45 / unit);
           rig.hand(1, hand); rig.hand(0, otherHand); hand.add(otherHand).multiplyScalar(.5).addScaledVector(up, .18);
           const arrival = calm || leavesShowing ? 1 : smooth(since(state.actAt) / .5);
           sheet.position.copy(hand).lerp(heldPoint, arrival);
