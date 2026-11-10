@@ -738,6 +738,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const elofTalker = createTalker('elof', 3), ghostTalker = createTalker('spoket', 5);
   const heard: Look = { turn: 0, nod: 0 }, faceAt = new Vector3(), spokenPose: Pose = { ...STANDING };
   const BOTH_HANDS: Free = [true, true], NO_HANDS: Free = [false, false];
+  const FREE_WITH_LAMP: readonly Free[] = [[false, true], [true, false]];
   /** What he does in a scene that leaves his hands free for a gesture as he speaks. */
   const HANDS_HANG: readonly Act[] = ['stand', 'watch', 'look'];
   assets
@@ -2144,12 +2145,26 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Lowering the scarf and holding it, they lean out over the railing a little, unless they walk with him.
       if (scarf) posed.lean += 0.3 * scarf.weight * (1 - (one.walk?.pace ?? 0));
       one.rig.group.rotation.y = turnFamily(one.rig.group.rotation.y, facing, dt, calmStory, turnRate);
+      let shown = true;
+      for (let node: Object3D | null = one.rig.group; node; node = node.parent) if (!node.visible) shown = false;
+      // With a scarf in both hands, the lamp is set down where the chapter says, and lights him from there (and stays).
+      const setDown = scarf ? scarf.lamp : null;
+      const lit = shown && !one.paddle && !one.seated && gesture.pull < 0.5 && !carrying && !(scarf && scarf.weight > 0.001 && !setDown)
+        && (rainGearFor(chapter, one.who, flags) !== null || (chapter.id === 'stormkvall' && one.who === 'pappa' && flags.has('lamp:give')));
+      // Reserve the same carrying hand before adding speech; otherwise its gesture changes the elbow plane
+      // that the lamp's final grip solves against. Moa's other hand is occupied by her umbrella.
+      const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
+        && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
+      if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
+      else lampTo.set(x, y + tall * .4, 0);
+      lampLocal.copy(lampTo); one.rig.group.worldToLocal(lampLocal);
+      const lampSide: 0 | 1 = lampLocal.x >= 0 && !umbrellaUp ? 0 : 1;
       // What is said (./talk.ts): they look at whoever speaks, from where their face was a moment ago, and speak with their
       // mouths, their heads and a free hand; drawn on a copy, which their own motion never keeps.
       const said = talk.lookAt(one.who), there = said ? talk.face(said) : null;
       if (there) one.rig.mouth(faceAt);
       one.talker.update(talk, there ? lookAt(one.rig.group, faceAt, there, heard) : null, lifeDt, calmStory,
-        one.seated || one.paddle || carrying || offersCap && (capSince < 0 || holdsCap) || !!(scarf && scarf.weight > 0.001) || gesture.hold > 0.001 || gesture.lift > 0.001 || gesture.pull > 0.001 ? NO_HANDS : BOTH_HANDS);
+        one.seated || one.paddle || carrying || umbrellaUp || offersCap && (capSince < 0 || holdsCap) || !!(scarf && scarf.weight > 0.001) || gesture.hold > 0.001 || gesture.lift > 0.001 || gesture.pull > 0.001 ? NO_HANDS : lit && !setDown ? FREE_WITH_LAMP[lampSide]! : BOTH_HANDS);
       one.talker.pose(Object.assign(spokenPose, posed));
       one.rig.pose(one.seated ? sitting(spokenPose, one.rig.legs) : one.paddle ? one.paddle.stance(spokenPose) : spokenPose);
       one.rig.face?.(one.talker.mouth.open, one.talker.mouth.round, one.talker.lids);
@@ -2228,12 +2243,6 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Out in the storm the family search with their lamps ("Regnrockar på! Vi går ut med lampor."): each holds a
       // lit flashlight in the left hand, the arm a little out, and lights the way to him. In Stormkvällen Pappa has
       // the one Elof brought him; in Stormskogen he holds Klonk in its beam until Elof is over.
-      let shown = true;
-      for (let node: Object3D | null = one.rig.group; node; node = node.parent) if (!node.visible) shown = false;
-      // With a scarf in both hands, the lamp is set down where the chapter says, and lights him from there (and stays).
-      const setDown = scarf ? scarf.lamp : null;
-      const lit = shown && !one.paddle && !one.seated && gesture.pull < 0.5 && !carrying && !(scarf && scarf.weight > 0.001 && !setDown)
-        && (rainGearFor(chapter, one.who, flags) !== null || (chapter.id === 'stormkvall' && one.who === 'pappa' && flags.has('lamp:give')));
       if (lit && !one.lamp) { one.lamp = litLamp(); one.lamp.name = 'family-lamp'; scene.add(one.lamp); }
       if (one.lamp) {
         one.lamp.visible = lit;
@@ -2247,17 +2256,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         } else if (lit) {
           const u = one.rig.height / 5.2;
           one.rig.group.updateWorldMatrix(true, false);
-          const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
-            && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
-          if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
-          else lampTo.set(x, y + tall * 0.4, 0);
-          // Held in the hand on his side, out in front of the body and of a raincoat over it, so that the arm never
-          // crosses the chest through the coat; the lamp itself turns to him (Olov: the arms went through the coats).
-          lampLocal.copy(lampTo);
-          one.rig.group.worldToLocal(lampLocal);
-          // While Moa has her umbrella in her left hand, the lamp is in her right.
-          const side: 0 | 1 = lampLocal.x >= 0 && !umbrellaUp ? 0 : 1;
-          holdFlashlight(one.rig, one.lamp, side, lampTo, Math.max(.7, u));
+          holdFlashlight(one.rig, one.lamp, lampSide, lampTo, Math.max(.7, u));
           one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
         }
       }
