@@ -903,6 +903,16 @@ förstod."
 
 ### 3.7 Tone and words
 
+**Walking during dialogue (Olov, 10 November 2026).** Ordinary remarks, hints, thanks and conversations along
+the route leave walking, jumping and collecting available. Their bubbles advance automatically after generous
+reading time and any recording; another line never cuts them off. A dialogue backlog alone cannot stop Elof.
+Physical scenes such as a catch, transformation, rescue or carefully framed reveal retain their authored hold,
+but their lines also finish automatically; *Fortsätt* is optional and cannot cut a recording. Pause remains the
+way to read without a time limit. Causal story actions and saved dialogue progress wait for actual completion,
+independently of movement. [The design and verification record](verification/2026-11-10-walk-and-talk.md)
+documents the protected exceptions and the research behind this change. This supersedes older instructions
+that every essential world line must stop play or require a separate Continue press.
+
 - **Tone map:**
   - Prolog and Gården: playful and comic, with the freeze jokes and the near-catches.
   - Granskogen: wonder, a little mysterious, always safe; the cone avalanche is slapstick.

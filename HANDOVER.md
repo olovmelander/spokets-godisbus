@@ -1,5 +1,27 @@
 # Handover
 
+## State (10 November 2026): playing while characters talk
+
+- **Olov asked:** ordinary speech must stop interrupting movement; calmer staging belongs only where the scene
+  needs it. He also asked how strong AAA and indie games handle this. This continuation starts from published
+  PR #256, `3c74f2c`, and applies the shared policy to both adventures without changing their release boundary.
+- **Behavior:** ordinary remarks, hints, thanks and conversations leave walking, jumping and collecting available.
+  Bubbles queue one at a time and finish automatically. Authored catches, magic, rescues and deliberate close
+  scenes retain their physical hold, but their lines also finish automatically; Continue is optional after any
+  recording ends. Existing reading time, slower pace, larger text and Pause remain. Larger bubbles fit the phone.
+- **Story:** emitted words and completed words have separate receipts. Following events and saved progress wait
+  for completion without freezing ordinary traversal. Reveals keep their matching picture through the words;
+  the owl can keep flying and steering. Required tasks unlocked after Elof passes remain helper return targets.
+- **Interruption:** Pause, hiding the page, recoverable graphics loss and opening a picture memory preserve the
+  line and its recording position. Automatic memories wait for the current line. Deliberately returning to a
+  checkpoint rearms unfinished speech. No existing voice recording or private family asset is changed.
+- **Evidence:** [the verification record](docs/verification/2026-11-10-walk-and-talk.md) explains the design,
+  primary Firewatch/God of War references, implementation and exact validation scope. Baseline 2,529 tests passed;
+  production code `310f8ed` passes 2,586 tests in 270 files, typecheck, build/size gates and the built-in privacy scan.
+  The record details local browser checks; this continuation's PR records the remaining exact-head browser, CI
+  and publication results before delivery.
+  Phone viewport checks do not establish physical-device frame rate. This work needs no local Blender session.
+
 ## State (10 November 2026): illustrations, shared props and natural character motion
 
 Tracked in [PR #256](https://github.com/olovmelander/spokets-godisbus/pull/256); its final checks and deployment
@@ -5271,6 +5293,12 @@ record identify the exact published revision.
 
 ## Next
 
+**Playing while talking (10 November).** Continue from the newest State and
+`docs/verification/2026-11-10-walk-and-talk.md`. Preserve the separation between movement, explicit physical
+holds and completed dialogue receipts; ordinary queues must not seize the controls. Keep reveal pictures with
+their lines and preserve paused recordings. Earlier patches and PRs are already integrated. No next step for
+this request needs Olov's computer.
+
 **Visual details and character motion (10 November).** The newest State and
 `docs/verification/2026-11-10-visual-followup.md` describe the current follow-up. Preserve the single owner of each
 held hand, event-time contact transitions, bounded head motion and exact Pause/resume state. Continue from the
@@ -5783,6 +5811,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Playing while talking (10 Nov) | Remove ordinary dialogue stops; retain appropriate calmer scenes | One cloud continuation with parallel simulation, HUD/audio, content and browser worktrees | — / 1 request | Automatic dialogue with playable traversal, explicit scene holds, completion receipts, reveal/save safeguards and phone checks; primary design sources and validation in the walk-and-talk record. |
 | Shared visual details and all-character motion (10 Nov) | Olov's five screenshot requests, then natural arms, heads and whole-body movement throughout the game | One continuing cloud session with six parallel implementation/review worktrees | — / 1 screenshot round plus expanded motion request | Cars, footballs, Swedish labels and consistent illustrated cast; shared pose/turn/grip/contact/head/Pause fixes, actual private geometry and phone-view checks. Evidence and limits in the visual follow-up record. |
 | Owl-tree bark (10 Nov) | Match nearby tree textures | One focused cloud follow-up with independent code review | — / 1 screenshot report | Shared bark texture on every tier, correctly scaled UVs, close trunk/rim detail and an attached grain on the moving branch. |
 | Living northern lights (10 Nov) | Make the aurora move beautifully | One focused cloud follow-up with independent browser validation | — / 0 so far | Flowing folds/rays and separate presentation time; 100 nightfall checks and private built portrait/landscape sequences on Low/High. |
@@ -5833,6 +5862,9 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Playing while talking (10 November):** the dialogue policy retains explicit physical scene holds; their
+  presence is intentional. Browser tests cover both phone orientations and interrupted speech, while the feel
+  and frame rate on the family's physical devices remain separate from this automated evidence.
 - **Current motion review (10 November):** the verified pose accumulation, head over-rotation, joint singularities
   and Pause/resume defects are corrected in the current follow-up. Foot sliding is reduced, not eliminated:
   the verification record distinguishes measured contact improvements from a complete foot-lock rewrite.
@@ -6032,6 +6064,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 10 November request to keep playing during ordinary dialogue is implemented in this continuation.
+  Existing calm scenes keep their staging and advance automatically; the verification record explains the policy.
 - The 10 November car/football/illustration/collection-label requests and confirmed runtime motion defects are
   addressed in PR #256, including the continuous painting-to-waking transition, boot release, torch handoffs
   and the two late carrying releases. Finer model sculpting and physical-device judgment remain separate;
@@ -6056,7 +6090,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree and visual/motion work add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
