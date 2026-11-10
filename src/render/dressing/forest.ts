@@ -1,6 +1,7 @@
 import { Color, Group, InstancedMesh, Mesh, Object3D } from 'three';
 import type { ChapterData } from '../../sim/types';
 import { placing, together, type ForestKit, type Placed } from '../forest-kit';
+import { openWaterAt } from '../water';
 import { floorDrop, shoreAt } from './ground';
 import { KIT, TALL_BLADES, grows, heightAt, landscape, mossAt, sequence, softMoss, tallGrass } from './kit';
 
@@ -222,6 +223,8 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
     const radius = (1 + next() * 0.45) * (z < -12 ? 0.8 : 1);
     if (!grows(chapter, x)) continue;
     const turn = [next() * 6.28, (next() - 0.5) * 0.04, 0.8 + next() * 0.4];
+    // Keep an authored approach open, including the trunk's width. Grass and the distant forest remain.
+    if (chapter.treeGaps?.some((gap) => x + radius * 1.5 > gap.from && x - radius * 1.5 < gap.to && z > gap.back)) continue;
     // None where a door's own spruce stands.
     if (doors.some((door) => Math.abs(door.at.x - x) < 3.2 && z > -9)) continue;
     place.rotation.set(0, turn[0]!, turn[1]!);
@@ -269,13 +272,18 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   // The floor in front of the path: the same things, lying down the slope towards the camera. Nothing there
   // stands higher than the path it lies under, less a finger, so that nothing ever covers his boots.
   const front = sequence(seed * 31 + 7);
-  const lie = (reach = 3.9, draw = front) => {
+  const lie = (reach = 3.9, draw = front, wet = false) => {
     const x = from + draw() * length;
     const z = 0.55 + draw() ** 0.85 * reach;
     // In front of a pool the floor is its near shore, from a hand in front of the water.
     const shore = shoreAt(chapter, x);
     const drop = shore !== null ? (z > 0.75 ? floorDrop(chapter, x, z) : null) : grows(chapter, x) ? floorDrop(chapter, x, z) : null;
-    return drop === null ? null : { x, z, y: (shore ?? heightAt(chapter, x)) - drop, room: drop - 0.05 };
+    if (drop === null) return null;
+    const y = (shore ?? heightAt(chapter, x)) - drop;
+    // Along a river the floor in front goes down into its water (../water.ts, open water): nothing lies there under
+    // it, but a stone may stand in the shallows.
+    const water = wet ? null : openWaterAt(chapter, x);
+    return water !== null && y < water + 0.04 ? null : { x, z, y, room: drop - 0.05 };
   };
   for (let i = 0; i < Math.round(length * FRONT.cushions); i++) {
     const at = lie();
@@ -354,7 +362,7 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
     needles.setMatrixAt(needles.count++, place.matrix);
   }
   for (let i = 0; i < Math.round(length * FRONT.stones); i++) {
-    const at = lie();
+    const at = lie(3.9, front, true);
     const want = 0.2 + front() * 0.6;
     const turn = front() * 6.28;
     const shade = 0.85 + front() * 0.3;

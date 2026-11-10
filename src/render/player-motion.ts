@@ -10,6 +10,7 @@ const BOY = GAITS.bertil;
 /** What standing gives him while he waits: the legs on the ground, the hips over them, the trunk and head. */
 const STOOD = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll', 'bendSide', 'tilt'] as const;
 import { createArmContact } from './arm-contact';
+import { drawnWhile } from './idle';
 import { COAT_ORDER, type RainGear } from './rain-gear';
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
@@ -636,6 +637,12 @@ export function createPlayerStandIn() {
   const backpack = new Mesh(new BoxGeometry(0.13, 0.24, 0.22), material('#6f6a40')); backpack.position.set(-0.19, 0.16, 0);
   const neck = new Group(); neck.position.y = 0.3;
   for (const part of [head, hairTop, fringe]) { part.position.y -= 0.3; neck.add(part); }
+  // A mouth on the front of his head, which opens as he speaks (./talk.ts): nothing of it while it is shut. Dark as his boots.
+  const mouth = new Mesh(new SphereGeometry(0.05, 10, 6), boot);
+  mouth.name = 'player-mouth';
+  mouth.position.set(0.176, 0.045, 0);
+  drawnWhile(mouth, false);
+  neck.add(mouth);
   // The fringe bends about its root on the brow; the hair's crown turns a little with it.
   const sway = createSway(), root = new Vector3(0.13 - 0.09 * Math.sin(0.85), 0.285 - 0.09 * Math.cos(0.85), 0);
   body.add(torso, neck, backpack);
@@ -712,6 +719,11 @@ export function createPlayerStandIn() {
     },
     hand(side: 0 | 1, out: Vector3) { return arms[side]!.elbow.localToWorld(out.copy(handTip)); },
     mouth(out: Vector3) { return neck.localToWorld(out.set(.17, .1, 0)); },
+    /** His mouth open (0 shut, 1 wide) and round; the stand-in has no lids to close. */
+    face(open: number, round: number, _lids: number) {
+      mouth.scale.set(0.25, Math.max(1e-3, 0.5 * open), 1 - 0.35 * round);
+      drawnWhile(mouth, open > 0.01);
+    },
     /** The wind in his hair (`windAt` where he stands), and a hand in it: secondary motion, never the simulation. */
     breeze(wind: number, dt: number, still: boolean, ruffle = 0) {
       // Paused (no time passing), the hair holds exactly as it is.

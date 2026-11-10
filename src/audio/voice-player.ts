@@ -33,7 +33,7 @@ if (typeof window !== 'undefined') {
 }
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stopVoice();
+    if (document.hidden) pauseVoice();
   });
 }
 
@@ -102,6 +102,34 @@ export function playVoice(key: string): void {
   }
 }
 
+/**
+ * Pause holds the line being said where it is, as its bubble waits under Pause; `resumeVoice` lets it finish. A line is
+ * discarded only when the player deliberately leaves or restarts the chapter.
+ */
+export function pauseVoice(): void {
+  pendingKey = null;
+  try {
+    currentAudio?.pause();
+  } catch {
+    // ignore
+  }
+}
+
+/** Back from Pause or a hidden page: continue only when the caller says the game may play. */
+export function resumeVoice(canPlay = true): void {
+  const audio = currentAudio;
+  if (!canPlay || !audio || !audio.paused || !soundEnabled || currentVolume <= 0) return;
+  try {
+    audio.play()?.catch(() => {
+      if (currentAudio !== audio) return;
+      currentAudio = null;
+      currentKey = null;
+    });
+  } catch {
+    stopVoice();
+  }
+}
+
 /** Stops any currently playing voice line. */
 export function stopVoice(): void {
   pendingKey = null;
@@ -122,4 +150,11 @@ export function stopVoice(): void {
 /** Returns the currently playing line key, or null if none. */
 export function playingVoice(): string | null {
   return currentKey;
+}
+
+/** Playback time of the current recording, for the speaker's mouth. Duration is zero until metadata arrives. */
+export function voicePosition(): { key: string; seconds: number; duration: number } | null {
+  if (!currentAudio || !currentKey) return null;
+  return { key: currentKey, seconds: Math.max(0, currentAudio.currentTime),
+    duration: Number.isFinite(currentAudio.duration) && currentAudio.duration > 0 ? currentAudio.duration : 0 };
 }

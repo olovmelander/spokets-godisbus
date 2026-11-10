@@ -1,7 +1,8 @@
 import { GRAVITY, RUN_SPEED } from '../../../sim/constants';
-import type { Candy, ChapterData, Ledge, Vec } from '../../../sim/types';
+import type { SceneDef } from '../../../sim/scene';
+import type { Candy, ChapterData, Flyby, Ledge, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { alongAll, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, flightAt, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 1: Stormgården (docs/aventyr-2.md). Units: EL. The home garden at night, in the autumn
@@ -98,6 +99,44 @@ const ROOT = { from: 166, top: 169, end: 172, to: 175, y: 1.4 };
 const HEDGE = { from: 184.6, y: 1.2 };
 
 /**
+ * The flash at the hedge (Olov, 9 November 2026: "När lillgubben flyger över häcken i slutet av kapitlet är det svårt
+ * att se honom. Det ska synas tydligt."). Elof stops and watches: a gust lifts the little one off the lawn in front of
+ * the hedge, close to the path, and tumbles him slowly up along it, over its top (the garden's end, 14 EL high where
+ * the ground ends, `HEDGE_TOP`) and away towards the forest, pale in his own glow, the lightning flashing again as he
+ * goes. It was a dark shape four EL back that went into the hedge, across the sky in two and a half seconds, under the
+ * line Elof says.
+ */
+const HEDGE_TOP = { x: 196, y: 14 };
+const FLIGHT: Flyby = {
+  on: 'beat:sg:flash', from: { x: 181, y: 1 }, to: { x: 197.6, y: 17.2 }, z: -0.5, toZ: -6, seconds: 6, rise: 1.6, size: 2.1,
+  who: 'lillgubbe', lit: [2, 4],
+};
+/** Where the little one is, `k` of the way. */
+const flown = (k: number) => flightAt(FLIGHT, k);
+/**
+ * The camera goes with him: it takes over from where he is, and moves with the same ease as his flight, most of his
+ * way and up the hedge, so that he stays in the picture under Elof's words and goes from it over the hedge's top,
+ * small, into the dark. Wide enough at the start to have Elof in it too, on a phone held upright as well.
+ */
+const HEDGE_SCENE: SceneDef = {
+  id: 'haecken', at: 177, before: 180.5, seconds: 6.8, hold: true,
+  // Finish the previous line, frame the hedge, then show and name the flight together.
+  cues: [{ at: 0.8, flag: 'sg:flight' }],
+  stage: {
+    shots: [
+      { at: 0, x: 180.2, y: 3, height: 7.6, width: 7.6, move: 0.8 },
+      { at: 0.9, x: round(180.2 + 0.95 * (FLIGHT.to.x - FLIGHT.from.x)), y: round(3 + 0.8 * (FLIGHT.to.y - FLIGHT.from.y)), height: 8.4, width: 7.8, move: 5.8 },
+    ],
+    // He points to where the gust lifts the little one, and follows him with his eyes, up over the hedge.
+    elof: [
+      { at: 0.15, act: 'point', aim: flown(0.3) },
+      { at: 2, act: 'look', aim: flown(0.55) },
+      { at: 3.6, act: 'look', aim: flown(0.85) },
+    ],
+  },
+};
+
+/**
  * The window sills, over the first run of drops: a dry way, up from the deck and down again in the dry place.
  * Each is a held jump over the last or level with it, and the two over the drops stand higher than a drop can
  * knock him (1.5 over the deck).
@@ -147,8 +186,8 @@ export const stormgard: ChapterData = {
     flybys: [
       // A flash: the old trägubbe on the playhouse roof leaps away towards the hedge.
       { on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 172, y: 8 }, seconds: 2.5, who: 'tragubbe' },
-      // And at the hedge: the little one, tumbling over it towards the forest.
-      { on: 'beat:sg:flash', from: { x: 176, y: 5 }, to: { x: 200, y: 10 }, seconds: 2.5, who: 'lillgubbe' },
+      // And at the hedge: the little one, tumbling over it towards the forest, while Elof watches (`haecken`).
+      FLIGHT,
     ],
     // The playhouse the trail climbs, its green walls just behind the roof he walks on; birches by the hedge.
     buildings: [
@@ -194,8 +233,8 @@ export const stormgard: ChapterData = {
     { look: 'tragubbe', at: PLAYHOUSE.ridge, until: 'beat:sg:playhouse', z: -0.4 },
   ],
   spawn: { x: 1, y: DECK + 0.01 },
-  // Where and when, as the chapter opens (../kit.ts).
-  scenes: [timeCard('stormgard', 1)],
+  // Where and when, as the chapter opens (../kit.ts); and the little one over the hedge, watched.
+  scenes: [timeCard('stormgard', 1), HEDGE_SCENE],
   goalX: 189,
   ground: [
     { x: -3, y: 16 },
@@ -237,11 +276,11 @@ export const stormgard: ChapterData = {
     { x: ROOT.top, y: ROOT.y },
     { x: ROOT.end, y: ROOT.y },
     { x: ROOT.to, y: 0 },
-    // 7. the hedge
+    // 7. the hedge, and its tall end, which the little one flies over
     { x: HEDGE.from, y: 0 },
     { x: HEDGE.from, y: HEDGE.y },
-    { x: 196, y: HEDGE.y },
-    { x: 196, y: 14 },
+    { x: HEDGE_TOP.x, y: HEDGE.y },
+    HEDGE_TOP,
   ],
   water: [
     { from: DITCH.from, to: DITCH.to, y: WATER },
@@ -353,8 +392,9 @@ export const stormgard: ChapterData = {
     { id: 'sg:lonely', on: 'sg:thought', who: 'elof', line: 'sgLonely', read: true },
     { id: 'sg:why', at: 147.6, needs: 'sg:thought', who: 'elof', line: 'sgWhy', read: true },
     { id: 'sg:lookout', on: 'sg:lookout', who: 'elof', line: 'sgLookout' },
-    // 7. the hedge
-    { id: 'sg:flash', at: 177, who: 'elof', line: 'sgFlash', read: true },
+    // 7. the hedge: said as the flash comes, while he stands and watches the little one go (`haecken`), so that the
+    // words are under the flight and not in front of it.
+    { id: 'sg:flash', on: 'sg:flight', who: 'elof', line: 'sgFlash' },
     { id: 'sg:forest', at: 180.2, who: 'elof', line: 'sgForest' },
     { id: 'sg:end-klonk', at: 182.4, who: 'spoket', line: 'sgKlonkKlonk' },
   ],

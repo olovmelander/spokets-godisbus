@@ -184,11 +184,13 @@ describe('the wind in the characters’ details', () => {
     for (const who of ['mamma', 'pappa', 'moa', 'bertil'] as const) {
       const rig = createRehearsalRig(who);
       expect(rig.group.children.filter((child) => child instanceof Mesh)).toHaveLength(1);
-      expect((rig.group.children[0] as InstancedMesh).count).toBe(17);
+      // Its seventeen parts and the mouth that speaks (src/render/talk.ts), all in the one draw.
+      expect((rig.group.children[0] as InstancedMesh).count).toBe(18);
     }
     let meshes = 0;
     createPlayerStandIn().group.traverse((node) => { if (node instanceof Mesh) meshes++; });
-    expect(meshes).toBe(15);
+    // His fifteen parts and his mouth, which is drawn only while he speaks.
+    expect(meshes).toBe(16);
   });
 
   it('bends a model’s named hair, brim and hem bones downwind about their roots, and rests them exactly', () => {

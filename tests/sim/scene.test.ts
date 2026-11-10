@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { BONUS, COURSES, STORY } from '../../src/content/chapters';
 import { sv } from '../../src/content/sv';
 import { STEP } from '../../src/sim/constants';
-import { QUIET_WAIT, SceneDirector, sceneBeats, type SceneDef } from '../../src/sim/scene';
+import { SceneDirector, sceneBeats, type SceneDef } from '../../src/sim/scene';
 import type { PlayerState } from '../../src/sim/types';
 import { PROLOG_SCENES } from '../../src/content/chapters/prolog-scenes';
 
 /** Just what the director reads of him: where he is, and whether he stands on his own feet. */
 const standing = (x: number, more: Partial<PlayerState> = {}) => ({ x, y: 0, mode: 'free', grounded: true, ...more }) as PlayerState;
 
-function run(director: SceneDirector, seconds: number, player: PlayerState, flags: Set<string>, said: string[], talking = false) {
-  for (let i = 0; i < Math.round(seconds / STEP); i++) director.tick(player, flags, said, talking);
+function run(director: SceneDirector, seconds: number, player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false) {
+  for (let i = 0; i < Math.round(seconds / STEP); i++) director.tick(player, flags, said, talking, listening);
 }
 
 const morning: SceneDef = {
@@ -165,12 +165,92 @@ describe('the story\'s scenes', () => {
     expect(director.frame?.id).toBe('titel');
   });
 
-  it('waits for quiet only so long', () => {
+  it('waits for a long line to finish before starting', () => {
     const titel: SceneDef = { id: 'titel', at: 51.4, seconds: 1, hold: true, quiet: true };
     const flags = new Set<string>();
     const director = new SceneDirector([titel], { x: 0, y: 0 }, flags);
-    run(director, QUIET_WAIT + 0.1, standing(51.5), flags, [], true);
+    run(director, 30, standing(51.5), flags, [], true);
+    expect(director.frame).toBeNull();
+    director.tick(standing(51.5), flags, [], false);
     expect(director.frame?.id).toBe('titel');
+  });
+
+  // Olov, 9 November 2026: what someone says is let finish before the next event plays or the next line is said.
+  it('lets what is being said finish before any held scene takes the floor, and he listens meanwhile', () => {
+    const flags = new Set<string>(['grab']);
+    const director = new SceneDirector([later], { x: 0, y: 0 }, flags);
+    run(director, 3, standing(0), flags, [], true);
+    expect(director.frame).toBeNull();
+    expect(director.holding).toBe(true);
+    director.tick(standing(0), flags, [], false);
+    expect(director.frame?.id).toBe('later');
+    // One that is not held never waits: a card, or the acting that goes with a line as it is said.
+    const walk: SceneDef = { id: 'walk', on: 'go', seconds: 1 };
+    const going = new Set<string>(['go']);
+    const free = new SceneDirector([walk], { x: 0, y: 0 }, going);
+    free.tick(standing(0), going, [], true);
+    expect(free.frame?.id).toBe('walk');
+  });
+
+  it('counts its wait from the last line said: a conversation before it is let finish, however long', () => {
+    const flags = new Set<string>(['grab']);
+    const said: string[] = [];
+    const director = new SceneDirector([later], { x: 0, y: 0 }, flags);
+    // Four lines of six seconds each, said one after another: longer than and never one line too long.
+    for (let line = 0; line < 4; line++) {
+      said.push(`talk:${line}`);
+      run(director, 6, standing(0), flags, said, true);
+      expect(director.frame, `after line ${line}`).toBeNull();
+    }
+    director.tick(standing(0), flags, said, false);
+    expect(director.frame?.id).toBe('later');
+  });
+
+  it('makes a reading stop at each line: the next line, and the end, wait while one is still being read', () => {
+    const talk: SceneDef = {
+      id: 'talk', seconds: 3,
+      cues: [{ at: 0.5, flag: 'pointed' }],
+      lines: [{ at: 0.2, who: 'moa', line: 'notYet' }, { at: 1, who: 'pappa', line: 'newGhost' }],
+    };
+    const flags = new Set<string>();
+    const said: string[] = [];
+    const director = new SceneDirector([talk], { x: 0, y: 0 }, flags);
+    run(director, 0.3, standing(0), flags, said);
+    expect(said).toEqual(['talk:0']);
+    // Moa's line is still being read: the next story cue waits, even after thirty seconds.
+    run(director, 30, standing(0), flags, said, true);
+    expect(flags.has('pointed')).toBe(false);
+    expect(said).toEqual(['talk:0']);
+    expect(director.frame!.seconds).toBeLessThan(0.5);
+    expect(director.frame!.seconds).toBeGreaterThan(0.45);
+    // Read: Pappa answers; while his line is read, the scene does not end.
+    run(director, 0.6, standing(0), flags, said);
+    expect(flags.has('pointed')).toBe(true);
+    expect(said).toEqual(['talk:0', 'talk:1']);
+    run(director, 5, standing(0), flags, said, true);
+    expect(director.frame?.id).toBe('talk');
+    expect(flags.has('scene:talk')).toBe(false);
+    run(director, 2.1, standing(0), flags, said);
+    expect(flags.has('scene:talk')).toBe(true);
+  });
+
+  it('tells a page that listens its lines one at a time, and a robot all those due at once', () => {
+    const both: SceneDef = { id: 'both', seconds: 1, lines: [{ at: 0.2, who: 'mamma', line: 'notYet' }, { at: 0.2, who: 'pappa', line: 'newGhost' }] };
+    const flags = new Set<string>();
+    const said: string[] = [];
+    const director = new SceneDirector([both], { x: 0, y: 0 }, flags);
+    for (let i = 0; i < 0.3 / STEP && said.length === 0; i++) director.tick(standing(0), flags, said, false, true);
+    // Due at the same moment, the second waits: the page hears the first only after this step.
+    expect(said).toEqual(['both:0']);
+    run(director, 2, standing(0), flags, said, true, true);
+    expect(said).toEqual(['both:0']);
+    director.tick(standing(0), flags, said, false, true);
+    expect(said).toEqual(['both:0', 'both:1']);
+
+    const robot = new Set<string>();
+    const told: string[] = [];
+    run(new SceneDirector([both], { x: 0, y: 0 }, robot), 0.3, standing(0), robot, told);
+    expect(told).toEqual(['both:0', 'both:1']);
   });
 
   it('keeps each unbroken story stretch short, its moments inside it, and its lines among the game\'s words', () => {

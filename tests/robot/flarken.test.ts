@@ -559,9 +559,37 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(lookout.who).toBe('elof');
       expect(lookout.at!).toBeGreaterThan(left(platform));
       expect(lookout.at!).toBeLessThan(right(platform));
-      const flash = flarken.storm!.flybys!.find((f) => f.on === 'beat:sjon:lookout')!;
-      expect(flash.who).toBe('lillgubbe');
-      expect(flash.to.x).toBeGreaterThan(flarken.goalX);
+      // Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar". On the platform the picture goes out with him,
+      // in a held scene, and his words wait for the moment it has: then it is in the picture while they are read.
+      const scene = flarken.scenes!.find((s) => s.id === 'sjon:utkik')!;
+      expect(scene.hold).toBe(true);
+      expect(scene.at).toBe(lookout.at);
+      expect(scene.before).toBeCloseTo(right(platform), 5);
+      const seen = scene.cues!.find((cue) => cue.flag === lookout.needs)!;
+      const shot = scene.stage!.shots![0]!;
+      expect(seen.at).toBeGreaterThanOrEqual(shot.at + (shot.move ?? 1));
+      expect(seen.at).toBeLessThan(scene.seconds);
+      // What it shows: the little one on its stone, far out behind the jetty's end, where the lake runs out, until he
+      // has left the tower; and the shot has it in the middle of its picture, either way up.
+      const sighting = flarken.storm!.sightings!.find((s) => s.on === lookout.needs)!;
+      expect(sighting.who).toBe('lillgubbe');
+      expect(sighting.until).toBe('beat:sjon:gap');
+      expect(sighting.at.x).toBeGreaterThan(flarken.checkpoints![CP.far]!.x);
+      expect(sighting.z).toBeLessThan(-3);
+      expect(Math.abs(sighting.at.x - shot.x)).toBeLessThan(shot.width! / 2);
+      expect(Math.abs(sighting.at.y - shot.y)).toBeLessThan(shot.height / 2);
+      // Played: he is held on the platform until the picture has come back, and says it once, in its place.
+      const sim = new Sim(flarken, {}, { checkpoint: CP.tower, flags: BOAT });
+      run(sim, 0.2);
+      for (let i = 0; i < 10 / STEP && !sim.flags.has('beat:sjon:lookout'); i++) sim.step({ ...idle, x: 1 });
+      expect(sim.flags.has('sjon:seen'), where(sim)).toBe(true);
+      expect(sim.curr.y).toBeCloseTo(platform.y, 2);
+      const held = sim.curr.x;
+      run(sim, scene.seconds - seen.at - 0.3, { x: 1 });
+      expect(sim.curr.x).toBeCloseTo(held, 3);
+      run(sim, 1, { x: 1 });
+      expect(sim.curr.x).toBeGreaterThan(held + 0.5);
+      expect(sim.said.filter((id) => id === 'sjon:lookout')).toEqual(['sjon:lookout']);
     });
 
     it('climbing it, he stops at the far edge if he walks, and a run or a held jump off it lands on the jetty beyond', () => {
@@ -618,7 +646,38 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       // It goes down in the gap, under the water, where nothing can stand on it.
       const water = flarken.water!.find((w) => w.from <= last.x && w.to >= last.x)!;
       expect(last.y + stone.height).toBeLessThan(water.y - 1);
-      expect(flarken.beats!.find((b) => b.id === 'sjon:plop')!.on).toBe('placed:sjon-stone');
+      // The plop is said when he has seen it go under: the picture rolls it to the edge, tips it in and sinks it
+      // (src/content/aventyr2/render.ts, `fieldstone`), a moment after it is in place to the simulation. He stands and
+      // watches meanwhile, in a held scene whose shot has the gap in the picture, and the scene says when it is under.
+      const watch = flarken.scenes!.find((scene) => scene.id === 'sjon:plopp')!;
+      expect(watch.on).toBe('placed:sjon-stone');
+      expect(watch.hold).toBe(true);
+      expect(watch.until).toBe('sjon:sunk');
+      const sunk = watch.cues!.find((cue) => cue.flag === 'sjon:sunk')!;
+      expect(sunk.at).toBeGreaterThan(1);
+      expect(sunk.at).toBeLessThan(2);
+      const shot = watch.stage!.shots![0]!;
+      expect(shot.x + shot.width! / 2).toBeGreaterThan(barkGap.from + 0.6);
+      expect(shot.x - shot.width! / 2).toBeLessThan(stone.stops[0]!.x - stone.width / 2 - 0.3);
+      expect(flarken.beats!.find((b) => b.id === 'sjon:plop')!.on).toBe('sjon:sunk');
+      const sim = new Sim(flarken, {}, { checkpoint: CP.tower, flags: BOAT });
+      run(sim, 0.2);
+      runOn(sim, stone.stops[0]!.x - stone.width / 2 - 1.5);
+      runInto(sim, 1);
+      use(sim);
+      // The scene begins once the stone is in place to the simulation; until it is under he stands, held there.
+      for (let i = 0; i < 2 / STEP && sim.sceneFrame?.id !== 'sjon:plopp'; i++) sim.step({ ...idle });
+      expect(sim.flags.has('placed:sjon-stone')).toBe(true);
+      const watching = sim.curr.x;
+      run(sim, sunk.at - 0.2, { x: 1 });
+      expect(sim.curr.x).toBeCloseTo(watching, 3);
+      expect(sim.said).not.toContain('sjon:plop');
+      run(sim, 0.3, { x: 1 });
+      expect(sim.said.slice(-2)).toEqual(['sjon:plop', 'sjon:plop-klonk']);
+      // And it is not played again, nor in a game taken up after it.
+      run(sim, watch.seconds);
+      expect(sim.flags.has('scene:sjon:plopp')).toBe(true);
+      expect(new Sim(flarken, {}, { checkpoint: CP.far, flags: [...BOAT, 'sjon:sunk'] }).flags.has('scene:sjon:plopp')).toBe(true);
       // The answer comes when he has seen the stone sink, and stands by the bark.
       const idea = flarken.beats!.find((b) => b.id === 'sjon:bark-idea')!;
       expect(idea.needs).toBe('placed:sjon-stone');
@@ -685,19 +744,21 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const outlet = flarken.beats!.find((b) => b.id === 'sjon:outlet')!;
       expect(outlet.read).toBe(true);
       expect(outlet.who).toBe('elof');
-      expect(outlet.at!).toBeLessThan(flarken.goalX);
-      expect(outlet.at!).toBeGreaterThan(flarken.checkpoints![CP.far]!.x);
+      const watch = flarken.scenes!.find((scene) => scene.id === 'sjon:strommen')!;
+      expect(watch.at!).toBeLessThan(flarken.goalX);
+      expect(watch.at!).toBeGreaterThan(flarken.checkpoints![CP.far]!.x);
+      expect(outlet.on).toBe('sjon:current');
       const flybys = flarken.storm!.flybys!;
-      expect(flybys.find((f) => f.on === 'beat:sjon:outlet')!.who).toBe('lillgubbe');
+      expect(flybys.find((f) => f.on === 'sjon:current')!.who).toBe('lillgubbe');
       // The old one waits on the end post until he leaps.
-      const old = flarken.decor!.find((d) => d.look === 'tragubbe' && d.until === 'beat:sjon:log')!;
+      const old = flarken.decor!.find((d) => d.look === 'tragubbe' && d.until === 'sjon:log-run')!;
       expect(old.at.x).toBeGreaterThan(flarken.goalX);
       expect(heightAt(flarken, old.at.x)).toBeCloseTo(old.at.y, 5);
-      const leapAfter = flybys.find((f) => f.on === 'beat:sjon:log')!;
+      const leapAfter = flybys.find((f) => f.on === 'sjon:log-run')!;
       expect(leapAfter.who).toBe('tragubbe');
       expect(leapAfter.from.x).toBe(old.at.x);
       // Both go on down the river, out of the picture: the stone is the finale's, at Billsta.
-      for (const f of flybys.filter((f) => f.on === 'beat:sjon:outlet' || f.on === 'beat:sjon:log')) expect(f.to.x).toBeGreaterThan(old.at.x + 10);
+      for (const f of flybys.filter((f) => f.on === 'sjon:current' || f.on === 'sjon:log-run')) expect(f.to.x).toBeGreaterThan(old.at.x + 10);
       expect(flarken.decor!.filter((d) => (d.look === 'tragubbe' || d.look === 'lillgubbe') && (d.z ?? 0) < -6)).toEqual([]);
       const lines: Record<string, string> = sv.lines;
       expect(Object.values(words.lines)).not.toContain('Där! På stenen ute i sjön!');
@@ -772,7 +833,8 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     expect(flarken.candy.length).toBeGreaterThanOrEqual(85);
     expect(flarken.checkpoints!.length).toBeGreaterThanOrEqual(8);
     expect(flarken.checkpoints!.length).toBeLessThanOrEqual(10);
-    expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card']);
+    // The card, the lookout from the diving tower, and the stone going under.
+    expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card', 'sjon:utkik', 'sjon:strommen', 'sjon:stocken', 'sjon:plopp']);
     for (const kind of ['tower', 'hut', 'swings', 'picnic', 'birch'] as const) {
       expect(buildings.some((d) => d.kind === kind), kind).toBe(true);
     }

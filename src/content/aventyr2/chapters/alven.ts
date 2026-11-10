@@ -104,6 +104,14 @@ const CALL_PAPPA = 88.6;
 const BRIDGE = { x: 100, width: 24, height: 7.8 };
 /** The bridge's deck, where Pappa stands: the deck's slab is centred on its height, and is 2.4 thick. */
 const DECK = BRIDGE.height + 1.2 + RAPID;
+/**
+ * Pappa's scarf (src/render/scarf.ts). He stands at the railing straight over where Elof takes hold, so that it hangs
+ * straight down to him, held out over the railing in both hands (`hands` high, `out` behind the path); while it
+ * lifts Elof he walks along the bridge with him, and stands at its far end after. His lamp is set down on the edge of the
+ * deck beside him meanwhile, and lights Elof from there.
+ */
+const SCARF = { at: 91.7, hands: DECK + 2.6, out: -0.3, wool: '#a8322b', lamp: { x: 93.2, y: DECK + 0.55, z: -0.72 } };
+const PAPPA_STANDS = { x: SCARF.at, y: DECK, z: -1.5 };
 
 // 4. The beaver's place: two gnawed stumps, a step each, and the lodge, too steep to jump: a gnawed stick up it.
 const FAR_BANK: Stone = { from: 107.4, to: 116.4, y: 0 };
@@ -118,7 +126,14 @@ const STICK = { x: 119.5, bottom: STUMP2.y, top: LODGE.y, exit: 1 as const, look
 // 5. The lake: its shore, the owl, the otter's stone out in the shallows, and the far shore.
 const SHORE: Stone = { from: SLOPE_END, to: 137.4, y: 0 };
 const CALL_OWL = 133.8;
-const OWL = { from: { x: 136.2, y: 0 }, to: { x: 166, y: 0.4 }, rise: 4.6, time: 6.6, corridor: 0.5 };
+/**
+ * The owl's flight (Olov, 9 November 2026: "När man flyger på ugglan över sjön syns godisar under. Går de att ta?").
+ * It skims low over the shallows, over the rolling logs, so that the sweets on the way out to the otter's stone are
+ * just under him: the stick dips him down to each (src/sim/ride-path.ts). Then it climbs high over the wide lake,
+ * where he sees the little one far ahead, and comes down to the far shore. Low as it goes, the owl under him stays
+ * clear of the water and the logs.
+ */
+const OWL = { from: { x: 136.2, y: 0 }, to: { x: 166, y: 0.4 }, rise: 4.6, time: 6.6, corridor: 0.7, skim: { from: 138.4, to: 143.8, y: 1.85 } };
 const OTTER: Stone = { from: 145.2, to: 148.2, y: 0.5 };
 /**
  * Two logs the eddy rolls to and fro in the shallows, a hop apart, their tops at the shore's height: the way out to
@@ -135,8 +150,30 @@ const ROLLERS: Mover[] = [rolling('al-roll-1', 139.6, 0), rolling('al-roll-2', 1
 // 6. Moälven: the far shore, a stone in a stream that joins it, and the shore on towards Billsta.
 const MOALVEN: Stone = { from: 165, to: 172, y: 0.4 };
 const CREEK: Stone = { from: 173.4, to: 175.2, y: 0.6 };
-const ON: Stone = { from: 176.6, to: 194, y: 0.4 };
+// The end wall stays beyond the whole parked car: a wall at the goal hides its front half from the river.
+const ON: Stone = { from: 176.6, to: 224, y: 0.4 };
 const CREEK_WAY: Stone[] = [MOALVEN, CREEK, ON];
+
+/**
+ * Moa and Bertil (Olov, 9 November 2026: "Bertil och Moa bara dyker upp vid bilen"). They have followed by car, and wait
+ * by it on the road at the river's end from the start, searching the water with their lamps: he sees them there as he
+ * comes along Moälven, and they run down from the car to the bank at the trail's end, Bertil round the gnawed stump.
+ */
+const KIDS = {
+  /**
+   * Where he is when they set off: on the far bank of the creek, where he can stop safely and see both children come down
+   * from the car before the trail runs out.
+   */
+  run: 177.8,
+  car: { moa: { x: 186.4, y: 0, z: -9.6 }, bertil: { x: 188.8, y: 0, z: -9 } },
+  bank: { moa: { x: 183.2, y: ON.y, z: -1.2 }, bertil: { x: 185.4, y: ON.y, z: -0.9 } },
+  /** Where they shine their lamps, waiting: the river, where he will come. */
+  river: { x: 177, y: 0, z: 0 },
+  /** Where Elof stands as the trail runs out, for them to look at. */
+  elof: { x: 181.6, y: ON.y + 0.9, z: 0 },
+};
+/** The time card, which Moa and Bertil stand in by the car. */
+const CARD = timeCard('alven', 1);
 
 /** A stone in the ground's outline: up out of the water, across, and down again. */
 const island = (s: Stone): Vec[] => [{ x: s.from, y: DEEP }, { x: s.from, y: s.y }, { x: s.to, y: s.y }, { x: s.to, y: DEEP }];
@@ -173,15 +210,37 @@ export const alven: ChapterData = {
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (src/content/chapters/cards.ts).
   scenes: [
-    timeCard('alven', 1),
-    // Called, Pappa is seen where he stands: up on the bridge's middle, over the rapids, from where he lowers his scarf.
-    // The rapids' camera keeps Elof in the picture and him out of it, so for a moment the picture looks up to him.
+    // As the chapter opens, Moa and Bertil wait by the family's car at the river's end, far ahead, lamps on the water.
+    { ...CARD, stage: { ...CARD.stage, actors: {
+      moa: [{ at: 0, ...KIDS.car.moa, face: 0.36, move: 0.01, act: 'shine', aim: KIDS.river, holds: 'lamp-moa' }],
+      bertil: [{ at: 0, ...KIDS.car.bertil, face: 0.4, move: 0.01, act: 'shine', aim: KIDS.river, holds: 'lamp-bertil' }],
+    } } },
+    // Called, Pappa is seen where he stands: up at the bridge's railing over the bank, lowering his scarf. The picture
+    // opens out for a moment to show all of it: him on the bridge, the scarf coming down, and Elof on the bank below.
     {
       id: 'bron', on: 'al:pappa', until: 'al:lift', before: 92, seconds: 1.5, hold: true,
-      stage: { shots: [{ at: 0, x: 97.6, y: DECK + 3.4, height: 10, width: 16, move: 0.35 }] },
+      stage: { shots: [{ at: 0, x: SCARF.at + 0.6, y: DECK - 1.6, height: 15.5, width: 16, move: 0.35 }] },
     },
+    // As he comes along Moälven they see his light, and run down from the car to the bank at the trail's end, Moa first,
+    // Bertil round the gnawed stump after her: there when the trail runs out ("Vi letar tillsammans. Jag är här.").
+    // He watches from the safe bank after the creek. The shot includes both children from their first step, also on
+    // a portrait phone: from farther away the ordinary following camera missed their run entirely.
+    { id: 'al:kids', at: KIDS.run, seconds: 3.6, hold: true, stage: {
+      shots: [{ at: 0, x: 183.4, y: 3.4, height: 12.8, width: 16, move: 0.5 }],
+      actors: {
+      moa: [
+        { at: 0, act: 'look', aim: KIDS.elof },
+        { at: 0.15, ...KIDS.bank.moa, move: 2.2, act: 'look', aim: KIDS.elof },
+      ],
+      bertil: [
+        { at: 0.25, x: 187.8, y: 0.2, z: -4.6, move: 1.1, act: 'look', aim: KIDS.elof },
+        { at: 1.35, ...KIDS.bank.bertil, move: 1.25, act: 'look', aim: KIDS.elof },
+      ],
+    } } },
   ],
   goalX: 186,
+  // The road and the children's whole approach stay in view; close spruces otherwise hide Moa as she sets off.
+  treeGaps: [{ from: 178, to: 212, back: -22 }],
   trailEnds: true,
   // Pappa answers in the coda: he follows by car along the river.
   coda: 'pappa',
@@ -276,8 +335,12 @@ export const alven: ChapterData = {
     // The gentle way: offered to anyone who has fallen in, or plays on Lugnt.
     { id: 'al:leaf', at: LEAF.from, verb: 'take', word: 'board', needs: FELL_IN, ride: 'al:leaf' },
     // On the bank before the rapids: he calls Pappa, who lowers his scarf from the bridge; then he takes hold.
-    // Pappa himself is up on the bridge, at its railing over the rapids ("Jag står här uppe på bron!").
-    { id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, standsAt: { x: BRIDGE.x - 0.6, y: DECK, z: -2.4 }, verb: 'call', word: 'callPappa' },
+    // Pappa himself is up on the bridge, at its railing over the bank's end ("Jag står här uppe på bron!"); while the
+    // scarf lifts Elof he walks along the bridge with him, and stays at its far end.
+    {
+      id: 'al:pappa', look: 'sign', at: { x: CALL_PAPPA, y: 0 }, standsAt: PAPPA_STANDS, verb: 'call', word: 'callPappa',
+      goesTo: { ...PAPPA_STANDS, x: LIFT.to.x + 0.4 }, goesWhen: 'al:lift',
+    },
     { id: 'al:lift', at: LIFT.from, verb: 'take', word: 'alScarf', needs: 'al:scarf', ride: 'al:lift' },
     // On the lake's shore: the owl from the forest. Called, it glides over and settles where he climbs up (`goesTo`), and
     // that owl is the one that carries him.
@@ -287,7 +350,7 @@ export const alven: ChapterData = {
   rides: [
     { id: 'al:raft', look: 'raft', ...RAFT },
     { id: 'al:leaf', look: 'leaf', ...LEAF },
-    // Pappa's scarf: only Elof is drawn, hanging from it, lifted up towards the bridge and down on the far side.
+    // Pappa's scarf: Elof hangs from it by his hands, lifted up towards the bridge and down on the far side.
     { id: 'al:lift', look: 'none', ...LIFT },
     { id: 'al:owl', look: 'owl', ...OWL },
   ],
@@ -301,8 +364,8 @@ export const alven: ChapterData = {
   storm: {
     rain: 1,
     lightning: 7.5,
-    // Pappa's scarf, held down from the bridge's railing to Elof's hands all the way over the rapids.
-    ropes: [{ ride: 'al:lift', from: { x: BRIDGE.x, y: BRIDGE.height + 2.4 }, z: -2, colour: '#3a6a9a' }],
+    // Pappa's scarf, red wool: lowered from his hands over the railing, and held down to Elof's all the way over the rapids.
+    ropes: [{ ride: 'al:lift', held: 'al:pappa', from: { x: SCARF.at, y: SCARF.hands }, z: SCARF.out, colour: SCARF.wool, lamp: SCARF.lamp }],
     flybys: [
       // From the outlet's bank: the little one, bobbing away down the current.
       { on: 'beat:al:flash', from: { x: 22, y: 0 }, to: { x: 46, y: 0.2 }, seconds: 2.8, who: 'lillgubbe' },
@@ -314,8 +377,8 @@ export const alven: ChapterData = {
       { on: 'beat:al:old-ahead', from: { x: 186, y: 0.4 }, to: { x: 212, y: 0.4 }, seconds: 3.2, who: 'tragubbe' },
     ],
     glows: [
-      // Pappa's lamp up on the bridge, once he is called.
-      { at: { x: 99.6, y: 8.4 }, z: -2.4, size: 1.4, after: 'al:pappa' },
+      // Pappa's lamp up on the bridge, set down on the edge of its deck once he is called, to hold his scarf.
+      { at: { x: SCARF.lamp.x, y: SCARF.lamp.y }, z: SCARF.lamp.z, size: 1.4, after: 'al:pappa' },
       // The family's car on the road by the river, its headlights on: they drive to Billsta.
       { at: { x: 177.6, y: 1.4 }, z: -2.6, size: 1.6, after: 'beat:al:billsta' },
       { at: { x: 178.6, y: 1.4 }, z: -2.6, size: 1.6, after: 'beat:al:billsta' },
@@ -343,6 +406,9 @@ export const alven: ChapterData = {
   decor: [
     // A frog on the bank, by the reeds.
     { look: 'kit', word: 'groda', at: { x: 111.6, y: 0 }, z: -1.3, turn: 0.5, scale: 0.8 },
+    // The beaver itself, on the bank by its stumps, gnawing a stick: it looks at Elof, thumps its tail and goes behind its
+    // lodge, and swims home over the lake while he is up on the roof (../beaver.ts).
+    { look: 'kit', word: 'baver', at: { x: 115.2, y: FAR_BANK.y }, z: -2.6 },
     // Gnawed stumps on the beaver's steps, and what he has felled and dropped along the banks.
     { look: 'kit', word: 'stubbe-gnagd', at: { x: 117.1, y: 0.9 }, z: -0.9, turn: 0.4 },
     { look: 'kit', word: 'stubbe-gnagd', at: { x: 118.9, y: 1.8 }, z: -1.1, turn: 1.9, scale: 1.2 },
@@ -359,11 +425,10 @@ export const alven: ChapterData = {
     // The otter on its stone.
     { look: 'otter', at: { x: (OTTER.from + OTTER.to) / 2, y: OTTER.y }, z: 0.1 },
     // Reeds along the banks, and in the shallows by them.
-    ...[3.6, 10.8, 49.9, 82.6, 113, 131.8].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
+    ...[3.6, 10.8, 49.9, 82.6, 131.8].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
+    // Behind the beaver, so its paws, stick and broad tail are seen as he comes off the bridge.
+    { look: 'reed', at: { x: 113, y: 0 }, z: -6 },
     ...[165.4, 177.4, 190.4].map((x) => ({ look: 'reed' as const, at: { x, y: ON.y } })),
-    // Moa and Bertil, come down from the road, when the trail has run out.
-    { look: 'sign', at: { x: 183.2, y: ON.y }, word: 'callMoa', after: 'beat:al:last' },
-    { look: 'sign', at: { x: 185.4, y: ON.y }, word: 'callBertil', after: 'beat:al:last' },
     ...[15.2, 48.8].map((x) => ({ look: 'reed' as const, at: { x, y: CURRENT } })),
     { look: 'reed', at: { x: 164.4, y: LAKE } },
   ],
@@ -452,13 +517,14 @@ export const alven: ChapterData = {
     // Down the current the picture is wide and looks ahead, so the next bank is in it.
     { from: 13, to: 52, zoom: 1.45, lift: 0.3, lead: 3.4 },
     { from: 52, to: 82, zoom: 1.3, lift: 0.2 },
-    // At the rapids the bridge and Pappa on it are in the picture, and the arc he is lifted along.
-    { from: 82, to: 110, zoom: 1.7, lift: 2.4 },
+    // At the rapids the bridge is in the picture, the scarf coming down from Pappa's hands at its railing (on a big
+    // screen his hands too), and the arc he is lifted along.
+    { from: 82, to: 110, zoom: 2, lift: 3.4 },
     { from: 110, to: 132, zoom: 1.35, lift: 0.9 },
     // Over the lake the picture opens out, the owl's arc and the far shore in it.
     { from: 132, to: 168, zoom: 1.6, lift: 1.4, lead: 3.4 },
     // At the end the river widens, and the family's car waits on the road.
-    { from: 168, to: 194, zoom: 1.55, lift: 0.8 },
+    { from: 168, to: ON.to, zoom: 1.55, lift: 0.8 },
   ],
   candy: [
     // 0. the outlet's bank, up to the raft
@@ -497,12 +563,15 @@ export const alven: ChapterData = {
     // The last of the handful from the bowl.
     ...row(177.8, 180.6, ON.y),
   ],
-  // Side candy: hearts and lollipops on the way out to the otter's stone, one over each rolling log, where he stands
-  // on it, and two on the stone. None is taken from the shore or from the owl's back. New ones are added at the end.
+  // Side candy: hearts and lollipops on the way out to the otter's stone, in the arcs of the hops from the shore to the
+  // first rolling log, from it to the second and from that to the stone, and one a hop up over the first log. None is
+  // taken from the shore, nor by following the owl's trail; from its back, the stick dips him down to every one (`OWL`).
+  // New ones are added at the end.
   side: [
-    ...ROLLERS.map((log) => ({ x: round((log.stops[0]!.x + log.stops[1]!.x) / 2, 1), y: 0.6 })),
-    { x: 146.2, y: round(OTTER.y + 0.55) },
-    { x: 147.4, y: round(OTTER.y + 0.55) },
+    { x: 138.4, y: 1.5 },
+    { x: 139.7, y: 1.45 },
+    { x: 141.2, y: 1.5 },
+    { x: 144.4, y: 1.55 },
   ],
 };
 

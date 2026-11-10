@@ -1,10 +1,13 @@
 import { Box3, Mesh } from 'three';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { moonstone } from '../../src/content/aventyr2/moonstone';
+import { ADVENTURE2, loadAdventure2 } from '../../src/content/chapters';
+import { isOpenWater, openWaterAt } from '../../src/render/water';
 
-beforeAll(() => {
+beforeAll(async () => {
   const fake: object = new Proxy(function () {}, { get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : fake), apply: () => fake, set: () => true });
   vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, getContext: () => fake }) });
+  await loadAdventure2();
 });
 afterAll(() => vi.unstubAllGlobals());
 
@@ -43,17 +46,20 @@ describe('the moonlit meeting stone', () => {
     expect(Math.max(...edges.values())).toBe(2);
   });
 
-  it('submerges the front edge and covers the exposed lakebed on tall screens', () => {
+  it('submerges the front edge, and the lake itself covers the lakebed in front of it on tall screens', () => {
     const group = moonstone(20, 0.6, -0.5);
     const stone = group.getObjectByName('moonstone-surface') as Mesh;
     const position = stone.geometry.getAttribute('position');
     for (let i = 0; i < position.count; i++) if (position.getZ(i) > 5) expect(position.getY(i)).toBeLessThan(-0.5);
-    const water = group.getObjectByName('moonstone-water')!;
-    const bounds = new Box3().setFromObject(water);
-    expect(bounds.min.x).toBe(0);
-    expect(bounds.max.x).toBe(20);
-    expect(bounds.min.z).toBeCloseTo(-5.5);
-    expect(bounds.max.z).toBeGreaterThan(80);
-    expect(bounds.max.y).toBeCloseTo(-0.515);
+    // It had a dark plane of its own just under the surface in front of it, from when the river's water ended at the
+    // stone. The narrow's own water lies there now, over the whole chapter (src/render/water.ts, open water), and the
+    // plane showed through it on High as a flat dark sheet.
+    expect(group.getObjectByName('moonstone-water')).toBeUndefined();
+    const stormoga = ADVENTURE2.find((chapter) => chapter.id === 'stormoga')!;
+    const skerry = stormoga.landmarks!.find((mark) => mark.look === 'skerry')!;
+    expect(isOpenWater(stormoga)).toBe(true);
+    for (const x of [skerry.from, (skerry.from + skerry.to) / 2, skerry.to]) expect(openWaterAt(stormoga, x)).toBe(-0.5);
+    const box = new Box3().setFromObject(group);
+    expect(box.min.y).toBeLessThan(-0.5);
   });
 });

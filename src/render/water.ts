@@ -164,9 +164,14 @@ const POOL: WaterKind = {
 
 const KINDS: Partial<Record<PlaceId, WaterKind>> = {
   forest: POOL,
-  /** Peat water: nearly black, still, and a mirror. It lies in front of the tussocks and behind the whole bog. */
+  /**
+   * Peat water: nearly black, still, and a mirror. It lies in front of the whole bog and behind it, and the islands
+   * stand in it (open water, `waterShape`): it was cut 2.4 in front of the path, and on a phone held upright the lower third of the
+   * picture was that cut, a tank seen from the side under the surface (Olov, Kapitel 6: "ser man från sidan rakt in
+   * under vattenytan, och det ser väldigt fyrkantigt ut"; Myren's and Flärken's water had the same).
+   */
   bog: {
-    front: 2.4, corner: 1.5, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
+    front: 160, corner: 160, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
     dim: 0.6, faceTop: '#34423f', faceDeep: '#0e1a18', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#c9d2c0',
     mirror: 0.5, tint: '#c8bd9e', ripple: 0.8, bedColour: '#000000', shoreColour: '#000000', stands: null,
     drift: 0.6,
@@ -182,13 +187,17 @@ const KINDS: Partial<Record<PlaceId, WaterKind>> = {
 };
 
 /**
- * A river: black, running, open towards the camera and on behind the path. Its stones and banks stand in it. Its
- * surface runs on past the camera, so that its cut is never in the picture: on a phone held upright the camera
+ * A river: black, running, open towards the camera and on behind the path. Its stones and banks stand in it (open
+ * water, `waterShape`).
+ * Its surface runs on past the camera, so that its cut is never in the picture: on a phone held upright the camera
  * stands about 24 EL out and sees the water to about 13 EL in front of the path, past where it used to end (11),
- * which then showed as the edge of a block (Olov, 7 November 2026). 48 is past the camera in every shot.
+ * which then showed as the edge of a block (Olov, 7 November 2026). A portrait reunion shot stands 108 EL out;
+ * the surface reaches past that too, so widening the picture never reveals the underwater ground as cut blocks. It ran so
+ * only where the simulation has water, and in front of each bank its sheet ended in the air over the bank's floor,
+ * which falls away towards the camera: seen from the side, a flat sheet with nothing under it (Olov, 9 November 2026).
  */
 export const RIVER: WaterKind = {
-  front: 48, corner: 48, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
+  front: 160, corner: 160, back: -60, thins: -26, behind: -5.5, feather: 0, depth: 12, bed: 0, shore: 0,
   dim: 0.6, faceTop: '#2a3a3c', faceDeep: '#0c1618', ramp: 1.6, faceAlpha: 0.93, faceBelow: 1, murk: 0.5, through: '#b8cac4',
   mirror: 0.55, tint: '#c4ccc0', ripple: 1.25, bedColour: '#000000', shoreColour: '#000000', stands: null,
   // As fast as the foam it carries between the rapids (Älven's `storm.foam`).
@@ -197,6 +206,15 @@ export const RIVER: WaterKind = {
 
 /** How wide a thing can stand in a river with the water going on past it: more than that is a bank. */
 const STANDS_IN_IT = 10;
+/** Over how many EL still water comes to run fully, where it runs out into a stream. */
+const RUN_IN = 4;
+/** How long each of running water's two copies of its ripples is carried before it begins again, in seconds. */
+const RUN_ROUND = 2.4;
+/**
+ * How far in front of the path open water meets its banks: their floor has gone down into it here, the forest's
+ * where its slope crosses a river's height (about 1.3 to 1.9 in front), the bog's islands sooner.
+ */
+const BANK_FRONT = 1.6;
 
 /** A river is one water: its stretches meet half way between them, under what stands in it. */
 function joined(pools: readonly { from: number; to: number; y: number }[]) {
@@ -238,9 +256,11 @@ export interface WaterShape {
 /**
  * The water of a chapter as one mesh. A pool's surface lies where the simulation has it (`from`, `to`, `y`);
  * everything else is the picture's: how far it reaches towards and away from the camera, where it ends in
- * haze instead of an edge, and the face it is cut with in front.
+ * haze instead of an edge, and the face it is cut with in front. Open water lies over the whole chapter at the
+ * heights of `stretches` (the simulation's own, where `pools` were joined under what stands in them).
  */
-export function waterShape(pools: readonly { from: number; to: number; y: number }[], kind: WaterKind, span?: { from: number; to: number }, street?: (x: number) => number): WaterShape {
+export function waterShape(pools: readonly { from: number; to: number; y: number }[], kind: WaterKind, span?: { from: number; to: number }, street?: (x: number) => number,
+  stretches?: readonly { from: number; to: number; y: number }[]): WaterShape {
   const position: number[] = [];
   const part: number[] = [];
   const index: number[] = [];
@@ -256,37 +276,43 @@ export function waterShape(pools: readonly { from: number; to: number; y: number
     for (let i = 0; i < grid.length - 1; i++) for (let j = 0; j < grid[i]!.length - 1; j++) quad(grid[i]![j]!, grid[i + 1]![j]!, grid[i]![j + 1]!, grid[i + 1]![j + 1]!);
   };
   if (!pools.length) return { position, part, index };
-  const level = pools[0]!.y;
-  const everywhere = kind.behind !== null && span !== undefined;
-  // Far shores first, then the water behind everything, then each pool from its face to its surface: the
-  // mesh is drawn in this order, and nothing of it is in front of what comes later.
+  if (kind.behind !== null && span !== undefined) {
+    // Open water (a river, a lake, the bog): one surface over the whole chapter, from past the camera to where it
+    // thins into the haze, and the ground stands in it. Where the simulation has a stretch of water it lies at that
+    // stretch's height, and across a bank between two of different heights it goes from the one to the other, under
+    // the bank and in front of it, where the bank's floor has gone down into it. It has no cut and no edge in view.
+    const along = levelLine(stretches ?? pools);
+    const xs = [span.from - 60, span.to + 60, ...along.map(([x]) => x)];
+    const columns = [...new Set(xs)].sort((a, b) => a - b);
+    const grid = columns.map((x) => {
+      const y = levelOn(along, x);
+      return [{ z: kind.front, there: 1 }, { z: kind.thins, there: 1 }, { z: kind.back, there: 0 }].map((row) => corner(x, y, row.z, 0, row.there, 1, y));
+    });
+    for (let i = 0; i < grid.length - 1; i++) for (let j = 0; j < 2; j++) quad(grid[i]![j]!, grid[i + 1]![j]!, grid[i]![j + 1]!, grid[i + 1]![j + 1]!);
+    return { position, part, index };
+  }
+  // Far shores first, then each pool from its face to its surface: the mesh is drawn in this order, and nothing
+  // of it is in front of what comes later.
   if (kind.bed > 0) for (const w of pools) {
     const up = street ? Math.max(street(w.from - 0.2), street(w.to + 0.2)) : w.y + 0.3;
     sheet(w.y, [w.from, w.to], () => [
       { z: kind.back + 0.4, which: 2 }, { z: kind.back - 0.5, y: up, which: 2 }, { z: kind.shore, y: up, which: 2 },
     ]);
   }
-  if (everywhere) {
-    const xs = [span.from - 60, span.to + 60];
-    for (const w of pools) if (w.y === level) xs.push(...columnsOf(w, kind.corner < kind.front ? 1.2 : 0));
-    const columns = [...new Set(xs)].sort((a, b) => a - b);
-    sheet(level, columns, () => [{ z: kind.behind! }, { z: kind.thins }, { z: kind.back, there: 0 }]);
-  }
   for (const w of pools) {
-    const joined = everywhere && w.y === level;
-    const inset = kind.corner < kind.front ? 1.2 : joined ? 0 : kind.bed > 0 ? 2 : kind.feather;
+    const inset = kind.corner < kind.front ? 1.2 : kind.bed > 0 ? 2 : kind.feather;
     const columns = columnsOf(w, inset);
     const front = columns.map((_, i) => (i === 0 || i === columns.length - 1 ? kind.corner : kind.front));
     const edge = (i: number) => i === 0 || i === columns.length - 1;
-    // The cut face: straight down from the front of the surface.
+    // The cut face: straight down from the front of the surface. A pool's own ground closes it in front with a near
+    // shore over its lip, so that it is not seen (../dressing/ground.ts `shore`).
     for (let i = 0; i < columns.length - 1; i++) {
       quad(
         corner(columns[i]!, w.y, front[i]!, 1, 1, 1, w.y), corner(columns[i + 1]!, w.y, front[i + 1]!, 1, 1, 1, w.y),
         corner(columns[i]!, w.y - kind.depth, front[i]!, 1, 1, 1, w.y), corner(columns[i + 1]!, w.y - kind.depth, front[i + 1]!, 1, 1, 1, w.y),
       );
     }
-    if (joined) sheet(w.y, columns, (i) => [{ z: front[i]! }, { z: kind.behind! }]);
-    else if (kind.bed > 0) {
+    if (kind.bed > 0) {
       // A puddle: shallow at its shores, a hand deep in the middle.
       sheet(w.y, columns, (i) => [
         { z: front[i]!, deep: edge(i) ? 0 : 1 }, { z: kind.back + 2.5, deep: edge(i) ? 0 : 1 }, { z: kind.back, deep: 0 },
@@ -299,6 +325,49 @@ export function waterShape(pools: readonly { from: number; to: number; y: number
     } else sheet(w.y, columns, (i) => [{ z: front[i]! }, { z: kind.back }]);
   }
   return { position, part, index };
+}
+
+/**
+ * Open water's height along the chapter, as the points it goes through: each stretch of the simulation's water at its
+ * own height from end to end, straight from one to the next across what lies between, and level beyond the first and
+ * the last.
+ */
+export function levelLine(stretches: readonly { from: number; to: number; y: number }[]): [x: number, y: number][] {
+  const line: [number, number][] = [];
+  for (const w of [...stretches].sort((a, b) => a.from - b.from)) {
+    const last = line[line.length - 1];
+    // A stretch that begins where the last one ended, or inside it, goes on from where that one is.
+    if (last && w.from <= last[0]) {
+      if (w.to > last[0]) line.push([w.to, w.y]);
+      continue;
+    }
+    line.push([w.from, w.y], [w.to, w.y]);
+  }
+  return line;
+}
+
+/** Open water's height at x, from its line. */
+export function levelOn(line: readonly [number, number][], x: number): number {
+  if (!line.length) return 0;
+  if (x <= line[0]![0]) return line[0]![1];
+  for (let i = 1; i < line.length; i++) {
+    const [bx, by] = line[i]!;
+    if (x <= bx) {
+      const [ax, ay] = line[i - 1]!;
+      const k = bx - ax < 1e-6 ? 1 : (x - ax) / (bx - ax);
+      return k >= 1 ? by : k <= 0 ? ay : ay + (by - ay) * k;
+    }
+  }
+  return line[line.length - 1]![1];
+}
+
+/**
+ * Whether a chapter's water is open (a river, a lake, the bog): it lies over the whole chapter, in front of the path
+ * as behind it, and its ground stands in it. Its height at x then is `openWaterAt`.
+ */
+export const isOpenWater = (chapter: ChapterData) => (chapter.water ?? []).length > 0 && (chapter.river ? RIVER : waterKind(chapter.place)).behind !== null;
+export function openWaterAt(chapter: ChapterData, x: number): number | null {
+  return isOpenWater(chapter) ? levelOn(levelLine(chapter.water!), x) : null;
 }
 
 /** A pool's columns: its two ends, and one a little inside each. */
@@ -479,7 +548,15 @@ function nothingFar(): DataTexture {
 export function createWater(chapter: ChapterData, look: { colour: string; opacity: number; face?: number } | null, sun: readonly [number, number, number] = [-7, 5, -4], setting: WaterSetting = {}) {
   const group = new Group();
   const pools = drawnPools(chapter.river ? joined(chapter.water ?? []) : chapter.water ?? [], setting.under);
+  // The simulation's own stretches, at whose heights open water lies.
+  const stretches = drawnPools(chapter.water ?? [], setting.under);
   const kind = chapter.river ? RIVER : waterKind(setting.place ?? chapter.place, look !== null);
+  // Open water lies in front of its banks too: what it mirrors of a bank, and its wet band along one, end where the
+  // bank's floor has gone down into it, a little in front of the path.
+  const open = kind.behind !== null;
+  // Still water runs where the chapter's foam drifts on it (Äventyr 2's `storm.foam`): Flärken's lake out into its å.
+  // A river runs everywhere already.
+  const outlet = kind.current ? undefined : chapter.storm?.foam?.[0];
   const details = { value: 0 }, time = { value: 0 };
   // A puddle in the street mirrors what stands across it: as far to each side as the camera can see it in it.
   const puddle = pools[0];
@@ -521,6 +598,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     columnTint: { value: Array.from({ length: MIRRORED.trunks }, () => new Color()) },
     bankTop: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[0]) },
     bankFace: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[1]) },
+    bankFront: { value: open ? BANK_FRONT : 1e4 },
     viewProjection: { value: new Matrix4() },
     islands: { value: (islands?.map ?? nothingFar()) as Texture },
     // Where the islands' row begins and how wide it is (none: 0), where their fronts go under the water, and the height it counts from.
@@ -545,6 +623,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     // Its small ripples, and its current: EL a second along x and z, and how long its streaks are drawn out along it.
     rippleMap: { value: rippleField() },
     stream: { value: new Vector3(kind.current ?? 0, 0, kind.current ? Math.min(2.6, 1 + kind.current * 0.75) : 1) },
+    // Where still water runs out into a stream, as a lake into its å: from where it begins to run, to where it runs
+    // fully, how fast, and where it ends (none: 0).
+    run: { value: outlet ? new Vector4(outlet.from, outlet.from + RUN_IN, outlet.speed, outlet.to) : new Vector4() },
     // How hard it rains on it now, how bright the sky is now (lightning brightens it), how much light falls on it now
     // against its first, and how much of a night it is.
     weather: { value: new Vector4(0, 1, 1, night) },
@@ -575,7 +656,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     fragmentShader: /* glsl */ `
       uniform sampler2D flowMap, refraction, mirrorMap, islands;
       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
-      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze;
+      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze, bankFront;
       uniform vec4 rings[${RINGS}];
       uniform vec2 life;
       uniform sampler2D nearMirror;
@@ -586,6 +667,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
       uniform vec2 resolution;
       uniform sampler2D rippleMap;
       uniform vec3 stream, farTint, lampTint[${LAMPS}];
+      uniform vec4 run;
       uniform vec4 weather, lamps[${LAMPS}];
       varying vec3 waterWorld; varying float waterDepth; varying vec4 waterPart;
       #include <fog_pars_fragment>
@@ -655,7 +737,21 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         vec2 carried = waterWorld.xz - stream.xy * time;
         // How much of the water one pixel covers, towards the eye and across: taken here, outside any branch.
         float pixelZ = fwidth(waterWorld.z);
-        vec3 wave = ripples(carried + flow * 0.8, time, pixelZ + fwidth(waterWorld.x) * 0.3);
+        float pixelW = pixelZ + fwidth(waterWorld.x) * 0.3;
+        vec3 wave = ripples(carried + flow * 0.8, time, pixelW);
+        // Where still water runs out into a stream (a lake into its å): there its ripples run with it, drawn out along
+        // it. Two copies, each carried a little way and then begun again, half a round apart, and each seen most while
+        // the other begins again: a pattern carried by a current that differs from place to place is otherwise torn finer
+        // and finer as the minutes go.
+        float running = run.z > 0.0 ? smoothstep(run.x, run.y, waterWorld.x) * (1.0 - smoothstep(run.w - 3.0, run.w, waterWorld.x)) : 0.0;
+        float roundA = fract(time / ${RUN_ROUND.toFixed(1)}), roundB = fract(time / ${RUN_ROUND.toFixed(1)} + 0.5), toB = abs(roundA * 2.0 - 1.0);
+        vec2 runA = carried - vec2(run.z * ${RUN_ROUND.toFixed(1)} * roundA, 0.0);
+        vec2 runB = carried - vec2(run.z * ${RUN_ROUND.toFixed(1)} * roundB, 0.0) + vec2(5.3, 2.1);
+        if (running > 0.001) {
+          vec3 waveA = ripples(runA * vec2(0.55, 1.0) + flow * 0.5, time, pixelW);
+          vec3 waveB = ripples(runB * vec2(0.55, 1.0) + flow * 0.5, time, pixelW);
+          wave = mix(wave, mix(waveA, waveB, toB), running);
+        }
         // Cat's paws: the wind roughens the water in patches that drift slowly over it, between them it lies almost
         // still and mirrors cleanly, so that it looks alive and never like glass (Olov: "lite vågor och rörelse").
         float gust = 0.45 + 0.55 * smoothstep(-0.3, 0.9, sin(waterWorld.x * 0.23 - time * 0.55 + 1.6 * sin(waterWorld.z * 0.31 + time * 0.17))
@@ -665,10 +761,19 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
         // the current, drawn out along it where it runs. Rougher in a storm's wind and rain.
         float rough = surface.y * (1.0 + 0.9 * weather.x);
         float smallCrest = 0.0;
+        // Running water's foam: lines drawn out along the current, carried with it (Mid and High).
+        float runFoam = 0.0;
         if (details > 0.5) {
           vec2 a = (carried + flow * 0.6) * vec2(0.62 / stream.z, 0.95) + vec2(0.021, 0.034) * time;
           vec2 b = mat2(0.6, 0.8, -0.8, 0.6) * carried * vec2(1.3 / stream.z, 1.7) - vec2(0.037, -0.016) * time;
           vec4 small = texture2D(rippleMap, a) + texture2D(rippleMap, b) - 1.0;
+          if (running > 0.001) {
+            vec4 smallA = texture2D(rippleMap, runA * vec2(0.28, 0.95)) + texture2D(rippleMap, mat2(0.6, 0.8, -0.8, 0.6) * runA * vec2(0.55, 1.7)) - 1.0;
+            vec4 smallB = texture2D(rippleMap, runB * vec2(0.28, 0.95)) + texture2D(rippleMap, mat2(0.6, 0.8, -0.8, 0.6) * runB * vec2(0.55, 1.7)) - 1.0;
+            small = mix(small, mix(smallA, smallB, toB), running);
+            float linesA = textureLod(rippleMap, runA * vec2(0.09, 0.8), 1.0).b, linesB = textureLod(rippleMap, runB * vec2(0.09, 0.8), 1.0).b;
+            runFoam = smoothstep(0.6, 0.86, mix(linesA, linesB, toB)) * running * (1.0 - smoothstep(0.08, 0.3, pixelW));
+          }
           // A street's puddle, a hand deep, lies all but still unless it rains: its mirror of the yard sways enough.
           slope += small.xy * 0.035 * rough * (0.6 + 0.4 * gust) * (body.w > 0.0 ? 0.35 + 0.65 * weather.x : 1.0);
           smallCrest = small.z;
@@ -726,16 +831,19 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           vec3 d = normalize(ray + vec3(slope.x * 5.0, 0.0, slope.y * 2.0) * length(ray));
           float near = 1e9;
           vec3 standing = vec3(0.0);
+          // Open water goes on in front of a bank, where the bank's floor has gone down into it: no band there.
+          float alongBank = 1.0 - smoothstep(bankFront - 0.4, bankFront + 0.4, waterWorld.z);
           for (int i = 0; i < ${MIRRORED.banks}; i++) {
             vec4 b = banks[i];
             if (waterWorld.x < b.x - 0.05 || waterWorld.x > b.y + 0.05) continue;
             // A dark wet band where it meets a bank.
             float left = b.z - waterPart.w, right = b.w - waterPart.w;
-            banked = max(banked, max(step(0.05, left) * (1.0 - smoothstep(0.0, 0.5, waterWorld.x - b.x)), step(0.05, right) * (1.0 - smoothstep(0.0, 0.5, b.y - waterWorld.x))));
+            banked = max(banked, max(step(0.05, left) * (1.0 - smoothstep(0.0, 0.5, waterWorld.x - b.x)), step(0.05, right) * (1.0 - smoothstep(0.0, 0.5, b.y - waterWorld.x))) * alongBank);
             float t = ((d.x < 0.0 ? b.x : b.y) - waterWorld.x) / (abs(d.x) < 1e-4 ? 1e-4 : d.x);
             float high = d.x < 0.0 ? left : right;
             float under = -d.y * t;
-            if (t > 0.0 && t < near && under < high && waterWorld.z + d.z * t > -16.0) {
+            float meets = waterWorld.z + d.z * t;
+            if (t > 0.0 && t < near && under < high && meets > -16.0 && meets < bankFront) {
               near = t;
               standing = mix(bankFace, bankTop, smoothstep(high - 0.45, high - 0.1, under)) * (0.7 + 0.3 * smoothstep(0.0, 0.6, under));
             }
@@ -914,6 +1022,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
             top *= 1.0 - 0.3 * (1.0 - smoothstep(0.02, 0.3, deep));
           }
         }
+        foam = max(foam, runFoam * 0.7 * isTop);
         top = mix(top, mix(through, vec3(1.0), 0.4) * (mix(skyMiddle, skyGlow, 0.5) * weather.y * 0.55 + 0.03), foam * 0.75 * (1.0 - wetOnly));
         top += sparkle;
         solid *= shoreFade;
@@ -957,7 +1066,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   });
   const first = chapter.ground?.[0];
   const last = chapter.ground?.[chapter.ground.length - 1];
-  const shape = waterShape(pools, kind, first && last ? { from: first.x, to: last.x } : undefined, setting.street);
+  const shape = waterShape(pools, kind, first && last ? { from: first.x, to: last.x } : undefined, setting.street, stretches);
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(shape.position, 3));
   geometry.setAttribute('part', new Float32BufferAttribute(shape.part, 4));

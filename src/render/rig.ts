@@ -1,6 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { createArmContact, createHandGrip, createHandHold } from './arm-contact';
+import { faceOf } from './face';
 import { copyShape, fingersOf, mixShape, REST, type Grip } from './fingers';
 import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
 import { bendSoftly, followLimbs } from './joints';
@@ -241,6 +242,11 @@ export interface Rig {
   dress?(gear: RainGear | null, ready?: boolean): void;
   /** The cap off his head, lent away (Bertil's in Granskogen, "Min keps blir din båt"), or back on. */
   bareHead?(bare: boolean): void;
+  /**
+   * The face (./face.ts, ./talk.ts): the mouth `open` (0 shut, 1 as wide as an "a") and `round` (0 spread, 1 the round of an
+   * "u"), and the lids down (0 open, 1 shut). A body without a face to move keeps it as it is.
+   */
+  face?(open: number, round: number, lids: number): void;
   /** Puts on a wardrobe made in Blender (./rain-gear.ts, fitWardrobe): its pieces are worn from then on. */
   wear?(made: Object3D): void;
 }
@@ -348,7 +354,12 @@ export function createRehearsalRig(who: Role): Rig {
     { joint: 'hipR', box: [0, -THIGH / 2, 0, 0.48, THIGH, 0.58, trousers] },
     { joint: 'kneeR', box: [0, -SHIN / 2 + 0.1, 0, 0.44, SHIN - 0.2, 0.52, trousers] },
     { joint: 'footR', box: [0, 0, 0.12, 0.58, 0.26, 0.95, shoe] },
+    // The mouth, last so that the others keep their places: no size while it is shut (`face`).
+    { joint: 'neck', box: [0, 0.28, 0.384, 0.24, 0.12, 0.03, '#4a2b27'] },
   ];
+  /** The parts the face moves: the eyes, which blink, and the mouth. */
+  const EYES = [2, 3], MOUTH = parts.length - 1;
+  let opened = 0, rounded = 0, shut = 0;
   const mesh = new InstancedMesh(geometry, new MeshLambertMaterial(), parts.length);
   mesh.name = `family-rehearsal-body:${who}`;
   const colour = new Color();
@@ -410,7 +421,14 @@ export function createRehearsalRig(who: Role): Rig {
   const pivot = new Matrix4(), turned = new Euler();
   function writePart(i: number): void {
     const { joint, box: [x, y, z, w, h, d] } = parts[i]!;
-    box.compose(place.set(x, y, z), still, size.set(w, h, d));
+    // The eyes close to a line to blink; the mouth opens down from its top edge, narrower as it rounds. Shut, it is a sliver
+    // inside the head, where nothing sees it.
+    if (i === MOUTH) {
+      if (opened > 0) box.compose(place.set(x, y + h / 2 - (h * opened) / 2, z), still, size.set(w * (1 - 0.35 * rounded), h * opened, d));
+      else box.compose(place.set(x, y, z - 0.1), still, size.set(w, 0.01, d));
+    }
+    else if (EYES.includes(i)) box.compose(place.set(x, y, z), still, size.set(w, h * (1 - 0.9 * shut), d));
+    else box.compose(place.set(x, y, z), still, size.set(w, h, d));
     if (i === 4 && bend.w < 1) {
       box.premultiply(pivot.makeTranslation(-hinge.x, -hinge.y, -hinge.z)).premultiply(pivot.makeRotationFromQuaternion(bend))
         .premultiply(pivot.makeTranslation(hinge.x, hinge.y, hinge.z));
@@ -526,6 +544,13 @@ export function createRehearsalRig(who: Role): Rig {
       if (!role.cap) return;
       mesh.setColorAt(4, colour.set(bare ? hair : '#3e4445'));
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    },
+    face(open, round, lids) {
+      // Only what has changed: a still face writes nothing.
+      if (Math.abs(open - opened) < 1e-3 && Math.abs(round - rounded) < 1e-3 && Math.abs(lids - shut) < 1e-3) return;
+      opened = open; rounded = round; shut = lids;
+      writePart(MOUTH); writePart(EYES[0]!); writePart(EYES[1]!);
+      mesh.instanceMatrix.needsUpdate = true;
     },
     hand(side, out) {
       group.updateWorldMatrix(true, false);
@@ -744,6 +769,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
   followLimbs(model);
   // Fingers that bend and hold, in each hand (./fingers.ts).
   const fingered = fingersOf(model);
+  // A mouth that speaks and lids that blink, over the painted face (./face.ts).
+  const face = faceOf(model);
   const shaped = copyShape(REST), handScale = new Vector3();
   const bone = (name: string, sign: 1 | -1): Bone | null => {
     const node = model.getObjectByName(name);
@@ -912,6 +939,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (wardrobe.capped) wardrobe.capped.value = headBare ? 0 : 1;
     },
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
+    face(open, round, lids) { face?.set(open, round, lids); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
     reach(side, target, weight = 1, most = 1) { contacts[side]?.(target, weight, most); },
     hold(side, grip, weight = 1) {
@@ -1040,5 +1068,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   };
   // A body without the family's hands (a figure built in code) holds as it did: at its hand, the hand as it is.
   if (!fingered[0] && !fingered[1]) { delete made.hold; delete made.grasp; delete made.socket; }
+  // And one without the family's painted face keeps the face it has.
+  if (!face) delete made.face;
   return made;
 }

@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
+import { alven } from '../../src/content/aventyr2/chapters/alven';
 import { STONE } from '../../src/render/bark-detail';
 import { FLOOR_SHAPES, restock, stretch } from '../../src/render/dressing/forest';
 import { shoreAt } from '../../src/render/dressing/ground';
@@ -358,6 +359,20 @@ describe('the forest\'s floor with the kit', () => {
     const matrix = new Matrix4();
     mesh.getMatrixAt(i, matrix);
     return matrix.elements.slice(12, 15).map((n) => Math.round(n * 1000) / 1000);
+  });
+
+  it('keeps the real Älven scatter out of the children’s approach from the car', () => {
+    const gap = alven.treeGaps![0]!;
+    const inGap = ([x, , z]: number[]) => x! >= gap.from && x! <= gap.to && z! > gap.back;
+    let before = 0;
+    for (let from = alven.ground[0]!.x - 12; from < alven.ground.at(-1)!.x + 12; from += 18) {
+      const seed = Math.round(from * 7 + 97);
+      const old = stretch({ ...alven, treeGaps: [] }, from, from + 18, seed);
+      before += places(old.getObjectByName('forest-trunks') as InstancedMesh).filter(inGap).length;
+      const now = stretch(alven, from, from + 18, seed);
+      expect(places(now.getObjectByName('forest-trunks') as InstancedMesh).filter(inGap)).toEqual([]);
+    }
+    expect(before).toBeGreaterThan(0);
   });
 
   // The kit's cushions were a third lighter than the balls they stand for. Since the moss pass of 8 November 2026

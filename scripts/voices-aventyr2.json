@@ -427,32 +427,18 @@
     "text": "Hu-hu! Vad mjukt det är att flyga!"
   },
   {
-    "key": "ssPappaHere",
-    "speaker": "pappa",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[warm, steady father]",
-    "text": "Elof? Jag hör dig! Var är du?"
-  },
-  {
     "key": "ssTooWide",
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "För brett att hoppa. Och så mörkt!"
+    "text": "För brett att hoppa. Hur kommer vi över?"
   },
   {
-    "key": "ssBeam",
+    "key": "ssPappaHere",
     "speaker": "pappa",
     "situation": "Äventyr 2, stormskog",
     "tag": "[warm, steady father]",
-    "text": "Där är Klonk! Nu ser jag honom."
-  },
-  {
-    "key": "ssStiff",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Pappa ser dig! Då blir du ju stel!"
+    "text": "Något rör sig i ljuset. Är det du, Elof?"
   },
   {
     "key": "ssTiptoe",
@@ -460,27 +446,6 @@
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Förlåt, Klonk! Jag går lätt, lätt."
-  },
-  {
-    "key": "ssPappaAway",
-    "speaker": "pappa",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[warm, steady father]",
-    "text": "Jag lyser på stigen framför dig."
-  },
-  {
-    "key": "ssAwake",
-    "speaker": "spoket",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[playful wooden voice, wordless]",
-    "text": "Klonk!"
-  },
-  {
-    "key": "ssThanks",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Tack, Klonk! Du är världens bästa bro."
   },
   {
     "key": "ssHollowSeen",
@@ -551,6 +516,48 @@
     "situation": "Äventyr 2, stormskog",
     "tag": "[playful wooden voice, wordless]",
     "text": "Klonk, klonk!"
+  },
+  {
+    "key": "ssBeam",
+    "speaker": "pappa",
+    "situation": "Äventyr 2, stormskog",
+    "tag": "[warm, steady father]",
+    "text": "Där är du ju! Akta dig för kanten!"
+  },
+  {
+    "key": "ssFell",
+    "speaker": "pappa",
+    "situation": "Äventyr 2, stormskog",
+    "tag": "[warm, steady father]",
+    "text": "Oj! Klonk föll rakt över klyftan."
+  },
+  {
+    "key": "ssStiff",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormskog",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Han blir stel när Pappa tittar. En bro!"
+  },
+  {
+    "key": "ssPappaAway",
+    "speaker": "pappa",
+    "situation": "Äventyr 2, stormskog",
+    "tag": "[warm, steady father]",
+    "text": "Bra, Elof! Nu lyser jag på stigen."
+  },
+  {
+    "key": "ssAwake",
+    "speaker": "spoket",
+    "situation": "Äventyr 2, stormskog",
+    "tag": "[playful wooden voice, wordless]",
+    "text": "Klonk!"
+  },
+  {
+    "key": "ssThanks",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormskog",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Tack, Klonk! Du är världens bästa bro."
   },
   {
     "key": "scene_stormskog",
@@ -854,18 +861,18 @@
     "text": "Där! Vinden tar lillgubben norrut!"
   },
   {
-    "key": "olNorth",
-    "speaker": "bertil",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Upp mot sjön vid Flärken!"
-  },
-  {
     "key": "olFollow",
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Gamla trägubben följer efter honom!"
+  },
+  {
+    "key": "olNorth",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, olympia",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Upp mot sjön vid Flärken!"
   },
   {
     "key": "olCar",
@@ -1810,7 +1817,7 @@
     "speaker": "bertil",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cheerful older brother, excited]",
-    "text": "Nästa äventyr får vara i tofflor."
+    "text": "Jag drömmer om Thailand. Snart åker vi!"
   },
   {
     "key": "soMormor",

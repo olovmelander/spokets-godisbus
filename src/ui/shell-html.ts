@@ -295,6 +295,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
            <button class="wide" id="endPhotos" type="button" hidden>${CAMERA}<span>${sv.photos.again}</span></button>
            <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
            <button class="wide go" id="endExplore" type="button" hidden>${FOLDED_MAP}<span>${sv.explore.title}</span></button>
+           <button class="wide" id="endHome" type="button" hidden>${HOME}<span>${sv.pause.home}</span></button>
            <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
            <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
          </div>

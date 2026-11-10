@@ -75,7 +75,8 @@ try {
         foot: actor.children[0].boundingBox.min.y, player: { ...sim.curr } });
       window.probe = { draw, snapshot, sim }; return snapshot();
     }, { course, x, y, who, flags, tier });
-    check(`${name}: the named relative has articulated arms and legs in one instanced draw`, shown.visible && shown.meshes === 1 && shown.instances === 17);
+    // Seventeen parts and the mouth that speaks (src/render/talk.ts), in the one draw.
+    check(`${name}: the named relative has articulated arms and legs in one instanced draw`, shown.visible && shown.meshes === 1 && shown.instances === 18);
     check(`${name}: the helper's head and feet fit the shared composition`, shown.corners.every(([x,y]) => Math.abs(x) < 1 && Math.abs(y) < 1));
     if (course === 'norrsken') check(`${name}: all four relatives fit the reunion shot`, shown.family.length === 4 && shown.family.every((a) => a.visible && a.corners.every(([x,y]) => Math.abs(x)<1 && Math.abs(y)<1)));
     const paused = await page.evaluate(() => { const p=window.probe; for(let i=0;i<20;i++)p.draw(0); return p.snapshot(); });

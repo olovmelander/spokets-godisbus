@@ -10,23 +10,28 @@ import { weathered } from './weathered';
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
   'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
 const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
+/** The street's life: a grown-up walking past behind Byn's houses (art/blender/a2-street.py). */
+const STREET = ['fotgangare'];
 const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
 const YARD = ['vedbod', 'roddbat-vinter', 'brevlada', 'gungor', 'utemobler', 'fotbollsmal', 'fotbollsmal-stort', 'kitbord'];
 /** Äventyr 2's buildings: Själevad's church, the beaver's lodge, Olympia's store and floodlight masts, Billsta's poles. */
 const BUILDINGS = ['kyrka', 'baverhydda', 'kiosk', 'belysningsmast', 'elstolpe'];
-const FLARKEN = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'bryggarm'];
+const FLARKEN = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack', 'solskylt', 'bryggarm', 'bryggbrott'];
+/** Flärken's stone and bark, which roll, slide and float: no weather laid on them where they stand, or it would swim. */
+const FLARKEN_MOVING = ['grasten', 'barkbit'];
 const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme', 'leksakshylla', 'docka', 'docka-rock'];
-const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
+const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'baver', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
   ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
   ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
+  ...Object.fromEntries(STREET.map((name) => [name, ['aventyr2', 'street'] as const])),
   ...Object.fromEntries(BUILT.map((name) => [name, ['aventyr2', 'built'] as const])),
   ...Object.fromEntries(YARD.map((name) => [name, ['aventyr2', 'yard'] as const])),
   ...Object.fromEntries(BUILDINGS.map((name) => [name, ['aventyr2', 'buildings'] as const])),
-  ...Object.fromEntries(FLARKEN.map((name) => [name, ['aventyr2', 'flarken'] as const])),
+  ...Object.fromEntries([...FLARKEN, ...FLARKEN_MOVING].map((name) => [name, ['aventyr2', 'flarken'] as const])),
   ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
@@ -41,7 +46,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
  * The creatures whose head is a thing of its own in the kit (art/blender/a2-creatures.py, `<name>-huvud`), and where
  * their neck is in the model's own space (glTF's: y up, the front towards +z): the pivot the head turns about.
  */
-const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], igelkott: [0, 0.3, 0.55], groda: [0, 0.36, 0.12] };
+const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], baver: [0, 1.24, 0.08], igelkott: [0, 0.3, 0.55], groda: [0, 0.36, 0.12] };
 
 /** What stands outdoors and is shown weathered: the built things, the nature kit, Flärkenbadet's, and Olympia's hall and stand. */
 const WEATHERED = new Set([...BUILT, ...YARD, ...FLARKEN, ...NATURE, 'olympia-hall', 'olympia-stand']);

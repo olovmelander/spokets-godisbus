@@ -69,7 +69,8 @@ function pace(chapter: ChapterData) {
     wasAhead = d.ahead;
     wasOffered = d.offered;
     const p = game.sim.curr;
-    const plain = !hop && !act && d.x === 1 && p.mode === 'free' && p.grounded && game.sim.checkpoint === big;
+    // While a held moment holds him, or he stands and listens, he waits: pushing right is not running.
+    const plain = !hop && !act && d.x === 1 && !game.sim.held && p.mode === 'free' && p.grounded && game.sim.checkpoint === big;
     if (plain) run += dt;
     else close(p.x);
   }

@@ -12,7 +12,10 @@ import { createFootwork, type Footwork } from './footwork';
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
+import { goldSweet } from './gold-sweet';
 import type { Grip } from './fingers';
+import { lookAt } from './look';
+import { createTalker, talk, type Free, type Look, type Talker } from './talk';
 
 /**
  * The stage: plays a chapter's scenes in the picture (src/sim/scene.ts). It owns the family's posable figures
@@ -260,7 +263,7 @@ function play(state: State, keys: readonly ActorKey[], t: number): void {
 function shotAt(keys: readonly ShotKey[], t: number): { shot: Required<Omit<ShotKey, 'at' | 'move'>>; blend: number } | null {
   if (keys.length === 0 || keys[0]!.at > t) return null;
   const first = keys[0]!;
-  const shot = { x: first.x, y: first.y, height: first.height, width: first.width ?? 0, eye: first.eye ?? 0 };
+  const shot = { x: first.x, y: first.y, z: first.z ?? 0, height: first.height, width: first.width ?? 0, eye: first.eye ?? 0 };
   const blend = smooth((t - first.at) / (first.move ?? 1));
   for (let i = 1; i < keys.length; i++) {
     const key = keys[i]!;
@@ -270,6 +273,7 @@ function shotAt(keys: readonly ShotKey[], t: number): { shot: Required<Omit<Shot
     const p = smooth((until - key.at) / (key.move ?? 1));
     shot.x = mix(shot.x, key.x, p);
     shot.y = mix(shot.y, key.y, p);
+    shot.z = mix(shot.z, key.z ?? 0, p);
     shot.height = mix(shot.height, key.height, p);
     shot.width = mix(shot.width, key.width ?? 0, p);
     shot.eye = mix(shot.eye, key.eye ?? 0, p);
@@ -308,17 +312,24 @@ function elofAt(keys: readonly ElofKey[], t: number) {
 /** What the view does with a frame of the stage. */
 export interface Directions {
   /** The camera's shot while a scene asks for one, and how much of it to take over the play camera. */
-  shot: { x: number; y: number; height: number; width: number; eye: number; blend: number } | null;
+  shot: { x: number; y: number; z: number; height: number; width: number; eye: number; blend: number } | null;
   /** Thin bars above and below: a scene is telling. */
   bars: boolean;
   /** The ghost, staged by the scene: where it is, how it is turned and tilted, and its eyes. Null: as the simulation has it. */
   ghost: { x: number; y: number; z: number; face: number; tilt: number; bounce: number; blink: number; rough: number; look: Point | null; act: Act; actT: number } | null;
   /** Elof, in a held scene: lifted, acting, facing, and how big. */
   /** `onto`: where his feet are drawn in the place itself (on a hand), as much as `ontoWeight` says (0 to 1). */
+  /** `life`: the clock he goes on standing and breathing by under his act, which runs on while a line is read (./talk.ts). */
   elof: {
     lift: Point; onto: Point; ontoWeight: number; act: Act | null; actT: number; aim: Point | null; face: number | null; size: number | null;
+    life: number;
   } | null;
 }
+
+/** Which hands are free for a gesture as someone speaks (./talk.ts): both, the left, the right, or neither. */
+const HANDS_FREE: readonly Free[] = [[true, true], [true, false], [false, true], [false, false]];
+/** Acts that leave the hands to hang: a gesture of speech may use them. */
+const HANDS_HANG: readonly Act[] = ['stand', 'watch', 'look', 'nod'];
 
 /**
  * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
@@ -517,7 +528,7 @@ export interface Stage {
   /** One frame: what to do with the ghost, Elof and the camera. `dt` is 0 while the game stands still. */
   update(frame: SceneFrame | null, flags: ReadonlySet<string>, elof: { x: number; y: number }, clock: number, dt: number, calm: boolean): Directions;
   /** Attach the story sweet after Elof's actual body has been posed and placed. */
-  updateElof(rig: Pick<Rig, 'hand' | 'mouth' | 'reach' | 'hold' | 'socket'>, direction: Directions['elof'], height: number, calm: boolean): void;
+  updateElof(rig: Pick<Rig, 'hand' | 'mouth' | 'reach' | 'hold' | 'socket' | 'grasp'>, direction: Directions['elof'], height: number, calm: boolean): void;
   /** Everyone the stage has: for the shadows and the tests. */
   readonly actors: ReadonlyMap<Role, { rig: Rig; visible: () => boolean }>;
 }
@@ -636,8 +647,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
   star.add(new Mesh(new SphereGeometry(.13, 8, 6), gold));
   drawnWhile(star, false);
-  if (scenes.some(scene => scene.stage?.star)) group.add(star);
-  let starOn = false;
+  if (scenes.some(scene => scene.stage?.star === true)) group.add(star);
+  // The golden geléhallon, where a scene has him eat that instead (Stormens öga).
+  const raspberry = goldSweet();
+  drawnWhile(raspberry, false);
+  if (scenes.some(scene => scene.stage?.star === 'gold')) group.add(raspberry);
+  let starOn: Group | null = null;
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
   const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
   block.name = 'stage-block';
@@ -707,29 +722,49 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
   let lastScene: string | null = null;
   const starts = new Map<string, State>();
+  /**
+   * How long the scene playing now has waited on its lines (the story holds while one is read): the bodies go on standing and
+   * breathing by the scene's clock and this, so that nobody freezes while something is said, and nothing jumps as it goes on.
+   */
+  let waited = 0;
+  /** Each body's part in what is said (./talk.ts), and where its head looks. */
+  const talkers = new Map<Role, Talker>();
+  const heard: Look = { turn: 0, nod: 0 }, faceAt = new Vector3();
 
   let stagedTilt = 0;
   return {
     group,
     updateElof(rig, direction, height, calm) {
-      const shown = starOn && (direction?.act === 'show' || direction?.act === 'eat');
+      // The golden sweet is in his hands as he looks at it too, held before him (`hands`).
+      const shown = !!starOn && (direction?.act === 'show' || direction?.act === 'eat' || (starOn === raspberry && direction?.act === 'hands'));
       const bite = eatingAt(direction?.actT ?? 0, calm);
       const size = shown ? direction?.act === 'eat' ? bite.sweet : 1 : 0;
-      drawnWhile(star, size > 0);
-      if (!shown) return;
+      drawnWhile(star, size > 0 && starOn === star);
+      drawnWhile(raspberry, size > 0 && starOn === raspberry);
+      if (!shown || !starOn) return;
       const unit = height / 3;
+      // The star is made for a boy three times his small size; the golden sweet is as big as it lay on its paper by him small.
+      const sweet = starOn === raspberry;
       // Between his thumb and his finger (./fingers.ts), or at the hand of a body without them.
-      const pinched = { kind: 'pinch' as const, size: .08 * unit };
-      const at = () => { rig.hold?.(1, pinched); return rig.socket ? rig.socket(1, pinched, hand) : rig.hand(1, hand); };
+      const pinched = { kind: 'pinch' as const, size: sweet ? .05 * height : .08 * unit };
+      const at = () => { rig.hold?.(1, pinched); return rig.socket ? rig.socket(1, pinched, hand, heldAxis) : rig.hand(1, hand); };
       at();
+      const aboveFingers = sweet ? .07 * height * size : 0;
       if (direction?.act === 'eat') {
         rig.mouth(heldPoint); heldPoint.z += .045 * unit;
+        // The candy's centre meets the lips while its base stays between the fingertips. Reaching the wrist
+        // here instead left the private model's grip socket above his eyes.
+        heldPoint.y -= aboveFingers;
         hand.lerp(heldPoint, bite.mouth);
-        rig.reach(1, hand); at();
+        if (sweet && rig.grasp && rig.socket) rig.grasp(1, pinched, wristTarget.copy(hand), heldAxis, hand);
+        else { rig.reach(1, hand); at(); }
       }
-      star.position.copy(hand);
-      star.scale.setScalar(size * unit);
-      star.rotation.set(0, 0, -.12);
+      starOn.position.copy(hand);
+      // The sweet sits on his fingertips, not in them.
+      starOn.position.y += aboveFingers;
+      starOn.scale.setScalar(size * (sweet ? height : unit));
+      starOn.rotation.set(0, 0, -.12);
+      if (sweet) (starOn.getObjectByName('glow') as Mesh).scale.setScalar(calm ? 1 : 1 + .12 * Math.sin(lastT * 5.3));
     },
     birds: jayFlies ? [jay.getObjectByName('bird')!] : [],
     // Read each time: a model from Blender may have taken a rehearsal figure's place since.
@@ -755,7 +790,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     update(frame, flags, elof, clock, dt, calm) {
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
-      starOn = scene?.stage?.star === true;
+      starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
       const t = frame?.seconds ?? 0;
       const ghostKeys = scene?.stage?.actors?.ghost;
       const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;
@@ -780,6 +815,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const same = !!scene && lastScene === scene.id;
       const flowing = dt > 0 && dt < 0.25 && (!same || t === lastT || Math.abs(t - lastT - dt) < 0.05);
       const paused = dt <= 0 && (!scene || (same && t === lastT));
+      // The scene's clock waits on a line while the frame's goes on: the bodies' own clock goes on from it (`waited`).
+      if (!same) waited = 0;
+      else if (dt > 0 && dt < 0.25 && t === lastT) waited += dt;
       // Elof put far away at once (a game taken up): the picture cuts, and so do they. Nearer, they walk over.
       const restored = lastElof !== null && Math.abs(elof.x - lastElof) > LOST;
       lastScene = scene?.id ?? null;
@@ -927,7 +965,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           return { ahead: ahead * unit, side: side * unit, up: (target.y - y) * unit };
         };
         const aim = aimFor(state.aim);
-        const time = scene && keys ? t : clock;
+        // How each stands and breathes goes by the scene's clock in a scene, and on by itself while it waits on a line.
+        const time = scene && keys ? t + waited : clock;
         // Between scenes finish the current sip, then hold the cup down; pausing never advances this clock.
         const prior = was?.act === state.act ? was.elapsed : Math.max(0, -state.actAt);
         const elapsed = scene && keys ? Math.max(0, t - state.actAt)
@@ -1126,7 +1165,19 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           const back = chairBack(state.stance, state.before, elapsed, hipsBack, pushed);
           piece.made.position.set(piece.x - Math.sin(yaw(piece.face)) * back, piece.y, piece.z - Math.cos(yaw(piece.face)) * back);
         }
+        // What is said (./talk.ts), drawn over what the scene asks for and never kept in it: they look at whoever speaks, from
+        // where their face was a moment ago, and speak with their mouths, their heads and a free hand.
+        const talker = talkers.get(who) ?? talkers.set(who, createTalker(who, 101 + 37 * FAMILY.indexOf(who))).get(who)!;
+        const other = talk.lookAt(who), there = other ? talk.face(other) : null;
+        if (there) rig.mouth(faceAt);
+        const hangs = HANDS_HANG.includes(state.act);
+        const free = HANDS_FREE[(hangs && !state.holdsLeft ? 0 : 2) + (hangs && !state.holds ? 0 : 1)]!;
+        talker.update(talk, there ? lookAt(rig.group, faceAt, there, heard) : null, dt, calm, free);
+        talker.pose(pose);
         rig.pose(pose);
+        rig.face?.(talker.mouth.open, talker.mouth.round, talker.lids);
+        rig.mouth(faceAt);
+        talk.place(who, faceAt.x, faceAt.y, faceAt.z);
         // Resolve authored interaction targets in 3D. Interrupted acts retain their contact share,
         // and unreachable targets stay at the real arm's limit rather than stretching the body.
         hand.set(0, 0, 0); otherHand.set(0, 0, 0);
@@ -1518,7 +1569,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         ghost,
         elof: elofNow ? {
           lift: elofNow.lift, onto, ontoWeight: carrier ? elofNow.rideWeight : 0, act: elofNow.act, actT: t - elofNow.actAt,
-          aim: elofNow.aim, face: elofNow.face, size: elofNow.size,
+          aim: elofNow.aim, face: elofNow.face, size: elofNow.size, life: t + waited,
         } : null,
       };
     },

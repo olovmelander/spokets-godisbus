@@ -18,10 +18,17 @@ import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
 import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
+import { GRAVITY } from '../../sim/constants';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
+import { stepLength } from '../../render/acting';
+import { paintedWood } from '../../render/painted-wood';
 import { box, building, paint, PANE, rock } from './buildings';
-import { createGrandparent, type Grandparent } from './grandparents';
+import { createGrandparent, type Going, type Grandparent } from './grandparents';
+import { afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
+import { logSeed, riverLogShape, riverLogWood } from './river-log';
+import { beaverLife } from './beaver';
+import { morgonen } from './chapters/morgonen';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -46,7 +53,6 @@ const ball = (radius: number, material: Material, x = 0, y = 0, z = 0, squash: r
   return mesh;
 };
 const UP = new Vector3(0, 1, 0);
-const tmp = new Vector3();
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
 /**
  * A creature's look about, from -1 to 1: it holds one way, then turns to the next over `ease` of a hold, at uneven
@@ -71,6 +77,14 @@ function scatter(seed: number): () => number {
 
 /** Where Elof is, for those who look at him, how far the story has come, and whether the picture keeps still. */
 const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean } = { x: 0, flags: null, still: false };
+/** The chapter in the picture, for the things on rails that draw their own way there: Flärken's stone and bark. */
+const playing: { chapter: ChapterData | null } = { chapter: null };
+/** For the tests: where the storm says which chapter is in the picture. */
+export const DRAWN_IN = playing;
+/** The open water of the chapter being drawn, for what swims in it. */
+let pools: NonNullable<ChapterData['water']> = [];
+/** The chapter whose picture this is, for where its ground is: set as its storm is made. */
+let course: ChapterData | null = null;
 
 /**
  * The owls that carry him, one to a chapter (Olov, 8 November 2026: the owl he climbed onto vanished, or flew off by
@@ -268,6 +282,8 @@ const RAIN_MAX = 420;
 const RAIN_FOR = { low: 150, mid: 290, high: RAIN_MAX } as const;
 /** The box of rain round the camera: how wide, how tall, and from how far behind the play plane to how near. */
 const BOX = { x: 34, y: 22, back: -8, front: 4 };
+/** How near the play plane the camera comes in play, at the least: nearer than this, the box goes with it. */
+const RAIN_OUT = 6;
 
 /** The flag at which the storm blows the window open: the gust in Stormkvällen's `fonstret`. */
 const WINDOW_BURST = 'gust';
@@ -406,12 +422,18 @@ function bolt(seed: number): Mesh {
 
 /** The storm's night outside a lit house. */
 const OUT_OF_DOORS = { sky: new Color('#7488b8'), ground: new Color('#2c3830'), sun: new Color('#a8bce8'), far: new Color('#6a7088') };
+/** The chapters whose pools are rain water standing on a ground, with the rain's rings all over them. */
+const PUDDLES = new Set(['olympia']);
 
 /**
  * The storm round the camera. Its flashes are soft and seldom (Harding's rule: never more than three a second);
  * with less motion the rain hangs still and there are none.
  */
 function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtra | null {
+  playing.chapter = chapter;
+  // The chapter's open water, for what swims in it (./beaver.ts).
+  pools = chapter.water ?? [];
+  course = chapter;
   // The owl rides of this chapter, and the flag that boards each: the spot that starts it.
   owlRides.length = 0;
   for (const ride of chapter.rides ?? []) {
@@ -420,7 +442,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   }
   const storm = chapter.storm;
   const dim = DIM[chapter.id];
-  if (!storm && dim === undefined) return null;
+  // Out of the storm, the morning after, there is none of it to draw; but the pack's looks there still follow the story
+  // (the new latch hooked, ../chapters/morgonen.ts).
+  if (!storm && dim === undefined) {
+    return chapter.id === 'morgonen' ? { update({ x, flags, still }: ExtraFrame) { elof.x = x; elof.flags = flags; elof.still = still; } } : null;
+  }
   const group = new Group();
   group.name = 'storm';
   scene.add(group);
@@ -458,6 +484,22 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const landingSeeds = Array.from({ length: LANDINGS }, () => ({ x: random() * 16 - 8, z: -1.6 + random() * 2.4, phase: random(), every: 0.5 + random() * 0.6 }));
   if (rain > 0) group.add(landings);
   const landingTint = new Color();
+  // Rain on the still water of a ground's puddles (Olympia's flooded goalmouth and centre circle): rings that open and
+  // fade all over each, a few at a time, wherever he is, so that the water reads as water standing in the rain. The
+  // landings near him fall on the ground under a pool, at its bottom. Added light, one draw; on Low none.
+  const puddles = rain > 0 && PUDDLES.has(chapter.id) ? chapter.water ?? [] : [];
+  const PUDDLE_RINGS = 8;
+  const puddleRings = new InstancedMesh(landings.geometry, landings.material, Math.max(1, puddles.length * PUDDLE_RINGS));
+  puddleRings.instanceMatrix.setUsage(DynamicDrawUsage);
+  puddleRings.instanceColor = new InstancedBufferAttribute(new Float32Array(puddleRings.count * 3), 3);
+  puddleRings.instanceColor.setUsage(DynamicDrawUsage);
+  puddleRings.frustumCulled = false;
+  puddleRings.renderOrder = 4;
+  puddleRings.userData.rich = true;
+  const puddleSeeds = puddles.flatMap((pool) => Array.from({ length: PUDDLE_RINGS }, () => ({
+    pool, x: pool.from + 0.35 + random() * (pool.to - pool.from - 0.7), z: -1.6 + random() * 2, phase: random(), every: 0.7 + random() * 0.7,
+  })));
+  if (puddles.length) group.add(puddleRings);
   const place = new Object3D();
   const SLANT = 0.32;
   place.rotation.z = -SLANT * 0.6;
@@ -474,21 +516,82 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   let flashBolt = 0;
   const flashOf = (since: number) => since < 0 ? 0 : Math.exp(-since * 7) * smooth(since / 0.04) + 0.55 * Math.exp(-Math.max(0, since - 0.22) * 9) * smooth((since - 0.18) / 0.04);
 
-  // Figures blown across the sky: lit by their own flash.
+  // Figures blown across the sky: lit by their own flash. A flight meant to be watched (`lit`) is the figure itself,
+  // its model where the pack has it, in a soft pale glow that brightens with each flash, tumbling about its middle.
   const flybys = (storm?.flybys ?? []).map((def) => {
-    const figure = (def.who === 'lillgubbe' ? littleFigure : oldFigure)(true);
-    figure.scale.setScalar(1.2);
+    const lit = !!def.lit;
+    const figure = (def.who === 'lillgubbe' ? littleFigure : oldFigure)(!lit);
+    const holder = new Group();
+    holder.name = `flyby:${def.on}`;
+    holder.add(figure);
+    holder.scale.setScalar(def.size ?? 1.2);
     // Floating down the water, the old one rides a log.
-    if (def.who === 'tragubbe' && Math.max(def.from.y, def.to.y) < 1.5) {
+    if (def.who === 'tragubbe' && afloat(def)) {
       const log = new Mesh(new CylinderGeometry(0.22, 0.25, 2.2, 8), solid('#5a4632', 0.9));
       log.rotation.z = Math.PI / 2;
-      log.position.y = -0.1;
+      log.position.y = -0.25;
+      log.name = 'flyby-log';
+      // The family's carving replaces this socket's stand-in; the log stays under its feet.
+      log.userData.keep = 0;
       figure.add(log);
     }
-    figure.visible = false;
-    group.add(figure);
-    return { def, figure, start: -1, seen: false };
+    let halo: Mesh | null = null;
+    if (lit) {
+      figure.position.y = -FIGURE_MIDDLE[def.who];
+      halo = glow('#dde4ff', 2.4, 0);
+      halo.position.z = -0.3;
+      holder.add(halo);
+    }
+    holder.visible = false;
+    group.add(holder);
+    return { def, figure: holder, halo, start: -1, seen: false, flashed: 0 };
   });
+
+  // Someone seen far off (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): the carving itself, pale and
+  // a little warm, standing on its stone in the water where a flash shows it, with a soft light about it so that it
+  // reads against the dark lake, rings round the stone and the current going by. Drawn bigger than it is, for the
+  // distance; a scene's shot looks out to it (the chapter's own business).
+  const sightings = (storm?.sightings ?? []).map((def) => {
+    const root = new Group();
+    root.name = 'sighting';
+    root.position.set(def.at.x, def.at.y, def.z);
+    const size = def.size ?? 1;
+    const stone = new Mesh(rock(def.at.x * 7, 0.95, 0.5, 0.8), solid('#363a40', 0.35));
+    stone.position.y = -0.05;
+    const figure = def.who === 'lillgubbe' ? littleFigure() : oldFigure();
+    // Lit a little from within, as the meeting's pair are: pale wood that holds what light there is.
+    figure.userData.warm = true;
+    figure.traverse((node) => {
+      const material = (node as Mesh).material as MeshStandardMaterial | undefined;
+      if (material?.isMeshStandardMaterial) { material.emissive.set('#6a5236'); material.emissiveIntensity = 0.55; }
+    });
+    figure.scale.setScalar(size);
+    figure.position.y = 0.4;
+    const halo = glow('#dfe8ff', 2.6 * size, 0.42);
+    halo.position.set(0, 0.4 + 0.35 * size, -0.5);
+    const water = new MeshBasicMaterial({ color: '#cfe0f0', transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending, fog: false });
+    const rings = [0, 1].map(() => {
+      const ring = new Mesh(new RingGeometry(0.92, 1, 40).rotateX(-Math.PI / 2), water.clone());
+      ring.position.y = 0.02;
+      root.add(ring);
+      return ring;
+    });
+    // The current going by on its way to the river: pale streaks on the water, past the stone and on. One draw; each
+    // fades in and out by its colour, the light being added.
+    const lanes = [0.55, -0.7, 0.95, -0.35];
+    const streaks = new InstancedMesh(new PlaneGeometry(0.9, 0.05).rotateX(-Math.PI / 2),
+      new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.22, depthWrite: false, blending: AdditiveBlending, fog: false }), lanes.length);
+    streaks.instanceMatrix.setUsage(DynamicDrawUsage);
+    streaks.instanceColor = new InstancedBufferAttribute(new Float32Array(lanes.length * 3), 3);
+    streaks.instanceColor.setUsage(DynamicDrawUsage);
+    streaks.frustumCulled = false;
+    root.add(stone, figure, halo, streaks);
+    drawnWhile(root, false);
+    group.add(root);
+    return { def, root, figure, halo, rings, streaks, lanes, seen: false };
+  });
+  const streakAt = new Object3D();
+  const streakTint = new Color();
 
   // Candles and lamps in windows: warm, a little alive.
   const glows = (storm?.glows ?? []).map((def, i) => {
@@ -602,12 +705,14 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     }
   }
 
-  // A figure seen far out in the lake stands on a stone of its own, dark and wet, the waves round it.
+  // A figure seen far out in the lake stands on a stone of its own, dark and wet, the waves round it: as big as the figure
+  // is drawn, its top under its feet.
   for (const d of (chapter.water ?? []).length > 0 ? chapter.decor ?? [] : []) {
     if ((d.look !== 'tragubbe' && d.look !== 'lillgubbe') || (d.z ?? 0) > -6) continue;
+    const size = d.scale ?? 1;
     const rock = new Mesh(new SphereGeometry(1.4, 12, 8), solid('#3c4048', 0.9, { flatShading: true }));
-    rock.scale.set(1.3, 0.55, 1);
-    rock.position.set(d.at.x, d.at.y - 0.45, d.z ?? 0);
+    rock.scale.set(1.3 * size, 0.55 * size, size);
+    rock.position.set(d.at.x, d.at.y - (size === 1 ? 0.45 : 0.72 * size), d.z ?? 0);
     group.add(rock);
   }
 
@@ -702,16 +807,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     });
   }
 
-  // A rope or Pappa's scarf from above down to his hands, while he rides on it.
-  const ropes = (storm?.ropes ?? []).map((def) => {
-    const ride = chapter.rides?.find((r) => r.id === def.ride);
-    // Whoever holds it lowers it first ("Jag sänker ner min halsduk."): it hangs down to where he takes hold.
-    const boarding = chapter.spots?.find((spot) => spot.ride === def.ride);
-    const mesh = new Mesh(new CylinderGeometry(0.09, 0.09, 1, 6).translate(0, 0.5, 0), solid(def.colour ?? '#c8372a', 0.9));
-    mesh.visible = false;
-    group.add(mesh);
-    return { def, ride, boarding, mesh };
-  });
+  // Pappa's scarf from the bridge is drawn with the family who hold it (../../render/scarf.ts).
 
   const owlWings: Object3D[] = [];
   let first = true;
@@ -761,6 +857,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         scene.traverse((object) => { if (object.name === 'owl-wing') owlWings.push(object); });
         // A flyby whose moment has passed already (a game taken up later) is not played again.
         for (const f of flybys) if (flags.has(f.def.on)) f.seen = true;
+        for (const s of sightings) if (flags.has(s.def.on)) s.seen = true;
         // The boulders the gusts' shelters stand in for are put away, where something else is drawn: one mesh a gust.
         for (const [i, stone] of scene.getObjectsByProperty('name', 'shelters').entries()) if (shelterOf(i) !== 'stones') stone.visible = false;
         // The garden's far pictures are drawn by day: beyond the door they are the same garden in the storm's night.
@@ -804,6 +901,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       if (still && calmFlag && flags.has(calmFlag)) calm = 1;
       const cx = camera.position.x;
       const cy = camera.position.y;
+      // Where a scene's shot takes the camera out beyond the play plane (to the stone in Billsta's narrow), the rain goes
+      // out with it, still falling in front of it.
+      const cz = Math.min(0, camera.position.z - RAIN_OUT);
 
       // The rain falls through its box and starts again at the top; the box goes with the camera.
       const count = rain > 0 ? Math.round(RAIN_FOR[tier] * rain * (1 - calm)) : 0;
@@ -815,7 +915,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const s = seeds[i]!;
           const fall = (s.y + t * s.speed) % BOX.y;
           const x = ((s.x + fall * SLANT - cx) % BOX.x + BOX.x) % BOX.x;
-          place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z);
+          place.position.set(cx - BOX.x / 2 + x, cy + BOX.y / 2 - fall, s.z + cz);
           // No rain falls indoors: only out of doors, beyond the house's corner.
           const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
           place.scale.set(out, out * s.long, out);
@@ -849,16 +949,70 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         landings.instanceMatrix.needsUpdate = true;
         landings.instanceColor!.needsUpdate = true;
       }
+      const puddling = puddles.length > 0 && rain > 0 && tier !== 'low';
+      drawnWhile(puddleRings, puddling);
+      if (puddling) {
+        const t = still ? 0 : clock;
+        place.rotation.set(0, 0, 0);
+        for (const [i, s] of puddleSeeds.entries()) {
+          const round = t / s.every + s.phase;
+          const k = round - Math.floor(round);
+          const where = Math.floor(round) * 5.17 + i * 2.3;
+          const x = Math.min(s.pool.to - 0.3, Math.max(s.pool.from + 0.3, s.x + Math.sin(where) * 0.6));
+          place.position.set(x, s.pool.y + 0.015, s.z + Math.cos(where) * 0.3);
+          place.scale.setScalar(0.7 + k * 2.6);
+          place.updateMatrix();
+          puddleRings.setMatrixAt(i, place.matrix);
+          const light = (1 - k) * (1 - k) * 0.8 * (1 - calm) * rain;
+          puddleRings.setColorAt(i, landingTint.setRGB(light * 0.85, light * 0.9, light));
+        }
+        place.rotation.set(0, 0, -SLANT * 0.6);
+        puddleRings.instanceMatrix.needsUpdate = true;
+        puddleRings.instanceColor!.needsUpdate = true;
+      }
 
-      // Lightning, now and then; and one at every flyby's moment.
+      // Lightning, now and then; and one at every flyby's moment, and again through a flight meant to be watched.
       for (const f of flybys) {
-        if (!f.seen && flags.has(f.def.on)) {
+        const again = f.def.lit ?? [];
+        const due = !f.seen ? flags.has(f.def.on) : f.flashed < again.length && clock - f.start >= again[f.flashed]!;
+        if (!due) continue;
+        if (f.seen) f.flashed++;
+        else {
           f.seen = true;
           f.start = clock;
+        }
+        flashAt = clock;
+        flashBolt = (flashBolt + 1) % bolts.length;
+        bolts[flashBolt]!.position.set(cx + (random() - 0.5) * 30, cy + 22, -60);
+      }
+      // And one where someone is seen far off, behind them; then they stay, rocking on their stone in the current.
+      for (const s of sightings) {
+        const shown = flags.has(s.def.on) && !flags.has(s.def.until);
+        if (shown && !s.seen) {
+          s.seen = true;
           flashAt = clock;
           flashBolt = (flashBolt + 1) % bolts.length;
-          bolts[flashBolt]!.position.set(cx + (random() - 0.5) * 30, cy + 22, -60);
+          bolts[flashBolt]!.position.set(s.def.at.x + (random() - 0.5) * 12, cy + 20, -60);
         }
+        drawnWhile(s.root, shown);
+        if (!shown) continue;
+        s.figure.rotation.z = still ? 0 : Math.sin(clock * 1.6) * 0.07 + Math.sin(clock * 2.9 + 1) * 0.025;
+        s.figure.position.y = 0.4 + (still ? 0 : Math.sin(clock * 1.3) * 0.03);
+        (s.halo.material as MeshBasicMaterial).opacity = still ? 0.4 : 0.36 + 0.06 * Math.sin(clock * 1.7);
+        for (const [i, ring] of s.rings.entries()) {
+          const k = still ? 0.3 + 0.4 * i : (clock * 0.45 + i * 0.5) % 1;
+          ring.scale.setScalar(0.9 + 1.6 * k);
+          (ring.material as MeshBasicMaterial).opacity = 0.32 * (1 - k) * Math.min(1, k * 6);
+        }
+        for (const [i, z] of s.lanes.entries()) {
+          const k = still ? 0.5 : (clock * 0.28 + i * 0.27) % 1;
+          streakAt.position.set(-2.4 + 4.8 * k, 0.02, z);
+          streakAt.updateMatrix();
+          s.streaks.setMatrixAt(i, streakAt.matrix);
+          s.streaks.setColorAt(i, streakTint.setScalar(Math.sin(Math.PI * k)));
+        }
+        s.streaks.instanceMatrix.needsUpdate = true;
+        s.streaks.instanceColor!.needsUpdate = true;
       }
       if (!still && storm?.lightning && calm === 0 && clock >= nextFlash) {
         flashAt = clock;
@@ -887,12 +1041,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const k = f.start < 0 ? 1 : (clock - f.start) / f.def.seconds;
         f.figure.visible = k < 1 && f.start >= 0;
         if (!f.figure.visible) continue;
-        const e = smooth(k);
         // On the water a figure floats, bobbing along; in the air it tumbles across the sky.
-        const floating = Math.max(f.def.from.y, f.def.to.y) < 1.5;
-        const lift = floating ? 0.12 * Math.sin(clock * 3) : Math.sin(Math.PI * k) * 2.2;
-        f.figure.position.set(f.def.from.x + (f.def.to.x - f.def.from.x) * e, f.def.from.y + (f.def.to.y - f.def.from.y) * e + lift, -4);
+        const floating = afloat(f.def);
+        const at = flightAt(f.def, k);
+        f.figure.position.set(at.x, at.y + (floating ? 0.12 * Math.sin(clock * 3) : 0), at.z);
         f.figure.rotation.z = still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
+        // Its glow comes up as the flash finds it, breathes with each flash, and goes as it is lost in the dark.
+        if (f.halo) (f.halo.material as MeshBasicMaterial).opacity = (0.42 + 0.5 * flash) * smooth(k / 0.06) * (1 - smooth((k - 0.82) / 0.18));
       }
       for (const b of beams) {
         b.lamp.visible = x >= b.def.within[0] && x <= b.def.within[1];
@@ -908,8 +1063,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       if (coneDrops) for (const splash of splashes) splash.visible = false;
       if (frozenLedge && storm?.frozen) {
-        // Once he is over, Pappa looks away and Klonk is himself again, on the far side.
-        if (flags.has(storm.frozen) && x > frozenLedge.x + frozenLedge.width / 2 + 0.8) crossed = true;
+        // Once he is over, Pappa looks away and Klonk is himself again, on the far side: on its flag, where it has one.
+        if (flags.has(storm.frozen) && (storm.wakes ? flags.has(storm.wakes) : x > frozenLedge.x + frozenLedge.width / 2 + 0.8)) crossed = true;
         const lying = flags.has(storm.frozen) && !crossed;
         if (lying && !frozenKlonk) {
           const ghost = scene.getObjectByName('chase-ghost')?.children[0];
@@ -935,20 +1090,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const lit = b.def.lit !== undefined && (b.def.lit === '' || flags.has(b.def.lit));
         b.panes.color.copy(lit ? (b.def.kind === 'car' ? PANE.cabin : PANE.lit) : PANE.dark);
         if (lit && !still) b.panes.color.multiplyScalar(0.92 + 0.08 * Math.sin(clock * 2.1 + b.def.x));
-      }
-      for (const rope of ropes) {
-        const on = riding && !!rope.ride && x >= Math.min(rope.ride.from.x, rope.ride.to.x) - 0.3 && x <= Math.max(rope.ride.from.x, rope.ride.to.x) + 0.3;
-        const hangs = !on && !!rope.ride && !!rope.boarding && !flags.has(rope.boarding.id) && (rope.boarding.needs === undefined || flags.has(rope.boarding.needs));
-        rope.mesh.visible = on || hangs;
-        if (!on && !hangs) continue;
-        // From where it is held to his raised hands; lowered and waiting, to just over where he takes hold, swaying.
-        const sway = hangs && !still ? Math.sin(clock * 1.6) * 0.25 : 0;
-        const hx = hangs ? rope.ride!.from.x + 0.3 + sway : x, hy = hangs ? rope.ride!.from.y + 1.4 : y + 1.05, hz = 0.1, fz = rope.def.z ?? -1;
-        const dx = rope.def.from.x - hx, dy = rope.def.from.y - hy, dz = fz - hz;
-        const length = Math.hypot(dx, dy, dz);
-        rope.mesh.position.set(hx, hy, hz);
-        rope.mesh.scale.set(1, length, 1);
-        rope.mesh.quaternion.setFromUnitVectors(UP, tmp.set(dx, dy, dz).normalize());
       }
       starMaterial.opacity = calm;
       drawnWhile(starField, calm > 0);
@@ -1077,6 +1218,9 @@ function awningFlap(): Group {
 }
 
 // --- the figures ---------------------------------------------------------------------------------------------
+
+/** How high each figure's middle is over its feet: a watched flight tumbles about it. */
+const FIGURE_MIDDLE = { lillgubbe: 0.26, tragubbe: 0.5 } as const;
 
 /** Pappa's very first trägubbe: grey old wood, a pointed cap, a crooked smile and the crowberry eyes Elof gave it. */
 function oldFigure(silhouette = false): Group {
@@ -1299,16 +1443,66 @@ function lantern(): { group: Group; light: Mesh } {
   return { group, light };
 }
 
-/** Mormor or Morfar in the picture: no longer a thing he uses up, so they stay when he calls. */
+/** How far behind its group a grandparent's body stands (./grandparents.ts). */
+const RIG_BACK = 1.9;
+/**
+ * At the door she walked to (Mormor's at the barn): where her hand goes on it from where she stands, which way she turns
+ * meanwhile (a little towards him), when the door opens after she has come (the simulation's `bi:door`, ./chapters/
+ * billsta.ts), how long she pushes it in, and when she has let go.
+ */
+const AT_DOOR = { ahead: 0.75, up: 2.55, out: 0.4, heading: -0.35, open: 0.55, push: 0.4, let: 1.1 };
+
+/**
+ * Mormor or Morfar in the picture: no longer a thing he uses up, so they stay when he calls. Where the chapter sends one
+ * (`Spot.goesTo`, once `goesWhen` is set), they walk there over the ground at their own pace, and at the end put a hand
+ * on what is before them and push it (Mormor, up the planks to the barn's door, which swings in as the simulation opens
+ * it: `ELDER_WALK` times both).
+ */
 function figure(spot: Spot, who: Grandparent, lit = who === 'mormor'): SpotProp {
   const carried = lit ? lantern() : null;
   const made = createGrandparent(who, carried?.group ?? null, spot.id.startsWith('decor:'));
   made.group.userData.dress = (model: Object3D) => made.dress(model);
-  made.group.position.set(spot.at.x, spot.at.y, -0.6);
+  const home = spot.standsAt, to = spot.goesTo;
+  const put = (x: number, y: number, z: number) => made.group.position.set(x, y, z + RIG_BACK);
+  if (home) put(home.x, home.y, home.z); else made.group.position.set(spot.at.x, spot.at.y, -0.6);
+  const going: Going = { gait: 0, pace: 0, stride: 0, heading: null, touch: null, weight: 0 };
+  const touch = new Vector3();
+  const ground = (x: number) => (course ? heightAt(course, x) : home && to ? home.y + ((to.y - home.y) * (x - home.x)) / (to.x - home.x || 1) : 0);
+  let goneFor = -1, seconds = 1, first = true, wasX = 0, wasY = 0;
   return {
     group: made.group,
     update(used, clock, dt) {
-      made.update(used, clock, dt, elof.x, elof.flags?.has(LADDER_LAID));
+      const goes = !!home && !!to && !!elof.flags?.has(spot.goesWhen ?? spot.id);
+      let ongoing: Going | undefined;
+      if (goes && home && to) {
+        if (goneFor < 0) {
+          seconds = elderWalk(home.x, to.x, ground);
+          // A game taken up after the walk finds them there, and so does one without motion.
+          goneFor = first || elof.still ? seconds + AT_DOOR.open + AT_DOOR.let + 1 : 0;
+          wasX = home.x; wasY = home.y;
+        } else goneFor += dt;
+        const k = smooth(goneFor / seconds);
+        const x = home.x + (to.x - home.x) * k, z = home.z + (to.z - home.z) * k, y = ground(x);
+        put(x, y, z);
+        const moved = Math.hypot(x - wasX, y - wasY);
+        wasX = x; wasY = y;
+        const walking = goneFor < seconds;
+        going.gait = dt > 0 ? moved / dt / made.rig.height : 0;
+        // The stride goes by the ground covered, a step of the body's own length at its gait, so the planted foot holds.
+        if (moved > 0) going.stride += moved / stepLength(Math.max(going.gait, 0.3), made.rig.height, made.rig.legs);
+        going.pace = elof.still ? (walking ? 1 : 0) : going.pace + ((walking && moved > 1e-4 ? 1 : 0) - going.pace) * Math.min(1, dt * 8);
+        // The way she goes; at the door, turned a little to him; once it is open and she has let go, as she will.
+        const at = goneFor - seconds;
+        going.heading = walking ? Math.atan2(to.x - home.x, to.z - home.z) : at < AT_DOOR.open + AT_DOOR.let ? AT_DOOR.heading : null;
+        // Her hand goes out to the door as she comes to it, stays on it while it opens, pushing it a little way in, and
+        // comes back.
+        const open = at - AT_DOOR.open;
+        going.weight = elof.still || at < -0.3 ? 0 : open < AT_DOOR.push ? smooth((at + 0.3) / 0.5) : 1 - smooth((open - AT_DOOR.push) / (AT_DOOR.let - AT_DOOR.push));
+        going.touch = touch.set(to.x + AT_DOOR.ahead + smooth(open / AT_DOOR.push) * 0.35, to.y + AT_DOOR.up, to.z + AT_DOOR.out);
+        ongoing = going;
+      }
+      first = false;
+      made.update(used, clock, dt, elof.x, elof.flags?.has(LADDER_LAID), ongoing);
       if (carried) (carried.light.material as MeshBasicMaterial).opacity = 0.55 + 0.08 * Math.sin(clock * 6.3);
     },
   };
@@ -1536,6 +1730,10 @@ function umbrella(): Group {
   return group;
 }
 
+/** How far in front of his feet the little one's cap comes to lie, found in the gutter, and the flag of his hand on it. */
+const CAP_AT_FEET = 0.42;
+const CAP_PICKED = 'sb:cap-picked';
+
 function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
   return {
     // He leaps away, as he does all night, except where Elof lifts him up.
@@ -1625,13 +1823,15 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // Its gladness starts when it has its cap back, from the ground, and grows in over a moment: no hop is caught
       // halfway up, and the trembling fades into the sway.
       let gladFor = 0;
+      // Home on the shelf the morning after (`home`), it sways happily with both feet planted on the shelf.
+      const home = spot.word === 'home';
       return standing(spot, figure, (clock, dt) => {
-        const glad = elof.flags?.has('scene:motet') ?? false;
+        const glad = home || (elof.flags?.has('scene:motet') ?? false);
         gladFor = glad ? gladFor + dt : 0;
         const k = smooth(gladFor / 0.4);
         const tremble = Math.sin(clock * 5.3) * 0.03 + Math.sin(clock * 8.1 + 1) * 0.012;
         figure.rotation.z = tremble * (1 - k) + Math.sin(gladFor * 1.7) * 0.06 * k;
-        figure.position.y = glad ? gladHop(gladFor) * k : 0;
+        figure.position.y = glad && !home ? gladHop(gladFor) * k : 0;
       }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
     },
     pumpkin: (spot) => {
@@ -1720,8 +1920,12 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     cocoa: (spot) => {
       // Sunday's cup of hot chocolate ("Varm choklad efter stormen"): a white mug with a red heart, brown to the
-      // brim, and its steam curling up.
+      // brim, and its steam curling up. It stands at the front of the breakfast table, poured for him, where he stands to
+      // take it (`breakfast`): taken, it goes from the table.
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y + TABLE_TOP, -0.75);
       const group = new Group();
+      root.add(group);
       const mug = new Mesh(new CylinderGeometry(0.17, 0.15, 0.32, 14), solid('#f4f1ea', 0.5));
       mug.position.y = 0.16;
       const cocoa = new Mesh(new CylinderGeometry(0.15, 0.15, 0.01, 14), solid('#5a3420', 0.3));
@@ -1739,14 +1943,23 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         group.add(puff);
         return puff;
       });
-      return standing(spot, group, (clock) => {
-        for (const [i, puff] of puffs.entries()) {
-          const k = (clock * 0.45 + i / 3) % 1;
-          puff.position.set(Math.sin(clock * 1.7 + i * 2.1) * 0.05 * (1 + k), 0.34 + k * 0.5, 0);
-          puff.scale.setScalar(0.6 + k * 1.4);
-        }
-        steam.opacity = 0.2;
-      });
+      let since = 0;
+      return {
+        group: root,
+        update(used, clock, dt) {
+          // Taken, it goes from the table where it stands: smaller, and gone.
+          since = used ? since + dt : 0;
+          const size = Math.max(0, 1 - since / 0.4);
+          group.scale.setScalar(size);
+          drawnWhile(root, size > 0);
+          for (const [i, puff] of puffs.entries()) {
+            const k = (clock * 0.45 + i / 3) % 1;
+            puff.position.set(Math.sin(clock * 1.7 + i * 2.1) * 0.05 * (1 + k), 0.34 + k * 0.5, 0);
+            puff.scale.setScalar(0.6 + k * 1.4);
+          }
+          steam.opacity = 0.2;
+        },
+      };
     },
     flashlight: (spot) => {
       const group = new Group();
@@ -1775,22 +1988,46 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const group = new Group();
       const cap = new Mesh(new ConeGeometry(0.16, 0.3, 10), solid('#c23a2e', 0.9));
       // Back on its head it sits straight and goes with its hops; lost, it lies on its side and bobs.
-      const worn = spot.word === 'worn';
+      const home = spot.word === 'home';
+      const worn = home || spot.word === 'worn';
       cap.rotation.z = worn ? 0 : 1.2;
       cap.position.y = worn ? 0.15 : 0.1;
       group.add(cap, ball(0.06, solid('#f4efe4', 0.9), worn ? 0 : 0.17, worn ? 0.32 : 0.2, 0));
-      return standing(spot, group, (clock) => { group.position.y = worn ? gladHop(clock) : 0.04 * Math.sin(clock * 3); });
+      if (worn) return standing(spot, group, (clock) => { group.position.y = home ? 0 : gladHop(clock); });
+      // Lost in the gutter in Byn i stormen, it bobs where it lies. Found, a gust tumbles it the last step to his feet,
+      // and it lies there until his hand has it (the scene `mossan`, ./chapters/stormbyn.ts): then it is in his hand
+      // (../../render/view.ts). In a game taken up after that it is gone.
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y, -0.2);
+      root.add(group);
+      let since = -1, to = spot.at.x;
+      return {
+        group: root,
+        update(used, clock, dt) {
+          if (!used) {
+            since = -1;
+            root.position.x = spot.at.x;
+            group.rotation.z = 0;
+            group.position.y = 0.04 * Math.sin(clock * 3);
+            drawnWhile(root, true);
+            return;
+          }
+          if (since < 0) {
+            since = 0;
+            to = elof.x + (Math.sign(spot.at.x - elof.x) || 1) * CAP_AT_FEET;
+          }
+          since += dt;
+          const k = elof.still ? 1 : smooth(since / 0.5);
+          root.position.x = spot.at.x + (to - spot.at.x) * k;
+          // It rolls over the stones as it goes, and lies still.
+          group.rotation.z = (spot.at.x - root.position.x) / 0.16;
+          group.position.y = 0;
+          drawnWhile(root, !(elof.flags?.has(CAP_PICKED) || elof.flags?.has('scene:mossan')));
+        },
+      };
     },
     casement: (spot) => casement(spot),
-    latch: (spot) => {
-      const group = new Group();
-      const brass = solid('#c8a040', 0.35, { metalness: 0.6 });
-      const hook = new Mesh(new TorusGeometry(0.16, 0.03, 6, 14, Math.PI * 1.4), brass);
-      const eye = new Mesh(new TorusGeometry(0.06, 0.02, 6, 10), brass);
-      eye.position.set(0.3, 0, 0);
-      group.add(hook, eye);
-      return standing(spot, group);
-    },
+    latch: (spot) => latch(spot),
     football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
     whiteWater: (spot) => {
       // The rapids: wet boulders the river breaks over, and standing waves of white water that heave and never go.
@@ -2003,6 +2240,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       if (spot.word === 'and' || spot.word === 'and-hona') {
         return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
       }
+      // The beaver gnaws, looks at him, thumps its tail, and swims home to its lodge (./beaver.ts).
+      if (spot.word === 'baver') return beaverLife(spot, group, model, () => pools, elof);
       // The hedgehog snuffles, the frog hops on the spot, the snail creeps (../../render/kit-life.ts).
       if (spot.word === 'igelkott' || spot.word === 'groda' || spot.word === 'snigel') {
         const rest = { x: 0, y: 0, turn: 0, size: 1 };
@@ -2011,6 +2250,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return { group, update: () => {} };
     },
     aftermath: () => aftermath(),
+    breakfast: (spot) => breakfast(spot),
     doll: (spot) => {
       // The doll at the foot of the toy shelf, in the small yellow raincoat Elof takes for the storm (../../render/elof-coat.ts):
       // without it once he has taken it. The room's models from Blender (art/blender/a2-room.py) take the plain shapes' place.
@@ -2145,31 +2385,39 @@ const paneLight = () => drawnPicture(128, 128, (c) => {
   for (const [x, y] of [[14, 14], [68, 14], [14, 68], [68, 68]] as const) c.fillRect(x, y, 46, 46);
 });
 
+/** The top of the morning's kitchen table, from the floor: the room kit's table (../../render/stage.ts, `bord`). */
+const TABLE_TOP = 1.65;
 /**
- * Sunday morning's room: what the night left. Wet raincoats on their hooks and boots in a pool, leaves blown in at the
- * window, mormor's lantern put out on the table, and the sun lying on the floor. All of it stands in the room's own
- * places, counted from the room's start. The coats go on dripping.
+ * The windows of the family's room the morning after, the same as on the evening of the storm and on to the room's end:
+ * the first is the one the storm blew open, by Pappa's shelf, with the new latch.
+ */
+const MORNING_WINDOWS = morgonen.house!.windows;
+
+/**
+ * Sunday morning's room: what the night left. Wet raincoats on their hooks in the hall and boots in a pool, leaves blown
+ * in at the window the storm opened, and the sun lying on the floor. The room's things stand where they stood on the
+ * evening of the storm (../chapters/stormkvall.ts, `homeEvening`), counted from the room's start. The coats go on dripping.
  */
 function aftermath(): SpotProp {
   const group = new Group();
   const WALL = -8.5;
   const SILL = 3.2;
   const coats: BufferGeometry[] = [];
-  // The very coats and boots they wore through the storm (../../render/rain-gear.ts).
+  // The very coats and boots they wore through the storm (../../render/rain-gear.ts), on the hall's wall between two windows.
   const WHO = ['pappa', 'mamma', 'moa', 'bertil'] as const;
-  const COATS = WHO.map((who, i) => ({ x: [15.9, 17, 18.1, 19][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
-  coats.push(paint(new BoxGeometry(4.8, 0.16, 0.16).translate(17.75, 5.6, WALL - 0.24), '#6a4a2c'));
+  const COATS = WHO.map((who, i) => ({ x: [37.6, 38.7, 39.8, 40.7][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
+  coats.push(paint(new BoxGeometry(4.8, 0.16, 0.16).translate(39.45, 5.6, WALL - 0.24), '#6a4a2c'));
   for (const coat of COATS) {
     const mid = 5.45 - coat.tall / 2;
     coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
     coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
   }
   // And beside them, small, the doll's raincoat Elof wore through the storm when he was small (../../render/elof-coat.ts).
-  const LITTLE = { x: 19.85, tall: 0.6 };
+  const LITTLE = { x: 41.55, tall: 0.6 };
   coats.push(paint(new CylinderGeometry(0.09, 0.2, LITTLE.tall, 10).scale(1, 1, 0.4).translate(LITTLE.x, 5.45 - LITTLE.tall / 2, WALL), ELOF_COAT));
   coats.push(paint(new SphereGeometry(0.1, 10, 8).scale(1, 0.85, 0.6).translate(LITTLE.x, 5.47, WALL), ELOF_COAT));
   for (const side of [-1, 1]) coats.push(paint(new CylinderGeometry(0.04, 0.045, 0.34, 6).rotateZ(side * 0.28).translate(LITTLE.x + side * 0.15, 5.2, WALL + 0.02), ELOF_COAT));
-  const BOOTS = WHO.map((who, i) => ({ x: [15.8, 16.9, 18, 19][i]!, colour: RAIN_GEAR[who].boots }));
+  const BOOTS = WHO.map((who, i) => ({ x: [37.5, 38.6, 39.7, 40.7][i]!, colour: RAIN_GEAR[who].boots }));
   for (const boot of BOOTS) {
     for (const side of [-0.2, 0.2]) {
       coats.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), boot.colour));
@@ -2177,23 +2425,25 @@ function aftermath(): SpotProp {
     }
   }
   group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
-  group.add(roomThings({ sofa: 44.5, lamp: 36.4, plant: 55, drawings: 0, rug: 10, blanket: true }));
+  // The sofa, the lamp, the plant, the rug and Moa's drawings where they were on the evening of the storm; the blanket
+  // pulled half off the sofa now.
+  group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: true }));
   // The pool they stand in: flat, and giving back the room's light.
-  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(17.4, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
+  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(39.1, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
   // The sun on the floor, one window's worth from each, lying a little aslant.
   const light = new PlaneGeometry(4.8, 10.5, 1, 1).rotateX(-Math.PI / 2);
   const at = light.getAttribute('position');
   for (let i = 0; i < at.count; i++) at.setX(i, at.getX(i) + at.getZ(i) * -0.42);
-  const panes = mergeGeometries([4, 13, 22, 40, 49].map((x) => light.clone().translate(x + 0.8, 0.02, 1)));
+  const panes = mergeGeometries(MORNING_WINDOWS.map((x) => light.clone().translate(x + 0.8, 0.02, 1)));
   group.add(new Mesh(panes, new MeshBasicMaterial({ map: paneLight(), color: '#ffe6b0', transparent: true, opacity: 0.2, blending: AdditiveBlending, depthWrite: false, fog: false })));
-  // Birch leaves that came in at the window with the storm.
+  // Birch leaves that came in at the window the storm blew open, and blew on across the floor.
   const random = scatter(61);
   const leaves = new InstancedMesh(new SphereGeometry(0.2, 6, 4).scale(1, 0.05, 0.68), new MeshStandardMaterial({ roughness: 0.75 }), 30);
   const place = new Object3D();
   const tint = new Color();
   for (let i = 0; i < leaves.count; i++) {
-    const near = i % 3 === 0 ? 22 : i % 3 === 1 ? 13 : 40;
+    const near = i % 3 === 0 ? MORNING_WINDOWS[0] : i % 3 === 1 ? MORNING_WINDOWS[0] + 6 : 22;
     place.position.set(near + (random() - 0.5) * 8, 0.03, 0.5 + random() * 5.5);
     place.rotation.set(0, random() * 6.28, (random() - 0.5) * 0.14);
     place.updateMatrix();
@@ -2201,15 +2451,10 @@ function aftermath(): SpotProp {
     leaves.setColorAt(i, tint.set(random() < 0.6 ? '#c9a23a' : '#a8703a').multiplyScalar(0.8 + random() * 0.3));
   }
   group.add(leaves);
-  // Mormor's lantern on the table, put out.
-  const out = lantern();
-  out.light.visible = false;
-  out.group.position.set(8, 2.68, -1.5);
-  group.add(out.group);
   // A great tit on the sill of the window with the new latch: the storm is over, and it has come for what the night left.
   const tit = new Mesh(smallBird(BIRDS.tit), new MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }));
   tit.scale.setScalar(1);
-  tit.position.set(22, SILL, WALL + 0.12);
+  tit.position.set(MORNING_WINDOWS[0], SILL, WALL + 0.12);
   group.add(tit);
   // Three slow drops from the coats' hems.
   const fall = new SphereGeometry(0.05, 6, 4);
@@ -2228,7 +2473,7 @@ function aftermath(): SpotProp {
       const hop = Math.max(0, 1 - Math.abs(round - 2) / 0.22);
       const back = Math.max(0, 1 - Math.abs(round - 5.4) / 0.22);
       const along = Math.min(1, Math.max(0, (round - 1.8) / 0.4)) - Math.min(1, Math.max(0, (round - 5.2) / 0.4));
-      tit.position.x = 21.4 + along * 1.5;
+      tit.position.x = MORNING_WINDOWS[0] - 0.6 + along * 1.5;
       tit.position.y = SILL + (hop + back) * 0.16;
       tit.rotation.y = round > 2.2 && round < 5.2 ? Math.PI + 0.5 : 0.5;
       tit.rotation.z = (round > 3 && round < 3.4) || (round > 6.2 && round < 6.6) ? -0.6 : 0;
@@ -2236,6 +2481,144 @@ function aftermath(): SpotProp {
         const k = (clock * 0.45 + phase) % 1;
         drop.position.y = from * (1 - k * k);
       }
+    },
+  };
+}
+
+/** A mug, standing on its foot at (x, z), its handle out to the right: in vertex colours, to merge with the rest. */
+function mugParts(x: number, z: number, colour: string, turn = 0): BufferGeometry[] {
+  const tall = 0.26, wide = 0.13;
+  const place = (geometry: BufferGeometry) => geometry.rotateY(turn).translate(x, 0, z);
+  return [
+    paint(place(new CylinderGeometry(wide, wide * 0.88, tall, 12).translate(0, tall / 2, 0)), colour),
+    // Hot chocolate to the brim.
+    paint(place(new CylinderGeometry(wide * 0.88, wide * 0.88, 0.012, 12).translate(0, tall - 0.02, 0)), '#5a3420'),
+    paint(place(new TorusGeometry(0.06, 0.017, 6, 10, Math.PI).rotateZ(-Math.PI / 2).translate(wide, tall * 0.55, 0)), colour),
+  ];
+}
+
+/**
+ * Sunday's breakfast on the kitchen table (Olov, 9 November 2026: "Mormor och den varma chokladen ska synas, med koppar och
+ * en termos på bordet"): mormor's thermos of hot chocolate, a cup poured for each at the table, steaming, a plate of
+ * buns, and her lantern from the night, put out. Elof's own cup stands at the front, for him to take (`cocoa`). Its place
+ * is the middle of the table's top; the table is 5 long and 2.2 deep (../../render/stage.ts).
+ */
+function breakfast(spot: Spot): SpotProp {
+  const group = new Group();
+  group.position.set(spot.at.x, spot.at.y, -1.5);
+  const parts: BufferGeometry[] = [];
+  // The thermos: a tall green flask with its cup screwed on as a lid, a steel band, and a handle on its side.
+  const THERMOS = { x: -1.55, z: -0.05 };
+  const flask: (readonly [number, number])[] = [[0.001, 0], [0.15, 0], [0.165, 0.04], [0.165, 0.5], [0.14, 0.56], [0.1, 0.6], [0.001, 0.6]];
+  parts.push(paint(new LatheGeometry(flask.map(([r, y]) => new Vector2(r, y)), 14).translate(THERMOS.x, 0, THERMOS.z), '#4f7f62'));
+  parts.push(paint(new CylinderGeometry(0.168, 0.168, 0.05, 14).translate(THERMOS.x, 0.47, THERMOS.z), '#a9afb3'));
+  parts.push(paint(new CylinderGeometry(0.13, 0.115, 0.17, 14).translate(THERMOS.x, 0.68, THERMOS.z), '#e4dccb'));
+  parts.push(paint(new TorusGeometry(0.11, 0.022, 6, 12, Math.PI).rotateZ(-Math.PI / 2).translate(THERMOS.x + 0.16, 0.3, THERMOS.z), '#3c6650'));
+  // A cup for each at the table, poured: mormor's, Bertil's, Moa's and morfar's (Mamma and Pappa hold theirs).
+  const CUPS = [
+    { x: -0.95, z: 0.62, colour: '#f2eee6' }, { x: 0.1, z: -0.72, colour: '#4a7fb0' },
+    { x: 2.05, z: -0.15, colour: '#e8c040' }, { x: 0.45, z: 0.55, colour: '#a8714a' },
+  ];
+  CUPS.forEach((cup, i) => parts.push(...mugParts(cup.x, cup.z, cup.colour, i * 0.9)));
+  // A plate of cinnamon buns.
+  parts.push(paint(new CylinderGeometry(0.34, 0.3, 0.035, 18).translate(-0.4, 0.02, -0.2), '#f4f0e6'));
+  for (const [dx, dz] of [[-0.12, -0.08], [0.12, -0.04], [0, 0.12]] as const) {
+    parts.push(paint(new SphereGeometry(0.12, 10, 6).scale(1, 0.55, 1).translate(-0.4 + dx, 0.09, -0.2 + dz), '#c98b4c'));
+  }
+  const table = new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }));
+  parts.forEach((part) => part.dispose());
+  group.add(table);
+  // Mormor's lantern from the night, put out, at the table's back corner.
+  const out = lantern();
+  out.light.visible = false;
+  out.group.position.set(-2.05, 0.78, -0.72);
+  group.add(out.group);
+  // The steam over each cup: two soft puffs curling up, in one draw.
+  const steam = new InstancedMesh(new SphereGeometry(0.06, 8, 6), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.2, depthWrite: false }), CUPS.length * 2);
+  steam.frustumCulled = false;
+  group.add(steam);
+  const place = new Object3D();
+  const rise = (clock: number) => {
+    for (let i = 0; i < steam.count; i++) {
+      const cup = CUPS[i >> 1]!;
+      const k = (clock * 0.4 + (i & 1) * 0.5 + (i >> 1) * 0.27) % 1;
+      place.position.set(cup.x + Math.sin(clock * 1.6 + i * 2.1) * 0.05 * (1 + k), 0.3 + k * 0.5, cup.z);
+      place.scale.setScalar(0.6 + k * 1.3);
+      place.updateMatrix();
+      steam.setMatrixAt(i, place.matrix);
+    }
+    steam.instanceMatrix.needsUpdate = true;
+  };
+  rise(0);
+  return { group, update: (_used, clock) => { if (!elof.still) rise(clock); } };
+}
+
+/**
+ * The flag that hooks the new latch, and how long after it his hand has come to it: when the scene `haken` is close on
+ * it (../chapters/morgonen.ts), so that its click comes with the scene's.
+ */
+const LATCH_HOOKED = 'latch';
+const LATCH_REACH = 1.1;
+
+/**
+ * The new latch Pappa fitted the morning after (Olov, 9 November 2026: "Fönsterhaken ska se snyggare ut när man hakar fast
+ * den"), on the meeting stiles of the window the storm blew open: a brass hook on its pin and a round plate on the left
+ * half, and a screw eye on the right. Until it is hooked it hangs loose from its pin and sways a little. Hooked (the flag
+ * `latch`), it swings up, a little past the eye, drops into it and settles with a small bounce. A game taken up later
+ * finds it hooked; with less motion it is simply hooked. Its pin is half a hand left of its place, the eye as far right.
+ */
+function latch(spot: Spot): SpotProp {
+  const root = new Group();
+  root.position.set(spot.at.x, spot.at.y, -8.78);
+  const brass = solid('#d6ae4c', 0.3, { metalness: 0.7 });
+  // A storm hook, long and stout enough to hold the window in a gale, and to be seen across the room.
+  const PIN = { x: -0.45, z: 0.11 }, EYE = { x: 0.45, y: -0.1, z: 0.11 };
+  const fixed = [
+    // The hook's plate, its pin and the pin's head.
+    new CylinderGeometry(0.1, 0.1, 0.035, 16).rotateX(Math.PI / 2).translate(PIN.x, 0, 0.018),
+    new CylinderGeometry(0.024, 0.024, 0.12, 8).rotateX(Math.PI / 2).translate(PIN.x, 0, 0.06),
+    new SphereGeometry(0.04, 10, 8).translate(PIN.x, 0, PIN.z + 0.04),
+    // The eye's plate, its shank out from the stile, and its ring, lying flat for the hook to drop into.
+    new CylinderGeometry(0.07, 0.07, 0.03, 14).rotateX(Math.PI / 2).translate(EYE.x, EYE.y, 0.015),
+    new CylinderGeometry(0.02, 0.02, 0.1, 8).rotateX(Math.PI / 2).translate(EYE.x, EYE.y, 0.05),
+    new TorusGeometry(0.07, 0.022, 8, 18).rotateX(Math.PI / 2).translate(EYE.x, EYE.y, EYE.z),
+  ];
+  root.add(new Mesh(mergeGeometries(fixed.map((part) => part.toNonIndexed())), brass));
+  fixed.forEach((part) => part.dispose());
+  // The hook: a ring round the pin, a rod as long as from the pin to the eye, and its end bent down, to drop into the eye.
+  const LONG = EYE.x - PIN.x;
+  const hook = new Group();
+  hook.position.set(PIN.x, 0, PIN.z);
+  const arm = [
+    new TorusGeometry(0.05, 0.018, 6, 12),
+    new CylinderGeometry(0.032, 0.032, LONG - 0.04, 8).rotateZ(Math.PI / 2).translate((LONG + 0.03) / 2, 0, 0),
+    new SphereGeometry(0.036, 8, 6).translate(LONG, 0, 0),
+    new CylinderGeometry(0.026, 0.02, 0.16, 8).translate(LONG, -0.08, 0),
+  ];
+  hook.add(new Mesh(mergeGeometries(arm.map((part) => part.toNonIndexed())), brass));
+  arm.forEach((part) => part.dispose());
+  root.add(hook);
+  /** Hanging loose, the rod points down from its pin. */
+  const LOOSE = -Math.PI / 2;
+  let since = 0, known = false;
+  const angle = (u: number, clock: number) => {
+    // Hanging, a slow small sway.
+    if (u < 0) return LOOSE + 0.05 * Math.sin(clock * 1.3) * Math.min(1, -u + 0.4);
+    // Up, a little past level so that its end clears the eye; then it drops in, faster as it falls; then a small bounce.
+    if (u < 0.5) return LOOSE + (-LOOSE + 0.22) * smooth(u / 0.5);
+    if (u < 0.72) { const v = (u - 0.5) / 0.22; return 0.22 * (1 - v * v); }
+    if (u < 1.2) { const w = (u - 0.72) / 0.48; return 0.04 * Math.sin(Math.PI * w) * (1 - w); }
+    return 0;
+  };
+  return {
+    group: root,
+    update(_used, clock, dt) {
+      const hooked = elof.flags?.has(LATCH_HOOKED) ?? false;
+      // Hooked already when the picture first sees it (a game taken up later): it is simply hooked.
+      if (!known) since = hooked ? 99 : 0;
+      known = true;
+      since = hooked ? since + dt : 0;
+      hook.rotation.z = elof.still ? (hooked ? 0 : LOOSE) : angle(hooked ? since - LATCH_REACH : -1, clock);
     },
   };
 }
@@ -2248,8 +2631,371 @@ const gladHop = (t: number) => {
   return Math.sin((beat - n) * Math.PI) ** 6 * height;
 };
 
+/**
+ * A splash where something heavy goes into the water, `since` seconds after it did (before that, none): drops thrown
+ * up and out, a crown of white that rises and falls back, and rings that spread on the water. Its origin is the
+ * water's surface where it went in. With less motion only the rings.
+ */
+function waterSplash(size: number) {
+  const group = new Group();
+  const white = new MeshBasicMaterial({ color: '#e4edf2', transparent: true, opacity: 0, depthWrite: false });
+  // The drops: one draw for them all.
+  const drops = new InstancedMesh(new SphereGeometry(0.055 * size, 6, 4), white.clone(), 12);
+  drops.instanceMatrix.setUsage(DynamicDrawUsage);
+  drops.frustumCulled = false;
+  group.add(drops);
+  const thrown = Array.from({ length: 12 }, (_, i) => {
+    const a = (i / 12) * Math.PI * 2 + 0.3 * Math.sin(i * 7.1);
+    return { vx: Math.cos(a) * (0.8 + 0.8 * ((i * 0.37) % 1)) * size, vz: Math.sin(a) * 0.5 * size, vy: (2.4 + 1.8 * ((i * 0.61) % 1)) * size };
+  });
+  const place = new Object3D();
+  const crown = new Mesh(new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true).translate(0, 0.21 * size, 0), white.clone());
+  group.add(crown);
+  const rings = [0, 0.3, 0.65].map((delay) => {
+    const mesh = new Mesh(new RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2), white.clone());
+    mesh.position.y = 0.015;
+    group.add(mesh);
+    return { mesh, delay };
+  });
+  drawnWhile(group, false);
+  return {
+    group,
+    update(since: number, still: boolean) {
+      const on = since >= 0 && since < 2.6;
+      drawnWhile(group, on);
+      if (!on) return;
+      drops.visible = !still && since < 0.7;
+      if (drops.visible) {
+        for (const [i, d] of thrown.entries()) {
+          place.position.set(d.vx * since, d.vy * since - 0.5 * GRAVITY * since * since, d.vz * since);
+          place.scale.setScalar(place.position.y > -0.02 ? 1 : 0);
+          place.updateMatrix();
+          drops.setMatrixAt(i, place.matrix);
+        }
+        drops.instanceMatrix.needsUpdate = true;
+        (drops.material as MeshBasicMaterial).opacity = 0.85 * (1 - since / 0.7);
+      }
+      const c = since / 0.45;
+      crown.visible = !still && c < 1;
+      crown.scale.set(1 + c * 0.8, 0.02 + Math.sin(Math.PI * Math.min(1, c)) * 1.2, 1 + c * 0.8);
+      (crown.material as MeshBasicMaterial).opacity = 0.7 * (1 - c);
+      for (const r of rings) {
+        const k = (since - r.delay) / 1.9;
+        r.mesh.visible = k > 0 && k < 1;
+        r.mesh.scale.setScalar((0.5 + 2.4 * k) * size);
+        (r.mesh.material as MeshBasicMaterial).opacity = 0.5 * (1 - k);
+      }
+    },
+  };
+}
+
+/**
+ * How far behind or in front of the play plane Flärken's stone and bark lie on the planks: the stone at the front, the
+ * bark at the back, so that the stone rolls past the bark and not through it. In the water the bark floats under him.
+ */
+const STONE_Z = 0.6;
+const BARK_Z = -0.6;
+/** Where the stone sinks, a little nearer the play plane than where it lay. */
+const STONE_Z_IN = 0.25;
+/** How long the stone takes to roll to the edge, and how fast it sinks once the water has slowed it, in EL a second. */
+const ROLL = 1.55;
+const SINK = 1.3;
+
+/** Where a thing standing on a chapter's ground at `x` comes to its edge going right, and the water's level beyond. */
+function edgeAhead(chapter: ChapterData | null, x: number, y: number, to: number): { edge: number; water: number } {
+  let edge = x;
+  if (chapter) while (edge < to && heightAt(chapter, edge + 0.05) > y - 0.3) edge += 0.05;
+  const water = chapter?.water?.find((w) => w.from <= to && w.to >= to)?.y ?? y - 0.6;
+  return { edge: Math.min(edge, to), water };
+}
+
+/**
+ * Flärken's round field stone (Olov, 9 November 2026: "Uppdraget med stenen som ska fylla luckan måste se bättre ut"),
+ * art/blender/flarken.py's `grasten`: Elof's own idea, pushed out to fill the gap, where it sinks. The simulation takes
+ * it from where it lies to where it ends, under the water, straight and in a moment; drawn so, it went through the
+ * planks. Here it has its weight: it gathers way slowly, rolls along the planks turning as it goes, tips over the edge,
+ * falls in with a splash, and sinks more slowly through the water to the bottom, bubbles coming up after it. Its shadow
+ * lies on the planks under it. The chapter says the plop once it has gone under (`sjon:sunk`). With less motion it goes
+ * the same way, without the splash's drops.
+ */
+function fieldStone(mover: Mover): Group {
+  const outer = new Group();
+  const r = mover.height / 2;
+  const first = mover.stops[0]!;
+  const last = mover.stops[mover.stops.length - 1]!;
+  const holder = new Group();
+  holder.userData.model = 'grasten';
+  // Wet in the rain: its granite a little glossy.
+  holder.userData.onModelInstalled = (model: Group) => model.traverse((node) => {
+    const mesh = node as Mesh;
+    const material = mesh.material as MeshStandardMaterial | undefined;
+    if (!material?.isMeshStandardMaterial) return;
+    mesh.material = material.clone();
+    (mesh.material as MeshStandardMaterial).roughness = 0.42;
+    mesh.castShadow = true;
+  });
+  // Until the kit's has come: a smooth grey stone as big.
+  const standIn = new Mesh(new SphereGeometry(1, 24, 16).scale(mover.width / 2, r, r * 0.86), solid('#7a7974', 0.45));
+  standIn.castShadow = true;
+  holder.add(standIn);
+  glowMap ??= glowTexture(32);
+  const shade = new Mesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new MeshBasicMaterial({ color: '#000000', map: glowMap, transparent: true, opacity: 0.5, depthWrite: false }));
+  shade.scale.set(mover.width * 1.7, 1, r * 2.1);
+  const splash = waterSplash(1.1);
+  // The bubbles that come up after it, one draw for them all.
+  const air = new InstancedMesh(new SphereGeometry(0.075, 8, 6), new MeshBasicMaterial({ color: '#d8e6f0', transparent: true, opacity: 0.75, depthWrite: false }), 7);
+  air.instanceMatrix.setUsage(DynamicDrawUsage);
+  air.frustumCulled = false;
+  drawnWhile(air, false);
+  const bubbles = Array.from({ length: 7 }, (_, i) => ({ at: 0.15 + i * 0.32, size: 0.6 + 0.6 * ((i * 0.47) % 1), x: 0, y: 0 }));
+  const place = new Object3D();
+  outer.add(holder, shade, splash.group, air);
+
+  let ready = false, edge = first.x, water = first.y - 0.6, span = 0, speed = 0, fall = 0, inAt = 0, entered = 0, start = 0;
+  let state: 'unknown' | 'rest' | 'going' | 'sunk' = 'unknown';
+  const at = { x: 0, y: 0, z: 0, turn: 0, planks: 1 };
+  /** Where its middle is drawn `t` seconds after the push, how far it has turned, and how much of it is on the planks. */
+  const path = (t: number) => {
+    let rolled: number;
+    if (t < ROLL) {
+      // Gathering way: slowly at first, and rolling on at the edge.
+      const u = Math.max(0, t) / ROLL;
+      at.x = first.x + span * (2 * u * u - u * u * u);
+      at.y = first.y + r;
+      at.z = STONE_Z;
+      at.planks = 1;
+      rolled = at.x - first.x;
+    } else if (t < inAt) {
+      // Over the edge and falling, as he falls; while it still touches the planks' end it turns about it.
+      const k = t - ROLL;
+      at.x = edge + 0.85 * speed * k;
+      at.y = first.y + r - 0.5 * GRAVITY * k * k;
+      const off = Math.hypot(at.x - edge, at.y - first.y);
+      if (off < r) {
+        at.x = edge + ((at.x - edge) / off) * r;
+        at.y = first.y + ((at.y - first.y) / off) * r;
+      }
+      at.z = STONE_Z + (STONE_Z_IN - STONE_Z) * (k / fall);
+      at.planks = Math.max(0, 1 - k / 0.12);
+      rolled = at.x - first.x;
+    } else {
+      // In the water: slowed at once, then sinking steadily to the bottom, drifting on a little and turning less.
+      const k = t - inAt;
+      const drop = SINK * k + (GRAVITY * fall - SINK) * 0.25 * (1 - Math.exp(-k / 0.25));
+      at.x = entered + (last.x - entered) * (1 - Math.exp(-k / 0.6));
+      at.y = Math.max(last.y + r, water + r - drop);
+      at.z = STONE_Z_IN;
+      at.planks = 0;
+      rolled = entered - first.x + 0.85 * speed * 0.7 * (1 - Math.exp(-k / 0.7));
+    }
+    at.turn = -rolled / r;
+    return at;
+  };
+  outer.userData.tick = (clock: number) => {
+    const mesh = outer.parent;
+    if (!mesh) return;
+    if (!ready) {
+      ({ edge, water } = edgeAhead(playing.chapter, first.x, first.y, last.x));
+      span = edge - first.x;
+      speed = span / ROLL;
+      fall = Math.sqrt((2 * Math.max(0.05, first.y - water)) / GRAVITY);
+      inAt = ROLL + fall;
+      entered = edge + 0.85 * speed * fall;
+      // Each bubble rises from where the stone was when it let it go.
+      for (const b of bubbles) { path(inAt + b.at); b.x = at.x; b.y = at.y + r * 0.4; }
+      ready = true;
+    }
+    const sx = mesh.position.x, sy = mesh.position.y;
+    const atFirst = Math.abs(sx - first.x) < 1e-3 && Math.abs(sy - first.y) < 1e-3;
+    if (state === 'unknown') state = Math.abs(sx - last.x) < 1e-3 && Math.abs(sy - last.y) < 1e-3 ? 'sunk' : 'rest';
+    if (state === 'rest' && !atFirst) { state = 'going'; start = clock; }
+    if (state !== 'rest' && atFirst) state = 'rest';
+    const t = state === 'rest' ? 0 : state === 'sunk' ? 60 : clock - start;
+    path(t);
+    // It draws its own way: the simulation's lean and squash are not its.
+    mesh.rotation.z = 0;
+    mesh.scale.set(1, 1, 1);
+    holder.position.set(at.x - sx, at.y - sy, at.z);
+    holder.rotation.set(0, 0, at.turn);
+    shade.position.set(at.x - sx, first.y + 0.015 - sy, at.z);
+    shade.visible = at.planks > 0;
+    (shade.material as MeshBasicMaterial).opacity = 0.5 * at.planks;
+    splash.group.position.set(entered - sx, water - sy, STONE_Z_IN);
+    splash.update(state === 'going' ? t - inAt : -1, elof.still);
+    let rising = false;
+    for (const [i, b] of bubbles.entries()) {
+      const since = state === 'going' ? t - inAt - b.at : -1;
+      const rise = b.y + since * 1.7;
+      const up = since > 0 && rise < water;
+      rising ||= up;
+      place.position.set(b.x - sx + Math.sin(since * 9 + b.at * 5) * 0.06, rise - sy, STONE_Z_IN + 0.1);
+      place.scale.setScalar(up ? b.size : 0);
+      place.updateMatrix();
+      air.setMatrixAt(i, place.matrix);
+    }
+    air.instanceMatrix.needsUpdate = true;
+    drawnWhile(air, rising);
+  };
+  return outer;
+}
+
+/**
+ * Flärken's bark (art/blender/flarken.py, `barkbit`), which fills the gap once the stone has sunk: it lies at the back
+ * of the planks, behind the stone, and is pushed along them. The simulation's last push takes it straight from the
+ * planks to where it floats in the gap, through the planks' end; drawn here, it slides to the edge, tips over it, goes
+ * in with a splash, bobs up again and floats under him, mostly under the water, rocking a little.
+ */
+function barkRaft(mover: Mover): Group {
+  const outer = new Group();
+  const holder = new Group();
+  holder.name = 'bark-holder';
+  holder.userData.model = 'barkbit';
+  const splash = waterSplash(0.9);
+  outer.add(holder, splash.group);
+  const before = mover.stops[mover.stops.length - 2]!;
+  const last = mover.stops[mover.stops.length - 1]!;
+  /** How long it slides to the edge, and how long it takes from tipping to being in the water. */
+  const SLIDE = 0.32, DROP = 0.3;
+  let ready = false, edge = before.x, water = last.y + mover.height * 0.6, start = 0;
+  let state: 'unknown' | 'planks' | 'going' | 'afloat' = 'unknown';
+  outer.userData.tick = (clock: number) => {
+    const mesh = outer.parent;
+    if (!mesh) return;
+    if (!ready) {
+      ({ edge, water } = edgeAhead(playing.chapter, before.x, before.y, last.x));
+      ready = true;
+    }
+    const sx = mesh.position.x, sy = mesh.position.y;
+    // On the planks, give or take the little way past a stop that a push settles back from.
+    const onPlanks = sx <= before.x + 0.2 && sy >= before.y - 0.05;
+    if (state === 'unknown') state = Math.abs(sx - last.x) < 1e-3 && Math.abs(sy - last.y) < 1e-3 ? 'afloat' : 'planks';
+    if (state === 'planks' && !onPlanks) { state = 'going'; start = clock; }
+    if (state !== 'planks' && onPlanks) state = 'planks';
+    if (state === 'planks') {
+      // On the planks it slides as the simulation has it, at the back.
+      holder.position.set(0, 0, BARK_Z);
+      holder.rotation.set(0, 0, 0);
+      splash.update(-1, elof.still);
+      return;
+    }
+    const t = state === 'afloat' ? 60 : clock - start;
+    // Where its middle is when it tips: a little over the edge.
+    const over = edge + mover.width * 0.12;
+    const tipped = over + (last.x - over) * 0.7;
+    let x: number, y: number, tip: number;
+    if (t < SLIDE) {
+      const u = t / SLIDE;
+      x = before.x + (over - before.x) * (1.6 * u - 0.6 * u * u);
+      y = before.y;
+      tip = 0;
+    } else if (t < SLIDE + DROP) {
+      const k = (t - SLIDE) / DROP;
+      x = over + (tipped - over) * k;
+      y = before.y + (last.y - 0.22 - before.y) * k * k;
+      tip = -0.45 * Math.sin(Math.PI * k);
+    } else {
+      // Under, and up again: it bobs a few times and settles where it floats.
+      const k = t - SLIDE - DROP;
+      x = tipped + (last.x - tipped) * (1 - Math.exp(-k / 0.3));
+      y = last.y - 0.22 * Math.exp(-k / 0.28) * Math.cos(k * 6.5);
+      tip = 0.07 * Math.exp(-k / 0.35) * Math.sin(k * 8);
+    }
+    const z = BARK_Z * (1 - smooth(t / (SLIDE + DROP)));
+    // Afloat, it rocks a little on the water.
+    const bob = elof.still ? 0 : Math.sin(clock * 1.9) * 0.02;
+    const rock_ = elof.still ? 0 : Math.sin(clock * 1.3 + 1) * 0.015;
+    mesh.rotation.z = 0;
+    mesh.scale.set(1, 1, 1);
+    holder.position.set(x - sx, y + bob - sy, z);
+    holder.rotation.set(0, 0, tip + rock_);
+    // In it goes where its foot meets the water as it tips.
+    splash.group.position.set(over + (tipped - over) * 0.6 - sx, water - sy, 0);
+    splash.update(t - SLIDE - DROP * 0.6, elof.still);
+  };
+  return outer;
+}
+
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
 const TIPPED = -0.16;
+
+/** The barn door at the top of the planks in Billsta: how wide and tall it is drawn, and where it hangs, behind the path. */
+const BARN_DOOR = { wide: 2.4, tall: 5.4, back: -1.6, thick: 0.18, swing: 1.62 };
+
+/**
+ * The loft door of mormor's barn, at the top of the planks up to it (Billsta; Olov, 9 November 2026: "Mormor ska gå fram
+ * och öppna ladan"): Falu red boards with a white frame and the white Z of its braces, iron straps on its hinges and a
+ * ring to pull it by, in a white door frame with a piece of the barn's red wall going back from it. The simulation lifts
+ * the door's block up out of his way when it opens (`DOOR`, ./chapters/billsta.ts); the picture keeps the frame where
+ * it stands and swings the door in on its hinges as the block goes up. Two draws: the frame, and the door.
+ */
+function barnDoor(mover: Mover): Group {
+  const { wide, tall, back, thick, swing } = BARN_DOOR;
+  const closed = mover.stops[0]!.y;
+  const travel = Math.max(1e-3, mover.stops[mover.stops.length - 1]!.y - closed);
+  const front = back + wide;
+  const RED = ['#8a2f25', '#7c2a21', '#93342a', '#842c23'];
+  const WHITE = '#e6e1d4';
+  const IRON = '#202022';
+  // The frame and the wall: they stay where they stand.
+  const frame: BufferGeometry[] = [];
+  for (const z of [back - 0.12, front + 0.12]) frame.push(box(0.26, tall + 0.36, 0.24, 0, (tall + 0.36) / 2 - 0.05, z, WHITE));
+  frame.push(box(0.28, 0.26, wide + 0.6, 0, tall + 0.2, back + wide / 2, WHITE));
+  frame.push(box(0.34, 0.12, wide + 0.3, 0, 0.03, back + wide / 2, '#9a8a70'));
+  // The wall going back from the door, boards with battens over their joints, and a little of it over the lintel.
+  const wall = { from: back - 0.24, to: -4.4, top: tall + 1.2 };
+  const boards = Math.round((wall.from - wall.to) / 0.55);
+  for (let i = 0; i < boards; i++) {
+    const z = wall.from - (i + 0.5) * ((wall.from - wall.to) / boards);
+    frame.push(box(0.16, wall.top, (wall.from - wall.to) / boards - 0.03, -0.02, wall.top / 2, z, RED[i % RED.length]!));
+    if (i > 0) frame.push(box(0.2, wall.top, 0.09, 0.02, wall.top / 2, z + (wall.from - wall.to) / boards / 2, '#6e251d'));
+  }
+  frame.push(box(0.16, wall.top - tall - 0.33, wide + 0.6, -0.02, (wall.top + tall + 0.33) / 2, back + wide / 2, RED[2]!));
+  const frameMaterial = solid('#ffffff', 0.85, { vertexColors: true });
+  paintedWood(frameMaterial);
+  const frameMesh = new Mesh(mergeGeometries(frame), frameMaterial);
+  frameMesh.castShadow = true;
+  // The door, on its hinges at its back edge: upright boards, a white frame on its face, the white Z of its braces.
+  const leaf: BufferGeometry[] = [];
+  const planks = 5;
+  for (let i = 0; i < planks; i++) {
+    leaf.push(box(thick, tall - 0.04, wide / planks - 0.04, 0, tall / 2, (i + 0.5) * (wide / planks), RED[i % RED.length]!));
+  }
+  for (const side of [-1, 1]) {
+    const x = side * (thick / 2 + 0.03);
+    for (const y of [0.16, tall - 0.16]) leaf.push(box(0.06, 0.24, wide - 0.08, x, y, wide / 2, WHITE));
+    for (const z of [0.12, wide - 0.12]) leaf.push(box(0.06, tall - 0.08, 0.2, x, tall / 2, z, WHITE));
+    leaf.push(box(0.06, 0.2, wide - 0.3, x, tall * 0.52, wide / 2, WHITE));
+    // The diagonals of the Z, in the lower and the upper half.
+    for (const [low, high] of [[0.3, tall * 0.52], [tall * 0.52, tall - 0.3]] as const) {
+      const run = wide - 0.5, rise = high - low;
+      leaf.push(paint(new BoxGeometry(0.06, Math.hypot(run, rise), 0.18).rotateX(-Math.atan2(run, rise) * side).translate(x, (low + high) / 2, wide / 2), WHITE));
+    }
+  }
+  // Iron straps over the hinges, and the ring to pull it by, near its free edge.
+  for (const y of [0.9, tall - 0.9]) leaf.push(box(thick + 0.1, 0.16, wide * 0.42, 0, y, wide * 0.21, IRON));
+  leaf.push(paint(new TorusGeometry(0.16, 0.035, 6, 14).rotateY(Math.PI / 2).translate(-thick / 2 - 0.08, tall * 0.45, wide - 0.32), IRON));
+  const leafMaterial = solid('#ffffff', 0.85, { vertexColors: true });
+  paintedWood(leafMaterial);
+  const leafMesh = new Mesh(mergeGeometries(leaf), leafMaterial);
+  leafMesh.castShadow = true;
+  const hinge = new Group();
+  hinge.name = 'barn-door-hinge';
+  hinge.position.z = back;
+  hinge.add(leafMesh);
+  const held = new Group();
+  held.add(frameMesh, hinge);
+  const group = new Group();
+  group.add(held);
+  // Each frame: the simulation's block has gone up `lift`; the picture stays where it stood and the door swings in.
+  group.userData.tick = () => {
+    const lift = (group.parent?.position.y ?? closed) - closed;
+    held.position.y = -lift;
+    if (group.parent) { group.parent.rotation.z = 0; group.parent.scale.set(1, 1, 1); }
+    const open = Math.min(1, Math.max(0, lift / travel));
+    hinge.rotation.y = swing * open * open * (3 - 2 * open);
+  };
+  return group;
+}
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
@@ -2265,21 +3011,14 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       return group;
     },
     riverLog: (mover) => {
-      // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is. The kit's, once it
-      // has come: art/blender/a2-nature.py.
+      // A sawn log floating half under, its top level where he stands (./river-log.ts): the kit's fallen branch, fitted
+      // to the thing's box, lay 0.47 to 0.78 under his feet.
       const group = new Group();
-      group.userData.model = 'stock-flod';
-      group.userData.block = { width: mover.width * 1.04, height: mover.height * 1.1, depth: mover.height * 1.1, x: 0, y: mover.height / 2 };
-      const r = mover.height / 2;
-      const bark = new Mesh(new CylinderGeometry(r, r * 1.05, mover.width, 14).rotateZ(Math.PI / 2), solid('#42342a', 0.62));
-      bark.position.y = r;
-      bark.castShadow = true;
-      const pale = solid('#c2a678', 0.8);
-      const near = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(Math.PI / 2), pale);
-      near.position.set(mover.width / 2 + 0.002, r, 0);
-      const far = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(-Math.PI / 2), pale);
-      far.position.set(-mover.width / 2 - 0.002, r, 0);
-      group.add(bark, near, far);
+      const log = new Mesh(riverLogShape(mover.width, mover.height, logSeed(mover.id)), riverLogWood());
+      log.name = 'river-log';
+      log.castShadow = true;
+      log.receiveShadow = true;
+      group.add(log);
       return group;
     },
     lid: (mover) => {
@@ -2295,9 +3034,12 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       }
       return group;
     },
+    fieldstone: (mover) => fieldStone(mover),
     bark: (mover) => {
-      const group = new Group();
-      // Pine bark, grey-brown and furrowed: pale enough to be told in the storm's dark.
+      const outer = barkRaft(mover);
+      const group = outer.getObjectByName('bark-holder')!;
+      // Until the kit's has come (art/blender/flarken.py, `barkbit`): pine bark, grey-brown and furrowed, pale enough to
+      // be told in the storm's dark.
       const slab = new Mesh(new BoxGeometry(mover.width, mover.height, 1.2, 6, 2, 3), solid('#9a7656', 1, { flatShading: true, emissive: '#3a2614', emissiveIntensity: 0.5 }));
       const at = slab.geometry.getAttribute('position');
       const r = scatter(Math.round(mover.width * 100));
@@ -2320,7 +3062,7 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       const top = new Mesh(new BoxGeometry(mover.width * 0.86, 0.06, 0.9), solid('#b8966e', 1));
       top.position.y = mover.height + 0.02;
       group.add(top);
-      return group;
+      return outer;
     },
     'swing-sign': (mover) => {
       // A shop's sign on two chains: a plain painted board with a border, and no letter on it.
@@ -2383,6 +3125,7 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       group.add(door, metal);
       return group;
     },
+    'barn-door': (mover) => barnDoor(mover),
     'jetty-plank': (mover) => {
       const group = new Group();
       const plank = new Mesh(new BoxGeometry(mover.width, mover.height, 1.4), solid('#8c7a62', 0.9));

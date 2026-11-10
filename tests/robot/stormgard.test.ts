@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import '../../src/content/aventyr2/aventyr2';
 import { context, stormgard } from '../../src/content/aventyr2/chapters/stormgard';
+import { flightAt } from '../../src/content/aventyr2/kit';
 import { words } from '../../src/content/aventyr2/lines/stormgard';
 import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
@@ -257,7 +258,51 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
       // The old one is seen before the trail climbs the playhouse; the little one flies before the hedge.
       const beat = (id: string) => stormgard.beats!.find((b) => b.id === id)!;
       expect(beat('sg:playhouse').at!).toBeLessThan(planks[0]!.x);
-      expect(beat('sg:flash').at!).toBeLessThan(stormgard.goalX);
+      expect(stormgard.scenes!.find((scene) => scene.id === 'haecken')!.at!).toBeLessThan(stormgard.goalX);
+    });
+
+    it('at the hedge he stops and watches the little one tumble slowly over it, near the path and lit', () => {
+      // Olov, 9 November 2026: "När lillgubben flyger över häcken i slutet av kapitlet är det svårt att se honom. Det ska
+      // synas tydligt."
+      const flight = stormgard.storm!.flybys!.find((flyby) => flyby.on === 'beat:sg:flash')!;
+      expect(flight.seconds).toBeGreaterThanOrEqual(4.5);
+      expect(flight.z!).toBeGreaterThan(-1.5);
+      expect(flight.size!).toBeGreaterThan(1.2);
+      expect(flight.lit?.length).toBeGreaterThan(0);
+      // Over the hedge, from in front of it.
+      expect(flight.from.x).toBeLessThan(stormgard.surfaces!.find((surface) => surface.kind === 'hedge')!.from);
+      expect(flight.to.x).toBeGreaterThan(stormgard.goalX);
+      // Over the hedge's tall end where the ground ends, and never into it.
+      const end = stormgard.ground[stormgard.ground.length - 1]!;
+      for (let k = 0; k <= 1; k += 0.01) {
+        const at = flightAt(flight, k);
+        if (at.x > end.x - 0.6) expect(at.y, `at ${k.toFixed(2)} of the way`).toBeGreaterThan(end.y + 0.5);
+      }
+      const moment = stormgard.scenes!.find((scene) => scene.id === 'haecken')!;
+      expect(moment.hold).toBe(true);
+      expect(moment.on).toBeUndefined();
+      expect(moment.cues).toContainEqual({ at: 0.8, flag: 'sg:flight' });
+      expect(stormgard.beats!.find((beat) => beat.id === 'sg:flash')!.on).toBe('sg:flight');
+      expect(moment.seconds).toBeGreaterThanOrEqual(flight.seconds - 0.5);
+      // Its camera follows him: the shot's last key moves on along his way, as long as his flight takes.
+      const shots = moment.stage!.shots!;
+      expect(shots[shots.length - 1]!.x - shots[0]!.x).toBeGreaterThan((flight.to.x - flight.from.x) / 2);
+      expect(shots[shots.length - 1]!.move!).toBeGreaterThanOrEqual(flight.seconds - 1);
+      // Played: the robot is held there for the whole flight, and goes on to the forest after.
+      const game = new Game(stormgard, {}, { checkpoint: 4, placed: ['lid'], flags: AFTER_BOOT });
+      let heldFor = 0;
+      let wasAhead = false;
+      let wasOffered = false;
+      for (let frame = 0; frame < 60 * 120 && !game.sim.flags.has('goal'); frame++) {
+        const { x, y, ahead, offered } = decide(game, stormgard);
+        game.frame(1 / 60, { x, y, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
+        wasAhead = ahead;
+        wasOffered = offered;
+        if (game.sim.sceneFrame?.id === 'haecken' && game.sim.held) heldFor += 1 / 60;
+      }
+      expect(game.sim.flags.has('goal'), `he got to ${game.sim.curr.x.toFixed(1)}`).toBe(true);
+      expect(heldFor).toBeGreaterThanOrEqual(moment.seconds - 0.1);
+      expect(game.sim.bubbles).toBe(0);
     });
 
     it('resumes at the big candy after the boot, and plays on to the forest without repeating anything', () => {
@@ -288,6 +333,20 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
       expect(game.sim.said).toEqual(SAID.slice(SAID.indexOf('sg:playhouse')));
       expect(game.sim.bubbles).toBe(0);
     });
+  });
+
+  it('frames the little one before its flight is announced, after the previous line is finished', () => {
+    const sim = new Sim({ ...stormgard, spawn: { x: 176.7, y: 0 } });
+    // Approach while a previous line still owns the floor: neither flight nor camera may jump ahead.
+    for (let i = 0; i < 120; i++) sim.step({ ...idle, x: 1, talking: true });
+    expect(sim.flags.has('beat:sg:flash')).toBe(false);
+    expect(sim.sceneFrame).toBeNull();
+    for (let i = 0; i < 360 && !sim.flags.has('beat:sg:flash'); i++) sim.step({ ...idle, x: 1, talking: false });
+    expect(sim.flags.has('beat:sg:flash')).toBe(true);
+    expect(sim.sceneFrame?.id).toBe('haecken');
+    expect(sim.sceneFrame!.seconds).toBeGreaterThanOrEqual(0.79);
+    expect(sim.sceneFrame!.seconds).toBeLessThan(0.9);
+    expect(sim.held).toBe(true);
   });
 
   describe('the side ways', () => {

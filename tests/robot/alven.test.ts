@@ -10,7 +10,7 @@ import { settingsFor, simOptions } from '../../src/save/settings';
 import { FALL_LIMIT, FELL_IN, JUMP_APEX, LEDGE_REACH, RUNNING_JUMP_REACH, STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { Ride, SimStart } from '../../src/sim/types';
-import { idle, leap, run, runPast, sideTaken, use, walkTo } from '../sim/drive';
+import { idle, jump, leap, run, runPast, sideTaken, use, walkTo } from '../sim/drive';
 import { decide, heightAt, playThrough } from './robot';
 
 /**
@@ -120,7 +120,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
     expect(alven.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(alven.coda).toBe('pappa');
     expect(alven.storm).toMatchObject({ rain: 1, lightning: 7.5 });
-    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'bron']);
+    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'bron', 'al:kids']);
     expect(sv.scene.alven).toBe('Älven · halv tolv');
   });
 
@@ -460,8 +460,10 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       run(sim, 0.2);
       const at = (i: number) => sim.movers.find((m) => m.def.id === rollers[i]!.id)!;
       const on = (i: number) => Math.abs(sim.curr.x - at(i).x) < rollers[i]!.width / 2 && Math.abs(sim.curr.y - at(i).y - rollers[i]!.height) < 0.1;
-      // Out: from the shore onto the first, onto the second when they roll close, and up onto the stone.
+      // Out: from the shore onto the first, a hop up on it, onto the second when they roll close, and up onto the stone.
       leap(sim, 1, 137.1);
+      expect(on(0)).toBe(true);
+      jump(sim);
       expect(on(0)).toBe(true);
       waitFor(sim, () => at(1).x - at(0).x < 3.25 && at(0).x > 139.7);
       leap(sim, 1, at(0).x + 0.7);
@@ -483,6 +485,40 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       expect(sim.curr.x).toBeLessThan(137.4);
       expect(sim.curr.y).toBeCloseTo(0, 2);
       expect(sim.bubbles).toBe(0);
+    });
+
+    it('skims low over the shallows on the owl, so that the sweets seen under him are taken by dipping down to them', () => {
+      // Olov: "När man flyger på ugglan över sjön syns godisar under. Går de att ta, eller är det omöjligt?" They are: the
+      // owl flies low over the rolling logs, and down on the stick takes every one of them from its back.
+      expect(owl.skim).toBeDefined();
+      const sweets = (alven.side ?? []).filter((c) => c.x > owl.from.x && c.x < owl.to.x);
+      expect(sweets.length).toBe(4);
+      for (const c of sweets) expect(c.x).toBeGreaterThanOrEqual(owl.skim!.from);
+      const fly = (down: boolean) => {
+        const sim = new Sim(alven, {}, { checkpoint: CP.lake, flags: ['al:pappa', 'al:scarf', 'al:lift', 'al:owl-call', 'al:owl-ready'] });
+        run(sim, 0.2);
+        expect(walkTo(sim, board.at.x)).toBe(true);
+        expect(sim.curr.word).toBe('alBoardOwl');
+        use(sim);
+        expect(sim.curr.mode).toBe('ride');
+        let lowest = Infinity;
+        for (let i = 0; i < 12 / STEP && sim.curr.mode === 'ride'; i++) {
+          sim.step({ ...idle, y: down ? -1 : 0 });
+          // Over the water and the logs his feet stay high enough for the owl under him, even dipped down.
+          if (sim.curr.x > owl.skim!.from - 1 && sim.curr.x < owl.skim!.to + 1) lowest = Math.min(lowest, sim.curr.y);
+        }
+        run(sim, 0.2);
+        expect(sim.curr.x).toBeCloseTo(owl.to.x, 1);
+        expect(sim.bubbles).toBe(0);
+        return { taken: sideTaken(sim, owl.from.x, owl.to.x).taken, lowest };
+      };
+      // Following the trail it passes over them: it takes none.
+      expect(fly(false).taken).toBe(0);
+      // Dipped down over them, it takes all four; and he stays high enough that the owl under him skims the water and the
+      // logs without going into them.
+      const dipped = fly(true);
+      expect(dipped.taken).toBe(4);
+      expect(dipped.lowest).toBeGreaterThan(1.2);
     });
   });
 
@@ -520,9 +556,44 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       }
       expect(alven.beats!.find((b) => b.id === 'al:moa-trail')!.who).toBe('moa');
       expect(alven.beats!.find((b) => b.id === 'al:bertil-pocket')!.who).toBe('bertil');
-      // Moa and Bertil are there, by the road, when he needs them.
-      const family = (alven.decor ?? []).filter((d) => d.after === 'beat:al:last');
-      expect(family.map((d) => d.word).sort()).toEqual(['callBertil', 'callMoa']);
+      // Moa and Bertil are there when he needs them, and are seen coming (Olov: "Bertil och Moa bara dyker upp vid
+      // bilen"): from the start they wait by the car on the road, lamps on the water, and as the trail runs out they run
+      // down from it to him on the bank. Nothing puts them there out of nowhere.
+      expect((alven.decor ?? []).filter((d) => d.word === 'callMoa' || d.word === 'callBertil')).toEqual([]);
+      const car = alven.storm!.buildings!.find((d) => d.kind === 'car')!;
+      // The tall boundary belongs beyond its whole footprint, so the car remains visible behind the riverbank.
+      for (const x of [car.x - 14.5, car.x, car.x + 14.5]) expect(heightAt(alven, x)).toBeCloseTo(0.4, 5);
+      const card = alven.scenes!.find((scene) => scene.id === 'card')!;
+      const come = alven.scenes!.find((scene) => scene.id === 'al:kids')!;
+      // He watches their entrance safely from the bank after the creek, before the trail ends and the next lines.
+      expect(come.at!).toBeGreaterThan(alven.checkpoints!.at(-1)!.x);
+      expect(come.at!).toBeLessThan(last.at!);
+      expect(heightAt(alven, come.at!)).toBeCloseTo(0.4, 5);
+      expect(come.hold).toBe(true);
+      const shot = come.stage!.shots![0]!;
+      // Both starts and ends are within the shot's horizontal span, with space above their heads.
+      expect(shot.height).toBeGreaterThan(10);
+      for (const who of ['moa', 'bertil'] as const) {
+        const waits = card.stage!.actors![who]![0]!;
+        expect(waits.at).toBe(0);
+        // By the car: in front of it, near its side, on the road behind the river.
+        expect(Math.abs(waits.x! - car.x)).toBeLessThan(12);
+        expect(waits.z!).toBeLessThan(-6);
+        expect(waits.z!).toBeGreaterThan(car.z);
+        expect(waits.holds).toBe(`lamp-${who}`);
+        expect(Math.abs(waits.x! - shot.x)).toBeLessThan(shot.width! / 2);
+        const keys = come.stage!.actors![who]!;
+        const there = keys.filter((k) => k.x !== undefined).at(-1)!;
+        // On the bank beside him at the trail's end, near the path, a running child's few seconds from the car.
+        expect(there.x! - last.at!).toBeGreaterThan(0);
+        expect(there.x! - last.at!).toBeLessThan(5);
+        expect(there.z!).toBeGreaterThan(-2);
+        expect(Math.abs(there.y! - heightAt(alven, there.x!))).toBeLessThan(0.05);
+        const moving = keys.filter((k) => k.move !== undefined && k.x !== undefined);
+        const run = moving.reduce((sum, k) => sum + k.move!, 0);
+        expect(run).toBeLessThanOrEqual(3);
+        expect(keys.every((k) => !k.away)).toBe(true);
+      }
     });
 
     it('ends with the family\'s car on the road by the river: three mil to Billsta, where mormor and morfar live', () => {

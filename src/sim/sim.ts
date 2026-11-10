@@ -13,6 +13,7 @@ import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
 import { LEDGE_CORNER, LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
 import { hintFor } from './help';
+import { rideY } from './ride-path';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
@@ -21,7 +22,7 @@ import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
 import type {
-  ChapterData, Checkpoint, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
+  Beat, ChapterData, Checkpoint, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
 } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
@@ -134,6 +135,16 @@ export interface DripState {
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 
+/** The height of a walked ride's ground at x, point to point (Ride.ground). */
+export function groundAlong(ground: readonly Vec[], x: number): number {
+  if (x <= ground[0]!.x) return ground[0]!.y;
+  for (let i = 1; i < ground.length; i++) {
+    const a = ground[i - 1]!, b = ground[i]!;
+    if (x <= b.x) return b.x > a.x ? mix(a.y, b.y, (x - a.x) / (b.x - a.x)) : b.y;
+  }
+  return ground[ground.length - 1]!.y;
+}
+
 /**
  * The pure simulation: no three, no DOM, no clock. One call to step() is 1/120 s.
  * It holds the ground and a greybox Elof with the moves of plan §4.2: he walks, runs and jumps, walks over
@@ -197,6 +208,13 @@ export class Sim {
   private readonly began = new Map<string, number>();
   /** Whether he stands and watches such a beat now. */
   private watching = false;
+  /** The beats whose moment has come while someone was still speaking, and the step each came at: they wait their turn. */
+  private readonly waiting = new Map<string, number>();
+  /**
+   * Whether he stands and listens for them: a story line waits for its turn where it belongs, or the words have fallen
+   * behind what he does (more than one line waits).
+   */
+  private behind = false;
   private idle = 0;
   private progress = -1;
   private furthest = -Infinity;
@@ -433,9 +451,23 @@ export class Sim {
 
   cancelStory(): void { this.story = null; }
 
-  /** Whether he stands and watches the story now: a beat that takes time, a freeze joke or a held scene. */
+  /**
+   * Whether he stands and watches the story now: a beat that takes time, a freeze joke or a held scene; or listens, while
+   * one of them, or a story line, waits for what is being said to finish.
+   */
   get held(): boolean {
-    return this.watching || !!this.prologue?.frame || !!this.scene?.holding;
+    const standing = this.curr.mode === 'free' && this.curr.grounded;
+    return this.watching || (this.behind && standing) || !!this.prologue?.frame || !!this.prologue?.listening || !!this.scene?.holding;
+  }
+
+  /** Whether lines whose moment has come still wait their turn: the page's last card waits for them too. */
+  get unsaid(): boolean {
+    return this.waiting.size > 0;
+  }
+
+  /** The lines that wait their turn, and the step at which the moment of each came. */
+  get waits(): ReadonlyMap<string, number> {
+    return this.waiting;
   }
 
   /**
@@ -453,8 +485,13 @@ export class Sim {
     this.prev = this.curr;
     this.ringNotes();
     this.returnGifts();
-    this.prologue?.tick(this.curr, this.ghost, this.flags);
-    this.scene?.tick(this.curr, this.flags, this.said, input.talking === true);
+    // What is said waits its turn (./types.ts, StepInput): so do the story's moments, after the lines that came first.
+    const listening = input.talking !== undefined;
+    const speaking = input.talking === true;
+    const told = this.said.length;
+    const talking = speaking || this.waiting.size > 0;
+    this.prologue?.tick(this.curr, this.ghost, this.flags, talking);
+    this.scene?.tick(this.curr, this.flags, this.said, talking, listening);
     // While he watches a beat of the story, the stick and the buttons do nothing.
     if (this.held) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
@@ -479,7 +516,7 @@ export class Sim {
     this.sink();
     for (const berry of this.berries) berry.squash = Math.max(0, berry.squash - STEP / BERRY_SQUASH);
     if (this.chapter.ghostMeet && !this.prologue?.frame) this.haunt();
-    this.tell();
+    this.tell(speaking || this.said.length > told, listening);
     this.assist(input.help === true);
 
     this.world.step(STEP);
@@ -665,8 +702,16 @@ export class Sim {
     if (wet) this.startBubble();
   }
 
-  /** The beats whose moment has come: each is told once, and remembered as a flag. */
-  private tell(): void {
+  /**
+   * The beats whose moment has come: each is told once, and remembered as a flag. While someone is still speaking on
+   * the page, the next waits its turn: it is said once the line before it has been read, the one that has waited
+   * longest first, and its flag comes with it, so whatever waits for that flag (a flash, a scene, the next line) waits
+   * for the words too (Olov, 9 November 2026: "det den säger få talas klart innan nästa event spelas upp eller pratas
+   * upp"). While a story line (`read`) waits, or more than one line does, he stands and listens (on his own feet, never in
+   * the air or on a hose): the words keep up with what he does, and each is said near where it belongs. With nobody
+   * listening (`listening` false: the robot) each is said as its moment comes.
+   */
+  private tell(talking = false, listening = false): void {
     for (const set of this.chapter.sets ?? []) if (set.when.every((flag) => this.flags.has(flag))) this.flags.add(set.flag);
     // Beats that take time: each begins when its first flag is set, and ends by setting its own.
     this.watching = false;
@@ -678,18 +723,45 @@ export class Sim {
       if ((this.steps - from) * STEP >= beat.seconds) this.flags.add(beat.flag);
       else if (beat.hold) this.watching = true;
     }
-    for (const beat of this.chapter.beats ?? []) {
-      if (beat.needs !== undefined && !this.flags.has(beat.needs)) continue;
-      if (beat.until !== undefined && this.flags.has(beat.until)) continue;
-      if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) continue;
-      const flag = `beat:${beat.id}`;
-      if (this.flags.has(flag)) continue;
+    const due = (beat: Beat) => {
+      if (beat.needs !== undefined && !this.flags.has(beat.needs)) return false;
+      if (beat.until !== undefined && this.flags.has(beat.until)) return false;
+      if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) return false;
+      if (this.flags.has(`beat:${beat.id}`)) return false;
       const passed = beat.at !== undefined && this.curr.x >= beat.at;
       const happened = beat.on !== undefined && this.flags.has(beat.on);
-      if (!passed && !happened) continue;
-      this.flags.add(flag);
+      return passed || happened;
+    };
+    const say = (beat: Beat) => {
+      this.flags.add(`beat:${beat.id}`);
       this.said.push(beat.id);
+    };
+    if (!listening) {
+      for (const beat of this.chapter.beats ?? []) if (due(beat)) say(beat);
+      return;
     }
+    // A beat no longer due (he went back, or the story went past it) stops waiting: it was never shown.
+    let next: Beat | null = null;
+    let since = Infinity;
+    const story: Beat[] = [];
+    for (const beat of this.chapter.beats ?? []) {
+      if (!due(beat)) {
+        this.waiting.delete(beat.id);
+        continue;
+      }
+      const from = this.waiting.get(beat.id) ?? this.steps;
+      this.waiting.set(beat.id, from);
+      if (beat.read) story.push(beat);
+      if (from < since) {
+        next = beat;
+        since = from;
+      }
+    }
+    if (next && !talking) {
+      this.waiting.delete(next.id);
+      say(next);
+    }
+    this.behind = this.waiting.size > 1 || story.some((beat) => this.waiting.has(beat.id));
   }
 
   /**
@@ -706,7 +778,10 @@ export class Sim {
     const open = Math.sin(Math.PI * state.t);
     const k = smooth(state.t);
     this.facing = ride.to.x >= ride.from.x ? 1 : -1;
-    this.place(mix(ride.from.x, ride.to.x, k), mix(ride.from.y, ride.to.y, k) + open * (ride.rise + state.offset));
+    const x = mix(ride.from.x, ride.to.x, k);
+    // Walking follows the ground; an owl can skim its candy before climbing again.
+    const y = ride.ground ? groundAlong(ride.ground, x) : rideY(ride, state.t) + open * state.offset;
+    this.place(x, y);
     if (state.t >= 1) this.release(ride.to.y);
   }
 
@@ -944,6 +1019,9 @@ export class Sim {
   toCheckpoint(): void {
     this.prologue?.cancel();
     this.scene?.cancel();
+    // What waited to be said is said again when its moment comes, where he is now.
+    this.waiting.clear();
+    this.behind = false;
     this.resetChallenges(true);
     this.story = null;
     const to = sceneResumeAt(this.chapter.scenes, this.flags, this.checkpoints[this.checkpoint] ?? this.chapter.spawn);

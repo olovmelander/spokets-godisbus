@@ -7,7 +7,7 @@ import { nextAfter } from '../../src/content/chapters';
 import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
-import { JUMP_APEX, LEDGE_REACH, RUNNING_JUMP_REACH } from '../../src/sim/constants';
+import { JUMP_APEX, LEDGE_REACH, MOVE_TIME, RUNNING_JUMP_REACH, STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { Ledge, SimStart } from '../../src/sim/types';
 import { jump, leap, run, runPast, sideTaken, use, walkTo } from '../sim/drive';
@@ -138,6 +138,8 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const buildings = billsta.storm!.buildings!;
       const car = buildings.find((b) => b.kind === 'car')!;
       expect(car.lit).toBe('');
+      // The road is flat in front of the entire parked car: a start-wall must not hide its rear and cabin.
+      for (const x of [car.x - (car.width ?? 29) / 2, car.x, billsta.spawn.x]) expect(heightAt(billsta, x)).toBe(0);
       // Well back from the play plane, so its wheels, body and cabin are in the picture; in front of the house.
       expect(car.z).toBeLessThanOrEqual(-8);
       // He stands beside it, on the asphalt.
@@ -232,8 +234,9 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
   });
 
   describe('Mormor', () => {
-    it('the barn\'s door at the top of the planks is shut, too high to climb, until mormor opens it', () => {
-      expect(door.on).toBe('bi:mormor');
+    it('the barn\'s door at the top of the planks is shut, too high to climb, until mormor walks up and opens it', () => {
+      expect(door.on).toBe('bi:door');
+      expect(door.look).toBe('barn-door');
       expect(door.height).toBeGreaterThan(JUMP_APEX + LEDGE_REACH);
       // Opened, it slides up in its frame, over his head.
       expect(door.stops[1]!.x).toBe(door.stops[0]!.x);
@@ -251,18 +254,58 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect((sv.verbs as Record<string, string>).biCallMormor).toBe('Ropa på mormor');
       use(sim);
       expect(sim.flags.has('bi:mormor')).toBe(true);
-      run(sim, 1);
+      // Olov: "Mormor ska gå fram och öppna ladan." She walks up the planks to the door while he stands and watches, and
+      // it opens as she pushes it: not before.
+      const goes = billsta.later!.find((l) => l.flag === 'bi:mormor-goes')!;
+      const opens = billsta.later!.find((l) => l.flag === door.on)!;
+      expect(goes.after).toBe('bi:mormor');
+      expect(opens.after).toBe(goes.flag);
+      expect(goes.hold && opens.hold).toBe(true);
+      expect(call.goesWhen).toBe(goes.flag);
+      run(sim, 1, { x: 1 });
+      expect(sim.held).toBe(true);
+      expect(sim.curr.x).toBeCloseTo(call.at.x, 1);
+      expect(sim.flags.has(`placed:${door.id}`)).toBe(false);
+      run(sim, goes.seconds + opens.seconds + MOVE_TIME + 0.2 - 1);
       expect(sim.flags.has(`placed:${door.id}`)).toBe(true);
+      expect(sim.held).toBe(false);
       expect(runPast(sim, 58, 10)).toBe(true);
       expect(sim.curr.y, where(sim)).toBeCloseTo(heightAt(billsta, 58), 1);
       expect(sim.bubbles).toBe(0);
       expect(sim.said).toEqual(expect.arrayContaining(['bi:mormor-here', 'bi:lantern', 'bi:open', 'bi:loft']));
     });
 
+    it('is seen clearly where she waits, walks up the planks to the door, and stands there with her lantern', () => {
+      // Olov: "Mormor döljs av en stubbe." The woodshed's chopping block stands 9.2 in front of the woodshed's middle
+      // (art/blender/a2-yard.py, 'vedbod'): it is behind the path, and behind her, so it hides neither.
+      const shed = billsta.storm!.buildings!.find((b) => b.kind === 'woodshed')!;
+      const block = { x: shed.x + 5.6, z: shed.z + 9.2, radius: 1.3 };
+      expect(block.z + block.radius).toBeLessThan(-0.5);
+      const mormor = spot('bi:mormor');
+      const waits = mormor.standsAt!, there = mormor.goesTo!;
+      expect(waits.z).toBeGreaterThan(block.z + block.radius + 0.5);
+      expect(waits.z).toBeLessThan(-0.5);
+      expect(waits.y).toBeCloseTo(heightAt(billsta, waits.x), 5);
+      // At the top of the planks, just short of the door, on the planks' own height.
+      expect(there.x).toBeLessThan(door.stops[0]!.x - 0.6);
+      expect(there.x).toBeGreaterThan(door.stops[0]!.x - 1.6);
+      expect(there.y).toBeCloseTo(heightAt(billsta, there.x), 2);
+      // While she walks up and opens it, the picture shows all of it: him where he called her, her way up the planks,
+      // and the door, from its foot to its top. It lasts until the door is open.
+      const seen = billsta.scenes!.find((s) => s.on === mormor.goesWhen)!;
+      const shot = seen.stage!.shots![0]!;
+      const opens = billsta.later!.find((l) => l.flag === door.on)!;
+      expect(seen.seconds).toBeGreaterThan(opens.seconds + MOVE_TIME + 0.5);
+      expect(seen.hold).toBeFalsy();
+      for (const x of [mormor.at.x - 0.6, waits.x, there.x, door.stops[0]!.x + 1]) expect(Math.abs(x - shot.x)).toBeLessThan(shot.width! / 2);
+      for (const y of [-0.3, there.y + 2.6, door.stops[0]!.y + door.height + 0.4]) expect(Math.abs(y - shot.y)).toBeLessThan(shot.height / 2);
+    });
+
     it('her lantern lights the loft and the barn\'s windows once she is called, and comes up the hill at the end', () => {
       const storm = billsta.storm!;
-      expect(storm.glows!.filter((g) => g.after === 'bi:mormor').length).toBeGreaterThanOrEqual(1);
-      expect(billsta.decor!.find((d) => d.look === 'lantern')!.after).toBe('bi:mormor');
+      // Its light falls into the loft once she has opened the door, from where she holds it up there.
+      expect(storm.glows!.filter((g) => g.after === `placed:${door.id}`).length).toBeGreaterThanOrEqual(1);
+      expect(billsta.decor!.find((d) => d.look === 'lantern')).toBeUndefined();
       expect(storm.buildings!.find((b) => b.kind === 'barn')!.lit).toBe('bi:mormor');
       expect(storm.glows!.some((g) => g.after === 'beat:bi:owl' && g.at.x > slopeGust!.to)).toBe(true);
       expect(words.lines.biMormorHere).toBe('Lilla Elof! Är det verkligen du?');
@@ -560,6 +603,27 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
         expect(d.z!).toBeGreaterThan(-32);
       }
       expect(billsta.storm!.flybys!.some((f) => f.on === 'beat:bi:there')).toBe(true);
+      // Olov: "Bilden ska bli tydligare när lillgubben och gamla trägubben syns nere i sundet." They are drawn bigger, warm
+      // (found, as on the stone in the storm's eye), with a light on the water behind them; and the flash's moment is a
+      // close look at the stone that holds them a few seconds.
+      for (const d of far) {
+        expect(d.scale!).toBeGreaterThanOrEqual(2);
+        expect(d.word).toBe('lifted');
+      }
+      const tragubbe = far.find((d) => d.look === 'tragubbe')!;
+      expect(billsta.storm!.glows!.some((g) => g.after === 'beat:bi:there' && Math.abs(g.at.x - tragubbe.at.x) < 1 && g.z! < tragubbe.z! && g.size! >= 4)).toBe(true);
+      const seen = billsta.scenes!.find((s) => s.on === 'beat:bi:there')!;
+      // It stays on them while the little one lands and he says what he sees; his reading of the flash holds him.
+      expect(there.read).toBe(true);
+      expect(seen.seconds).toBeGreaterThanOrEqual(billsta.later!.find((l) => l.flag === 'bi:landed')!.seconds + 4);
+      const shot = seen.stage!.shots![0]!;
+      // The first spoken line stops the scene clock immediately; a long pan used to freeze behind the trees.
+      expect(shot.move).toBeLessThanOrEqual(STEP);
+      expect(Math.abs(shot.x - tragubbe.at.x)).toBeLessThan(1);
+      // The camera goes out to the stone: the picture is measured where they stand, a few EL tall, them in its middle.
+      expect(shot.z).toBe(tragubbe.z);
+      expect(shot.height).toBeLessThanOrEqual(5);
+      expect(Math.abs(shot.y - (tragubbe.at.y + 0.5))).toBeLessThan(shot.height / 4);
       expect(words.lines.biOwl).toMatch(/ugglan/);
       expect(words.lines.biToNarrow).toMatch(/sundet/);
       // The card waits until the last word is said.
@@ -590,7 +654,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(billsta.place).toBe('garden');
       // The card, and Moa and Bertil by the car: Moa points at the window, and they run ahead of him round the house
       // to its back door. None of it stops him.
-      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-window', 'bi:kids-run']);
+      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-window', 'bi:kids-run', 'bi:ladan', 'bi:sundet']);
       expect(billsta.scenes!.every((s) => !s.hold)).toBe(true);
       const run = billsta.scenes!.find((s) => s.id === 'bi:kids-run')!;
       const house = billsta.storm!.buildings!.find((b) => b.kind === 'villa')!;
@@ -636,7 +700,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       if (seen[seen.length - 1] !== id) seen.push(id);
     }
     expect(seen).toEqual([
-      'billstaRoad', 'billstaMorfar/morfar', 'billstaLadder/morfar', 'billstaYard', 'billstaMormor/mormor', 'billstaBarn/mormor',
+      'billstaRoad', 'billstaMorfar/morfar', 'billstaLadder/morfar', 'billstaYard', 'billstaMormor/mormor', 'billstaOpens/mormor', 'billstaBarn/mormor',
       'billstaLoft', 'billstaRoof', 'billstaBrook', 'billstaSeesaw/spoket', 'billstaKlonkOn/spoket', 'billstaLever/spoket', 'billstaShortEnd/spoket', 'billstaFly/spoket',
       'billstaBoulders', 'billstaWind', 'billstaBrow', 'billstaLook', 'billstaFound',
     ]);

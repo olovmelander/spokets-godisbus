@@ -1,4 +1,4 @@
-import { BufferGeometry, Color, ConeGeometry, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, PlaneGeometry, SphereGeometry } from 'three';
+import { BufferGeometry, Color, ConeGeometry, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, SphereGeometry } from 'three';
 import { granite } from '../../render/dressing/ground';
 
 /** The meeting's wave-worn granite: one continuous skin, with a level strip for the exact walking surface. */
@@ -101,12 +101,7 @@ export function moonstone(width: number, top: number, water: number): Group {
     }
   }
   for (const mesh of [lichens, loose, blades]) { mesh.computeBoundingSphere(); group.add(mesh); }
-
-  // The river renderer joins narrow rocks only. This broad skerry also needs water in front of its footprint:
-  // otherwise a tall phone looks underneath it at the dry lakebed and the bog's submerged vegetation.
-  const lake = new Mesh(new PlaneGeometry(width, 96).rotateX(-Math.PI / 2), new MeshStandardMaterial({ color: '#1e3050', roughness: 0.24, metalness: 0.18 }));
-  lake.name = 'moonstone-water';
-  lake.position.set(width / 2, water - 0.015, 42.5);
-  group.add(lake);
+  // The lake lies in front of it and round it as everywhere in the narrow (../../render/water.ts, open water): it had
+  // a dark plane of its own there, from when the river's water ended at the stone, which now showed through the lake.
   return group;
 }

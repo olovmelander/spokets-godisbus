@@ -42,20 +42,22 @@ export interface SceneDef {
   seconds: number;
   /**
    * He stands and watches it: the stick and the buttons do nothing. A held scene begins only when he stands on
-   * his own feet, so he is never stopped in the air or on a hose. Keep uninterrupted acting short; essential
+   * his own feet, so he is never stopped in the air or on a hose, and only when nothing is being said: it takes
+   * the floor once the words before it are finished, as `quiet` does. Keep uninterrupted acting short; essential
    * lines provide reading stops between the actions (the chapter tests check this pacing).
    */
   hold?: boolean;
   /**
    * It waits until nothing is being said, and he stands and listens meanwhile: the words before it are let
-   * finish, for `QUIET_WAIT` seconds at most.
+   * finish. A held scene always does.
    */
   quiet?: boolean;
   /** Flags the scene sets at its moments, in seconds from its start: the story's own steps. */
   cues?: readonly { at: number; flag: string }[];
   /**
    * What is said in it, and when: each is a bubble, with the speaker's wordless sound (plan §3.7). A line is a
-   * beat with the id `<scene id>:<index>`, said once.
+   * beat with the id `<scene id>:<index>`, said once. Each is a reading stop: while a line is still being read, the
+   * scene's clock waits at its next cue, line, and end, so it never talks over itself.
    */
   lines?: readonly { at: number; who: Speaker; line: string }[];
   /** Wordless sounds follow the same clock as the acting, including reading pauses. */
@@ -147,6 +149,11 @@ export interface ShotKey {
   width?: number;
   /** The camera's own height over `y`: below zero it looks up, as Elof does at a giant. */
   eye?: number;
+  /**
+   * For something further back than the play plane (the two on their stone far out in Billsta's narrow): how far behind
+   * it the middle of the picture is, and `height` is measured there. Left out: 0, the play plane.
+   */
+  z?: number;
   /** How long the camera takes to get here, in seconds. Left out: 1. */
   move?: number;
 }
@@ -178,8 +185,11 @@ export interface SceneStage {
   words?: readonly { at: number; seconds: number; kind: 'caption' | 'title'; text: string }[];
   /** The picture fades from or to black: how dark it is from each moment, eased over `move` seconds. */
   fade?: readonly { at: number; to: number; move?: number }[];
-  /** Elof holds a star while he shows it and eats it: the shrinking, in either adventure. */
-  star?: boolean;
+  /**
+   * Elof holds a star while he shows it and eats it: the shrinking, in either adventure. 'gold': the golden geléhallon
+   * instead, that makes him big again (Stormens öga).
+   */
+  star?: boolean | 'gold';
 }
 
 /** One moment of Elof's part in a held scene. His place in the simulation never changes with it. */
@@ -222,9 +232,6 @@ export function endsInScene(chapter: { goalNeeds?: string; scenes?: readonly Sce
   return chapter.goalNeeds !== undefined && (chapter.scenes ?? []).some((scene) => scene.cues?.some((cue) => cue.flag === chapter.goalNeeds));
 }
 
-/** The longest a scene waits for quiet, in seconds: a line that never ends cannot keep the story waiting. */
-export const QUIET_WAIT = 10;
-
 /** The flag a finished scene leaves. */
 export const sceneDone = (id: string) => `scene:${id}`;
 
@@ -246,9 +253,8 @@ export function sceneResumeAt(scenes: readonly SceneDef[] | undefined, flags: Re
  */
 export class SceneDirector {
   private playing: { def: SceneDef; seconds: number; cue: number; line: number } | null = null;
-  /** A scene is due and waits for quiet: he stands and listens. How long it has waited. */
+  /** A scene is due and waits for quiet: he stands and listens. */
   private listening = false;
-  private waited = 0;
   /** Where the next scene of this name begins, when it is not at its start. */
   private opening: { id: string; seconds: number } | null = null;
 
@@ -271,23 +277,36 @@ export class SceneDirector {
     return this.listening || this.playing?.def.hold === true;
   }
 
-  /** One step. `said` is where the beats told go, as the simulation's own; `talking`, whether a line is still read. */
-  tick(player: PlayerState, flags: Set<string>, said: string[], talking = false): void {
+  /**
+   * One step. `said` is where the beats told go, as the simulation's own; `talking`, whether a line is still being
+   * read, or waits to be said; `listening`, whether a page hears them, so that its lines come one at a time.
+   */
+  tick(player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false): void {
     if (!this.playing) this.begin(player, flags, talking);
     const playing = this.playing;
     if (!playing) return;
+    const lines = playing.def.lines ?? [];
+    // Story cues, another line and the ending wait for the current words, however long they take.
+    // Acting between cues can continue; the rendering supplies subtle life during a held reading stop.
+    const cues = playing.def.cues ?? [];
+    if (talking && lines.length > 0) {
+      const next = Math.min(lines[playing.line]?.at ?? playing.def.seconds,
+        cues[playing.cue]?.at ?? playing.def.seconds);
+      if (playing.seconds + STEP * 1.5 >= next) return;
+    }
     playing.seconds += STEP;
     // Half a step early, so that a moment on a step's edge is never a step late at any frame rate.
     const now = playing.seconds + STEP / 2;
-    const cues = playing.def.cues ?? [];
     for (; playing.cue < cues.length && cues[playing.cue]!.at <= now; playing.cue++) flags.add(cues[playing.cue]!.flag);
-    const lines = playing.def.lines ?? [];
-    for (; playing.line < lines.length && lines[playing.line]!.at <= now; playing.line++) {
+    let spoke = false;
+    for (; playing.line < lines.length && lines[playing.line]!.at <= now && !(spoke && listening); playing.line++) {
       const id = `${playing.def.id}:${playing.line}`;
       flags.add(`beat:${id}`);
       said.push(id);
+      spoke = true;
     }
-    if (now < playing.def.seconds) return;
+    // Heard, a line is read before the next, and before the scene ends.
+    if (now < playing.def.seconds || (spoke && listening)) return;
     // Whatever was left is told at its end.
     for (; playing.cue < cues.length; playing.cue++) flags.add(cues[playing.cue]!.flag);
     flags.add(sceneDone(playing.def.id));
@@ -307,7 +326,6 @@ export class SceneDirector {
   cancel(): void {
     this.playing = null;
     this.listening = false;
-    this.waited = 0;
   }
 
   private begin(player: PlayerState, flags: Set<string>, talking: boolean): void {
@@ -326,13 +344,12 @@ export class SceneDirector {
       }
       // A held scene waits for him to stand, and the scenes after it wait with it: the story keeps its order.
       if (scene.hold && !(player.mode === 'free' && player.grounded)) return;
-      // One that waits for quiet lets what is being said finish first. He stands and listens meanwhile.
-      if (scene.quiet && talking && this.waited < QUIET_WAIT) {
-        this.waited += STEP;
+      // One that waits for quiet, and every held one, lets what is being said finish first: it takes the floor only
+      // then. He stands and listens meanwhile.
+      if ((scene.quiet || scene.hold) && talking) {
         this.listening = true;
         return;
       }
-      this.waited = 0;
       // Begun again after an interruption: its lines are said again, from the first.
       for (let i = 0; i < (scene.lines?.length ?? 0); i++) flags.delete(`beat:${scene.id}:${i}`);
       const from = this.opening?.id === scene.id ? Math.min(this.opening.seconds, scene.seconds) : 0;

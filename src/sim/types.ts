@@ -182,7 +182,8 @@ export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket'
 
 /**
  * Something said, in a bubble (plan §3.7): the game has no voices. It comes when Elof first passes `at`, or
- * when the flag `on` is set, and only once.
+ * when the flag `on` is set, and only once. While someone is still speaking it waits its turn, and its flag
+ * (`beat:<id>`), and whatever waits for that, comes when it is said (src/sim/sim.ts, `tell`).
  */
 export interface Beat {
   id: string;
@@ -190,8 +191,6 @@ export interface Beat {
   on?: string;
   /** Context that must exist even when Elof reaches the position first. */
   needs?: string;
-  /** A new causal scene replaces stale queued dialogue. */
-  priority?: boolean;
   /** An explanation is no longer useful once this next action is complete. */
   until?: string;
   /** A local explanation waits until Elof is back at its help encounter. */
@@ -219,6 +218,17 @@ export interface Ride {
   corridor?: number;
   /** What he rides on, for the picture. Left out: Moa's paper plane. */
   look?: RideLook;
+  /**
+   * Over this stretch it goes low, his feet at most `y` high, and climbs again after it (./ride-path.ts): the owl over
+   * the shallows in Älven, so that what lies there is in reach of the stick.
+   */
+  skim?: { from: number; to: number; y: number };
+  /**
+   * He walks it on his own feet, along this ground, and is not carried through the air: where his feet are, point to
+   * point along the way (the bed of the shallows where he wades). It takes the arc's place, and the stick does not
+   * steer him. The picture draws him walking.
+   */
+  ground?: readonly Vec[];
 }
 
 /**
@@ -399,11 +409,13 @@ export interface SimStart {
 /** What a thing on a rail is, a thing to use is, and what he rides on: the picture's business only. */
 export type MoverLook = 'boulder' | 'riverLog' | 'plank' | 'block' | 'matchbox' | 'curl' | 'twig' | 'cone' | 'leaf' | 'log' | 'figure' | 'ants' | 'tussock' | 'stone'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door';
+  // Flärken's round stone, which rolls off the planks and sinks.
+  | 'fieldstone'
+  | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door' | 'barn-door';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
 export type SpotLook = 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'cocoa' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
+  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'cocoa' | 'breakfast' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none' | 'boot' | 'umbrella' | 'owl' | 'football' | 'raft';
 
@@ -522,6 +534,8 @@ export interface ChapterData {
   challenges?: Challenge[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
+  /** For the picture: clear the near trunks where people come down from a road or stand in a clearing. */
+  treeGaps?: { from: number; to: number; back: number }[];
   /**
    * For the picture only, and never read by the simulation: what a raised block of the ground is. A model
    * stands over the block (src/render/forest-kit.ts), with its top where the outline has the block's.
@@ -684,6 +698,30 @@ export interface ChapterData {
 }
 
 /**
+ * A figure blown across the dark sky in a flash (Äventyr 2's storm): from `from` to `to` in `seconds`, eased, tumbling
+ * over a rise. The picture's business only, as all of `Storm` is.
+ */
+export interface Flyby {
+  on: string;
+  from: Vec;
+  to: Vec;
+  seconds: number;
+  who: 'lillgubbe' | 'tragubbe';
+  /** How far behind the play plane it flies at its start, and at its end. Left out: 4 behind, all the way. */
+  z?: number;
+  toZ?: number;
+  /** How big it is drawn. Left out: 1.2. */
+  size?: number;
+  /** How high its tumble rises over the straight line between its ends. Left out: 2.2 in the air. */
+  rise?: number;
+  /**
+   * A flight meant to be watched, not glimpsed: the figure as it is, pale wood in a soft glow, and the lightning
+   * flashes again at these seconds into it. Left out: a dark shape, lit by one flash.
+   */
+  lit?: readonly number[];
+}
+
+/**
  * Äventyr 2's weather and what is seen in its flashes (docs/aventyr-2.md). The picture's business only: the
  * simulation never reads it. Drawn by the adventure's own pack.
  */
@@ -697,22 +735,36 @@ export interface Storm {
   /** Once this flag is set the storm has passed: no rain, no flashes, and the sky clears. */
   calm?: string;
   /** A flash when the flag is set, and a figure blown across the dark sky, from one place to another. */
-  flybys?: { on: string; from: Vec; to: Vec; seconds: number; who: 'lillgubbe' | 'tragubbe' }[];
+  flybys?: Flyby[];
+  /**
+   * Someone seen far off in a flash once `on` is set, until `until` is: the little one caught on a stone where the river
+   * begins, seen from the top of the diving tower. Drawn as the carving itself, pale, on its stone in the water, with a
+   * little light of its own so that it reads in the dark; `size` is how much bigger than its own it is drawn, for the
+   * distance. `z` is behind the play plane.
+   */
+  sightings?: { on: string; until: string; at: Vec; z: number; who: 'lillgubbe' | 'tragubbe'; size?: number }[];
   /**
    * The flag of a ledge that is Klonk himself, frozen stiff as a plank in a grown-up's lamp (the Toy Story rule):
    * while it is set and Elof has not crossed, Klonk lies across, and the ghost is not drawn standing anywhere else.
    */
   frozen?: string;
   /**
+   * The flag on which the frozen one wakes: the grown-up looks away. Pappa's lamp leaves him, and he is himself again
+   * where the ghost waits. Left out: once Elof is over.
+   */
+  wakes?: string;
+  /**
    * The chapter's ledges that are always there are drawn as a goal's white frame bar: the crossbar he walks along,
    * where Äventyr 1 would have drawn a trestle.
    */
   bars?: 'goal';
   /**
-   * A rope or a scarf held down to him from above while he is on a ride: from where it is held (`from`) to his
-   * hands, for the ride's whole way. Pappa's scarf from the bridge.
+   * A scarf held down to him from above for a ride (src/render/scarf.ts): Pappa's from the bridge. `held`: the spot whose
+   * call lowers it, whose one holds it in both hands and walks along with him while it carries him. `from`: where it is
+   * held from, its height the hands'; `z`, how far behind the path they hold it out. `colour`: its wool. `lamp`: where
+   * the holder sets their flashlight down meanwhile, still lighting him. Picture only.
    */
-  ropes?: { ride: string; from: Vec; z?: number; colour?: string }[];
+  ropes?: { ride: string; from: Vec; z?: number; colour?: string; held?: string; lamp?: { x: number; y: number; z: number } }[];
   /** What falls at the chapter's drips, where it is not water: cones shaken from the spruces. */
   drips?: 'cone';
   /**
@@ -745,7 +797,7 @@ export interface Storm {
   buildings?: {
     kind: 'jettyArm' | 'pole' | 'store' | 'trestleTable' | 'pitch' | 'chess' | 'sunboard' | 'villa' | 'barn' | 'goal' | 'floodlight' | 'stand' | 'clubhouse' | 'tower' | 'hut' | 'birch' | 'car' | 'kota'
       | 'church' | 'bridge' | 'woodshed' | 'rowboat' | 'swings' | 'slide' | 'picnic' | 'volleyball' | 'lodge' | 'mailbox' | 'cliff' | 'spruce'
-      | 'gardenset';
+      | 'gardenset' | 'outlet';
     x: number; z: number; y?: number; width?: number; height?: number; flip?: boolean; lit?: string; model?: string; size?: number;
     /**
      * A pitch's lines (../content/aventyr2/buildings.ts): its halfway line and circle, a goal's box, how far it runs on
@@ -761,6 +813,8 @@ export interface Storm {
     slider?: { top: number; rise: number };
     /** Turned about the upright, in quarter turns: a net or a table seen from its end. */
     turn?: number;
+    /** An outlet's near bank begins this far along it, past the end of a jetty that runs out into its mouth. */
+    opens?: number;
   }[];
   /** Warm windows of lit candles and lanterns, which glow through the rain. */
   glows?: { at: Vec; z?: number; size?: number; after?: string }[];
@@ -786,7 +840,11 @@ export interface StepInput {
   act: boolean;
   /** He asks the helper. Left out: no. */
   help?: boolean;
-  /** Someone is still speaking on the page: a scene that waits for quiet waits. Left out: no. */
+  /**
+   * Someone is still speaking on the page, or a line was said earlier in this frame: what is to be said next waits
+   * its turn, and so do a held scene and a freeze joke (src/sim/scene.ts). Left out: nobody listens (the robot and
+   * the tests, which have no page), and lines are said as their moments come, all at once, as the page queues them.
+   */
   talking?: boolean;
 }
 

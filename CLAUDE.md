@@ -63,10 +63,11 @@ so the rules below stay.
 
 ## Olov's standing decisions (plan §0)
 
-- **No logotypes or brand marks** on any model, texture or screen: plain shapes instead. There are two exceptions,
-  both Olov's decisions:
+- **No logotypes or brand marks** on any model, texture or screen: plain shapes instead. There are three exceptions,
+  all Olov's decisions:
   - the name Olympia in white letters on the red hall (4 November 2026), in the game's own Playpen Sans;
-  - Anundsjö IF's crest on Bertil's cap (7 November 2026), in the private repository's `family/cap_crest.py`.
+  - Anundsjö IF's crest on Bertil's cap (7 November 2026), in the private repository's `family/cap_crest.py`;
+  - the name Flärken on the big sun board (9 November 2026), in the game's own Playpen Sans.
   No other crests, sponsors or lettering. The family's car is their silver hatchback without its badge.
 - **One tester, no dates.** Only Olov tests before Elof plays, and a stage is done when its checkpoint passes.
 - **Elof and the family are generated from Olov's sheets by image-to-3D and finished in Blender** (his decision,

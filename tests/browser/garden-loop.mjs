@@ -144,6 +144,8 @@ try {
     await move(1, s => s.word === 'gardenGiveDrawing', 'return drawing to Moa');
     await act();
     await until(s => s.flags.includes('garden:shared-paper'), 'drawing thanks');
+    // The gift commits before its reply: Moa waits for any preceding line to finish.
+    await until(s => s.said.includes('garden:thanks'), 'Moa thanks him after the preceding line');
     check(`${name}: the family reward is optional and precedes departure`, (await state()).said.includes('garden:thanks') && !(await state()).flags.includes('plane:board'));
     await page.locator('#pauseBtn').click();
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));

@@ -137,6 +137,61 @@ try {
     await finish();
   }
 
+  console.log('endings: the second adventure ends with its last scene, and its card leads calmly back');
+  for (const [width, height] of [[844, 390], [390, 844]]) {
+    // Morgonen efter after the cup of cocoa: on to the door, where the story ends (Olov, 9 November 2026: on the last card
+    // a press meant for the last words started it all over, after a black screen).
+    const told = ['scene:frukost', 'shelf:old', 'beat:moOld', 'shelf:small', 'beat:moSmall', 'scene:fonster', 'latch', 'scene:haken',
+      'beat:moLatched', 'beat:moFluff', 'beat:moName', 'beat:moKlonk', 'beat:moNice', 'beat:moWelcome', 'scene:namnet', 'cocoa',
+      'scene:kakao', 'beat:moCup', 'beat:moKnew', 'beat:moAnswer'];
+    const name = `morgonen-${width}x${height}`;
+    const { page, state, finish } = await open(name, { viewport: { width, height }, hasTouch: true, serviceWorkers: 'block' }, `?dev&debug&standin&course=morgonen&tier=low&at=23,0.01&flags=${told.join(',')}`);
+    const href = page.url();
+    await page.keyboard.down('ArrowRight');
+    // The last words wait for the reader, who reads on as a child does, with Enter; the card itself is never pressed here.
+    // On GitHub the game is drawn in software, and its ten seconds of scene can take a few minutes there.
+    let seen = false, read = false;
+    const end = Date.now() + 300000;
+    while (Date.now() < end && await page.locator('#endCard').isHidden()) {
+      const now = await state();
+      seen ||= now.scene?.id === 'slut';
+      if (now.storyReading && await page.locator('#endCard').isHidden()) {
+        await page.keyboard.press('Enter');
+        read = true;
+      } else if (read && !now.scene) {
+        // Read on, he walks on: the reading let go of the keys, so the arrow is pressed again.
+        await page.keyboard.up('ArrowRight');
+        await page.keyboard.down('ArrowRight');
+        read = false;
+      }
+      await sleep(150);
+    }
+    await page.keyboard.up('ArrowRight');
+    const ended = await state();
+    check(`morgonen: the story ends in its own last scene, at the door${seen && ended.flags.includes('a2slut') ? ''
+      : ` (seen ${seen}, x ${ended.x.toFixed(1)}, scene ${ended.scene?.id ?? '-'}, ${ended.flags.filter((f) => !f.startsWith('beat:')).join(' ')})`}`,
+    seen && ended.flags.includes('a2slut'));
+    await page.waitForSelector('#endCard:not([hidden])', { timeout: 30000 });
+    check('morgonen: the last card says that it ends', await page.locator('#endTitle').textContent() === 'Slut'
+      && await page.locator('#endKicker').textContent() === 'Äventyr 2 · Slutet');
+    check('morgonen: the map of the chapters is offered, and has the focus', await page.locator('#endExplore').isVisible()
+      && await page.evaluate(() => document.activeElement?.id) === 'endExplore');
+    check('morgonen: and the way back to the start page', await page.locator('#endHome').isVisible());
+    for (const selector of ['#endTitle', '#endPicture', '#endExplore', '#endHome']) {
+      check(`${name}: ${selector} is fully in view`, await inView(page, selector));
+    }
+    // The press that used to start it all over opens the map of the chapters instead.
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('#explore:not([hidden])', { timeout: 30000 });
+    check('morgonen: Enter on the last card opens the map, and nothing is played again', page.url() === href && (await state()).flags.includes('goal'));
+    await page.locator('#explore .panel-close').click();
+    await page.locator('#endHome').click();
+    await page.waitForSelector('#title:not([hidden])', { timeout: 30000 });
+    check('morgonen: the start page comes over the card, without a new page', page.url() === href);
+    await picture(page, `/tmp/endings-${name}-title.png`);
+    await finish();
+  }
+
   console.log('endings: a chapter opens on its time card');
   {
     const { page, state, finish } = await open('granskog-card', {}, '?dev&debug&standin&course=granskog&tier=low');

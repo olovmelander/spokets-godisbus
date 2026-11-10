@@ -1,9 +1,12 @@
 import { courseQuery } from '../content/chapters';
 import type { PlayerSave } from './store';
 
-/** The ending stays finished when its chapter is played again. */
+/**
+ * The ending stays finished when its chapter is played again: the first adventure's, or the second's (Morgonen efter),
+ * whose last card leads back to the map of the chapters as the first's does.
+ */
 export function storyFinished(flags: PlayerSave['flags']): boolean {
-  return flags.epilog?.includes('goal') ?? false;
+  return (flags.epilog?.includes('goal') ?? false) || (flags.morgonen?.includes('goal') ?? false);
 }
 
 /** The name is a story discovery, carried into every later visit. */

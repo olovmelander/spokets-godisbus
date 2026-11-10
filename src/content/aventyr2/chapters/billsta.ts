@@ -1,7 +1,7 @@
 import { GRAVITY, RUN_SPEED } from '../../../sim/constants';
 import type { Candy, ChapterData, Jump, Ledge, Mover, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { alongAll, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, elderWalk, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 7: Billsta (docs/aventyr-2.md), nearly midnight. Units: EL. Billsta is three mil from Bredbyn,
@@ -15,7 +15,7 @@ import { alongAll, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit
  *    while Elof watches, and Elof walks over.
  * 3. **Gården:** the gravel drive, the lawn, a rowing boat turned over on trestles, birches, the woodshed and its
  *    stack of firewood, and a plain mailbox by the road (no name, no number). **Mormor** waits by the woodshed.
- *    "Ropa på mormor": she lights her lantern and opens the barn for him.
+ *    "Ropa på mormor": she lights her lantern, walks up the planks to the barn's door and opens it for him.
  * 4. **Ladan:** up the planks to the barn's door, through the dark hay loft by mormor's lantern, over a bale and the
  *    hatch in its floor, and out onto the long roof against the barn, where the gusts blow and the ventilation
  *    hoods are the lee. Two beams over the loft are a second way. The roof's far end slopes down to its low eaves,
@@ -88,11 +88,12 @@ const LOFT = 4.8;
 const ramp = (x: number) => round((LOFT * (x - PLANKS.from)) / (PLANKS.to - PLANKS.from), 4);
 
 /**
- * The barn's door at the top of the planks, blown shut: as high as two of him, and nothing climbs it. Mormor
- * opens it (`on`): it slides up in its frame, over his head.
+ * The barn's door at the top of the planks, blown shut: as high as two of him, and nothing climbs it. Mormor walks up
+ * and opens it (`on`): to the simulation its block slides up, over his head; in the picture the door swings in on its
+ * hinges, in its frame (./render.ts, 'barn-door').
  */
 const DOOR: Mover = {
-  id: 'bi-door', look: 'plank', width: 0.4, height: 2.6, verb: 'pull', on: 'bi:mormor',
+  id: 'bi-door', look: 'barn-door', width: 0.4, height: 2.6, verb: 'pull', on: 'bi:door',
   stops: [{ x: 55.6, y: LOFT }, { x: 55.6, y: LOFT + 2.8 }],
 };
 
@@ -121,6 +122,17 @@ const BEAMS: Ledge[] = [
 /** Where morfar and mormor stand, and he calls them. */
 const MORFAR = { x: 13.2, y: 0 };
 const MORMOR = { x: 47.4, y: 0 };
+/**
+ * Mormor (Olov, 9 November 2026: "Mormor döljs av en stubbe", and "Mormor ska gå fram och öppna ladan"). She waits by the
+ * foot of the planks, in front of the woodshed's chopping block, and when he has called her she walks up the planks to
+ * the barn's door, puts her hand on it and opens it, and stays there with her lantern while he goes in. While she walks
+ * up he stands and watches; the door opens as she pushes it (`ELDER_WALK` times both). Meanwhile the picture opens out
+ * to show all of it, him at the planks' foot, her going up them and the door at their top (`MORMOR_SEEN`).
+ */
+const MORMOR_WAITS = { x: 47.9, y: 0, z: -0.9 };
+const MORMOR_AT_DOOR = { x: 54.7, y: ramp(54.7), z: -0.9 };
+const MORMOR_WALK = elderWalk(MORMOR_WAITS.x, MORMOR_AT_DOOR.x, (x) => (x < PLANKS.from ? 0 : ramp(x)));
+const MORMOR_SEEN = { x: 51.7, y: 5, height: 11.6, width: 12.5, seconds: round(MORMOR_WALK + 2.2, 1) };
 
 // --- 5. the forest behind the house, and Billaberget ---------------------------------------------------------------
 
@@ -211,6 +223,15 @@ const SHELVES: Ledge[] = [
  */
 const NARROW = { from: 182, to: 300, y: 6.75, near: -20 };
 const STONE_OUT = { x: 195, y: round(NARROW.y + 0.3), z: -27 };
+/**
+ * Seeing them there (Olov, 9 November 2026: "Bilden ska bli tydligare när lillgubben och gamla trägubben syns nere i
+ * sundet"): far as they are, the two figures and their stone are drawn bigger than they would be, as a picture that wants
+ * them seen does, warm against the dark water with a light on the water behind them; and when the flash shows them, the
+ * camera goes out from the brow to them, over the narrow's water (`z`: the picture is measured at the stone), holds
+ * them while he says what he sees, and then gives him back.
+ */
+const FAR_SIZE = 2.2;
+const SEEN = { x: STONE_OUT.x - 0.3, y: round(NARROW.y + 1.1), z: STONE_OUT.z, height: 4.4, width: 5, seconds: 7 };
 
 /** A heart over a ledge, where he takes it standing there. */
 const over = (ledge: Ledge, dx = 0, lift = 0.55): Candy => ({ x: round(ledge.x + dx), y: round(ledge.y + lift) });
@@ -250,7 +271,10 @@ export const billsta: ChapterData = {
     // car and stand by its front, Moa looking up at mormor and morfar's lit window, Bertil at Elof. Mamma, who drove
     // ("Hoppa in, Elof! Vi kör dit med bilen." at Älven's end), stands by the headlight and lights the road for him;
     // Pappa beside the front door lights the way up to the house. They stay by the car (the coda's "family by the car").
-    { ...CARD, stage: { ...CARD.stage, actors: {
+    { ...CARD, stage: { ...CARD.stage,
+      // Establish the whole car and the family before following Elof, including on a portrait phone.
+      shots: [{ at: 0, x: -2, y: 3.2, height: 12.5, width: 30, move: 0.01 }],
+      actors: {
       moa: [{ at: 0, ...KIDS.moa, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW }],
       bertil: [{ at: 0, ...KIDS.bertil, y: 0, face: 0.35, move: 0.01, act: 'look', aim: { x: 1, y: 0.5, z: 0 } }],
       mamma: [{ at: 0, ...PARENTS.mamma, y: 0, face: 0.2, move: 0.01, act: 'shine', aim: ROAD, holds: 'lamp-mamma' }],
@@ -279,6 +303,20 @@ export const billsta: ChapterData = {
         { at: inAt('bertil') + 0.2, away: true },
       ],
     } } },
+    // Called, mormor walks up the planks and opens the barn's door while he watches: all of it in the picture, until
+    // the door is open and she has let go of it.
+    {
+      id: 'bi:ladan', on: 'bi:mormor-goes', seconds: MORMOR_SEEN.seconds,
+      stage: { shots: [{ at: 0, x: MORMOR_SEEN.x, y: MORMOR_SEEN.y, height: MORMOR_SEEN.height, width: MORMOR_SEEN.width, move: 1.2 }] },
+    },
+    // "Där nere! På en sten i sundet!": the camera goes out to the stone far below, looking down onto it a little, and
+    // stays there while he says what he sees, the little one lands, and the old one holds him. It does not hold Elof:
+    // the flash's words do, as he reads.
+    {
+      id: 'bi:sundet', on: 'beat:bi:there', seconds: SEEN.seconds,
+      // His first line is a reading stop: the stone must already be framed before the scene clock waits for it.
+      stage: { shots: [{ at: 0, x: SEEN.x, y: SEEN.y, z: SEEN.z, height: SEEN.height, width: SEEN.width, eye: 1, move: 0.001 }] },
+    },
   ],
   goalX: 194.6,
   // The chapter's card waits until the flash's last word is said: the little one safe on the stone, the owl.
@@ -286,8 +324,9 @@ export const billsta: ChapterData = {
   // Everyone answers in the coda: the family by the car, and mormor and morfar.
   coda: 'all',
   ground: [
-    { x: -3, y: 10 },
-    { x: -3, y: 0 },
+    // The level's backstop is beyond the parked car. At x=-3 its tall front face hid the whole rear and cabin.
+    { x: -30, y: 10 },
+    { x: -30, y: 0 },
     // 1. the road, 2. its ditch
     ...pit(DITCH.from, DITCH.to, DITCH.bottom, 0),
     // 3. the drive, the lawn, and the woodshed's stack, with a soft drop off its end
@@ -383,8 +422,11 @@ export const billsta: ChapterData = {
   spots: [
     // Morfar at the ditch, with his long ladder.
     { id: 'bi:morfar', look: 'morfar', at: MORFAR, verb: 'call', word: 'biCallMorfar' },
-    // Mormor by the woodshed, with her lantern.
-    { id: 'bi:mormor', look: 'mormor', at: MORMOR, verb: 'call', word: 'biCallMormor' },
+    // Mormor by the woodshed, with her lantern: called, she walks up the planks and opens the barn's door.
+    {
+      id: 'bi:mormor', look: 'mormor', at: MORMOR, verb: 'call', word: 'biCallMormor',
+      standsAt: MORMOR_WAITS, goesTo: MORMOR_AT_DOOR, goesWhen: 'bi:mormor-goes',
+    },
     // Klonk at the seesaw: he is too light alone, and calls his friend.
     { id: 'bi:call-klonk', at: { x: CALL_AT, y: 0 }, verb: 'call', word: 'biCallKlonk' },
     // The seesaw itself. Once the stone is near his end, Klonk's long arm flings him over the brook.
@@ -396,6 +438,9 @@ export const billsta: ChapterData = {
   // Morfar lays his ladder over the ditch: Elof stands and watches until it lies still.
   later: [
     { flag: 'bi:ladder', after: 'bi:morfar', seconds: 1.6, hold: true, within: [6, 20] },
+    // Mormor, once her words are read, walks up the planks to the barn's door and opens it: he stands and watches.
+    { flag: 'bi:mormor-goes', after: 'bi:mormor', seconds: 0.2, hold: true, within: [MORMOR.x - 4, PLANKS.to] },
+    { flag: 'bi:door', after: 'bi:mormor-goes', seconds: round(MORMOR_WALK + 0.55, 2), hold: true, within: [MORMOR.x - 4, PLANKS.to] },
     // Klonk jumps onto the seesaw's high end: Elof stands on the low end and watches until Klonk is on.
     { flag: 'bi:klonk-on', after: 'bi:call-klonk', seconds: 1.2, hold: true, within: [BANK.from, POOL.from] },
     // If he stands and thinks, he remembers something, and a little later he looks at the stone.
@@ -452,7 +497,8 @@ export const billsta: ChapterData = {
       // The great round birch that stands behind it.
       { kind: 'birch', x: -6, z: -96, height: 84 },
       { kind: 'barn', x: 94, z: -44, lit: 'bi:mormor', model: 'billsta-barn', size: 0.8 },
-      { kind: 'woodshed', x: 42, z: -7 },
+      // The woodshed, far enough back that its chopping block stands behind the path, and behind mormor.
+      { kind: 'woodshed', x: 42, z: -12.2 },
       { kind: 'rowboat', x: 24, z: -5, width: 16 },
       // Morfar's garden table and chairs, put away under a tarp for the winter, on the lawn towards the house.
       { kind: 'gardenset', x: 34, z: -30, width: 9.2 },
@@ -478,11 +524,13 @@ export const billsta: ChapterData = {
       // The car's headlights, still on.
       { at: { x: round(CAR.x + CAR.width / 2 + 0.3), y: 4.6 }, z: CAR.z + 4.5, size: 1.6 },
       { at: { x: round(CAR.x + CAR.width / 2 + 0.3), y: 4.6 }, z: CAR.z - 4.5, size: 1.6 },
-      // Mormor's lantern, set down just inside the barn's door: it lights the dark loft.
-      { at: { x: 56.8, y: LOFT + 0.6 }, z: -0.9, size: 1.3, after: 'bi:mormor' },
-      { at: { x: 63, y: LOFT + 2.2 }, z: -2.4, size: 2.4, after: 'bi:mormor' },
+      // Mormor's lantern, held up at the barn's door once she has opened it: its light falls into the dark loft.
+      { at: { x: 56.8, y: LOFT + 0.6 }, z: -0.9, size: 1.3, after: `placed:${DOOR.id}` },
+      { at: { x: 63, y: LOFT + 2.2 }, z: -2.4, size: 2.4, after: `placed:${DOOR.id}` },
       // Mormor, come up the path behind him with her lantern, as the owl hoots.
       { at: { x: 189.6, y: 6.6 }, z: -1.6, size: 1.2, after: 'beat:bi:owl' },
+      // A light on the water behind the two on their stone, from the moment the flash shows them: they stand out against it.
+      { at: { x: STONE_OUT.x + 0.4, y: round(NARROW.y + 1.1) }, z: STONE_OUT.z - 1.2, size: 6.5, after: 'beat:bi:there' },
     ],
   },
   decor: [
@@ -500,11 +548,10 @@ export const billsta: ChapterData = {
     { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -2.6, turn: 2.9 },
     // The hazel shelves on Billaberget's face.
     ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
-    // Mormor's lantern, once she has opened the barn.
-    { look: 'lantern', at: { x: 56.8, y: LOFT }, z: -0.9, after: 'bi:mormor' },
-    // Far out in the narrow, on a stone: the old one, and the little one once the wave has tossed him there.
-    { look: 'tragubbe', at: { x: STONE_OUT.x, y: STONE_OUT.y }, z: STONE_OUT.z, after: 'beat:bi:there' },
-    { look: 'lillgubbe', at: { x: STONE_OUT.x + 0.6, y: STONE_OUT.y }, z: STONE_OUT.z, after: 'bi:landed' },
+    // Far out in the narrow, on a stone: the old one, and the little one once the wave has tossed him there. Found, both
+    // are warm in the dark (as on the stone in the storm's eye), and the old one rocks a little as he holds the little one.
+    { look: 'tragubbe', word: 'lifted', at: { x: STONE_OUT.x, y: STONE_OUT.y }, z: STONE_OUT.z, scale: FAR_SIZE, after: 'beat:bi:there' },
+    { look: 'lillgubbe', word: 'lifted', at: { x: round(STONE_OUT.x + 0.32 * FAR_SIZE), y: STONE_OUT.y }, z: STONE_OUT.z, scale: FAR_SIZE, after: 'bi:landed' },
   ],
   // Klonk, ahead of him all the way, on firm ground. It waits at the ditch for the ladder and at the barn's door
   // for mormor; on the roof and the slope it hops from lee to lee; at the seesaw it waits over the stone until he
@@ -602,7 +649,7 @@ export const billsta: ChapterData = {
     { from: 60.4, to: 65.8, above: 6.6, zoom: 1.4, lift: -0.6 },
     { from: 150.3, to: 158.3, above: 5.9, zoom: 1.4, lift: -0.6 },
     // The road: wide and lifted, so the car, the spruces and the lit window behind the yard are in the picture.
-    { from: -3, to: 22, zoom: 1.5, lift: 1.6, lead: 3.2 },
+    { from: -30, to: 22, zoom: 1.5, lift: 1.6, lead: 3.2 },
     { from: 22, to: 46, zoom: 1.35, lift: 1 },
     // Mormor, the planks and the door at their top in one picture.
     { from: 46, to: 56, zoom: 1.45, lift: 1.4, lead: 3.4 },
@@ -720,6 +767,8 @@ export const context: Chooser = (has, player) => {
   if (at >= BANK.from - 0.5) return ['billstaSeesaw', 'billstaKlonk', 'water', 'spoket'];
   if (at >= EAVES.to && player.y < EAVES.y) return ['billstaBrook', 'billstaForest', 'water'];
   if (at >= ROOF.from - 0.2 && (player.y > LOFT + 1.6 || at > ROOF.to)) return ['billstaRoof', 'billstaMormor'];
+  // Called, she walks up the planks and opens the door while he watches; then the barn is open.
+  if (has('bi:mormor') && !has(`placed:${DOOR.id}`)) return ['billstaOpens', 'billstaMormor', 'house', 'mormor'];
   if (has('bi:mormor')) return at < DOOR.stops[0]!.x ? ['billstaBarn', 'billstaMormor', 'house', 'mormor'] : ['billstaLoft', 'billstaMormor', 'house'];
   if (at >= STACK[0]!.x - 1.5) return ['billstaMormor', 'billstaMormor', 'house', 'mormor'];
   if (has('bi:ladder')) return at < DITCH.to + 0.4 ? ['billstaLadder', 'billstaMorfar', 'water', 'morfar'] : ['billstaYard', 'billstaBoth', 'house'];

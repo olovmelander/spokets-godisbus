@@ -13,8 +13,13 @@ import { createAssets } from '../src/render/assets';
 import { createPlayerMotion, createTurning } from '../src/render/player-motion';
 import { createModelRig, STANDING, type Rig, type Role } from '../src/render/rig';
 import { coatPose, elofRainGear, PUT_ON, TAKE_OFF } from '../src/render/elof-coat';
-import type { PlayerState } from '../src/sim/types';
+import type { PlayerState, Speaker } from '../src/sim/types';
 import { createStage, litLamp } from '../src/render/stage';
+import { lookAt } from '../src/render/look';
+import { createTalker, talk, type Look, type Talker } from '../src/render/talk';
+import { sv } from '../src/content/sv';
+// Äventyr 2's lines, for the talk scene's words (TALK).
+import '../src/content/aventyr2/aventyr2';
 import { FIRST_SLEEVE, gearOnAt, heldInOther, LOOK, type GearRole } from '../src/render/rain-gear';
 import type { ActorKey } from '../src/sim/scene';
 import { JUMP_SPEED } from '../src/sim/constants';
@@ -30,8 +35,23 @@ const sceneName = query.get('scene') ?? 'walk';
 const FAMILY: Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const wanted = (query.get('who') ?? '').split(',').filter(Boolean);
 const cast = FAMILY.filter((who) => sceneName === 'grand' || sceneName === 'elof' ? wanted.includes(who) : wanted.length === 0 || wanted.includes(who));
-const elders = (['mormor', 'morfar'] as Grandparent[]).filter((who) => sceneName === 'grand' && (wanted.length === 0 || wanted.includes(who)));
-const LANE = 9;
+const elders = (['mormor', 'morfar'] as Grandparent[])
+  .filter((who) => sceneName === 'grand' ? wanted.length === 0 || wanted.includes(who) : sceneName === 'talk' && wanted.includes(who));
+/** How far apart they stand: in a row across the lab, or close together, talking. */
+const LANE = sceneName === 'talk' ? 2.6 : 9;
+/**
+ * ?scene=talk: the family stand together and speak in turn (Mormor and Morfar too, with &who=…,mormor,morfar), and Elof in
+ * front of them; each line is held for reading `?read` seconds (3.2), as the game holds a line: the scene's clock waits while
+ * the bodies go on living, look at whoever speaks, and the one speaking says it (src/render/talk.ts, face.ts).
+ */
+const TALK: readonly { at: number; who: Speaker; line: string }[] = [
+  { at: 1, who: 'mamma', line: 'skPower' }, { at: 1.6, who: 'pappa', line: 'skLamp' }, { at: 2.2, who: 'bertil', line: 'skShip' },
+  { at: 2.8, who: 'moa', line: 'skWindow' }, { at: 3.4, who: 'elof', line: 'skWind' }, { at: 4, who: 'mormor', line: 'biLantern' },
+  { at: 4.6, who: 'morfar', line: 'biLadderLay' },
+];
+const READ = Number(query.get('read') ?? 3.2);
+/** In ?scene=talk, Elof in front of them, on his own model where the pack has it, and his part in the talk. */
+let listener: { rig: Rig; talker: Talker; look: Look; at: Vector3 } | null = null;
 /** When the dress scene's act begins: its gear goes on from then, as the game's does (src/render/rain-gear.ts). */
 const DRESS_AT = 1.8;
 
@@ -96,6 +116,8 @@ const SCRIPTS: Record<string, (x: number) => ActorKey[]> = {
   ],
   // Following Elof, who walks, runs, stops and comes back.
   follow: (x) => [{ at: 0, x, y: 0, z: 0, face: 0, move: 0.01, act: 'stand', follow: 2.5 + x / LANE * 2.2 }],
+  // Standing together, towards the camera and a little towards each other, as they talk (TALK).
+  talk: (x) => [{ at: 0, x, y: 0, z: 0, face: 0.25 + (x / LANE - 1.5) * -0.03, move: 0.01, act: 'stand' }],
 };
 /** Where Elof is, in the follow scene: he walks, runs, stops and comes back. */
 const elofAt = (t: number) => t < 1 ? 0 : t < 5 ? (t - 1) * 1.6 : t < 9 ? 6.4 + (t - 5) * 3.5 : t < 11 ? 20.4 : 20.4 - (t - 11) * 1.4;
@@ -191,7 +213,7 @@ if (story) for (const [who, one] of stage.actors) if (wanted.length > 0 && !want
 
 const figures: { who: Grandparent; figure: Figure; group: Group }[] = elders.map((who, i) => {
   const figure = createGrandparent(who, null);
-  figure.group.position.set(i * LANE + 6, 0, 0);
+  figure.group.position.set(sceneName === 'talk' ? (cast.length + i) * LANE : i * LANE + 6, 0, sceneName === 'talk' ? 1.9 : 0);
   scene.add(figure.group);
   return { who, figure, group: figure.group };
 });
@@ -220,14 +242,18 @@ const elofSpeed = (t: number) => t < 1 ? 0 : t < 5 ? 1.2 : t < 9 ? 3.5 : t < 9.6
 /** Where the camera looks, close on him: he is one EL tall. */
 
 const camera = new PerspectiveCamera(28, 1, 0.5, 400);
-/** ?track: the camera keeps the first of them in the middle, at `?zoom` EL across (a close look at one body). */
-const track = query.has('track'), zoom = Number(query.get('zoom') ?? 9);
+/**
+ * ?track: the camera keeps the first of them in the middle, at `?zoom` EL across (a close look at one body); `&follow=moa`
+ * keeps that one instead (in ?scene=talk, `elof`, `mormor` or `morfar` too).
+ */
+const track = query.has('track'), zoom = Number(query.get('zoom') ?? 9), follow = query.get('follow');
 function frame(): void {
   const width = innerWidth, height = innerHeight;
   renderer.setSize(width, height, false);
   camera.aspect = width / height;
   const count = Math.max(1, cast.length + figures.length);
-  const followed = track ? played ? played.outer : boy ? boy.rig.group : coated ? coated.group : cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group : undefined;
+  const chosen = follow === 'elof' ? listener?.rig.group : follow ? stage.actors.get(follow as Role)?.rig.group ?? figures.find((one) => one.who === follow)?.figure.rig.group : undefined;
+  const followed = !track ? undefined : chosen ?? (played ? played.outer : boy ? boy.rig.group : coated ? coated.group : cast[0] ? stage.actors.get(cast[0])?.rig.group : figures[0]?.figure.rig.group);
   const span = followed ? zoom : (count - 1) * LANE + (sceneName === 'walk' ? 16 : 4);
   const middle = followed ? followed.getWorldPosition(new Vector3()).x
     : (sceneName === 'walk' ? 8 : sceneName === 'grand' ? 6 : 0) + (count - 1) * LANE / 2;
@@ -257,9 +283,35 @@ const draw = () => { if (track) frame(); renderer.render(scene, camera); };
 const flags = new Set<string>(story ? told(book) : []);
 const lamp = litLamp();
 let clock = 0, running = 0, runFrom = 0;
+/** ?scene=talk: the scene's own clock, which waits while a line is read; the line being read, and for how long. */
+let talkT = 0, line = 0, readFor = -1;
+const talking = TALK.filter((one) => cast.includes(one.who as Role) || elders.includes(one.who as Grandparent) || one.who === 'elof');
 function step(dt: number): void {
   clock += dt;
   const elof = { x: elofAt(clock), y: 0 };
+  if (sceneName === 'talk') {
+    if (readFor < 0) {
+      talkT += dt;
+      if (line < talking.length && talkT >= talking[line]!.at) readFor = 0;
+    } else if ((readFor += dt) > READ) { readFor = -1; line++; }
+    const now = readFor >= 0 ? talking[line]! : null;
+    talk.hear(now ? { who: now.who, text: (sv.lines as Record<string, string>)[now.line] ?? '', seconds: readFor, reading: true } : null, dt);
+    if (listener) {
+      const { rig, talker, look, at } = listener;
+      const other = talk.lookAt('elof'), there = other ? talk.face(other) : null;
+      if (there) rig.mouth(at);
+      talker.update(talk, there ? lookAt(rig.group, at, there, look) : null, dt, query.has('calm'));
+      const pose = { ...STANDING };
+      talker.pose(pose);
+      rig.pose(pose);
+      rig.face?.(talker.mouth.open, talker.mouth.round, talker.lids);
+      rig.mouth(at);
+      talk.place('elof', at.x, at.y, at.z);
+    } else talk.place('elof', (cast.length + elders.length - 1) * LANE / 2, 0.9, 3.4);
+    stage.update({ id: 'lab', seconds: talkT }, flags, elof, clock, dt, query.has('calm'));
+    for (const { figure, group } of figures) figure.update(false, clock, dt, group.position.x + 30);
+    return;
+  }
   // Followers: the scene places them once, and from then on they walk along behind him.
   const following = sceneName === 'follow' && clock > 0.05;
   if (following) flags.add('scene:lab');
@@ -398,6 +450,18 @@ const load = async () => {
     const rig = createModelRig(model, 1);
     scene.add(rig.group);
     boy = { rig, motion: createPlayerMotion(), x: 0 };
+    watchPose('elof', rig);
+    loaded.push('elof');
+  }
+  if (sceneName === 'talk' && files['elof.glb'] && !query.has('noelof')) {
+    // In front of them at their left, as big as he is among them as a boy, turned to them and to the camera.
+    const model = await assets.model('private', 'elof');
+    const rig = createModelRig(model, 1);
+    rig.group.scale.setScalar(3);
+    rig.group.position.set(-2.2, 0, 1.6);
+    rig.group.rotation.y = 0.85;
+    scene.add(rig.group);
+    listener = { rig, talker: createTalker('elof', 3), look: { turn: 0, nod: 0 }, at: new Vector3() };
     watchPose('elof', rig);
     loaded.push('elof');
   }

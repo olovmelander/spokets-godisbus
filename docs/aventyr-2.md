@@ -45,9 +45,9 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
 - Klonk is named and is Elof's friend. It has no mouth; it speaks in thought pictures and *klonk*. It freezes into
   plain wood when a grown-up looks (the Toy Story rule), which Stormskogen turns into a puzzle.
 - The family helps as kind giants, one at each big crossing, each with something of their own.
-- No surnames, no address, no house number, no school, no logotypes (the one exception is the name Olympia in white
-  letters on the red hall, which Olov asked for). Real places nearby may be named, but Äventyr
-  2 names its public places too: Olympia, Flärken and Billsta.
+- No surnames, no address, no house number, no school, no logotypes except Olov’s three decisions in plan §0,
+  row 13: Olympia on the red hall, Anundsjö IF’s crest on Bertil’s cap, and Flärken on the big sun board.
+  Real places nearby may be named; Äventyr 2 names Olympia, Flärken and Billsta.
 - Nothing frightening chases Elof. The storm is wild, loud and beautiful, never a monster. The family is out in
   it with him, in raincoats, with lamps.
 - Every line is at most 42 characters and is authored in `src/content/aventyr2/lines/`, merged by `sv.ts`.
@@ -129,7 +129,8 @@ number, sign or coordinates appear anywhere, no real map shows it (Moa's crayon 
 5. **Bertils stövelbåt:** "Ropa på Bertil". His rubber boot carries Elof over the flooded lawn.
 6. **The playhouse**: ledges up its wall. The old trägubbe's thought picture waits on its roof (a lonely figure).
    Optional: the trampoline's bounces up to the roof ridge for a hidden candy.
-7. **The hedge:** a lightning flash shows the little one tumbling over the hedge towards the forest.
+7. **The hedge:** a lightning flash shows the little one tumbling over the hedge towards the forest. Elof stops and
+   watches him go, slowly and near, pale in his own glow (Olov, 9 November 2026: he must be clearly seen).
 
 ### Kapitel 2: Stormskogen (forest at night)
 
@@ -151,10 +152,13 @@ number, sign or coordinates appear anywhere, no real map shows it (Moa's crayon 
 3. **Gallret:** the drain grate's bars over the deep dark.
    All along the street the blinds are down. He pulls a shop's bell cord, someone wakes, and a blind goes up on a lit
    window: three times, the same thing he does for his own family at the end of the night.
-4. **Moas paraply:** "Ropa på Moa". From a high wall he floats down under her umbrella over the flooded crossing.
+4. **Moas paraply:** "Ropa på Moa". She waits on the high wall with her umbrella open over her head; called, she
+   sets it down at the edge for him, and he floats down under it over the flooded crossing.
 5. **The swinging sign:** a moving platform.
-6. **Fjun's cap:** the little one's carved cap lies in the gutter. "Rännstenen rinner ner till sjön!"
-7. Down the steps to the shore path.
+6. **Fjun's cap:** the little one's carved cap lies in the gutter. He stops, picks it up and holds it up to look at it
+   before he says what it is (Olov, 9 November 2026: finding it went far too fast).
+7. Up the steps towards Olympia, which lies up on its hill (Olov, 9 November 2026: "Man ska gå upp till Olympia, inte
+   ner.").
 
 ### Kapitel 4: Olympia (Bredbyn's football ground at night)
 
@@ -171,7 +175,8 @@ the pitch. A football is one and a half Elofs high: the puzzles are football puz
 5. **The corner flag** snapping in the gusts, and the benches' roofs dripping, with a dry way under them.
 6. **Bertil's free kick:** "Ropa på Bertil". He kicks the ball, and Elof rides it in a great arc into the far goal.
 7. **The biathlon range:** knock the targets white, one by one (optional), for side candy.
-8. At the far end the strongest gust takes the little one north, up the valley towards the lake. Flärken is six
+8. At the far end the strongest gust takes the little one north, up the valley towards the lake, slowly enough that
+   Elof stands and watches him go, and the old one leap after him. Flärken is six
    kilometres off, so the family takes the car: Bertil, "Hoppa in i bilen! Vi åker till Flärken."
 
 ### Kapitel 5: Flärken (Flärkenbadet, the bathing place, Kubbe and Norrflärke)
@@ -283,9 +288,10 @@ The worlds were authored from this design and keep its beats, with these details
   flight crosses a 10.5 EL windthrow; Klonk lies frozen across the gap as a plank, and stays for good once laid, so
   there is always a way back; the old trägubbe is seen in a flash going down the hill.
 - **Byn i stormen:** the awning's striped flap is an optional bounce to the trestle stands; a 27 EL leaf ride down
-  the gutter; five grate bars; four stone steps up the wall to Moa's umbrella. It now ends on the road to Olympia.
-- **Olympia** (goal at 179 EL, 93 trail candies): down the steps from the street and over the high fence by the
-  ball-stop net; footballs bowled across the small pitch from behind; *Bollen i målet*, the big ball fetched from its table
+  the gutter; five grate bars; four stone steps up the wall to Moa's umbrella. It now ends on the road up to Olympia,
+  three steps up from the street.
+- **Olympia** (goal at 179 EL, 94 trail candies): up three stone steps from the road to the ground on its hill, and
+  over the high fence by the ball-stop net; footballs bowled across the small pitch from behind; *Bollen i målet*, the big ball fetched from its table
   and kicked four times ("Sparka") into the flooded goalmouth, where it floats as a stepping stone ("Mål! Fast det var jag som gick in!");
   a side way up the goal's net and along its white crossbar; the corner flag and the dripping benches; Bertil's
   free kick over the centre circle, which is a lake, into the far goal; five biathlon targets turned white with
@@ -294,27 +300,43 @@ The worlds were authored from this design and keep its beats, with these details
   as lace rings and the slide; the picnic table, dry under its top; the torn volleyball net as a bounce up to the
   changing rooms' roofs, and a banging door; wet stones in the shallows with a reed up the high one; seven floating
   reed mats; six jetty posts against the waves; Mamma's SUP held against the broken jetty; up the diving tower to
-  the lookout; the bark pushed three times into the last gap ("Bark flyter, precis som Klonk!"). The outlet takes
-  both figures down the river: "Trä flyter!"
+  the lookout, where the picture goes out over the lake with him to the little one, caught on a stone where the river
+  begins; at the gap, where the planks have broken off, a round stone that rolls off the edge and sinks, and then the
+  bark pushed three times into the gap ("Bark flyter, precis som Klonk!"). The painted sun board behind the shallows
+  says Flärken (Olov's decision, 9 November 2026). The outlet takes both figures down the river: "Trä flyter!"
 - **Älven** (goal at 186 EL, 92 candies): a little raft and a birch leaf down the current; stones and bobbing logs; the rapids
-  under the bridge in Bredbyn, where Pappa lowers his scarf and lifts Elof over (the scarf is drawn from the
-  bridge to his hands for the whole lift); the beaver's gnawed stumps and lodge, an otter; the owl from Stormskogen
-  over the lake; Moälven widening; at the end the family's car on the road by the river, its headlights on, to
-  drive the three mil to Billsta.
+  under the bridge in Bredbyn, where Pappa, at the railing over the bank, lowers his knitted scarf in both hands and
+  walks along the bridge lifting Elof over, the scarf hanging straight down to Elof's hands; the beaver's gnawed
+  stumps and lodge, an otter; the owl from Stormskogen over the lake, skimming low over the rolling logs first, so
+  that the stick dips him to the side way's sweets; Moälven widening; at the end the family's car on the road by
+  the river, its headlights on, to drive the three mil to Billsta, with Moa and Bertil waiting by it who run down
+  to him as the trail runs out.
 - **Billsta** (rebuilt after Olov's correction: the house is by the road near the forest, three mil from Bredbyn by
   car; goal at 194.6 EL, 113 trail candies, 12 side candies, 9 checkpoints): out of the family's car on the road
   ("Framme i Billsta, hos mormor och morfar!"), the lit window ahead and the spruces across the road; morfar lays his
-  long ladder across the flooded ditch ("Gå på stegen, lilla vän"); the gravel drive, the rowing boat on its
-  trestles and the woodshed's stack; mormor with her lantern opens the red barn; through the dark hay loft, over a
-  bale and a hatch, and along the barn's long roof in the gusts, sheltering behind its ventilation hoods; into the
-  forest behind the house: a brook crossed on stones, and where it runs deep, **Klonk's seesaw**: a dry spruce lies
-  over a stone, "Ropa på Klonk", it hardly stirs, Elof pushes the stone back towards his own end, and Klonk's long arm
-  flings him over the brook up onto Billaberget's bank ("Tack, Klonk! Du är min bästa vän."); then its boulders, a crack, rock shelves with
-  hazelnuts against its granite face, and the slope in the gusts behind the boulders; at the brow a flash shows both
-  figures far below on a stone in the narrow, the owl is heard, and mormor: "Kom, vi går ner till sundet."
+  long ladder across the flooded ditch ("Gå på stegen, lilla vän"); the gravel drive, the rowing boat on its trestles
+  and the woodshed's stack; mormor with her lantern walks up the planks and opens the red barn's door; through the
+  dark hay loft, over a bale and a hatch, and along the barn's long roof in the gusts, sheltering behind its
+  ventilation hoods; into the forest behind the house: a brook crossed on stones, and where it runs deep, **Klonk's
+  seesaw**: a dry spruce lies over a stone, "Ropa på Klonk", it hardly stirs, Elof pushes the stone back towards his
+  own end, and Klonk's long arm flings him over the brook up onto Billaberget's bank ("Tack, Klonk! Du är min bästa
+  vän."); then its boulders, a crack, rock shelves with hazelnuts against its granite face, and the slope in the gusts
+  behind the boulders; at the brow a flash shows both figures far below on a stone in the narrow, held close in the
+  picture for a moment, warm against the dark water, the owl is heard, and mormor: "Kom, vi går ner till sundet."
 - **Stormens öga** now lies in the narrow at Billsta, below Billaberget's granite and spruces, with Själevad's
   church far down the lake; mormor and morfar's house is not on the shore. Mormor and morfar come down with
   everyone and welcome them ("Hemma hos oss finns det varm choklad."), and come to breakfast in Morgonen efter.
+  (9 November 2026, Olov's play-through:) the meeting waits until Elof has gone up to the figures; at its end the old
+  one holds out the golden sweet on its paper in a glitter. He carries it up before him, looks at it in his hands,
+  tastes it, and grows in its glitter. Bertil dreams of Thailand, where the family is going soon. *Gå hem* is walked:
+  off the stone, through the shallows and up onto the shore, where the family come to meet him and walk on with him,
+  mormor lifting her lantern and Klonk hopping ahead.
+- **Morgonen efter** is the room of Stormkvällen, each thing where it stood: Pappa's shelf, the window the storm blew
+  open beside it, the table and its chairs, the toy shelf, the sofa. Breakfast has mormor's green thermos of hot
+  chocolate, a steaming cup for each, buns and her lantern from the night on the table, and Elof's own cup at its
+  front. The new latch is a storm hook on the window's meeting stiles: it swings up and drops into its eye. The story
+  ends at the door out into the morning, where he turns to them all and the picture goes to the two figures on the
+  shelf; the last card offers the map of the chapters and the start page, never "Spela igen" under the last press.
 
 The audit after version 2 also fixed the picture in several places: the `iron` surface (a street drain's grate)
 had been used for Olympia's fence and Stormgården's watering can, and the ground's picture dug a drain's well

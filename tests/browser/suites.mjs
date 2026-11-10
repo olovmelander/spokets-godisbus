@@ -41,6 +41,7 @@ export const SUITES = [
   ['stone-courses', 2],
   ['memory-presentation', 20],
   ['dialogue-reading', 2],
+  ['talk-life', 40],
   ['ghost-thoughts', 337],
   ['story-context', 260],
   ['opening-story', 323],

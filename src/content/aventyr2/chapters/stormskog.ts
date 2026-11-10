@@ -18,8 +18,11 @@ import { alongAll, jump, round, row, slopeRow, timeCard } from '../kit';
  * 5. **Vindfällen:** fallen spruces: a trunk across the path, one leaning on another as a slope, a crack
  *    between two of them, and the widest gap of all. There the owl waits, and flies Elof over.
  * 6. **Pappas ficklampa** (puzzle, the Toy Story rule): a gap too wide to jump, and Klonk waits at its edge.
- *    "Ropa på Pappa": his beam falls on Klonk, who freezes stiff and topples across the gap like a plank.
- *    Elof walks over his friend. Pappa turns the beam back to the path, and Klonk wakes.
+ *    Pappa peers at something tiny moving in his lamplight: "Är det du, Elof?" "Ropa på Pappa": he sees him at the edge, his
+ *    beam falls on Klonk, who freezes stiff and topples across the gap like a plank (to Pappa, a toy that fell
+ *    over); Elof, thinking, sees why. Elof walks over his friend. On the far side Pappa turns the beam to the path,
+ *    and Klonk wakes beside Elof. Two held scenes, `ss:ljuset` and `ss:vaknar`: each line is read before the
+ *    acting goes on.
  * 7. **Gamla trägubbens minne:** past a fallen trunk, a dark hollow under the roots. There Klonk shows the
  *    old one's thought, the crack on the mountain where it lay: "Den var ensam i mörkret i flera år."
  *    "Därför väntar den inte."
@@ -35,6 +38,11 @@ import { alongAll, jump, round, row, slopeRow, timeCard } from '../kit';
 
 /** The hill down to the village: from the high root's end (184, 4) to the level at (200, 0). */
 const hill = (x: number) => round(4 - (x - 184) * 0.25, 4);
+
+/** Pappa's gap, Klonk across it, and where Elof stands when Klonk wakes on its far side. */
+const GAP = { from: 134, to: 138, woke: 139.4, klonk: 141.5 };
+/** Pappa with his lamp, behind the call sign: where Elof and the camera look up to his face. */
+const PAPPA_FACE = { x: 131, y: 4.8, z: -0.9 };
 
 /** The owl's flight over the widest gap of the windthrow: from its near edge to well past its far one. */
 const OWL = { from: { x: 109.6, y: 0 }, to: { x: 123, y: 0 }, rise: 4, time: 3 };
@@ -58,11 +66,50 @@ export const stormskog: ChapterData = {
   id: 'stormskog',
   place: 'forest',
   spawn: { x: 1, y: 0.01 },
-  // Where and when, as the chapter opens (src/content/chapters/cards.ts).
-  scenes: [timeCard('stormskog', 1)],
+  scenes: [
+    // Where and when, as the chapter opens (src/content/chapters/cards.ts).
+    timeCard('stormskog', 1),
+    // Called, Pappa finds him at the edge with his lamp. Its light falls on Klonk, who is wood at once and lies across
+    // the gap; to Pappa a toy has fallen over, and Elof, thinking, sees why. The picture takes in Pappa's face.
+    {
+      id: 'ss:ljuset', on: 'ss:beam', from: 129, before: GAP.from - 0.5, until: 'ss:frozen', seconds: 3.6, hold: true,
+      cues: [{ at: 1.2, flag: 'ss:frozen' }],
+      lines: [
+        { at: 0.4, who: 'pappa', line: 'ssBeam' },
+        { at: 1.8, who: 'pappa', line: 'ssFell' },
+        { at: 2.8, who: 'elof', line: 'ssStiff' },
+      ],
+      stage: {
+        shots: [{ at: 0, x: 133.6, y: 2.7, height: 7.6, width: 13, move: 0.6 }],
+        elof: [
+          { at: 0, act: 'look', aim: PAPPA_FACE },
+          { at: 1.4, act: 'look', aim: { x: 136, y: 0.2, z: 0 } },
+          { at: 2.8, act: 'look', aim: { x: 133.8, y: 0.3, z: 0 } },
+        ],
+      },
+    },
+    // Over on the far side: Pappa turns his lamp to the path, and in the dark Klonk is himself again, beside Elof.
+    {
+      id: 'ss:vaknar', at: GAP.woke, needs: 'ss:frozen', seconds: 2.9, hold: true,
+      cues: [{ at: 0.9, flag: 'ss:woke' }],
+      lines: [
+        { at: 0.3, who: 'pappa', line: 'ssPappaAway' },
+        { at: 1.3, who: 'spoket', line: 'ssAwake' },
+        { at: 2.2, who: 'elof', line: 'ssThanks' },
+      ],
+      stage: {
+        shots: [{ at: 0, x: 137.2, y: 2.4, height: 7.2, width: 12, move: 0.6 }],
+        elof: [
+          { at: 0, act: 'look', aim: PAPPA_FACE },
+          { at: 1, act: 'look', aim: { x: GAP.klonk, y: 0.6, z: 0 } },
+          { at: 2.2, act: 'wave', aim: { x: GAP.klonk, y: 0.6, z: 0 } },
+        ],
+      },
+    },
+  ],
   goalX: 205,
   coda: 'pappa',
-  storm: { frozen: 'ss:frozen', drips: 'cone', rain: 0.75,
+  storm: { frozen: 'ss:frozen', wakes: 'ss:woke', drips: 'cone', rain: 0.75,
     lightning: 10,
     flybys: [
       // At the forest's edge: the little one, tumbling over the treetops ahead.
@@ -216,11 +263,10 @@ export const stormskog: ChapterData = {
     { x: 177.7, bottom: 0, top: 4, exit: 1, needs: 'jay', look: 'lichen' },
   ],
   rides: [{ id: 'owl', look: 'owl', ...OWL }],
-  // Pappa's beam: he stands and watches the light find Klonk, a moment only.
-  later: [{ flag: 'ss:frozen', after: 'ss:beam', seconds: 1.4, hold: true, within: [126, 139] }],
   // The memory also reaches a child who passes the hollow or resumes beyond it without its receipt:
   // keep its picture and unlock the explanation, just as touching the hollow does on the walking route.
-  sets: [{ flag: 'ss:hollow', when: ['beat:ss:hollow'] }],
+  // Klonk is awake in a game taken up beyond the gap, as in one that saw him wake.
+  sets: [{ flag: 'ss:hollow', when: ['beat:ss:hollow'] }, { flag: 'ss:woke', when: ['scene:ss:vaknar'] }],
   jumps: [
     // Up the ravine's far side, step by step.
     jump({ x: 39.1, y: 0 }, { x: 40, y: 0.8 }),
@@ -253,9 +299,10 @@ export const stormskog: ChapterData = {
     // over the widest gap ahead of the owl: a ghost hops where a boy has to fly
     { at: { x: 124.5, y: 0 } },
     { at: { x: 128.5, y: 0 } },
-    // At the edge of Pappa's gap it waits for the beam, which turns it into the bridge.
-    { at: { x: 133.6, y: 0 }, until: 'ss:frozen' },
-    { at: { x: 141.5, y: 0 } },
+    // At the edge of Pappa's gap it stands and waits for the beam, which turns it into the bridge.
+    { at: { x: 133.6, y: 0 }, until: 'ss:frozen', still: true },
+    // It wakes on the far side, beside him, once Pappa looks away, and stands there until he has thanked it.
+    { at: { x: GAP.klonk, y: 0 }, until: 'scene:ss:vaknar', still: true },
     { at: { x: 147.5, y: 0.8 } },
     // In the dark hollow it waits, showing the old one's thought, until he has come to see.
     { at: { x: 155.5, y: -1.2 }, until: 'ss:hollow', thought: { picture: 'pine-crack' } },
@@ -283,15 +330,11 @@ export const stormskog: ChapterData = {
     { id: 'ss:windthrow', at: 81, who: 'elof', line: 'ssWindthrow' },
     { id: 'ss:owl-waits', at: 107.5, until: 'owl', needs: 'placed:owl-twig', who: 'elof', line: 'ssOwlWaits', read: true },
     { id: 'ss:owl-fly', on: 'owl', who: 'elof', line: 'ssOwlFly' },
-    // 6. Pappa's flashlight
-    { id: 'ss:pappa', at: 126.5, until: 'ss:beam', who: 'pappa', line: 'ssPappaHere', read: true },
-    { id: 'ss:wide', at: 129.6, until: 'ss:beam', who: 'elof', line: 'ssTooWide' },
-    { id: 'ss:beam', on: 'ss:beam', who: 'pappa', line: 'ssBeam', read: true },
-    { id: 'ss:stiff', on: 'ss:frozen', who: 'elof', line: 'ssStiff', read: true },
+    // 6. Pappa's flashlight: the gap is too wide to jump; Pappa, searching, sees something tiny in his light and
+    // asks if it is him. The rest is in its two scenes, and on the bridge a whisper to the friend he walks on.
+    { id: 'ss:wide', at: 127.4, until: 'ss:beam', who: 'elof', line: 'ssTooWide' },
+    { id: 'ss:pappa', at: 129.8, until: 'ss:beam', who: 'pappa', line: 'ssPappaHere', read: true },
     { id: 'ss:tiptoe', at: 135.2, needs: 'ss:frozen', who: 'elof', line: 'ssTiptoe' },
-    { id: 'ss:away', at: 138.8, needs: 'ss:frozen', who: 'pappa', line: 'ssPappaAway' },
-    { id: 'ss:awake', at: 140, needs: 'ss:frozen', who: 'spoket', line: 'ssAwake' },
-    { id: 'ss:thanks', at: 141.6, needs: 'ss:frozen', who: 'elof', line: 'ssThanks' },
     // 7. the old one's memory: the heart of the chapter, read slowly
     { id: 'ss:hollow-seen', at: 151, who: 'elof', line: 'ssHollowSeen' },
     { id: 'ss:hollow', at: 159, on: 'ss:hollow', who: 'spoket', line: 'ssHollowKlonk' },
@@ -419,7 +462,7 @@ export const context: Chooser = (has, at) => {
   if (has('jay')) return ['ssLichen', 'ssJay', 'heart'];
   if (at.x >= 162) return ['ssJay', 'ssJay', 'heart'];
   if (has('ss:hollow')) return ['ssMemory', 'ssLamps', 'mountain'];
-  if (has('ss:frozen')) return at.x < 138.5 ? ['ssPlank', 'ssPappa', 'heart', 'pappa'] : ['ssFollow', 'ssLamps'];
+  if (has('ss:frozen')) return has('ss:woke') ? ['ssFollow', 'ssLamps'] : ['ssPlank', 'ssPappa', 'heart', 'pappa'];
   if (at.x >= 123) return ['ssPappa', 'ssPappa', 'trail', 'pappa'];
   if (has('owl')) return ['ssOwlRide', 'ssOwl', 'sparkle'];
   if (has('placed:owl-twig')) return at.x >= 104.6 ? ['ssOwlBoard', 'ssOwl', 'sparkle'] : ['ssWindthrow', 'ssOwl'];

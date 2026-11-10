@@ -11,11 +11,11 @@ import { drainsOf } from '../../src/render/dressing/ground';
 import { AWNING, DOOR_WIDE, LAMP_POST, STREET_DEPTH, WINDOW_WIDE, awningTips, uprights } from '../../src/render/village';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { cameraIntent } from '../../src/sim/camera-intent';
-import { BERRY_HALF, CANDY_MAGNET, ELOF_HEIGHT, FALL_LIMIT, GHOST_CLEARANCE, JUMP_APEX, RUNNING_JUMP_REACH } from '../../src/sim/constants';
+import { BERRY_HALF, CANDY_MAGNET, ELOF_HEIGHT, FALL_LIMIT, GHOST_CLEARANCE, JUMP_APEX, LEDGE_REACH, RUNNING_JUMP_REACH, STEP } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { PlayerState } from '../../src/sim/types';
 import { decide, heightAt, playThrough } from './robot';
-import { jump, run, runPast, walkTo } from '../sim/drive';
+import { idle, jump, run, runPast, walkTo } from '../sim/drive';
 
 /**
  * Kapitel 3, Byn i stormen (docs/aventyr-2.md): its puzzles and its family help, played by the robot, and the
@@ -175,6 +175,29 @@ describe('Kapitel 3, Byn i stormen', () => {
     expect(game.sim.bubbles).toBe(0);
   });
 
+  it('has Moa with her umbrella before she is called, and called she steps to the edge to set it down for him', () => {
+    // She holds it open over her head while she waits (src/render/view.ts; Olov, 9 November 2026: "Moa ska hålla i ett
+    // paraply redan innan Elof ropar på henne och får det."), and goes where her hand reaches the ride's start.
+    const umbrella = stormbyn.rides!.find((ride) => ride.id === 'umbrella')!;
+    const call = stormbyn.spots!.find((s) => s.id === 'umbrella:ready')!;
+    expect(call.goesTo).toBeDefined();
+    expect(call.goesTo!.y).toBe(umbrella.from.y);
+    expect(umbrella.from.x - call.goesTo!.x).toBeGreaterThan(0.8);
+    expect(umbrella.from.x - call.goesTo!.x).toBeLessThan(2);
+    // Behind the path, so that he walks past her in front.
+    expect(call.goesTo!.z).toBeLessThan(-0.5);
+  });
+
+  it('ends on the road up towards Olympia: its last steps go up, each a pull-up', () => {
+    // Up to Olympia, not down (Olov, 9 November 2026: "Man ska gå upp till Olympia, inte ner.").
+    expect(heightAt(stormbyn, stormbyn.goalX) - heightAt(stormbyn, 162)).toBeGreaterThanOrEqual(3);
+    for (let x = 160; x < END - 0.3; x += 0.1) {
+      expect(heightAt(stormbyn, x + 0.1) - heightAt(stormbyn, x), `at ${x.toFixed(1)}`).toBeLessThanOrEqual(LEDGE_REACH);
+      expect(heightAt(stormbyn, x) - heightAt(stormbyn, x + 0.1), `at ${x.toFixed(1)}`).toBeLessThan(FALL_LIMIT);
+    }
+    expect(words.purposes!.sbLake!.purpose).toBe('Gå uppför trappan mot Olympia.');
+  });
+
   it('without the umbrella he cannot cross: walking off the wall ends in the glitter bubble, back on the wall', () => {
     const game = new Game(stormbyn, {}, { checkpoint: 4 });
     for (let frame = 0; frame < 60 * 6 && game.sim.bubbles === 0; frame++) game.frame(1 / 60, { x: 1, y: 0, hopHeld: true }, { hop: frame % 30 === 0, act: false, helper: false });
@@ -188,9 +211,35 @@ describe('Kapitel 3, Byn i stormen', () => {
     const cap = stormbyn.spots!.find((s) => s.id === 'cap')!;
     expect(cap).toMatchObject({ look: 'tiny-cap', touch: true });
     expect(heightAt(stormbyn, cap.at.x)).toBe(cap.at.y);
-    const lines = stormbyn.beats!.filter((beat) => beat.on === 'cap');
+    // Finding it is a moment of its own (Olov, 9 November 2026: "När man hittar lillgubbens mössa går det alldeles för
+    // fort."): he stops, his hand has it, he holds it up, and only then are its words said.
+    const moment = stormbyn.scenes!.find((scene) => scene.on === cap.id)!;
+    expect(moment.hold).toBe(true);
+    const picked = moment.cues!.find((cue) => cue.flag === 'sb:cap-picked')!;
+    const seen = moment.cues!.find((cue) => cue.flag === 'sb:cap-seen')!;
+    expect(picked.at).toBeGreaterThan(0.5);
+    expect(seen.at - picked.at).toBeGreaterThanOrEqual(0.8);
+    expect(moment.seconds - seen.at).toBeGreaterThanOrEqual(1.5);
+    const lines = stormbyn.beats!.filter((beat) => beat.on === seen.flag);
     expect(lines.map((beat) => sv.lines[beat.line as keyof typeof sv.lines])).toEqual(['Lillgubbens mössa! Jag tar med den.', 'Godisspåret går mot fotbollsplanen!', 'Klonk, klonk!']);
     expect(lines[1]!.read).toBe(true);
+    // Played: coming to it stops him for the whole moment, a step from where it lay, and the words come after his hand
+    // has it.
+    const sim = new Sim(stormbyn, {}, { checkpoint: 6, flags: ['leaf', 'umbrella:ready', 'family:umbrella-ready', 'umbrella'] });
+    for (let i = 0; i < 10 / STEP && !sim.flags.has(cap.id); i++) sim.step({ ...idle, x: 1 });
+    const foundAt = sim.curr.x;
+    let heldFor = 0;
+    let saidBeforeHand = false;
+    for (let i = 0; i < 8 / STEP; i++) {
+      sim.step({ ...idle, x: 1 });
+      if (sim.held) heldFor += STEP;
+      if (sim.said.includes('sbCap') && !sim.flags.has(picked.flag)) saidBeforeHand = true;
+      if (!sim.held && sim.flags.has(`scene:${moment.id}`)) break;
+    }
+    expect(heldFor).toBeGreaterThanOrEqual(moment.seconds - 0.1);
+    expect(sim.said).toEqual(expect.arrayContaining(['sbCap', 'sbToLake', 'sbKlonkCap']));
+    expect(saidBeforeHand).toBe(false);
+    expect(Math.abs(foundAt - cap.at.x)).toBeLessThan(1.3);
     // Klonk thinks of the little one once the cap is found.
     const thought = stormbyn.ghost!.find((perch) => perch.thought)!;
     expect(thought.thought).toEqual({ picture: 'small-figure', after: 'cap' });
@@ -204,7 +253,7 @@ describe('Kapitel 3, Byn i stormen', () => {
     expect(sim.flags.has('cap')).toBe(false);
     expect(sim.flags.has('goal')).toBe(false);
     expect(storyContext('stormbyn', sim.flags, sim.curr)?.purpose).toBe(words.purposes!.sbFindCap!.purpose);
-    // The street remains reachable. Jump back up the three steps and walk to the cap.
+    // The street remains reachable. Back down the three steps and walk to the cap.
     for (let attempt = 0; attempt < 18 && sim.curr.x > 140; attempt++) {
       run(sim, 0.35, { x: -1 });
       jump(sim, -1);
