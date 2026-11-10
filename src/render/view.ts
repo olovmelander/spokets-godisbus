@@ -418,7 +418,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       drawnWhile(prop, false);
       scene.add(prop);
     }
-    return { ride, prop };
+    return { ride, prop, wasRidden: false, landed: Infinity };
   });
   const moverMeshes = buildMovers(chapter);
   /** The movers that go over the water: rafts, logs and boards, which it mirrors (./water.ts). */
@@ -1286,22 +1286,30 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     plane.rotation.z = waitingPlane ? 0 : heading;
     for (const c of carriers) {
       if (!c.prop) continue;
+      if (c === carrier) { c.wasRidden = true; c.landed = 0; }
+      else if (c.wasRidden) { c.wasRidden = false; c.landed = 0; }
+      else c.landed += dt;
       // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
       // Granskogen, and in the storm Bertil's boot on the flooded lawn ("Min stövel blir din båt. Kliv i!"), Moa's
       // umbrella on the wall, the raft and the birch leaves on the water.
       const boarding = WAITS_READY.has(c.ride.look ?? '') ? chapter.spots?.find((spot) => spot.ride === c.ride.id && spot.look === undefined) : undefined;
       const waiting = (chapter.id === 'granskog' && c.ride.id === 'cap' && flags.has('cap:ready') && !flags.has('cap'))
         || (!!boarding && c !== carrier && !flags.has(boarding.id) && (boarding.needs === undefined || flags.has(boarding.needs)));
-      const propSize = waiting ? 1 : c === carrier ? size : 0;
+      const football = c.ride.look === 'football';
+      const scored = football && flags.has(chapter.spots?.find(spot => spot.ride === c.ride.id)?.id ?? '') && x >= c.ride.to.x - 0.1 && c !== carrier;
+      // Roll away into the goal promptly, so his soft step down clears the ball instead of passing through it.
+      const rolling = scored ? 2 * smooth(c.landed / 0.4) : 0;
+      const propSize = waiting || scored ? 1 : c === carrier ? football ? Math.min(1, curr.t / 0.05) : size : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
-      c.prop.position.set(waiting ? c.ride.from.x : x, (waiting ? c.ride.from.y : y) - 0.05, 0);
+      c.prop.position.set(waiting ? c.ride.from.x : scored ? c.ride.to.x + rolling : x, (waiting ? c.ride.from.y : scored ? c.ride.to.y : y) - 0.05, scored ? -rolling : 0);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
       // A bird beats with a strong downstroke and a quicker upstroke, glides between bursts, and nods with each beat;
       // its wing tips follow a little behind.
       const wings = wingbeat(clock, 1.1, { every: 6.5, glide: 1.8, held: -0.2 });
       const flying = c.ride.look !== 'cap' && !waiting;
-      c.prop.rotation.z = !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6 + wings.pitch;
+      c.prop.rotation.z = football ? 0 : !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6 + wings.pitch;
+      if (football && c.prop.children[0]) c.prop.children[0].rotation.z = -(c.prop.position.x - c.ride.from.x) / 0.8;
       const beat = wings.lift * 0.75;
       const lag = wingbeat(clock - 0.12, 1.1, { every: 6.5, glide: 1.8, held: -0.2 }).lift * 0.75;
       const near = c.prop.getObjectByName('wingNear');
