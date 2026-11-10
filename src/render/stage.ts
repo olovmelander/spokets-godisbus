@@ -334,6 +334,12 @@ export interface Directions {
 const HANDS_FREE: readonly Free[] = [[true, true], [true, false], [false, true], [false, false]];
 /** Acts that leave the hands to hang: a gesture of speech may use them. */
 const HANDS_HANG: readonly Act[] = ['stand', 'watch', 'look', 'nod'];
+/** These acts keep their working right arm but leave the left free to counter-swing during a walk.
+ * Pointing's idle counter-gesture belongs to standing; reach, lift and show need both arms and stay their own.
+ */
+const WALKING_HANDS: Partial<Record<Act, Free>> = {
+  point: HANDS_FREE[1]!, shine: HANDS_FREE[1]!, offer: HANDS_FREE[1]!, wave: HANDS_FREE[1]!, paint: HANDS_FREE[1]!,
+};
 
 /**
  * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
@@ -1055,18 +1061,21 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // and the trunk goes on over them as it goes walking, turning against the hips and bending with the step.
           for (const joint of STRIDING) pose[joint] += (walking[joint] - pose[joint]) * legs;
           if (acting) for (const joint of UNDER_ACT) pose[joint] += (walking[joint] - STANDING[joint]) * weight;
-          if (!acting) {
-            for (const joint of CARRIED) pose[joint] += (walking[joint] - pose[joint]) * weight;
-            if (!state.holdsLeft && state.holds !== 'drawing') {
-              pose.armL += (walking.armL - pose.armL) * weight;
-              pose.elbowL += (walking.elbowL - pose.elbowL) * weight;
-              pose.wristL += (walking.wristL - pose.wristL) * weight;
-            }
-            if (!state.holds && state.holdsLeft !== 'drawing') {
-              pose.armR += (walking.armR - pose.armR) * weight;
-              pose.elbowR += (walking.elbowR - pose.elbowR) * weight;
-              pose.wristR += (walking.wristR - pose.wristR) * weight;
-            }
+          if (!acting) for (const joint of CARRIED) pose[joint] += (walking[joint] - pose[joint]) * weight;
+          const free = !acting || HANDS_HANG.includes(state.act) ? HANDS_FREE[0]!
+            : state.act === 'shine' && state.holdsLeft?.startsWith('lamp-') && !state.holds?.startsWith('lamp-')
+              ? HANDS_FREE[2]! : WALKING_HANDS[state.act] ?? HANDS_FREE[3]!;
+          // Arm ownership is independent of the torso gesture. Props reserve their actual hand, and a drawing both;
+          // a lamp carried on the left leaves the right arm free. Targeted contact is solved after the shared pose.
+          if (free[0] && !state.holdsLeft && state.holds !== 'drawing') {
+            pose.armL += (walking.armL - pose.armL) * weight;
+            pose.elbowL += (walking.elbowL - pose.elbowL) * weight;
+            pose.wristL += (walking.wristL - pose.wristL) * weight;
+          }
+          if (free[1] && !state.holds && state.holdsLeft !== 'drawing') {
+            pose.armR += (walking.armR - pose.armR) * weight;
+            pose.elbowR += (walking.elbowR - pose.elbowR) * weight;
+            pose.wristR += (walking.wristR - pose.wristR) * weight;
           }
           if (stridePace > 0.01) pose.seat = null;
         }

@@ -1,5 +1,5 @@
 import { stubCanvas } from './canvas-stub';
-import { InstancedMesh, Vector3 } from 'three';
+import { InstancedMesh, Matrix4, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { garden } from '../../src/content/chapters/garden';
 import { prolog } from '../../src/content/chapters/ends';
@@ -92,6 +92,91 @@ describe('story character motion', () => {
     show(stage, 3.15);
     expect(snapshot(stage).joints).not.toEqual(first);
     expect(rig.hand(0, new Vector3()).y).toBeGreaterThan(3.3);
+  });
+
+  it.each(['point', 'shine', 'offer'] as const)('swings the free arm while walking and continuing to %s', act => {
+    const aim = { x: 20, y: 3.8, z: 2 };
+    const stage = stageFor([
+      { at: 0, x: 0, y: 0, face: .25, act, aim, ...(act === 'shine' ? { holds: 'lamp-mamma' as const } : {}) },
+      { at: .6, x: 6, move: 3.4 },
+    ]);
+    const rig = actor(stage), posed: number[] = [], original = rig.pose.bind(rig);
+    let time = 0;
+    vi.spyOn(rig, 'pose').mockImplementation(pose => {
+      if (time >= 1.5 && time <= 3.5) posed.push(pose.armL);
+      original(pose);
+    });
+    const elbow = new Vector3(), hand = new Vector3(), matrix = new Matrix4();
+    for (let frame = 0; frame <= 240; frame++) {
+      time = frame / 60; show(stage, time);
+      if (time < 1.5 || time > 3.5) continue;
+      if (act === 'point') {
+        rig.group.updateMatrixWorld(true);
+        const mesh = rig.group.children[0] as InstancedMesh;
+        mesh.getMatrixAt(9, matrix);
+        elbow.set(0, .45, 0).applyMatrix4(matrix).applyMatrix4(mesh.matrixWorld);
+        rig.hand(1, hand);
+        expect(hand.clone().sub(elbow).angleTo(new Vector3(aim.x, aim.y, aim.z).sub(elbow))).toBeLessThan(.015);
+      }
+      if (act === 'shine') {
+        const lamp = stage.group.getObjectByName('stage-thing:lamp-mamma')!;
+        expect(lamp.position.distanceTo(rig.hand(1, hand))).toBeLessThan(.3);
+      }
+    }
+    // A real counter-swing, not just the tiny breathing loop under the gesture.
+    expect(Math.max(...posed) - Math.min(...posed)).toBeGreaterThan(.45);
+  });
+
+  it('swings the right arm when the walking torch is held in the left hand', () => {
+    const stage = stageFor([
+      { at: 0, x: 0, y: 0, face: .25, act: 'shine', aim: { x: 20, y: 1, z: 2 }, holdsLeft: 'lamp-mamma' },
+      { at: .6, x: 6, move: 3.4 },
+    ]);
+    const rig = actor(stage), posed: number[] = [], original = rig.pose.bind(rig);
+    let time = 0;
+    vi.spyOn(rig, 'pose').mockImplementation(pose => { if (time >= 1.5 && time <= 3.5) posed.push(pose.armR); original(pose); });
+    for (let frame = 0; frame <= 240; frame++) {
+      time = frame / 60; show(stage, time);
+      const lamp = stage.group.getObjectByName('stage-thing:lamp-mamma')!;
+      expect(lamp.position.distanceTo(rig.hand(0, new Vector3()))).toBeLessThan(.3);
+    }
+    expect(Math.max(...posed) - Math.min(...posed)).toBeGreaterThan(.45);
+  });
+
+  it('keeps a carried left-hand mug reserved while the right hand points during a walk', () => {
+    const stage = stageFor([
+      { at: 0, x: 0, y: 0, face: .25, act: 'point', aim: { x: 20, y: 4, z: 2 }, holdsLeft: 'mug' },
+      { at: .6, x: 6, move: 3.4 },
+    ]);
+    const rig = actor(stage), posed: number[] = [], original = rig.pose.bind(rig);
+    let time = 0;
+    vi.spyOn(rig, 'pose').mockImplementation(pose => { if (time >= 1.5 && time <= 3.5) posed.push(pose.armL); original(pose); });
+    for (let frame = 0; frame <= 240; frame++) {
+      time = frame / 60; show(stage, time);
+      const mug = stage.group.getObjectByName('stage-thing:mug')!, grip = stage.group.getObjectByName('sipping-mug-grip')!;
+      expect(mug.position.distanceTo(grip.position)).toBeCloseTo(.18, 8);
+    }
+    expect(Math.max(...posed) - Math.min(...posed)).toBeLessThan(.1);
+  });
+
+  it('hands a walking gesture back to the stride continuously and holds it on pause', () => {
+    const stage = stageFor([
+      { at: 0, x: 0, y: 0, face: .25, act: 'point', aim: { x: 20, y: 4, z: 2 } },
+      { at: .6, x: 6, move: 4.4 },
+      { at: 2.8, act: 'look' },
+    ]);
+    const rig = actor(stage), previous = [new Vector3(), new Vector3()];
+    for (let frame = 0; frame <= 300; frame++) {
+      show(stage, frame / 60);
+      for (const side of [0, 1] as const) {
+        const hand = rig.hand(side, new Vector3());
+        if (frame > 150) expect(hand.distanceTo(previous[side]!)).toBeLessThan(.25);
+        previous[side]!.copy(hand);
+      }
+    }
+    const before = snapshot(stage);
+    stage.update({ id: 'motion', seconds: 5 }, new Set(), { x: 0, y: 0 }, 5, 0, false);
+    expect(snapshot(stage)).toEqual(before);
   });
 
   it('holds a following body exactly on pause, even if the player is restored far away', () => {
