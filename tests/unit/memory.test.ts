@@ -52,18 +52,24 @@ describe('the four memories', () => {
     }
   });
 
-  it('have no words, and end on the little figure: it is in every memory', () => {
+  it('have no words, and end with the same old wooden friend in every memory', () => {
     for (const [id, pictures] of Object.entries(MEMORIES)) {
       for (const picture of pictures) {
         expect(picture, id).not.toContain('<text');
         expect(picture.startsWith('<svg') && picture.endsWith('</svg>'), id).toBe(true);
       }
-      expect(pictures[pictures.length - 1], id).toContain('class="tragubbe"');
+      expect(pictures[pictures.length - 1], id).toContain('data-illustration-part="old-carving"');
     }
   });
 
-  it('show little Elof in light blue every time, as the plan says', () => {
-    for (const [id, pictures] of Object.entries(MEMORIES)) expect(pictures.some((picture) => picture.includes('#9cc4e4')), id).toBe(true);
+  it('show toddler Elof in light-blue pyjamas indoors and his light-blue jacket outdoors in every picture', () => {
+    for (const [id, pictures] of Object.entries(MEMORIES)) {
+      const indoors = id === 'garden';
+      for (const picture of pictures) {
+        expect(picture, id).toContain(`data-illustration-part="person-elof-toddler-${indoors ? 'indoors' : 'outdoors'}"`);
+        expect(picture, id).toContain(indoors ? '#a6bfe6' : '#87b4d4');
+      }
+    }
   });
 
   it('gives every painting layered scene motion without an independently moving wooden friend', () => {
@@ -71,6 +77,7 @@ describe('the four memories', () => {
       expect(picture).toContain('data-memory-motion="light"');
       expect(picture).toContain('data-memory-motion="motes"');
       expect(picture).not.toContain('class="tragubbe" data-memory-motion');
+      expect(picture).not.toMatch(/<g[^>]*(?:data-illustration-part="old-carving"[^>]*data-memory-motion|data-memory-motion[^>]*data-illustration-part="old-carving")[^>]*>/);
     }
     expect(sv.memories.chapters.garden.captions.join(' ')).not.toContain('spricka');
     expect(sv.memories.chapters.granskog.captions.join(' ')).not.toContain('spricka');

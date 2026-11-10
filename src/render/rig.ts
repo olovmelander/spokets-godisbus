@@ -1,6 +1,7 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
-import { createArmContact, createHandGrip, createHandHold } from './arm-contact';
+import { kneeSupport } from './knee-support';
+import { createArmContact, createHandGrip, createHandHold, type GripTurn } from './arm-contact';
 import { faceOf } from './face';
 import { copyShape, fingersOf, mixShape, REST, type Grip } from './fingers';
 import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
@@ -152,15 +153,15 @@ export function groundedHips(p: Pose): number {
  * The feet of a stride. A stiff ankle tips the foot with the shin; through the stance the ankle gives, so the sole stays near the
  * ground from heel to toe, and lets go as the leg swings through. `phase` is the stride's: the left leg leads at a quarter turn.
  */
-export function plantFeet(p: Pose, phase: number): void {
+export function plantFeet(p: Pose, phase: number, swingCancellation = .9): void {
   const stance = (side: number) => {
     const t = Math.min(1, Math.max(0, 0.5 - side * Math.cos(phase) * 2));
     return t * t * (3 - 2 * t);
   };
   // Swinging through, the foot is held up off the toe, nearly level, so the toe never catches the ground.
   const sL = stance(1), sR = stance(-1);
-  p.footL = -(p.legL - p.kneeL) * (0.55 * sL + 0.9 * (1 - sL));
-  p.footR = -(p.legR - p.kneeR) * (0.55 * sR + 0.9 * (1 - sR));
+  p.footL = -(p.legL - p.kneeL) * (0.55 * sL + swingCancellation * (1 - sL));
+  p.footR = -(p.legR - p.kneeR) * (0.55 * sR + swingCancellation * (1 - sR));
 }
 
 export function blendPose(a: Pose, b: Pose, t: number, out: Pose = { ...STANDING }, floor = false): Pose {
@@ -202,8 +203,12 @@ export interface Rig {
   pose(pose: Pose): void;
   /** Where a hand is in the world after the last pose: the body's left is 0. */
   hand(side: 0 | 1, out: Vector3): Vector3;
+  /** Actual arm joints in world space, after posing; used to place held things within this body's reach. */
+  arm?(side: 0 | 1, shoulder: Vector3, elbow: Vector3, wrist: Vector3): void;
   /** Where a knee is in the world after the last pose (the joint): the body's left is 0. A hand rests on it, kneeling. */
   knee?(side: 0 | 1, out: Vector3): Vector3;
+  /** Visible top of the posed knee, for a supporting palm. */
+  kneeSurface?(side: 0 | 1, out: Vector3): Vector3;
   /** The lips in world space, following the head's nod and turn. */
   mouth(out: Vector3): Vector3;
   /**
@@ -211,8 +216,9 @@ export interface Rig {
    * length it may use (1, all of it, as pointing does; less keeps the elbow bent, as holding something out does).
    */
   reach(side: 0 | 1, target: Vector3, weight?: number, most?: number): void;
-  /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach. */
-  grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number): Vector3;
+  /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach.
+   * A supporting palm can also give its surface normal and an outward elbow direction, blended by the same weight. */
+  grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number, palmNormal?: Vector3, elbowDirection?: Vector3): Vector3;
   /**
    * Closes a hand's fingers round what it holds (./fingers.ts): `weight` of the way from how they are (resting, after a
    * pose) to the grip. A body without fingers keeps its hands as they are.
@@ -221,9 +227,9 @@ export interface Rig {
   /**
    * Holds a thing after posing: the hand goes where its grip's socket comes to `target`, with the thing's axis along
    * `axis`, and the fingers close round it as the hand arrives (`weight`). Returns the socket where it is (a reach too far
-   * is clamped), and the thing's axis as held in `axisOut`.
+   * is clamped), and the thing's axis as held in `axisOut`. An optional `fingerDirection` also defines a tool's palm roll.
    */
-  grasp?(side: 0 | 1, grip: Grip, target: Vector3, axis: Vector3, out: Vector3, weight?: number, axisOut?: Vector3): Vector3;
+  grasp?(side: 0 | 1, grip: Grip, target: Vector3, axis: Vector3, out: Vector3, weight?: number, axisOut?: Vector3, fingerDirection?: Vector3, gripTurn?: GripTurn): Vector3;
   /** Where a grip's socket is in the world now, and the held thing's axis: for a thing held wherever the hand is. */
   socket?(side: 0 | 1, grip: Grip, out: Vector3, axisOut?: Vector3): Vector3;
   /**
@@ -488,12 +494,13 @@ export function createRehearsalRig(who: Role): Rig {
     set('handR', 'elbowR', 0, -FORE, 0, p.wristR);
     // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
     const lean = swayLean(p.sway);
-    // A leg turned at the hip (`yawL`) turns about the upright of the body as it leans, and swings out in its own way.
-    leg('hipL', HIP_X, p.legL, -p.hipRoll - lean, p.splayL, p.yawL ?? 0);
+    // Leg targets are in the body's frame: undo the pelvis's counter-twist before their own hip turns.
+    const untwist = p.twist * .45;
+    leg('hipL', HIP_X, p.legL, -p.hipRoll - lean, p.splayL, (p.yawL ?? 0) + untwist);
     set('kneeL', 'hipL', 0, -THIGH, 0, -p.kneeL);
     // The foot stays level across, whatever the leg's lean: the ankle gives.
     foot('footL', 'kneeL', p.footL, -p.splayL, lean, p.yawL ?? 0);
-    leg('hipR', -HIP_X, p.legR, -p.hipRoll - lean, -p.splayR, p.yawR ?? 0);
+    leg('hipR', -HIP_X, p.legR, -p.hipRoll - lean, -p.splayR, (p.yawR ?? 0) + untwist);
     set('kneeR', 'hipR', 0, -THIGH, 0, -p.kneeR);
     foot('footR', 'kneeR', p.footR, p.splayR, lean, p.yawR ?? 0);
   }
@@ -556,6 +563,12 @@ export function createRehearsalRig(who: Role): Rig {
       group.updateWorldMatrix(true, false);
       return out.copy(hands[side]).applyMatrix4(group.matrixWorld);
     },
+    arm(side, shoulder, elbow, wrist) {
+      group.updateWorldMatrix(true, true);
+      contacts[side].upper.getWorldPosition(shoulder);
+      contacts[side].lower.getWorldPosition(elbow);
+      contacts[side].wrist.getWorldPosition(wrist);
+    },
     knee(side, out) {
       group.updateWorldMatrix(true, false);
       return group.localToWorld(out.setFromMatrixPosition(joints[side === 0 ? 'kneeL' : 'kneeR']).multiplyScalar(s));
@@ -580,8 +593,8 @@ export function createRehearsalRig(who: Role): Rig {
       contacts[side].solve(target, weight, most);
       contactParts(side);
     },
-    grip(side, target, direction, out, weight = 1) {
-      contacts[side].grip(target, direction, out, weight);
+    grip(side, target, direction, out, weight = 1, palmNormal, elbowDirection) {
+      contacts[side].grip(target, direction, out, weight, palmNormal, elbowDirection);
       contactParts(side);
       return out;
     },
@@ -798,6 +811,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const chestUp = axis(bones.chest, Y), pelvisUp = axis(bones.pelvis, Y);
   // A whole leg turns about the upright through its hip (`yawL`, `yawR`): the body's up in each thigh's own terms.
   const legUp = [axis(bones.legL, Y), axis(bones.legR, Y)], footUp = [axis(bones.footL, Y), axis(bones.footR, Y)];
+  const pelvisLegs = [bones.legL, bones.legR].map(leg => {
+    for (let parent = leg?.node.parent; parent; parent = parent.parent) if (parent === bones.pelvis?.node) return true;
+    return false;
+  });
   const bodyAhead = new Vector3();
   /** A thigh: tipped across with the body (`body`), turned about the upright (`yaw`), out to its side (`splay`), swung. */
   const thighBend = (b: Bone | null, swing: number, up: Vector3 | null, yaw: number, side: Vector3 | null, body: number, splay: number) => {
@@ -868,6 +885,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const legs = measureLegs(group, orientation, bones.legL?.node, bones.kneeL?.node, feet[0], supports[0]?.points, bones.legR?.node, height, model);
   // Kneeling, the body stands on the front of its shin just under the knee: its own knee's thickness below the joint.
   const kneeThick = (legs.knee ?? KNEELING) * height;
+  const kneeSurfaces = [bones.kneeL, bones.kneeR].map((bone, side) => bone ? kneeSupport(model, bone.node, side === 0 ? 'l' : 'r', height) : null);
   // Without a hand bone, approximate the forearm by the upper arm, measured in the lower bone's own units.
   // Keeping a world-space length here would shorten the reach if a scene later enlarged the whole figure.
   const fore = [bones.armL, bones.armR].map((upper, i) => {
@@ -880,7 +898,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   });
   const holds = handBones.map((hand, i) => {
     const lower = i === 0 ? bones.elbowL : bones.elbowR;
-    return hand && lower && contacts[i] ? createHandHold(lower.node, hand, contacts[i]!) : null;
+    return hand && lower && contacts[i] ? createHandHold(lower.node, hand, contacts[i]!, fingered[i]?.layout.along) : null;
   });
   /** A grip's shape and socket in a hand, for the held thing's size in the world. */
   const gripIn = (side: 0 | 1, grip: Grip) => {
@@ -890,7 +908,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
   };
   const grips = handBones.map((hand, i) => {
     const lower = i === 0 ? bones.elbowL : bones.elbowR;
-    return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
+    const fingers = fingered[i];
+    return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!, undefined, undefined, fingers ? {
+      along: fingers.layout.along, normal: fingers.layout.palmward, at: fingers.grip('flat', 0).socket.at,
+    } : undefined) : null;
   });
   const sway = createSway(), soft = softParts(model);
   // How high the hip joints stand over the soles: how far a leg leans in under shifted hips.
@@ -954,14 +975,14 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (axisOut) axisOut.copy(made.socket.axis).transformDirection(bone.matrixWorld);
       return bone.localToWorld(out.copy(made.socket.at));
     },
-    grasp(side, grip, target, axis, out, weight = 1, axisOut) {
+    grasp(side, grip, target, axis, out, weight = 1, axisOut, fingerDirection, gripTurn) {
       const made = gripIn(side, grip), hold = holds[side];
       if (!made || !hold) {
         this.reach(side, target, weight);
         if (axisOut) axisOut.copy(axis);
         return this.hand(side, out);
       }
-      hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, grip.kind === 'hook');
+      hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, fingerDirection, gripTurn);
       // The fingers close as the hand comes, the last of the way, and only on what the hand gets to: an arm that falls
       // short of it leaves the hand open, not closed on the air.
       const hand = fingered[side]!, length = hand.layout.size * 0.112 * handScale.x;
@@ -970,8 +991,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
       this.hold!(side, grip, k * k * (3 - 2 * k) * near * near * (3 - 2 * near));
       return out;
     },
-    grip(side, target, direction, out, weight = 1) {
-      if (grips[side]) return grips[side]!(target, direction, out, weight);
+    grip(side, target, direction, out, weight = 1, palmNormal, elbowDirection) {
+      if (grips[side]) return grips[side]!(target, direction, out, weight, palmNormal, elbowDirection);
       this.reach(side, target, weight);
       return this.hand(side, out);
     },
@@ -1024,9 +1045,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
       }
       bend(bones.elbowL, p.elbowL);
       bend(bones.elbowR, p.elbowR);
-      // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
-      thighBend(bones.legL, p.legL, legUp[0]!, p.yawL ?? 0, ahead.legL, -p.hipRoll - lean, p.splayL);
-      thighBend(bones.legR, p.legR, legUp[1]!, p.yawR ?? 0, ahead.legR, -p.hipRoll - lean, -p.splayR);
+      // Leg targets are body-relative. Keep the pelvis's counter-twist out of each descendant leg's own hip turn.
+      const untwist = p.twist * .45;
+      thighBend(bones.legL, p.legL, legUp[0]!, (p.yawL ?? 0) + (pelvisLegs[0] ? untwist : 0), ahead.legL, -p.hipRoll - lean, p.splayL);
+      thighBend(bones.legR, p.legR, legUp[1]!, (p.yawR ?? 0) + (pelvisLegs[1] ? untwist : 0), ahead.legR, -p.hipRoll - lean, -p.splayR);
       bend(bones.kneeL, p.kneeL);
       bend(bones.kneeR, p.kneeR);
       // (A model without a pelvis has no legs to lean in under it either: it stays as it is.)
@@ -1061,6 +1083,13 @@ export function createModelRig(model: Object3D, height: number): Rig {
       // Blender's bones lie along their own +y: the hand is a forearm's length along it from the elbow.
       return lower.node.localToWorld(out.set(0, fore[side]!, 0));
     },
+    arm(side, shoulder, elbow, wrist) {
+      const upper = side === 0 ? bones.armL : bones.armR, lower = side === 0 ? bones.elbowL : bones.elbowR;
+      if (upper && lower) { upper.node.getWorldPosition(shoulder); lower.node.getWorldPosition(elbow); }
+      else { group.localToWorld(shoulder.set((side === 0 ? 1 : -1) * height * .13, height * .75, 0)); elbow.copy(shoulder); }
+      this.hand(side, wrist);
+    },
+    kneeSurface(side, out) { return kneeSurfaces[side]?.(out) ?? this.knee!(side, out).addScaledVector(Y, height * .025); },
     knee(side, out) {
       const knee = side === 0 ? bones.kneeL : bones.kneeR;
       return knee ? knee.node.getWorldPosition(out) : group.localToWorld(out.set(0, height * 0.17, 0));

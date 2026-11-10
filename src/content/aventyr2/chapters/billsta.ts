@@ -481,7 +481,7 @@ export const billsta: ChapterData = {
     // on its trestles under a tarp, the garden furniture under another, the mailbox by the road, birches, and the
     // forest's spruces across the road and behind the house, up Billaberget.
     buildings: [
-      // The family's car on the road, just stopped after the drive, its inside light on.
+      // The family's car on the road, just stopped after the drive, its wet glass reflecting the night sky.
       { kind: 'car', x: CAR.x, z: CAR.z, width: CAR.width, lit: '', size: 0.62 },
       { kind: 'mailbox', x: 11.6, z: -2.4 },
       // The road's wooden poles, with their wires across the sky, and a lamp on each.

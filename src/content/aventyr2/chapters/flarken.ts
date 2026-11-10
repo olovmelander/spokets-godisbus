@@ -497,7 +497,7 @@ export const flarken: ChapterData = {
     boat: { spot: 'sjon:mamma', after: 'sjon:mamma', y: -0.6, from: { x: 150, z: -13 }, to: { x: (BREAK.from + BREAK.to) / 2, z: -1.1 } },
     glows: [{ at: { x: 149.8, y: 1.2 }, z: -1.1, size: 1, after: 'sjon:boat' }],
     buildings: [
-      // The family's car at the parking, where they left it to search the shore, its inside light on.
+      // The family's car at the parking, where they left it to search the shore, its wet glass reflecting the lake sky.
       { kind: 'car', x: 1, z: -14, lit: '' },
       // The playground: the swing set, the rings under its seats; the slide, its ladder where his is.
       { kind: 'swings', x: SWING_SET.x, z: -0.8, width: SWING_SET.width, height: SWING_SET.height },

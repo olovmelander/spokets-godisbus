@@ -2,8 +2,55 @@ import { Bone, Group, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest';
 import { createFamilyMotion } from '../../src/render/family-motion';
 import { createModelRig, createRehearsalRig, STANDING, type Pose } from '../../src/render/rig';
+import { createConversation, createTalker } from '../../src/render/talk';
 
 describe('family help-point movement', () => {
+  it('holds a scarf lean through a long reading pause without storing it in the next base pose', () => {
+    const motion = createFamilyMotion('mamma', 80), talk = createConversation(), speaker = createTalker('mamma', 80);
+    const base = { ...motion.update(1 / 60, 1, 0, .2, null, false) };
+    const bends: number[] = [], mouths: number[] = [];
+    for (let frame = 0; frame < 600; frame++) {
+      const posed = motion.update(0, 1, 0, .2, null, false);
+      expect(posed).toEqual(base);
+      // The scarf and speech layer onto the same returned pose while story time is held.
+      posed.lean += .3;
+      talk.hear({ who: 'mamma', text: 'Jag håller halsduken. Du kan klättra ner nu, Elof.', seconds: frame / 60, reading: true }, 1 / 60);
+      speaker.update(talk, null, 1 / 60, false, [false, false]);
+      speaker.pose(posed);
+      bends.push(posed.lean); mouths.push(speaker.mouth.open);
+      expect(Math.abs(posed.lean - (base.lean + .3))).toBeLessThan(.06);
+    }
+    expect(Math.max(...bends) - Math.min(...bends)).toBeGreaterThan(.005);
+    expect(Math.max(...mouths)).toBeGreaterThan(.5);
+    // Pause freezes the living layer too; redrawing the scarf must not change the body.
+    let paused: Pose | undefined;
+    for (let frame = 0; frame < 120; frame++) {
+      const posed = motion.update(0, 1, 0, .2, null, false);
+      posed.lean += .3;
+      speaker.update(talk, null, 0, false, [false, false]);
+      speaker.pose(posed);
+      if (paused) expect(posed).toEqual(paused);
+      paused = { ...posed };
+    }
+  });
+
+  it('keeps caller gestures out of later help, carry and reduced-motion transitions', () => {
+    const motion = createFamilyMotion('pappa', 27), untouched = createFamilyMotion('pappa', 27);
+    let output: Pose | undefined;
+    for (let frame = 0; frame < 240; frame++) {
+      const carry = frame >= 80 && frame < 160 ? (frame - 80) / 30 : null;
+      const calm = frame >= 200, joy = frame >= 30 && frame < 80 ? 1 : 0;
+      const posed = motion.update(1 / 60, frame / 60, joy, .3, carry, calm);
+      const expected = untouched.update(1 / 60, frame / 60, joy, .3, carry, calm);
+      expect(posed).toEqual(expected);
+      if (output) expect(posed).toBe(output);
+      output = posed;
+      posed.lean += .3; posed.armR = 2.4; posed.kneeL += .4;
+      expect(motion.update(0, frame / 60, joy, .3, carry, calm)).toEqual(expected);
+      posed.lean += .3; posed.armR = 2.4; posed.kneeL += .4;
+    }
+  });
+
   it('welcomes Elof before calling, keeps the offered help readable, and holds it through pause', () => {
     for (const [who, purpose] of [['moa', 'moa'], ['pappa', 'seesaw'], ['bertil', 'cap:ready'], ['mamma', 'braid']] as const) {
       const motion = createFamilyMotion(who, 80, purpose);

@@ -184,7 +184,8 @@ function airPose(vy: number, air: Air, out: Pose): void {
   const kneeLead = READY + 0.1 * m, kneeTrail = READY + 0.2 * m, legLead = READY / 2 + 0.55 * m, legTrail = READY / 2 - 0.35 * m;
   out.legL = mix(0.62 + 0.38 * top, legLead); out.legR = mix(0.05 + 0.45 * top, legTrail);
   out.kneeL = mix(0.75 + 0.6 * top, kneeLead); out.kneeR = mix(0.6 + 0.6 * top, kneeTrail);
-  out.footL = mix(-0.3, kneeLead - legLead); out.footR = mix(-0.45, (kneeTrail - legTrail) * (1 - m) - 0.15 * m);
+  // The trailing ankle opens too: pointing its toe down makes it touch before the leading heel and drag on landing.
+  out.footL = mix(-0.3, kneeLead - legLead); out.footR = mix(-0.45, kneeTrail - legTrail);
   out.armL = mix(1.25 + 0.15 * top, 1.65); out.armR = mix(1.4 + 0.1 * top, 1.85);
   out.elbowL = mix(0.5, 0.32); out.elbowR = mix(0.45, 0.28);
   out.spread = mix(0.22 + 0.2 * top, 0.42);
@@ -269,9 +270,10 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     // (Landing, the trunk gives a moment after the legs: createPlayerMotion adds it.)
     out.lean = (0.1 + 0.08 * run) * pace; out.nod = -0.05 * pace;
     out.twist = swing * (0.3 + 0.16 * run);
-    plantFeet(out, phase);
+    // Cancel the whole shin pitch during recovery; leaving ten percent tips the long toe into the ground.
+    plantFeet(out, phase, 1);
     // Giving on landing, the soles stay flat: the ankles take up what the shins tip that the stride's feet do not.
-    const flat = (side: number) => { const t = clamp(0.5 - side * Math.cos(phase) * 2), k = t * t * (3 - 2 * t); return 1 - 0.55 * k - 0.9 * (1 - k); };
+    const flat = (side: number) => { const t = clamp(0.5 - side * Math.cos(phase) * 2), k = t * t * (3 - 2 * t); return 1 - 0.55 * k - (1 - k); };
     out.footL += 0.5 * landing * flat(1); out.footR += 0.5 * landing * flat(-1);
   }
   return out;
@@ -401,6 +403,9 @@ export function createTurning(start = 0, rate = 30) {
 /** Only actual travel advances a stride: blocked movement, rides and a paused view never march. */
 export function createPlayerMotion() {
   const target = { ...STANDING }, pose = { ...STANDING };
+  // The view can add a pull or a gesture without changing the cached motion used by paused frames
+  // and by the next scene transition. Reuse the output; no per-frame allocation is needed.
+  const drawn: Pose = { ...STANDING };
   let lastX: number | null = null, lastY = 0, lastMode: PlayerState['mode'] = 'free';
   let grounded = true, free = false, phase = 0, landing = 0, landed = Infinity, impact = 0, idle = 0;
   let speed = 0, lead = 1;
@@ -458,17 +463,20 @@ export function createPlayerMotion() {
         // Out of the scene, he goes on from the scene's pose.
         follower.reset(held);
         for (const joint of JOINTS) strode[joint] = held[joint];
-        return held;
+        return Object.assign(drawn, held);
       }
       const unscripted = wasScripted;
       wasScripted = false;
-      if (dt <= 0) return pose;
+      if (dt <= 0) return Object.assign(drawn, pose);
       const walking = player.mode === 'free' && player.grounded;
       // Carried (a ride, an assisted arc, the glitter bubble) he goes as fast as what carries him: that is no teleport.
       const carried = player.mode === 'ride' || player.mode === 'fly' || player.mode === 'bubble';
       // (Taking hold of a hose or a ledge puts him a little way along to it: that is no teleport either.)
       const continuous = carried || distance <= Math.max(RUN_SPEED * 2, Math.abs(player.vx) * 1.5) * dt + 0.35;
-      const pace = walking && free && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
+      const touchesDown = walking && !grounded && (previousMode === 'free' || previousMode === 'fly') && impact > 0 && continuous;
+      // The first grounded frame already travels. Waiting for the previous frame to be free would leave pace zero here
+      // and make the heel-strike reset below unreachable on every running landing.
+      const pace = walking && (free || touchesDown) && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
       // Filter measured travel before taking acceleration, so interpolation does not shake the torso.
       const before = speed;
       speed = walking && free && continuous && !player.atEdge ? speed + (travel / dt - speed) * (1 - Math.exp(-16 * dt)) : 0;
@@ -488,7 +496,7 @@ export function createPlayerMotion() {
       } else if (airborne && !player.grounded) air.t += dt;
       air.rise = airborne && !player.grounded ? player.y - leftAt : 0;
       // Stepping off a ride, a hose or the finished clamber is not a fall onto the ground.
-      if (walking && !grounded && (previousMode === 'free' || previousMode === 'fly') && impact > 0 && continuous) {
+      if (touchesDown) {
         landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
         landed = 0;
         // Landing on the run, the leading foot is the one that comes down: the stride goes on from its heel strike.
@@ -604,7 +612,7 @@ export function createPlayerMotion() {
       was = doing;
       // A story's explicit seat ends with its act; locomotion is supported by the actual posed soles.
       pose.seat = null;
-      return pose;
+      return Object.assign(drawn, pose);
     },
   };
 }
@@ -619,13 +627,13 @@ export function createPlayerStandIn() {
   const shirt = material('#9db9e3'), jeans = material('#2f4b7c'), boot = material('#6b4a2e');
   const skin = material('#f2cba8'), hair = material('#ecc967');
   const leg = (z: number) => {
-    const hip = new Group(), knee = new Group();
-    hip.position.set(0, 0.4, z); knee.position.y = -0.19;
+    const hip = new Group(), knee = new Group(), ankle = new Group();
+    hip.position.set(0, 0.4, z); knee.position.y = -0.19; ankle.position.y = -0.165;
     const thigh = new Mesh(new BoxGeometry(0.12, 0.17, 0.12), jeans); thigh.position.y = -0.105;
     const shin = new Mesh(new BoxGeometry(0.12, 0.15, 0.12), jeans); shin.position.y = -0.085;
-    const foot = new Mesh(new BoxGeometry(0.2, 0.09, 0.13), boot); foot.position.set(0.035, -0.165, 0);
-    knee.add(shin, foot); hip.add(thigh, knee); figure.add(hip);
-    return { hip, knee };
+    const foot = new Mesh(new BoxGeometry(0.2, 0.09, 0.13), boot); foot.position.x = 0.035;
+    ankle.add(foot); knee.add(shin, ankle); hip.add(thigh, knee); figure.add(hip);
+    return { hip, knee, ankle, foot };
   };
   const legs = [leg(-0.075), leg(0.075)];
   const torso = new Mesh(new CapsuleGeometry(0.15, 0.16, 6, 14), shirt); torso.position.y = 0.14;
@@ -659,7 +667,7 @@ export function createPlayerStandIn() {
   const contacts = arms.map(arm => createArmContact(arm.shoulder, arm.elbow, handTip));
   for (const [i, side] of ['left', 'right'].entries()) {
     legs[i]!.hip.name = `player-hip-${side}`; legs[i]!.knee.name = `player-knee-${side}`;
-    legs[i]!.knee.children[1]!.name = `player-boot-${side}`;
+    legs[i]!.ankle.name = `player-ankle-${side}`; legs[i]!.foot.name = `player-boot-${side}`;
     arms[i]!.shoulder.name = `player-shoulder-${side}`; arms[i]!.elbow.name = `player-elbow-${side}`;
   }
   // The doll's raincoat in Stormnatten (./elof-coat.ts): over his body with its hood on his back, and over each arm's
@@ -745,12 +753,14 @@ export function createPlayerStandIn() {
         [0, p.legL, p.kneeL, p.armL, p.elbowL], [1, p.legR, p.kneeR, p.armR, p.elbowR],
       ] as const) {
         legs[i]!.hip.rotation.z = hipAngle; legs[i]!.knee.rotation.z = -kneeAngle;
+        const footAngle = i === 0 ? p.footL : p.footR;
+        legs[i]!.ankle.rotation.z = footAngle;
         arms[i]!.shoulder.rotation.set((i === 0 ? 1 : -1) * p.spread, 0, armAngle);
         arms[i]!.elbow.rotation.set(0, 0, elbowAngle);
-        const angle = hipAngle - kneeAngle;
+        const angle = hipAngle - kneeAngle, soleAngle = angle + footAngle;
         // The full boot's four sole corners, not just its ankle; a turned toe never enters the floor.
-        lowest = Math.min(lowest, 0.4 - 0.19 * Math.cos(hipAngle) + 0.035 * Math.sin(angle) - 0.165 * Math.cos(angle)
-          - 0.1 * Math.abs(Math.sin(angle)) - 0.045 * Math.abs(Math.cos(angle)));
+        lowest = Math.min(lowest, 0.4 - 0.19 * Math.cos(hipAngle) - 0.165 * Math.cos(angle) + 0.035 * Math.sin(soleAngle)
+          - 0.1 * Math.abs(Math.sin(soleAngle)) - 0.045 * Math.abs(Math.cos(soleAngle)));
       }
       figure.position.y = (p.seat === null ? -lowest : p.seat / 5.2 - 0.4) + p.bounce / 5.2;
     },

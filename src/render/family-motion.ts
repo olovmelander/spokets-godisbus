@@ -60,6 +60,9 @@ const CHARACTER = {
 /** Helpers stay on their feet: a personal greeting, a quiet look, or Pappa supporting his passenger. */
 export function createFamilyMotion(who: Role, at: number, purpose = '') {
   const pose: Pose = { ...STANDING }, helping: Pose = { ...STANDING }, standing: Pose = { ...STANDING };
+  // Callers add held props, walking and speech to this reusable output. Keep the cached base untouched,
+  // especially while story time is held: a scarf's lean must be added once, not again on every redraw.
+  const drawn: Pose = { ...STANDING };
   const character = CHARACTER[who];
   const gift = purpose.startsWith('party:');
   const task = purpose === 'moa' || gift ? 'offer' : purpose === 'cap' || purpose === 'cap:ready' ? 'reach' : purpose === 'seesaw' ? 'point'
@@ -79,7 +82,7 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
     get waiting(): Waiting | null { return act; },
     update(dt: number, clock: number, joy: number, towards: number, carryX: number | null, calm: boolean,
       look?: { ahead: number; up: number }, help?: { ready: boolean; near: boolean }, legs: Legs = REHEARSAL_LEGS): Pose {
-      if (dt <= 0) return pose;
+      if (dt <= 0) return Object.assign(drawn, pose);
       const close = help?.near ? 1 : 0;
       presence = calm ? close : presence + (close - presence) * -Math.expm1(-dt * 5);
       const changedHelp = help?.ready !== lastHelp;
@@ -192,7 +195,7 @@ export function createFamilyMotion(who: Role, at: number, purpose = '') {
       } else from = null;
       lastX = carryX;
       pose.bounce = 0;
-      return pose;
+      return Object.assign(drawn, pose);
     },
   };
 }

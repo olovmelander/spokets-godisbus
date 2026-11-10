@@ -120,6 +120,83 @@ function bootModel(skinned: boolean, hip = 2.55) {
   return { model, boots, thighs };
 }
 
+describe('legs keep their body-space direction as the pelvis twists', () => {
+  for (const kind of ['rehearsal', 'imported'] as const) {
+    it(`preserves both posed legs and actual boot directions through turns (${kind})`, () => {
+      const parent = new Group();
+      parent.position.set(3, -2, 5); parent.scale.set(1.3, 1.7, 1.3);
+      let rig: ReturnType<typeof createModelRig>, directions: () => Vector3[], chest: () => Vector3;
+      if (kind === 'rehearsal') {
+        rig = createRehearsalRig('pappa');
+        const mesh = rig.group.children[0] as InstancedMesh;
+        const direction = (i: number, axis: Vector3) => {
+          const matrix = new Matrix4(); mesh.getMatrixAt(i, matrix);
+          return axis.transformDirection(matrix.premultiply(mesh.matrixWorld));
+        };
+        directions = () => [direction(11, new Vector3(0, -1, 0)), direction(14, new Vector3(0, -1, 0)),
+          direction(13, new Vector3(0, 0, 1)), direction(16, new Vector3(0, 0, 1))];
+        chest = () => direction(0, new Vector3(0, 0, 1));
+      } else {
+        const { model, boots, thighs } = bootModel(true), pelvis = new Bone(), spine = new Bone(), upper = new Bone();
+        pelvis.name = 'pelvis'; spine.name = 'spine_01'; upper.name = 'spine_02';
+        pelvis.position.y = 2.55; model.add(pelvis);
+        // Reparent without changing the exported rest pose or the skin's inverse binds.
+        for (const thigh of thighs) pelvis.attach(thigh);
+        pelvis.add(spine); spine.add(upper); upper.position.y = .8;
+        model.rotation.y = .43; model.scale.setScalar(.7);
+        rig = createModelRig(model, 5.2 * .7);
+        directions = () => [
+          ...thighs.map(thigh => thigh.children[0]!.getWorldPosition(new Vector3()).sub(thigh.getWorldPosition(new Vector3())).normalize()),
+          ...boots.map(boot => {
+            // The actual skinned toe and heel centres, not the diagonal exported ankle bone's axes.
+            const toe = new Vector3(), heel = new Vector3(), point = new Vector3(), position = boot.geometry.attributes.position!;
+            let toes = 0, heels = 0;
+            for (let i = 0; i < position.count; i++) {
+              boot.getVertexPosition(i, point); boot.localToWorld(point);
+              if (position.getZ(i) > .22) { toe.add(point); toes++; } else { heel.add(point); heels++; }
+            }
+            return toe.divideScalar(toes).sub(heel.divideScalar(heels)).normalize();
+          }),
+        ];
+        chest = () => new Vector3(0, 0, 1).transformDirection(upper.matrixWorld);
+      }
+      parent.add(rig.group);
+      for (const turn of [0, .8, -1.7]) for (const hipRoll of [-.16, .16]) {
+        parent.rotation.y = turn;
+        const pose = { ...STANDING, legL: .4, legR: -.25, kneeL: .2, kneeR: .35,
+          splayL: .08, splayR: .1, yawL: .27, yawR: -.19, hipRoll };
+        rig.pose(pose); parent.updateMatrixWorld(true);
+        const reference = directions(), body = chest();
+        for (const twist of [-.4, .15, .32]) {
+          const twisted = { ...pose, twist }, original = { ...twisted };
+          rig.pose(twisted); parent.updateMatrixWorld(true);
+          for (const [i, direction] of directions().entries()) {
+            expect(direction.distanceTo(reference[i]!), `${kind}, turn ${turn}, twist ${twist}, limb ${i}`).toBeLessThan(1e-6);
+          }
+          expect(chest().distanceTo(body)).toBeGreaterThan(.05);
+          expect(twisted).toEqual(original);
+        }
+        // The authored left/right hip turns still matter; the fix must not simply zero all leg yaw.
+        rig.pose({ ...pose, yawL: 0, yawR: 0 }); parent.updateMatrixWorld(true);
+        const straight = directions();
+        expect(straight[2]!.distanceTo(reference[2]!)).toBeGreaterThan(.1);
+        expect(straight[3]!.distanceTo(reference[3]!)).toBeGreaterThan(.1);
+      }
+    });
+  }
+
+  it.each([false, true])('leaves legs without a pelvis ancestor unchanged (unrelated pelvis=%s)', hasPelvis => {
+    const { model, thighs } = bootModel(true);
+    if (hasPelvis) { const unrelated = new Bone(); unrelated.name = 'pelvis'; model.add(unrelated); }
+    const rig = createModelRig(model, 5.2);
+    const direction = () => thighs.map(thigh => thigh.children[0]!.getWorldPosition(new Vector3()).sub(thigh.getWorldPosition(new Vector3())).normalize());
+    const pose = { ...STANDING, legL: .5, legR: -.3, yawL: .2, yawR: -.1 };
+    rig.pose(pose); rig.group.updateMatrixWorld(true); const before = direction();
+    rig.pose({ ...pose, twist: .4 }); rig.group.updateMatrixWorld(true);
+    for (const [i, after] of direction().entries()) expect(after.distanceTo(before[i]!)).toBeLessThan(1e-8);
+  });
+});
+
 describe('imported Blender body contact', () => {
   for (const skinned of [false, true]) {
     it(`plants the actual heel or toe through a gait (${skinned ? 'skinned' : 'rigid'} boots)`, () => {

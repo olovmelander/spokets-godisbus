@@ -1,7 +1,15 @@
 import { CylinderGeometry, Group, Mesh, MeshStandardMaterial, Quaternion, Vector3 } from 'three';
 import { holdCarving, type CarryingRig } from './carrying';
+import type { Pose } from './rig';
 
 const UP = new Vector3(0, 1, 0);
+const smooth = (t: number) => { const k = Math.max(0, Math.min(1, t)); return k * k * (3 - 2 * k); };
+
+/** The shoulder gives up the rope over the same interval as the real grip. */
+export function rescueCarryPose(pose: Pose, weight: number): void {
+  pose.lean -= .13 * weight; pose.twist -= .12 * weight;
+  pose.armR += (.22 - pose.armR) * weight; pose.elbowR += (.8 - pose.elbowR) * weight;
+}
 /** The lace has one continuous path: Elof's hands, over the lip, and down around the old carving.
  * Afterwards the same line draws taut behind him as he drags the heavy wooden body along the rock.
  */
@@ -13,6 +21,8 @@ export function createNorrskenRescue() {
   const hand = new Vector3(), target = new Vector3(), tip = new Vector3(), lip = new Vector3(), last = new Vector3(), point = new Vector3(), along = new Vector3(), heldAxis = new Vector3();
   const turn = new Quaternion();
   let draggedX: number | null = null;
+  const releasedAt = new Vector3(), releasedAxis = new Vector3();
+  let hadContact = false;
   const rod = (i: number, a: Vector3, b: Vector3) => {
     const made = pieces[i]!; along.subVectors(b, a);
     made.position.copy(a).add(b).multiplyScalar(.5);
@@ -22,11 +32,29 @@ export function createNorrskenRescue() {
   };
   return {
     group,
+    /** Scene time freezes with reading and Pause. A restored taste has no old grip to bring back. */
+    weight(flags: ReadonlySet<string>, tasteSeconds?: number, calm = false): number {
+      if (!flags.has('lower') || flags.has('home')) return 0;
+      if (!flags.has('taste')) return 1;
+      return hadContact && tasteSeconds !== undefined && !calm ? 1 - smooth(tasteSeconds / .45) : 0;
+    },
     update(rig: CarryingRig, player: Group, carving: Group, flags: ReadonlySet<string>, lowering: number,
-      pulling: boolean, clock: number, dt: number, calm: boolean, lifting = 0, feeding = false) {
+      pulling: boolean, clock: number, dt: number, calm: boolean, lifting = 0, feeding = false, releaseWeight = 0) {
       const lowered = flags.has('lower'), rescued = flags.has('placed:tragubbe');
       group.visible = lowered && !flags.has('taste') && !flags.has('home');
-      if (!group.visible) return;
+      const grip = { kind: 'power' as const, size: .026 };
+      if (!group.visible) {
+        // Keep the last actual socket while the right hand opens. Recomputing the hauling target here would
+        // jump it forward when the wood settles. Store it in his frame so growing does not stretch the releasing
+        // arm back to a point beside his former tiny body. The scene owns the carving and rope visibility.
+        if (flags.has('taste') && hadContact && releaseWeight > 0) {
+          player.localToWorld(target.copy(releasedAt));
+          along.copy(releasedAxis).transformDirection(player.matrixWorld);
+          if (rig.grasp) rig.grasp(1, grip, target, along, hand, releaseWeight);
+          else { rig.reach(1, target, releaseWeight); rig.hold?.(1, grip, releaseWeight); }
+        } else hadContact = false;
+        return;
+      }
       for (const piece of pieces) piece.visible = false;
       draggedX ??= carving.position.x;
       const distance = player.position.x - draggedX;
@@ -40,7 +68,6 @@ export function createNorrskenRescue() {
         // The lower corner scrapes the rock. Its weight trails each step, instead of hovering at hand height.
         carving.rotation.z = hauling ? -Math.sign(distance) * (.3 + (calm ? 0 : .035 * Math.sin(clock * 9))) : 0;
       }
-      const grip = { kind: 'power' as const, size: .026 };
       // Elof's outer group faces +x (the imported model is turned inside it). In the crouch his
       // chest is lower too: a standing-height target would put the feeding hand over his head.
       target.set(hauling ? -.17 : .28, feeding ? .3 : hauling ? .46 : .53, .12);
@@ -56,8 +83,13 @@ export function createNorrskenRescue() {
         target.copy(carving.position); target.z -= .16; target.y += .4;
         rig.reach(0, target, lifting); rig.hold?.(0, { kind: 'power', size: .13 }, lifting);
         rig.hand(1, hand);
-      } else if (rig.grasp) rig.grasp(1, grip, target, along, hand);
-      else { rig.reach(1, target); rig.hand(1, hand); rig.hold?.(1, grip); }
+      } else if (rig.grasp) rig.grasp(1, grip, target, along, hand, 1, heldAxis);
+      else { rig.reach(1, target); rig.hand(1, hand); rig.hold?.(1, grip); heldAxis.copy(along); }
+      if (lifting === 0) {
+        player.worldToLocal(releasedAt.copy(hand));
+        releasedAxis.copy(heldAxis).applyQuaternion(player.getWorldQuaternion(turn).invert());
+        hadContact = true;
+      }
       if (!rescued) {
         // The second hand feeds the line while lowering, then closes behind the first for each heave.
         target.copy(hand).addScaledVector(along, pulling ? -.17 : -.11); target.z -= .05;

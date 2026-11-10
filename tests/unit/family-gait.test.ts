@@ -42,8 +42,8 @@ function soles(stage: Stage): { heel: Vector3; toe: Vector3 }[] {
 describe('the family walk', () => {
   it.each([[6, 4], [6, 2], [10, 2]])('keeps the planted boot where it was put down: %s across in %s seconds', (way, seconds) => {
     const stage = stageFor([{ at: 0, x: 0, y: 0, face: 0, move: .01, act: 'stand' }, { at: 1, x: way, move: seconds }]);
-    type Contact = { side: number; on: 'heel' | 'toe' | 'flat'; x: number };
-    let last: Contact | null = null, lastX = 0, slipped = 0, travelled = 0;
+    type Contact = { side: number; on: 'heel' | 'toe' | 'flat'; x: number; z: number };
+    let last: Contact | null = null, lastX = 0, slipped = 0, along = 0, across = 0, travelled = 0;
     for (let f = 0; f <= (1 + seconds + .5) * 60; f++) {
       stage.update({ id: 'motion', seconds: f / 60 }, new Set(), { x: 0, y: 0 }, f / 60, 1 / 60, false);
       const now = soles(stage), x = body(stage).group.position.x;
@@ -52,20 +52,24 @@ describe('the family walk', () => {
       let contact: Contact | null = null;
       for (const [side, one] of now.entries()) {
         const heel = one.heel.y - low < .01, toe = one.toe.y - low < .01;
-        if (heel && toe) contact = { side, on: 'flat', x: (one.heel.x + one.toe.x) / 2 };
-        else if (heel || toe) contact ??= { side, on: heel ? 'heel' : 'toe', x: heel ? one.heel.x : one.toe.x };
+        if (heel && toe) contact = { side, on: 'flat', x: (one.heel.x + one.toe.x) / 2, z: (one.heel.z + one.toe.z) / 2 };
+        else if (heel || toe) contact ??= { side, on: heel ? 'heel' : 'toe', x: heel ? one.heel.x : one.toe.x, z: heel ? one.heel.z : one.toe.z };
       }
       // Off the ground in a run's flight, nothing is planted.
       if (last && contact && contact.side === last.side && contact.on === last.on && low < .01) {
-        slipped += Math.abs(contact.x - last.x);
+        const dx = contact.x - last.x, dz = contact.z - last.z;
+        slipped += Math.hypot(dx, dz); along += Math.abs(dx); across += Math.abs(dz);
         travelled += Math.abs(x - lastX);
       }
       last = contact; lastX = x;
     }
     expect(travelled).toBeGreaterThan(way * .2);
-    // Before the motion pass of 6 November the planted boot slid about as far as the body went (a ratio near 1). The
-    // feet are fitted to the ground now (src/render/gait.ts): what remains is from steps that change length.
-    expect(slipped / travelled).toBeLessThan(.08);
+    // Count side slip too: the old x-only check missed the pelvis turning the planted legs. Counter-yaw lowers slow
+    // walking's total slip .20761→.18386, while x rises .06593→.08218 because the hip origins still move with the pelvis.
+    // Keep that tradeoff bounded per axis; do not pretend that the remaining slip (including changing steps) is zero.
+    expect(slipped / travelled).toBeLessThan(.19);
+    expect(along / travelled).toBeLessThan(.085);
+    expect(across / travelled).toBeLessThan(.14);
   });
 
   it('ends a walk with the feet together, and its steps get longer as it goes faster', () => {

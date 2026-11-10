@@ -11,6 +11,40 @@ const player = (more: Partial<PlayerState> = {}): PlayerState => ({ x: 0, y: 0, 
 const target = (state: PlayerState, phase = 0, pace = 0, landing = 0) => playerPose(state, phase, pace, landing, { ...STANDING });
 
 describe('the player’s shared motion', () => {
+  it('does not accumulate a rope-pulling pose through repeated reading or Pause frames', () => {
+    const motion = createPlayerMotion(), state = player();
+    const base = { ...motion.update(state, 0, 1 / 60, null) };
+    let pulling: Pose | undefined;
+    for (let frame = 0; frame < 600; frame++) {
+      const posed = motion.update(state, 0, 0, null);
+      expect(posed).toEqual(base);
+      // Halfway into taking the weight, the view adds the pull to this held base.
+      posed.lean += (-.24 - posed.lean) * .5;
+      posed.kneeL += (.25 - posed.kneeL) * .5;
+      posed.kneeR += (.25 - posed.kneeR) * .5;
+      if (pulling) expect(posed).toEqual(pulling);
+      pulling = { ...posed };
+    }
+  });
+
+  it('keeps caller gestures out of scripted entry, paused holds and the return to walking', () => {
+    for (const calm of [false, true]) {
+      const motion = createPlayerMotion(), untouched = createPlayerMotion(), state = player();
+      const scenePose = { ...STANDING, lean: .3, armL: 1.1, kneeL: .4 };
+      let output: Pose | undefined;
+      for (let frame = 0; frame < 240; frame++) {
+        const scripted = frame >= 40 && frame < 160 ? scenePose : null;
+        const dt = frame >= 90 && frame < 120 ? 0 : 1 / 60;
+        const x = frame > 180 ? (frame - 180) / 20 : 0;
+        const posed = motion.update(state, x, dt, scripted, 0, calm);
+        expect(posed).toEqual(untouched.update(state, x, dt, scripted, 0, calm));
+        if (output) expect(posed).toBe(output);
+        output = posed;
+        posed.lean += .3; posed.armR = 2.4; posed.kneeL += .4;
+      }
+    }
+  });
+
   it('keeps the stand-in mouth target at its visible lips through growth and head turns', () => {
     const body = createPlayerStandIn(), lips = body.group.getObjectByName('player-mouth')!;
     body.group.position.set(7, 3, -2); body.group.rotation.y = -.35;
@@ -378,6 +412,26 @@ describe('the rounded public player', () => {
         }
       }
       expect(lowest).toBeCloseTo(0, 6);
+    }
+  });
+
+  it('uses the requested ankle angles while preserving the stand-in boot dimensions and floor contact', () => {
+    const body = createPlayerStandIn();
+    for (const [left, right] of [[0, 0], [.45, -.2], [-.35, .6]]) {
+      body.pose({ ...STANDING, footL: left!, footR: right! }); body.group.updateMatrixWorld(true);
+      let low = Infinity;
+      for (const [side, requested] of [['left', left!], ['right', right!]] as const) {
+        const boot = body.group.getObjectByName(`player-boot-${side}`) as Mesh;
+        const heel = boot.localToWorld(new Vector3(-.1, -.045, 0)), toe = boot.localToWorld(new Vector3(.1, -.045, 0));
+        expect(Math.atan2(toe.y - heel.y, toe.x - heel.x)).toBeCloseTo(requested, 6);
+        boot.geometry.computeBoundingBox();
+        expect(boot.geometry.boundingBox!.getSize(new Vector3()).toArray()).toEqual([
+          expect.closeTo(.2, 6), expect.closeTo(.09, 6), expect.closeTo(.13, 6),
+        ]);
+        const vertices = boot.geometry.getAttribute('position');
+        for (let i = 0; i < vertices.count; i++) low = Math.min(low, boot.localToWorld(new Vector3().fromBufferAttribute(vertices, i)).y);
+      }
+      expect(low).toBeCloseTo(0, 6);
     }
   });
 

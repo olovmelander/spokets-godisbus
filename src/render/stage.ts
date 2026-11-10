@@ -1,3 +1,5 @@
+import { flashlightCarryTarget, holdFlashlight, quietLampArm } from './lamp-hold';
+import { lampHandTransfer } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
@@ -14,6 +16,7 @@ import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
 import { goldSweet } from './gold-sweet';
+import { goldMouthWeight } from './gold-contact';
 import type { Grip } from './fingers';
 import { lookAt } from './look';
 import { createTalker, talk, type Free, type Look, type Talker } from './talk';
@@ -30,8 +33,6 @@ const FAMILY: readonly Role[] = ['pappa', 'mamma', 'moa', 'bertil'];
 const SEATED: readonly Act[] = ['sit', 'carve', 'draw'];
 /** Acts whose aim the whole body turns to. */
 const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
-/** The way a lamp shines in its own space (litLamp). */
-const LAMP_AXIS = new Vector3(0, 0, 1);
 /** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
 const OFFER_REACH = 0.82;
 /**
@@ -61,7 +62,7 @@ interface State {
   act: Act;
   /** When the act began, and the act and stance before it, for the blend between them. */
   actAt: number;
-  before: { act: Act; t: number; stance: Stance; aim: Point | null; mug: 0 | 1 | null; held: [Thing | null, Thing | null]; previous: State['before'] } | null;
+  before: { act: Act; t: number; stance: Stance; settledLow: boolean; aim: Point | null; mug: 0 | 1 | null; held: [Thing | null, Thing | null]; previous: State['before'] } | null;
   stance: Stance;
   aim: Point | null;
   glance: { from: Point; weight: number } | null;
@@ -96,6 +97,9 @@ const mixTurn = (a: number, b: number, t: number) => {
  * `height` tall on `legs`: its distance counted in steps of the length each moment's speed gives (acting.ts stepLength).
  */
 function stepsOf(way: number, seconds: number, height: number, u: number, legs: Legs): number {
+  // No interval has elapsed at the exact start key. Both speed and step length are zero there;
+  // integrating 0 / 0 would poison a previous stride still settling under the new action.
+  if (u <= 0) return 0;
   const n = 24;
   let steps = 0;
   for (let i = 0; i < n; i++) {
@@ -144,6 +148,8 @@ const JUMP = 0.08;
 const SLOW = ['sway', 'hipRoll', 'bendSide', 'tilt'] as const;
 const CATCH_SLOW = 6;
 const CATCH_HEAD = 9;
+/** The neck follows at its own speed, not the much faster catch allowed for hands and feet. */
+const HEAD_RATE = 6;
 const catchOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? CATCH_SLOW
   : joint === 'turn' || joint === 'nod' ? CATCH_HEAD : CATCH);
 /** And those slow ones never go over faster than this (a second's worth of the hips' whole shift), even in a stride. */
@@ -153,7 +159,8 @@ const SLOW_RATE = 1.5;
  * (tests/unit/family-gait.test.ts). A run's legs would turn faster: there it shows as legs that turn at it, to and fro.
  */
 const LEG_RATE = 20;
-const rateOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE : JOINT_RATE);
+const rateOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE
+  : joint === 'turn' || joint === 'nod' ? HEAD_RATE : JOINT_RATE);
 /** Where each of the family's standing loops starts, in seconds: nobody shifts their weight in step with anyone else. */
 const LOOP: Record<Role, number> = { pappa: 0, mamma: 2.7, moa: 5.1, bertil: 1.3 };
 /** What a stride gives the legs and hips, whatever the hands are doing, and what it gives the trunk, head and spread arms. */
@@ -230,7 +237,8 @@ function apply(state: State, key: ActorKey, since: number): void {
   if (key.act !== undefined && (key.act !== state.act || state.actAt < key.at - 1e-6)) {
     // Keep any unfinished blend when the next key interrupts it. Relative ages also survive scene changes.
     const age = Math.max(0, key.at - state.actAt);
-    state.before = first ? null : { act: state.act, t: age, stance: state.stance, aim: state.aim,
+    // Repeating a lowered act is already down; retain that fact even after its earlier transition history expires.
+    state.before = first ? null : { act: state.act, t: age, stance: state.stance, settledLow: LOW.includes(state.stance) && state.before?.stance === state.stance, aim: state.aim,
       mug: state.holds === 'mug' ? 1 : state.holdsLeft === 'mug' ? 0 : null, held: [state.holdsLeft, state.holds], previous: age < .45 ? state.before : null };
     state.stance = stanceOf(key.act, state.stance);
     state.act = key.act;
@@ -331,6 +339,12 @@ export interface Directions {
 const HANDS_FREE: readonly Free[] = [[true, true], [true, false], [false, true], [false, false]];
 /** Acts that leave the hands to hang: a gesture of speech may use them. */
 const HANDS_HANG: readonly Act[] = ['stand', 'watch', 'look', 'nod'];
+/** These acts keep their working right arm but leave the left free to counter-swing during a walk.
+ * Pointing's idle counter-gesture belongs to standing; reach, lift and show need both arms and stay their own.
+ */
+const WALKING_HANDS: Partial<Record<Act, Free>> = {
+  point: HANDS_FREE[1]!, shine: HANDS_FREE[1]!, offer: HANDS_FREE[1]!, wave: HANDS_FREE[1]!, paint: HANDS_FREE[1]!,
+};
 
 /**
  * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
@@ -529,6 +543,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       holders.add(mesh);
     }
   }
+  if (chapter.id === 'stormkvall') {
+    const lamp = litLamp(); lamp.name = 'stage-thing:lamp-pappa'; drawnWhile(lamp, false);
+    things.set('lamp-pappa', lamp); holders.add(lamp);
+  }
   /** The chairs and stools, and who sits on each (below): getting up, they push it back from the table, and draw it in sitting down. */
   const chairs: { made: Group; x: number; y: number; z: number; face: number; top: number; owner: string | null; near: number }[] = [];
   for (const piece of chapter.furniture ?? []) {
@@ -654,7 +672,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
 
   const place = new Object3D();
-  const hand = new Vector3(), lampAim = new Vector3(), kneeAt = new Vector3();
+  const hand = new Vector3(), lampAim = new Vector3(), lampBefore = new Vector3(), kneeAt = new Vector3();
+  const lampMeeting = new Vector3(), lampOther = new Vector3();
+  const kneeOutside = new Vector3(), kneeNormal = new Vector3(0, -1, 0);
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
   const walking: Pose = { ...STANDING };
@@ -712,7 +732,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // The candy's centre meets the lips while its base stays between the fingertips. Reaching the wrist
         // here instead left the private model's grip socket above his eyes.
         heldPoint.y -= aboveFingers;
-        hand.lerp(heldPoint, bite.mouth);
+        // The sweet has vanished before growth begins. Release the empty hand's mouth contact while still
+        // in the eating act, so the next act inherits a hand already following the blended body pose.
+        hand.lerp(heldPoint, bite.mouth * (sweet ? goldMouthWeight(direction.actT) : 1));
         if (sweet && rig.grasp && rig.socket) rig.grasp(1, pinched, wristTarget.copy(hand), heldAxis, hand);
         else { rig.reach(1, hand); at(); }
       }
@@ -749,6 +771,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const scene = active >= 0 ? scenes[active]! : null;
       starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
       const t = frame?.seconds ?? 0;
+      const elofKeys = scene?.stage?.elof;
+      const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t) : null;
       const ghostKeys = scene?.stage?.actors?.ghost;
       const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;
       if (workpiece) play(workpiece, ghostKeys!, t);
@@ -794,6 +818,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // Gone in: coming back is a cut, not a walk from where they went.
           live.delete(who);
           continue;
+        }
+        // The lamp Elof gave Pappa is a real held prop, so neither walking nor speech reuses that hand.
+        const persistentLamp = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
+        const transfer = persistentLamp ? lampHandTransfer(chapter, who, frame, calm) : 0;
+        if (persistentLamp) {
+          state = { ...state };
+          state.holds = transfer > 0 ? 'lamp-pappa' : null;
+          state.holdsLeft = transfer < 1 ? 'lamp-pappa' : null;
         }
         const was = live.get(who);
         let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
@@ -964,12 +996,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
          * How far down in a crouch the body is (0 to 1): going down, down there under whatever it does with its arms and
          * head, and getting up the same way back. The hips sit back over the feet as far (crouchPlaces), which stay put.
          */
-        const crouched = (act: Act, stance: Stance, from: State['before'], age: number): number => {
+        const crouched = (act: Act, stance: Stance, from: State['before'], age: number, settled = false): number => {
           const clip = CLIPS.crouch, s = clip.seconds;
-          const now = stance === 'crouch' ? act === 'crouch' && !calm ? Math.min(1, Math.max(0, sample(clip.down!, Math.min(age, s)))) : 1
+          const now = stance === 'crouch' ? act === 'crouch' && !calm ? Math.min(1, Math.max(0, sample(clip.down!, Math.min(age + (settled ? s : 0), s)))) : 1
             : stance === 'stand' && from?.stance === 'crouch' && !calm && age < CROUCH_UP
               ? Math.min(1, Math.max(0, sample(clip.down!, s * (1 - age / CROUCH_UP)))) : 0;
-          return from && age < .45 ? mix(crouched(from.act, from.stance, from.previous, from.t), now, smooth(age / .45)) : now;
+          return from && age < .45 ? mix(crouched(from.act, from.stance, from.previous, from.t, from.settledLow), now, smooth(age / .45)) : now;
         };
         // Getting up from a chair and sitting down on one (art/blender/motion.py CLIPS.standUp, sitDown): what it has of
         // the body (CHAIRED) comes in from the act before and hands over to what they do next; the head nods on top.
@@ -1007,7 +1039,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         getUp(pose, state.stance, state.before, elapsed);
         if (state.before && elapsed < 0.45) {
           const previous = (old: NonNullable<State['before']>, out: Pose): Pose => {
-            actPose(old.act, { t: old.t, aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who, legs: rig.legs, clock: time + LOOP[who], seat: sitsAt }, out, old.stance);
+            actPose(old.act, { t: old.t + (old.settledLow && (old.act === 'kneel' || old.act === 'crouch') ? CLIPS[old.act].seconds : 0), aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who, legs: rig.legs, clock: time + LOOP[who], seat: sitsAt }, out, old.stance);
             getUp(out, old.stance, old.previous, old.t);
             chair(out, old.stance, old.previous, old.t);
             if (old.previous) blendPose(previous(old.previous, { ...STANDING }), out, smooth(old.t / .45), out, true);
@@ -1042,18 +1074,21 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // and the trunk goes on over them as it goes walking, turning against the hips and bending with the step.
           for (const joint of STRIDING) pose[joint] += (walking[joint] - pose[joint]) * legs;
           if (acting) for (const joint of UNDER_ACT) pose[joint] += (walking[joint] - STANDING[joint]) * weight;
-          if (!acting) {
-            for (const joint of CARRIED) pose[joint] += (walking[joint] - pose[joint]) * weight;
-            if (!state.holdsLeft && state.holds !== 'drawing') {
-              pose.armL += (walking.armL - pose.armL) * weight;
-              pose.elbowL += (walking.elbowL - pose.elbowL) * weight;
-              pose.wristL += (walking.wristL - pose.wristL) * weight;
-            }
-            if (!state.holds && state.holdsLeft !== 'drawing') {
-              pose.armR += (walking.armR - pose.armR) * weight;
-              pose.elbowR += (walking.elbowR - pose.elbowR) * weight;
-              pose.wristR += (walking.wristR - pose.wristR) * weight;
-            }
+          if (!acting) for (const joint of CARRIED) pose[joint] += (walking[joint] - pose[joint]) * weight;
+          const free = !acting || HANDS_HANG.includes(state.act) ? HANDS_FREE[0]!
+            : state.act === 'shine' && state.holdsLeft?.startsWith('lamp-') && !state.holds?.startsWith('lamp-')
+              ? HANDS_FREE[2]! : WALKING_HANDS[state.act] ?? HANDS_FREE[3]!;
+          // Arm ownership is independent of the torso gesture. Props reserve their actual hand, and a drawing both;
+          // a lamp carried on the left leaves the right arm free. Targeted contact is solved after the shared pose.
+          if (free[0] && !state.holdsLeft && state.holds !== 'drawing') {
+            pose.armL += (walking.armL - pose.armL) * weight;
+            pose.elbowL += (walking.elbowL - pose.elbowL) * weight;
+            pose.wristL += (walking.wristL - pose.wristL) * weight;
+          }
+          if (free[1] && !state.holds && state.holdsLeft !== 'drawing') {
+            pose.armR += (walking.armR - pose.armR) * weight;
+            pose.elbowR += (walking.elbowR - pose.elbowR) * weight;
+            pose.wristR += (walking.wristR - pose.wristR) * weight;
           }
           if (stridePace > 0.01) pose.seat = null;
         }
@@ -1081,7 +1116,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         if (flowing && !cut && shown && target) {
           const handing = had !== undefined && had !== legs;
           for (const joint of LIMBS) {
-            const step = pose[joint] - target[joint], excess = step - targetStep[joint], jump = Math.abs(excess) > JUMP;
+            const step = pose[joint] - target[joint], excess = step - targetStep[joint];
+            // A stopped or slowly moving target is not another jump. Otherwise a remembered fast step can keep
+            // injecting the same offset forever, even while a held pose is completely still.
+            const jump = Math.abs(step) > JUMP && Math.abs(excess) > JUMP;
             targetStep[joint] = jump ? targetStep[joint] : step;
             // The legs are the stride's, a clip's or a stance's own, which put the feet where they stand (and the trunk is the
             // stride's while it walks): they are drawn as asked, at most at LEG_RATE, the weight's shift at SLOW_RATE.
@@ -1100,11 +1138,32 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             offSpeed[joint] = (offSpeed[joint] - w * k) * e;
             if (Math.abs(off[joint]) < 1e-6 && Math.abs(offSpeed[joint]) < 1e-5) off[joint] = offSpeed[joint] = 0;
             const most = rateOf(joint) * dt;
-            pose[joint] = shown[joint] + Math.max(-most, Math.min(most, pose[joint] + off[joint] - shown[joint]));
+            let caught = pose[joint] + off[joint];
+            if (joint === 'turn') {
+              // A delayed turn may keep momentum after its target changes, but cannot carry the head behind the chest.
+              // Bound the catch offset smoothly inside the remaining neck range: ordinary gaze (zero offset) stays
+              // exact, and velocity eases towards the limit instead of hitting a hard clamp. Speech adds only its small
+              // look/nod afterwards. Keep this inside the active catch; Pause retains the already drawn head unchanged.
+              const gaze = Math.max(-.9, Math.min(.9, pose.turn));
+              const room = 1.15 - Math.sign(off.turn) * gaze;
+              caught = gaze + room * Math.tanh(off.turn / room);
+            }
+            pose[joint] = shown[joint] + Math.max(-most, Math.min(most, caught - shown[joint]));
             speed[joint] = (pose[joint] - shown[joint]) / dt;
           }
+          // Footwork owns these optional hip turns outside JOINTS. Returning a stride to standing, or a
+          // turn to a crouch, releases them at the same bounded speed as the rest of each leg. Standing
+          // wraps a direction that carry kept continuous: take its nearest equivalent, not another full turn.
+          for (const joint of ['yawL', 'yawR'] as const) {
+            const from = shown[joint] ?? 0, difference = (pose[joint] ?? 0) - from, most = LEG_RATE * dt;
+            const step = Math.atan2(Math.sin(difference), Math.cos(difference));
+            pose[joint] = from + Math.max(-most, Math.min(most, step));
+          }
+        } else if (paused && shown) {
+          // Pause holds the motion's memory as well as its picture. Losing an unfinished blend's
+          // offset or velocity here would make the first resumed frame jump toward its target.
+          Object.assign(pose, shown);
         } else {
-          if (paused && shown) Object.assign(pose, shown);
           for (const joint of LIMBS) off[joint] = offSpeed[joint] = speed[joint] = targetStep[joint] = 0;
         }
         if (!paused) asking.set(who, wantedNow);
@@ -1112,7 +1171,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // Getting up, the body comes up over its feet; sitting down, it goes down behind them, and in with the chair.
         const hipsBack = backOf(state.stance, state.before, elapsed);
         // Crouching, the hips sit back over the feet, which stay where they stood.
-        const shift = hipsBack + crouchPlaces(rig.legs).ahead * rig.height * crouched(state.act, state.stance, state.before, elapsed + already);
+        const shift = hipsBack + crouchPlaces(rig.legs).ahead * rig.height * crouched(state.act, state.stance, state.before, elapsed, already > 0);
         if (shift !== 0) {
           rig.group.position.x -= Math.sin(yaw(face)) * shift;
           rig.group.position.z -= Math.cos(yaw(face)) * shift;
@@ -1122,15 +1181,49 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           const back = chairBack(state.stance, state.before, elapsed, hipsBack, pushed);
           piece.made.position.set(piece.x - Math.sin(yaw(piece.face)) * back, piece.y, piece.z - Math.cos(yaw(piece.face)) * back);
         }
+        // Kneeling, the right hand rests on the right knee, and crouching both hands on the knees, with the real arms: as they
+        // go down, while they look about down there, and as they push up off them getting up.
+        const lowered = (stance: Stance) => stance === 'kneel' ? CLIPS.kneel : stance === 'crouch' ? CLIPS.crouch : null;
+        /** How long getting up takes, from a kneel or a crouch. */
+        const upOf = (clip: Clip) => clip === CLIPS.crouch ? CROUCH_UP : clip.seconds;
+        const onKnee = (side: 0 | 1, act: Act, stance: Stance, age: number, old: State['before'], settled = false): number => {
+          const resting = (low: Stance) => low === 'crouch' || side === 1;
+          const clip = lowered(stance), from = old ? lowered(old.stance) : null;
+          const now = clip && resting(stance) ? act === stance ? calm ? 1 : sample(clip.hand!, age + (settled ? clip.seconds : 0))
+            : act === 'watch' || act === 'look' || act === 'nod' ? 1 : 0
+            : stance === 'stand' && from && resting(old!.stance) && !calm && age < upOf(from)
+              ? sample(from.hand!, from.seconds * (1 - age / upOf(from))) * (1 - smooth(age / upOf(from))) : 0;
+          return old && age < .45 ? mix(onKnee(side, old.act, old.stance, old.t, old.previous, old.settledLow), now, smooth(age / .45)) : now;
+        };
+        const supportLeft = rig.knee && !state.holdsLeft?.startsWith('lamp-') ? onKnee(0, state.act, state.stance, elapsed, state.before, already > 0) : 0;
+        const supportRight = rig.knee && !state.holds?.startsWith('lamp-') ? onKnee(1, state.act, state.stance, elapsed, state.before, already > 0) : 0;
         // What is said (./talk.ts), drawn over what the scene asks for and never kept in it: they look at whoever speaks, from
         // where their face was a moment ago, and speak with their mouths, their heads and a free hand.
         const talker = talkers.get(who) ?? talkers.set(who, createTalker(who, 101 + 37 * FAMILY.indexOf(who))).get(who)!;
         const other = talk.lookAt(who), there = other ? talk.face(other) : null;
         if (there) rig.mouth(faceAt);
         const hangs = HANDS_HANG.includes(state.act);
-        const free = HANDS_FREE[(hangs && !state.holdsLeft ? 0 : 2) + (hangs && !state.holds ? 0 : 1)]!;
+        const free = HANDS_FREE[(hangs && !state.holdsLeft && supportLeft <= 1e-3 ? 0 : 2) + (hangs && !state.holds && supportRight <= 1e-3 ? 0 : 1)]!;
         talker.update(talk, there ? lookAt(rig.group, faceAt, there, heard) : null, dt, calm, free);
         talker.pose(pose);
+        // A carrying hand cannot also wave or point underneath its torch solve: that moving palm would roll the
+        // wrist around a steady beam. Keep this arm's base quiet, sharing the acquisition blend with the held prop.
+        for (const side of [0, 1] as const) {
+          const held = side === 0 ? state.holdsLeft : state.holds;
+          if (!held?.startsWith('lamp-')) continue;
+          const weight = calm || persistentLamp || !state.before || state.before.held[side] === held ? 1 : smooth(elapsed / .45);
+          const support = persistentLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
+          quietLampArm(pose, side, weight * support);
+        }
+        // Support begins with a relaxed, outward elbow. Carrying a raised gesture's roll into the knee solve can
+        // turn the elbow through the torso during acquisition even though the final contact is correct.
+        for (const side of ['L', 'R'] as const) {
+          const weight = side === 'L' ? supportLeft : supportRight;
+          pose[`arm${side}`] = mix(pose[`arm${side}`], .2, weight);
+          pose[`elbow${side}`] = mix(pose[`elbow${side}`], .6, weight);
+          pose[`out${side}`] = mix(pose[`out${side}`], .4, weight);
+          pose[`wrist${side}`] *= 1 - weight;
+        }
         rig.pose(pose);
         rig.face?.(talker.mouth.open, talker.mouth.round, talker.lids);
         rig.mouth(faceAt);
@@ -1138,7 +1231,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // Resolve authored interaction targets in 3D. Interrupted acts retain their contact share,
         // and unreachable targets stay at the real arm's limit rather than stretching the body.
         hand.set(0, 0, 0); otherHand.set(0, 0, 0);
-        let rightWeight = 0, leftWeight = 0;
+        let rightWeight = 0, leftWeight = 0, rightLimit = 0;
         const reach = (act: Act, age: number, target: Point | null, old: State['before'], share: number): void => {
           const k = old ? smooth(age / .45) : 1;
           if (old && k < 1) reach(old.act, old.t, old.aim, old.previous, share * (1 - k));
@@ -1147,6 +1240,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           heldPoint.set(target.x, target.y, target.z ?? 0);
           const right = weight * smooth(t / (act === 'lift' ? 1.1 : act === 'point' ? .3 : .5));
           hand.addScaledVector(heldPoint, right); rightWeight += right;
+          rightLimit += right * (act === 'offer' ? OFFER_REACH : 1);
           if (act === 'reach' || act === 'lift') {
             const left = weight * smooth((t - .08) / (act === 'lift' ? 1.02 : .42));
             heldPoint.x += .3 * Math.cos(yaw(face)) / unit;
@@ -1156,34 +1250,33 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         };
         reach(state.act, elapsed, state.aim, state.before, 1);
-        // Pointing uses the whole arm; something held out to be taken keeps a bend at the elbow, however far off he is.
-        if (rightWeight > 0) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, state.act === 'offer' ? OFFER_REACH : 1);
+        // Pointing uses the whole arm; an offer keeps an elbow bend. Each retained act carries its own limit
+        // through the blend, so starting or ending an offer cannot suddenly shorten or straighten the arm.
+        const rightTorch = state.holds?.startsWith('lamp-'), leftTorch = state.holdsLeft?.startsWith('lamp-');
+        // A torch points with its beam. Its carrying solve owns that arm, rather than first stretching the same
+        // elbow towards the thing and then solving it a second time back down beside the body.
+        // A palm supporting Elof needs a little elbow bend before its final grip solve. Locking the arm straight
+        // first erases its bend plane; turning the palm then bends it on an arbitrary side in a single frame.
+        // Keep that small reserve only while he stands on the hands, releasing it as he steps off.
+        const carrying = elofNow?.rides === who ? elofNow.rideWeight : 0;
+        const carryingReach = 1 - .02 * carrying;
+        if (rightWeight > 0 && !rightTorch) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, Math.min(rightLimit / rightWeight, carryingReach));
         // And the hand points with its first finger as the arm comes up, and lets it go as the arm comes down (./fingers.ts).
         const points = state.act === 'point' ? smooth((calm ? 3 : elapsed) / .3)
           : state.before?.act === 'point' ? 1 - smooth(elapsed / .45) : 0;
-        if (points > 1e-3) rig.hold?.(1, POINTING, points);
-        if (leftWeight > 0) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
-        // Kneeling, the right hand rests on the right knee, and crouching both hands on the knees, with the real arms: as they
-        // go down, while they look about down there, and as they push up off them getting up.
-        const lowered = (stance: Stance) => stance === 'kneel' ? CLIPS.kneel : stance === 'crouch' ? CLIPS.crouch : null;
-        /** How long getting up takes, from a kneel or a crouch. */
-        const upOf = (clip: Clip) => clip === CLIPS.crouch ? CROUCH_UP : clip.seconds;
-        const onKnee = (side: 0 | 1, act: Act, stance: Stance, age: number, old: State['before']): number => {
-          const resting = (low: Stance) => low === 'crouch' || side === 1;
-          const clip = lowered(stance), from = old ? lowered(old.stance) : null;
-          const now = clip && resting(stance) ? act === stance ? calm ? 1 : sample(clip.hand!, age)
-            : act === 'watch' || act === 'look' || act === 'nod' ? 1 : 0
-            : stance === 'stand' && from && resting(old!.stance) && !calm && age < upOf(from)
-              ? sample(from.hand!, from.seconds * (1 - age / upOf(from))) * (1 - smooth(age / upOf(from))) : 0;
-          return old && age < .45 ? mix(onKnee(side, old.act, old.stance, old.t, old.previous), now, smooth(age / .45)) : now;
-        };
+        if (points > 1e-3 && !rightTorch) rig.hold?.(1, POINTING, points);
+        if (leftWeight > 0 && !leftTorch) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight, carryingReach);
         forward.set(Math.sin(yaw(face)), 0, Math.cos(yaw(face)));
         for (const side of [0, 1] as const) {
-          const handOnKnee = rig.knee ? onKnee(side, state.act, state.stance, elapsed + already, state.before) : 0;
+          const handOnKnee = side === 0 ? supportLeft : supportRight;
           if (handOnKnee <= 1e-3) continue;
-          // On the top of the knee, a little back from its front, the wrist over the thigh.
-          rig.knee!(side, kneeAt).addScaledVector(up, rig.height * KNEE_HAND.up).addScaledVector(forward, -rig.height * KNEE_HAND.back);
-          rig.reach(side, kneeAt, handOnKnee);
+          // Put the actual palm flat on the knee's visible top. The old wrist target behind the joint drew the forearm
+          // through the abdomen, and aiming only the fingers left a vertical palm beside the knee.
+          if (rig.kneeSurface) rig.kneeSurface(side, kneeAt);
+          else rig.knee!(side, kneeAt).addScaledVector(up, rig.height * KNEE_HAND.up);
+          kneeOutside.set(Math.cos(yaw(face)), 0, -Math.sin(yaw(face))).multiplyScalar(side === 0 ? 1 : -1);
+          rig.grip(side, kneeAt, forward, hand, handOnKnee, kneeNormal, kneeOutside);
+          rig.hold?.(side, FLAT, handOnKnee);
         }
         // The working hands follow the wood, using each body's real arm lengths and the blade's tip.
         const leavesCarving = state.before?.act === 'carve' && elapsed < .45;
@@ -1221,7 +1314,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (state.act === 'draw' || leavesDrawing) {
             drawingContact = true;
             const pen = drawingAt(state.act === 'draw' ? since(state.actAt) : state.before!.t, calm, who);
-            const weight = state.act === 'draw' ? 1 : 1 - smooth(elapsed / .45);
+            // Returning from a look or gesture brings the hands back with the act's event-time blend.
+            // An existing drawing (including its initial/restored pose) keeps its contact throughout.
+            const taking = calm || !state.before || state.before.act === 'draw' ? 1 : smooth(elapsed / .45);
+            const weight = state.act === 'draw' ? taking : 1 - smooth(elapsed / .45);
             paperContact.position.copy(sheet.position).addScaledVector(across, pen.across / unit).addScaledVector(forward, pen.ahead / unit);
             paperContact.position.y += .008 + pen.lift / unit;
             paperContact.userData.contact = pen.contact;
@@ -1245,9 +1341,18 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         }
         const showsDrawing = state.holds === 'drawing' || state.holdsLeft === 'drawing';
-        const leavesShowing = state.before?.act === 'show' && elapsed < .45;
+        const leavesShowing = state.before?.act === 'show' && state.before.held.includes('drawing') && elapsed < .45;
         if (sheet && (showsDrawing || leavesShowing)) {
-          rig.mouth(heldPoint).addScaledVector(up, -.64 / unit).addScaledVector(forward, .45 / unit);
+          rig.mouth(heldPoint);
+          // Her head can turn toward a speaker without pulling the page, and an arm, across her abdomen.
+          // Centre the page between the shoulders; only its height follows the face above it.
+          if (rig.arm) {
+            rig.arm(0, hand, otherHand, kneeAt);
+            rig.arm(1, otherHand, kneeAt, wristTarget);
+            heldPoint.x = (hand.x + otherHand.x) * .5;
+            heldPoint.z = (hand.z + otherHand.z) * .5;
+          }
+          heldPoint.addScaledVector(up, -.64 / unit).addScaledVector(forward, .45 / unit);
           rig.hand(1, hand); rig.hand(0, otherHand); hand.add(otherHand).multiplyScalar(.5).addScaledVector(up, .18);
           const arrival = calm || leavesShowing ? 1 : smooth(since(state.actAt) / .5);
           sheet.position.copy(hand).lerp(heldPoint, arrival);
@@ -1265,7 +1370,17 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         }
         // What they hold: in the right hand, and in the left. Moa's drawing is held up in both.
         const releasingMug = state.before && elapsed < .45 ? state.before.mug : null;
-        for (const [side, current] of [[1, state.holds], [0, state.holdsLeft]] as const) {
+        const handingLamp = persistentLamp && transfer > 0 && transfer < 1;
+        if (handingLamp) {
+          // Both hands meet at a reachable point ahead of the waist. Raw sleeve-gesture sockets can lie outside
+          // the other arm's reach. The receiving hand arrives before the giving hand lets go, so changing the
+          // fully supporting socket cannot jump the torch. The free arm keeps the authored sleeve movement.
+          flashlightCarryTarget(rig, 0, lampMeeting); flashlightCarryTarget(rig, 1, lampOther);
+          lampMeeting.lerp(lampOther, transfer);
+        }
+        const heldHands = handingLamp && transfer > .5 ? [[0, state.holdsLeft], [1, state.holds]] as const
+          : [[1, state.holds], [0, state.holdsLeft]] as const;
+        for (const [side, current] of heldHands) {
           // A hand that has just let something go opens over the blend, one that has just taken it closes.
           const had = state.before && elapsed < .45 ? state.before.held?.[side] ?? null : null;
           if (had && had !== current && had !== 'drawing' && !(had === 'mug' && side === releasingMug)) rig.hold?.(side, GRIPS[had], 1 - smooth(elapsed / .45));
@@ -1276,6 +1391,23 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (current) holding.add(mesh);
           rig.hand(side, hand);
           if (held === 'drawing') continue;
+          if (held.startsWith('lamp-')) {
+            const aim = state.aim;
+            lampAim.set(aim?.x ?? elof.x, aim?.y ?? elof.y + .4, aim?.z ?? 0);
+            // Looking to a new person turns the held torch over the same authored interval as the body.
+            // A raw aim here would snap the wrist even while the head/arms were still blending. Use scene time,
+            // so a reading hold or Pause keeps this turn where it was, without accumulating presentation frames.
+            const from = state.glance ? state.glance.from : state.before?.aim;
+            const aimWeight = state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
+            lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
+            // Newly taking a torch must follow the same event-time blend as the authored arms.
+            // Pappa's persistent indoor torch is already in hand across every later act.
+            const taking = calm || persistentLamp || had === current || !state.before ? 1 : smooth(elapsed / .45);
+            const support = handingLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
+            holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), true, taking * support,
+              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused), handingLamp ? lampMeeting : undefined);
+            continue;
+          }
           const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);
           if (held === 'mug') {
             const sip = sippingAt(state.act === 'sip' ? since(state.actAt) : 0, calm, who);
@@ -1317,16 +1449,6 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             mesh.position.copy(hand);
             if (carved) mesh.quaternion.setFromUnitVectors(up, knifeHeld);
             else if (drawn) mesh.quaternion.setFromUnitVectors(up, crayonHeld);
-            else if (held.startsWith('lamp-') && state.aim) {
-              // A lamp shines where its holder looks for something: the road ahead of him, the way up to a house.
-              lampAim.set(state.aim.x, state.aim.y, state.aim.z ?? 0).sub(hand).normalize();
-              if (rig.grasp) {
-                // The hand turns with it, closed round its body, the light out past the thumb.
-                rig.grasp(side, GRIPS[held], aimed.copy(hand), lampAim, hand, closing, heldAxis);
-                mesh.position.copy(hand).addScaledVector(heldAxis, -.06);
-                mesh.quaternion.setFromUnitVectors(LAMP_AXIS, heldAxis);
-              } else mesh.quaternion.setFromUnitVectors(LAMP_AXIS, lampAim);
-            }
             else if (rig.socket) mesh.quaternion.setFromUnitVectors(up, heldAxis);
             else mesh.rotation.set(0, yaw(face), held === 'knife' || held === 'brush' || held === 'crayon' ? -0.6 : 0);
           }
@@ -1531,8 +1653,6 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       if (ghost && rough > 0) block.position.set(ghost.x, ghost.y + .54, ghost.z);
 
       const shot = scene?.stage?.shots ? shotAt(scene.stage.shots, t) : null;
-      const elofKeys = scene?.stage?.elof;
-      const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t) : null;
       // On a hand he stands on its palm, a little over the hand's middle.
       const carrier = elofNow?.rides ? rigs.get(elofNow.rides) : undefined;
       const onto = { x: 0, y: 0, z: 0 };

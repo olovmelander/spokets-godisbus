@@ -1,8 +1,38 @@
 import { Bone, Euler, Group, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { createArmContact, createHandGrip, solveArm } from '../../src/render/arm-contact';
+import { createArmContact, createHandGrip, createHandHold, solveArm, type GripTurn } from '../../src/render/arm-contact';
 
 describe('arm contact geometry', () => {
+  it.each([-1, 1])('keeps a partially acquired tool on one rotation arc through the %s half-turn', sign => {
+    const hand = new Bone(), parent = new Group(); parent.add(hand);
+    const localAxis = new Vector3(1, 1, 0).normalize(), fingers = new Vector3(0, 0, 1);
+    const target = new Vector3(.3, 1.5, .6), socket = new Vector3(.03, -.02, .08), out = new Vector3(), held = new Vector3();
+    const turn: GripTurn = { rotation: new Quaternion(), valid: false };
+    const hold = createHandHold(parent, hand, point => { hand.position.copy(point); parent.updateMatrixWorld(true); }, fingers);
+    const desired = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), .4);
+    const axis = localAxis.clone().applyQuaternion(desired), down = fingers.clone().applyQuaternion(desired);
+    const pose = (degrees: number, weight: number) => {
+      hand.position.set(.3, 1.5, .6);
+      hand.quaternion.setFromAxisAngle(new Vector3(0, 0, 1), sign * degrees * Math.PI / 180).multiply(desired);
+      parent.updateMatrixWorld(true);
+      hold(socket, localAxis, target, axis, out, weight, held, down, turn);
+      expect(out.distanceTo(hand.localToWorld(socket.clone()))).toBeLessThan(1e-8);
+      return hand.getWorldQuaternion(new Quaternion());
+    };
+    let previous = pose(160, .2);
+    for (let i = 1; i <= 120; i++) {
+      const degrees = 160 + i / 3, weight = .2 + i / 300, current = pose(degrees, weight);
+      expect(current.angleTo(previous)).toBeLessThan(.02);
+      if (i === 60) for (let paused = 0; paused < 20; paused++) expect(pose(degrees, weight).angleTo(current)).toBeLessThan(1e-7);
+      previous = current;
+    }
+    expect(pose(200, 1).angleTo(desired)).toBeLessThan(1e-7);
+    expect(held.distanceTo(axis)).toBeLessThan(1e-8);
+    turn.valid = false;
+    const rewound = pose(160, .2); turn.valid = false;
+    expect(pose(160, .2).angleTo(rewound)).toBeLessThan(1e-7);
+  });
+
   it('reaches across the body in three dimensions while keeping both limb lengths', () => {
     const shoulder = new Vector3(.8, 3, 0), elbow = new Vector3(1, 2.2, .3), hand = new Vector3(.8, 2, 1);
     const target = new Vector3(-.1, 2.5, .8), nextElbow = new Vector3(), nextHand = new Vector3();
@@ -58,6 +88,35 @@ function importedArm() {
 }
 
 describe('contact on posed arm joints', () => {
+  it.each([-1, 1])('carries the %s elbow plane smoothly when a target crosses the authored pole', (side) => {
+    const root = new Group(), upper = new Bone(), lower = new Bone(), hand = new Bone();
+    root.add(upper); upper.add(lower); lower.add(hand);
+    upper.position.set(side * .5, 2, 0); lower.position.set(0, -.7, 0); hand.position.set(0, -.6, 0);
+    const reset = () => { upper.quaternion.identity(); lower.rotation.set(side * .7, 0, 0); hand.quaternion.identity(); root.updateMatrixWorld(true); };
+    reset();
+    const shoulder = upper.getWorldPosition(new Vector3()), elbow = lower.getWorldPosition(new Vector3());
+    const reachAxis = hand.getWorldPosition(new Vector3()).sub(shoulder).normalize();
+    const pole = elbow.sub(shoulder); pole.addScaledVector(reachAxis, -pole.dot(reachAxis)).normalize();
+    const contact = createArmContact(upper, lower, hand), target = new Vector3();
+    let previous: Vector3 | null = null;
+    for (let i = -40; i <= 40; i++) {
+      const angle = i * .002;
+      target.copy(shoulder).addScaledVector(pole, .9 * Math.cos(angle)).addScaledVector(reachAxis, .9 * Math.sin(angle));
+      reset(); contact(target);
+      const placed = lower.getWorldPosition(new Vector3());
+      if (previous) expect(placed.distanceTo(previous)).toBeLessThan(.003);
+      previous = placed;
+      expect(hand.getWorldPosition(new Vector3()).distanceTo(target)).toBeLessThan(1e-8);
+      expect(placed.distanceTo(shoulder)).toBeCloseTo(.7, 8);
+      expect(placed.distanceTo(target)).toBeCloseTo(.6, 8);
+      const rotations = [upper.quaternion.clone(), lower.quaternion.clone()];
+      // A pose evaluated again after an unrelated reach has exactly the same result.
+      reset(); contact(new Vector3(side, 1.6, -.5)); reset(); contact(target);
+      expect(upper.quaternion.angleTo(rotations[0]!)).toBeLessThan(1e-7);
+      expect(lower.quaternion.angleTo(rotations[1]!)).toBeLessThan(1e-7);
+    }
+  });
+
   it('reconstructs a straight-arm reach independently of previously bent poses', () => {
     const root = new Group(), upper = new Group(), lower = new Group(), hand = new Group();
     root.add(upper); upper.add(lower); lower.add(hand);
@@ -147,6 +206,82 @@ describe('contact on posed arm joints', () => {
 });
 
 describe('holding a tool in the palm', () => {
+  it.each([-1, 1])('keeps the %s socket and measured finger roll on a complete tool frame', side => {
+    const root = new Group(), upper = new Bone(), lower = new Bone(), hand = new Bone();
+    root.add(upper); upper.add(lower); lower.add(hand);
+    upper.position.set(side * .45, 2, 0); lower.position.y = -.7; hand.position.y = -.6;
+    const socket = new Vector3(.04, -.07, .02), localAxis = new Vector3(side, 0, 0);
+    // Imported hands can have arbitrary rest roll; use their measured finger direction, not a presumed bone +Y.
+    const localFingers = new Vector3(0, 1, 0).applyAxisAngle(localAxis, .37);
+    const hold = createHandHold(lower, hand, createArmContact(upper, lower, hand), localFingers);
+    const target = new Vector3(side * .4, 1.2, .5), axis = new Vector3(), fingers = new Vector3(), held = new Vector3(), out = new Vector3();
+    let previous: Quaternion | null = null;
+    for (let i = -90; i <= 90; i++) {
+      const turn = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), i * Math.PI / 120);
+      axis.set(0, 0, 1).applyQuaternion(turn); fingers.set(0, -1, 0).applyQuaternion(turn);
+      upper.quaternion.identity(); lower.quaternion.identity(); hand.quaternion.identity();
+      hold(socket, localAxis, target, axis, out, 1, held, fingers);
+      const rotation = hand.getWorldQuaternion(new Quaternion());
+      if (previous) expect(rotation.angleTo(previous)).toBeLessThan(.03);
+      previous = rotation;
+      expect(out.distanceTo(target)).toBeLessThan(1e-8);
+      expect(held.dot(axis)).toBeGreaterThan(1 - 1e-8);
+      expect(localFingers.clone().applyQuaternion(rotation).dot(fingers)).toBeGreaterThan(1 - 1e-8);
+    }
+  });
+
+  it.each([-1, 1])('keeps the %s hand continuous as a held axis passes parallel to its forearm', (side) => {
+    const root = new Group(), upper = new Bone(), lower = new Bone(), hand = new Bone();
+    root.add(upper); upper.add(lower); lower.add(hand);
+    upper.position.set(side * .45, 2, 0); lower.position.y = -.7; hand.position.y = -.6;
+    const hold = createHandHold(lower, hand, createArmContact(upper, lower, hand));
+    const socket = new Vector3(side * .04, -.07, .02), localAxis = new Vector3(side, 0, 0);
+    const target = new Vector3(side * .4, 1.2, .5), out = new Vector3(), held = new Vector3();
+    let previous: Quaternion | null = null;
+    // The real Alven card crossed the old .97 forearm/axis cone on entry and again on exit.
+    // Include exact alignment: there is no projected forearm direction there.
+    for (let i = -80; i <= 80; i++) {
+      const angle = i * .005, axis = new Vector3(Math.sin(angle), -Math.cos(angle), 0);
+      upper.quaternion.identity(); lower.quaternion.identity(); hand.rotation.set(0, side * .7, 0);
+      hold(socket, localAxis, target, axis, out, 1, held);
+      const rotation = hand.getWorldQuaternion(new Quaternion());
+      if (previous) expect(rotation.angleTo(previous)).toBeLessThan(.02);
+      previous = rotation;
+      expect(out.distanceTo(target)).toBeLessThan(1e-8);
+      expect(held.dot(axis)).toBeGreaterThan(1 - 1e-8);
+      expect([upper, lower, hand].every(b => b.quaternion.toArray().every(Number.isFinite))).toBe(true);
+    }
+  });
+
+  it('keeps a directed grip continuous across a right angle and independent of earlier redraws', () => {
+    const arm = importedArm(); arm.parent.scale.setScalar(1.2);
+    const hold = createHandHold(arm.lower, arm.hand, arm.contact), socket = new Vector3(.04, .06, 0);
+    const localAxis = new Vector3(0, 1, 0), out = new Vector3(), held = new Vector3();
+    const target = arm.body.localToWorld(new Vector3(.1, 2.3, .7));
+    const authoredHand = new Quaternion().setFromEuler(new Euler(.2, -.3, .1));
+    const reset = () => { arm.reset(); arm.hand.quaternion.copy(authoredHand); arm.parent.updateMatrixWorld(true); };
+    reset();
+    const along = localAxis.clone().transformDirection(arm.hand.matrixWorld);
+    const cross = new Vector3(1, 0, 0).addScaledVector(along, -along.x).normalize();
+    let previous: Quaternion | null = null;
+    for (let i = -10; i <= 10; i++) {
+      const angle = Math.PI / 2 + i * .002, axis = along.clone().multiplyScalar(Math.cos(angle)).addScaledVector(cross, Math.sin(angle));
+      reset(); hold(socket, localAxis, target, axis, out, .6, held);
+      const rotations = [arm.upper, arm.lower, arm.hand].map(b => b.quaternion.clone());
+      const rotation = arm.hand.getWorldQuaternion(new Quaternion());
+      if (previous) expect(rotation.angleTo(previous)).toBeLessThan(.01);
+      previous = rotation;
+      const contact = out.clone();
+      // A paused frame reapplies the authored pose, just as the game does before held props.
+      for (let redraw = 0; redraw < 12; redraw++) {
+        reset(); hold(socket, localAxis, target, axis, out, .6, held);
+        expect(out.distanceTo(contact)).toBeLessThan(1e-9);
+        for (const [j, bone] of [arm.upper, arm.lower, arm.hand].entries())
+          expect(bone.quaternion.angleTo(rotations[j]!)).toBeLessThan(1e-7);
+      }
+    }
+  });
+
   it('aims the fingers and puts the actual palm centre on a world target', () => {
     const { parent, body, upper, lower, hand, contact } = importedArm();
     parent.scale.setScalar(1.6);

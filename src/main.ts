@@ -1224,7 +1224,7 @@ async function start(): Promise<void> {
       const lost = lostFound(all);
       if (lostSeen >= 0 && lost.length > lostSeen) {
         const fresh = lost.find((thing) => !lostKnown.includes(thing));
-        if (fresh) hud.notice(sv.lostFound.replace('{name}', sv.lost[fresh] ?? fresh));
+        if (fresh) hud.notice(sv.lostFound.replace('{name}', sv.lost[fresh] ?? sv.lostTitle));
       }
       lostSeen = lost.length;
       lostKnown = lost;

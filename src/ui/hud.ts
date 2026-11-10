@@ -127,7 +127,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     const mark = doc.createElement('i');
     mark.className = found ? 'kind' : 'missing';
     mark.style.cssText = stickerStyle(kind);
-    mark.title = sv.kinds[kind] ?? kind;
+    mark.title = sv.kinds[kind] ?? sv.stickers;
     return mark;
   };
   let stuck: string[] | null = null;
@@ -206,7 +206,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         const piece = sticker(kind);
         // It slaps on, or with less motion lights up (ui.css).
         piece.classList.add('new');
-        hang(sv.found.replace('{name}', sv.kinds[kind] ?? kind), FIND_TIME, piece);
+        hang(sv.found.replace('{name}', sv.kinds[kind] ?? sv.stickers), FIND_TIME, piece);
         tag.dataset.find = kind;
       }
     },

@@ -11,6 +11,7 @@ import { drainsOf } from './dressing/ground';
 import { glowTexture } from './glow';
 import { paperBag, SATURDAY_BAG_TALL } from './saturday-bag';
 import { rigWalker, STRIDE, type Walker } from './passerby';
+import { carGlass } from './car-glass';
 import { BRED_BYN_CHIMNEYS, BRED_BYN_SMOKE_Z } from '../content/bredbyn';
 
 /**
@@ -1447,7 +1448,7 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
   });
   // Cream, not red: red is the candy's and the hook's, and the hook hangs where the car passes.
   const paint = new MeshStandardMaterial({ color: '#d8cdb0', roughness: 0.65 });
-  const window = new MeshStandardMaterial({ color: '#809ba6', roughness: 0.5 });
+  const window = new MeshStandardMaterial({ name: 'car-window', color: '#263e50', roughness: .2 });
   // A round old car, seen from the side and pushed out to its width.
   const side = new Outline();
   side.moveTo(-9, 1.7);
@@ -1488,6 +1489,9 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
   car.userData.model = 'bil-gra';
   car.userData.fit = 3.8;
   car.userData.lift = -0.45;
+  car.userData.carWet = (chapter.storm?.rain ?? 0) > 0;
+  car.userData.disposeFallback = true;
+  carGlass(car, car.userData.carWet as boolean, 1 / 3.8);
   let walker: Walker | null = null;
   shoes.userData.onModelInstalled = (copy: Object3D) => { walker = rigWalker(copy); };
   // The car's wheels turn as it rolls, where its model has them on pivots of their own (art/blender/a2-props.py), and

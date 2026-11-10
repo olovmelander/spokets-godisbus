@@ -91,9 +91,25 @@ export function dressingFrom(chapter: Pick<ChapterData, 'scenes'>, scene: string
  * in its sleeve, so that his left goes over his head and into its sleeve empty, and takes it back once he has zipped up.
  */
 export function heldInOther(chapter: Pick<ChapterData, 'scenes'>, who: string, scene?: { id: string; seconds: number } | null, calm = false): boolean {
-  if (calm || !scene || !(who in DRESSING)) return false;
+  return lampHandTransfer(chapter, who, scene, calm) > .5;
+}
+
+/** The same authored handoffs, with enough time for both hands to meet instead of swapping a full grip in one frame. */
+export function lampHandTransfer(chapter: Pick<ChapterData, 'scenes'>, who: string, scene?: { id: string; seconds: number } | null, calm = false): number {
+  if (calm || !scene || !(who in DRESSING)) return 0;
   const from = dressingFrom(chapter, scene.id, who), keys = (CLIPS[DRESSING[who as GearRole]] as Clip).lamp;
-  return from !== null && !!keys && keys.length >= 3 && scene.seconds >= from && sample(keys, scene.seconds - from) > 0.5;
+  if (from === null || !keys || keys.length < 3 || scene.seconds < from) return 0;
+  const t = scene.seconds - from;
+  let held = keys[1]!;
+  for (let i = 3; i < keys.length; i += 3) {
+    const before = keys[i - 2]!, after = keys[i + 1]!;
+    if (before === after) continue;
+    const middle = (keys[i - 3]! + keys[i]!) / 2, duration = Math.max(.8, keys[i]! - keys[i - 3]!);
+    const u = Math.max(0, Math.min(1, (t - middle) / duration + .5));
+    if (u < 1) return before + (after - before) * u * u * (3 - 2 * u);
+    held = after;
+  }
+  return held;
 }
 
 /** They are in their own clothes in Stormkvällen until they have got ready to go out together. */
