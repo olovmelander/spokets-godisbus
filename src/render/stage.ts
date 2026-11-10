@@ -147,6 +147,8 @@ const JUMP = 0.08;
 const SLOW = ['sway', 'hipRoll', 'bendSide', 'tilt'] as const;
 const CATCH_SLOW = 6;
 const CATCH_HEAD = 9;
+/** The neck follows at its own speed, not the much faster catch allowed for hands and feet. */
+const HEAD_RATE = 6;
 const catchOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? CATCH_SLOW
   : joint === 'turn' || joint === 'nod' ? CATCH_HEAD : CATCH);
 /** And those slow ones never go over faster than this (a second's worth of the hips' whole shift), even in a stride. */
@@ -156,7 +158,8 @@ const SLOW_RATE = 1.5;
  * (tests/unit/family-gait.test.ts). A run's legs would turn faster: there it shows as legs that turn at it, to and fro.
  */
 const LEG_RATE = 20;
-const rateOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE : JOINT_RATE);
+const rateOf = (joint: typeof LIMBS[number]) => (SLOW.includes(joint as typeof SLOW[number]) ? SLOW_RATE
+  : joint === 'turn' || joint === 'nod' ? HEAD_RATE : JOINT_RATE);
 /** Where each of the family's standing loops starts, in seconds: nobody shifts their weight in step with anyone else. */
 const LOOP: Record<Role, number> = { pappa: 0, mamma: 2.7, moa: 5.1, bertil: 1.3 };
 /** What a stride gives the legs and hips, whatever the hands are doing, and what it gives the trunk, head and spread arms. */
