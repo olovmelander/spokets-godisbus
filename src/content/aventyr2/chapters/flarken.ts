@@ -185,6 +185,8 @@ const PLATFORM: Ledge = { x: (TOWER.from + TOWER.to) / 2, y: TOWER.y, width: TOW
  */
 const LOOKOUT_AT = 155.6;
 const SEEN = { x: 186.6, y: WATER, z: -5 };
+/** Time to follow each carving along the outlet before it is lost beyond the bend. */
+const OUTLET_RUN = 7.2;
 /** The jetty beyond the tower, its far end pushed down into the water by the waves, and the bark lying on it. */
 const BEYOND = { from: 159.6, to: 163.4 };
 const SAG = { from: BEYOND.to, to: 166.4 };
@@ -264,6 +266,7 @@ function over(way: Stone[]): Candy[] {
 
 const GUNGFLY: Stone[] = [SHORE, ...MATS_A, ISLAND, ...MATS_B, LANDING];
 const BARK_WAY: Stone[] = [LOW, RAFT, FAR];
+const CARD = timeCard('flarken', 1);
 
 export const flarken: ChapterData = {
   id: 'flarken',
@@ -272,37 +275,40 @@ export const flarken: ChapterData = {
   spawn: { x: 1, y: 0.01 },
   scenes: [
     // Where and when, as the chapter opens (src/content/chapters/cards.ts).
-    timeCard('flarken', 1),
+    { ...CARD, stage: { ...CARD.stage,
+      // Establish the modeled family car with both wheels clear, before following the tiny boy to the shore.
+      shots: [{ at: 0, x: 2, y: 3.2, height: 12, width: 30, move: 0.001 }],
+    } },
     // At the top of the diving tower he points out over the lake, and the picture goes with him: a flash, and the
     // little one is there on its stone (`sightings`). His words wait for Fortsätt with the picture on it (`sjon:lookout`).
     {
       id: 'sjon:utkik', at: LOOKOUT_AT, before: TOWER.to, seconds: 3.4, hold: true, quiet: true,
       cues: [{ at: 1.25, flag: 'sjon:seen' }],
       stage: {
-        shots: [{ at: 0.1, x: SEEN.x - 1.2, y: 0.4, z: SEEN.z, height: 5.6, width: 5.2, eye: 4.5, move: 1.1 }],
+        shots: [{ at: 0.1, x: SEEN.x, y: 0.4, z: SEEN.z, height: 4.8, width: 4.4, eye: 4.5, move: 1.1 }],
         elof: [{ at: 0.2, act: 'point', aim: SEEN }, { at: 3.1, act: null }],
       },
     },
     // At the outlet, look down the actual stream before the current carries him away. The first line holds this
     // close view; the next event waits until his passage is over. Each camera follows the same unhurried crossing.
     {
-      id: 'sjon:strommen', at: 184, before: 188, until: 'sjon:downstream', seconds: 6.9, hold: true, quiet: true,
-      cues: [{ at: 0.7, flag: 'sjon:current' }, { at: 6.8, flag: 'sjon:downstream' }],
+      id: 'sjon:strommen', at: 184, before: 188, until: 'sjon:downstream', seconds: OUTLET_RUN + 1.1, hold: true, quiet: true,
+      cues: [{ at: 0.7, flag: 'sjon:current' }, { at: OUTLET_RUN + 1, flag: 'sjon:downstream' }],
       stage: {
         shots: [
           { at: 0, x: 187.8, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 0.65 },
-          { at: 0.7, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 5.8 },
+          { at: 0.7, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: OUTLET_RUN },
         ],
         elof: [{ at: 0.2, act: 'point', aim: { x: 190, y: 0.5 } }],
       },
     },
     {
-      id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: 6.9, hold: true,
-      cues: [{ at: 0.7, flag: 'sjon:log-run' }, { at: 6.8, flag: 'sjon:both-downstream' }],
+      id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: OUTLET_RUN + 1.1, hold: true,
+      cues: [{ at: 0.7, flag: 'sjon:log-run' }, { at: OUTLET_RUN + 1, flag: 'sjon:both-downstream' }],
       stage: {
         shots: [
           { at: 0, x: 189.6, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 0.65 },
-          { at: 0.7, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 5.8 },
+          { at: 0.7, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: OUTLET_RUN },
         ],
         elof: [{ at: 0.2, act: 'look', aim: { x: 195, y: 0.5 } }],
       },
@@ -319,8 +325,9 @@ export const flarken: ChapterData = {
   // Mamma answers from the boat in the coda.
   coda: 'mamma',
   ground: [
-    { x: -3, y: 12 },
-    { x: -3, y: 0 },
+    // The invisible start wall must stand behind the whole car, not through its rear wheel and roof.
+    { x: -32, y: 12 },
+    { x: -32, y: 0 },
     // 1. the parking and the swings, the puddle under the second, and the slide
     { x: PUDDLE.from, y: 0 },
     { x: PUDDLE.from, y: PUDDLE.bottom },
@@ -479,8 +486,8 @@ export const flarken: ChapterData = {
       // The old one, far out on the planks, leaps on into the dark when he comes.
       { on: 'beat:sjon:old-one', from: { x: OLD_ONE.x, y: 1.4 }, to: { x: 170, y: 6 }, seconds: 2.2, who: 'tragubbe' },
       // At the end: the outlet takes the little one, and the old one leaps after him onto a log.
-      { on: 'sjon:current', from: { x: SEEN.x, y: 0.2 }, to: { x: 206, y: -0.15 }, z: -4, seconds: 5.8, size: 1.5, who: 'lillgubbe', lit: [] },
-      { on: 'sjon:log-run', from: { x: END_POST.x, y: 0.25 }, to: { x: 206, y: 0.25 }, z: -4, seconds: 5.8, size: 1.3, who: 'tragubbe', lit: [] },
+      { on: 'sjon:current', from: { x: SEEN.x, y: 0.2 }, to: { x: 206, y: -0.15 }, z: -4, seconds: OUTLET_RUN, size: 1.8, who: 'lillgubbe', lit: [] },
+      { on: 'sjon:log-run', from: { x: END_POST.x, y: 0.25 }, to: { x: 206, y: 0.25 }, z: -4, seconds: OUTLET_RUN, size: 1.3, who: 'tragubbe', lit: [] },
     ],
     // From the top of the diving tower: the little one, far out where the lake runs out into the river, in the lookout's
     // flash, until he has gone on past the tower and out of sight of it.
