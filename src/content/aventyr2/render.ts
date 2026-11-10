@@ -23,6 +23,7 @@ import { GRAVITY } from '../../sim/constants';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { stepLength } from '../../render/acting';
 import { paintedWood } from '../../render/painted-wood';
+import { footballGeometry, footballMaterial } from '../../render/football';
 import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Going, type Grandparent } from './grandparents';
 import { afloat, flightAt, elderWalk } from './kit';
@@ -1351,24 +1352,6 @@ function otter(): { group: Group; head: Group } {
 
 // --- the things of the story -----------------------------------------------------------------------------------
 
-/** A football's skin: white, with the dark patches where an icosahedron's corners are. Radius 1, at the origin. */
-function footballGeometry(): BufferGeometry {
-  const geometry = new SphereGeometry(1, 28, 18);
-  const t = (1 + Math.sqrt(5)) / 2;
-  const corners = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]]
-    .map(([x, y, z]) => { const l = Math.hypot(x!, y!, z!); return [x! / l, y! / l, z! / l] as const; });
-  const at = geometry.getAttribute('position');
-  const colours: number[] = [];
-  for (let i = 0; i < at.count; i++) {
-    const x = at.getX(i), y = at.getY(i), z = at.getZ(i);
-    const near = Math.max(...corners.map(([cx, cy, cz]) => x * cx + y * cy + z * cz));
-    const dark = near > 0.94;
-    colours.push(...(dark ? [0.08, 0.08, 0.09] : [0.95, 0.95, 0.93]));
-  }
-  geometry.setAttribute('color', new Float32BufferAttribute(colours, 3));
-  return geometry;
-}
-const footballMaterial = () => new MeshStandardMaterial({ vertexColors: true, roughness: 0.45 });
 function football(radius: number): Mesh {
   const ball = new Mesh(footballGeometry(), footballMaterial());
   ball.scale.setScalar(radius);

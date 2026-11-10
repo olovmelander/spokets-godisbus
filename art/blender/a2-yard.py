@@ -486,6 +486,69 @@ if wanted('fotbollsmal-stort'):
 # A table of planks on two folding trestles, open underneath so that he is seen as he runs under it: 3.8 long, its top 1.1 up,
 # where he walks; the club's things on its back edge (a stack of training bibs, a net bag of balls), clear of where he walks.
 
+
+def kit_football(part, centre, radius, turn):
+    """The same 12 pentagons/20 hexagons as the playing balls, merged into the table's one mesh."""
+    ico = bmesh.new()
+    bmesh.ops.create_icosphere(ico, subdivisions=1, radius=1.0)
+    ico.verts.index_update()
+    points = [v.co.copy().normalized() for v in ico.verts]
+    faces = [[v.index for v in f.verts] for f in ico.faces]
+    ico.free()
+    near = [set() for _ in points]
+    for side in faces:
+        for i in range(3):
+            a, b = side[i], side[(i + 1) % 3]
+            near[a].add(b)
+            near[b].add(a)
+    def cut(a, b):
+        return (2 * points[a] + points[b]).normalized()
+    panels = []
+    for i, normal in enumerate(points):
+        across = normal.cross(Vector((0, 1, 0)) if abs(normal.y) < .9 else Vector((1, 0, 0))).normalized()
+        up = normal.cross(across)
+        corners = [cut(i, j) for j in near[i]]
+        ordered = [(math.atan2(p.dot(up), p.dot(across)), k) for k, p in enumerate(corners)]
+        ordered.sort()
+        corners = [corners[k] for angle, k in ordered]
+        panels.append((corners, tone('#20262a')))
+    for a, b, c in faces:
+        panels.append(([cut(a, b), cut(b, a), cut(b, c), cut(c, b), cut(c, a), cut(a, c)], tone('#f2eee4')))
+    seam = tone('#555953')
+    rotate = Matrix.Rotation(turn, 3, 'Z')
+    vertices = {}
+
+    def vertex(p):
+        key = tuple(round(v, 7) for v in p)
+        if key not in vertices:
+            vertices[key] = put(part, centre + rotate @ (p * radius), seam)
+        return vertices[key]
+
+    def triangle(a, b, c, colour):
+        if (b - a).cross(c - a).dot(a) < 0:
+            b, c = c, b
+        face(part, [vertex(a), vertex(b), vertex(c)], colour)
+
+    def between(a, b, t):
+        return (a * (1 - t) + b * t).normalized()
+    for corners, colour in panels:
+        middle = sum(corners, Vector()).normalized()
+        inner = [(p * math.cos(.012) + (middle - p * middle.dot(p)).normalized() * math.sin(.012)) for p in corners]
+        for i in range(len(corners)):
+            j = (i + 1) % len(corners)
+            for k in range(2):
+                a, b = [between(corners[i], corners[j], t) * .992 for t in (k / 2, (k + 1) / 2)]
+                c, d = [between(inner[i], inner[j], t) for t in (k / 2, (k + 1) / 2)]
+                triangle(a, b, d, seam)
+                triangle(a, d, c, seam)
+            rows = [[(middle * (1 - row / 2) + inner[i] * ((row - col) / 2) + inner[j] * (col / 2)).normalized() for col in range(row + 1)] for row in range(3)]
+            for row in range(2):
+                for col in range(row + 1):
+                    triangle(rows[row][col], rows[row + 1][col], rows[row + 1][col + 1], colour)
+                    if col < row:
+                        triangle(rows[row][col], rows[row + 1][col + 1], rows[row][col + 1], colour)
+
+
 if wanted('kitbord'):
     part = new_part()
     PLANK = tone('#9a8060')
@@ -505,5 +568,5 @@ if wanted('kitbord'):
     for k in range(4):
         timber(part, (0.6 - 0.02 * k, 0.55, TOP + 0.03 * k * 2), (1.3 + 0.02 * k, 0.86, TOP + 0.06 + 0.06 * k), lit(tone('#e0a020' if k % 2 else '#d84a20'), 0.95), k)
     for k in range(3):
-        lump(part, Vector((-1.25 + 0.3 * k, 0.72, TOP + 0.16 + 0.05 * (k % 2))), (0.15, 0.15, 0.15), 2, tone('#f0f0ec') if k != 1 else tone('#2a2a2a'))
+        kit_football(part, Vector((-1.25 + 0.3 * k, 0.72, TOP + 0.16 + 0.05 * (k % 2))), 0.15, k * .53)
     finish(part, 'kitbord', sharp=40.0, strength=0.5, reach=0.4, floor=0.0, leaf=True)
