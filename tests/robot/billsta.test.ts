@@ -217,7 +217,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(sim.held).toBe(true);
       expect(Math.abs(sim.curr.x - call.at.x)).toBeLessThan(0.1);
       expect(sim.flags.has('bi:ladder')).toBe(false);
-      run(sim, 1, { x: 1 });
+      run(sim, billsta.later!.find(later => later.flag === 'bi:ladder')!.seconds - .8 + .1, { x: 1 });
       expect(sim.flags.has('bi:ladder')).toBe(true);
       expect(sim.ghost!.perch).toBeGreaterThan(edge);
       expect(runPast(sim, 21)).toBe(true);

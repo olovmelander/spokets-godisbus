@@ -2920,7 +2920,7 @@ function barkRaft(mover: Mover): Group {
 const TIPPED = -0.16;
 
 /** The barn door at the top of the planks in Billsta: how wide and tall it is drawn, and where it hangs, behind the path. */
-const BARN_DOOR = { wide: 2.4, tall: 5.4, back: -1.6, thick: 0.18, swing: 1.62 };
+const BARN_DOOR = { wide: 2.4, tall: 5.4, back: -1.6, thick: 0.18, swing: -1.62 };
 
 /**
  * The loft door of mormor's barn, at the top of the planks up to it (Billsta; Olov, 9 November 2026: "Mormor ska gå fram
@@ -2951,9 +2951,17 @@ function barnDoor(mover: Mover): Group {
     if (i > 0) frame.push(box(0.2, wall.top, 0.09, 0.02, wall.top / 2, z + (wall.from - wall.to) / boards / 2, '#6e251d'));
   }
   frame.push(box(0.16, wall.top - tall - 0.33, wide + 0.6, -0.02, (wall.top + tall + 0.33) / 2, back + wide / 2, RED[2]!));
+  // An overhanging eave and the loft's small window join the door to a barn front, not a freestanding panel.
+  frame.push(box(1.05, 0.18, front - wall.to + 0.7, 0, wall.top + 0.1, (front + wall.to) / 2, '#464640'));
+  const windowZ = (wall.to + wall.from) / 2;
+  frame.push(box(0.2, 1.25, 1.35, 0, 3.6, windowZ, WHITE));
+  frame.push(box(0.23, 1.01, 1.11, 0, 3.6, windowZ, '#b8a46b'));
+  frame.push(box(0.25, 1.05, 0.08, 0, 3.6, windowZ, WHITE));
+  frame.push(box(0.25, 0.08, 1.15, 0, 3.6, windowZ, WHITE));
   const frameMaterial = solid('#ffffff', 0.85, { vertexColors: true });
   paintedWood(frameMaterial);
   const frameMesh = new Mesh(mergeGeometries(frame), frameMaterial);
+  frameMesh.name = 'barn-door-frame';
   frameMesh.castShadow = true;
   // The door, on its hinges at its back edge: upright boards, a white frame on its face, the white Z of its braces.
   const leaf: BufferGeometry[] = [];
@@ -2978,12 +2986,16 @@ function barnDoor(mover: Mover): Group {
   const leafMaterial = solid('#ffffff', 0.85, { vertexColors: true });
   paintedWood(leafMaterial);
   const leafMesh = new Mesh(mergeGeometries(leaf), leafMaterial);
+  leafMesh.name = 'barn-door-leaf';
   leafMesh.castShadow = true;
   const hinge = new Group();
   hinge.name = 'barn-door-hinge';
   hinge.position.z = back;
   hinge.add(leafMesh);
   const held = new Group();
+  // The old YZ plane showed only its narrow edge from the game's camera. The facade faces the yard;
+  // its right hinge opens away into the loft and Mormor reaches its free edge from the planks.
+  held.rotation.y = -Math.PI / 2;
   held.add(frameMesh, hinge);
   const group = new Group();
   group.add(held);

@@ -190,6 +190,17 @@ describe('the ledges, as they are drawn', () => {
     expect(mesh.boundingSphere!.radius).toBeGreaterThan(0.9);
   });
 
+  it('takes over the full laid ladder immediately, without shrinking between Morfar’s hands and the ditch', () => {
+    const built = buildLedges([{ x: 16.9, y: 0, width: 5, look: 'ladder', needs: 'bi:ladder' }]);
+    const mesh = built.group.getObjectByName('ledges:0:ladder') as InstancedMesh;
+    expect(size(mesh, 0).x).toBe(0);
+    built.update(new Set(['bi:ladder']), 0);
+    expect(size(mesh, 0).x).toBeCloseTo(5);
+    expect(mesh.visible).toBe(true);
+    built.update(new Set(), 0);
+    expect(size(mesh, 0).x).toBe(0);
+  });
+
   it('in every chapter a side way costs the picture one mesh, and one more for each look that waits for a flag', () => {
     for (const chapter of [...STORY, ...BONUS]) {
       const ledges = chapter.ledges ?? [];

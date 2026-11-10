@@ -533,7 +533,10 @@ export function buildLedges(ledges: readonly Ledge[], rods: readonly Rod[] = [],
       for (const i of at) {
         const want = flags.has(ledges[i]!.needs!) ? 1 : 0;
         if (there[i] === want) continue;
-        there[i] = want > there[i]! ? Math.min(1, there[i]! + dt / GROW) : Math.max(0, there[i]! - dt / GROW);
+        // Morfar has just lowered the full ladder into this exact place. Its physical ledge takes over in
+        // the same frame; shrinking away then growing from its middle broke the landing animation.
+        there[i] = ledges[i]!.look === 'ladder' ? want
+          : want > there[i]! ? Math.min(1, there[i]! + dt / GROW) : Math.max(0, there[i]! - dt / GROW);
         changed = true;
       }
     }

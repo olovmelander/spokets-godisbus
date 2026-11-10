@@ -437,7 +437,7 @@ export const billsta: ChapterData = {
   counterweight: { from: BANK.from, to: POOL.from, call: 'bi:call-klonk', heavy: PIVOT.id, launch: 'bi:fling' },
   // Morfar lays his ladder over the ditch: Elof stands and watches until it lies still.
   later: [
-    { flag: 'bi:ladder', after: 'bi:morfar', seconds: 1.6, hold: true, within: [6, 20] },
+    { flag: 'bi:ladder', after: 'bi:morfar', seconds: 2.7, hold: true, within: [6, 20] },
     // Mormor, once her words are read, walks up the planks to the barn's door and opens it: he stands and watches.
     { flag: 'bi:mormor-goes', after: 'bi:mormor', seconds: 0.2, hold: true, within: [MORMOR.x - 4, PLANKS.to] },
     { flag: 'bi:door', after: 'bi:mormor-goes', seconds: round(MORMOR_WALK + 0.55, 2), hold: true, within: [MORMOR.x - 4, PLANKS.to] },

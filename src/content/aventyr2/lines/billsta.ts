@@ -18,7 +18,7 @@ export const words: ChapterWords = {
     biMorfarHere: 'Elof! Så liten du har blivit!',
     biLadderLay: 'Vänta, jag lägger stegen över diket.',
     biLadderOn: 'Så där. Gå på stegen, lilla vän.',
-    biThanksMorfar: 'En bro med trappsteg! Tack, morfar!',
+    biThanksMorfar: 'Tack, morfar!',
     biToMormor: 'Mormor väntar vid ladan med lyktan.',
     // 3. the yard, and Mormor and her lantern
     biYard: 'Er gräsmatta har blivit en djungel!',
