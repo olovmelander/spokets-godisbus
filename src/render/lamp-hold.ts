@@ -1,5 +1,5 @@
 import { Matrix4, Quaternion, Vector3, type Object3D } from 'three';
-import type { Rig } from './rig';
+import { STANDING, type Pose, type Rig, type Role } from './rig';
 
 const shoulder = new Vector3(), elbow = new Vector3(), target = new Vector3(), wrist = new Vector3();
 const forward = new Vector3(), across = new Vector3(), direction = new Vector3(), held = new Vector3();
@@ -10,6 +10,21 @@ const fingersDown = new Vector3(0, -1, 0);
 const grip = { kind: 'power' as const, size: .075 };
 const frames = new WeakMap<Object3D, { axis: Vector3; rotation: Quaternion; time?: number }>();
 const carriedFrame = new Quaternion(), transport = new Quaternion();
+const ARM = [['armL', 'elbowL', 'wristL', 'outL'], ['armR', 'elbowR', 'wristR', 'outR']] as const;
+
+/** Keep the same carrying hand when Elof passes. Moa's left hand belongs to the umbrella throughout that chapter. */
+export const familyLampSide = (who: Role, umbrellaChapter: boolean): 0 | 1 => who === 'moa' && umbrellaChapter ? 1 : 0;
+
+/** Bertil gives both hands to his boot before the lamp is hidden at half of the existing pull gesture. */
+export function lampCarryWeight(pull: number): number {
+  const t = Math.max(0, Math.min(1, pull / .5));
+  return 1 - t * t * (3 - 2 * t);
+}
+
+/** The held tool owns this arm; keep a greeting or a wave on the free arm. */
+export function quietLampArm(pose: Pose, side: 0 | 1, weight = 1): void {
+  for (const joint of ARM[side]) pose[joint] += (STANDING[joint] - pose[joint]) * weight;
+}
 
 function aimFrame(ray: Vector3, out: Quaternion): Quaternion {
   frameUp.set(0, 1, 0).addScaledVector(ray, -ray.y);

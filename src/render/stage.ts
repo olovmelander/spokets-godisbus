@@ -1,4 +1,4 @@
-import { holdFlashlight } from './lamp-hold';
+import { holdFlashlight, quietLampArm } from './lamp-hold';
 import { heldInOther } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
@@ -1176,8 +1176,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (!held?.startsWith('lamp-') || state.act === 'dress') continue;
           const persistent = chapter.id === 'stormkvall' && who === 'pappa' && flags.has('lamp:give');
           const weight = calm || persistent || !state.before || state.before.held[side] === held ? 1 : smooth(elapsed / .45);
-          for (const joint of side === 0 ? ['armL', 'elbowL', 'wristL', 'outL'] as const : ['armR', 'elbowR', 'wristR', 'outR'] as const)
-            pose[joint] = mix(pose[joint], STANDING[joint], weight);
+          quietLampArm(pose, side, weight);
         }
         rig.pose(pose);
         rig.face?.(talker.mouth.open, talker.mouth.round, talker.lids);
@@ -1347,7 +1346,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             // Looking to a new person turns the held torch over the same authored interval as the body.
             // A raw aim here would snap the wrist even while the head/arms were still blending. Use scene time,
             // so a reading hold or Pause keeps this turn where it was, without accumulating presentation frames.
-            const from = state.glance?.from ?? state.before?.aim;
+            const from = state.glance ? state.glance.from : state.before?.aim;
             const aimWeight = state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
             lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
             // Newly taking a torch must follow the same event-time blend as the authored arms.

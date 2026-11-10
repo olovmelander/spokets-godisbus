@@ -1,7 +1,8 @@
 import { Group, Matrix4, Quaternion, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actPose } from '../../src/render/acting';
-import { holdFlashlight } from '../../src/render/lamp-hold';
+import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from '../../src/render/lamp-hold';
+import { createFamilyMotion } from '../../src/render/family-motion';
 import { createRehearsalRig, STANDING, type Role } from '../../src/render/rig';
 import { createStage } from '../../src/render/stage';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
@@ -14,6 +15,48 @@ afterEach(() => { vi.unstubAllGlobals(); talk.reset(); });
 const v = () => new Vector3();
 
 describe('a flashlight carried in front of a posed body', () => {
+  it.each([
+    ['pappa', false], ['mamma', false], ['moa', false], ['moa', true], ['bertil', false],
+  ] as const)('keeps %s’s lamp in one hand through a passing greeting (umbrella=%s)', (who, umbrella) => {
+    const rig = createRehearsalRig(who), motion = createFamilyMotion(who, 0), lamp = new Group();
+    const side = familyLampSide(who, umbrella), free = side === 0 ? 1 : 0;
+    if (umbrella) expect(side).toBe(1); // The real umbrella is supported by Moa's left hand.
+    let previous: Vector3 | null = null;
+    for (let i = 0; i <= 120; i++) {
+      const time = i / 60, x = -1 + i / 60;
+      const pose = { ...motion.update(1 / 60, time, Math.max(0, 1.8 - time), 0, null, false) };
+      rig.pose(pose); const greeting = rig.hand(free, v());
+      quietLampArm(pose, side); rig.pose(pose);
+      holdFlashlight(rig, lamp, side, new Vector3(x, .4, 0), Math.max(.7, rig.height / 5.2), true, 1, null, 1, time);
+      expect(rig.hand(free, v()).distanceTo(greeting)).toBeLessThan(1e-8);
+      expect(lamp.position.distanceTo(rig.hand(side, v()))).toBeLessThan(1e-8);
+      if (previous) expect(lamp.position.distanceTo(previous)).toBeLessThan(.04);
+      previous = lamp.position.clone();
+    }
+  });
+
+  it('gives Bertil’s lamp hand to his boot continuously on both sides of the visibility gate', () => {
+    const rig = createRehearsalRig('bertil'), lamp = new Group(), u = rig.height / 5.2;
+    const target = new Vector3(1, .4, 0), boot = new Vector3(-.33 * u, 1.05 * u, .55 * u);
+    const frame = (pull: number) => {
+      const lit = pull < .5, weight = lampCarryWeight(pull);
+      const pose = { ...STANDING, lean: .4, armL: 1.3, elbowL: .7 };
+      if (lit) quietLampArm(pose, 0, weight);
+      rig.pose(pose); rig.reach(0, boot, pull); rig.reach(1, boot, pull);
+      if (lit) holdFlashlight(rig, lamp, 0, target, Math.max(.7, u), true, weight);
+      return rig.hand(0, v());
+    };
+    for (const direction of [1, -1]) {
+      let previous = frame(direction > 0 ? .45 : .55);
+      for (let i = 1; i <= 100; i++) {
+        const pull = direction > 0 ? .45 + i / 1000 : .55 - i / 1000, hand = frame(pull);
+        expect(hand.distanceTo(previous)).toBeLessThan(.01);
+        expect(frame(pull).distanceTo(hand)).toBeLessThan(1e-8);
+        previous = hand;
+      }
+    }
+  });
+
   it('carries the palm continuously as moving Elof passes directly under the hand, with stable Pause and seek', () => {
     const trace = (rate: number, timed = true) => {
       const rig = createRehearsalRig('pappa'), lamp = new Group(), socket = v(), ray = v(), fingers = v();

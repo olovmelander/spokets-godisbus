@@ -1,5 +1,5 @@
 import { capArms, capHands, capHandoff } from './cap-handoff';
-import { holdFlashlight } from './lamp-hold';
+import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from './lamp-hold';
 import { stormSweet } from './storm-sweet';
 import { lessMotion } from '../platform/motion';
 import { owlHollow } from './owl-trap';
@@ -2156,8 +2156,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
       if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
       else lampTo.set(x, y + tall * .4, 0);
-      lampLocal.copy(lampTo); one.rig.group.worldToLocal(lampLocal);
-      const lampSide: 0 | 1 = lampLocal.x >= 0 && !umbrellaUp ? 0 : 1;
+      const lampSide = familyLampSide(one.who, !!umbrellaRide), lampWeight = lampCarryWeight(gesture.pull);
       // What is said (./talk.ts): they look at whoever speaks, from where their face was a moment ago, and speak with their
       // mouths, their heads and a free hand; drawn on a copy, which their own motion never keeps.
       const said = talk.lookAt(one.who), there = said ? talk.face(said) : null;
@@ -2165,6 +2164,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       one.talker.update(talk, there ? lookAt(one.rig.group, faceAt, there, heard) : null, lifeDt, calmStory,
         one.seated || one.paddle || carrying || umbrellaUp || offersCap && (capSince < 0 || holdsCap) || !!(scarf && scarf.weight > 0.001) || gesture.hold > 0.001 || gesture.lift > 0.001 || gesture.pull > 0.001 ? NO_HANDS : lit && !setDown ? FREE_WITH_LAMP[lampSide]! : BOTH_HANDS);
       one.talker.pose(Object.assign(spokenPose, posed));
+      if (lit && !setDown) quietLampArm(spokenPose, lampSide, lampWeight);
       one.rig.pose(one.seated ? sitting(spokenPose, one.rig.legs) : one.paddle ? one.paddle.stance(spokenPose) : spokenPose);
       one.rig.face?.(one.talker.mouth.open, one.talker.mouth.round, one.talker.lids);
       if (offersCap) {
@@ -2247,7 +2247,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         } else if (lit) {
           const u = one.rig.height / 5.2;
           one.rig.group.updateWorldMatrix(true, false);
-          holdFlashlight(one.rig, one.lamp, lampSide, lampTo, Math.max(.7, u), true, 1, null, 1, calmStory ? undefined : clock);
+          holdFlashlight(one.rig, one.lamp, lampSide, lampTo, Math.max(.7, u), true, lampWeight, null, 1, calmStory ? undefined : clock);
           one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
         }
       }
