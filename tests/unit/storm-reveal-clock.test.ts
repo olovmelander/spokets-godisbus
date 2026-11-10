@@ -79,7 +79,7 @@ describe('a story reveal waits for its own line without stopping the storm', () 
 });
 
 describe('restoring the actual Älven reveal without replaying old flights', () => {
-  function saved(completed = false, fresh = false) {
+  function saved(completed = false, fresh = false, still = false) {
     const chapter = AVENTYR2.find(chapter => chapter.id === 'alven')!;
     const flight = chapter.storm!.flybys!.find(f => f.on === 'al:little-seen')!;
     const past = chapter.storm!.flybys![0]!;
@@ -91,7 +91,7 @@ describe('restoring the actual Älven reveal without replaying old flights', () 
     let clock = 0;
     const update = (dt: number, seconds: number | null, waiting = false) => {
       clock += dt;
-      extras.forEach(extra => extra.update({ dt, clock, flags, x: 156, y: 3, camera, still: false, tier: 'low', riding: true,
+      extras.forEach(extra => extra.update({ dt, clock, flags, x: 156, y: 3, camera, still, tier: 'low', riding: true,
         revealPaused: waiting, scene: seconds === null ? null : { id: 'al:little', seconds, waiting } }));
     };
     update(0, null);
@@ -126,6 +126,36 @@ describe('restoring the actual Älven reveal without replaying old flights', () 
     for (let i = 0; i < 120; i++) update(.05, .9 + i * .05);
     expect(figure.visible).toBe(false);
     expect(historical.visible).toBe(false);
+  });
+
+  it.each([false, true])('establishes a fresh glow when waiting follows its cue one frame later (reduced motion %s)', still => {
+    const { flags, flight, figure, historical, halo, update } = saved(false, true, still);
+    flags.add(flight.on);
+    // The cue is emitted during this frame. Owned waiting is decided before cue emission, so the next
+    // simulation frame first notices the earlier line still playing: this is the actual owl-ride sequence.
+    update(.05, .8);
+    expect(figure.visible).toBe(true);
+    expect(halo.material.opacity).toBe(0);
+    const opening = figure.position.clone();
+    update(0, .8, true);
+    expect(figure.position.toArray()).toEqual(opening.toArray()); // exact Pause cannot establish a new pose
+    update(.05, .8, true);
+    expect(halo.material.opacity).toBeGreaterThan(.3);
+    const x = figure.position.x;
+    expect(x).toBeGreaterThan(flight.from.x);
+    for (let i = 0; i < 200; i++) update(.05, .8, true);
+    expect(figure.position.x).toBe(x);
+    expect(halo.material.opacity).toBeGreaterThan(.3);
+    update(.4, 1.2);
+    const progressed = figure.position.x;
+    expect(progressed).toBeGreaterThan(x);
+    for (let i = 0; i < 100; i++) update(.05, 1.2, true);
+    expect(figure.position.x).toBe(progressed); // a later wait cannot reset an already visible flight
+    expect(historical.visible).toBe(false);
+    for (let i = 0; i < 120; i++) update(.05, 1.2 + i * .05);
+    expect(figure.visible).toBe(false);
+    update(.05, 1.2, true);
+    expect(figure.visible).toBe(false);
   });
 
   it('reconstructs a saved pending reveal at a visible phase, then continues only once', () => {

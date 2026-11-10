@@ -994,6 +994,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           f.flashed = (f.def.lit ?? []).filter(at => at <= f.elapsed).length;
           flashAt = clock;
         }
+        const waitingHere = revealPaused && moment && !flags.has(`scene:${moment.id}`)
+          && f.reveals.some(one => one.id === moment.id);
+        // A cue is emitted after SceneDirector decides this frame's waiting state. If its line has to
+        // queue on the next frame, establish the opening glow then too, without rewinding a visible flight.
+        if (dt > 0 && waitingHere && f.elapsed >= 0 && f.elapsed < f.def.seconds * .06) f.elapsed = f.def.seconds * .06;
         // The reveal owns this travel clock. Its line may outlast the flight, while rain, wingbeats and the
         // ride continue on the world's clock. Neither an active reading hold nor Pause spends the remaining flight.
         if (f.elapsed >= 0 && !revealPaused && dt > 0) f.elapsed += dt;
@@ -1005,8 +1010,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           f.seen = true;
           // Its cue can wait behind an earlier line before this reveal gets to speak. Establish the same
           // visible opening as a restored reveal, rather than holding its first glow at zero opacity.
-          const waitingHere = revealPaused && moment && !flags.has(`scene:${moment.id}`)
-            && f.reveals.some(one => one.id === moment.id);
           f.elapsed = waitingHere ? f.def.seconds * .06 : 0;
         }
         flashAt = clock;
