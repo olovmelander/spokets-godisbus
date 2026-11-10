@@ -1,5 +1,5 @@
 // Deterministic real-renderer checks for the finale. Uses the authored chapter and simulation states,
-// with stand-ins, and advances only the picture's clock. Run: node tests/browser/nightfall.mjs.
+// with stand-ins; nightfall holds simulation still, then the reunion advances its authored scene. Run: node tests/browser/nightfall.mjs.
 // Iteration captures stay in ignored docs/shots/_work/; these are not checkpoint contact sheets.
 import assert from 'node:assert/strict';
 import { mkdirSync, realpathSync } from 'node:fs';
@@ -109,7 +109,7 @@ try {
       const draw = (dt = 0) => view.render({
         prev: sim.prev, curr: sim.curr, alpha: 1, dt, atGoal: false, collected: sim.collected, checkpoint: sim.checkpoint,
         movers: sim.movers, drips: sim.drips, flags: sim.flags, ghost: sim.ghost, rollers: sim.rollers,
-        tussocks: sim.tussocks, gusts: sim.gusts, help: sim.help, berries: sim.berries,
+        tussocks: sim.tussocks, gusts: sim.gusts, help: sim.help, berries: sim.berries, scene: sim.sceneFrame,
       });
       // Shared scenery adds model names too. The production loading barrier, not a count of arrivals,
       // ensures every kit has arrived before the shader baseline is warmed and measured.
@@ -118,13 +118,20 @@ try {
       const scene = fixture.renderedScene();
       const far = [];
       scene.traverse((object) => { if (object.name.startsWith('far-dusk-')) far.push(object); });
+      const shownFamily = () => {
+        const shown=[];
+        scene.traverse(object=>{if(!object.userData.familyRole)return;
+          for(let node=object;node;node=node.parent)if(!node.visible)return;
+          shown.push({who:object.userData.familyRole,x:object.getWorldPosition(object.position.clone()).x});
+        });
+        return shown;
+      };
       const snapshot = () => ({
         ...view.info(), background: scene.backgroundIntensity,
         sky: scene.getObjectByName('place-sky').material.color.r, rim: fixture.rimStrength(),
         far: far.map((card) => card.material.color.r),
         fog: scene.fog.color.toArray(), state: JSON.stringify(sim.curr),
-        familyShown: (() => { let count=0;scene.traverse(object=>{if(!object.userData.familyRole)return;
-          for(let node=object;node;node=node.parent)if(!node.visible)return;count++;});return count; })(),
+        family: shownFamily(), familyShown: shownFamily().length, scene: sim.sceneFrame,
       });
       window.probe = { fixture, sim, view, draw, scene, snapshot };
       return snapshot();
@@ -150,11 +157,10 @@ try {
     check(`${name}: Elof's actual rim fades with nightfall and is gone at night`, early.rim > 0 &&
       transition.frames.every((s, i, all) => s.rim >= 0 && s.rim <= (all[i - 1] ?? early).rim) &&
       transition.frames.at(-1).rim === 0 && transition.paused.rim === transition.beforePause.rim);
-    check(`${name}: tasting reveals the same four family figures`, transition.frames.every(s=>s.familyShown === 4));
+    check(`${name}: tasting waits for the reunion instead of teleporting the family`, transition.frames.every(s=>s.familyShown === 0));
     check(`${name}: no shader compiles or simulation changes during nightfall`, transition.frames.every((s) => s.programs === early.programs && s.state === early.state));
     console.log(`  draws ${name}: ${early.drawCalls} → ${transition.frames.map((s) => s.drawCalls).join(', ')}`);
-    // Tasting also reveals the existing family signs. From that first frame on only uniforms change, and nothing
-    // new comes into the picture. The glitter round him leaves it when he has grown back: two draw calls fewer.
+    // Before the reunion starts, only uniforms change. The glitter leaves when he has grown back.
     check(`${name}: nightfall draw calls never rise, within budget`, transition.frames.every((s, i, all) => s.drawCalls <= (all[i - 1] ?? s).drawCalls && withinDraws(s.drawCalls, s.tier)));
     check(`${name}: pause holds nightfall still`, transition.paused.background === transition.beforePause.background);
     await picture(page, join(shots, `${name}-night.png`));
@@ -171,6 +177,22 @@ try {
     });
     check(`${name}: reversing nightfall restores sky, hills and haze without drift`, returned.background === early.background && returned.sky === early.sky && returned.far.every((v) => v === 1) && returned.fog.every((v, i) => Math.abs(v - early.fog[i]) < 1e-9));
     check(`${name}: reversing nightfall restores the original rim`, returned.rim === early.rim);
+    const reunion = await page.evaluate(() => {
+      const p=window.probe, idle={x:0,y:0,hop:false,hopHeld:false,act:false}, frames=[];
+      p.sim.flags.add('taste');
+      let elapsed=0;
+      for(const until of [.4,1.6,3.2,11.5]) {
+        for(;elapsed<until;elapsed+=1/120)p.sim.step(idle);
+        p.draw(.1);frames.push(p.snapshot());
+      }
+      return {frames,done:p.sim.flags.has('scene:aterfunna')};
+    });
+    check(`${name}: the actual reunion keeps exactly the four family members visible`, reunion.frames.every(s=>
+      s.familyShown===4 && s.family.map(actor=>actor.who).sort().join(',')==='bertil,mamma,moa,pappa'));
+    check(`${name}: the family enters from the right before taking its waiting places`,
+      reunion.frames[0].scene?.id==='aterfunna' && reunion.frames[0].family.every(actor=>actor.x>40) &&
+      reunion.frames[2].family.every(actor=>actor.x<33) && reunion.done);
+    check(`${name}: entering and settling the reunion uses already warmed shaders`, reunion.frames.every(s=>s.programs===early.programs));
     assert.deepEqual(errors, [], `${name}: browser errors`);
     await page.close();
   }

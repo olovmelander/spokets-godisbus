@@ -46,9 +46,10 @@ const purpose = (page) => page.locator('#storyPurpose').getAttribute('data-purpo
 
 /**
  * The four Pappa lines' 14.135 seconds, and the coda the chapter now ends on before its last page (3.2 s longer
- * than the 1.4 s the card used to wait; docs/narrative-audit/threads.md §5.4).
+ * than the 1.4 s the card used to wait; docs/narrative-audit/threads.md §5.4), plus the new reunion's
+ * 10.8 authored seconds. Reading pauses do not advance Sim; the family's arrival and acting do.
  */
-const FAST_ROUTE = 14.135 + 3.2;
+const FAST_ROUTE = 14.135 + 3.2 + 10.8;
 
 async function fastEnd(page, fromSteps) {
   // Game caps simulation steps per rendered frame. Slow software rendering can make this short
@@ -285,10 +286,14 @@ try {
   await known.finish();
 
   }
-  // The finale emits its four lines together. Saving or restarting must not mark unread words as read.
+  // The arriving family first asks how Elof is. Saving or restarting must not mark unread words as read.
   const reading = await open({ width: 844, height: 390 }, saved('norrsken', 1, { norrsken: ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste'] }));
   await reading.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low`);
   await ready(reading.page);
+  for (const words of ['Elof! Hur mår du?', 'Bra! Vi hittade honom!']) {
+    await reading.page.waitForFunction((line) => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === line, words);
+    await continueDialogue(reading.page);
+  }
   await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Min allra första trägubbe …');
   await picture(reading.page, join(shots, 'reading-844x390.png'));
   await reading.page.setViewportSize({ width: 390, height: 844 });
@@ -306,6 +311,11 @@ try {
   await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
   check('reload resumes the first unread line without replaying the acknowledged line', (await state(reading.page)).said[0] === 'first2');
   await reading.page.keyboard.press('Escape');
+  await reading.page.reload();
+  await ready(reading.page);
+  await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
+  check('a second reload still preserves the acknowledged origin and the unread next line', (await state(reading.page)).said[0] === 'first2');
+  await reading.page.keyboard.press('Escape');
   await reading.page.click('#stuckBtn');
   await reading.page.click('#stuckYes');
   await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
@@ -313,7 +323,7 @@ try {
   await reading.finish();
 
   if (!process.env.STORY_READING_ONLY) {
-  // This saved route can finish within the four Pappa lines' 14.135-second duration at normal speed.
+  // The saved route keeps its old travel bound plus the newly authored reunion's 10.8 seconds.
   // The bound below measures simulation time; dialogue reading uses a separate frame-time clock.
   // The required Smaka stage is another real source for the untimed origin at the end card.
   const originText = 'Pappa täljde trägubben åt mig när jag var liten. Vi tappade den här på berget. Spöket tog godiset för att välkomna den hem.';
@@ -335,7 +345,10 @@ try {
     !/min gamla|min första/.test(await fast.page.locator('#pauseStoryRecap').textContent()));
   await fast.page.keyboard.press('e');
   await fast.page.waitForFunction(() => window.__godis.state().flags.includes('taste'));
-  for (const words of ['Min allra första trägubbe …', 'Den täljde jag till dig', 'när du var liten, Elof.', 'Vi tappade den här uppe.']) {
+  for (const words of ['Elof! Hur mår du?', 'Bra! Vi hittade honom!',
+    'Min allra första trägubbe …', 'Den täljde jag till dig', 'när du var liten, Elof.', 'Vi tappade den här uppe.',
+    'Spöket hjälpte mig hela vägen hit.', 'Trägubben satt fast i sprickan.', 'Han var alldeles ensam.',
+    'Nu behöver han aldrig vara ensam.', 'Ni hjälptes åt. Vad modigt!', 'Båda ska få följa med hem.', 'Ja. Nu går vi hem tillsammans.']) {
     await fast.page.waitForFunction((line) => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === line, words);
     await continueDialogue(fast.page);
   }

@@ -304,6 +304,16 @@ export const sv = {
   lines: {
     gardenLandedMoa: 'Gick det bra, lillebror?',
     gardenLandedElof: 'Ja! Jag landade mjukt! Tack, Moa!',
+    nrFoundYou: 'Där är du ju! Jag ska hjälpa dig.',
+    nrHowAreYou: 'Elof! Hur mår du?',
+    nrAllRight: 'Bra! Vi hittade honom!',
+    nrGhostHelped: 'Spöket hjälpte mig hela vägen hit.',
+    nrStuck: 'Trägubben satt fast i sprickan.',
+    nrLonely: 'Han var alldeles ensam.',
+    nrTogether: 'Nu behöver han aldrig vara ensam.',
+    nrBrave: 'Ni hjälptes åt. Vad modigt!',
+    nrBothHome: 'Båda ska få följa med hem.',
+    nrGoHome: 'Ja. Nu går vi hem tillsammans.',
     // The extra chapter, Byn: a Saturday later, on the way to the candy shop.
     // At the party, when what he found under the deck is given back (plan §4.8).
     clipBack: 'Mitt hårspänne! Tack, lillebror!',

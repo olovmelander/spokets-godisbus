@@ -11,7 +11,7 @@ describe('Norrsken: the trail home', () => {
   const way = homeTrailWay(norrsken)!;
   const feet = { y: 0, z: 0 };
   const idle = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
-  const done = ['lower', 'crowberry', 'eyes', 'bag', 'share:tragubbe', 'share:spoket', 'share:jay', 'shared', 'taste'];
+  const done = ['lower', 'crowberry', 'eyes', 'bag', 'share:tragubbe', 'share:spoket', 'share:jay', 'shared', 'taste', 'scene:aterfunna'];
 
   it('has his feet where the simulation carries him, the whole way down', () => {
     const sim = new Sim({ ...norrsken, spawn: { x: 33, y: 0.01 } }, {}, { placed: ['tragubbe'], flags: done });

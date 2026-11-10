@@ -9,6 +9,8 @@ import { heldInOther, rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
+import { holdCarving } from './carrying';
+import { createNorrskenRescue } from './norrsken-rescue';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -717,6 +719,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
   const carryAhead = new Vector3(), carryUp = new Vector3(0, 1, 0);
+  const carrySide = new Vector3(), carryAxis = new Vector3(), carryHips = new Vector3();
+  const rescue = chapter.id === 'norrsken' ? createNorrskenRescue() : null;
+  if (rescue) scene.add(rescue.group);
   const laceHand = new Vector3(), laceAlong = new Vector3();
   /** Myren's lysklubba, held up in his right hand in the mist: where that hand is, from the frame before. */
   const lanternHand = new Vector3(), lanternLift = new Vector3();
@@ -835,7 +840,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           one.rig.dispose?.();
           one.rig = rig;
           wardrobeFor(rig, who, manifest);
-          one.neck = model.getObjectByName('Head') ?? model.getObjectByName('head');
+          one.neck = model.getObjectByName('neck_01') ?? model.getObjectByName('Head') ?? model.getObjectByName('head');
           if (chapter.id === 'myren' && who === 'mamma') one.braidTip = braidTip(model);
           stand.prop!.group.clear();
           stand.prop!.group.add(rig.group);
@@ -1471,7 +1476,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     {
       const shotHeight = Math.max(8.4, 10.2 / camera.aspect);
       shotIn(nearShots.taste, chapter.id === 'norrsken' && flags.has('taste') && x >= 26 && x <= 33 && !flags.has('home'),
-        29.7, 2.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), 29.7, 2.1);
+        28.7, 2.1, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), 28.7, 2.1);
     }
     {
       const shotHeight = Math.max(10.2, 8.8 / camera.aspect);
@@ -1570,7 +1575,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
     // Hang by his hands from the scarf; walk on his own feet on the way home.
     const moving = onScarf ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
-    const pullIndex = movers.findIndex((m, i) => m.t !== undefined && m.t < 1 && (m.stop ?? 0) > 0 && chapter.movers?.[i]?.verb === 'pull' && !chapter.movers[i]!.on);
+    // Norrsken's continuous rescue line already owns both grips and the loop around the carving.
+    const pullIndex = rescue ? -1 : movers.findIndex((m, i) => m.t !== undefined && m.t < 1 && (m.stop ?? 0) > 0 && chapter.movers?.[i]?.verb === 'pull' && !chapter.movers[i]!.on);
     const pullMover = pullIndex >= 0 ? movers[pullIndex]! : null;
     const playerPose = playerMotion.update(moving, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
     // What is said (./talk.ts): he looks at whoever speaks to him, from where his face was a moment ago, and speaks with his
@@ -1589,6 +1595,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const elofHands = (scripted?.act && !HANDS_HANG.includes(scripted.act)) || curr.hook || lanternHeld ? NO_HANDS : BOTH_HANDS;
     elofTalker.update(talk, elofThere ? lookAt(elof.group, faceAt, elofThere, heard, true) : null, lifeDt, calmStory, elofHands);
     elofTalker.pose(Object.assign(spokenPose, playerPose));
+    if (rescue && flags.has('placed:tragubbe') && !flags.has('taste') && x > 14) {
+      // Lean into the load with the carrying shoulder behind him, instead of jogging empty-handed.
+      spokenPose.lean -= .13; spokenPose.twist -= .12; spokenPose.armR = .22; spokenPose.elbowR = .8;
+    }
+    if (rescue && sceneFrame?.id === 'uppdragen') spokenPose.lean -= .16;
     playerBody.pose(spokenPose);
     playerBody.face?.(elofTalker.mouth.open, elofTalker.mouth.round, elofTalker.lids);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
@@ -2274,7 +2285,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Out of the crack for good, the lace is off it: its ring no longer hides the face he paints.
       const ring = carving?.getObjectByName('pull-ring');
       if (ring) ring.visible = !flags.has('placed:tragubbe');
-      if (carving && flags.has('taste') && ghostState && !homeJourney) carving.position.set(ghostState.x - .5, ghostState.y, 0);
+      if (carving && rescue) rescue.update(playerBody, elof.group, carving as Group, flags,
+        sceneFrame?.id === 'snoret' ? clamp((sceneFrame.seconds - .4) / 1.7, 0, 1) : 1,
+        flags.has('nr:rope-ready') && !flags.has('placed:tragubbe'), clock, dt, calmStory,
+        sceneFrame?.id === 'uppdragen' ? smooth(clamp((sceneFrame.seconds - .5) / .65, 0, 1)) * (1 - smooth(clamp((sceneFrame.seconds - 1.9) / .6, 0, 1))) : 0,
+        sceneFrame?.id === 'snoret');
+      if (carving && flags.has('taste') && !homeJourney) {
+        carving.position.set(26.05, 0, .2); carving.rotation.z = 0;
+        ghostPlace.position.set(27.8, 0, .1); ghostPlace.visible = true;
+      }
       if (homeJourney && flags.has('home')) {
         // The home ride is visibly Pappa carrying Elof, with both returned carvings alongside him.
         const k = clamp(shoulderLift / 4.25, 0, 1), weight = k * k * (3 - 2 * k);
@@ -2292,30 +2311,42 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           if (shoulderLift > 0) {
             carryAhead.set(Math.sin(model.rotation.y), 0, Math.cos(model.rotation.y));
             if (pappa.neck) pappa.neck.getWorldPosition(seat);
-            else pappa.rig.mouth(seat).addScaledVector(carryUp, -.25).addScaledVector(carryAhead, -.38);
-            seat.addScaledVector(carryAhead, -.14 * tall).addScaledVector(carryUp, .1 * tall);
-            const hips = playerHips[0] && playerHips[1]
-              ? (playerHips[0].getWorldPosition(boot).y + playerHips[1].getWorldPosition(palm).y) / 2 - elof.group.position.y : .4 * tall;
-            Object.assign(shoulderPose, playerPose);
-            shoulderPose.legL = lerp(playerPose.legL, .85, weight); shoulderPose.legR = lerp(playerPose.legR, .85, weight);
-            shoulderPose.kneeL = lerp(playerPose.kneeL, 1.15, weight); shoulderPose.kneeR = lerp(playerPose.kneeR, 1.15, weight);
-            shoulderPose.seat = hips * 5.2 / tall * (1 - weight);
+            else pappa.rig.mouth(seat).addScaledVector(carryUp, -.65).addScaledVector(carryAhead, -.18);
+            // His pelvis rests behind the neck, with his thighs either side of it. Anchor the actual hips,
+            // not his feet/root at Pappa's head: different body proportions keep the same real contact.
+            seat.addScaledVector(carryAhead, -.09 * tall).addScaledVector(carryUp, .045 * tall);
+            Object.assign(shoulderPose, spokenPose);
+            shoulderPose.legL = lerp(playerPose.legL, 1.16, weight); shoulderPose.legR = lerp(playerPose.legR, 1.16, weight);
+            shoulderPose.kneeL = lerp(playerPose.kneeL, 1.32, weight); shoulderPose.kneeR = lerp(playerPose.kneeR, 1.32, weight);
+            shoulderPose.splayL = shoulderPose.splayR = .30 * weight;
+            shoulderPose.seat = null;
+            elof.group.rotation.y += (model.rotation.y - Math.PI / 2 - elof.group.rotation.y) * weight;
             playerBody.pose(shoulderPose);
-            elof.group.position.lerp(seat, weight);
+            if (playerHips[0] && playerHips[1]) {
+              carryHips.copy(playerHips[0].getWorldPosition(boot)).add(playerHips[1].getWorldPosition(palm)).multiplyScalar(.5);
+            } else carryHips.copy(elof.group.position).addScaledVector(carryUp, .4 * tall);
+            elof.group.position.addScaledVector(seat.sub(carryHips), weight);
             for (const side of [0, 1] as const) {
               const foot = playerFeet[side];
               if (!foot) continue;
               foot.getWorldPosition(boot).addScaledVector(carryUp, -.025 * tall);
               pappa.rig.grip(side, boot, carryUp, palm, weight);
+              pappa.rig.hold?.(side, { kind: 'power', size: .08 }, weight);
             }
           }
         }
-        seat.copy(elof.group.position); seat.y -= .16 * tall; seat.z += .1 * tall;
-        seat.lerp(boot.set(x, y + shoulderLift, .12), 1 - weight);
-        ghostPlace.visible = true; ghostPlace.position.copy(seat); ghostPlace.position.x -= .8; ghostPlace.scale.setScalar(1);
+        carryAhead.set(Math.cos(elof.group.rotation.y), 0, -Math.sin(elof.group.rotation.y));
+        carrySide.set(carryAhead.z, 0, -carryAhead.x);
+        playerBody.mouth(seat).addScaledVector(carryUp, -.27 * tall).addScaledVector(carryAhead, .18 * tall);
+        ghostPlace.visible = true; ghostPlace.scale.setScalar(1);
         ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
+        holdCarving(playerBody, 0, boot.copy(seat).addScaledVector(carrySide, .2 * tall), carryUp, .43, .12, ghostPlace.position, carryAxis);
+        ghostPlace.quaternion.setFromUnitVectors(carryUp, carryAxis);
         ghostGroundY = playerGroundY;
-        if (carving) { carving.position.copy(seat); carving.position.x += .8; }
+        if (carving) {
+          holdCarving(playerBody, 1, boot.copy(seat).addScaledVector(carrySide, -.2 * tall), carryUp, .39, .13, carving.position, carryAxis);
+          carving.quaternion.setFromUnitVectors(carryUp, carryAxis);
+        }
       }
       sharedSweets?.update(flags, ghostPlace.position, carving?.position);
     }

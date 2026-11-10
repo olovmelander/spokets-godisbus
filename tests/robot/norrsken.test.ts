@@ -25,12 +25,12 @@ describe('Final, Norrsken, in greybox', () => {
       const result = playThrough(fps, norrsken, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // The story's steps, each one built on the one before.
-      const did = result.flags.filter((flag) => !flag.startsWith('beat:') && !flag.startsWith('gift:') && flag !== 'scene:card');
+      const did = result.flags.filter((flag) => !flag.startsWith('beat:') && !flag.startsWith('gift:') && !flag.startsWith('scene:') && flag !== 'nr:rope-ready');
       expect(did.slice(0, 5)).toEqual(['lower', 'placed:tragubbe', 'crowberry', 'eyes', 'bag']);
       expect(did.slice(5, 8).sort()).toEqual(['share:jay', 'share:spoket', 'share:tragubbe']);
       expect(did.slice(8)).toEqual(['shared', 'taste', 'home', 'goal']);
-      // Pappa's line, in its four bubbles.
-      expect(result.said).toEqual(['first1', 'first2', 'first3', 'first4']);
+      expect(result.said).toEqual(['nrFoundYou', 'aterfunna:0', 'aterfunna:1', 'first1', 'first2', 'first3', 'first4', ...Array.from({ length: 7 }, (_, i) => `aterfunna:${i + 6}`)]);
+      expect(result.flags.indexOf('scene:aterfunna')).toBeLessThan(result.flags.indexOf('home'));
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
       expect(result.checkpoint).toBe(norrsken.checkpoints!.length - 1);
@@ -101,6 +101,10 @@ describe('Final, Norrsken, in greybox', () => {
     expect(sim.curr.word).toBe('lowerLace');
     sim.step({ ...idle, act: true });
     run(sim, 0.1);
+    expect(sim.curr.verb).toBeNull();
+    expect(sim.sceneFrame?.id).toBe('snoret');
+    expect(sim.movers[0]!.y).toBeCloseTo(-2.6);
+    run(sim, 2.6);
     expect(sim.curr.verb).toBe('pull');
     sim.step({ ...idle, act: true });
     run(sim, 1);
@@ -113,12 +117,12 @@ describe('Final, Norrsken, in greybox', () => {
   });
 
   it('has a crack he can walk over, and a trägubbe he can step over', () => {
-    const sim = new Sim({ ...norrsken, spawn: { x: 9, y: 0.01 } }, {}, { placed: ['tragubbe'] });
+    const sim = new Sim({ ...norrsken, spawn: { x: 9, y: 0.01 } }, {}, { placed: ['tragubbe'], flags: ['scene:uppdragen'] });
     // At a walk: the slowest way over.
     run(sim, 6, { x: 0.5 });
     expect(sim.curr.x).toBeGreaterThan(13);
     expect(sim.bubbles).toBe(0);
-    const back = new Sim({ ...norrsken, spawn: { x: 15, y: 0.01 } }, {}, { placed: ['tragubbe'] });
+    const back = new Sim({ ...norrsken, spawn: { x: 15, y: 0.01 } }, {}, { placed: ['tragubbe'], flags: ['scene:uppdragen'] });
     run(back, 2.5, { x: -1 });
     expect(back.curr.x).toBeLessThan(11.5);
     expect(back.bubbles).toBe(0);

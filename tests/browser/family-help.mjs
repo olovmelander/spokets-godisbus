@@ -46,7 +46,7 @@ try {
     ['granskog', 113.2, -8, 'pappa', ['seesaw']],
     ['granskog', 154.6, -8, 'bertil', []],
     ['myren', 84.8, 0, 'mamma', ['mamma']],
-    ['norrsken', 26.6, 0, 'bertil', ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste']],
+    ['norrsken', 26.6, 0, 'bertil', ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste', 'scene:aterfunna']],
     ['epilog', 7, 0, 'mamma', []],
   ]) for (const [width, height, tier] of [[844, 390, 'low'], [390, 844, 'high']]) {
     const name = `${course}-${who}-${width}x${height}`;
@@ -66,7 +66,8 @@ try {
         gusts: sim.gusts, help: sim.help, berries: sim.berries });
       await view.ready; for (let i = 0; i < 12; i++) draw(.1);
       const scene = f.renderedScene(), actors = [];
-      scene.traverse((node) => { if (node.userData.familyRole) actors.push(node); });
+      // These are the established helpers. Scene-only actors have already run in and handed over to them.
+      scene.traverse((node) => { if (node.userData.familyRole && !node.name.startsWith('stage-')) actors.push(node); });
       const actor = actors.filter((a) => a.userData.familyRole === who).sort((a,b) => Math.abs(a.parent.position.x-x)-Math.abs(b.parent.position.x-x))[0];
       const visible = (a) => { for (let n=a; n; n=n.parent) if (!n.visible) return false; return true; };
       const snapshot = () => ({ ...view.info(), at: actor.position.toArray(), rotation: actor.rotation.toArray(),
@@ -78,7 +79,7 @@ try {
     // Seventeen parts and the mouth that speaks (src/render/talk.ts), in the one draw.
     check(`${name}: the named relative has articulated arms and legs in one instanced draw`, shown.visible && shown.meshes === 1 && shown.instances === 18);
     check(`${name}: the helper's head and feet fit the shared composition`, shown.corners.every(([x,y]) => Math.abs(x) < 1 && Math.abs(y) < 1));
-    if (course === 'norrsken') check(`${name}: all four relatives fit the reunion shot`, shown.family.length === 4 && shown.family.every((a) => a.visible && a.corners.every(([x,y]) => Math.abs(x)<1 && Math.abs(y)<1)));
+    if (course === 'norrsken') check(`${name}: all four relatives fit the reunion shot`, shown.family.length === 4 && shown.family.map(a=>a.who).sort().join(',') === 'bertil,mamma,moa,pappa' && shown.family.every((a) => a.visible && a.corners.every(([x,y]) => Math.abs(x)<1 && Math.abs(y)<1)));
     const paused = await page.evaluate(() => { const p=window.probe; for(let i=0;i<20;i++)p.draw(0); return p.snapshot(); });
     check(`${name}: pausing retains the actual joint pose and GPU resources`, JSON.stringify(paused.at) === JSON.stringify(shown.at) && JSON.stringify(paused.rotation) === JSON.stringify(shown.rotation) && JSON.stringify(paused.pose) === JSON.stringify(shown.pose) && paused.textures === shown.textures && paused.geometries === shown.geometries);
     const calm = await page.evaluate(() => { const p=window.probe; for(let i=0;i<20;i++)p.draw(.1); return p.snapshot(); });
@@ -100,7 +101,7 @@ try {
       await picture(page, join(shots, `${name}-greeting.png`));
     }
     if (course === 'norrsken') {
-      const before = await page.evaluate(() => { const p=window.probe; p.sim.flags.delete('taste'); p.draw(0); return p.snapshot(); });
+      const before = await page.evaluate(() => { const p=window.probe; p.sim.flags.delete('taste'); p.sim.flags.delete('scene:aterfunna'); p.draw(0); return p.snapshot(); });
       check(`${name}: reunion relatives remain hidden before Elof grows back`, before.family.every((a) => !a.visible));
     }
     assert.deepEqual(errors, [], `${name}: browser errors`); await page.close();
