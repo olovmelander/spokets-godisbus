@@ -3,8 +3,8 @@ import { drawnWhile } from './idle';
 
 /**
  * The northern lights (plan §3.4, the final; visual audit, berget-and-norrsken rows 5 and 21): two curtains in
- * the upper sky. Each hangs from a sharp lower border that snakes slowly, with upright rays drifting along it,
- * brighter seams where it folds, pale green at the border, green through the middle and violet at the top.
+ * the upper sky. Broad folds travel through a soft lower hem, with finer rays streaming up the fabric.
+ * Patches of light move through the folds: pale green at the hem, turquoise within and violet at the tips.
  * The left third of the sky is left to the afterglow and the stars.
  *
  * It is drawn as the stars are, at the far plane in the picture's own space, so that the ridges and everything
@@ -33,20 +33,28 @@ export function createAurora() {
       float hash(float p) { p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
       float noise(float x) { float i = floor(x), f = fract(x); return mix(hash(i), hash(i + 1.0), f * f * (3.0 - 2.0 * f)); }
       vec3 curtain(float x, float base, float tall, float seed, float from, float to) {
-        // The lower border swings slowly, and dips where the ribbon folds towards us: there its light bunches
-        // into a bright seam. The rays drift along it.
-        float turn = sin(x * 6.5 + seed * 2.0 + time * 0.035);
-        float folds = exp(-turn * turn * 14.0);
-        float border = base + 0.028 * sin(x * 3.7 + seed + time * 0.05) + 0.01 * sin(x * 11.0 - seed - time * 0.09) - 0.018 * exp(-turn * turn * 40.0);
+        // One coherent ribbon, folded at different scales. Its shape visibly travels over a few seconds;
+        // the fine strands follow those folds instead of boiling as unrelated noise at each pixel.
+        float flow = x + 0.035 * sin(x * 4.0 + seed - time * 0.19);
+        float turn = sin(flow * 8.0 + seed * 2.0 - time * 0.24);
+        float folds = exp(-turn * turn * 9.0);
+        float border = base + 0.034 * sin(flow * 4.3 + seed + time * 0.21)
+          + 0.012 * sin(flow * 12.0 - seed - time * 0.34) - 0.018 * folds;
         float h = sky.y - border;
-        float rays = 0.25 + 0.75 * noise(x * 70.0 + seed * 9.0 - time * 0.5) * (0.4 + 0.6 * noise(x * 190.0 + seed - time * 0.9));
+        float up = max(h, 0.0);
+        float strand = flow + up * (0.12 * sin(flow * 6.0 + seed - time * 0.16));
+        float rays = 0.22 + 0.78 * noise(strand * 76.0 + seed * 9.0 - time * 0.7)
+          * (0.45 + 0.55 * noise(strand * 185.0 + seed - time * 1.1));
+        float travelling = 0.64 + 0.36 * noise(flow * 7.0 - time * 0.18 + seed * 3.0);
         float along = smoothstep(from, from + 0.12, x) * (1.0 - smoothstep(to - 0.2, to, x));
-        float lit = smoothstep(-0.003, 0.004, h) * along * (0.75 + 1.1 * folds);
-        float reach = tall * (0.5 + 0.9 * rays + 0.8 * folds);
-        float green = rays * exp(-max(h, 0.0) / reach);
-        float edge = exp(-max(h, 0.0) / 0.01);
-        float violet = smoothstep(1.0, 2.2, h / tall) * exp(-max(h, 0.0) / (tall * 3.0)) * (0.4 + 0.6 * rays);
-        return lit * (green * vec3(0.074, 1.0, 0.33) + edge * rays * vec3(0.5, 0.9, 0.55) + violet * vec3(0.42, 0.06, 1.0) * 0.4);
+        float lit = smoothstep(-0.006, 0.006, h) * along * travelling * (0.65 + 0.75 * folds);
+        float reach = tall * (0.75 + 0.65 * rays + 0.65 * folds);
+        float body = rays * exp(-up / reach);
+        float edge = exp(-up / 0.012);
+        float violet = smoothstep(0.75, 1.9, h / tall) * exp(-up / (tall * 2.6)) * (0.35 + 0.65 * rays);
+        vec3 green = mix(vec3(0.065, 0.9, 0.29), vec3(0.07, 0.72, 0.66), smoothstep(0.25, 1.5, h / tall));
+        return lit * (body * green + edge * rays * vec3(0.36, 0.63, 0.43)
+          + violet * vec3(0.4, 0.085, 0.82) * 0.55);
       }
       void main() {
         vec3 light = curtain(sky.x, 0.115, 0.075, 1.0, -0.16, 0.95) + 0.6 * curtain(sky.x * 0.9 + 0.3, 0.175, 0.06, 4.0, 0.12, 1.4);
@@ -56,7 +64,7 @@ export function createAurora() {
     `,
     transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false,
   });
-  material.customProgramCacheKey = () => 'aurora-v1';
+  material.customProgramCacheKey = () => 'aurora-v2';
   const mesh = new Mesh(geometry, material);
   mesh.name = 'aurora';
   mesh.frustumCulled = false;
@@ -75,7 +83,8 @@ export function createAurora() {
     /** `k` is how far night has fallen; `most` caps the light, lower where the picture is drawn without HDR. */
     update(k: number, clock: number, most: number) {
       uniforms.time.value = clock;
-      uniforms.strength.value = k * most * (0.88 + 0.12 * Math.sin(clock * 0.9));
+      // Movement lives within the curtains; the whole sky never flashes brighter and darker in unison.
+      uniforms.strength.value = k * most;
       drawnWhile(mesh, k > 0);
     },
   };

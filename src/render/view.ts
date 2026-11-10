@@ -1514,7 +1514,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
       camera.lookAt(window.x, window.y + 0.65, window.z);
     }
-    const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory);
+    const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory, lifeDt);
     // The foreground's own shade, by day; little of it at night and in the storm, which are dark enough (./grade.ts).
     gradePass?.setForeShade(CINEMA * (chapter.storm ? 0.35 : 1) * (1 - 0.7 * darkness));
     // Sunlight through the leaves on the forest floor and the lawn, by day, out of the storm (./ground-detail.ts).
@@ -2600,9 +2600,11 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
   // The lights' own time stands still with less motion: they hang as they are.
   let drift = 0;
   /** `most` caps the lights: lower on Low, where they are added after the picture's tone mapping. */
-  function update(flags: ReadonlySet<string>, dt: number, most: number, still: boolean): number {
+  function update(flags: ReadonlySet<string>, dt: number, most: number, still: boolean, lifeDt: number): number {
     k = Math.min(1, Math.max(0, k + (after === null || flags.has(after) ? dt : -dt) / 3));
-    if (!still) drift += dt;
+    // Nightfall belongs to the story's event time. The sky's quiet movement, like breathing, continues
+    // during reading; Pause supplies zero lifeDt and reduced motion holds the current curtain exactly.
+    if (!still) drift += lifeDt;
     sky.copy(day).lerp(dark, k);
     // The night sky and the moon still light what faces up and out: the ground and the faces stay readable (the
     // light pass of 6 November 2026; at 0.75 and 0.7 the finale's summit and the epilogue's room went murky).
@@ -2610,7 +2612,7 @@ function buildNight(chapter: ChapterData, sky: Color, hemisphere: HemisphereLigh
     sun.intensity = lerp(lights.sun, 0.9, k);
     if (aurora) {
       aurora.update(k, drift, most);
-      hemisphere.color.copy(lights.above).lerp(green, 0.25 * k * (0.85 + 0.15 * Math.sin(drift * 0.9)));
+      hemisphere.color.copy(lights.above).lerp(green, 0.25 * k);
     }
     return k;
   }

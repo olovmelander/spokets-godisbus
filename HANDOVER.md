@@ -1,5 +1,26 @@
 # Handover
 
+## State (10 November 2026): living northern lights on the summit
+
+- **Olov asked:** “Kan vi göra så att norrskenet rör sig på ett snyggt visuellt sätt!” The outdoor northern
+  lights in Norrsken now have visibly travelling folds, finer coherent rays and moving patches of green,
+  turquoise and violet. Two overlapping curtains retain the dark sky to the left in wide views and stay
+  behind the mountain and tree silhouettes. Global brightness pulsing is removed; the scene's green fill stays steady.
+- **Time:** nightfall's three-second transition still follows story/event time. Only the aurora's drift uses
+  presentation time, so it continues gently during a held line while the story waits. Pause and either source
+  of **Mindre rörelse** hold the current curtain exactly; resuming continues without jumping ahead.
+- **Cost and scope:** the existing single additive draw, six vertices, no textures and shader warmup remain.
+  Indoor evening-window illustrations are unchanged. No family model, recording, release boundary or rule changed.
+- **Checked:** typecheck; all 2,403 tests in 248 files; production build/size gates (JS 637.3 KB, boot 5,701.5 KB);
+  built-in privacy scan (995 tracked / 187 built / 439 media, no local exiftool or optional denylist).
+  `nightfall` passed all 100 checks at 390×844 and 844×390 on Low and High: actual shader spatial flow rather
+  than a brightness pulse, held story/nightfall, exact Pause, both reduced-motion sources, warmup and resource budgets.
+  Three native-browser captures per size/tier in the built game with actual private family models show the same
+  held “Elof! Hur mår du?” line and scene time while the curtains move. These establish visual changes in the
+  sampled views, not physical-device frame rate. Private captures stay in ignored scratch; no likeness image is committed.
+- **Next:** this request is complete locally; the full CI suite gates merging and Pages deployment. No step needs
+  Olov's computer. Preserve the separation between nightfall's event time and the lights' presentation time.
+
 ## State (10 November 2026): Olov's next full playthrough, both adventures
 
 [PR #253](https://github.com/olovmelander/spokets-godisbus/pull/253) contains this follow-up.
@@ -5186,6 +5207,10 @@
 
 ## Next
 
+**Living northern lights (10 November).** The newest State section records the summit aurora's motion and
+validation. Keep the nightfall transition on story time while the curtains follow presentation time; Pause
+and reduced motion hold the picture. The indoor window illustrations are a separate existing drawing.
+
 **The next full-playthrough list covers both adventures (10 November).** Continue from the newest State section
 and `docs/verification/2026-11-10-playthrough.md`. The earlier 32-item list and saved patches were completed in
 PR #252; do not reapply them. The private exports remain in their own repository. No work from either list needs
@@ -5589,6 +5614,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Living northern lights (Olov, 10 November 2026):** visibly flowing, soft curtains on the summit, including
+  during dialogue; preserve Pause and Mindre rörelse, and avoid whole-sky flashing.
 - **Both adventures share the candy bag (Olov, 10 November 2026):** keep all earlier sweets, finds, memories and
   photos visible while playing either adventure. Eight storm sweets and the witnessed picture stories **Stormens
   spår** extend collecting without changing Äventyr 1's sixteen-kind golden reward.
@@ -5683,6 +5710,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Living northern lights (10 Nov) | Make the aurora move beautifully | One focused cloud follow-up with independent browser validation | — / 0 so far | Flowing folds/rays and separate presentation time; 100 nightfall checks and private built portrait/landscape sequences on Low/High. |
 | Olov's full playthrough of both adventures (10 Nov) | Fix 62 chronological notes and extend the shared candy bag | One continuation with six parallel building/review worktrees | — / 1 new playthrough after PR #252 | Chapter staging, contacts, scenery, illustrations, world-anchored rain and shared collections; exact request and evidence in the new 10 November verification record. |
 | Olov's Äventyr 2 playthrough list (9–10 Nov) | Olov's request: fix 32 things he noted, let every line finish, life while someone speaks, lip-sync | Eight builders saved their work on 9 November; one continuation on 10 November with six parallel worktrees integrated and finished it | — / 0 so far | All eight patches applied in the requested order, chapter fixes plus speech sequencing and speaking animation; visual review and regression evidence in the 10 November State and verification checklist. |
 | The rest of the whole body (9 Nov, evening) | Olov's request: "Fix this!" to the five things left | Part of the same cloud session, with two building agents | — / 0 so far | Turning on the spot in steps; the trunk alive under a held act; the weight over before a step and the trunk following the hips; Elof's jumps, landings and turns without snaps; Billsta's children at a child's sprint. |
@@ -5730,6 +5758,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Aurora follow-up (10 November):** no new defect found in the focused checks. Native browser captures establish
+  the curtain motion in the sampled phone viewports; they do not measure the family's physical-device performance.
 - **Limits of the 10 November review:** private models were checked in built-game browser viewports, including
   390×844 and 844×390. Sampled action captures establish poses and story sequencing, not native frame rate on a
   phone. Existing whole-body sliding/likeness work below is not declared finished by this playthrough pass.
@@ -5921,6 +5951,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The summit aurora's requested flowing motion is implemented (10 November); evening-window illustrations remain
+  a separate static depiction if a future request extends the effect indoors.
 - Finer hair on Moa and Mamma, and the family's bodies closer to the sheets' clothes: pockets, seams, a belt. (Hands
   with separate fingers were made on 9 November.)
 - The kneel's back foot stepping back about 0.4 of the height, and Granskogen's seesaw kneel and Moa's at the root hole
@@ -5938,7 +5970,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough work adds no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough and aurora work add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
