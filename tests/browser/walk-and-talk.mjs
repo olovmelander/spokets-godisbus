@@ -22,6 +22,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ args:['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 let checks = 0;
+const layoutFailures = [];
 const check = (name, value) => { assert.ok(value, name); checks++; console.log(`  ok   ${name}`); };
 const state = page => page.evaluate(() => window.__godis.state());
 const text = page => page.locator('#bubbleLine').textContent();
@@ -119,6 +120,18 @@ try {
     const jumped = await state(page);
     check(`${label}: ${touch ? 'touch' : 'keyboard'} jump works while the full line stays visible`, jumped.y > queued.y + .15 && await text(page) === words);
     if (controls) await controls.hop(false); else await page.keyboard.up('Space');
+    const layout = await page.evaluate(() => {
+      const rect = document.getElementById('bubble').getBoundingClientRect();
+      const controls = ['stickBase', 'hopBtn', 'actBtn'].map(id => document.getElementById(id).getBoundingClientRect());
+      return { bubble:rect.toJSON(), controls:controls.map(r => r.toJSON()), width:innerWidth,
+        pageWidth:document.documentElement.scrollWidth, bigText:document.body.classList.contains('big-text'),
+        clear:controls.every(r => rect.bottom <= r.top || rect.top >= r.bottom || rect.right <= r.left || rect.left >= r.right) };
+    });
+    const fits = layout.bubble.width > 0 && layout.bubble.height > 0 && layout.bubble.left >= 0 && layout.bubble.right <= layout.width
+      && layout.pageWidth <= layout.width && layout.bigText && layout.clear;
+    // Report every viewport before failing, so a layout regression does not hide the input/staging result.
+    if (!fits) { layoutFailures.push({ viewport:label, ...layout }); console.error(`  layout failure ${label}: ${JSON.stringify(layout)}`); }
+    else check(`${label}: the visible big-text line fits and leaves play controls clear`, fits);
     await page.locator('#pauseBtn').click({ force:true });
     await advance(page, .05);
     const paused = await state(page), pausedWords = await text(page);
@@ -132,13 +145,6 @@ try {
     const lines = await page.evaluate(() => window.walkTalkClock.lines);
     assert.deepEqual(lines.map(line => line.text), ['Olympia! Hela planen är mörk.', 'Klonk!', 'Inte ens strålkastarna lyser!'], `${label}: every full line is shown once, in order, without a Continue click`); checks++;
     check(`${label}: queued replies keep their own readable display time`, lines[1].at - lines[0].at >= 3 && lines[2].at - lines[1].at >= 2.5);
-    const layout = await page.evaluate(() => {
-      const rect = document.getElementById('bubble').getBoundingClientRect();
-      const controls = ['stickZone', 'hopBtn', 'actBtn'].map(id => document.getElementById(id).getBoundingClientRect());
-      return document.documentElement.scrollWidth <= innerWidth && document.body.classList.contains('big-text')
-        && controls.every(r => rect.bottom <= r.top || rect.top >= r.bottom || rect.right <= r.left || rect.left >= r.right);
-    });
-    check(`${label}: big text leaves the movement and action controls clear`, layout);
     await controls?.close(); assert.deepEqual(route.errors, []); await page.close();
 
     const staged = await open(width, height, 'stormkvall', '2.6,.01');
@@ -157,5 +163,6 @@ try {
     check(`${label}: movement returns after the protected scene, without an extra dismiss`, (await state(staged.page)).x > released.x + .3 && !(await state(staged.page)).held);
     assert.deepEqual(staged.errors, []); await staged.page.close();
   }
+  assert.deepEqual(layoutFailures, [], 'visible big-text lines fit both viewports and leave play controls clear');
   console.log(`Walk and talk: ${checks} browser checks passed.`);
 } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
