@@ -18,6 +18,7 @@ try {
   await page.evaluate(async () => {
     const art = await import('/spokets-godisbus/src/ui/story-illustrations.ts');
     const { MEMORIES } = await import('/spokets-godisbus/src/ui/memory-art.ts');
+    const { spriteHtml } = await import('/spokets-godisbus/src/ui/sprite.ts');
     const { strokeHtml } = await import('/spokets-godisbus/src/ui/story-stroke.ts');
     window.art = art;
     const descriptions = {
@@ -35,7 +36,7 @@ try {
     window.keys = Object.keys(descriptions);
     document.head.innerHTML = '<style>body{margin:0;background:#ede4d0;color:#413b3a;font:16px sans-serif;padding:20px}h2{font-size:22px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}figure{margin:0}figure>svg{display:block;width:100%;height:auto;border-radius:12px}figcaption{padding:7px;line-height:1.4}section{margin-bottom:24px}</style>';
     const section = (name,title,inside) => `<section data-section="${name}"><h2>${title}</h2><div class="grid">${inside}</div></section>`;
-    document.body.innerHTML = section('family','Familjen i teckningarna',Object.entries(names).map(([who,name])=>`<figure><svg viewBox="0 0 320 200"><rect width="320" height="200" fill="#fff3d4"/>${art.storyPerson(who,145,190,172,{pack:true})}<svg x="232" y="17" width="68" height="64" viewBox="0 0 68 64">${art.storyPortrait(who)}</svg></svg><figcaption>${name}</figcaption></figure>`).join(''))
+    document.body.innerHTML = spriteHtml() + section('family','Familjen i teckningarna',Object.entries(names).map(([who,name])=>`<figure><svg viewBox="0 0 320 200"><rect width="320" height="200" fill="#fff3d4"/>${art.storyPerson(who,145,190,172,{pack:true})}<svg x="232" y="17" width="68" height="64" viewBox="0 0 68 64">${art.storyPortrait(who)}</svg></svg><figcaption>${name}</figcaption></figure>`).join(''))
       + section('story','Bilder från äventyren',window.keys.map(key => `<figure>${art.storyIllustration(key)}<figcaption>${descriptions[key]}</figcaption></figure>`).join(''))
       + section('memories','När Elof var liten',Object.entries(MEMORIES).flatMap(([chapter,pages])=>pages.map((svg,n)=>`<figure>${svg}<figcaption>${chapterNames[chapter]} · ${n+1}<br>${sv.memories.chapters[chapter]?.captions?.[n] ?? ''}</figcaption></figure>`)).join(''));
     const holder = document.createElement('figure'); holder.innerHTML = strokeHtml; holder.querySelector('#strokeBody').hidden = false;
@@ -46,6 +47,7 @@ try {
     const last = document.createElement('section');last.dataset.section='carving';last.innerHTML='<h2>Den nya lilla vännen</h2><div class="grid"></div>';
     last.lastChild.append(holder,carving);document.body.append(last);
   });
+  assert.equal(await page.locator('#i-carving-hands').count(), 1, 'Carving review includes the real sleeve, helping hand and knife sprite');
   const comparison = await page.evaluate(async () => {
     const { art, keys } = window, results = [];
     for (const key of keys) {
