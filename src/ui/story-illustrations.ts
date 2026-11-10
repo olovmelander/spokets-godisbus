@@ -17,7 +17,7 @@ const wash = (top: string, bottom: string, y1 = 0, y2 = 200): Wash => ({ top, bo
 const shadow = (x: number, y: number, r: number) => ({ ...ellipse(x, y, r, r * .14, '#273e47'), opacity: .2 });
 
 /** Their deliberately different silhouettes: the old one's bent cap/beard/coat; Elof's short, bare linden block. */
-function woodenFigure(kind: 'old' | 'little', eyes = true, fresh = false): Art {
+function woodenFigure(kind: 'old' | 'little', eyes = true, fresh = false, restingArms = true): Art {
   if (kind === 'little') return group([
     shadow(0, 1, 37),
     path('M-27-56-34-24-31-5-19 0 24-1 32-8 29-28 21-55Z', wash('#f6e3b9', '#c29c68', -64, 0), '#8c7154', 1.7),
@@ -34,8 +34,8 @@ function woodenFigure(kind: 'old' | 'little', eyes = true, fresh = false): Art {
     shadow(0, 1, 37),
     path('M-24-23-27-5-14 0-4-4-6-23M8-23 6-6 17 0 31-3 26-23', '#73675b', '#4e514b', 1.5),
     path('M-25-63-32-23-18-16 1-21 21-16 30-24 21-64Z', wash(fresh ? '#c8b28a' : '#a2a48a', fresh ? '#a08c6f' : '#737e70', -68, -20), '#59665c', 1.7),
-    path('M-25-60-36-43-35-29-25-32-18-50M22-60 34-44 33-31 24-30 17-50', fresh ? '#baa47f' : '#838e79', '#59665c', 1.5),
-    ellipse(-29, -31, 5, 6, '#c4ad87'), ellipse(28, -31, 5, 6, '#c4ad87'),
+    ...(restingArms ? [path('M-25-60-36-43-35-29-25-32-18-50M22-60 34-44 33-31 24-30 17-50', fresh ? '#baa47f' : '#838e79', '#59665c', 1.5),
+    ellipse(-29, -31, 5, 6, '#c4ad87'), ellipse(28, -31, 5, 6, '#c4ad87')] : []),
     path('M-22-87-25-72-19-61 0-53 20-61 25-76 16-91Z', '#d7c8a5', '#8d826d', 1.5),
     path('M-22-70-22-51-14-40-6-44 0-33 11-42 22-62 20-72 10-68 0-64-11-67Z', '#d5d0b8', '#8f917e', 1),
     line('M-16-63-12-49M-6-62-1-44M6-61 6-45M15-65 14-51', '#a5a592', 1.2),
@@ -131,15 +131,16 @@ function person(who: IllustrationPerson, options: PersonOptions = {}): Art {
   const p = FAMILY[who], adult = ['pappa','mamma','mormor','morfar'].includes(who), rain = options.rain === true;
   const toddler = who === 'elof' && options.memory !== undefined, pyjamas = toddler && options.memory === 'indoors', jacket = toddler && !pyjamas;
   const shirt = rain ? p.coat : jacket ? '#87b4d4' : p.top, arm = options.arm ?? 'none';
-  const bare = !rain && who === 'mamma', short = !rain && (who === 'pappa' || who === 'bertil' || who === 'mormor');
+  const carriesPack = options.pack && ['elof','moa','mamma','pappa'].includes(who);
+  const bare = !rain && who === 'mamma', short = !rain && (who === 'pappa' || who === 'bertil' || who === 'mormor' || who === 'elof' && !toddler);
   const sleeve = bare ? p.skin : shirt, boots = rain && who !== 'elof', shoes = pyjamas ? '#e7dcc9' : boots ? p.boot : p.shoe;
   const head: Art[] = [
     path('M-22-99Q-24-117-6-122Q14-126 24-106L24-86 17-73 2-68-15-74-23-86Z', wash('#f9d9b8', p.skin, -123, -69), I, 1.3),
     ellipse(-23, -89, 4, 6, p.skin), ellipse(24, -89, 4, 6, p.skin),
-    ...(who === 'moa' || who === 'mamma' || who === 'mormor' ? [
+    ...(who === 'moa' || who === 'mamma' ? [
       path('M-24-98Q-29-121-8-125Q18-131 27-106L22-92Q16-105 3-115Q-12-104-22-91Z', p.hair, p.shade, 1.4),
       line('M2-121Q-14-115-20-101M5-121Q18-116 23-103', p.light, 2),
-    ] : [path(who === 'elof' ? 'M-24-99Q-28-109-17-117Q-19-126-7-122Q-1-133 7-122Q19-128 19-115Q28-111 26-99L17-104 12-112Q7-105 3-109L-1-115-8-106-14-112-18-102Z' : 'M-24-99-23-115-10-124 10-124 23-113 26-99 16-103 10-112 1-106-8-113-18-103Z', p.hair, p.shade, 1.2),
+    ] : who === 'mormor' ? [path('M-25-94Q-31-108-22-119Q-14-128-3-124Q9-132 20-121Q31-116 25-95L19-94Q15-105 5-109Q-4-98-16-101L-20-92Z',p.hair,p.shade,1.3),line('M-21-111Q-14-119-4-116M2-121Q16-120 21-109M-12-109Q-3-108 1-114',p.light,2)] : [path(who === 'elof' ? 'M-24-99Q-28-109-17-117Q-19-126-7-122Q-1-133 7-122Q19-128 19-115Q28-111 26-99L17-104 12-112Q7-105 3-109L-1-115-8-106-14-112-18-102Z' : 'M-24-99-23-115-10-124 10-124 23-113 26-99 16-103 10-112 1-106-8-113-18-103Z', p.hair, p.shade, 1.2),
       ...(who === 'elof' ? [line('M-16-115-9-118M1-121 6-114M15-116 18-109', p.light, 2)] : [])]),
     ...[-9, 10].flatMap(x => [ellipse(x, -91, 3.4, 4.1, '#fff9e9'), ellipse(x+.4, -91, 2.1, 3, p.eyes), ellipse(x+.6, -91, 1, 2, '#332d2c'), ellipse(x, -92.3, .65, .85, '#fffdf1')]),
     line('M-14-99-6-101M6-101 14-100', p.shade, who === 'pappa' ? 2.4 : 1.4),
@@ -155,7 +156,7 @@ function person(who: IllustrationPerson, options: PersonOptions = {}): Art {
     line('M-6-77Q2-71 10-79', I, 1.5),
     ...(who === 'bertil' ? [path('M-7-78Q2-74 11-79L8-74-1-73Z', '#fff5e6', I, .8)] : []),
     ...(who === 'pappa' ? [path('M-26-111Q-20-130 2-128Q21-128 25-112L40-107 37-102 9-106-25-105Z', '#2a2c32', '#1d1f24', 1.5), line('M-2-125 1-112M-22-109 18-108', '#64626a', 1)] : []),
-    ...(who === 'bertil' ? [path('M-26-111Q-20-131 2-129Q23-127 27-112L39-106 36-101 8-105-25-105Z', '#c8242c', '#7f302f', 1.4), path('M-16-111-13-123Q0-131 13-122L17-109Z', '#f4f2ee', '#bfaaa0', .8),
+    ...(who === 'bertil' ? [path('M-26-111Q-20-131 2-129Q23-127 27-112L39-106 36-101 8-105-25-105Z', '#c8242c', '#7f302f', 1.4), path('M-22-111-20-122Q0-133 20-122L23-109Z', '#f4f2ee', '#bfaaa0', .8),
       // The approved cap has a small red/white/green shield; at story size its colours identify the same cap.
       path('M-3-122H7V-114L2-110-3-114Z', '#f5eee0', '#7d5c4f', .8), path('M-2-121H6V-117H-2Z', '#c8242c'), path('M-2-116H6V-114L2-111-2-114Z', '#477547') ] : []),
     ...(jacket ? [path('M-27-110Q-16-128 7-124L26-113 34-108 31-104 3-107-26-105Z', '#8c978b', '#57665f', 1.3), line('M3-122 7-110M-19-109 20-108', '#c3cbba', 1)] : []),
@@ -169,7 +170,7 @@ function person(who: IllustrationPerson, options: PersonOptions = {}): Art {
   const resting = (flip = false): Layer => ({ ...group([path('M-18-69-25-52-25-37-18-36-14-55Z', sleeve, I, 1.4), ...(short ? [path('M-25-52-25-37-18-36-16-51Z', p.skin, I, 1)] : []), ellipse(-21,-34,4.4,5,p.skin,I,1)]), flip });
   return group([
     ...(options.seated ? [] : [shadow(0, 1, 28)]),
-    ...(options.pack ? [path('M-19-69Q-37-74-34-43L-27-35-15-37Z', p.pack, I, 1.3), path('M-31-67-18-65-16-52-32-54Z', p.pack, '#c4ad79', 1)] : []),
+    ...(carriesPack ? [path('M-19-69Q-37-74-34-43L-27-35-15-37Z', p.pack, I, 1.3), path('M-31-67-18-65-16-52-32-54Z', p.pack, '#c4ad79', 1)] : []),
     ...(who === 'moa' ? [path('M-22-101Q-33-93-28-81Q-35-72-26-64Q-31-55-19-53L-14-72 15-72 20-53Q33-55 28-66Q37-76 28-83Q34-96 23-104Z', p.hair, p.shade, 1.4)] : []),
     ...(options.seated ? [] : [path('M-16-40-18-9-10-3-3-5 0-31 5-31 8-5 17-3 22-8 17-41Z', who === 'moa' || who === 'pappa' && !rain ? p.skin : pyjamas ? '#a6bfe6' : p.legs, I, 1.5),
     ...(who === 'pappa' && !rain ? [path('M-20-44H20L21-23H4L0-31-4-23H-21Z', p.legs, I, 1.4), line('M-19-25H-5M5-25H19M0-42V-31', '#bfd1df', 2)] : []),
@@ -199,7 +200,7 @@ function person(who: IllustrationPerson, options: PersonOptions = {}): Art {
       path('M-17-69-24-58-13-53-8-66M16-69 25-61 15-54 8-66', shirt, I, 1.2),
       ...(options.pose === 'camera' ? [ellipse(-18,-91,4,4,p.skin,I,1),ellipse(16,-90,4,4,p.skin,I,1)] : []),
     ] : []),
-    ...(options.pack ? [line('M-16-68-12-42M16-68 14-44', '#68543b', 3)] : []),
+    ...(carriesPack ? [line('M-16-68-12-42M16-68 14-44', '#68543b', 3)] : []),
     path('M-5-76V-67Q0-62 6-67V-77Z', p.skin),
     group(head, 0, adult ? -8 : toddler ? 3 : 0, adult ? .87 : toddler ? 1.04 : 1),
     ...(who === 'mamma' ? [
@@ -226,7 +227,7 @@ function torch(x:number,y:number): Art { return group([
   path('M-8-4H8V4H-8Z','#424956',I,1),path('M-11-5H-6V5H-11Z','#d9c39a',I,1),line('M-10-3V3','#fff6c1',2),
 ],x,y,1,0,'flashlight'); }
 function heldPair(cap = false): Art { return group([
-  woodenFigure('old'),
+  woodenFigure('old', true, false, false),
   // Little lies across the old one's chest; the old hands are painted over its body.
   group([woodenFigure('little')],15,-24,.47,-25),
   path('M-25-58-28-41-4-28 3-33-19-47-18-57M22-58 27-44 26-26 18-26 17-43 15-53', '#838e79','#59665c',1.5),
@@ -281,7 +282,7 @@ function scene(key: StoryIllustrationKey): Art[] {
     path('M0 154Q51 137 86 139L118 121 208 129 320 113V158Q237 167 155 155T0 177Z','#49665f'),
     path('M0 166Q68 148 129 151T320 148L320 166Q242 183 154 168T0 184Z','#728c75'),
     group([person('pappa',{rain:true})],119,151,.76), group([person('mamma',{rain:true})],179,148,.73),
-    group([person('bertil',{rain:true,bootOff:true})],230,150,.59),group([person('moa',{rain:true})],275,148,.55),
+    group([person('bertil',{rain:true,bootOff:true})],230,150,.59),group([person('moa',{rain:true})],275,148,.58),
     torch(103,125),torch(164,123),torch(218,130),torch(263,129),
     group([person('elof',{rain:true,arm:'up'})],59,179,.17),group([klonk()],79,179,.2),
     line('M43 183q14-4 28 0m-23 7h17','#efd59c',2,.7),spruce(12,163,134),spruce(344,162,145),

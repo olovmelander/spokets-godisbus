@@ -7,7 +7,7 @@ const motion = (kind: string, inside: string) => `<g data-memory-motion="${kind}
 const shadow = (x: number, y: number, r: number) => `<ellipse cx="${x}" cy="${y}" rx="${r}" ry="${r * .17}" fill="${INK}" opacity=".15"/>`;
 
 function grownUp(x: number, y: number, h: number, mark: 'cap' | 'braid' = 'cap', lean = 0): string {
-  return storyPerson(mark === 'braid' ? 'mamma' : 'pappa', x, y, h, {}, lean);
+  return storyPerson(mark === 'braid' ? 'mamma' : 'pappa', x, y, h, { pack: true }, lean);
 }
 function littleElof(x: number, y: number, h: number, cap = false, arm: 'up' | 'out' | 'none' = 'none'): string {
   return storyPerson('elof', x, y, h, { memory: cap ? 'outdoors' : 'indoors', arm });
@@ -50,13 +50,13 @@ export const MEMORIES: Record<string, string[]> = {
     frame(`${spruce(30,165,143)}${spruce(281,163,157)}${ground(158)}${stump(204,165)}${figure(204,133,61)}
       ${littleElof(106,165,92,true,'out')}${motion('offer',jelly(143,124,7))}${jelly(221,131,6)}${leaves()}`),
     frame(`${spruce(19,169,161)}${spruce(296,160,132,'#899579')}${ground(157)}${stump(175,162)}${figure(174,131,54)}${jelly(193,130,6)}
-      ${littleElof(104,168,91,true,'up')}${jelly(128,95,6)}${storyPerson('pappa',254,163,118,{pose:'camera'})}${camera(254,82)}
+      ${littleElof(104,168,91,true,'up')}${jelly(128,95,6)}${storyPerson('pappa',254,163,118,{pose:'camera',pack:true})}${camera(254,82)}
       ${motion('glint','<path d="M238 77l-8 -5m6 13 -11 1m16 -17 -2 -8" stroke="#fff2c9" stroke-width="2"/>')}`),
   ],
   myren: [
     frame(`${mountain(242,116,190,75)}${ground(139,'#a8ad7e')}
       <path d="M0 147q68 -25 136 5t184 -8v22H0z" fill="#9bbabc"/><path d="M-5 176 323 151" stroke="#796d55" stroke-width="12"/><path d="M-5 172 323 147" stroke="#dcc49a" stroke-width="6"/>
-      ${motion('walk',`${storyPerson('moa',48,169,54)}${grownUp(93,165,88,'braid')}${storyPerson('bertil',133,162,61)}${storyShoulderCarry(221,156,96,49)}`)}
+      ${motion('walk',`${storyPerson('moa',48,169,60,{pack:true})}${grownUp(93,165,88,'braid')}${storyPerson('bertil',133,162,61)}${storyShoulderCarry(221,156,96,49)}`)}
       <path d="M21 197v-19m3 14 7 -9m251 5v-20m4 17 6 -8" ${stroke} stroke="#748563"/>`, 'marsh'),
     frame(`${mountain(247,139,176,88)}${ground(170,'#a8ad7e')}${motion('offer',storyShoulderCarry(129,217,146,72))}
       <path d="M184 57q22 -8 37 -3" fill="none" stroke="#f8edc5" stroke-width="2"/>`, 'marsh'),
