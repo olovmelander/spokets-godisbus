@@ -771,6 +771,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const scene = active >= 0 ? scenes[active]! : null;
       starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
       const t = frame?.seconds ?? 0;
+      const elofKeys = scene?.stage?.elof;
+      const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t) : null;
       const ghostKeys = scene?.stage?.actors?.ghost;
       const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;
       if (workpiece) play(workpiece, ghostKeys!, t);
@@ -1253,12 +1255,17 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const rightTorch = state.holds?.startsWith('lamp-'), leftTorch = state.holdsLeft?.startsWith('lamp-');
         // A torch points with its beam. Its carrying solve owns that arm, rather than first stretching the same
         // elbow towards the thing and then solving it a second time back down beside the body.
-        if (rightWeight > 0 && !rightTorch) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, rightLimit / rightWeight);
+        // A palm supporting Elof needs a little elbow bend before its final grip solve. Locking the arm straight
+        // first erases its bend plane; turning the palm then bends it on an arbitrary side in a single frame.
+        // Keep that small reserve only while he stands on the hands, releasing it as he steps off.
+        const carrying = elofNow?.rides === who ? elofNow.rideWeight : 0;
+        const carryingReach = 1 - .02 * carrying;
+        if (rightWeight > 0 && !rightTorch) rig.reach(1, hand.divideScalar(rightWeight), rightWeight, Math.min(rightLimit / rightWeight, carryingReach));
         // And the hand points with its first finger as the arm comes up, and lets it go as the arm comes down (./fingers.ts).
         const points = state.act === 'point' ? smooth((calm ? 3 : elapsed) / .3)
           : state.before?.act === 'point' ? 1 - smooth(elapsed / .45) : 0;
         if (points > 1e-3 && !rightTorch) rig.hold?.(1, POINTING, points);
-        if (leftWeight > 0 && !leftTorch) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight);
+        if (leftWeight > 0 && !leftTorch) rig.reach(0, otherHand.divideScalar(leftWeight), leftWeight, carryingReach);
         forward.set(Math.sin(yaw(face)), 0, Math.cos(yaw(face)));
         for (const side of [0, 1] as const) {
           const handOnKnee = side === 0 ? supportLeft : supportRight;
@@ -1646,8 +1653,6 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       if (ghost && rough > 0) block.position.set(ghost.x, ghost.y + .54, ghost.z);
 
       const shot = scene?.stage?.shots ? shotAt(scene.stage.shots, t) : null;
-      const elofKeys = scene?.stage?.elof;
-      const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t) : null;
       // On a hand he stands on its palm, a little over the hand's middle.
       const carrier = elofNow?.rides ? rigs.get(elofNow.rides) : undefined;
       const onto = { x: 0, y: 0, z: 0 };
