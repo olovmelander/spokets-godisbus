@@ -1,3 +1,4 @@
+import { capArms, capHands, capHandoff } from './cap-handoff';
 import { holdFlashlight } from './lamp-hold';
 import { stormSweet } from './storm-sweet';
 import { lessMotion } from '../platform/motion';
@@ -997,7 +998,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const capGift = chapter.id === 'granskog' ? carriers.find(carrier => carrier.ride.id === 'cap') : undefined;
   const capTime = chapter.later?.find(wait => wait.flag === 'family:cap-ready')?.seconds ?? 2.4;
   let capSince = -1;
-  const capFrom = new Vector3(), capAt = new Vector3(), capHand = new Vector3();
+  const capFrom = new Vector3(), capAt = new Vector3();
   const capKneel: Pose = { ...STANDING };
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
   const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number; hold: number; stoop: number }>();
@@ -2030,14 +2031,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
         ? { ready: now && !(chapter.id === 'myren' && one.glad === 'mamma' && flags.has('placed:pine')), near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined, one.rig.legs);
       const offersCap = !!capGift && one.who === 'bertil' && !flags.has('cap') && Math.abs(x - one.at) < 8;
-      const holdsCap = offersCap && capSince >= 0 && capSince < capTime * 0.82;
+      const holdsCap = offersCap && capSince >= 0 && capSince < capTime;
       if (offersCap) {
         // One hand on the brim while he explains the idea; after being called, two hands on the cap.
         // Suppress the generic high greeting arms, which fought the practical reach and twisted his wrists.
-        posed.armL = holdsCap ? 1.1 : 0.12; posed.armR = capSince < 0 ? 1.9 : holdsCap ? 1.1 : 0.18;
-        posed.elbowL = holdsCap ? 0.8 : 0.25; posed.elbowR = capSince < 0 ? 1.05 : holdsCap ? 0.8 : 0.3;
-        posed.spread = 0.08;
-        const low = smooth((capSince / capTime - 0.25) / 0.4) * (1 - smooth((capSince / capTime - 0.82) / 0.18));
+        capArms(posed, capSince, capTime);
+        const low = capHandoff(capSince, capTime).crouch;
         if (low > 0) {
           actPose('kneel', { t: 3, aim: null, stride: 0, pace: 0, calm: calmStory, role: 'bertil', legs: one.rig.legs }, capKneel);
           for (const joint of JOINTS) if (joint !== 'turn' && joint !== 'nod' && !joint.startsWith('arm') && !joint.startsWith('elbow')) posed[joint] += (capKneel[joint] - posed[joint]) * low;
@@ -2171,24 +2170,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (offersCap) {
         one.rig.group.updateWorldMatrix(true, false);
         const tall = one.rig.height;
-        if (capSince < 0) {
-          capHand.set(-0.12 * tall, 0.95 * tall, 0.14 * tall).applyMatrix4(one.rig.group.matrixWorld);
-          one.rig.reach(1, capHand, 0.9, 0.96);
-          one.rig.hold?.(1, CAP_PINCH, 0.65);
-        } else if (capGift!.prop && capSince < capTime * 0.82) {
-          if (capSince <= dt) capFrom.set(0, tall * 0.98, tall * 0.13).applyMatrix4(one.rig.group.matrixWorld);
-          const k = smooth((capSince / capTime - 0.12) / 0.7);
-          capAt.set(capGift!.ride.from.x, capGift!.ride.from.y - 0.05, 0).lerp(capFrom, 1 - k);
-          capAt.y += Math.sin(Math.PI * k) * 0.25;
+        if (capSince >= 0 && capGift!.prop && capSince <= capTime) {
+          if (capSince <= dt) capFrom.set(0, tall * .98, tall * .13).applyMatrix4(one.rig.group.matrixWorld);
+          const k = capHandoff(capSince, capTime).lower;
+          capAt.set(capGift!.ride.from.x, capGift!.ride.from.y - .05, 0).lerp(capFrom, 1 - k);
+          capAt.y += Math.sin(Math.PI * k) * .25;
           capGift!.prop.position.copy(capAt);
-          capGift!.prop.rotation.set(Math.PI * (1 - smooth(k / 0.55)), 0, 0);
-          drawnWhile(capGift!.prop, capSince >= capTime * 0.12);
-          for (const side of [0, 1] as const) {
-            capHand.copy(capAt).add(lampLocal.set(side === 0 ? 0.5 : -0.5, 0.04, 0));
-            one.rig.reach(side, capHand, 1, 0.97);
-            one.rig.hold?.(side, CAP_PINCH, 0.75);
-          }
+          capGift!.prop.rotation.set(Math.PI * (1 - smooth(k / .55)), 0, 0);
+          drawnWhile(capGift!.prop, capSince >= capTime * .12);
         }
+        capHands(one.rig, capSince, capTime, capAt);
       }
       if (scarf && scarf.weight > 0.001 && one.walk) {
         // Both hands on it, out over the railing, the one over the other; the scarf hangs from the lower (./scarf.ts).
