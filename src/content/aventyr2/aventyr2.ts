@@ -6,6 +6,7 @@ import { CHAPTER_PICTURE, DRAWING, PICTURE } from '../../ui/map';
 import { ARRANGEMENTS } from '../../audio/music';
 import { VOICES } from '../../audio/cues';
 import { FACES } from '../../ui/faces';
+import { storyPortrait } from '../../ui/story-illustrations';
 import { contextFor, type Chooser } from './context';
 import { installPictures } from './render';
 import { installMap } from './map';
@@ -76,12 +77,7 @@ into(ARRANGEMENTS, {
 } satisfies typeof ARRANGEMENTS);
 // Mormor and Morfar (docs/aventyr-2.md): their names in the bubbles, a plain face each, and wordless voices.
 into(sv.who, { mormor: 'Mormor', morfar: 'Morfar' });
-const face = (coat: string, extra = '') => `<path d="M13 62V42q20-15 42 0v20" fill="${coat}"/><circle cx="34" cy="24" r="18" fill="#dfb586"/>`
-  + `<path d="M16 21Q14 4 34 4t18 17q-6-9-18-9t-18 9z" fill="#cfccc4"/>${extra}`;
-into(FACES, {
-  mormor: face('#7a3a4a', '<circle cx="54" cy="52" r="6" fill="#ffd27a"/>'),
-  morfar: face('#3c5a44', '<path d="M14 16q4-12 20-12t20 12z" fill="#4a4a46"/><path d="M48 15h14v4H46z" fill="#4a4a46"/>'),
-});
+into(FACES, { mormor: storyPortrait('mormor'), morfar: storyPortrait('morfar') });
 into(VOICES, {
   mormor: { wave: 'sine', pitch: 320, steps: [5, 3, 0, 2], pace: 0.15 },
   morfar: { wave: 'triangle', pitch: 150, steps: [0, 2, 0], pace: 0.18 },

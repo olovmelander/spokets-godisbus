@@ -1,6 +1,7 @@
 import { sv } from '../content/sv';
 import { CHECK, CROSS } from './icons';
 import { faceBody } from './faces';
+import { carvingArt } from './story-illustrations';
 import { createStrokeUI, strokeHtml } from './story-stroke';
 import { FRIENDS, PARTY_GUESTS, SWEETS, partyReward, sharingReward, type Friend, type PartyGuest, type StoryAction, type StoryAnswer, type Sweet } from '../sim/story';
 
@@ -10,10 +11,10 @@ const pictures: Record<Sweet, string> = {
   skumbanan: '<path d="M12 20q6 42 43 19q-10 29-38 10Q2 38 12 20z" fill="#e6be42" stroke="#fff0a4" stroke-width="2"/>',
   lingon: '<circle cx="34" cy="38" r="16" fill="#b33748"/><path d="M34 23q-2-17 12-16q-1 12-12 16" fill="#789451"/><circle cx="29" cy="33" r="3" fill="#e99994"/>',
 };
-// The family as their bubbles draw them, in their signs' colours: one cast everywhere (story-presentation.md row 19).
+// The family as their bubbles and story pages draw them: one cast everywhere (story-presentation.md row 19).
 const portraits = {
   mamma: faceBody('mamma'), pappa: faceBody('pappa'), moa: faceBody('moa'), bertil: faceBody('bertil'),
-  tragubbe: '<path d="M18 58V31h30v27" fill="#bf8c58"/><circle cx="33" cy="27" r="13" fill="#dfbc84"/><path d="M16 21L33 2l18 19z" fill="#9c6a49"/>',
+  tragubbe: carvingArt('old', 34, 62, 61),
   spoket: '<path d="M14 55V26q0-23 20-23t20 23v29l-8-5-8 5-8-5-8 5z" fill="#e7d4a6"/><circle cx="27" cy="23" r="3"/><circle cx="40" cy="23" r="3"/><path d="M37 38h19v20H37z" fill="#a37243"/>',
   jay: '<path d="M14 39q3-27 25-21q19 5 11 26L29 54z" fill="#979ca0"/><path d="M15 36l18-8-4 19z" fill="#b08057"/><path d="M47 23l17 5-15 5z" fill="#555454"/><circle cx="44" cy="24" r="3"/>',
 };
