@@ -1259,7 +1259,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (state.act === 'draw' || leavesDrawing) {
             drawingContact = true;
             const pen = drawingAt(state.act === 'draw' ? since(state.actAt) : state.before!.t, calm, who);
-            const weight = state.act === 'draw' ? 1 : 1 - smooth(elapsed / .45);
+            // Returning from a look or gesture brings the hands back with the act's event-time blend.
+            // An existing drawing (including its initial/restored pose) keeps its contact throughout.
+            const taking = !state.before || state.before.act === 'draw' ? 1 : smooth(elapsed / .45);
+            const weight = state.act === 'draw' ? taking : 1 - smooth(elapsed / .45);
             paperContact.position.copy(sheet.position).addScaledVector(across, pen.across / unit).addScaledVector(forward, pen.ahead / unit);
             paperContact.position.y += .008 + pen.lift / unit;
             paperContact.userData.contact = pen.contact;
