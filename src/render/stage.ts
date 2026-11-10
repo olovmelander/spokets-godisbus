@@ -698,6 +698,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     return states;
   }
   let lastScene: string | null = null;
+  let cameraScene: string | null = null;
+  let cameraReleased = false;
   const starts = new Map<string, State>();
   /**
    * How long the scene playing now has waited on its lines (the story holds while one is read): the bodies go on standing and
@@ -1652,7 +1654,18 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       drawnWhile(block, rough > 0);
       if (ghost && rough > 0) block.position.set(ghost.x, ghost.y + .54, ghost.z);
 
-      const shot = scene?.stage?.shots ? shotAt(scene.stage.shots, t) : null;
+      if (cameraScene !== (scene?.id ?? null)) {
+        cameraScene = scene?.id ?? null;
+        cameraReleased = false;
+      }
+      // A free-moving reveal can outlast its ride while the words finish. Once Elof leaves its authored
+      // area, give the shot back to the play camera's existing smooth release; its dialogue and scene keep going.
+      // Keep it released if he steps back over the edge, rather than snapping into the old fixed shot again.
+      const left = scene?.from ?? scene?.at;
+      if (scene && !scene.hold && (scene.before !== undefined && elof.x > scene.before
+        // Entry is interpolated from the preceding simulation step. Leave a small margin at that same boundary.
+        || left !== undefined && elof.x < left - .5)) cameraReleased = true;
+      const shot = !cameraReleased && scene?.stage?.shots ? shotAt(scene.stage.shots, t) : null;
       // On a hand he stands on its palm, a little over the hand's middle.
       const carrier = elofNow?.rides ? rigs.get(elofNow.rides) : undefined;
       const onto = { x: 0, y: 0, z: 0 };

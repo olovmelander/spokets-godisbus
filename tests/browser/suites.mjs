@@ -43,6 +43,7 @@ export const SUITES = [
   ['memory-presentation', 20],
   ['story-illustrations', 2],
   ['dialogue-reading', 2],
+  ['walk-and-talk', 180],
   ['talk-life', 40],
   ['ghost-thoughts', 337],
   ['story-context', 260],

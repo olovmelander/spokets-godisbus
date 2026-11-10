@@ -1850,6 +1850,7 @@ details.info-row p {
    A scrap of Moa's paper with the speaker's face, name and colour, so whoever can't read the name still sees who
    speaks (docs/ux-audit/in-play.md rows 14-16). Its full width, between the corner buttons and above them. */
 .bubble {
+  box-sizing: border-box;
   position: absolute;
   z-index: 3;
   left: 0;

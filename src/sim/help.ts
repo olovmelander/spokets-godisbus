@@ -20,18 +20,52 @@ export interface Hint {
 /** Something to do further off than this is not the next thing: the trail leads there. */
 export const HINT_REACH = 12;
 
+const goalRequirements = new WeakMap<ChapterData, ReadonlySet<string>>();
+
+/**
+ * A required action can become available after Elof walked past it during a conversation. Trace only the
+ * authored goal's prerequisites; distance must not turn that unfinished main action into an optional one.
+ * Chapter data is immutable in play, so build this small, cycle-safe set once per chapter.
+ */
+export function requiredForGoal(chapter: ChapterData): ReadonlySet<string> {
+  const cached = goalRequirements.get(chapter);
+  if (cached) return cached;
+  const parents = new Map<string, string[]>();
+  const link = (flag: string, ...needs: (string | undefined)[]) => {
+    parents.set(flag, [...(parents.get(flag) ?? []), ...needs.filter((need): need is string => need !== undefined)]);
+  };
+  for (const spot of chapter.spots ?? []) link(spot.id, spot.needs);
+  for (const beat of chapter.beats ?? []) link(`beat:${beat.id}`, beat.on, beat.needs);
+  for (const set of chapter.sets ?? []) link(set.flag, ...set.when);
+  for (const later of chapter.later ?? []) link(later.flag, later.after);
+  for (const scene of chapter.scenes ?? []) {
+    link(`scene:${scene.id}`, scene.on, scene.needs);
+    for (const cue of scene.cues ?? []) link(cue.flag, scene.on, scene.needs);
+    for (const [i, line] of (scene.lines ?? []).entries()) link(`beat:${line.id ?? `${scene.id}:${i}`}`, scene.on, scene.needs);
+  }
+  const required = new Set<string>();
+  const visit = (flag: string) => {
+    if (required.has(flag)) return;
+    required.add(flag);
+    for (const need of parents.get(flag) ?? []) visit(need);
+  };
+  if (chapter.goalNeeds) visit(chapter.goalNeeds);
+  goalRequirements.set(chapter, required);
+  return required;
+}
+
 /** A push begins from its correct side. The weight puzzle deliberately revisits a passed landmark. */
 export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null {
   const puzzle = chapter.counterweight, p = sim.curr;
-  if (!puzzle || p.x < puzzle.from || p.x > puzzle.to || sim.flags.has(puzzle.launch)) return null;
+  if (!puzzle || p.x < puzzle.from || p.x > puzzle.to || sim.ready(puzzle.launch)) return null;
   const spot = (id: string) => chapter.spots?.find((s) => s.id === id);
-  if (!sim.flags.has(puzzle.call)) {
+  if (!sim.ready(puzzle.call)) {
     const call = spot(puzzle.call);
     return call ? { at: call.at, verb: call.verb, word: call.word ?? null } : null;
   }
   const heavy = sim.movers.find((m) => m.def.id === puzzle.heavy);
   if (!heavy) return null;
-  if (sim.flags.has(`placed:${puzzle.heavy}`)) {
+  if (sim.ready(`placed:${puzzle.heavy}`)) {
     const launch = spot(puzzle.launch);
     // A seesaw he walks onto has no word on the button: he only walks there.
     return launch ? { at: launch.at, verb: launch.touch ? null : launch.verb, word: launch.touch ? null : launch.word ?? null } : null;
@@ -40,7 +74,7 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
   // weight to settle before offering another push or the launch it will unlock.
   if (heavy.t < 1) return { at: heavy.def.stops[heavy.stop]!, verb: null, word: null };
   const trial = puzzle.trial === undefined ? undefined : spot(puzzle.trial);
-  if (trial && !sim.flags.has(trial.id) && trial.needs !== undefined && sim.flags.has(trial.needs)) {
+  if (trial && !sim.ready(trial.id) && trial.needs !== undefined && sim.ready(trial.needs)) {
     return { at: trial.at, verb: trial.verb, word: trial.word ?? null };
   }
   // He stands on the side it is pushed from, whichever way that is.
@@ -53,10 +87,10 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
 export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   const p = sim.curr;
   if (sim.prologue?.frame) return null;
-  if (chapter.prologue && sim.flags.has('pappa:done') && !sim.flags.has('goal')) {
+  if (chapter.prologue && sim.ready('pappa:done') && !sim.ready('goal')) {
     return { at: { x: chapter.goalX, y: chapter.prologue.railing.y - 2.2 }, verb: null, word: null };
   }
-  const has = (flag?: string) => flag === undefined || sim.flags.has(flag);
+  const has = (flag?: string) => flag === undefined || sim.ready(flag);
   // A raised route can overlap ordinary ground in x (the anthill's other side). Its landing heights,
   // not the airborne feet, distinguish a deliberate climb from an ordinary jump or the ant ride.
   const route = chapter.challenges?.find((r) => p.x >= r.from && p.x <= r.to && p.y >= r.above &&
@@ -66,7 +100,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     if (missing) return { at: missing.at, verb: missing.verb, word: missing.word ?? null };
   }
   if (route && has(route.needs)) {
-    const found = sim.flags.has(`found:${route.reward}`);
+    const found = sim.ready(`found:${route.reward}`);
     if (found && !route.backtrack) return { at: route.return, verb: null, word: null };
     // Find the nearest landing, then show the next. Never use the live position of a moving platform:
     // repeated taps must progress from looking, to pointing, to the demonstration at the same place.
@@ -79,7 +113,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     // A missed jump may reset a light sequence while the bubble returns onto an upper ledge.
     // Guide back to the first unfinished light instead of pointing at its still-hidden successor.
     if (found && nearest === 0) return { at: route.return, verb: null, word: null };
-    const pending = route.pending?.find((id) => !sim.flags.has(id));
+    const pending = route.pending?.find((id) => !sim.ready(id));
     const light = pending ? chapter.spots?.find((spot) => spot.id === pending) : undefined;
     let target = found ? 0 : route.steps.length - 1;
     if (light) {
@@ -111,7 +145,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
   for (const spot of chapter.spots ?? []) {
     // One he only has to touch is skipped, unless the chapter cannot end without it (Stormbyn's cap).
-    if (spot.extra || (spot.touch && spot.id !== chapter.goalNeeds) || sim.flags.has(spot.id) || !has(spot.needs)) continue;
+    if (spot.extra || (spot.touch && spot.id !== chapter.goalNeeds) || sim.ready(spot.id) || !has(spot.needs)) continue;
     things.push({ at: spot.at, verb: spot.verb, word: spot.word ?? null });
   }
   // Things on rails that are not yet where they belong, and that he moves himself.
@@ -126,10 +160,11 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     if (hook.extra || (hook.land?.x ?? hook.x + hook.length) <= p.x + 0.5) continue;
     things.push({ at: { x: hook.x, y: hook.y }, verb: 'lace', word: null });
   }
-  // What lies far behind him was optional, or he could not have come so far: he is not sent back for it, unless the
-  // chapter cannot end without it (Stormbyn's cap). Granskogen's jay sent him back 87 EL from the brook.
-  const needed = chapter.spots?.find((spot) => spot.id === chapter.goalNeeds)?.at;
-  for (let i = things.length - 1; i >= 0; i--) if (things[i]!.at.x < p.x - HINT_REACH && things[i]!.at !== needed) things.splice(i, 1);
+  // Optional things far behind stay behind. A goal prerequisite remains useful even when it unlocked after
+  // a long conversation: the knife at home and the morning cocoa must still be findable on the way back.
+  const required = requiredForGoal(chapter);
+  const needed = new Set(chapter.spots?.filter((spot) => required.has(spot.id)).map((spot) => spot.at));
+  for (let i = things.length - 1; i >= 0; i--) if (things[i]!.at.x < p.x - HINT_REACH && !needed.has(things[i]!.at)) things.splice(i, 1);
   // What he stands at comes first: where several things may be done in any order, it is the one in reach.
   const beside = things.filter((thing) => Math.abs(thing.at.x - p.x) <= 1.3).sort((a, b) => Math.abs(a.at.x - p.x) - Math.abs(b.at.x - p.x))[0];
   if (beside) return beside;

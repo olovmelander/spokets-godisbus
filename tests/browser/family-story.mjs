@@ -6,7 +6,6 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
 import { picture } from './picture.mjs';
-import { continueDialogue } from './dialogue.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const shots = join(root, 'docs/shots/_work/family-story'); mkdirSync(shots, { recursive: true });
@@ -34,16 +33,26 @@ try {
   const { page, errors } = await open('granskog', '154.6,-8', { width: 844, height: 390 });
   await wait(page, () => window.__godis.state().word === 'callBertil');
   await page.keyboard.press('KeyE');
-  await wait(page, () => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent.includes('Kliv i när du vill'));
+  await wait(page, () => !document.getElementById('bubble').hidden && document.getElementById('bubbleLine').textContent.includes('Kliv i när du vill'));
   const offered = await state(page);
+  const offer = await page.locator('#bubbleLine').textContent();
   check('Bertil prepares the cap and explains the choice while Elof stays ashore', offered.flags.includes('cap:ready') &&
     offered.flags.includes('family:cap-ready') && !offered.flags.includes('cap') && offered.mode === 'free');
-  await page.keyboard.down('ArrowRight'); await page.waitForTimeout(700); await page.keyboard.up('ArrowRight');
-  const held = await state(page);
-  check('reading the offer does not time out or move Elof towards the water', held.storyReading && held.steps === offered.steps && held.x === offered.x);
+  await page.keyboard.down('ArrowLeft');
+  try {
+    await page.waitForFunction(x => window.__godis.state().x < x - .2, offered.x, { timeout: 60000 });
+  } finally { await page.keyboard.up('ArrowLeft'); }
+  const moved = await state(page);
+  check('Elof can walk along the shore while Bertil’s complete offer remains visible',
+    moved.steps > offered.steps && moved.x < offered.x - .2 && !moved.held && !moved.storyReading &&
+    await page.locator('#bubble').isVisible() && await page.locator('#bubbleLine').textContent() === offer &&
+    await page.locator('#sceneNext').isHidden());
+  check('walking during the offer does not board the boat', moved.mode === 'free' && !moved.flags.includes('cap'));
   await picture(page, join(shots, 'bertil-offer-844x390.png'));
-  await continueDialogue(page);
-  await wait(page, () => !window.__godis.state().storyReading);
+  await wait(page, () => {
+    const s = window.__godis.state();
+    return s.said.includes('family:cap-ready') && !s.pendingDialogue.includes('family:cap-ready') && document.getElementById('bubble').hidden;
+  });
   await page.keyboard.down('ArrowRight');
   await wait(page, () => window.__godis.state().word === 'capBoard');
   await page.keyboard.up('ArrowRight');
@@ -61,13 +70,15 @@ try {
   const mamma = await open('myren', '84.8,0', { width: 390, height: 844 });
   await wait(mamma.page, () => window.__godis.state().word === 'callMamma');
   await mamma.page.keyboard.press('KeyE');
-  await wait(mamma.page, () => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent.includes('Följ stocken över'));
+  await wait(mamma.page, () => !document.getElementById('bubble').hidden && document.getElementById('bubbleLine').textContent.includes('Följ stocken över'));
   const built = await state(mamma.page);
   check('Mamma finishes placing the stock before saying the bridge is ready', built.flags.includes('mamma') &&
-    built.flags.includes('placed:pine') && built.flags.includes('beat:family:bridge-ready'));
+    built.flags.includes('placed:pine') && built.said.includes('family:bridge-ready'));
   await picture(mamma.page, join(shots, 'mamma-bridge-ready-390x844.png'));
-  await continueDialogue(mamma.page);
-  await wait(mamma.page, () => !window.__godis.state().storyReading);
+  await wait(mamma.page, () => {
+    const s = window.__godis.state();
+    return s.said.includes('family:bridge-ready') && !s.pendingDialogue.includes('family:bridge-ready') && document.getElementById('bubble').hidden;
+  });
   await mamma.page.evaluate(() => document.body.classList.add('big-text'));
   check('Mamma’s completed bridge keeps its named next-action reminder',
     await mamma.page.locator('#storyPurpose').getAttribute('data-guide') === 'mamma' &&

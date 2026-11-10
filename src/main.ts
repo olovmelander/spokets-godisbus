@@ -11,7 +11,7 @@ import { STEP } from './sim/constants';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
 import { cuesFor, footingAt, newCueMemory, type Heard } from './audio/cues';
-import { pauseVoice, resumeVoice, setVoiceSettings, stopVoice, voicePosition } from './audio/voice-player';
+import { pauseVoice, resumeVoice, setVoiceSettings, voicePosition } from './audio/voice-player';
 import { ADVENTURE2, BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, courseFor, courseId, courseQuery, isAdventure2, loadAdventure2, loadLookCourses, LOOK_IDS, nextAvailable } from './content/chapters';
 import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
@@ -299,7 +299,10 @@ async function start(): Promise<void> {
     () => (settings.slower ? 1.25 : 1) * (settings.bigText ? 1.2 : 1),
     // Something to use has come in reach: one soft knock of wood (in-play.md row 7).
     () => audio.ui('press'),
-    (who) => voiced.push(who));
+    (who) => voiced.push(who),
+    // Seeing a bubble is not finishing it. The stable receipt gates story consequences and saving,
+    // while ordinary walking, jumping and collecting remain independent of the conversation.
+    (id) => game.sim.acknowledge(id));
   const story = createStoryPanel(document, {
     named: isKlonk,
     answer(answer) {
@@ -323,18 +326,8 @@ async function start(): Promise<void> {
   });
   // What is said along the way, and in the chapter's scenes (src/sim/scene.ts).
   const beats = new Map([...(chapter.beats ?? []), ...sceneBeats(chapter.scenes)].map((beat) => [beat.id, beat]));
-  const readingBeats = new Set(benchOn ? [] : [
-    ...(chapter.beats ?? []).filter((beat) => beat.read).map((beat) => beat.id),
-    ...sceneBeats(chapter.scenes?.filter((scene) => scene.hold)).map((beat) => beat.id),
-    ...(chapter.id === 'norrsken' ? ['first1', 'first2', 'first3', 'first4'] : []),
-  ]);
-  // Emitting a line is not reading it. Only Fortsätt acknowledges a manual line for the next save.
-  const readBeats = new Set([...readingBeats].filter((id) => game.sim.flags.has(`beat:${id}`)));
-  const unreadBeats: string[] = [];
   const advanceStory = () => {
     if (menuOpen() || platformBlocked() || !hud.advance()) return;
-    const read = unreadBeats.shift();
-    if (read) readBeats.add(read);
     // The press belongs to the words. It must never also jump, walk or use something in the world.
     pointing.cancel();
     askedForUse = askedForHelp = false;
@@ -418,7 +411,7 @@ async function start(): Promise<void> {
       side: { ...save.side, [chapter.id]: game.sim.collectedSide.flatMap((got, i) => (got ? [i] : [])) },
       placed: { ...save.placed, [chapter.id]: game.sim.placed },
       flags: { ...save.flags, [chapter.id]: rememberFlags(save.flags[chapter.id] ?? [], game.sim.flags, chapter.id)
-        .filter((flag) => !flag.startsWith('beat:') || !readingBeats.has(flag.slice(5)) || readBeats.has(flag.slice(5))) },
+        .filter((flag) => !flag.startsWith('beat:') || !game.sim.pendingDialogue.has(flag.slice(5))) },
       playMs: save.playMs + (now - playedFrom),
     };
     playedFrom = now;
@@ -564,10 +557,9 @@ async function start(): Promise<void> {
     },
     onStuck() {
       highLanding.reset();
+      const rearmed = game.sim.pendingDialogue.size > 0;
+      game.sim.discardDialogue();
       game.sim.toCheckpoint();
-      const rearmed = unreadBeats.length > 0;
-      for (const id of unreadBeats) game.sim.flags.delete(`beat:${id}`);
-      unreadBeats.length = 0;
       hud.clear();
       resume();
       // Stuck on a puzzle, and not only in a corner: the helper comes along too, and looks at the next thing to do;
@@ -769,7 +761,7 @@ async function start(): Promise<void> {
     {
       onDevice: showDevice,
       onTap(x, y) {
-        if (platformBlocked() || menuOpen() || hud.reading()) return;
+        if (platformBlocked() || menuOpen() || game.sim.held || hud.reading()) return;
         const what = pointing.tap({ x, y }, { world: (at) => view.worldScreen(at), player: () => view.playerScreen(), helper: () => view.helperScreen() });
         if (!what) return;
         if (what.kind === 'use') askedForUse = true;
@@ -872,10 +864,21 @@ async function start(): Promise<void> {
       game.resume();
       devicePlay.visible();
       // The hidden page held its recording. Continue with its bubble, unless a menu still holds the game.
-      resumeVoice(!menuOpen() && !platformBlocked());
+      resumeVoice((memories.open || !menuOpen()) && !platformBlocked());
     }
   });
-  window.addEventListener('pagehide', () => { devicePlay.setPlaying(false); writeSave(); });
+  window.addEventListener('pagehide', () => {
+    devicePlay.setPlaying(false);
+    input.release(); pointing.cancel(); askedForUse = askedForHelp = false;
+    writeSave();
+  });
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    game.resume();
+    input.release();
+    // BFCache keeps the current bubble and its recording. A menu still owns the pause on return.
+    resumeVoice((memories.open || !menuOpen()) && !platformBlocked());
+  });
 
   const debug: Debug | null = devtools ? devtools.createDebug(byId('debug')) : null;
   if (debugOn) {
@@ -884,7 +887,7 @@ async function start(): Promise<void> {
         ...game.sim.curr, steps: game.sim.steps, flags: [...game.sim.flags], candy: game.sim.candyCount,
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         pointing: { last: pointing.last, walking: pointing.walking }, tutorial: tutorial.shown, playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost, ending: { open: ending.open, seconds: ending.seconds }, prologue: game.sim.prologue?.frame ?? null,
-        scene: game.sim.sceneFrame, held: game.sim.held, storyReading: hud.reading(), ghost: game.sim.ghost ? { ...game.sim.ghost } : null,
+        scene: game.sim.sceneFrame, held: game.sim.held, storyReading: hud.reading(), pendingDialogue: [...game.sim.pendingDialogue], ghost: game.sim.ghost ? { ...game.sim.ghost } : null,
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
@@ -947,6 +950,7 @@ async function start(): Promise<void> {
       } else canvas.focus();
       audio.sleep(platformBlocked());
       audio.menu(menuOpen());
+      resumeVoice((memories.open || !menuOpen()) && !platformBlocked());
       if (!menuOpen()) audio.unlock();
       if (title.open) offline.check();
     });
@@ -969,7 +973,7 @@ async function start(): Promise<void> {
   });
   canvas.addEventListener('webglcontextlost', (event) => {
     event.preventDefault();
-    stopVoice();
+    pauseVoice();
     if (!recovering) {
       pausedBeforeLoss = paused;
       focusBeforeLoss = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -1093,7 +1097,8 @@ async function start(): Promise<void> {
         }
       }
       if (hud.reading()) {
-        // The whole authored moment waits, including its actors, camera and story flags.
+        // Only a deliberately staged line protects its tableau. Its reading/voice clock still runs below,
+        // and finishes automatically; E is an optional advance, never a toll on ordinary movement.
         pointing.cancel();
         if (edges.act) advanceStory();
         game.resume();
@@ -1122,7 +1127,7 @@ async function start(): Promise<void> {
       audio.menu(true);
       audio.ui('open');
     }
-    if (!remembered && game.sim.flags.has('memory')) {
+    if (!remembered && game.sim.flags.has('memory') && !hud.speaking()) {
       remembered = true;
       pointing.cancel();
       askedForUse = askedForHelp = false;
@@ -1257,16 +1262,20 @@ async function start(): Promise<void> {
     // A held scene takes the floor as it begins: what was said before it is not read over it.
     const scene = game.sim.sceneFrame;
     if (scene && scene.id !== sceneHeard) {
-      if (chapter.scenes?.find((def) => def.id === scene.id)?.hold) hud.hush();
+      if (chapter.scenes?.find((def) => def.id === scene.id)?.hold) {
+        hud.hush();
+        pointing.cancel();
+        askedForUse = askedForHelp = false;
+        input.release();
+      }
     }
     sceneHeard = scene?.id ?? null;
     for (; told < game.sim.said.length; told++) {
       const id = game.sim.said[told]!;
       const beat = beats.get(id);
-      // The opening's causes and the final reveal wait for the reader; passing remarks remain timed.
-      const read = readingBeats.has(id);
-      if (read) unreadBeats.push(id);
-      if (beat) hud.say(beat.who, beat.line, read);
+      // A bubble alone never takes the controls. Only an actual physical/staged hold protects the
+      // picture while its words finish; this includes authored world lines in a deliberate reveal.
+      if (beat) hud.say(beat.who, beat.line, !benchOn && game.sim.held && game.sim.sceneFrame !== null, id);
       if (beat?.line === 'safeHere') audio.play({ kind: 'motif', who: 'mamma' });
     }
     // A bumped head is an incidental remark: it never waits for Fortsätt, interrupts a line, or arrives late.
@@ -1277,10 +1286,12 @@ async function start(): Promise<void> {
       }
     }
     // What is said waits while a memory plays: its line comes after it.
+    // Establish ownership before tick: even a zero-time tick may present an idle queued line.
+    // Opening Pause or a memory must not start that line's recording under the panel.
+    hud.paused(menuOpen());
     hud.tick(menuOpen() ? 0 : dt);
     sceneUi.reading(hud.reading() && !menuOpen() && !platformBlocked(), device,
-      sv.dialogue.moments[scene?.id ?? ''] ?? (readingBeats.has(unreadBeats[0] ?? '') ? sv.storyContext.family : ''));
-    hud.paused(menuOpen());
+      sv.dialogue.moments[scene?.id ?? ''] ?? (hud.reading() ? sv.storyContext.family : ''));
     // The end: a moment to arrive, then the card with the candy in rows of ten. The last words are let finish first,
     // and the lines still waiting their turn: a chapter must not end over what someone is saying.
     if (atGoal) {

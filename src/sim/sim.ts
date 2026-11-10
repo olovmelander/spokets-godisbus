@@ -17,7 +17,7 @@ import { rideY } from './ride-path';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
-import { SceneDirector, sceneResumeAt } from './scene';
+import { SceneDirector, sceneResumeAt, type SceneDef } from './scene';
 import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
@@ -210,11 +210,12 @@ export class Sim {
   private watching = false;
   /** The beats whose moment has come while someone was still speaking, and the step each came at: they wait their turn. */
   private readonly waiting = new Map<string, number>();
-  /**
-   * Whether he stands and listens for them: a story line waits for its turn where it belongs, or the words have fallen
-   * behind what he does (more than one line waits).
-   */
-  private behind = false;
+  /** Emitted lines a listening page has not finished yet. These are not saved as completed receipts. */
+  private readonly pending = new Set<string>();
+  /** Story conditions use completed words; the public flags still expose their first visible moment. */
+  private readonly conditions = { has: (flag: string) => this.ready(flag) };
+  /** World lines belonging to a reveal, their first cue time, and the words before them in that picture. */
+  private readonly dialogue = new Map<string, { scene: SceneDef; at: number; before: readonly string[] }>();
   private idle = 0;
   private progress = -1;
   private furthest = -Infinity;
@@ -294,6 +295,11 @@ export class Sim {
   constructor(readonly chapter: ChapterData, options: SimOptions = {}, start: SimStart = {}) {
     this.prologue = chapter.prologue ? new PrologueSequence(chapter.prologue, chapter.ghost ?? []) : null;
     this.options = options;
+    for (const scene of chapter.scenes ?? []) for (const [i, id] of (scene.dialogue ?? []).entries()) {
+      const beat = chapter.beats?.find((candidate) => candidate.id === id);
+      const at = Math.max(0, ...(scene.cues ?? []).filter((cue) => cue.flag === beat?.on || cue.flag === beat?.needs).map((cue) => cue.at));
+      this.dialogue.set(id, { scene, at, before: scene.dialogue!.slice(0, i) });
+    }
     this.checkpoints = chapter.checkpoints ?? [];
     this.jumps = chapter.jumps ?? [];
     // A saved game starts at its big candy. One the chapter doesn't know means the chapter's start.
@@ -381,7 +387,7 @@ export class Sim {
     const ahead = this.perches.findIndex((perch) => perch.at.x > spawn.x + 1);
     const first = this.perches[ahead];
     this.ghost = first ? { x: first.at.x, y: first.at.y, perch: ahead, t: 1, gone: false } : null;
-    if (chapter.prologue && this.ghost && this.flags.has('pappa:done')) {
+    if (chapter.prologue && this.ghost && this.ready('pappa:done')) {
       // Taken up after Pappa's joke: the ghost is gone from the older prologue, and at the deck's edge in this one.
       if (!chapter.prologue.edge) this.ghost.gone = true;
       else if (this.ghost.perch < chapter.ghost!.findIndex((perch) => perch.at.x === chapter.prologue!.edge!.x)) this.prologue!.hide(this.ghost);
@@ -443,7 +449,7 @@ export class Sim {
     // figure's eyes (docs/ux-audit/story-presentation.md row 18).
     const done = this.story.spot;
     const at = this.chapter.spots?.find((spot) => spot.id === done)?.at;
-    const next = at && this.chapter.spots?.find((spot) => spot.story && spot.needs === done && !this.flags.has(spot.id)
+    const next = at && this.chapter.spots?.find((spot) => spot.story && spot.needs === done && !this.ready(spot.id)
       && spot.at.x === at.x && spot.at.y === at.y);
     this.story = next ? { kind: next.story!, spot: next.id } : null;
     return true;
@@ -452,12 +458,32 @@ export class Sim {
   cancelStory(): void { this.story = null; }
 
   /**
-   * Whether he stands and watches the story now: a beat that takes time, a freeze joke or a held scene; or listens, while
-   * one of them, or a story line, waits for what is being said to finish.
+   * Whether a staged moment needs his hands to rest: a physical beat, freeze joke or held scene.
+   * Ordinary conversation and its queue never take away movement.
    */
   get held(): boolean {
-    const standing = this.curr.mode === 'free' && this.curr.grounded;
-    return this.watching || (this.behind && standing) || !!this.prologue?.frame || !!this.prologue?.listening || !!this.scene?.holding;
+    return this.watching || !!this.prologue?.frame || !!this.prologue?.listening || !!this.scene?.holding;
+  }
+
+  /** Emitted, unfinished beat IDs, for the page's save filter and dialogue lifecycle. */
+  get pendingDialogue(): ReadonlySet<string> { return this.pending; }
+
+  /** A line has finished its text and any recording. Unknown or repeated acknowledgements do nothing. */
+  acknowledge(id: string): void { this.pending.delete(id); }
+
+  /** Whether a story condition is complete. `flags` itself also includes lines currently being spoken. */
+  ready(flag: string): boolean {
+    return this.flags.has(flag) && !(flag.startsWith('beat:') && this.pending.has(flag.slice(5)));
+  }
+
+  /**
+   * Deliberately clearing the page ("Jag har fastnat") re-arms unfinished words. Automatic recovery keeps the
+   * active line and its receipt pending, so a fall cannot duplicate it or acknowledge a later replay early.
+   */
+  discardDialogue(): void {
+    for (const id of this.pending) this.flags.delete(`beat:${id}`);
+    this.pending.clear();
+    this.waiting.clear();
   }
 
   /** Whether lines whose moment has come still wait their turn: the page's last card waits for them too. */
@@ -487,11 +513,13 @@ export class Sim {
     this.returnGifts();
     // What is said waits its turn (./types.ts, StepInput): so do the story's moments, after the lines that came first.
     const listening = input.talking !== undefined;
-    const speaking = input.talking === true;
+    const speaking = input.talking === true || this.pending.size > 0;
     const told = this.said.length;
     const talking = speaking || this.waiting.size > 0;
-    this.prologue?.tick(this.curr, this.ghost, this.flags, talking);
-    this.scene?.tick(this.curr, this.flags, this.said, talking, listening);
+    this.prologue?.tick(this.curr, this.ghost, this.flags, talking, this.conditions);
+    this.scene?.tick(this.curr, this.flags, this.said, talking, listening, this.conditions, this.waiting);
+    // A scene can emit before actions and physics this step. Register its words before any causal check.
+    if (listening) for (let i = told; i < this.said.length; i++) this.pending.add(this.said[i]!);
     // While he watches a beat of the story, the stick and the buttons do nothing.
     if (this.held) input = { x: 0, y: 0, hopHeld: false, hop: false, act: false };
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
@@ -534,7 +562,7 @@ export class Sim {
     // The bubble only carries. Everywhere else, candy he comes near is his: up a hose too.
     if (this.state.kind !== 'bubble') this.collect();
     this.resetChallenges();
-    if (this.curr.x >= this.chapter.goalX && (!this.chapter.goalNeeds || this.flags.has(this.chapter.goalNeeds))) this.flags.add('goal');
+    if (this.curr.x >= this.chapter.goalX && (!this.chapter.goalNeeds || this.ready(this.chapter.goalNeeds))) this.flags.add('goal');
   }
 
   /**
@@ -546,9 +574,9 @@ export class Sim {
     for (const [i, def] of (this.chapter.rollers ?? []).entries()) {
       const state = this.rollers[i]!;
       state.on = false;
-      if (def.until !== undefined && this.flags.has(def.until)) continue;
+      if (def.until !== undefined && this.ready(def.until)) continue;
       // Cones that wait for a nudge keep time from the nudge, and none is on its way before its turn.
-      if (state.since < 0 && this.flags.has(def.needs!)) state.since = this.steps;
+      if (state.since < 0 && this.ready(def.needs!)) state.since = this.steps;
       if (state.since < 0) continue;
       const every = Math.max(1, Math.round(def.every / STEP));
       const since = this.steps - state.since - Math.round(def.first / STEP);
@@ -621,7 +649,7 @@ export class Sim {
     }
     if (this.kept && (this.kept.ago += STEP) > HELP_KEPT) this.kept = null;
     const visit = this.chapter.helper?.visit;
-    if (visit && this.curr.x >= visit.from && this.curr.x <= visit.to && !this.flags.has(`visit:${visit.id}`)) {
+    if (visit && this.curr.x >= visit.from && this.curr.x <= visit.to && !this.ready(`visit:${visit.id}`)) {
       // Remember the story beat in ordinary save flags, without moving Elof, the ghost's chase state or
       // any puzzle. A candy/checkpoint on this stretch must not immediately cancel its quiet visit.
       this.flags.add(`visit:${visit.id}`);
@@ -703,20 +731,16 @@ export class Sim {
   }
 
   /**
-   * The beats whose moment has come: each is told once, and remembered as a flag. While someone is still speaking on
-   * the page, the next waits its turn: it is said once the line before it has been read, the one that has waited
-   * longest first, and its flag comes with it, so whatever waits for that flag (a flash, a scene, the next line) waits
-   * for the words too (Olov, 9 November 2026: "det den säger få talas klart innan nästa event spelas upp eller pratas
-   * upp"). While a story line (`read`) waits, or more than one line does, he stands and listens (on his own feet, never in
-   * the air or on a hose): the words keep up with what he does, and each is said near where it belongs. With nobody
-   * listening (`listening` false: the robot) each is said as its moment comes.
+   * Lines retain their visible emission flags, but causal conditions wait for the page's acknowledgement.
+   * The oldest still-relevant line is spoken next. Queued words never stop walking or jumping; authored
+   * physical holds remain explicit. With no listening page, robot playthroughs complete lines immediately.
    */
   private tell(talking = false, listening = false): void {
-    for (const set of this.chapter.sets ?? []) if (set.when.every((flag) => this.flags.has(flag))) this.flags.add(set.flag);
+    for (const set of this.chapter.sets ?? []) if (set.when.every((flag) => this.ready(flag))) this.flags.add(set.flag);
     // Beats that take time: each begins when its first flag is set, and ends by setting its own.
     this.watching = false;
     for (const beat of this.chapter.later ?? []) {
-      if (this.flags.has(beat.flag) || !this.flags.has(beat.after) || beat.until !== undefined && this.flags.has(beat.until)) continue;
+      if (this.ready(beat.flag) || !this.ready(beat.after) || beat.until !== undefined && this.ready(beat.until)) continue;
       if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) continue;
       const from = this.began.get(beat.flag) ?? this.steps;
       this.began.set(beat.flag, from);
@@ -724,17 +748,26 @@ export class Sim {
       else if (beat.hold) this.watching = true;
     }
     const due = (beat: Beat) => {
-      if (beat.needs !== undefined && !this.flags.has(beat.needs)) return false;
-      if (beat.until !== undefined && this.flags.has(beat.until)) return false;
+      if (beat.needs !== undefined && !this.ready(beat.needs)) return false;
+      if (beat.until !== undefined && this.ready(beat.until)) return false;
       if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) return false;
       if (this.flags.has(`beat:${beat.id}`)) return false;
+      const owner = listening ? this.dialogue.get(beat.id) : undefined;
+      if (owner) {
+        // Saved cue flags describe what happened, not where the camera is now. Rejoin the actual reveal
+        // before narrating it, and let its framing reach the same cue even when that flag was restored.
+        const frame = this.scene?.frame;
+        if (frame?.id !== owner.scene.id || frame.seconds + STEP / 2 < owner.at) return false;
+        if (owner.before.some((id) => !this.ready(`beat:${id}`))) return false;
+      }
       const passed = beat.at !== undefined && this.curr.x >= beat.at;
-      const happened = beat.on !== undefined && this.flags.has(beat.on);
+      const happened = beat.on !== undefined && this.ready(beat.on);
       return passed || happened;
     };
     const say = (beat: Beat) => {
       this.flags.add(`beat:${beat.id}`);
       this.said.push(beat.id);
+      if (listening) this.pending.add(beat.id);
     };
     if (!listening) {
       for (const beat of this.chapter.beats ?? []) if (due(beat)) say(beat);
@@ -743,7 +776,6 @@ export class Sim {
     // A beat no longer due (he went back, or the story went past it) stops waiting: it was never shown.
     let next: Beat | null = null;
     let since = Infinity;
-    const story: Beat[] = [];
     for (const beat of this.chapter.beats ?? []) {
       if (!due(beat)) {
         this.waiting.delete(beat.id);
@@ -751,7 +783,6 @@ export class Sim {
       }
       const from = this.waiting.get(beat.id) ?? this.steps;
       this.waiting.set(beat.id, from);
-      if (beat.read) story.push(beat);
       if (from < since) {
         next = beat;
         since = from;
@@ -761,7 +792,6 @@ export class Sim {
       this.waiting.delete(next.id);
       say(next);
     }
-    this.behind = this.waiting.size > 1 || story.some((beat) => this.waiting.has(beat.id));
   }
 
   /**
@@ -801,10 +831,10 @@ export class Sim {
       ghost.y = mix(this.hop.fromY, perch.at.y, k) + Math.sin(Math.PI * ghost.t) * this.hop.lift;
       return;
     }
-    if (perch.until && !this.flags.has(perch.until)) return;
+    if (perch.until && !this.ready(perch.until)) return;
     const p = this.curr;
     const away = Math.hypot(p.x - ghost.x, p.y - ghost.y);
-    const waiting = perch.catch !== undefined && !this.flags.has(perch.catch);
+    const waiting = perch.catch !== undefined && !this.ready(perch.catch);
     const leaves = waiting ? away < GHOST_SLIP : away < (perch.near ?? GHOST_NEAR);
     if (!leaves) return;
     const next = this.perches[ghost.perch + 1];
@@ -826,7 +856,7 @@ export class Sim {
     const safe = (x: number, y: number) => Math.hypot(x - p.x, y - p.y) >= GHOST_CLEARANCE;
     for (let tries = 0; tries <= this.perches.length; tries++) {
       const perch = this.perches[ghost.perch]!;
-      const waiting = perch.until !== undefined && !this.flags.has(perch.until);
+      const waiting = perch.until !== undefined && !this.ready(perch.until);
       if (ghost.t < 1) {
         const start = Math.min(1, ghost.t + STEP / this.hop.time);
         let found = false;
@@ -881,7 +911,7 @@ export class Sim {
     const ghost = this.ghost;
     if (!ghost || ghost.gone || ghost.t < 1) return null;
     const perch = this.perches[ghost.perch]!;
-    if (perch.catch === undefined || this.flags.has(perch.catch)) return null;
+    if (perch.catch === undefined || this.ready(perch.catch)) return null;
     return Math.hypot(this.curr.x - ghost.x, this.curr.y - ghost.y) <= GHOST_CATCH ? perch.catch : null;
   }
 
@@ -892,7 +922,7 @@ export class Sim {
     return (
       this.spots.find(
         (spot) =>
-          !spot.touch && !this.flags.has(spot.id) && (spot.needs === undefined || this.flags.has(spot.needs)) &&
+          !spot.touch && !this.ready(spot.id) && (spot.needs === undefined || this.ready(spot.needs)) &&
           Math.abs(spot.at.x - p.x) <= SPOT_REACH && Math.abs(spot.at.y - p.y) < 1,
       ) ?? null
     );
@@ -962,7 +992,7 @@ export class Sim {
       }
       const last = mover.def.stops.length - 1;
       // A helper's hands: it goes to where it belongs as soon as its flag is set.
-      if (mover.def.on !== undefined && mover.t >= 1 && mover.stop < last && this.flags.has(mover.def.on)) {
+      if (mover.def.on !== undefined && mover.t >= 1 && mover.stop < last && this.ready(mover.def.on)) {
         mover.from = mover.stop;
         mover.stop = last;
         mover.t = 0;
@@ -995,7 +1025,7 @@ export class Sim {
     for (const mover of this.movers) {
       const def = mover.def;
       if (def.cycle || def.verb !== verb || def.on !== undefined || mover.t < 1 || mover.stop >= def.stops.length - 1) continue;
-      if (def.needs !== undefined && !this.flags.has(def.needs)) continue;
+      if (def.needs !== undefined && !this.ready(def.needs)) continue;
       const next = def.stops[mover.stop + 1]!;
       const way = Math.sign(next.x - mover.x) || 1;
       if (verb === 'pull') {
@@ -1022,10 +1052,9 @@ export class Sim {
     this.scene?.cancel();
     // What waited to be said is said again when its moment comes, where he is now.
     this.waiting.clear();
-    this.behind = false;
     this.resetChallenges(true);
     this.story = null;
-    const to = sceneResumeAt(this.chapter.scenes, this.flags, this.checkpoints[this.checkpoint] ?? this.chapter.spawn);
+    const to = sceneResumeAt(this.chapter.scenes, this.conditions, this.checkpoints[this.checkpoint] ?? this.chapter.spawn);
     // Sent back to before a ride he has taken, he can take it again: otherwise he would be left on its near side.
     this.readyRides(to.x);
     this.safe.x = to.x;
@@ -1074,7 +1103,7 @@ export class Sim {
   private placeLedges(): void {
     for (const [i, ledge] of this.ledges.entries()) {
       if (ledge.needs === undefined) continue;
-      const there = this.flags.has(ledge.needs);
+      const there = this.ready(ledge.needs);
       if (there === ledge.there && this.ledgeBodies[i]!.isActive() === there) continue;
       ledge.there = there;
       this.ledgeBodies[i]!.setActive(there);
@@ -1099,7 +1128,7 @@ export class Sim {
       return { x: mover.x + ring.x, y: mover.y + ring.y };
     }
     if (p.verb === 'slide') {
-      const c = this.climbs.find((c) => (c.needs === undefined || this.flags.has(c.needs)) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25);
+      const c = this.climbs.find((c) => (c.needs === undefined || this.ready(c.needs)) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25);
       return c ? { x: c.x, y: c.top } : null;
     }
     const spot = this.spotInReach();
@@ -1125,12 +1154,12 @@ export class Sim {
   /** A little thank-you waits until the gift giver has gone away and passes the door again. */
   private returnGifts(): void {
     for (const spot of this.spots) {
-      if (!spot.returnGift || !this.flags.has(spot.id) || this.flags.has(spot.returnGift)) continue;
+      if (!spot.returnGift || !this.ready(spot.id) || this.ready(spot.returnGift)) continue;
       const away = `${spot.id}:away`;
       const distance = Math.hypot(spot.at.x - this.curr.x, spot.at.y - this.curr.y);
       if (this.state.kind !== 'free' || !this.curr.grounded) continue;
       if (distance >= 4) this.flags.add(away);
-      else if (distance <= SPOT_REACH && this.flags.has(away)) this.flags.add(spot.returnGift);
+      else if (distance <= SPOT_REACH && this.ready(away)) this.flags.add(spot.returnGift);
     }
   }
 
@@ -1142,7 +1171,7 @@ export class Sim {
       const distance = Math.hypot(spot.at.x - this.curr.x, spot.at.y - this.curr.y);
       if (distance > reach + 0.2 || this.state.kind !== 'free') this.touchingNotes.delete(spot.id);
       if (distance > reach || this.state.kind !== 'free' || this.touchingNotes.has(spot.id)
-        || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
+        || (spot.needs !== undefined && !this.ready(spot.needs))) continue;
       this.touchingNotes.add(spot.id);
       this.flags.add(spot.id);
       this.noteHits = [...this.noteHits.slice(-15), { serial: ++this.noteSerial, id: spot.id, midi: spot.note }];
@@ -1167,7 +1196,7 @@ export class Sim {
     const hook = this.hookInReach();
     // A thing to touch is used by coming close. One with a ride carries him off from the ground.
     for (const spot of this.spots) {
-      if (!spot.touch || spot.note !== undefined || this.flags.has(spot.id) || (spot.needs !== undefined && !this.flags.has(spot.needs))) continue;
+      if (!spot.touch || spot.note !== undefined || this.ready(spot.id) || (spot.needs !== undefined && !this.ready(spot.needs))) continue;
       if (Math.hypot(spot.at.x - p.x, spot.at.y - p.y) > TOUCH_REACH + 0.5) continue;
       const ride = spot.ride === undefined ? undefined : (this.chapter.rides ?? []).find((r) => r.id === spot.ride);
       if (ride && !p.grounded) continue;
@@ -1180,7 +1209,7 @@ export class Sim {
       return;
     }
     // Använd at the top of a hose: he slides down it.
-    const usable = (c: Climb) => c.needs === undefined || this.flags.has(c.needs);
+    const usable = (c: Climb) => c.needs === undefined || this.ready(c.needs);
     const below = p.grounded ? this.climbs.find((c) => usable(c) && Math.abs(c.x - p.x) <= SLIDE_REACH && Math.abs(c.top - p.y) <= 0.25) : undefined;
     // Använd at a thing on a rail: Dra with the lace by its ring, or Knuffa from beside it.
     const pulled = hook ? null : this.moverFor('pull');
@@ -1229,7 +1258,7 @@ export class Sim {
     // Lätta hopp: at a marked edge the jump is made for him, and steered to where it lands.
     if (this.options.easyJumps && p.grounded && dir !== 0) {
       const reach = input.hop ? EASY_JUMP_STEER : EASY_JUMP_REACH;
-      const jump = this.jumps.find((j) => (j.until === undefined || !this.flags.has(j.until)) && j.dir === dir && Math.abs(j.at.y - p.y) < 0.3 && (j.at.x - p.x) * dir >= -0.05 && (j.at.x - p.x) * dir <= reach);
+      const jump = this.jumps.find((j) => (j.until === undefined || !this.ready(j.until)) && j.dir === dir && Math.abs(j.at.y - p.y) < 0.3 && (j.at.x - p.x) * dir >= -0.05 && (j.at.x - p.x) * dir <= reach);
       const ready = jump && (jump.needs === undefined || this.placed.includes(jump.needs));
       if (jump && ready && (input.hop || Math.abs(p.vx) > WALK_SPEED * 0.5)) {
         this.flyTo(jump.land, Math.min(0.8, Math.max(0.45, Math.hypot(jump.land.x - p.x, jump.land.y - p.y) / 4.5)));
@@ -1686,7 +1715,7 @@ export class Sim {
   /** Puts every trail candy within reach of Elof's middle in the bag. */
   private resetChallenges(force = false): void {
     for (const route of this.chapter.challenges ?? []) {
-      if (this.flags.has(`found:${route.reward}`)) continue;
+      if (this.ready(`found:${route.reward}`)) continue;
       const p = this.curr;
       if (force || p.x < route.from || p.x > route.to || p.y < route.above) {
         for (const flag of route.pending ?? []) this.flags.delete(flag);
@@ -1702,7 +1731,7 @@ export class Sim {
       if (this.collected[i]) continue;
       const c = candy[i]!;
       // A candy the ghost has yet to drop isn't there.
-      if (c.after !== undefined && !this.flags.has(c.after)) continue;
+      if (c.after !== undefined && !this.ready(c.after)) continue;
       if ((c.x - x) ** 2 + (c.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
       this.collected[i] = true;
       this.candyCount++;
@@ -1713,7 +1742,7 @@ export class Sim {
       for (let i = 0; i < side.length; i++) {
         if (this.collectedSide[i]) continue;
         const c = side[i]!;
-        if (c.after !== undefined && !this.flags.has(c.after)) continue;
+        if (c.after !== undefined && !this.ready(c.after)) continue;
         if ((c.x - x) ** 2 + (c.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
         this.collectedSide[i] = true;
         this.candyCount++;
@@ -1721,15 +1750,15 @@ export class Sim {
     }
     // Hidden candy: it has the same reach, and each is found once. A shy light must leave it first.
     for (const sweet of this.chapter.hidden ?? []) {
-      if (sweet.after !== undefined && !this.flags.has(sweet.after)) continue;
-      if (this.flags.has(`found:${sweet.kind}`) || (sweet.x - x) ** 2 + (sweet.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
+      if (sweet.after !== undefined && !this.ready(sweet.after)) continue;
+      if (this.ready(`found:${sweet.kind}`) || (sweet.x - x) ** 2 + (sweet.y - y) ** 2 > CANDY_MAGNET ** 2) continue;
       this.flags.add(`found:${sweet.kind}`);
     }
     // A big candy further on than the last one becomes the place he comes back to. One the story has not laid
     // down yet is not there, and neither is any after it.
     for (let i = this.checkpoint + 1; i < this.checkpoints.length; i++) {
       const c = this.checkpoints[i]!;
-      if (c.after !== undefined && !this.flags.has(c.after)) break;
+      if (c.after !== undefined && !this.ready(c.after)) break;
       if ((c.x - x) ** 2 + (c.y + ELOF_HEIGHT / 2 - y) ** 2 <= CHECKPOINT_REACH ** 2) this.checkpoint = i;
     }
   }

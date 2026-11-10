@@ -70,7 +70,7 @@ export const stormskog: ChapterData = {
     // Where and when, as the chapter opens (src/content/chapters/cards.ts).
     timeCard('stormskog', 1),
     {
-      id: 'ss:old-downhill', at: 182, seconds: 4.8, hold: true,
+      id: 'ss:old-downhill', at: 182, seconds: 4.8, hold: true, dialogue: ['ss:see-old'],
       cues: [{ at: .8, flag: 'ss:old-appears' }], lines: [],
       stage: { shots: [{ at: 0, x: 185.5, y: 4.6, height: 7.5, width: 11.5, move: .6 },
         { at: 2.2, x: 189.5, y: 3.6, height: 7.5, width: 12, move: 1.1 }],

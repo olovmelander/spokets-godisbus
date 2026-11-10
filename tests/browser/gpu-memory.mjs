@@ -29,6 +29,24 @@ const frames = (page, count = 2) => page.evaluate((count) => new Promise((resolv
 }), count);
 const ready = (page) => page.waitForFunction(() => window.__godis?.state().bootReady
   && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+// setTier releases the old pipeline, then synchronously compiles and draws the
+// whole scene without culling twice before the real settings click returns. Give that
+// software-rendered work two boot-sized windows, without widening other waits.
+// A click timeout cannot tell us whether dispatch or GL work consumed the time.
+const QUALITY_CHANGE_TIMEOUT = 120000;
+async function quality(page, tier, label) {
+  const before = (await info(page)).tier, started = performance.now();
+  console.log(`  switch ${label}: requested=${tier}, observed before=${before}, budget=${QUALITY_CHANGE_TIMEOUT / 1000}s`);
+  try {
+    await page.locator(`#graphics${tier[0].toUpperCase()}${tier.slice(1)}`).click({ timeout: QUALITY_CHANGE_TIMEOUT });
+  } catch (error) {
+    console.error(`  switch ${label}: requested=${tier}, observed before=${before}, completion unknown after ${((performance.now() - started) / 1000).toFixed(2)}s`);
+    throw error;
+  }
+  const observed = (await info(page)).tier;
+  console.log(`  switch ${label}: requested=${tier}, observed=${observed}, elapsed=${((performance.now() - started) / 1000).toFixed(2)}s`);
+  assert.equal(observed, tier, `${label}: the real settings click selects the requested rendering tier`);
+}
 const limits = { low: 100e6, mid: 150e6, high: 260e6 };
 function gate(label, data) {
   const gpu = data.gpu;
@@ -68,11 +86,11 @@ try {
     gate(`${course} Low tablet`, low);
     await settingsPage(page);
     for (const tier of ['mid', 'high']) {
-      await page.locator(`#graphics${tier[0].toUpperCase()}${tier.slice(1)}`).click();
+      await quality(page, tier, `${course} ${tier}`);
       await frames(page);
       gate(`${course} ${tier} tablet`, await info(page));
     }
-    await page.locator('#graphicsLow').click();
+    await quality(page, 'low', `${course} High→Low`);
     await frames(page);
     const lowAgain = await info(page);
     check(`${course}: changing High back to Low releases HDR targets`, lowAgain.gpu.targetBytes === low.gpu.targetBytes);
@@ -84,14 +102,14 @@ try {
     // The first HDR frame also uploads its reusable full-screen geometry: compare warmed baselines.
     const warmedLow = await info(page);
     for (let cycle = 0; cycle < 3; cycle++) {
-      await page.locator('#graphicsHigh').click();
+      await quality(page, 'high', `quality cycle ${cycle + 1} High`);
       await frames(page);
-      await page.locator('#graphicsLow').click();
+      await quality(page, 'low', `quality cycle ${cycle + 1} Low`);
       await frames(page);
       assert.deepEqual(footprint(await info(page)), footprint(warmedLow), `quality cycle ${cycle + 1}: warmed Low storage returns to baseline`);
     }
     check('repeated quality changes retain no abandoned GPU resources', true);
-    await page.locator('#graphicsHigh').click();
+    await quality(page, 'high', 'High before resize and restoration');
     await frames(page);
     const warmedHigh = await info(page);
     // Tier and context warmup draw every pass, including shafts disabled by the room's air.

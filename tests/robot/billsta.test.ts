@@ -612,7 +612,10 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       }
       const tragubbe = far.find((d) => d.look === 'tragubbe')!;
       expect(billsta.storm!.glows!.some((g) => g.after === 'beat:bi:there' && Math.abs(g.at.x - tragubbe.at.x) < 1 && g.z! < tragubbe.z! && g.size! >= 4)).toBe(true);
-      const seen = billsta.scenes!.find((s) => s.on === 'beat:bi:there')!;
+      const seen = billsta.scenes!.find((s) => s.id === 'bi:sundet')!;
+      expect(seen.at).toBe(there.at);
+      expect(seen.hold).toBe(true);
+      expect(seen.cues?.some((cue) => cue.flag === there.needs)).toBe(true);
       // It stays on them while the little one lands and he says what he sees; his reading of the flash holds him.
       expect(there.read).toBe(true);
       expect(seen.seconds).toBeGreaterThanOrEqual(billsta.later!.find((l) => l.flag === 'bi:landed')!.seconds + 4);
@@ -653,9 +656,9 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(billsta.coda).toBe('all');
       expect(billsta.place).toBe('garden');
       // The card, and Moa and Bertil by the car: Moa points at the window, and they run ahead of him round the house
-      // to its back door. None of it stops him.
+      // to its back door. Those views let him move; only the distant strait reveal holds its safe brow.
       expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-window', 'bi:kids-run', 'bi:ladan', 'bi:sundet']);
-      expect(billsta.scenes!.every((s) => !s.hold)).toBe(true);
+      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['bi:sundet']);
       const run = billsta.scenes!.find((s) => s.id === 'bi:kids-run')!;
       const house = billsta.storm!.buildings!.find((b) => b.kind === 'villa')!;
       for (const who of ['moa', 'bertil'] as const) {

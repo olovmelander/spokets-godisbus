@@ -95,7 +95,7 @@ const CAP_SEEN = 'sb:cap-seen';
 /** Where it comes to lie: a little in front of where he stops, coming along the street from the left. */
 const CAP_LIES = { x: CAP.x - 0.62, y: 0.14, z: -0.1 };
 const CAP_SCENE: SceneDef = {
-  id: 'mossan', on: 'cap', before: CAP.x + 6, seconds: 3.8, hold: true,
+  id: 'mossan', on: 'cap', before: CAP.x + 6, seconds: 3.8, hold: true, dialogue: ['sbCap', 'sbToLake'],
   cues: [{ at: 0.85, flag: CAP_PICKED }, { at: 1.9, flag: CAP_SEEN }],
   stage: {
     // Read the cap close to Elof first; only then open the frame to Klonk farther along the street.

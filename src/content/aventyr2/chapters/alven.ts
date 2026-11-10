@@ -221,12 +221,12 @@ export const alven: ChapterData = {
       id: 'bron', on: 'al:pappa', until: 'al:lift', before: 92, seconds: 1.5, hold: true,
       stage: { shots: [{ at: 0, x: SCARF.at + 0.6, y: DECK - 1.6, height: 15.5, width: 16, move: 0.35 }] },
     },
-    // He sees the little one from the owl. Frame both before the words hold the flight, then let it drift on.
-    // The old distance-triggered glimpse could finish while earlier dialogue was still on the page.
+    // The owl keeps flying and answering the stick while Elof points out the little one. Only this distant
+    // figure and its camera wait for the line; the wider shot includes the owl all the way to its landing.
     {
-      id: 'al:little', at: 152, needs: 'al:owl', before: 169, quiet: true, seconds: 5.8,
+      id: 'al:little', at: 152, needs: 'al:owl', before: 169, seconds: 5.8, dialogue: ['al:see-little'],
       cues: [{ at: 0.8, flag: 'al:little-seen' }],
-      stage: { shots: [{ at: 0, x: 158.5, y: 2.8, height: 7.5, width: 14, move: 0.6 }] },
+      stage: { shots: [{ at: 0, x: 160.5, y: 2.8, height: 7.5, width: 20, move: 0.6 }] },
     },
     // As he comes along Moälven they see his light, and run down from the car to the bank at the trail's end, Moa first,
     // Bertil round the gnawed stump after her: there when the trail runs out ("Vi letar tillsammans. Jag är här.").

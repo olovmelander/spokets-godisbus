@@ -7,9 +7,9 @@ import { decide } from './robot';
 
 /**
  * The robot with a page to listen to: the game's own bubbles (src/ui/hud.ts) on a page made of plain objects, driven
- * as src/main.ts drives them. What the simulation says goes to the bubbles; while a story line waits for Fortsätt the
- * game waits; a held scene that begins takes the floor; and the page tells the simulation whether someone is still
- * speaking. A reader presses Fortsätt once a line has been up as long as it takes to read. Every bubble is logged with
+ * as src/main.ts drives them. Ordinary bubbles leave the controls live; a genuinely held scene protects its picture
+ * while its line finishes automatically. The page acknowledges stable IDs after complete lines and tells the
+ * simulation whether someone is still speaking. This reader never presses Continue. Every bubble is logged with
  * when it came, when it went and how long it takes to read, so that a line cut short, or one never shown, is counted.
  */
 
@@ -110,14 +110,8 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
       for (const one of showing) one.gone ??= clock;
       showing = [];
     },
-  }), chapter.candy.length, () => true);
-  // What src/main.ts reads as story lines that wait for Fortsätt.
+  }), chapter.candy.length, () => true, () => 1, () => {}, () => {}, (id) => game.sim.acknowledge(id));
   const beats = new Map([...(chapter.beats ?? []), ...sceneBeats(chapter.scenes)].map((beat) => [beat.id, beat]));
-  const reading = new Set([
-    ...(chapter.beats ?? []).filter((beat) => beat.read).map((beat) => beat.id),
-    ...sceneBeats(chapter.scenes?.filter((scene) => scene.hold)).map((beat) => beat.id),
-    ...(chapter.id === 'norrsken' ? ['first1', 'first2', 'first3', 'first4'] : []),
-  ]);
   let told = game.sim.said.length;
   let sceneHeard: string | null = null;
   let wasAhead = false;
@@ -133,9 +127,6 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
     clock += dt;
     for (const id of game.sim.waits.keys()) if (!due.has(id)) due.set(id, clock);
     if (hud.reading()) {
-      // The reader presses Fortsätt once the line has been up long enough to read.
-      const up = showing.at(-1);
-      if (up?.read && up.shown !== null && clock - up.shown >= up.needs) hud.advance();
       game.resume();
       frozen += dt;
     } else {
@@ -157,9 +148,9 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
       const id = game.sim.said[told]!;
       const beat = beats.get(id);
       if (!beat || !lines[beat.line]) continue;
-      const read = reading.has(id);
+      const read = game.sim.held && game.sim.sceneFrame !== null;
       heard.push({ id, line: beat.line, text: lines[beat.line]!, read, due: due.get(id) ?? clock, said: clock, shown: null, gone: null, needs: readingTime(lines[beat.line]!) });
-      hud.say(beat.who, beat.line, read);
+      hud.say(beat.who, beat.line, read, id);
     }
     hud.tick(dt);
     if (game.sim.flags.has('goal')) {

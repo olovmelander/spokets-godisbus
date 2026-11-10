@@ -165,6 +165,18 @@ describe('the story\'s scenes', () => {
     expect(director.frame?.id).toBe('titel');
   });
 
+  it('waits for quiet without holding movement when the scene has no physical hold', () => {
+    const scene: SceneDef = { id: 'look', at: 1, seconds: 1, quiet: true };
+    const flags = new Set<string>();
+    const director = new SceneDirector([scene], { x: 0, y: 0 }, flags);
+    run(director, 2, standing(2), flags, [], true);
+    expect(director.frame).toBeNull();
+    expect(director.holding).toBe(false);
+    director.tick(standing(4), flags, [], false);
+    expect(director.frame?.id).toBe('look');
+    expect(director.holding).toBe(false);
+  });
+
   it('waits for a long line to finish before starting', () => {
     const titel: SceneDef = { id: 'titel', at: 51.4, seconds: 1, hold: true, quiet: true };
     const flags = new Set<string>();

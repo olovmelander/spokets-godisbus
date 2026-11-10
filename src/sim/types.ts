@@ -189,7 +189,8 @@ export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket'
 /**
  * Something said, in a bubble (plan §3.7): the game has no voices. It comes when Elof first passes `at`, or
  * when the flag `on` is set, and only once. While someone is still speaking it waits its turn, and its flag
- * (`beat:<id>`), and whatever waits for that, comes when it is said (src/sim/sim.ts, `tell`).
+ * (`beat:<id>`) comes when it is said for the picture. Story conditions wait for its completion receipt
+ * (src/sim/sim.ts, `acknowledge`); movement stays available except during explicitly staged moments.
  */
 export interface Beat {
   id: string;
@@ -201,7 +202,7 @@ export interface Beat {
   until?: string;
   /** A local explanation waits until Elof is back at its help encounter. */
   within?: readonly [number, number];
-  /** An essential explanation waits for Fortsätt before gameplay continues. */
+  /** An essential explanation retains its receipt across checkpoints; presentation need not hold movement. */
   read?: boolean;
   who: Speaker;
   /** A key of `sv.lines`. */
@@ -850,8 +851,9 @@ export interface StepInput {
   help?: boolean;
   /**
    * Someone is still speaking on the page, or a line was said earlier in this frame: what is to be said next waits
-   * its turn, and so do a held scene and a freeze joke (src/sim/scene.ts). Left out: nobody listens (the robot and
-   * the tests, which have no page), and lines are said as their moments come, all at once, as the page queues them.
+   * its turn, and so do a held scene and a freeze joke (src/sim/scene.ts). A listening page must also call
+   * Sim.acknowledge when each line finishes. Left out: nobody listens (the robot and tests with no page),
+   * and lines are said and completed as their moments come.
    */
   talking?: boolean;
 }

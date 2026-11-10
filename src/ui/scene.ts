@@ -7,7 +7,8 @@ export { sceneUiHtml } from './scene-html';
 
 /**
  * What a scene lays over the picture (src/sim/scene.ts): thin dark bars while it tells, a fade from or to black,
- * a card with the time of day, and the game's own name. Dialogue keeps its picture until Fortsätt.
+ * a card with the time of day, and the game's own name. Staged dialogue keeps its picture until the line
+ * finishes automatically; Fortsätt is optional, and Pause remains available for unhurried reading.
  */
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 

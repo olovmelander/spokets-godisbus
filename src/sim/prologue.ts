@@ -29,17 +29,17 @@ export class PrologueSequence {
    * One step. `talking`: a line is still being read, or waits to be said, so a joke that is due waits. The simulation
    * waits for the page to finish the line (./sim.ts).
    */
-  tick(player: PlayerState, ghost: GhostState | null, flags: Set<string>, talking = false): void {
+  tick(player: PlayerState, ghost: GhostState | null, flags: Set<string>, talking = false, conditions: Pick<ReadonlySet<string>, 'has'> = flags): void {
     this.listening = false;
     if (!ghost) return;
-    if (flags.has('pappa:done') && !this.layout.edge) { ghost.gone = true; return; }
+    if (conditions.has('pappa:done') && !this.layout.edge) { ghost.gone = true; return; }
     if (!this.frame && player.mode === 'free' && player.grounded) {
       // Pappa notices it once its flag is set, where he kneels: a game taken up further back walks there first.
       const pappaDue = this.layout.pappaAfter
-        ? (flags.has(this.layout.pappaAfter) || flags.has('pappa:noticed')) && player.x >= (this.layout.pappaFrom ?? -Infinity)
+        ? (conditions.has(this.layout.pappaAfter) || conditions.has('pappa:noticed')) && player.x >= (this.layout.pappaFrom ?? -Infinity)
         : player.x >= 44.4;
-      const kind = flags.has('blink') && !flags.has('mamma:passed') && ghost.x >= this.layout.doorway.x - 1.2 ? 'mamma'
-        : flags.has('star') && !flags.has('pappa:done') && pappaDue ? 'pappa' : null;
+      const kind = conditions.has('blink') && !conditions.has('mamma:passed') && ghost.x >= this.layout.doorway.x - 1.2 ? 'mamma'
+        : conditions.has('star') && !conditions.has('pappa:done') && pappaDue ? 'pappa' : null;
       // Its line is said as it begins: the words before it are let finish first.
       if (kind && talking) this.listening = true;
       else if (kind) {
@@ -57,7 +57,7 @@ export class PrologueSequence {
       }
     }
     // The first doorway catches the bag after Mamma has passed. The existing trail begins just beyond it.
-    if (flags.has('mamma:passed') && ghost.x >= this.layout.doorway.x) flags.add('bag:torn');
+    if (conditions.has('mamma:passed') && ghost.x >= this.layout.doorway.x) flags.add('bag:torn');
   }
 
   /**

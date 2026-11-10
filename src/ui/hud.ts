@@ -35,11 +35,12 @@ export interface Hud {
   /** While paused the bag says its number; in play only for a while after a candy (in-play.md row 2). */
   paused(on: boolean): void;
   /**
-   * Story lines wait for Fortsätt; incidental lines stay for a few seconds. Whatever is said waits its turn: a line on
-   * the page is never cut short or replaced by a later one, which comes when it has been read (Olov, 9 November 2026).
+   * Every line stays for its reading time and recording. Protected story lines also offer Fortsätt after the sound;
+   * ordinary lines leave play free. Whatever is said waits its turn without replacing a line still being read.
+   * A supplied stable beat ID is acknowledged only when this displayed line finishes, never when it is queued.
    */
-  say(who: Speaker, line: string, read?: boolean): void;
-  /** A story line is being read, or waits next. Its picture and the game wait with it. */
+  say(who: Speaker, line: string, read?: boolean, beatId?: string): void;
+  /** The line currently shown is protected. A future queued story line does not pause the current ordinary one. */
   reading(): boolean;
   /** A fresh press advances a story line after its recording and the accidental-press guard. */
   advance(): boolean;
@@ -90,10 +91,11 @@ const GOES_ON_TIME = 0.3;
 
 /**
  * `reading` stretches how long a bubble stays: longer with *Lugnare tempo* and with *Större text*. `spoke` hears
- * each line as it is shown, so its speaker's wordless sound goes with its bubble, not ahead of it.
+ * each line as it is shown, so its speaker's wordless sound goes with its bubble, not ahead of it. `completed` hears a
+ * stable beat ID once the displayed line has finished; clearing or abandoning it never creates a reading receipt.
  */
 export function createHud(doc: Document, total: number, ghostNamed: () => boolean = () => false, reading: () => number = () => 1,
-  arrived: () => void = () => {}, spoke: (who: Speaker) => void = () => {}): Hud {
+  arrived: () => void = () => {}, spoke: (who: Speaker) => void = () => {}, completed: (beatId: string) => void = () => {}): Hud {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const bag = byId('bag');
   const number = byId('bagCount');
@@ -109,11 +111,12 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   const bubble = byId('bubble');
   let shown = -1;
   let wordShown: string | undefined;
-  const queue: { who: Speaker; line: string; read: boolean }[] = [];
+  type Line = { who: Speaker; line: string; read: boolean; beatId?: string };
+  const queue: Line[] = [];
+  let current: Line | null = null;
   let left = 0;
   /** A bubble whose time is up, kept for a line that goes on from it (`GOES_ON_TIME`). */
   let lingers = 0;
-  let manual = false;
   let readFor = 0;
   /** Whose the bubble is and the lines in it now, so that a line which goes on from them is added under them. */
   let spoken: { who: Speaker; texts: string[] } | null = null;
@@ -153,6 +156,15 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   const verbs: Record<string, string> = sv.verbs;
   const lines: Record<string, string> = sv.lines;
   const actionWord = (verb: Verb, word?: string | null) => word === 'giveGhost' && ghostNamed() ? sv.giveKlonk : (verbs[word ?? verb] ?? verbs[verb] ?? sv.act);
+  const finish = () => {
+    const beatId = current?.beatId;
+    // Clear ownership before notifying the app: a save or another line queued by the callback cannot acknowledge this
+    // entry again. A pending autoplay retry must not start after its completed bubble has gone.
+    current = null;
+    left = 0;
+    stopVoice();
+    if (beatId !== undefined) completed(beatId);
+  };
 
   return {
     candy(count) {
@@ -239,28 +251,26 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       pausedNow = on;
       bag.classList.toggle('quiet', !on && countFor <= 0);
     },
-    say(who, line, read = false) {
+    say(who, line, read = false, beatId) {
       if (!lines[line]) return;
       // It waits its turn, a story line too: nothing is cut short or dropped to make room for it.
-      queue.push({ who, line, read });
+      queue.push({ who, line, read, beatId });
     },
     reading() {
-      return manual || queue.some((next) => next.read);
+      return current?.read === true;
     },
     advance() {
-      if (!manual || readFor < 0.25 || playingVoice() !== null) return false;
-      stopVoice();
-      manual = false;
-      left = 0;
+      if (pausedNow || !current?.read || readFor < 0.25 || playingVoice() !== null) return false;
       lingers = 0;
       bubble.hidden = true;
       spoken = null;
+      finish();
       return true;
     },
     clear() {
       stopVoice();
       queue.length = 0;
-      manual = false;
+      current = null;
       left = 0;
       lingers = 0;
       spoken = null;
@@ -274,12 +284,13 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       }
     },
     speaking() {
-      return manual || left > 0 || queue.length > 0 || playingVoice() !== null;
+      return current !== null || queue.length > 0 || playingVoice() !== null;
     },
     saying() {
       return bubble.hidden || said.at === 0 ? null : said;
     },
     tick(dt) {
+      if (pausedNow) return;
       if (noticeFor > 0) {
         noticeFor -= dt;
         // A find's sticker drops into the bag as its tag goes (a fade under Mindre rörelse).
@@ -290,16 +301,15 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         countFor -= dt;
         if (countFor <= 0 && !pausedNow) bag.classList.add('quiet');
       }
-      if (manual) {
-        readFor += dt;
-        return;
-      }
-      if (left > 0) {
+      if (current) {
         bubble.hidden = false;
-        left -= dt;
-        if (left > 0) return;
+        readFor += dt;
+        left = Math.max(0, left - dt);
+        // A paused/zero-time presentation frame cannot acknowledge a line, even if its sound ended between frames.
+        if (dt <= 0 || left > 0 || playingVoice() !== null) return;
         // Its time is up. It stays a moment for a line that goes on from it, which the simulation says now.
         lingers = GOES_ON_TIME;
+        finish();
         if (queue.length === 0) return;
       }
       // A recording can outlast its reading estimate: keep its bubble until the actual sound ends.
@@ -342,7 +352,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       byId('bubbleFace').innerHTML = faceSvg(next.who);
       bubble.dataset.who = next.who;
       bubble.hidden = false;
-      manual = next.read;
+      current = next;
       readFor = 0;
       left = readingTime(text) * reading();
       // The speaker's wordless sound goes with the bubble.

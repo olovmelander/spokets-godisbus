@@ -21,66 +21,68 @@ try {
     const { createHud } = await import('/src/ui/hud.ts');
     const { createSceneUi } = await import('/src/ui/scene.ts');
     mountShell(document.body);
-    const voiced = [];
-    const hud = createHud(document, 100, () => false, () => 1, () => {}, (who) => voiced.push(who));
+    const { setVoiceSettings } = await import('/src/audio/voice-player.ts');
+    setVoiceSettings(false, 0); // Synchronous fixture: real audio cannot finish inside this JS task.
+    const voiced = [], completed = [];
+    const hud = createHud(document, 100, () => false, () => 1, () => {}, (who) => voiced.push(who), id => completed.push(id));
     const line = () => document.getElementById('bubbleLine').textContent;
     const bubble = document.getElementById('bubble');
-    // A passing remark is on the page when a story line is said. The remark is read to its end (5.47 s) while the game
-    // waits, Fortsätt does not skip it, and then the story line takes the floor (Olov, 9 November 2026).
-    hud.say('mamma', 'notYet'); hud.tick(0);
-    hud.say('pappa', 'first1', true); hud.tick(0);
-    const waits = hud.reading() && !hud.advance();
-    for (let i = 0; i < 53; i++) hud.tick(0.1);
+    hud.say('mamma', 'notYet', false, 'remark'); hud.tick(0);
+    hud.say('pappa', 'first1', true, 'first1'); hud.tick(0);
+    const waits = !hud.reading() && hud.speaking() && !hud.advance();
+    for (let i = 0; i < 53; i++) hud.tick(.1);
     const remark = line();
-    hud.tick(0.3);
+    hud.tick(.3);
     const first = line(), guarded = !hud.advance();
-    hud.say('pappa', 'first2', true);
-    hud.say('pappa', 'first3', true);
-    hud.say('pappa', 'first4', true);
-    hud.say('elof', 'stomp');
-    hud.hush(); hud.tick(120);
-    const kept = line() === first && hud.reading();
-    const lines = [line()];
-    for (let i = 0; i < 3; i++) { hud.advance(); hud.tick(0); lines.push(line()); hud.tick(.3); }
-    hud.advance(); hud.tick(0);
-    // The shout said after them waits its turn too, and then has its own time.
-    const shout = line(), shoutRead = !hud.reading() && hud.speaking();
-    hud.tick(5); hud.tick(0.4);
+    for (const id of ['first2', 'first3', 'first4']) hud.say('pappa', id, true, id);
+    hud.say('elof', 'stomp', false, 'shout');
+    hud.paused(true); hud.hush(); hud.tick(120);
+    const kept = line() === first && hud.reading() && !hud.advance() && completed.join(',') === 'remark';
+    hud.paused(false);
+    const lines = [], keys = [];
+    for (let i = 0; i < 600 && hud.speaking(); i++) {
+      const saying = hud.saying();
+      if (saying && keys.at(-1) !== saying.key) { keys.push(saying.key); lines.push(saying.text); }
+      hud.tick(.1);
+    }
+    hud.tick(.4);
     const finished = !hud.reading() && !hud.speaking() && bubble.hidden;
-    hud.say('elof', 'stolenBag', true); hud.tick(0); hud.tick(0);
-    const pausedGuard = !hud.advance();
-    hud.tick(.3); hud.advance(); hud.tick(0);
-    // A scene that begins takes nothing from a line being said: it keeps its whole time.
+    const receipts = completed.slice();
+    hud.say('elof', 'stolenBag', true, 'optional'); hud.tick(0);
+    const freshGuard = !hud.advance();
+    hud.tick(.3); const optional = hud.advance(); hud.tick(0);
+    const optionalReceipt = completed.filter(id => id === 'optional').length === 1;
+    // Starting a scene never shortens the line already on the page.
     hud.say('mamma', 'notYet'); hud.tick(0); hud.tick(2); hud.hush(); hud.tick(3);
     const hushed = line() === remark && hud.speaking();
     hud.tick(1);
-    // A line that goes on from the one before, said once that one has had its time (the simulation waits for it), is
-    // still added under it.
     hud.clear();
     hud.say('pappa', 'first2'); hud.tick(0); hud.tick(5);
     const lingers = !bubble.hidden && !hud.speaking();
     hud.say('pappa', 'first3'); hud.tick(0);
-    const together = [...document.querySelectorAll('#bubbleLine .said')].map((said) => said.textContent);
-    hud.tick(5); hud.tick(0.4);
+    const together = [...document.querySelectorAll('#bubbleLine .said')].map(said => said.textContent);
+    hud.tick(5); hud.tick(.4);
     const ended = bubble.hidden;
     const scene = createSceneUi(document, () => { hud.advance(); scene.reading(hud.reading(), 'touch'); });
-    scene.reading(true, 'touch');
-    window.dialogue = { hud, scene };
-    return { waits, remark, first, guarded, kept, lines, shout, shoutRead, finished, pausedGuard, hushed, lingers, together, ended, voiced };
+    hud.say('pappa', 'first1', true, 'touch'); hud.tick(0); hud.tick(.3);
+    scene.reading(hud.reading(), 'touch');
+    window.dialogue = { hud, scene, completed };
+    return { waits, remark, first, guarded, kept, lines, finished, freshGuard, optional, optionalReceipt, receipts, hushed, lingers, together, ended, voiced };
   });
-  assert.equal(result.remark, 'Bertil! Godiset öppnar vi ikväll.', 'a passing remark keeps its whole reading time when a story line is said after it');
-  assert.ok(result.waits, 'the story line waits its turn, with the game, and Fortsätt does not skip the remark');
-  assert.equal(result.first, 'Min allra första trägubbe …', 'then the story line takes the floor');
-  assert.ok(result.guarded && result.pausedGuard, 'fresh/paused lines reject accidental input');
-  assert.ok(result.kept, 'two minutes and a scene hush cannot discard unread words');
-  assert.deepEqual(result.lines, ['Min allra första trägubbe …', 'Den täljde jag till dig', 'när du var liten, Elof.', 'Vi tappade den här uppe.']);
-  assert.ok(result.shout === 'Ge tillbaka mitt godis!' && result.shoutRead, 'a shout said after them waits its turn, and is timed');
-  assert.ok(result.finished, 'exactly four presses finish four lines, and the shout its time');
+  assert.equal(result.remark, 'Bertil! Godiset öppnar vi ikväll.', 'an ordinary line keeps its whole time before a protected one');
+  assert.ok(result.waits, 'queued protected dialogue does not itself impose a reading lock or let Continue skip ordinary speech');
+  assert.equal(result.first, 'Min allra första trägubbe …', 'then the protected line takes the floor');
+  assert.ok(result.guarded && result.freshGuard, 'fresh protected lines reject accidental input');
+  assert.ok(result.kept, 'Pause preserves the unread line and its completion receipt even across two minutes');
+  assert.deepEqual(result.lines, ['Min allra första trägubbe …', 'Den täljde jag till dig', 'när du var liten, Elof.', 'Vi tappade den här uppe.', 'Ge tillbaka mitt godis!']);
+  assert.deepEqual(result.receipts, ['remark', 'first1', 'first2', 'first3', 'first4', 'shout'], 'automatic completion acknowledges each displayed line exactly once, in order');
+  assert.ok(result.finished, 'all protected lines and the queued shout finish without one press per line');
+  assert.ok(result.optional && result.optionalReceipt, 'optional Continue completes one protected line exactly once');
   assert.ok(result.hushed, 'a scene beginning does not shorten the line being said');
-  assert.ok(result.lingers, 'a line whose time is up stays a moment for one that goes on from it');
+  assert.ok(result.lingers, 'a completed line stays briefly for its continuation');
   assert.deepEqual(result.together, ['Den täljde jag till dig', 'när du var liten, Elof.'], 'the line that goes on is added under it');
-  assert.ok(result.ended, 'and the bubble goes when nothing goes on from it');
-  assert.deepEqual(result.voiced, ['mamma', 'pappa', 'pappa', 'pappa', 'pappa', 'elof', 'elof', 'mamma', 'pappa', 'pappa'], 'each speaker sounds as their bubble shows');
+  assert.ok(result.ended, 'the bubble goes when nothing goes on from it');
+  assert.deepEqual(result.voiced, ['mamma', 'pappa', 'pappa', 'pappa', 'pappa', 'elof', 'elof', 'mamma', 'pappa', 'pappa', 'pappa'], 'each speaker sounds when their line actually appears');
   await page.tap('#sceneNext');
   assert.ok(await page.locator('#sceneReading').isHidden(), 'touch continues the actual reading control');
   for (const [width, height] of [[390, 844], [844, 390], [780, 360], [1180, 820], [1440, 900]]) {
@@ -98,10 +100,10 @@ try {
   }
   const cleared = await page.evaluate(() => {
     const { hud } = window.dialogue;
-    hud.say('pappa', 'first1', false, true); hud.tick(0); hud.clear();
-    return !hud.reading() && !hud.speaking() && document.getElementById('bubble').hidden;
+    hud.say('pappa', 'first1', true, 'cancelled'); hud.tick(0); hud.clear();
+    return !hud.reading() && !hud.speaking() && document.getElementById('bubble').hidden && !window.dialogue.completed.includes('cancelled');
   });
-  assert.ok(cleared, 'checkpoint restart clears an interrupted reading');
+  assert.ok(cleared, 'checkpoint restart clears an interrupted reading without claiming it completed');
   // Story beats are queued together in one simulation step. A later reading line must not silently
   // replace the clue or answer immediately before it, even though both appear in the robot's transcript.
   const adventure = await page.evaluate(async () => {
@@ -119,22 +121,24 @@ try {
       const chapter = AVENTYR2.find((chapter) => chapter.id === id);
       const beats = ids.map((id) => chapter.beats.find((beat) => beat.id === id));
       hud.clear();
-      for (const beat of beats) hud.say(beat.who, beat.line, !!beat.read);
+      for (const beat of beats) hud.say(beat.who, beat.line, false, beat.id);
       hud.tick(0);
-      const shown = [];
-      for (let i = 0; i < beats.length + 1 && hud.reading(); i++) {
-        shown.push(document.getElementById('bubbleLine').textContent);
-        hud.tick(.3); hud.advance(); hud.tick(0);
+      const shown = [], keys = [];
+      for (let i = 0; i < 1000 && hud.speaking(); i++) {
+        const saying = hud.saying();
+        if (saying && keys.at(-1) !== saying.key) { keys.push(saying.key); shown.push(saying.text); }
+        if (hud.reading()) throw Error('ordinary world dialogue imposed a reading lock');
+        hud.tick(.1);
       }
-      return { id, shown, expected: beats.map((beat) => sv.lines[beat.line]), finished: !hud.speaking() };
+      return { id, shown, expected: beats.map(beat => sv.lines[beat.line]), finished: !hud.speaking() };
     });
   });
   for (const exchange of adventure) {
     assert.deepEqual(exchange.shown, exchange.expected, `${exchange.id}: every line in the exchange reaches the reader in order`);
-    assert.ok(exchange.finished, `${exchange.id}: the exchange finishes after one press per line`);
+    assert.ok(exchange.finished, `${exchange.id}: the exchange finishes automatically with no per-line press`);
   }
   assert.deepEqual(errors, []);
-  console.log('Dialogue reading: lines in turn and in full, input guard, touch, interruption, five large-text layouts and five Adventure 2 exchanges passed.');
+  console.log('Dialogue reading: automatic full lines, completion receipts, protected optional Continue, Pause, touch, five large-text layouts and five timed Adventure 2 exchanges passed.');
 } finally {
   await browser?.close();
   await server.close();

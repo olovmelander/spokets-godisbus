@@ -313,12 +313,22 @@ try {
     const { page, state, finish } = await open('party', { hasTouch: true, viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: { berget: ['note:1'] }, playMs: 0 }));
     });
-    const thanks = async (friend) => {
-      await until(state, s => s.said.includes(`partyThanks:${friend}`) && s.storyReading, `${friend} thanks Elof`);
-      const line = await page.locator('#bubbleLine').textContent();
-      check(`${friend} acknowledges the gift before the next choice`, friend === 'spoket' ? /Klonk/.test(line) : /Tack/.test(line));
-      if (friend !== 'pappa') await until(state, s => !s.storyReading, `${friend} finishes thanking Elof`);
+    const readLine = async (id, words, ordinary = false) => {
+      await page.waitForFunction(({ id, words }) => window.__godis.state().said.includes(id) &&
+        !document.getElementById('bubble').hidden && document.getElementById('bubbleLine').textContent === words,
+      { id, words }, { timeout: 60000 });
+      if (ordinary) check(`${id}: the complete line appears without mandatory Continue`,
+        !(await state()).storyReading && await page.locator('#sceneNext').isHidden());
+      // Do not attach read.page: this receipt must arrive automatically, without the general helper pressing Continue.
+      await until(() => state(), s => s.said.includes(id) && !s.pendingDialogue.includes(id),
+        `${id}: the visible line finishes`, 60000);
     };
+    const thankYou = {
+      mamma: 'Tack, Elof! Vad gott med en godis.', pappa: 'Tack, Elof. Vad fint att du delar.',
+      moa: 'Tack, lillebror! Den här tycker jag om.', bertil: 'Tack! Nu är det ett riktigt godiskalas.',
+      spoket: 'Klonk, klonk!',
+    };
+    const thanks = friend => readLine(`partyThanks:${friend}`, thankYou[friend], true);
     await reach(page, 'giveMamma', 'first guest is reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     check('the family party offers three candies and five guests', await page.locator('[data-sweet]:visible').count() === 3 && await page.locator('[data-friend]:visible').count() === 5);
@@ -344,12 +354,16 @@ try {
       await until(state, (s) => s.flags.includes(`party:${friend}`), `choice for ${friend}`);
       await thanks(friend);
     }
-    // Each line now finishes before the next begins. Bound progress between the authored lines, rather than
-    // giving the whole cobbles explanation and Klonk's reply the deadline for a single line.
-    for (const id of ['cobbles1', 'cobbles2', 'cobbles3', 'klonk']) {
-      await until(state, (s) => s.said.includes(id), `the party says ${id}`);
+    // Queueing is not completion. Observe each full line and bound its automatic receipt separately,
+    // so the protected table scene's explanation and naming finish before Pappa's knife becomes the next action.
+    for (const [id, words] of [
+      ['cobbles1', 'Varför var stenarna på berget så runda?'],
+      ['cobbles2', 'Havets vågor slipade dem på en strand.'],
+      ['cobbles3', 'En gammal strand, så högt uppe!'],
+      ['klonk', 'Klonk, klonk!'], ['named', 'Du ska heta Klonk!'],
+    ]) {
+      await readLine(id, words);
     }
-    await until(state, (s) => s.flags.includes('beat:named'), 'the party reaches the naming');
     const afterParty = await state();
     check('Pappa remembers the saved musical cobbles at the party', ['cobbles1', 'cobbles2', 'cobbles3'].every((id) => afterParty.said.includes(id)));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));

@@ -472,7 +472,10 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
   });
 
   it('frames the little one before its flight is announced, after the previous line is finished', () => {
-    const sim = new Sim({ ...olympia, spawn: { x: 172.6, y: 0.52 } });
+    // This checkpoint has already heard the earlier goal/thanks/idea replies, not merely crossed their x marks.
+    const final = new Set(['ol:gust', 'ol:follow', 'ol:north', 'ol:car', 'ol:klonk-end']);
+    const flags = olympia.beats!.filter(beat => !final.has(beat.id)).map(beat => `beat:${beat.id}`);
+    const sim = new Sim({ ...olympia, spawn: { x: 172.6, y: 0.52 } }, {}, { flags });
     // Approach while a previous line still owns the floor: neither flight nor camera may jump ahead.
     for (let i = 0; i < 120; i++) sim.step({ ...idle, x: 1, talking: true });
     expect(sim.flags.has('beat:ol:gust')).toBe(false);

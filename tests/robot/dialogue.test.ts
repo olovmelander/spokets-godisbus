@@ -5,7 +5,7 @@ import { listenThrough } from './listener';
 
 /**
  * Every chapter of both adventures, played by the robot with the game's own bubbles listening (./listener.ts), as a
- * reader who reads every line before pressing Fortsätt (Olov, 9 November 2026: "när någon säger något kan bli avbrutet,
+ * reader who lets every line finish automatically (Olov, 9 November 2026: "när någon säger något kan bli avbrutet,
  * så då måste det den säger få talas klart innan nästa event spelas upp eller pratas upp"). No line is taken off the page
  * before it has been up as long as it takes to read, none is said and never shown, they come in the order their moments
  * came, and each is shown as the simulation says it: the story waited for the words, not the words for the story.

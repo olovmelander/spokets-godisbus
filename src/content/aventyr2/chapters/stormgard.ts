@@ -119,7 +119,7 @@ const flown = (k: number) => flightAt(FLIGHT, k);
  * small, into the dark. Wide enough at the start to have Elof in it too, on a phone held upright as well.
  */
 const HEDGE_SCENE: SceneDef = {
-  id: 'haecken', at: 177, before: 180.5, seconds: 6.8, hold: true,
+  id: 'haecken', at: 177, before: 180.5, seconds: 6.8, hold: true, dialogue: ['sg:flash'],
   // Finish the previous line, frame the hedge, then show and name the flight together.
   cues: [{ at: 0.8, flag: 'sg:flight' }],
   stage: {

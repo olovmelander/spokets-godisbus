@@ -4,7 +4,7 @@ import type { DripState, MoverState } from '../../src/sim/sim';
 import type { ChapterData, SimOptions } from '../../src/sim/types';
 import { eyeCentres, guidedCarve, guidedEye } from '../../src/sim/story-stroke';
 import { FRIENDS, PARTY_GUESTS } from '../../src/sim/story';
-import { counterweightTarget } from '../../src/sim/help';
+import { counterweightTarget, HINT_REACH, requiredForGoal } from '../../src/sim/help';
 
 /** The ground's height at x, read from the chapter data. */
 export function heightAt(chapter: ChapterData, x: number): number {
@@ -132,10 +132,12 @@ export function decide(game: Game, chapter: ChapterData): Decision {
     const direction = Math.sign(launch.at.x - p.x);
     return { ...wait, x: direction, ahead: overing(obstacle, direction) };
   }
-  // A glint behind it: something there can be used now. It walks back to it, as a player would.
+  // A glint behind it: something there can be used now. A required action may have unlocked while it
+  // walked and listened; the same main-route guidance as the real helper brings it back from farther away.
+  const required = requiredForGoal(chapter);
   const usable = (chapter.spots ?? []).find((s) =>
-    !s.touch && !game.sim.flags.has(s.id) && (s.needs === undefined || game.sim.flags.has(s.needs)) &&
-    p.x - s.at.x > 1 && p.x - s.at.x < 12 && Math.abs(s.at.y - p.y) < 1);
+    !s.touch && !game.sim.ready(s.id) && (s.needs === undefined || game.sim.ready(s.needs)) &&
+    p.x - s.at.x > 1 && (p.x - s.at.x < HINT_REACH || (!s.extra && required.has(s.id))) && Math.abs(s.at.y - p.y) < 1);
   if (usable && p.grounded) return { ...wait, x: -1 };
   if (p.hook) {
     const angle = Math.atan2(p.x - p.hook.x, p.hook.y - (p.y + 0.5));

@@ -8,7 +8,8 @@ import { idle, run, runPast } from './drive';
 /**
  * What is said waits its turn (Olov, 9 November 2026: "när någon säger något kan bli avbrutet, så då måste det den
  * säger få talas klart innan nästa event spelas upp eller pratas upp"). The simulation learns only through its input
- * whether the page is still speaking (`talking`); with nobody listening (the robot), it says each line as before.
+ * whether the page is still speaking (`talking`) and learns completion through `acknowledge`. With nobody
+ * listening (the robot), it says and completes each line as before.
  */
 const lane: ChapterData = {
   id: 'lane',
@@ -52,16 +53,19 @@ describe('lines that wait their turn', () => {
     expect([...sim.waits.keys()]).toEqual(['klonk', 'flash']);
     expect(sim.unsaid).toBe(true);
     // Quiet: the one that has waited longest, and only one, until that one has been read too.
+    sim.acknowledge('dark');
     sim.step({ ...idle, talking: false });
     expect(sim.said).toEqual(['dark', 'klonk']);
     run(sim, 1, { talking: true });
     expect(sim.said).toEqual(['dark', 'klonk']);
+    sim.acknowledge('klonk');
     sim.step({ ...idle, talking: false });
     expect(sim.said).toEqual(['dark', 'klonk', 'flash']);
     // What waits for a line's flag waits for its words: Moa's answer comes after the flash has been read.
     expect(sim.flags.has('beat:flash')).toBe(true);
     run(sim, 1, { talking: true });
     expect(sim.said.at(-1)).toBe('flash');
+    sim.acknowledge('flash');
     sim.step({ ...idle, talking: false });
     expect(sim.said.at(-1)).toBe('gone');
   });
@@ -75,34 +79,36 @@ describe('lines that wait their turn', () => {
     expect(robot.said).toEqual(['left', 'right']);
   });
 
-  it('keeps him where a story line belongs while it waits for the line before it', () => {
+  it('lets him keep walking while an essential explanation waits its turn', () => {
     const sim = new Sim(lane, {}, { flags: ['beat:dark', 'beat:klonk', 'beat:flash', 'beat:gone', 'beat:left', 'beat:right'] });
     runPast(sim, 22);
-    sim.step({ ...idle, x: 1, talking: false });
-    for (let i = 0; i < 1.5 / STEP; i++) sim.step({ ...idle, x: 1, talking: true });
+    run(sim, 1.5, { x: 1, talking: true });
     expect(sim.waits.has('cones')).toBe(true);
-    expect(sim.held).toBe(true);
+    expect(sim.held).toBe(false);
     const at = sim.curr.x;
     run(sim, 2, { x: 1, talking: true });
-    expect(sim.curr.x).toBeLessThan(at + 0.3);
-    expect(sim.curr.x).toBeGreaterThanOrEqual(24);
+    expect(sim.curr.x).toBeGreaterThan(at + 5);
     sim.step({ ...idle, x: 1, talking: false });
     expect(sim.said.at(-1)).toBe('cones');
     expect(sim.held).toBe(false);
   });
 
-  it('keeps him listening while the words have fallen behind: more than one line waits', () => {
+  it('keeps walking and jumping while several lines wait without dropping their order', () => {
     const sim = new Sim(lane);
     runUntilSaid(sim, 3, false);
-    // One line waits: he goes on. Two: he stands, on his own feet, until one of them has been said.
-    for (let i = 0; i < 20 / STEP && sim.waits.size < 1; i++) sim.step({ ...idle, x: 1, talking: true });
+    walk(sim, 10, true);
+    expect([...sim.waits.keys()]).toEqual(['klonk', 'flash']);
     expect(sim.held).toBe(false);
-    for (let i = 0; i < 20 / STEP && sim.waits.size < 2; i++) sim.step({ ...idle, x: 1, talking: true });
-    run(sim, 0.5, { x: 1, talking: true });
-    expect(sim.curr.grounded).toBe(true);
-    expect(sim.held).toBe(true);
+    const at = sim.curr.x;
+    sim.step({ ...idle, x: 1, hop: true, hopHeld: true, talking: true });
+    run(sim, 0.2, { x: 1, hopHeld: true, talking: true });
+    expect(sim.curr.x).toBeGreaterThan(at + 0.5);
+    expect(sim.curr.y).toBeGreaterThan(0.5);
+    expect(sim.curr.grounded).toBe(false);
+    expect(sim.said).toEqual(['dark']);
+    sim.acknowledge('dark');
     sim.step({ ...idle, x: 1, talking: false });
-    expect(sim.held).toBe(false);
+    expect(sim.said).toEqual(['dark', 'klonk']);
   });
 
   it('lets a line go that the story has gone past while it waited: it was never shown', () => {
@@ -136,6 +142,7 @@ describe('lines that wait their turn', () => {
     run(sim, 30, { talking: true });
     expect(sim.said).toEqual(['dark']);
     expect(sim.flags.has('beat:klonk')).toBe(false);
+    sim.acknowledge('dark');
     sim.step({ ...idle, talking: false });
     expect(sim.said).toEqual(['dark', 'klonk']);
   });
@@ -148,6 +155,7 @@ describe('lines that wait their turn', () => {
       const before = game.sim.said.length;
       game.frame(1 / 30, { x: 1, hopHeld: false, talking: false }, { hop: false, act: false, helper: false });
       counts.push(game.sim.said.length - before);
+      for (const id of game.sim.said.slice(before)) game.sim.acknowledge(id);
     }
     expect(game.sim.said).toEqual(['left', 'right']);
     expect(Math.max(...counts)).toBe(1);
