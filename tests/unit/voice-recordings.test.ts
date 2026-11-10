@@ -23,7 +23,7 @@ describe('the recorded voices', () => {
       const same = heard(shown(key) ?? '') === heard(manifest[key]!.text);
       expect(played.includes(key), key).toBe(same);
     }
-    // Most still say theirs: the rewritten ones wait for the new voices.
-    expect(played.length).toBeGreaterThan(recorded.length - 10);
+    // Olov's full-playthrough edits may rewrite any number of lines. Every file above is still checked:
+    // a stale recording must remain silent until a matching replacement is explicitly commissioned.
   });
 });
