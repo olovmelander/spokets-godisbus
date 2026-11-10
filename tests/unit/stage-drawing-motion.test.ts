@@ -73,3 +73,26 @@ it('keeps the pen on the paper when a drawing pose is repeated or restored', () 
     expect(tip.distanceTo(stage.group.getObjectByName('drawing-paper-contact')!.position)).toBeLessThan(1e-5);
   }
 });
+
+it.each([
+  { id: 'frukost', at: 7 },
+  { id: 'frukost', at: 9.6 },
+  { id: 'namnet', at: 3.4 },
+])('completes the quiet drawing contact on return or restore in $id at $at', ({ id, at }) => {
+  for (const restored of [false, true]) {
+    const stage = createStage(morgonen, () => 0), rig = stage.actors.get('moa')!.rig;
+    const index = morgonen.scenes!.findIndex(scene => scene.id === id), scene = morgonen.scenes![index]!;
+    const flags = new Set(morgonen.scenes!.slice(0, index).map(prior => prior.by?.done ?? `scene:${prior.id}`));
+    if (scene.on) flags.add(scene.on);
+    if (scene.needs) flags.add(scene.needs);
+    if (!restored) stage.update({ id, seconds: at - 1 / 60 }, flags, morgonen.spawn, at - 1 / 60, 1 / 60, true);
+    stage.update({ id, seconds: at }, flags, morgonen.spawn, at, restored ? 0 : 1 / 60, true);
+    // In namnet she also sits back down: the body must reach the chair before the page is within arm's reach.
+    if (id === 'namnet') stage.update({ id, seconds: at + .45 }, flags, morgonen.spawn, at + .45, 1 / 60, true);
+    stage.group.updateMatrixWorld(true);
+    const palm = rig.grip(0, new Vector3(), new Vector3(0, 1, 0), new Vector3(), 0);
+    expect(palm.distanceTo(stage.group.getObjectByName('drawing-paper-support')!.position)).toBeLessThan(1e-5);
+    const tip = stage.group.getObjectByName('drawing-crayon-tip')!.getWorldPosition(new Vector3());
+    expect(tip.distanceTo(stage.group.getObjectByName('drawing-paper-contact')!.position)).toBeLessThan(1e-5);
+  }
+});
