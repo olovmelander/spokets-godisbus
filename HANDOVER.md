@@ -2,6 +2,9 @@
 
 ## State (10 November 2026): illustrations, shared props and natural character motion
 
+Tracked in [PR #256](https://github.com/olovmelander/spokets-godisbus/pull/256); its final checks and deployment
+record identify the exact published revision.
+
 - **Olov asked:** improve every car's orange windows and every football; use Swedish collection names; make all
   drawn family members match their game models and all pictures fit the story; fix Pappa's flashlight arms.
   He then explicitly extended the task to every character's unnatural arms, backwards heads, odd motion and
@@ -22,6 +25,9 @@
   stride; the public stand-in now respects ankle poses. Legs counter the pelvis's twist without suppressing
   torso motion. Helpers keep their torch in the same hand when Elof passes; lamp aim and roll turn smoothly.
   Kneeling palms use the visible knee surface and an outward elbow, with the lamp hand reserved.
+  Held scene poses settle after fast target changes; boot, brush, sweet and rope contacts release smoothly.
+  Pappa supports Elof with a bent elbow while setting him down and hands his torch over at a reachable point
+  when dressing. Foot turns stay continuous across half-turns and transitions between walking and standing.
 - **Evidence:** [the verification record](docs/verification/2026-11-10-visual-followup.md) separates actual built
   views, native recordings, lab courses, private CPU geometry and automated checks. All seven private models
   were included in the motion screen; all 18 chapters and 75 authored scenes were inventoried. Subsequent
@@ -30,10 +36,11 @@
 - **Models and scope:** `art/private` remains linked to unchanged private exports at `fd8c283`. No private model,
   reference picture or likeness capture is committed. Only the public yard kit's three footballs were rebaked,
   using the available `bpy` 5.2.3; no existing `.blend` was opened. No recording, release boundary or save ID changes.
-- **Validation and next:** integration `b3b41d3` passes typecheck, all 2,497 tests in 260 files, the build/size gates
-  (644.9 KB gzipped JS; 5,760.8 KB boot) and the built-in privacy scan. Final acceptance also requires the combined
-  private motion review in both phone orientations, green CI for the exact PR head and Pages deployment; those
-  results are recorded in the PR before delivery. No part of this runtime/artwork task needs Olov's computer.
+- **Validation and next:** final code `4be5132` passes typecheck, all 2,529 tests in 265 files, the build/size gates
+  (645.9 KB gzipped JS; 5,761.9 KB boot) and the built-in privacy scan (1,021 tracked / 187 built / 439 media files).
+  The private motion review covers both phone orientations; the verification record identifies each immutable
+  build, camera and sampling method. Exact-head CI, the final contact checks and Pages results are recorded in
+  PR #256 before delivery. No part of this runtime/artwork task needs Olov's computer.
   Physical-device review remains distinct from the browser viewport and software-renderer evidence.
 
 ## State (10 November 2026): bark on the owl's tree
@@ -6025,10 +6032,10 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
-- The 10 November car/football/illustration/collection-label requests and confirmed runtime motion defects belong
-  to the current follow-up. Its final review still includes the continuous painting-to-waking transition and the
-  boot-pull release. Finer model sculpting and physical-device judgment remain separate; residual foot-slip
-  measurements are recorded explicitly rather than claiming perfectly locked feet.
+- The 10 November car/football/illustration/collection-label requests and confirmed runtime motion defects are
+  addressed in PR #256, including the continuous painting-to-waking transition, boot release, torch handoffs
+  and the two late carrying releases. Finer model sculpting and physical-device judgment remain separate;
+  residual foot-slip measurements are recorded explicitly rather than claiming perfectly locked feet.
 - The owl-tree texture request is implemented (10 November); no part of it is deferred.
 - The summit aurora's requested flowing motion is implemented (10 November); evening-window illustrations remain
   a separate static depiction if a future request extends the effect indoors.

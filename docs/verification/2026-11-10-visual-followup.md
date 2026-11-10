@@ -47,6 +47,11 @@ It found concrete defects that isolated still images had missed:
 - **First walking frame:** at the exact prologue key, stride integration divided zero by a zero step length,
   contaminating the settling legs and body with NaN. A zero elapsed interval now produces zero steps. An actual
   scene regression covers that boundary, stationary moves and instantaneous moves.
+- **Settling after a fast target change:** a remembered target step could keep injecting a catch offset even after
+  the desired pose stopped moving, leaving Pappa's offered arm hyperextended. This only appeared with the preceding
+  morning/painting history. A stopped or slowly moving target now clears that stale step while real jumps still
+  ease. Nine private reading/painting profiles reduce the later waking elbow step from 1.433 to .0485 radians;
+  regressions cover 30/60/120 Hz, a sudden target change and Pause/resume.
 - **Cap acquisition and release:** both the authored arms and their contact weights now ease onto the cap before
   it leaves Bertil's head, then ease off after it reaches the water. The previous one-frame contact switches
   produced a 102-degree upper-arm jump on entry and a 48-degree jump on release in the actual private game trace.
@@ -65,7 +70,9 @@ It found concrete defects that isolated still images had missed:
 - **Backwards heads:** Stage's inertial catch could exceed the intended gaze range, producing 100–132-degree
   head/chest angles on actual private models. Smooth offset bounds and a separate neck speed retain ordinary
   gaze without that overshoot. All 75 authored scenes were replayed across 174 staged actor/scene groups with
-  the four private Stage rigs: no full-3D head/chest angle exceeds 85 degrees; the largest is 78.36 degrees.
+  the four private Stage rigs. The post-catch replay at `b024d24` includes 98 reading stops, 102,044 finite-pose
+  checks, 1,126,312 finite bone-matrix checks and 7,656 exact Pause comparisons. No nonfinite pose, Pause drift
+  or full-3D head/chest angle above 85 degrees remains; the largest angle is 66.83 degrees.
 - **Pause/resume:** Pause held the visible pose but erased the unfinished blend's velocity and offset. Retaining
   that state makes resumed authored reunion/bathroom paths match uninterrupted paths. Eight private scenes in
   Norrsken/epilog have no remaining joint-step candidates in that replay; exact Pause is checked independently.
@@ -85,11 +92,43 @@ It found concrete defects that isolated still images had missed:
   The public slow-walk proxy's total improves from .20761 to .18386 while its along-course component rises from
   .06593 to .08218. The x bound changes from .08 to .085, alongside a stronger two-axis check of total slip below
   .19 and a z bound of .14. This tradeoff remains explicit.
+- **Turning feet when a walk starts or stops:** fading a wrapped relative foot angle could turn a half-turn crossing
+  into a 4.33-radian hip-yaw jump. The carried direction now stays continuous before fading, standing inherits the
+  last ankle position, and optional hip turns release toward the nearest equivalent angle at the existing leg-rate
+  bound. Full/partial-retention, standing, crouch, cut and Pause regressions cover the branch boundary. Private
+  Bertil replay at waking 1.175 reduces the thigh step from 2.152 to .178 radians and foot travel from 1.542 to
+  .0527 EL. The following standing handoff still has .336 EL of foot travel within the existing pose-rate limits;
+  this is not presented as perfect planted-foot locking.
+- **Setting Elof down:** Pappa's initial reach could straighten the supporting elbow completely before the palm
+  solver bent it again, losing its bend direction. A two-percent reach reserve lasts only while Elof is supported
+  and eases away with the existing ride weight. Real-game private replay at 9.708 seconds reduces the elbow step
+  from .171 to .00121 EL while retaining the same palm attachment. The regression fails before the fix and covers
+  normal/reduced motion, contact continuity and Pause.
 
 - **Torch ownership and orientation:** helpers keep a stable carrying hand as Elof passes them. Complete lamp
   frames follow the authored aim and recover roll continuously, including targets directly below the hand.
   Generic speech, pointing and knee support cannot overwrite that hand. Bertil releases his left torch grip
   with the existing boot-pull blend instead of switching it off at a threshold.
+- **Taking a torch and putting on a coat:** partial torch contact keeps its chosen rotation arc when the moving
+  palm crosses 180 degrees. Pappa's hands meet at a reachable point during the two existing coat handoffs, with
+  continuous contact weights. A prior flashlight-show act can no longer activate the drawing's two-hand contact.
+  Private replay with the real preceding story and reading stops removes the three torch jumps at coat entry and
+  hand changes; the largest remaining lamp step is .071 EL during standing up, and handoff steps stay near .045 EL.
+  Socket error is below 1.8e-15 EL, with exact Pause. Focused tests include both handoffs at 30/60/120 Hz.
+- **Boot-pull release:** actual built private traces found a remaining right-elbow snap when Bertil's hands left
+  the boot. The practical gesture now starts and ends with a .55-second smooth transition on event time. The real
+  call, pull and readiness timing is unchanged. Private replay reduces the first release hand step from .0509 to
+  .00187 EL, with exact Pause and held-reading contact; the final built replay checks the full talk/gesture layering.
+- **Eating the golden sweet:** in Stormens öga the sweet now stays in the same right hand through carrying,
+  inspecting and eating. Contact eases into the scene and releases after swallowing, before growth changes the
+  act. Private replay reduces the entry hand step from .23464 to .000495 EL and the later release from .10580 to
+  .002022 EL. Norrsken's separate left-hand taste also eases both contact endpoints; its visibility cutoff no
+  longer drops the arm in one frame (.34567 to .01980 EL in the private replay). Speech reserves the carrying hand.
+- **Releasing the rescue rope before tasting:** Norrsken's independent right-hand rope contact and carrying pose
+  now fade on the opening scene clock over .45 seconds. The cached actual contact stays in Elof's frame during
+  growth, without moving the wood or changing the rope's existing visibility. The real approach and taste action
+  reproduce the original 2.782-radian wrist step/.196 EL hand movement; the corrected private replay gives .0306
+  radians/.0135 EL, with exact Pause and no stale grip on restore or after the scene ends.
 - **Kneeling palms:** the old wrist target behind the knee put forearms through the abdomen. The contact solver
   now supports the palm on the visible knee surface with an outward elbow and a flat palm; private models use
   a small cached patch of the skinned knee. Repeated low stances ease into support instead of skipping the
@@ -123,14 +162,52 @@ Granskogen helpers, Myren, Norrsken and epilog, at Low 844×390 and High 390×84
 helpers and verify real renderer grounding, composition, exact Pause, idle/greeting motion and resource budgets.
 This precedes the final combined knee/lamp corrections; CI checks the final PR head separately.
 
+The combined built private review at `b3b41d3` covers twelve sequences in both phone orientations: the boot,
+cap, Myren log/braid, shoulder ride, scarf, brush offer, reunion lamps, drawing, shown paper, head turns,
+torch acquisition and carrying the carvings home. Actual checkpoints include the exact reported Stormkvällen
+line held for four seconds with unchanged event time, and knee support followed by Pappa's reach/lift.
+The corrected phone set has 51 inspected stills. A landscape speech bubble covers the scarf helper's upper
+body, while the portrait view shows it; the landscape hand/scarf contact remains visible. Moa is outside the
+authored portrait frame just before returning to drawing, then visible in the following held shot.
+
+A further immutable built review at `59bd00d` checks the corrected boot release, ordinary full morning dialogue
+followed by the real painting UI and waking, the two tasting boundaries, and a separately labeled drawing
+inspection view. Each phone orientation passes all sixteen inspected stills, 2,884 recorded pose frames, two exact
+Pause checks and all runtime assertions, with no nonfinite poses or large joint-step candidates. At the boot-ready
+boundary the actual right forearm step falls from 1.182 to .184 radians and hand travel from .171 to .00486 EL.
+The drawing inspection shifts only the inspection camera by four EL to expose both hands; it is not presented
+as the game's authored composition. Captures and scripts remain in ignored scratch.
+
+The immutable `39fd232` followup passes torch acquisition, both coat handoffs and the foot-turn route in each
+orientation: seventeen authored captures, 1,584 pose samples, three exact Pause checks, no nonfinite poses or
+large local joint-step candidates. Thirteen captures show the torch contacts. The four authored foot-context
+views have occluded boots; eight additional, explicitly labeled side-camera frames expose the feet. Independent
+inspection shows a quick stopping shuffle in a consistent direction, settling by 1.75 seconds. The packed game's
+left-foot measurements agree with the private replay; its separate right foot moves .539 EL during the standing
+handoff. The record retains that residual motion rather than claiming completely locked or uniformly slow feet.
+
+The final code build `4be5132` adds ten inspected authored captures in each orientation for the ordinary
+approach/rope release/taste and the full family conversation followed by Pappa setting Elof down. Phone and
+landscape record 3,746 and 3,383 pose frames respectively, with no nonfinite values or runtime errors and two
+exact Pause checks each. The final actual Pappa forearm step at 9.708 seconds is .00103 radians; Elof's rope
+release gives .03052 radians at the wrist and .01351 EL hand travel. The sampled contacts are visually coherent.
+A separate tiny, occluded Elof forearm change at the same set-down boundary measures .700 radians with .058 EL
+hand travel and zero local wrist rotation; the captures do not establish a visible defect. This diagnostic is
+retained explicitly, and the full approach is not reported as having zero joint-threshold candidates.
+
 ## Final gates
 
-Integration `b3b41d3` passes typecheck, all 2,497 unit/robot tests in 260 files, the production build and size
-gates (644.9 KB gzipped JavaScript; 5,760.8 KB boot), and the built-in privacy scan (1,013 tracked files,
+Final code `4be5132` passes typecheck, all 2,529 unit/robot tests in 265 files, the production build and size
+gates (645.9 KB gzipped JavaScript; 5,761.9 KB boot), and the built-in privacy scan (1,021 tracked files,
 187 built files, 439 media files; local exiftool and the optional denylist are unavailable). The actual
 collection-bag browser passes Swedish labels for every added sweet/find in both adventures and both phone
 orientations. Private exports remain unchanged.
 
-Final acceptance also requires the combined built private motion review in both phone orientations, followed
-by green CI for the exact PR head, including all registered chapter browser suites, and successful Pages
-deployment. Results from those gates are recorded in the pull request before delivery.
+The first complete CI run, `42870590629` at documentation/integration head `9a45f0e`, passed all 14 jobs,
+including all twelve registered browser shards. The later transition fixes require a fresh run on the final head;
+that earlier green run is not substituted for the merge gate.
+
+Final acceptance also requires the final scene-specific private contact checks, green CI for the exact PR head
+including all registered chapter browser suites, and successful Pages deployment. Results from those gates are
+recorded in [PR #256](https://github.com/olovmelander/spokets-godisbus/pull/256) before delivery; earlier passing
+builds do not substitute for the exact-head merge gate.
