@@ -280,9 +280,9 @@ export const flarken: ChapterData = {
       shots: [{ at: 0, x: 2, y: 3.2, height: 12, width: 30, move: 0.001 }],
     } },
     // At the top of the diving tower he points out over the lake, and the picture goes with him: a flash, and the
-    // little one is there on its stone (`sightings`). His words wait for Fortsätt with the picture on it (`sjon:lookout`).
+    // little one is there on its stone (`sightings`). The picture stays on him until the whole line has finished (`sjon:lookout`).
     {
-      id: 'sjon:utkik', at: LOOKOUT_AT, before: TOWER.to, seconds: 3.4, hold: true, quiet: true,
+      id: 'sjon:utkik', at: LOOKOUT_AT, before: TOWER.to, seconds: 3.4, hold: true, quiet: true, dialogue: ['sjon:lookout'],
       cues: [{ at: 1.25, flag: 'sjon:seen' }],
       stage: {
         shots: [{ at: 0.1, x: SEEN.x, y: 0.4, z: SEEN.z, height: 4.8, width: 4.4, eye: 4.5, move: 1.1 }],
@@ -292,7 +292,7 @@ export const flarken: ChapterData = {
     // At the outlet, look down the actual stream before the current carries him away. The first line holds this
     // close view; the next event waits until his passage is over. Each camera follows the same unhurried crossing.
     {
-      id: 'sjon:strommen', at: 184, before: 188, until: 'sjon:downstream', seconds: OUTLET_RUN + 1.1, hold: true, quiet: true,
+      id: 'sjon:strommen', at: 184, before: 188, until: 'sjon:downstream', seconds: OUTLET_RUN + 1.1, hold: true, quiet: true, dialogue: ['sjon:outlet'],
       cues: [{ at: 0.7, flag: 'sjon:current' }, { at: OUTLET_RUN + 1, flag: 'sjon:downstream' }],
       stage: {
         shots: [
@@ -303,7 +303,7 @@ export const flarken: ChapterData = {
       },
     },
     {
-      id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: OUTLET_RUN + 1.1, hold: true,
+      id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: OUTLET_RUN + 1.1, hold: true, dialogue: ['sjon:log'],
       cues: [{ at: 0.7, flag: 'sjon:log-run' }, { at: OUTLET_RUN + 1, flag: 'sjon:both-downstream' }],
       stage: {
         shots: [
@@ -316,7 +316,7 @@ export const flarken: ChapterData = {
     // The stone rolls along the planks, tips over their end and goes under: he watches it go, and the picture goes with
     // it to the gap, where it waits on the rings and the bubbles while he says the plop (`sjon:plop`, on `SUNK`).
     {
-      id: 'sjon:plopp', on: `placed:${STONE.id}`, before: LOW.to - 1, until: SUNK, seconds: 2.6, hold: true,
+      id: 'sjon:plopp', on: `placed:${STONE.id}`, before: LOW.to - 1, until: SUNK, seconds: 2.6, hold: true, dialogue: ['sjon:plop'],
       cues: [{ at: SUNK_AFTER, flag: SUNK }],
       stage: { shots: [{ at: 0, x: LOW.to - 0.2, y: 0.5, height: 6, width: 16, eye: 0.6, move: 0.75 }] },
     },

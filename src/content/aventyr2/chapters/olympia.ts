@@ -163,7 +163,7 @@ const FOLLOW: Flyby = {
  * the end of the ground, fills the picture.
  */
 const GUST_SCENE: SceneDef = {
-  id: 'norrut', at: 172.8, before: 178, seconds: 11, hold: true,
+  id: 'norrut', at: 172.8, before: 178, seconds: 11, hold: true, dialogue: ['ol:gust', 'ol:follow'],
   // A flight begins only once this shot has taken over, after the previous words finish.
   cues: [{ at: 0.8, flag: 'ol:north-flight' }, { at: FOLLOWS_AT, flag: FOLLOWS }],
   stage: {

@@ -310,11 +310,13 @@ export const billsta: ChapterData = {
       stage: { shots: [{ at: 0, x: MORMOR_SEEN.x, y: MORMOR_SEEN.y, height: MORMOR_SEEN.height, width: MORMOR_SEEN.width, move: 1.2 }] },
     },
     // "Där nere! På en sten i sundet!": the camera goes out to the stone far below, looking down onto it a little, and
-    // stays there while he says what he sees, the little one lands, and the old one holds him. It does not hold Elof:
-    // the flash's words do, as he reads.
+    // stays there while he says what he sees, the little one lands, and the old one holds him. This short
+    // view holds Elof on the safe brow; its dialogue finishes automatically, with the figures still in sight.
     {
-      id: 'bi:sundet', on: 'beat:bi:there', seconds: SEEN.seconds,
-      // His first line is a reading stop: the stone must already be framed before the scene clock waits for it.
+      id: 'bi:sundet', at: 193.2, seconds: SEEN.seconds, hold: true,
+      dialogue: ['bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down'],
+      // Frame the stone before making the first line available, even when earlier speech is still queued.
+      cues: [{ at: 0.01, flag: 'bi:strait-seen' }],
       stage: { shots: [{ at: 0, x: SEEN.x, y: SEEN.y, z: SEEN.z, height: SEEN.height, width: SEEN.width, eye: 1, move: 0.001 }] },
     },
   ],
@@ -637,7 +639,7 @@ export const billsta: ChapterData = {
     { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel' },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
     // 6. the brow: a flash, both trägubbar on a stone in the narrow far below, and the owl far off
-    { id: 'bi:there', at: 193.2, who: 'elof', line: 'biThere', read: true },
+    { id: 'bi:there', at: 193.2, needs: 'bi:strait-seen', who: 'elof', line: 'biThere', read: true },
     { id: 'bi:holds', on: 'bi:landed', who: 'elof', line: 'biHolds' },
     // The old one reached him: what he hurried for all night (Stormskogen's hollow).
     { id: 'bi:not-alone', on: 'beat:bi:holds', who: 'elof', line: 'biNotAlone' },
