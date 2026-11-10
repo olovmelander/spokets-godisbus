@@ -401,6 +401,9 @@ export function createTurning(start = 0, rate = 30) {
 /** Only actual travel advances a stride: blocked movement, rides and a paused view never march. */
 export function createPlayerMotion() {
   const target = { ...STANDING }, pose = { ...STANDING };
+  // The view can add a pull or a gesture without changing the cached motion used by paused frames
+  // and by the next scene transition. Reuse the output; no per-frame allocation is needed.
+  const drawn: Pose = { ...STANDING };
   let lastX: number | null = null, lastY = 0, lastMode: PlayerState['mode'] = 'free';
   let grounded = true, free = false, phase = 0, landing = 0, landed = Infinity, impact = 0, idle = 0;
   let speed = 0, lead = 1;
@@ -458,11 +461,11 @@ export function createPlayerMotion() {
         // Out of the scene, he goes on from the scene's pose.
         follower.reset(held);
         for (const joint of JOINTS) strode[joint] = held[joint];
-        return held;
+        return Object.assign(drawn, held);
       }
       const unscripted = wasScripted;
       wasScripted = false;
-      if (dt <= 0) return pose;
+      if (dt <= 0) return Object.assign(drawn, pose);
       const walking = player.mode === 'free' && player.grounded;
       // Carried (a ride, an assisted arc, the glitter bubble) he goes as fast as what carries him: that is no teleport.
       const carried = player.mode === 'ride' || player.mode === 'fly' || player.mode === 'bubble';
@@ -604,7 +607,7 @@ export function createPlayerMotion() {
       was = doing;
       // A story's explicit seat ends with its act; locomotion is supported by the actual posed soles.
       pose.seat = null;
-      return pose;
+      return Object.assign(drawn, pose);
     },
   };
 }
