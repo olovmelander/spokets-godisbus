@@ -76,6 +76,36 @@ describe('Äventyr 2: Stormens öga', () => {
     expect(result.said.filter((id) => order.includes(id))).toEqual(order);
   });
 
+  it('thanks the owl over the last stretch of water and lets Bertil name Elof before offering the light', () => {
+    const lamp = stormoga.scenes!.find(scene => scene.id === 'lampa:bertil')!;
+    expect(lamp.lines!.map(line => line.line)).toEqual(['soLampBertil', 'soLampBertilShine']);
+    const owl = stormoga.rides!.find(ride => ride.id === 'owl')!;
+    const thanks = stormoga.beats!.find(beat => beat.id === 'soOwlThanks')!;
+    expect(thanks).toMatchObject({ who: 'elof', needs: 'owl', read: true });
+    expect(thanks.at).toBeGreaterThan(owl.from.x + (owl.to.x - owl.from.x) * .8);
+    expect(thanks.at).toBeLessThan(stormoga.water![0]!.to);
+    const result = playThrough(60, stormoga, {}, 300);
+    const ordered = ['lampa:bertil:0', 'lampa:bertil:1', 'soOwlThanks', 'oga:0'];
+    expect(result.said.filter(id => ordered.includes(id))).toEqual(ordered);
+  });
+
+  it('walks up with the cap and gives it back before the golden sweet is offered', () => {
+    const meeting = stormoga.scenes!.find(scene => scene.id === 'motet')!;
+    const keys = meeting.stage!.elof!;
+    const walk = keys.find(key => key.act === 'walk')!;
+    const reach = keys.find(key => key.act === 'reach')!;
+    const line = meeting.lines!.find(line => line.line === 'soCapBack')!;
+    const handed = meeting.cues!.find(cue => cue.flag === 'so:cap-returned')!;
+    const gift = meeting.cues!.find(cue => cue.flag === 'gift:out')!;
+    expect(walk.lift!.x).toBeGreaterThan(2);
+    expect(walk.at + walk.move!).toBeLessThanOrEqual(reach.at + 1e-8);
+    expect(reach.at + .6).toBeLessThan(line.at);
+    expect(line.at).toBeLessThan(handed.at);
+    expect(handed.at).toBeLessThan(gift.at);
+    expect(keys.find(key => key.act === 'walk' && key.at > handed.at)?.lift).toEqual({ x: 0, y: 0, z: 0 });
+    expect(stormoga.storm!.buildings!.some(building => building.kind === 'church')).toBe(false);
+  });
+
   it('walks home on his own feet: off the stone, through the shallows and up onto the shore, never in the air', () => {
     // Olov, 9 November 2026: "När Elof väljer att gå hem i slutet flyger han."
     const home = stormoga.rides!.find((ride) => ride.id === 'home')!;
@@ -114,6 +144,7 @@ describe('Äventyr 2: Stormens öga', () => {
     // The grandparents wait on this bank too, with their soles on it.
     for (const person of stormoga.decor!.filter((thing) => ['mormor', 'morfar'].includes(thing.look) && thing.after === 'taste')) {
       expect(person.at.y).toBeCloseTo(groundAlong(stormoga.ground, person.at.x), 5);
+      expect(stormoga.water!.some(water => person.at.x >= water.from && person.at.x <= water.to)).toBe(false);
     }
   });
 

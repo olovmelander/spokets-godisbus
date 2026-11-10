@@ -52,13 +52,17 @@ export function spang(chapter: ChapterData): Mesh | null {
   if (walks.length === 0) return null;
   const parts: BufferGeometry[] = [];
   const tone = new Color();
+  // Stormens öga is a family jetty: its deck extends behind the walking lane under both grandparents.
+  const rows = chapter.id === 'stormoga' ? [-4, -3.2, -2.4, -1.6, ...ROWS] : ROWS;
+  const across = rows[rows.length - 1]! - rows[0]! + WIDE + 0.55;
+  const middle = (rows[0]! + rows[rows.length - 1]!) / 2;
   for (const walk of walks) {
     // The line he walks on, from end to end: its two ends, and its corners between them.
     const corners = chapter.ground.filter((p) => p.x > walk.from + 0.01 && p.x < walk.to - 0.01).map((p) => p.x);
     const lineAt = (x: number) => heightAt(chapter, Math.min(walk.to - 0.01, Math.max(walk.from + 0.01, x)));
-    for (const [r, z] of ROWS.entries()) {
+    for (const [r, z] of rows.entries()) {
       const joints = [walk.from, walk.to, ...corners];
-      for (let x = walk.from + STAGGER[r]!; x < walk.to; x += LONG) if (x > walk.from) joints.push(x);
+      for (let x = walk.from + STAGGER[r % STAGGER.length]!; x < walk.to; x += LONG) if (x > walk.from) joints.push(x);
       joints.sort((a, b) => a - b);
       for (let j = 0; j < joints.length - 1; j++) {
         const [xa, xb] = [joints[j]!, joints[j + 1]!];
@@ -85,7 +89,7 @@ export function spang(chapter: ChapterData): Mesh | null {
     }
     // The sleepers, square across the path, under the planks.
     for (let x = walk.from + APART / 2; x < walk.to - 1; x += APART) {
-      const log = new CylinderGeometry(ROUND, ROUND, ACROSS, 8).rotateX(Math.PI / 2).translate(x, lineAt(x) - THICK - ROUND * 0.9, 0);
+      const log = new CylinderGeometry(ROUND, ROUND, chapter.id === 'stormoga' ? across : ACROSS, 8).rotateX(Math.PI / 2).translate(x, lineAt(x) - THICK - ROUND * 0.9, middle);
       // Its side first, then its two sawn ends.
       parts.push(paint(log, (i) => (i < 18 ? tone.copy(SLEEPER).multiplyScalar(0.9 + 0.2 * hash(i, 23)) : SAWN), (_x, y, zz) => [0.25 + y * 0.1, zz * TILE]));
     }

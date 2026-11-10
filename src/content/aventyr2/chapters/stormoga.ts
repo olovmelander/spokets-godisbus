@@ -12,8 +12,7 @@ import { alongAll, row, timeCard, walkedAll } from '../kit';
  *    water, and never see him, small as he is, at their feet. Only mormor knows. He lights their lamps, one by one,
  *    and each of them feels that he is near: this is what the night has been for, Moa says it aloud. The row of
  *    light reaches out over the water, the stone is too far out to jump to, and *Ropa på ugglan*: the owl from
- *    Stormskogen has seen the light, and flies him out over the waves. Far down the lake Själevad's white church
- *    stands in the flashes.
+ *    Stormskogen has seen the light, and flies him out over the waves.
  * 2. **Stormens öga:** as he lands on the stone the wind drops, the rain stops, the clouds part: stars, and the
  *    moon on the water.
  * 3. **Mötet** (a held scene, when he has gone up to them): the old trägubbe holds the little one. It did not wait, all
@@ -90,7 +89,7 @@ const lit = (who: Lit, line: string, seconds: number): SceneDef => ({
 const SHORE = { mamma: 65, pappa: 66.8, moa: 68.4, bertil: 69.8 } as const;
 const SHORE_Z = { mamma: -1.4, pappa: -2.2, moa: -1.2, bertil: -2.4 } as const;
 /** Mormor and morfar on the shore, with her lantern. */
-const MORMOR = { x: 63.9, z: 1.0 };
+const MORMOR = { x: 65.7, z: -0.2 };
 const MORFAR = { x: 64.4, z: -3.4 };
 /** His face, big now, on the stone where he grew. */
 const GROWN = { x: TASTE, y: 3.1, z: 0 };
@@ -169,7 +168,10 @@ const SCENES: SceneDef[] = [
   lit('mamma', 'soLampMamma', 2.6),
   lit('pappa', 'soLampPappa', 2.6),
   lit('moa', 'soLampMoa', 3.6),
-  lit('bertil', 'soLampBertil', 2.6),
+  { ...lit('bertil', 'soLampBertil', 4.8), lines: [
+    { at: 0.5, who: 'bertil', line: 'soLampBertil' },
+    { at: 2.7, who: 'bertil', line: 'soLampBertilShine' },
+  ] },
   {
     // 2. The storm's eye: silence, and the sky opening.
     id: 'oga',
@@ -210,26 +212,26 @@ const SCENES: SceneDef[] = [
     id: 'motet',
     on: 'scene:oga',
     from: MEET,
-    seconds: 14.4,
+    seconds: 16.5,
     hold: true,
-    cues: [{ at: 12.4, flag: 'gift:out' }],
-    sounds: [{ at: 12.3, sound: 'blink' }],
+    cues: [{ at: 11.6, flag: 'so:cap-returned' }, { at: 14.6, flag: 'gift:out' }],
+    sounds: [{ at: 14.5, sound: 'blink' }],
     lines: [
       { at: 1.0, who: 'elof', line: 'soFound' },
       { at: 3.2, who: 'spoket', line: 'soKlonk' },
       { at: 5.4, who: 'elof', line: 'soHeld' },
       { at: 8.0, who: 'elof', line: 'soKnow' },
-      { at: 10.4, who: 'elof', line: 'soCapBack' },
+      { at: 10.8, who: 'elof', line: 'soCapBack' },
     ],
     stage: {
       shots: [
         { at: 0, x: FIGURES - 0.8, y: 1.3, height: 3.4, width: 7.2, move: 1.0 },
         // The sweet, close: held out to him on its gold paper.
-        { at: 12.0, x: SWEET.x + 0.2, y: 1.05, height: 2.4, width: 4, move: 0.8 },
+        { at: 14.0, x: SWEET.x + 0.2, y: 1.05, height: 2.4, width: 4, move: 0.8 },
       ],
       fx: [
-        { at: 12.3, kind: 'sparkle', from: SWEET, seconds: 2.0 },
-        { at: 12.4, kind: 'glow', from: SWEET, seconds: 2.0 },
+        { at: 14.5, kind: 'sparkle', from: SWEET, seconds: 2.0 },
+        { at: 14.6, kind: 'glow', from: SWEET, seconds: 2.0 },
       ],
       actors: {
         // Klonk on the stone, a little behind them: a glad hop at its own "Klonk …", a tilt of its head, and at the gold.
@@ -246,8 +248,10 @@ const SCENES: SceneDef[] = [
         { at: 0, act: 'watch', aim: { x: FIGURES, y: 1.0, z: -0.4 } },
         { at: 4.8, act: 'kneel', aim: { x: FIGURES, y: 0.9, z: -0.4 } },
         { at: 7.6, aim: { x: FIGURES + 0.32, y: 0.8, z: -0.3 } },
-        { at: 9.6, act: 'hands' },
-        { at: 11.8, act: 'watch', aim: SWEET },
+        { at: 8.8, lift: { x: 2.8, y: 0, z: -0.15 }, move: 1.3, act: 'walk', face: 0 },
+        { at: 10.1, act: 'reach', aim: { x: FIGURES + 0.32, y: 1.18, z: -0.3 } },
+        { at: 12.0, lift: { x: 0, y: 0, z: 0 }, move: 1.6, act: 'walk', face: 0.5 },
+        { at: 13.6, act: 'watch', face: 0, aim: SWEET },
       ],
     },
   },
@@ -408,7 +412,7 @@ export const stormoga: ChapterData = {
   storm: {
     rain: 1, lightning: 4.5, calm: 'eye',
     // The shore behind: Billaberget's granite and its forest, which the path from mormor and morfar's house by the
-    // road comes down through, and birches; far down the lake, Själevad's church. The house is not on the shore.
+    // road comes down through, and birches. The house is not on the shore.
     buildings: [
       { kind: 'cliff', x: -34, z: -46, y: 0, width: 40, height: 26 },
       { kind: 'spruce', x: -58, z: -58, height: 70 },
@@ -416,10 +420,6 @@ export const stormoga: ChapterData = {
       { kind: 'spruce', x: 6, z: -54, height: 58 },
       { kind: 'birch', x: -4, z: -40, height: 70 },
       { kind: 'birch', x: 92, z: -36, height: 64 },
-      // Själevad's church on the far shore, small and pale, where the bog's nearest far picture is open (x 25 to 59): seen
-      // past the jetty's lamps, ahead of the owl's flight and over the stone where the eye opens. Just behind that picture,
-      // whose land hides its foot and whose mist lies over it; any further back the haze would take it.
-      { kind: 'church', x: 31, z: -38, y: 1.8, width: 26, height: 18, size: 0.1 },
     ],
     glows: [
       // A warm place on the cold stone, where the two of them are.
@@ -514,6 +514,7 @@ export const stormoga: ChapterData = {
   beats: [
     { id: 'soFar', on: 'scene:lampa:bertil', who: 'elof', line: 'soFarLine', read: true },
     { id: 'soOwl', on: 'owl:ready', who: 'elof', line: 'soOwlCome', read: true },
+    { id: 'soOwlThanks', at: OWL.to.x - 3.6, needs: 'owl', who: 'elof', line: 'soOwlThanks', read: true },
     { id: 'soGold', on: 'gift', who: 'elof', line: 'soGoldLine', read: true },
     { id: 'soLast', on: 'gift', who: 'elof', line: 'soLastOne', read: true },
     { id: 'soShare', on: 'gift', who: 'elof', line: 'soShareLine', read: true },

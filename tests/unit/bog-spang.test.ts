@@ -1,5 +1,7 @@
 import type { Mesh } from 'three';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import '../../src/content/aventyr2/aventyr2';
+import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { COURSES } from '../../src/content/chapters';
 import { bankShapes } from '../../src/render/dressing/ground';
 import { heightAt } from '../../src/render/dressing/kit';
@@ -56,6 +58,18 @@ describe("the bog's walk of planks", () => {
       expect(at.getY(i)).toBeLessThan(4.5 - 0.3);
     }
     expect(under).toBeGreaterThan(20);
+  });
+
+  it('extends the family jetty inward under both grandparents, while keeping its front edge', () => {
+    const all = corners(spang(stormoga)!);
+    for (const grandparent of stormoga.decor!.filter(person => ['mormor', 'morfar'].includes(person.look) && person.until === 'owl')) {
+      // The grandparent rig stands 1.9 EL behind its prop's origin.
+      const z = grandparent.z! - 1.9;
+      const near = all.filter(p => p.x > grandparent.at.x - 3 && p.x < grandparent.at.x + 3 && Math.abs(p.y) < .001);
+      expect(Math.min(...near.map(p => p.z))).toBeLessThan(z - .3);
+      expect(Math.max(...near.map(p => p.z))).toBeGreaterThan(z + .3);
+    }
+    expect(Math.max(...all.filter(p => Math.abs(p.y) < .001).map(p => p.z))).toBeCloseTo(1.18, 2);
   });
 
   it('is only where a chapter has wood over the bog', () => {

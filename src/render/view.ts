@@ -1568,7 +1568,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // An act of the hands after a kneel keeps him on his knees, as the family stay on theirs.
       elofStance = stanceOf(scripted.act, elofStance);
       // He goes on standing and breathing under it by the scene's clock, which runs on by itself while a line is read.
-      scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory, clock: scripted.life }, elofPose, elofStance);
+      const walking = scripted.act === 'walk';
+      scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null,
+        stride: walking ? scripted.actT * 2 : 0, gait: walking ? 1.5 : 0, pace: walking ? 1 : 0, calm: calmStory, clock: scripted.life }, elofPose, elofStance);
       // Putting on the doll's raincoat, or taking it off: his arms go into its sleeves and out (./elof-coat.ts).
       if (sceneFrame) coatPose(sceneFrame.id, sceneFrame.seconds, scriptedPose);
     } else elofStance = 'stand';
@@ -1654,6 +1656,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // With his first finger, where his hand has fingers of its own (./fingers.ts).
       playerBody.hold?.(1, { kind: 'point' }, k * k * (3 - 2 * k));
     }
+    if (chapter.id === 'stormoga' && sceneFrame?.id === 'motet' && scripted?.act === 'reach' && scripted.aim) {
+      const k = smooth(clamp(scripted.actT / 0.6, 0, 1));
+      playerBody.reach(1, boot.set(scripted.aim.x, scripted.aim.y, scripted.aim.z ?? 0), k);
+    }
     stage.updateElof(playerBody, scripted, tall, calmStory);
     epilogueStage.updateElof(playerBody);
     homeRoutine?.updateElof(playerBody);
@@ -1718,12 +1724,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     // Found in Byn i stormen, it is in his hand while he picks it up and holds it up to look at it (the scene `mossan`,
     // its cue `sb:cap-picked`), and tucked in at his back from then on.
-    const capInHand = chapter.id === 'stormbyn' && flags.has('sb:cap-picked') && !flags.has('scene:mossan') && !curr.hook;
+    const returningCap = chapter.id === 'stormoga' && sceneFrame?.id === 'motet';
+    const returnedCap = returningCap && flags.has('so:cap-returned');
+    const capInHand = (chapter.id === 'stormbyn' && flags.has('sb:cap-picked') && !flags.has('scene:mossan') && !curr.hook)
+      || (returningCap && sceneFrame.seconds >= 8.8 && !returnedCap);
     const hasCap = (chapter.id === 'stormbyn' && flags.has('cap') && (capInHand || flags.has('scene:mossan')))
       || ['olympia', 'flarken', 'alven', 'billsta'].includes(chapter.id)
       || (chapter.id === 'stormoga' && !flags.has('scene:motet'));
     carriedCap.visible = hasCap && elof.group.visible;
-    if (carriedCap.visible && capInHand) {
+    if (carriedCap.visible && returnedCap) {
+      const mark = chapter.decor!.find(thing => thing.look === 'tiny-cap' && thing.until === 'taste')!;
+      carriedCap.position.set(mark.at.x, mark.at.y, mark.z ?? 0);
+      carriedCap.rotation.set(0, 0, 0);
+      carriedCap.scale.setScalar(1);
+    } else if (carriedCap.visible && capInHand) {
       // Between his right thumb and fingers, its point up (./fingers.ts).
       playerBody.hold?.(1, CAP_PINCH);
       if (playerBody.socket) playerBody.socket(1, CAP_PINCH, carriedCap.position);
@@ -1731,6 +1745,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       carriedCap.position.y -= 0.1 * tall;
       elof.group.getWorldQuaternion(carriedCap.quaternion);
       carriedCap.scale.setScalar(0.8 * tall);
+      if (returningCap) {
+        // After he has said the whole line, the last short movement sets the cap on the little one's head.
+        const mark = chapter.decor!.find(thing => thing.look === 'tiny-cap' && thing.until === 'taste')!;
+        const settle = smooth(Math.max(0, Math.min(1, (sceneFrame.seconds - 10.8) / .8)));
+        carriedCap.position.lerp(boot.set(mark.at.x, mark.at.y, mark.z ?? 0), settle);
+        carriedCap.rotation.set(0, carriedCap.rotation.y * (1 - settle), 0);
+        carriedCap.scale.setScalar(.8 * tall + (1 - .8 * tall) * settle);
+      }
     } else if (carriedCap.visible) {
       elof.group.updateWorldMatrix(true, false);
       carriedCap.position.set(-0.17, 0.5, 0.05).applyMatrix4(elof.group.matrixWorld);
