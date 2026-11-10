@@ -54,7 +54,7 @@ describe('family help has time to prepare and a deliberate next action', () => {
   });
 
   it.each([
-    [garden, 208, 0, ['moa', 'plane:board']],
+    [garden, 208, 0, ['moa', 'plane:board', 'scene:landat']],
     [granskog, 179, -8, ['seesaw', 'placed:cone', 'launch', 'cap']],
     [myren, 139, 0, ['mamma', 'placed:pine', 'braid', 'light']],
   ] as const)('does not replay completed help at an older far checkpoint in %s', (chapter, x, y, flags) => {

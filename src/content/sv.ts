@@ -302,6 +302,8 @@ export const sv = {
 
   // What is said, in bubbles: the game has no voices. At most about 40 characters each (plan §3.7).
   lines: {
+    gardenLandedMoa: 'Gick det bra, lillebror?',
+    gardenLandedElof: 'Ja! Jag landade mjukt! Tack, Moa!',
     // The extra chapter, Byn: a Saturday later, on the way to the candy shop.
     // At the party, when what he found under the deck is given back (plan §4.8).
     clipBack: 'Mitt hårspänne! Tack, lillebror!',
