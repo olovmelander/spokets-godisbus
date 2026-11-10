@@ -27,6 +27,7 @@ import { createStoryContext } from './ui/story-context';
 import { createInput, type Device } from './input/input';
 import { createAutoTier, createDynamicResolution, tierFromQuery } from './render/quality';
 import { createView, type View } from './render/view';
+import type { TalkFrame } from './render/talk';
 import { changeStyle, settingsFor, simOptions, tempoOf, type PlayStyle, type Settings } from './save/settings';
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
@@ -1030,6 +1031,10 @@ async function start(): Promise<void> {
   let shown = false;
   let lastTime = 0;
   let savedAt = game.sim.checkpoint;
+  // What is said, for the picture (src/render/talk.ts): the line in the bubble, how long it has been up, and whether the story
+  // waits on it. While it waits the picture goes on living: breathing, looking at whoever speaks, a mouth that says the words.
+  const talkFrame: TalkFrame = { who: null, text: '', seconds: 0, reading: false };
+  let talkAt = 0;
   function frame(time: number): void {
     requestAnimationFrame(frame);
     const began = performance.now();
@@ -1139,6 +1144,13 @@ async function start(): Promise<void> {
       line.style.setProperty('--loaded', String(bootReady ? 1 : view.loaded));
       line.classList.toggle('done', bootReady);
     }
+    const saying = hud.saying();
+    if (!saying || saying.at !== talkAt) { talkAt = saying?.at ?? 0; talkFrame.seconds = 0; } else if (!menuOpen()) talkFrame.seconds += dt;
+    talkFrame.who = saying?.who ?? null;
+    talkFrame.text = saying?.text ?? '';
+    talkFrame.reading = hud.reading();
+    const voice = voicePosition();
+    talkFrame.voice = voice?.key === saying?.key ? voice : null;
     view.render({
       // Under the title the place lives on (first-minutes.md row 4); under any other menu it stands still.
       prev: game.sim.prev, curr: game.sim.curr, alpha: game.alpha, dt: menuOpen() && !title.open ? 0 : dt,
@@ -1149,6 +1161,7 @@ async function start(): Promise<void> {
       flags: game.sim.flags, ghost: game.sim.ghost, rollers: game.sim.rollers, tussocks: game.sim.tussocks, gusts: game.sim.gusts, help: game.sim.help,
       berries: game.sim.berries,
       noteHits: game.sim.noteHits,
+      talk: talkFrame,
     });
     if (reglue) {
       reglue = false;

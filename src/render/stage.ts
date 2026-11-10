@@ -14,6 +14,8 @@ import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDI
 import { drawnWhile } from './idle';
 import { goldSweet } from './gold-sweet';
 import type { Grip } from './fingers';
+import { lookAt } from './look';
+import { createTalker, talk, type Free, type Look, type Talker } from './talk';
 
 /**
  * The stage: plays a chapter's scenes in the picture (src/sim/scene.ts). It owns the family's posable figures
@@ -317,10 +319,17 @@ export interface Directions {
   ghost: { x: number; y: number; z: number; face: number; tilt: number; bounce: number; blink: number; rough: number; look: Point | null; act: Act; actT: number } | null;
   /** Elof, in a held scene: lifted, acting, facing, and how big. */
   /** `onto`: where his feet are drawn in the place itself (on a hand), as much as `ontoWeight` says (0 to 1). */
+  /** `life`: the clock he goes on standing and breathing by under his act, which runs on while a line is read (./talk.ts). */
   elof: {
     lift: Point; onto: Point; ontoWeight: number; act: Act | null; actT: number; aim: Point | null; face: number | null; size: number | null;
+    life: number;
   } | null;
 }
+
+/** Which hands are free for a gesture as someone speaks (./talk.ts): both, the left, the right, or neither. */
+const HANDS_FREE: readonly Free[] = [[true, true], [true, false], [false, true], [false, false]];
+/** Acts that leave the hands to hang: a gesture of speech may use them. */
+const HANDS_HANG: readonly Act[] = ['stand', 'watch', 'look', 'nod'];
 
 /**
  * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
@@ -713,6 +722,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
   let lastScene: string | null = null;
   const starts = new Map<string, State>();
+  /**
+   * How long the scene playing now has waited on its lines (the story holds while one is read): the bodies go on standing and
+   * breathing by the scene's clock and this, so that nobody freezes while something is said, and nothing jumps as it goes on.
+   */
+  let waited = 0;
+  /** Each body's part in what is said (./talk.ts), and where its head looks. */
+  const talkers = new Map<Role, Talker>();
+  const heard: Look = { turn: 0, nod: 0 }, faceAt = new Vector3();
 
   let stagedTilt = 0;
   return {
@@ -798,6 +815,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const same = !!scene && lastScene === scene.id;
       const flowing = dt > 0 && dt < 0.25 && (!same || t === lastT || Math.abs(t - lastT - dt) < 0.05);
       const paused = dt <= 0 && (!scene || (same && t === lastT));
+      // The scene's clock waits on a line while the frame's goes on: the bodies' own clock goes on from it (`waited`).
+      if (!same) waited = 0;
+      else if (dt > 0 && dt < 0.25 && t === lastT) waited += dt;
       // Elof put far away at once (a game taken up): the picture cuts, and so do they. Nearer, they walk over.
       const restored = lastElof !== null && Math.abs(elof.x - lastElof) > LOST;
       lastScene = scene?.id ?? null;
@@ -945,7 +965,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           return { ahead: ahead * unit, side: side * unit, up: (target.y - y) * unit };
         };
         const aim = aimFor(state.aim);
-        const time = scene && keys ? t : clock;
+        // How each stands and breathes goes by the scene's clock in a scene, and on by itself while it waits on a line.
+        const time = scene && keys ? t + waited : clock;
         // Between scenes finish the current sip, then hold the cup down; pausing never advances this clock.
         const prior = was?.act === state.act ? was.elapsed : Math.max(0, -state.actAt);
         const elapsed = scene && keys ? Math.max(0, t - state.actAt)
@@ -1144,7 +1165,19 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           const back = chairBack(state.stance, state.before, elapsed, hipsBack, pushed);
           piece.made.position.set(piece.x - Math.sin(yaw(piece.face)) * back, piece.y, piece.z - Math.cos(yaw(piece.face)) * back);
         }
+        // What is said (./talk.ts), drawn over what the scene asks for and never kept in it: they look at whoever speaks, from
+        // where their face was a moment ago, and speak with their mouths, their heads and a free hand.
+        const talker = talkers.get(who) ?? talkers.set(who, createTalker(who, 101 + 37 * FAMILY.indexOf(who))).get(who)!;
+        const other = talk.lookAt(who), there = other ? talk.face(other) : null;
+        if (there) rig.mouth(faceAt);
+        const hangs = HANDS_HANG.includes(state.act);
+        const free = HANDS_FREE[(hangs && !state.holdsLeft ? 0 : 2) + (hangs && !state.holds ? 0 : 1)]!;
+        talker.update(talk, there ? lookAt(rig.group, faceAt, there, heard) : null, dt, calm, free);
+        talker.pose(pose);
         rig.pose(pose);
+        rig.face?.(talker.mouth.open, talker.mouth.round, talker.lids);
+        rig.mouth(faceAt);
+        talk.place(who, faceAt.x, faceAt.y, faceAt.z);
         // Resolve authored interaction targets in 3D. Interrupted acts retain their contact share,
         // and unreachable targets stay at the real arm's limit rather than stretching the body.
         hand.set(0, 0, 0); otherHand.set(0, 0, 0);
@@ -1536,7 +1569,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         ghost,
         elof: elofNow ? {
           lift: elofNow.lift, onto, ontoWeight: carrier ? elofNow.rideWeight : 0, act: elofNow.act, actT: t - elofNow.actAt,
-          aim: elofNow.aim, face: elofNow.face, size: elofNow.size,
+          aim: elofNow.aim, face: elofNow.face, size: elofNow.size, life: t + waited,
         } : null,
       };
     },

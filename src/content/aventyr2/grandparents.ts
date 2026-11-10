@@ -8,6 +8,8 @@ import { actPose } from '../../render/acting';
 import { KNEE_HAND, kneelPose, sample, stand } from '../../render/gait';
 import { CLIPS, STANDS } from '../../render/motion-data';
 import { JOINTS, STANDING, createModelRig, heightOf, type Pose, type Rig } from '../../render/rig';
+import { lookAt as turnTo } from '../../render/look';
+import { createTalker, talk, type Free, type Look } from '../../render/talk';
 import { windAt } from '../../render/wind';
 
 /**
@@ -115,6 +117,8 @@ function body(who: Grandparent): { model: Group; bones: Record<string, Bone> } {
   const head = bone('Head', spine, 0, HEAD_Y);
   const eyeL = bone('eye_l', head, 0.17, 0.5, 0.42);
   const eyeR = bone('eye_r', head, -0.17, 0.5, 0.42);
+  // The mouth under the smile, which opens as they speak (../../render/talk.ts): its bone at its middle, of no height shut.
+  const mouth = bone('mouth', head, 0, 0.3, 0.47);
   const armL = bone('upperarm_l', spine, SHOULDER.x, SHOULDER.y, 0, true);
   const armR = bone('upperarm_r', spine, -SHOULDER.x, SHOULDER.y, 0, true);
   const foreL = bone('lowerarm_l', armL, 0, UPPER);
@@ -127,7 +131,7 @@ function body(who: Grandparent): { model: Group; bones: Record<string, Bone> } {
   const calfR = bone('calf_r', thighR, 0, THIGH);
   const footL = bone('foot_l', calfL, 0, SHIN);
   const footR = bone('foot_r', calfR, 0, SHIN);
-  const list = [pelvis, spine, head, eyeL, eyeR, armL, armR, foreL, foreR, handL, handR, thighL, thighR, calfL, calfR, footL, footR];
+  const list = [pelvis, spine, head, eyeL, eyeR, armL, armR, foreL, foreR, handL, handR, thighL, thighR, calfL, calfR, footL, footR, mouth];
   const at = (one: Bone) => list.indexOf(one);
 
   const top = HIP_Y + SHOULDER.y;
@@ -146,6 +150,7 @@ function body(who: Grandparent): { model: Group; bones: Record<string, Bone> } {
     part(blob(0.055, 0.07, 0.03).translate(0.17, eyes, 0.45), at(eyeL), DARK),
     part(blob(0.055, 0.07, 0.03).translate(-0.17, eyes, 0.45), at(eyeR), DARK),
     part(new TorusGeometry(0.13, 0.016, 6, 10, Math.PI).rotateZ(Math.PI).translate(0, eyes - 0.2, 0.455), at(head), '#8a5a4a'),
+    part(blob(0.12, 0.085, 0.03).translate(0, eyes - 0.2, 0.47), at(mouth), '#4a2b27'),
     // The arms and the big hands.
     ...([[armL, foreL, handL, 1], [armR, foreR, handR, -1]] as const).flatMap(([upper, fore, hand, side]) => [
       part(limb(0.23, 0.2, UPPER).translate(side * SHOULDER.x, top, 0), at(upper), look.coat),
@@ -176,9 +181,10 @@ function body(who: Grandparent): { model: Group; bones: Record<string, Bone> } {
   mesh.frustumCulled = false;
   mesh.updateMatrixWorld(true);
   mesh.bind(new Skeleton(list));
+  mouth.scale.y = 0;
   const model = new Group();
   model.add(mesh);
-  return { model, bones: { head, eyeL, eyeR, handR, handL } };
+  return { model, bones: { head, eyeL, eyeR, handR, handL, mouth } };
 }
 
 /** Morfar's long ladder, upright from its foot: two rails and its rungs, one shape. */
@@ -267,7 +273,11 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   const clip = CLIPS.kneelElder;
   const was = new Vector3(), now = new Vector3(), rail = new Vector3(), up = new Quaternion(), tilt = new Quaternion(), Z = new Vector3(0, 0, 1);
   const kneeAt = new Vector3(), aheadOf = new Vector3(), socketAt = new Vector3();
-  let since = 0, kneel = 0, facing = 0, gaze = 0, nextBlink = 2 + phase, swing = 0, swingSpeed = 0, first = true;
+  let since = 0, kneel = 0, facing = 0, gaze = 0, swing = 0, swingSpeed = 0, first = true;
+  // Their part in what is said (../../render/talk.ts): they speak with their mouths and heads, look at whoever speaks, blink.
+  const talker = createTalker(who, who === 'mormor' ? 61 : 97), heard: Look = { turn: 0, nod: 0 }, faceAt = new Vector3();
+  // Her right hand holds the lantern: she says it with her left.
+  const hands: Free = [true, !lantern];
 
   return {
     group,
@@ -290,6 +300,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       }
       delete (bones as Partial<typeof bones>).eyeL;
       delete (bones as Partial<typeof bones>).eyeR;
+      delete (bones as Partial<typeof bones>).mouth;
     },
     update(used, clock, dt, elof, laid = false, going) {
       const still = lessMotion();
@@ -350,6 +361,12 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       gaze += ((going && going.pace > 0.3 ? 0 : lookAt - facing) - gaze) * Math.min(1, dt * 4);
       rig.group.rotation.y = facing;
       pose.turn = clamp(gaze, -0.7, 0.7);
+      // Someone speaks: they look at them, or, speaking, at him, from where their face was drawn a moment ago.
+      const other = talk.lookAt(who), there = other ? talk.face(other) : null;
+      if (there) rig.mouth(faceAt);
+      // Their walk, lantern and ladder wait with the event; their face and breathing do not.
+      talker.update(talk, there ? turnTo(rig.group, faceAt, there, heard) : null, talk.dt, still, hands);
+      talker.pose(pose);
       rig.pose(pose);
       if (going?.touch && going.weight > 0.001) {
         // A hand on the door, as far out to it as it has come, the fingers open on its boards.
@@ -388,11 +405,16 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
         }
       }
 
-      // A slow blink now and then.
-      const blink = !still && clock > nextBlink;
-      const lids = blink ? 0.12 : 1;
-      if (bones.eyeL && bones.eyeR) bones.eyeL.scale.y = bones.eyeR.scale.y = lids;
-      if (clock > nextBlink + 0.16) nextBlink = clock + 3 + ((clock * 7.3) % 3);
+      // A blink now and then, and the mouth as they speak: the model's own face, or the figure's eyes and mouth.
+      if (rig.face) rig.face(talker.mouth.open, talker.mouth.round, talker.lids);
+      else {
+        if (bones.eyeL && bones.eyeR) bones.eyeL.scale.y = bones.eyeR.scale.y = 1 - 0.88 * talker.lids;
+        if (bones.mouth) bones.mouth.scale.set(1 - 0.35 * talker.mouth.round, talker.mouth.open, 1);
+      }
+      // Where their face is, for the others to look at: while they are in the picture.
+      let shown = true;
+      for (let node: Object3D | null = group; node; node = node.parent) if (!node.visible) shown = false;
+      if (shown) { rig.mouth(faceAt); talk.place(who, faceAt.x, faceAt.y, faceAt.z); }
 
       if (carried) {
         const angle = ladderAngle(since);

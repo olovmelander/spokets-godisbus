@@ -75,7 +75,7 @@ import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-mode
 import { windAt, type Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { prologuePose, type PrologueFrame } from '../sim/prologue';
-import { endsInScene, type SceneFrame } from '../sim/scene';
+import { endsInScene, type Act, type SceneFrame } from '../sim/scene';
 import { BERRY_HALF, BERRY_HEIGHT, GHOST_CLEARANCE, JUMP_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
@@ -83,6 +83,8 @@ import { photoCut } from './crop';
 import { wingbeat } from './wingbeat';
 import { createFootSplash } from './foot-splash';
 import { craneChick, stepChick, type Gait } from './crane';
+import { lookAt } from './look';
+import { createTalker, talk, type Free, type Look, type TalkFrame, type Talker } from './talk';
 
 /** Whether the page's address has `?name`. */
 function pageAsks(name: string): boolean {
@@ -198,6 +200,8 @@ export interface Frame {
   noteHits?: readonly { serial: number; id: string; midi: number }[];
   /** What the helper is doing: its step, and where the thing is. */
   help: HelpState;
+  /** What is said now, and whether the story waits on it (./talk.ts). Left out: nothing. */
+  talk?: TalkFrame | null;
 }
 
 export interface View {
@@ -666,7 +670,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let ghostTurn = Math.PI;
   // Its idle look about (./ghost-model.ts) turns it, and the bag it carries, the way it turns to face him.
   let ghostLook = 0;
-  let clock = 0;
+  let clock = 0, lifeClock = 0;
   let starDropTime = 0;
   let elofStance: Stance = 'stand';
   let hangLast = 0, hangWeight = 0;
@@ -702,7 +706,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
   const elof = createPlayerStandIn();
-  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze' | 'dress' | 'hold' | 'grasp' | 'socket'> = elof;
+  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze' | 'dress' | 'hold' | 'grasp' | 'socket' | 'face'> = elof;
   let playerHips = ['left', 'right'].map(side => elof.group.getObjectByName(`player-hip-${side}`));
   let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
@@ -712,6 +716,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const lanternHand = new Vector3(), lanternLift = new Vector3();
   let lanternHeld = false;
   const playerMotion = createPlayerMotion();
+  // What is said (./talk.ts): one picture at a time, and this is it. Elof's part in it, the ghost's (its klonks), where a head
+  // looks, and a pose to draw it on without keeping it.
+  talk.reset();
+  const elofTalker = createTalker('elof', 3), ghostTalker = createTalker('spoket', 5);
+  const heard: Look = { turn: 0, nod: 0 }, faceAt = new Vector3(), spokenPose: Pose = { ...STANDING };
+  const BOTH_HANDS: Free = [true, true], NO_HANDS: Free = [false, false];
+  /** What he does in a scene that leaves his hands free for a gesture as he speaks. */
+  const HANDS_HANG: readonly Act[] = ['stand', 'watch', 'look'];
   assets
     .manifest()
     .then((manifest) => (!standIns && manifest.packs.private?.files['elof.glb'] ? assets.model('private', 'elof').then((model) => ({ model, manifest })) : null))
@@ -764,7 +776,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const paddle = stand.paddles ? createPaddle(rig.height) : undefined;
     if (paddle) scene.add(paddle.mesh);
     family.push({ rig, who, motion: createFamilyMotion(who, stand.at, stand.glad), at: stand.at, glad: stand.glad, was: false, joy: 0, seated: stand.seated, paddle,
-      walk: stand.goesTo ? { to: stand.goesTo, when: stand.goesWhen, place: stand.prop!.group, home: stand.prop!.group.position.clone(), stride: 0, pace: 0, gait: 0, seen: false } : undefined });
+      walk: stand.goesTo ? { to: stand.goesTo, when: stand.goesWhen, place: stand.prop!.group, home: stand.prop!.group.position.clone(), stride: 0, pace: 0, gait: 0, seen: false } : undefined,
+      talker: createTalker(who, 211 + 17 * family.length) });
   }
   if (stage.actors.size > 0 && !standIns) {
     assets.manifest().then(async (manifest) => {
@@ -1168,7 +1181,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
   }
 
-  function render({ prev, curr, alpha, dt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, scene: sceneFrame, ending }: Frame): void {
+  function render({ prev, curr, alpha, dt, eventDt, atGoal, collected, side, checkpoint, movers, drips, flags, ghost: ghostState, rollers, tussocks, gusts, help, berries, noteHits, prologue, scene: sceneFrame, ending, talk: words }: Frame): void {
+    // What is said this frame, for every body that says or hears it (./talk.ts).
+    const lifeDt = dt;
+    talk.hear(words, lifeDt);
+    // A reading stop holds the visible event as well as the simulation: the flying carving, a lowered scarf,
+    // a door and its walker must stay with the scene's shot. Breathing and speech have their own time below.
+    dt = words?.reading ? 0 : eventDt ?? dt;
+    lifeClock += lifeDt;
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
     rain.update(drips, dt);
     epilogueStage.update(flags, ending, lessMotion());
@@ -1194,7 +1214,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // What lives on a mover moves of itself: the ants under Granskogen's needle mats.
     for (const mesh of moverMeshes) (mesh.children[0]?.userData.tick as ((at: number) => void) | undefined)?.(clock);
     // The scene playing now, if any: where the family and the ghost are, what they do, and the shot (./stage.ts).
-    const directions = stage.update(sceneFrame ?? null, flags, { x, y }, clock, dt, calmStory);
+    const directions = stage.update(sceneFrame ?? null, flags, { x, y }, lifeClock, lifeDt, calmStory);
     responseFor = Math.max(0, responseFor - dt);
     const response = responseFor > 0 ? (calmResponse ? 0.15 : Math.sin((0.85 - responseFor) * 24) * responseFor / 0.85) : 0;
     if (responseFor === 0) reaction = null;
@@ -1506,7 +1526,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const facing = Math.cos(facingAngle) >= 0 ? 1 : -1;
       // An act of the hands after a kneel keeps him on his knees, as the family stay on theirs.
       elofStance = stanceOf(scripted.act, elofStance);
-      scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory }, elofPose, elofStance);
+      // He goes on standing and breathing under it by the scene's clock, which runs on by itself while a line is read.
+      scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null, stride: 0, pace: 0, calm: calmStory, clock: scripted.life }, elofPose, elofStance);
       // Putting on the doll's raincoat, or taking it off: his arms go into its sleeves and out (./elof-coat.ts).
       if (sceneFrame) coatPose(sceneFrame.id, sceneFrame.seconds, scriptedPose);
     } else elofStance = 'stand';
@@ -1516,8 +1537,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const breeze = gale * windAt(x);
     // His model's own legs (Rig.legs), where it has come: its feet hold the ground as he walks.
     const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
-    const playerPose = playerMotion.update(curr, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
-    playerBody.pose(playerPose);
+    // Hang by his hands from the scarf; walk on his own feet on the way home.
+    const moving = onScarf ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
+    const playerPose = playerMotion.update(moving, x, dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
+    // What is said (./talk.ts): he looks at whoever speaks to him, from where his face was a moment ago, and speaks with his
+    // mouth, his head and a free hand. It is drawn on a copy of his pose: his own motion never keeps it.
+    const elofOther = talk.lookAt('elof'), elofThere = elofOther ? talk.face(elofOther) : null;
+    if (elofThere) playerBody.mouth(faceAt);
+    const elofHands = (scripted?.act && !HANDS_HANG.includes(scripted.act)) || curr.hook || lanternHeld ? NO_HANDS : BOTH_HANDS;
+    elofTalker.update(talk, elofThere ? lookAt(elof.group, faceAt, elofThere, heard, true) : null, lifeDt, calmStory, elofHands);
+    elofTalker.pose(Object.assign(spokenPose, playerPose));
+    playerBody.pose(spokenPose);
+    playerBody.face?.(elofTalker.mouth.open, elofTalker.mouth.round, elofTalker.lids);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
     const elastic = curr.mode === 'free' && !scriptedPose && !calmStory;
     if (dt > 0) {
@@ -1558,6 +1589,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hold?.(1, { kind: 'point' }, k * k * (3 - 2 * k));
     }
     stage.updateElof(playerBody, scripted, tall, calmStory);
+    // Where his face is, for the others to look at as he speaks (as it was last drawn: near enough to look at).
+    if (elof.group.visible) {
+      playerBody.mouth(faceAt);
+      talk.place('elof', faceAt.x, faceAt.y, faceAt.z);
+    }
     // The doll's raincoat on him, part by part as he puts it on, and in his hands between the doll and his back.
     dressFor(playerBody, 'elof', flags, sceneFrame ?? null, calmStory, tall);
     heldCoat?.update(sceneFrame ?? null, flags, playerBody, elof.group, tall, y, calmStory);
@@ -1798,6 +1834,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghost.rotation.x += ghostFaces ? ghostIdle.pitch : ghostIdle.roll;
         ghost.rotation.z += ghostFaces ? ghostIdle.roll : -ghostIdle.pitch;
       }
+      // It has no mouth (plan §2.2): saying "Klonk", it bobs up once for each, tipping back a little, as a wooden toy would
+      // (./talk.ts). Its knock is its voice already (../audio/cues.ts).
+      ghostTalker.update(talk, null, lifeDt, calmStory);
+      const klonk = ghostTalker.klonk;
+      if (klonk > 0) {
+        ghostPlace.position.y += 0.1 * klonk * ghostPlace.scale.y;
+        if (ghostFaces) ghost.rotation.x -= 0.09 * klonk; else ghost.rotation.z += 0.09 * klonk;
+      }
+      if (ghostPlace.visible && ghostSize > 0.5) talk.place('spoket', ghostPlace.position.x, ghostPlace.position.y + 0.75 * ghostPlace.scale.y, ghostPlace.position.z);
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
     if (chapter.prologue) {
@@ -1968,7 +2013,28 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         posed.legR += (0.1 - posed.legR) * w; posed.kneeR += (1.65 - posed.kneeR) * w;
         one.rig.group.rotation.y += (-0.5 - one.rig.group.rotation.y) * w;
       }
-      one.rig.pose(one.seated ? sitting(posed, one.rig.legs) : one.paddle ? one.paddle.stance(posed) : posed);
+      // Lowering the scarf and holding it, they lean out over the railing a little, unless they walk with him.
+      if (scarf) posed.lean += 0.3 * scarf.weight * (1 - (one.walk?.pace ?? 0));
+      // What is said (./talk.ts): they look at whoever speaks, from where their face was a moment ago, and speak with their
+      // mouths, their heads and a free hand; drawn on a copy, which their own motion never keeps.
+      const said = talk.lookAt(one.who), there = said ? talk.face(said) : null;
+      if (there) one.rig.mouth(faceAt);
+      one.talker.update(talk, there ? lookAt(one.rig.group, faceAt, there, heard) : null, lifeDt, calmStory,
+        one.seated || one.paddle || carrying || !!(scarf && scarf.weight > 0.001) || gesture.hold > 0.001 || gesture.lift > 0.001 || gesture.pull > 0.001 ? NO_HANDS : BOTH_HANDS);
+      one.talker.pose(Object.assign(spokenPose, posed));
+      one.rig.pose(one.seated ? sitting(spokenPose, one.rig.legs) : one.paddle ? one.paddle.stance(spokenPose) : spokenPose);
+      one.rig.face?.(one.talker.mouth.open, one.talker.mouth.round, one.talker.lids);
+      if (scarf && scarf.weight > 0.001 && one.walk) {
+        // Both hands on it, out over the railing, the one over the other; the scarf hangs from the lower (./scarf.ts).
+        scarf.hands(one.walk.place.position, scarfLower, scarfUpper);
+        one.rig.reach(0, scarfLower, scarf.weight);
+        one.rig.reach(1, scarfUpper, scarf.weight);
+        const grip = { kind: 'power' as const, size: 0.05 };
+        one.rig.hold?.(0, grip, scarf.weight);
+        one.rig.hold?.(1, grip, scarf.weight);
+        if (one.rig.socket) one.rig.socket(0, grip, scarfTop); else one.rig.hand(0, scarfTop);
+        scarfHeld = true;
+      }
       if (gesture.lift > 0.001 && pine) {
         // Both hands under the pine's end, a hand's width apart.
         const end = pine.position.x - 4.3 + 0.25, at = pine.position.y + 0.2;
@@ -2070,6 +2136,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         drawnWhile(umbrellaRide.prop, true);
       }
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
+      // Where their face is, for the others to look at as they speak.
+      if (shown) {
+        one.rig.mouth(faceAt);
+        talk.place(one.who, faceAt.x, faceAt.y, faceAt.z);
+      }
     }
     // The scarf from the holder's hands, hanging, or straight down to Elof's while it carries him (./scarf.ts).
     scarves?.update(scarfHeld ? scarfTop : null, onScarf ? scarfBottom : null, dt, clock, gale * windAt(x), calmStory);
@@ -2282,6 +2353,8 @@ interface Relative {
    * first, how far they have walked in strides, how briskly, and whether a frame has placed them yet.
    */
   walk?: { to: { x: number; y: number; z: number }; when?: string | undefined; place: Object3D; home: Vector3; stride: number; pace: number; gait: number; seen: boolean } | undefined;
+  /** Their part in what is said (./talk.ts). */
+  talker: Talker;
 }
 
 function startState(chapter: ChapterData): PlayerState {
