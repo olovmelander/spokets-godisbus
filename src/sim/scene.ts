@@ -49,10 +49,15 @@ export interface SceneDef {
   /** Resume this conversation from acknowledged line receipts, preserving its remaining actions and cues. */
   resumeReading?: boolean;
   /**
-   * It waits until nothing is being said, and he stands and listens meanwhile: the words before it are let
-   * finish. A held scene always does.
+   * It waits until nothing is being said. Elof can keep moving while it waits unless `hold` is also set.
+   * A held scene always waits for quiet.
    */
   quiet?: boolean;
+  /**
+   * World beat IDs belonging to this reveal. Its clock waits while one is being spoken, independently of
+   * player movement; a ride can keep going while its scenery remains visible for the accompanying words.
+   */
+  dialogue?: readonly string[];
   /** Flags the scene sets at its moments, in seconds from its start: the story's own steps. */
   cues?: readonly { at: number; flag: string }[];
   /**
@@ -218,6 +223,8 @@ export interface ElofKey {
 export interface SceneFrame {
   id: string;
   seconds: number;
+  /** This reveal's owned world line is unfinished; hold its picture clock, not the rest of the world. */
+  waiting?: boolean;
 }
 
 function sceneLineId(scene: SceneDef, index: number): string {
@@ -241,12 +248,12 @@ export function endsInScene(chapter: { goalNeeds?: string; scenes?: readonly Sce
 export const sceneDone = (id: string) => `scene:${id}`;
 
 /** Whether a scene still has something to tell: not finished, and the story not gone past it. */
-export function sceneWaits(scene: SceneDef, flags: ReadonlySet<string>): boolean {
+export function sceneWaits(scene: SceneDef, flags: Pick<ReadonlySet<string>, 'has'>): boolean {
   return !flags.has(scene.by?.done ?? sceneDone(scene.id)) && (scene.until === undefined || !flags.has(scene.until));
 }
 
 /** Keep an interrupted, triggered tableau in its authored place when a checkpoint lies elsewhere. */
-export function sceneResumeAt(scenes: readonly SceneDef[] | undefined, flags: ReadonlySet<string>, checkpoint: Vec): Vec {
+export function sceneResumeAt(scenes: readonly SceneDef[] | undefined, flags: Pick<ReadonlySet<string>, 'has'>, checkpoint: Vec): Vec {
   const scene = scenes?.find((candidate) => candidate.resumeAt && candidate.on && flags.has(candidate.on)
     && (candidate.needs === undefined || flags.has(candidate.needs)) && sceneWaits(candidate, flags));
   return scene?.resumeAt ?? checkpoint;
@@ -258,8 +265,9 @@ export function sceneResumeAt(scenes: readonly SceneDef[] | undefined, flags: Re
  */
 export class SceneDirector {
   private playing: { def: SceneDef; seconds: number; cue: number; line: number } | null = null;
-  /** A scene is due and waits for quiet: he stands and listens. */
+  /** A held scene is due and waits for quiet: he stands and listens. */
   private listening = false;
+  private dialogueWaiting = false;
   /** Where the next scene of this name begins, when it is not at its start. */
   private opening: { id: string; seconds: number } | null = null;
 
@@ -274,7 +282,8 @@ export class SceneDirector {
 
   /** The scene playing now, or null. */
   get frame(): SceneFrame | null {
-    return this.playing ? { id: this.playing.def.id, seconds: this.playing.seconds } : null;
+    return this.playing ? { id: this.playing.def.id, seconds: this.playing.seconds,
+      ...(this.dialogueWaiting ? { waiting: true } : {}) } : null;
   }
 
   /** Whether he watches now, or listens before a scene. */
@@ -286,10 +295,14 @@ export class SceneDirector {
    * One step. `said` is where the beats told go, as the simulation's own; `talking`, whether a line is still being
    * read, or waits to be said; `listening`, whether a page hears them, so that its lines come one at a time.
    */
-  tick(player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false): void {
-    if (!this.playing) this.begin(player, flags, talking);
+  tick(player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false,
+    conditions: Pick<ReadonlySet<string>, 'has'> = flags): void {
+    if (!this.playing) this.begin(player, flags, talking, conditions);
+    this.dialogueWaiting = false;
     const playing = this.playing;
     if (!playing) return;
+    this.dialogueWaiting = (playing.def.dialogue ?? []).some((id) => flags.has(`beat:${id}`) && !conditions.has(`beat:${id}`));
+    if (this.dialogueWaiting) return;
     const lines = playing.def.lines ?? [];
     // Story cues, another line and the ending wait for the current words, however long they take.
     // Acting between cues can continue; the rendering supplies subtle life during a held reading stop.
@@ -306,7 +319,7 @@ export class SceneDirector {
     let spoke = false;
     for (; playing.line < lines.length && lines[playing.line]!.at <= now && !(spoke && listening); playing.line++) {
       const id = sceneLineId(playing.def, playing.line);
-      if (playing.def.resumeReading && flags.has(`beat:${id}`)) continue;
+      if (playing.def.resumeReading && conditions.has(`beat:${id}`)) continue;
       flags.add(`beat:${id}`);
       said.push(id);
       spoke = true;
@@ -332,14 +345,15 @@ export class SceneDirector {
   cancel(): void {
     this.playing = null;
     this.listening = false;
+    this.dialogueWaiting = false;
   }
 
-  private begin(player: PlayerState, flags: Set<string>, talking: boolean): void {
+  private begin(player: PlayerState, flags: Set<string>, talking: boolean, conditions: Pick<ReadonlySet<string>, 'has'>): void {
     this.listening = false;
     for (const scene of this.scenes) {
-      if (scene.by || !sceneWaits(scene, flags)) continue;
-      if (scene.needs !== undefined && !flags.has(scene.needs)) continue;
-      const due = scene.on !== undefined ? flags.has(scene.on) : scene.at === undefined || player.x >= scene.at;
+      if (scene.by || !sceneWaits(scene, conditions)) continue;
+      if (scene.needs !== undefined && !conditions.has(scene.needs)) continue;
+      const due = scene.on !== undefined ? conditions.has(scene.on) : scene.at === undefined || player.x >= scene.at;
       if (!due) continue;
       // Due, but staged where he is not yet: it waits for him, and the scenes after it wait with it.
       if (scene.from !== undefined && player.x < scene.from) return;
@@ -350,10 +364,9 @@ export class SceneDirector {
       }
       // A held scene waits for him to stand, and the scenes after it wait with it: the story keeps its order.
       if (scene.hold && !(player.mode === 'free' && player.grounded)) return;
-      // One that waits for quiet, and every held one, lets what is being said finish first: it takes the floor only
-      // then. He stands and listens meanwhile.
+      // Waiting for quiet does not itself hold the player. Only the authored physical scene reserves his hands.
       if ((scene.quiet || scene.hold) && talking) {
-        this.listening = true;
+        this.listening = scene.hold === true;
         return;
       }
       const opened = this.opening?.id === scene.id;
@@ -362,7 +375,7 @@ export class SceneDirector {
         // Saves contain acknowledged receipts only. Keep a new introduction before any older, named receipts;
         // tick skips those known later lines when reached. Reconstruct the last acknowledged tableau, then
         // play every action and cue between it and the next unread line (or the scene's ending).
-        while (line < (scene.lines?.length ?? 0) && flags.has(`beat:${sceneLineId(scene, line)}`)) line++;
+        while (line < (scene.lines?.length ?? 0) && conditions.has(`beat:${sceneLineId(scene, line)}`)) line++;
         if (line > 0) from = scene.lines![line - 1]!.at;
       } else {
         // Other scenes, and an explicit title opening, replay from their chosen beginning after interruption.

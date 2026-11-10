@@ -23,15 +23,15 @@ export const HINT_REACH = 12;
 /** A push begins from its correct side. The weight puzzle deliberately revisits a passed landmark. */
 export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null {
   const puzzle = chapter.counterweight, p = sim.curr;
-  if (!puzzle || p.x < puzzle.from || p.x > puzzle.to || sim.flags.has(puzzle.launch)) return null;
+  if (!puzzle || p.x < puzzle.from || p.x > puzzle.to || sim.ready(puzzle.launch)) return null;
   const spot = (id: string) => chapter.spots?.find((s) => s.id === id);
-  if (!sim.flags.has(puzzle.call)) {
+  if (!sim.ready(puzzle.call)) {
     const call = spot(puzzle.call);
     return call ? { at: call.at, verb: call.verb, word: call.word ?? null } : null;
   }
   const heavy = sim.movers.find((m) => m.def.id === puzzle.heavy);
   if (!heavy) return null;
-  if (sim.flags.has(`placed:${puzzle.heavy}`)) {
+  if (sim.ready(`placed:${puzzle.heavy}`)) {
     const launch = spot(puzzle.launch);
     // A seesaw he walks onto has no word on the button: he only walks there.
     return launch ? { at: launch.at, verb: launch.touch ? null : launch.verb, word: launch.touch ? null : launch.word ?? null } : null;
@@ -40,7 +40,7 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
   // weight to settle before offering another push or the launch it will unlock.
   if (heavy.t < 1) return { at: heavy.def.stops[heavy.stop]!, verb: null, word: null };
   const trial = puzzle.trial === undefined ? undefined : spot(puzzle.trial);
-  if (trial && !sim.flags.has(trial.id) && trial.needs !== undefined && sim.flags.has(trial.needs)) {
+  if (trial && !sim.ready(trial.id) && trial.needs !== undefined && sim.ready(trial.needs)) {
     return { at: trial.at, verb: trial.verb, word: trial.word ?? null };
   }
   // He stands on the side it is pushed from, whichever way that is.
@@ -53,10 +53,10 @@ export function counterweightTarget(sim: Sim, chapter: ChapterData): Hint | null
 export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   const p = sim.curr;
   if (sim.prologue?.frame) return null;
-  if (chapter.prologue && sim.flags.has('pappa:done') && !sim.flags.has('goal')) {
+  if (chapter.prologue && sim.ready('pappa:done') && !sim.ready('goal')) {
     return { at: { x: chapter.goalX, y: chapter.prologue.railing.y - 2.2 }, verb: null, word: null };
   }
-  const has = (flag?: string) => flag === undefined || sim.flags.has(flag);
+  const has = (flag?: string) => flag === undefined || sim.ready(flag);
   // A raised route can overlap ordinary ground in x (the anthill's other side). Its landing heights,
   // not the airborne feet, distinguish a deliberate climb from an ordinary jump or the ant ride.
   const route = chapter.challenges?.find((r) => p.x >= r.from && p.x <= r.to && p.y >= r.above &&
@@ -66,7 +66,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     if (missing) return { at: missing.at, verb: missing.verb, word: missing.word ?? null };
   }
   if (route && has(route.needs)) {
-    const found = sim.flags.has(`found:${route.reward}`);
+    const found = sim.ready(`found:${route.reward}`);
     if (found && !route.backtrack) return { at: route.return, verb: null, word: null };
     // Find the nearest landing, then show the next. Never use the live position of a moving platform:
     // repeated taps must progress from looking, to pointing, to the demonstration at the same place.
@@ -79,7 +79,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     // A missed jump may reset a light sequence while the bubble returns onto an upper ledge.
     // Guide back to the first unfinished light instead of pointing at its still-hidden successor.
     if (found && nearest === 0) return { at: route.return, verb: null, word: null };
-    const pending = route.pending?.find((id) => !sim.flags.has(id));
+    const pending = route.pending?.find((id) => !sim.ready(id));
     const light = pending ? chapter.spots?.find((spot) => spot.id === pending) : undefined;
     let target = found ? 0 : route.steps.length - 1;
     if (light) {
@@ -111,7 +111,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   // Things to use, once what they wait for has happened. One he only has to touch is on the trail anyway.
   for (const spot of chapter.spots ?? []) {
     // One he only has to touch is skipped, unless the chapter cannot end without it (Stormbyn's cap).
-    if (spot.extra || (spot.touch && spot.id !== chapter.goalNeeds) || sim.flags.has(spot.id) || !has(spot.needs)) continue;
+    if (spot.extra || (spot.touch && spot.id !== chapter.goalNeeds) || sim.ready(spot.id) || !has(spot.needs)) continue;
     things.push({ at: spot.at, verb: spot.verb, word: spot.word ?? null });
   }
   // Things on rails that are not yet where they belong, and that he moves himself.
