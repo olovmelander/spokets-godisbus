@@ -366,8 +366,8 @@ export const myren: ChapterData = {
     { x: 103.7, bottom: 0, top: 4.5, exit: 1, needs: 'braid', look: 'braid' },
   ],
   spots: [
-    { id: 'mamma', look: 'sign', at: { x: 84.8, y: 0 }, verb: 'call', word: 'callMamma' },
-    { id: 'braid', look: 'sign', at: { x: 102.2, y: 0 }, verb: 'call', word: 'callMamma' },
+    { id: 'mamma', look: 'sign', at: { x: 84.8, y: 0 }, standsAt: { x: 85.2, y: 0, z: -.4 }, goesTo: { x: 102.2, y: 2.35, z: -1.35 }, goesWhen: 'family:pine-released', verb: 'call', word: 'callMamma' },
+    { id: 'braid', look: 'sign', at: { x: 102.2, y: 0 }, verb: 'call', word: 'callMamma', needs: 'family:braid-arrived' },
     // The lollipop the ghost has stuck in the moss for him.
     { id: 'light', look: 'lollipop', at: { x: 142, y: 0 }, verb: 'take', word: 'takeLight' },
     // Only the next light is there; approaching it invites its friend further out to shine.
@@ -392,7 +392,7 @@ export const myren: ChapterData = {
   ],
   movers: [
     // The dead pine in the pool: Mamma's hands lift it across as a bridge.
-    { id: 'pine', look: 'log', width: 8.6, height: 0.4, verb: 'pull', on: 'mamma', stops: [{ x: 90, y: -1.5 }, { x: 90, y: -0.4 }] },
+    { id: 'pine', look: 'log', width: 8.6, height: 0.4, verb: 'pull', on: 'mamma', seconds: 2.4, stops: [{ x: 90, y: -1.5 }, { x: 90, y: -0.4 }] },
     // Only after helping the chick: Mamma lifts a plank over the lower mist trail. The old stepping
     // stones and upper lights remain. Its top clears all the old assisted-hop markers by more than
     // their reach in height, so stopping or turning on the new path never starts an old forward hop.
@@ -442,7 +442,7 @@ export const myren: ChapterData = {
   beats: [
     { id: 'family:mamma', at: 82.6, until: 'mamma', who: 'mamma', line: 'familyMamma', read: true },
     { id: 'family:bridge-ready', on: 'placed:pine', until: 'braid', within: [80, 99], who: 'mamma', line: 'familyBridgeReady', read: true },
-    { id: 'family:braid', at: 99.8, until: 'braid', who: 'mamma', line: 'familyBraid', read: true },
+    { id: 'family:braid', at: 99.8, until: 'braid', needs: 'family:braid-arrived', who: 'mamma', line: 'familyBraid', read: true },
     { id: 'family:braid-ready', on: 'family:braid-ready', until: 'light', within: [98, 107], who: 'mamma', line: 'familyBraidReady', read: true },
     { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' },
     { id: 'bog:chick-light', on: 'chick', who: 'elof', line: 'bogChickLight' },
@@ -450,7 +450,9 @@ export const myren: ChapterData = {
     { id: 'bog:bridge-ready', on: 'placed:bog-boardwalk', who: 'mamma', line: 'bogBridgeReady' },
     { id: 'bog:light-return', on: 'bog:lantern-return', who: 'elof', line: 'bogLightReturn' },
   ],
-  later: [{ flag: 'family:braid-ready', after: 'braid', until: 'light', within: [98, 107], seconds: 1.2, hold: true }],
+  sets: [{ flag: 'family:pine-released', when: ['braid'] }, { flag: 'family:braid-arrived', when: ['braid'] }],
+  later: [{ flag: 'family:pine-released', after: 'placed:pine', seconds: 1.2 },
+    { flag: 'family:braid-arrived', after: 'family:pine-released', seconds: 4.2 }, { flag: 'family:braid-ready', after: 'braid', until: 'light', within: [98, 107], seconds: 1.2, hold: true }],
   cameras: [
     // The upper route needs its next landing and the lower way home in portrait as well as landscape.
     { from: 145.8, to: 163, above: 1.55, zoom: 1.45, lift: 0.6, lead: 0.8 },

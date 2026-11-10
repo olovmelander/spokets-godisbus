@@ -1,6 +1,7 @@
 import { stormSweet } from './storm-sweet';
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
+import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } from './myren-helper';
 import { createPaddle, type Paddle } from './paddle';
 import { createScarves } from './scarf';
 import { heldInOther, rainGearFor } from './rain-gear';
@@ -758,6 +759,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The same family is visible at each practical help point. Approved models replace shared rehearsal
   // figures; a blank marker alone cannot explain who helped or connect these crossings to the opening.
   const family: Relative[] = [];
+  if (chapter.id === 'myren') scene.add(mammaSteps());
   /**
    * The rain gear and Bertil's own hair, made in Blender over each of the family's approved models (the private
    * repository's family/wardrobe.py): put on the model when it has come, if the private pack has it.
@@ -772,6 +774,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen })),
     ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
+  // One Mamma lays the pine and walks to the braid; the second call is only an interaction.
+  if (chapter.id === 'myren') for (let i = stands.length - 1; i >= 0; i--) {
+    if (stands[i]!.glad === 'braid' || stands[i]!.glad === 'bog:return-bridge') {
+      stands[i]!.prop!.group.clear(); stands.splice(i, 1);
+    }
+  }
   for (const stand of stands) {
     const who = personFor(stand.word)!, rig = createRehearsalRig(who);
     stand.prop!.group.clear(); stand.prop!.group.add(rig.group);
@@ -826,6 +834,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           one.rig = rig;
           wardrobeFor(rig, who, manifest);
           one.neck = model.getObjectByName('Head') ?? model.getObjectByName('head');
+          if (chapter.id === 'myren' && who === 'mamma') one.braidTip = braidTip(model);
           stand.prop!.group.clear();
           stand.prop!.group.add(rig.group);
           characterShadows.add({ object: rig.group, height: rig.height, radius: .45 * rig.height / 5.2,
@@ -1437,8 +1446,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (calmStory) overWater = 0;
     camera.position.set(look.x, centreY + (chapter.place === 'forest' ? BROOK_EYE : POOL_EYE) * overWater * look.zoom, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
-    const nearbyFamily = stands.find((stand) => stand.prop!.group.visible && Math.abs(stand.at - x) < 3.4 &&
-      Math.abs(stand.prop!.group.position.y - y) < 2 && curr.mode !== 'ride' && curr.mode !== 'fly');
+    const nearbyFamily = stands.find((stand) => stand.prop!.group.visible && Math.abs(stand.prop!.group.position.x - x) < 3.4 &&
+      Math.abs(stand.prop!.group.position.y - y) < 3.5 && curr.mode !== 'ride' && curr.mode !== 'fly');
     // The near shots (beside one of the family, the taste in Norrsken, on Pappa's shoulders) glide in and out over
     // half a second or so instead of cutting, each from wherever the camera was.
     camAt.set(look.x, centreY, 0);
@@ -1451,10 +1460,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camAt.lerp(shot.at, k);
     };
     {
-      const centreX = nearbyFamily ? (nearbyFamily.at + x) / 2 : 0;
+      const centreX = nearbyFamily ? (nearbyFamily.prop!.group.position.x + x) / 2 : 0;
       const familyY = nearbyFamily ? nearbyFamily.prop!.group.position.y : 0;
-      const shotHeight = Math.max(viewHeight * look.zoom, 7.8, 8.8 / camera.aspect);
-      shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, centreX, familyY + 2.2, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), centreX, familyY + 2.2);
+      const shotHeight = Math.max(viewHeight * look.zoom, 7.8 + Math.abs(familyY - y), 8.8 / camera.aspect);
+      const bothY = (familyY + y) / 2 + 2.2;
+      shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, centreX, bothY, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), centreX, bothY);
     }
     {
       const shotHeight = Math.max(8.4, 10.2 / camera.aspect);
@@ -1910,8 +1920,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         const dx = to.x - place.x, dz = to.z - place.z, far = Math.hypot(dx, dz);
         if (!w.seen || calmStory) { place.set(to.x, to.y, to.z); w.pace = 0; }
         else if (dt > 0 && far > 1e-3) {
-          const speed = Math.min(1.1 * one.rig.height, far * 3), step = Math.min(far, speed * dt);
-          place.x += dx / far * step; place.z += dz / far * step; place.y = to.y;
+          const speed = Math.min(chapter.id === 'myren' && one.glad === 'mamma' ? 5.2 : 1.1 * one.rig.height, far * 3), step = Math.min(far, speed * dt);
+          place.x += dx / far * step; place.z += dz / far * step;
+          place.y = chapter.id === 'myren' && one.glad === 'mamma' ? mammaPathY(place.x) : to.y;
+          if (chapter.id === 'myren' && one.glad === 'mamma') place.z = mammaPathZ(place.x);
           w.gait = speed / one.rig.height;
           w.stride += step / stepLength(Math.max(w.gait, 0.3), one.rig.height, one.rig.legs);
           w.pace += (1 - w.pace) * ease(8, dt);
@@ -1937,7 +1949,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ahead: Math.abs(x - one.at) * 5.2 / one.rig.height,
         up: (y + tall * .8 - one.rig.group.parent!.position.y) * 5.2 / one.rig.height,
       }, one.glad && ['moa', 'seesaw', 'cap:ready', 'mamma', 'braid', 'bog:return-bridge'].includes(one.glad)
-        ? { ready: now, near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined, one.rig.legs);
+        ? { ready: now && !(chapter.id === 'myren' && one.glad === 'mamma' && flags.has('placed:pine')), near: Math.abs(x - one.at) < 6 && Math.abs(y - one.rig.group.parent!.position.y) < 5 } : undefined, one.rig.legs);
       const offersCap = !!capGift && one.who === 'bertil' && !flags.has('cap') && Math.abs(x - one.at) < 8;
       const holdsCap = offersCap && capSince >= 0 && capSince < capTime * 0.82;
       if (offersCap) {
@@ -1953,6 +1965,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           posed.lean = Math.max(posed.lean, 0.85 * low);
         }
       }
+
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.
         const w = one.walk, p = w.pace;
@@ -2004,8 +2017,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       // On Myren, called, Mamma's hands lift the dead pine across the pool: she bends to its end and holds it while it
       // rises, and lets go once it lies across (the mover `pine`, which goes up by itself as her hands lift it).
-      const pine = one.who === 'mamma' && chapter.id === 'myren' ? scene.getObjectByName('mover:pine') : undefined;
+      const pine = one.glad === 'mamma' && chapter.id === 'myren' ? scene.getObjectByName('mover:pine') : undefined;
       const lifting = !!pine && flags.has('mamma') && pine.position.y < -0.42;
+      // Her end stays in her hands while the far end is lowered onto the opposite bank.
+      if (pine) pine.rotation.z = flags.has('placed:pine') ? 0 : pineTilt(pine.position.y);
       // In Granskogen, called, Pappa bends to his seesaw and holds its high end steady while Elof fetches the cone and
       // climbs on, and lets go as he flies (the ride `launch`).
       if (seesawPlank === undefined) seesawPlank = chapter.id === 'granskog' ? scene.getObjectByName('seesaw-plank') ?? null : null;
@@ -2020,9 +2035,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       gesture.lift = calmStory ? (gesture.liftFor > 0 ? 1 : 0) : gesture.lift + ((gesture.liftFor > 0 ? 1 : 0) - gesture.lift) * ease(6, dt);
       if (gesture.lift > 0.001) {
         const w = gesture.lift;
-        posed.lean += (0.8 - posed.lean) * w;
-        posed.kneeL += (1.35 - posed.kneeL) * w; posed.kneeR += (1.1 - posed.kneeR) * w;
-        posed.legL += (0.85 - posed.legL) * w; posed.legR += (0.6 - posed.legR) * w;
+        one.rig.group.rotation.y += (.9 - one.rig.group.rotation.y) * w;
+        mammaLogPose(posed, one.rig.legs, w);
       }
       const kneels = holding || beside;
       gesture.hold = calmStory ? (kneels ? 1 : 0) : gesture.hold + ((kneels ? 1 : 0) - gesture.hold) * ease(4, dt);
@@ -2094,9 +2108,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       if (gesture.lift > 0.001 && pine) {
         // Both hands under the pine's end, a hand's width apart.
-        const end = pine.position.x - 4.3 + 0.25, at = pine.position.y + 0.2;
-        one.rig.reach(0, rootReach.set(end - 0.15, at, 0.25), gesture.lift);
-        one.rig.reach(1, rootReach.set(end + 0.15, at, -0.25), gesture.lift);
+        const end = pine.position.x - 4.3 + .1, at = pine.position.y + .2 - 4.2 * Math.sin(pine.rotation.z);
+        lampAim.set(Math.cos(pine.rotation.z), Math.sin(pine.rotation.z), 0);
+        for (const side of [0, 1] as const) {
+          rootReach.set(end + (side === 0 ? -.15 : .15), at, side === 0 ? .12 : -.12);
+          if (one.rig.grasp) one.rig.grasp(side, { kind: 'power', size: .14 }, rootReach, lampAim, lampHeld, gesture.lift);
+          else one.rig.reach(side, rootReach, gesture.lift);
+        }
       }
       if (gesture.hold > 0.001 && board) {
         // A hand on the board's high end, over it, with the hand on that side; the other on his knee.
@@ -2108,6 +2126,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (gesture.reach > 0.001) {
         const poke = calmStory ? 0 : Math.sin(clock * 2.3) * 0.12;
         one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9 * gesture.reach);
+      }
+      if (chapter.id === 'myren' && one.glad === 'mamma') {
+        if (one.braidTip) one.braidTip.getWorldPosition(rootReach);
+        else one.rig.group.localToWorld(rootReach.set(-.18, one.rig.height * .55, .28));
+        climbs.attachBraid(rootReach);
+        one.braidHeld = (one.braidHeld ?? 0) + ((flags.has('braid') ? 1 : 0) - (one.braidHeld ?? 0)) * ease(6, dt);
+        if (one.braidHeld > .001) {
+          one.rig.reach(1, rootReach, one.braidHeld);
+          one.rig.hold?.(1, { kind: 'power', size: .055 }, one.braidHeld);
+        }
       }
       one.paddle?.update(one.rig, clock, calmStory);
       if (gesture.pull > 0.001) {
@@ -2396,6 +2424,8 @@ interface Relative {
   lamp?: Mesh | undefined;
   rig: Rig;
   neck?: Object3D;
+  braidTip?: Object3D;
+  braidHeld?: number;
   who: Role;
   motion: ReturnType<typeof createFamilyMotion>;
   /** Where they stand, along the course. */
@@ -3010,7 +3040,8 @@ function buildClimbs(chapter: ChapterData) {
       }
     }
   }
-  return { group, update };
+  const attachBraid = (tip: Vector3) => { for (const b of braids) b.braid.attach(tip); };
+  return { group, update, attachBraid };
 }
 
 /** Dark trunks behind the course: something for the eye to measure Elof's speed against. */

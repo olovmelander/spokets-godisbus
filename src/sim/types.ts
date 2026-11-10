@@ -100,6 +100,8 @@ export interface Mover {
   needs?: string;
   /** It goes to its last stop by itself when this flag is set, and Använd never moves it: a helper's hands lift it. */
   on?: string;
+  /** Seconds for one move; a helper may need time to bend, lift and set it down. */
+  seconds?: number;
   /** What it is, for the picture. Left out: a plain box. */
   look?: MoverLook;
   /** For Dra: where the ring sits, from the middle of its bottom. */

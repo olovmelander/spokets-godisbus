@@ -974,7 +974,7 @@ export class Sim {
         mover.t = 0;
       }
       if (mover.t >= 1) continue;
-      mover.t = Math.min(1, mover.t + STEP / MOVE_TIME);
+      mover.t = Math.min(1, mover.t + STEP / (mover.def.seconds ?? MOVE_TIME));
       // In place for good: the chapter can build on it.
       if (mover.t >= 1 && mover.stop === last) this.flags.add(`placed:${mover.def.id}`);
       const a = mover.def.stops[mover.from]!;
