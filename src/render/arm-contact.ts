@@ -43,18 +43,21 @@ export function solveArm(shoulder: Vector3, elbow: Vector3, hand: Vector3, targe
  * much of the arm's full length a reach may use: a hand held out to give something keeps a bend at the elbow.
  * The solve takes place above the shoulder, so transforms/scales around the rig do not distort its anatomy.
  */
-export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3D | Vector3): (worldTarget: Vector3, weight?: number, most?: number) => void {
+export interface ElbowGuide { direction: Vector3; weight: number }
+
+export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3D | Vector3): (worldTarget: Vector3, weight?: number, most?: number, elbowGuide?: ElbowGuide) => void {
   const shoulder = new Vector3(), elbow = new Vector3(), wrist = new Vector3(), target = new Vector3();
   const wantedElbow = new Vector3(), wantedHand = new Vector3(), from = new Vector3(), to = new Vector3();
-  const pole = new Vector3(), candidate = new Vector3();
+  const pole = new Vector3(), candidate = new Vector3(), upperBefore = new Quaternion(), lowerBefore = new Quaternion();
   const local = new Matrix4(), world = new Matrix4(), lowerLocal = new Matrix4(), turn = new Quaternion();
   const handNode = hand instanceof Object3D ? hand : null;
   const tip = handNode ? null : (hand as Vector3).clone();
   const handPosition = (out: Vector3) => handNode ? handNode.getWorldPosition(out) : lower.localToWorld(out.copy(tip!));
-  return (worldTarget, weight = 1, most = 1) => {
+  return (worldTarget, weight = 1, most = 1, elbowGuide) => {
     weight = Math.max(0, Math.min(1, weight));
     if (weight === 0) return;
     upper.updateWorldMatrix(true, true);
+    if (elbowGuide) { upperBefore.copy(upper.quaternion); lowerBefore.copy(lower.quaternion); }
     if (upper.parent) world.copy(upper.parent.matrixWorld); else world.identity();
     local.copy(world).invert();
     upper.getWorldPosition(shoulder).applyMatrix4(local);
@@ -74,6 +77,14 @@ export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3
     // collapse it when the target crossed that pole, then put the elbow on the opposite side in the next frame.
     to.copy(target).sub(shoulder).normalize();
     pole.applyQuaternion(turn.setFromUnitVectors(from, to));
+    if (elbowGuide) {
+      // A practical support can keep its elbow on its own side of the torso while its hand stays on the surface.
+      candidate.copy(elbowGuide.direction).transformDirection(local);
+      candidate.addScaledVector(to, -candidate.dot(to));
+      if (candidate.lengthSq() > 1e-8) {
+        pole.copy(candidate).normalize();
+      }
+    }
     solveArm(shoulder, elbow, wrist, target, wantedElbow, wantedHand, pole);
     from.copy(elbow).sub(shoulder).normalize(); to.copy(wantedElbow).sub(shoulder).normalize();
     upper.quaternion.premultiply(turn.setFromUnitVectors(from, to));
@@ -82,18 +93,59 @@ export function createArmContact(upper: Object3D, lower: Object3D, hand: Object3
     handPosition(from).applyMatrix4(lowerLocal).sub(lower.position).normalize();
     to.copy(wantedHand).applyMatrix4(world).applyMatrix4(lowerLocal).sub(lower.position).normalize();
     lower.quaternion.premultiply(turn.setFromUnitVectors(from, to));
-    lower.updateWorldMatrix(false, true);
+    if (elbowGuide) {
+      // Blend into the supported arm in joint space. Blending opposing elbow planes can flip around the reach axis
+      // halfway through acquisition even though both end poses are sound.
+      const share = Math.max(0, Math.min(1, elbowGuide.weight));
+      upper.quaternion.copy(upperBefore.slerp(upper.quaternion, share));
+      lower.quaternion.copy(lowerBefore.slerp(lower.quaternion, share));
+      upper.updateWorldMatrix(false, true);
+    } else lower.updateWorldMatrix(false, true);
   };
 }
 
 /** Aim a rigid palm after reaching its wrist; lengths stay in the actual hand bone's local units. */
-export function createHandGrip(lower: Object3D, hand: Object3D, reach: (target: Vector3) => void,
-  fingerAxis = new Vector3(0, 1, 0), palmFraction = .2): (target: Vector3, direction: Vector3, out: Vector3, weight?: number) => Vector3 {
+export function createHandGrip(lower: Object3D, hand: Object3D, reach: (target: Vector3, weight?: number, most?: number, guide?: ElbowGuide) => void,
+  fingerAxis = new Vector3(0, 1, 0), palmFraction = .2, support?: { along: Vector3; normal: Vector3; at: Vector3 }):
+  (target: Vector3, direction: Vector3, out: Vector3, weight?: number, normal?: Vector3, elbowDirection?: Vector3) => Vector3 {
   const axis = fingerAxis.clone().normalize(), offset = new Vector3(), wrist = new Vector3();
   const palm = new Vector3(), from = new Vector3(), direction = new Vector3(), target = new Vector3();
   const inverse = new Matrix4(), turn = new Quaternion(), blend = new Quaternion();
-  return (worldTarget, worldDirection, out, weight = 1) => {
+  const normal = new Vector3(), across = new Vector3(), frame = new Matrix4(), localFrame = new Quaternion();
+  const supportAlong = support?.along.clone().normalize() ?? axis;
+  const supportNormal = support?.normal.clone() ?? new Vector3(0, 0, 1);
+  supportNormal.addScaledVector(supportAlong, -supportNormal.dot(supportAlong)).normalize();
+  across.crossVectors(supportAlong, supportNormal).normalize();
+  localFrame.setFromRotationMatrix(frame.makeBasis(across, supportAlong, supportNormal)).invert();
+  const current = new Quaternion(), desired = new Quaternion(), parent = new Quaternion(), scaled = new Vector3();
+  const guide: ElbowGuide = { direction: new Vector3(), weight: 0 };
+  return (worldTarget, worldDirection, out, weight = 1, worldNormal, elbowDirection) => {
     hand.updateWorldMatrix(true, false);
+    if (worldNormal) {
+      if (weight <= 0) {
+        if (support) return hand.localToWorld(out.copy(support.at));
+        const length = hand.worldToLocal(lower.getWorldPosition(wrist)).length() * palmFraction;
+        return hand.localToWorld(out.copy(axis).multiplyScalar(length));
+      }
+      // A supporting palm needs two directions: fingers along the surface, palm into it. Aligning only the fingers
+      // leaves the hand's roll arbitrary, and can put a vertical hand beside a knee instead of on its top.
+      direction.copy(worldDirection).normalize();
+      normal.copy(worldNormal).addScaledVector(direction, -worldNormal.dot(direction)).normalize();
+      across.crossVectors(direction, normal).normalize();
+      desired.setFromRotationMatrix(frame.makeBasis(across, direction, normal)).multiply(localFrame);
+      hand.getWorldQuaternion(current); current.slerp(desired, Math.max(0, Math.min(1, weight)));
+      const length = hand.worldToLocal(lower.getWorldPosition(wrist)).length() * palmFraction;
+      if (support) offset.copy(support.at); else offset.copy(axis).multiplyScalar(length);
+      hand.localToWorld(palm.copy(offset));
+      hand.getWorldScale(scaled);
+      target.copy(palm).lerp(worldTarget, Math.max(0, Math.min(1, weight)))
+        .sub(from.copy(offset).multiply(scaled).applyQuaternion(current));
+      if (elbowDirection) { guide.direction.copy(elbowDirection); guide.weight = weight; }
+      reach(target, 1, 1, elbowDirection ? guide : undefined);
+      if (hand.parent) { hand.parent.updateWorldMatrix(true, false); hand.parent.getWorldQuaternion(parent); } else parent.identity();
+      hand.quaternion.copy(parent.invert().multiply(current));
+      return hand.localToWorld(out.copy(offset));
+    }
     const length = hand.worldToLocal(lower.getWorldPosition(wrist)).length() * palmFraction;
     offset.copy(axis).multiplyScalar(length);
     hand.localToWorld(palm.copy(offset));

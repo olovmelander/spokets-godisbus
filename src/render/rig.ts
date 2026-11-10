@@ -1,5 +1,6 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
+import { kneeSupport } from './knee-support';
 import { createArmContact, createHandGrip, createHandHold } from './arm-contact';
 import { faceOf } from './face';
 import { copyShape, fingersOf, mixShape, REST, type Grip } from './fingers';
@@ -206,6 +207,8 @@ export interface Rig {
   arm?(side: 0 | 1, shoulder: Vector3, elbow: Vector3, wrist: Vector3): void;
   /** Where a knee is in the world after the last pose (the joint): the body's left is 0. A hand rests on it, kneeling. */
   knee?(side: 0 | 1, out: Vector3): Vector3;
+  /** Visible top of the posed knee, for a supporting palm. */
+  kneeSurface?(side: 0 | 1, out: Vector3): Vector3;
   /** The lips in world space, following the head's nod and turn. */
   mouth(out: Vector3): Vector3;
   /**
@@ -213,8 +216,9 @@ export interface Rig {
    * length it may use (1, all of it, as pointing does; less keeps the elbow bent, as holding something out does).
    */
   reach(side: 0 | 1, target: Vector3, weight?: number, most?: number): void;
-  /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach. */
-  grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number): Vector3;
+  /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach.
+   * A supporting palm can also give its surface normal and an outward elbow direction, blended by the same weight. */
+  grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number, palmNormal?: Vector3, elbowDirection?: Vector3): Vector3;
   /**
    * Closes a hand's fingers round what it holds (./fingers.ts): `weight` of the way from how they are (resting, after a
    * pose) to the grip. A body without fingers keeps its hands as they are.
@@ -589,8 +593,8 @@ export function createRehearsalRig(who: Role): Rig {
       contacts[side].solve(target, weight, most);
       contactParts(side);
     },
-    grip(side, target, direction, out, weight = 1) {
-      contacts[side].grip(target, direction, out, weight);
+    grip(side, target, direction, out, weight = 1, palmNormal, elbowDirection) {
+      contacts[side].grip(target, direction, out, weight, palmNormal, elbowDirection);
       contactParts(side);
       return out;
     },
@@ -881,6 +885,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const legs = measureLegs(group, orientation, bones.legL?.node, bones.kneeL?.node, feet[0], supports[0]?.points, bones.legR?.node, height, model);
   // Kneeling, the body stands on the front of its shin just under the knee: its own knee's thickness below the joint.
   const kneeThick = (legs.knee ?? KNEELING) * height;
+  const kneeSurfaces = [bones.kneeL, bones.kneeR].map((bone, side) => bone ? kneeSupport(model, bone.node, side === 0 ? 'l' : 'r', height) : null);
   // Without a hand bone, approximate the forearm by the upper arm, measured in the lower bone's own units.
   // Keeping a world-space length here would shorten the reach if a scene later enlarged the whole figure.
   const fore = [bones.armL, bones.armR].map((upper, i) => {
@@ -903,7 +908,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
   };
   const grips = handBones.map((hand, i) => {
     const lower = i === 0 ? bones.elbowL : bones.elbowR;
-    return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!) : null;
+    const fingers = fingered[i];
+    return hand && lower && contacts[i] ? createHandGrip(lower.node, hand, contacts[i]!, undefined, undefined, fingers ? {
+      along: fingers.layout.along, normal: fingers.layout.palmward, at: fingers.grip('flat', 0).socket.at,
+    } : undefined) : null;
   });
   const sway = createSway(), soft = softParts(model);
   // How high the hip joints stand over the soles: how far a leg leans in under shifted hips.
@@ -983,8 +991,8 @@ export function createModelRig(model: Object3D, height: number): Rig {
       this.hold!(side, grip, k * k * (3 - 2 * k) * near * near * (3 - 2 * near));
       return out;
     },
-    grip(side, target, direction, out, weight = 1) {
-      if (grips[side]) return grips[side]!(target, direction, out, weight);
+    grip(side, target, direction, out, weight = 1, palmNormal, elbowDirection) {
+      if (grips[side]) return grips[side]!(target, direction, out, weight, palmNormal, elbowDirection);
       this.reach(side, target, weight);
       return this.hand(side, out);
     },
@@ -1081,6 +1089,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
       else { group.localToWorld(shoulder.set((side === 0 ? 1 : -1) * height * .13, height * .75, 0)); elbow.copy(shoulder); }
       this.hand(side, wrist);
     },
+    kneeSurface(side, out) { return kneeSurfaces[side]?.(out) ?? this.knee!(side, out).addScaledVector(Y, height * .025); },
     knee(side, out) {
       const knee = side === 0 ? bones.kneeL : bones.kneeR;
       return knee ? knee.node.getWorldPosition(out) : group.localToWorld(out.set(0, height * 0.17, 0));
