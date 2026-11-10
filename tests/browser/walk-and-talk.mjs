@@ -91,7 +91,7 @@ async function touchControls(page) {
       await cdp.send('Input.dispatchTouchEvent', { type:'touchStart', touchPoints:[{ ...stick, x:origin.x }] });
       await cdp.send('Input.dispatchTouchEvent', { type:'touchMove', touchPoints:[stick] });
     },
-    async hop(on) { await cdp.send('Input.dispatchTouchEvent', { type:on ? 'touchStart' : 'touchEnd', touchPoints:on ? [stick, jump] : [stick] }); },
+    async hop(on) { await cdp.send('Input.dispatchTouchEvent', { type:on ? 'touchStart' : 'touchEnd', touchPoints:on ? [jump] : [] }); },
     async release() { await cdp.send('Input.dispatchTouchEvent', { type:'touchEnd', touchPoints:[] }); },
     async close() { await cdp.detach(); },
   };
@@ -105,16 +105,18 @@ try {
     if (controls) await controls.right(); else await page.keyboard.down('ArrowRight');
     await until(page, async () => (await text(page)) === 'Olympia! Hela planen är mörk.', 'first ordinary line', 5);
     const first = await state(page), words = await text(page);
-    if (controls) await controls.hop(true); else await page.keyboard.down('Space');
-    await advance(page, .2);
-    const jumped = await state(page);
-    check(`${label}: ${touch ? 'touch' : 'keyboard'} jump works while the full line stays visible`, jumped.y > first.y + .15 && await text(page) === words);
-    if (controls) await controls.hop(false); else await page.keyboard.up('Space');
     await until(page, s => s.x >= 13.2, 'walk through queued route dialogue', 4);
     const queued = await state(page);
     check(`${label}: held movement crosses all three hints without a backlog stop`, queued.steps > first.steps && queued.said.includes('ol:klonk') && queued.said.includes('ol:lights') && await text(page) === words && !queued.held && !queued.storyReading);
     check(`${label}: ordinary dialogue does not cover play with a Continue control`, await page.locator('#sceneReading').isHidden());
     if (controls) await controls.release(); else await page.keyboard.up('ArrowRight');
+    // Separate complete touch gestures: ending one contact in a CDP multi-touch
+    // gesture can also cancel the captured joystick pointer in Chromium.
+    if (controls) await controls.hop(true); else await page.keyboard.down('Space');
+    await advance(page, .2);
+    const jumped = await state(page);
+    check(`${label}: ${touch ? 'touch' : 'keyboard'} jump works while the full line stays visible`, jumped.y > queued.y + .15 && await text(page) === words);
+    if (controls) await controls.hop(false); else await page.keyboard.up('Space');
     await page.locator('#pauseBtn').click({ force:true });
     await advance(page, .05);
     const paused = await state(page), pausedWords = await text(page);
