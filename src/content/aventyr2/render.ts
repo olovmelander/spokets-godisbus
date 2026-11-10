@@ -19,7 +19,7 @@ import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
 import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
-import { GRAVITY } from '../../sim/constants';
+import { GRAVITY, STEP } from '../../sim/constants';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { stepLength } from '../../render/acting';
 import { paintedWood } from '../../render/painted-wood';
@@ -984,7 +984,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         // A saved non-beat cue can precede its still-unread line. Ordinary past flights stay gone; only this
         // active, unfinished picture may reconstruct its own flight, after the camera has reached its cue.
         const resume = f.restored && !f.resumed && moment && !flags.has(`scene:${moment.id}`)
-          ? f.reveals.find(one => one.id === moment.id && moment.seconds >= one.at && moment.seconds < one.at + f.def.seconds)
+          // SceneDirector emits cues half a step early; an owned line can hold that exact phase on reload.
+          ? f.reveals.find(one => one.id === moment.id && moment.seconds + STEP / 2 >= one.at && moment.seconds < one.at + f.def.seconds)
           : undefined;
         if (resume && moment) {
           f.resumed = true;

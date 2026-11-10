@@ -3,6 +3,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
 import '../../src/content/aventyr2/render';
 import { PACK } from '../../src/render/extensions';
+import { STEP } from '../../src/sim/constants';
+import { SceneDirector } from '../../src/sim/scene';
+import type { PlayerState } from '../../src/sim/types';
 
 beforeAll(() => {
   const fake: object = new Proxy(function () {}, { get: (_, key) => key === Symbol.toPrimitive ? () => 0 : fake, apply: () => fake, set: () => true });
@@ -147,6 +150,25 @@ describe('restoring the actual Älven reveal without replaying old flights', () 
     update(.05, .81, true);
     expect(figure.visible).toBe(false);
     expect(historical.visible).toBe(false);
+  });
+
+  it('restores at the actual director cue phase, including its half-step emission boundary', () => {
+    const { flags, figure, halo, update } = saved();
+    const scene = AVENTYR2.find(chapter => chapter.id === 'alven')!.scenes!.find(scene => scene.id === 'al:little')!;
+    const cue = scene.cues![0]!;
+    flags.add('al:owl');
+    const player = { x: 152, y: 3, mode: 'ride', grounded: false } as PlayerState;
+    const director = new SceneDirector([scene], player, flags);
+    while ((director.frame?.seconds ?? 0) + STEP / 2 < cue.at) director.tick(player, flags, [], false, true);
+    const phase = director.frame!.seconds;
+    expect(phase + STEP / 2).toBeGreaterThanOrEqual(cue.at);
+    update(.05, phase, true);
+    expect(figure.visible).toBe(true);
+    expect(halo.material.opacity).toBeGreaterThan(.3);
+    const x = figure.position.x;
+    for (let i = 0; i < 100; i++) update(.05, phase, true);
+    expect(figure.position.x).toBe(x);
+    expect(halo.material.opacity).toBeGreaterThan(.3);
   });
 
   it('leaves a completed reveal hidden, even if an old caller supplies its scene frame', () => {
