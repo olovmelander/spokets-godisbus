@@ -12,7 +12,7 @@ import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
 import { holdCarving } from './carrying';
-import { createNorrskenRescue } from './norrsken-rescue';
+import { createNorrskenRescue, rescueCarryPose } from './norrsken-rescue';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -1617,9 +1617,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const elofHands = (scripted?.act && !HANDS_HANG.includes(scripted.act)) || curr.hook || lanternHeld ? NO_HANDS : giftHeld ? FREE_WITH_LAMP[GOLD_HAND]! : BOTH_HANDS;
     elofTalker.update(talk, elofThere ? lookAt(elof.group, faceAt, elofThere, heard, true) : null, lifeDt, calmStory, elofHands);
     elofTalker.pose(Object.assign(spokenPose, playerPose));
-    if (rescue && flags.has('placed:tragubbe') && !flags.has('taste') && x > 14) {
+    const rescueGrip = rescue?.weight(flags, sceneFrame?.id === 'aterfunna' ? sceneFrame.seconds : undefined, calmStory) ?? 0;
+    if (rescue && flags.has('placed:tragubbe') && rescueGrip > 0 && x > 14) {
       // Lean into the load with the carrying shoulder behind him, instead of jogging empty-handed.
-      spokenPose.lean -= .13; spokenPose.twist -= .12; spokenPose.armR = .22; spokenPose.elbowR = .8;
+      rescueCarryPose(spokenPose, rescueGrip);
     }
     if (rescue && sceneFrame?.id === 'uppdragen') spokenPose.lean -= .16;
     playerBody.pose(spokenPose);
@@ -2297,7 +2298,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         sceneFrame?.id === 'snoret' ? clamp((sceneFrame.seconds - .4) / 1.7, 0, 1) : 1,
         flags.has('nr:rope-ready') && !flags.has('placed:tragubbe'), clock, dt, calmStory,
         sceneFrame?.id === 'uppdragen' ? smooth(clamp((sceneFrame.seconds - .5) / .65, 0, 1)) * (1 - smooth(clamp((sceneFrame.seconds - 1.9) / .6, 0, 1))) : 0,
-        sceneFrame?.id === 'snoret');
+        sceneFrame?.id === 'snoret', rescueGrip);
       if (carving && flags.has('taste') && !homeJourney) {
         carving.position.set(26.05, 0, .2); carving.rotation.z = 0;
         ghostPlace.position.set(27.8, 0, .1); ghostPlace.visible = true;
