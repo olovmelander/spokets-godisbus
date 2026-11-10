@@ -185,8 +185,11 @@ export interface SceneStage {
   words?: readonly { at: number; seconds: number; kind: 'caption' | 'title'; text: string }[];
   /** The picture fades from or to black: how dark it is from each moment, eased over `move` seconds. */
   fade?: readonly { at: number; to: number; move?: number }[];
-  /** Elof holds a star while he shows it and eats it: the shrinking, in either adventure. */
-  star?: boolean;
+  /**
+   * Elof holds a star while he shows it and eats it: the shrinking, in either adventure. 'gold': the golden geléhallon
+   * instead, that makes him big again (Stormens öga).
+   */
+  star?: boolean | 'gold';
 }
 
 /** One moment of Elof's part in a held scene. His place in the simulation never changes with it. */

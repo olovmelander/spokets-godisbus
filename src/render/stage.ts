@@ -12,6 +12,7 @@ import { createFootwork, type Footwork } from './footwork';
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
+import { goldSweet } from './gold-sweet';
 import type { Grip } from './fingers';
 
 /**
@@ -518,7 +519,7 @@ export interface Stage {
   /** One frame: what to do with the ghost, Elof and the camera. `dt` is 0 while the game stands still. */
   update(frame: SceneFrame | null, flags: ReadonlySet<string>, elof: { x: number; y: number }, clock: number, dt: number, calm: boolean): Directions;
   /** Attach the story sweet after Elof's actual body has been posed and placed. */
-  updateElof(rig: Pick<Rig, 'hand' | 'mouth' | 'reach' | 'hold' | 'socket'>, direction: Directions['elof'], height: number, calm: boolean): void;
+  updateElof(rig: Pick<Rig, 'hand' | 'mouth' | 'reach' | 'hold' | 'socket' | 'grasp'>, direction: Directions['elof'], height: number, calm: boolean): void;
   /** Everyone the stage has: for the shadows and the tests. */
   readonly actors: ReadonlyMap<Role, { rig: Rig; visible: () => boolean }>;
 }
@@ -637,8 +638,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   }
   star.add(new Mesh(new SphereGeometry(.13, 8, 6), gold));
   drawnWhile(star, false);
-  if (scenes.some(scene => scene.stage?.star)) group.add(star);
-  let starOn = false;
+  if (scenes.some(scene => scene.stage?.star === true)) group.add(star);
+  // The golden geléhallon, where a scene has him eat that instead (Stormens öga).
+  const raspberry = goldSweet();
+  drawnWhile(raspberry, false);
+  if (scenes.some(scene => scene.stage?.star === 'gold')) group.add(raspberry);
+  let starOn: Group | null = null;
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
   const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
   block.name = 'stage-block';
@@ -713,24 +718,36 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   return {
     group,
     updateElof(rig, direction, height, calm) {
-      const shown = starOn && (direction?.act === 'show' || direction?.act === 'eat');
+      // The golden sweet is in his hands as he looks at it too, held before him (`hands`).
+      const shown = !!starOn && (direction?.act === 'show' || direction?.act === 'eat' || (starOn === raspberry && direction?.act === 'hands'));
       const bite = eatingAt(direction?.actT ?? 0, calm);
       const size = shown ? direction?.act === 'eat' ? bite.sweet : 1 : 0;
-      drawnWhile(star, size > 0);
-      if (!shown) return;
+      drawnWhile(star, size > 0 && starOn === star);
+      drawnWhile(raspberry, size > 0 && starOn === raspberry);
+      if (!shown || !starOn) return;
       const unit = height / 3;
+      // The star is made for a boy three times his small size; the golden sweet is as big as it lay on its paper by him small.
+      const sweet = starOn === raspberry;
       // Between his thumb and his finger (./fingers.ts), or at the hand of a body without them.
-      const pinched = { kind: 'pinch' as const, size: .08 * unit };
-      const at = () => { rig.hold?.(1, pinched); return rig.socket ? rig.socket(1, pinched, hand) : rig.hand(1, hand); };
+      const pinched = { kind: 'pinch' as const, size: sweet ? .05 * height : .08 * unit };
+      const at = () => { rig.hold?.(1, pinched); return rig.socket ? rig.socket(1, pinched, hand, heldAxis) : rig.hand(1, hand); };
       at();
+      const aboveFingers = sweet ? .07 * height * size : 0;
       if (direction?.act === 'eat') {
         rig.mouth(heldPoint); heldPoint.z += .045 * unit;
+        // The candy's centre meets the lips while its base stays between the fingertips. Reaching the wrist
+        // here instead left the private model's grip socket above his eyes.
+        heldPoint.y -= aboveFingers;
         hand.lerp(heldPoint, bite.mouth);
-        rig.reach(1, hand); at();
+        if (sweet && rig.grasp && rig.socket) rig.grasp(1, pinched, wristTarget.copy(hand), heldAxis, hand);
+        else { rig.reach(1, hand); at(); }
       }
-      star.position.copy(hand);
-      star.scale.setScalar(size * unit);
-      star.rotation.set(0, 0, -.12);
+      starOn.position.copy(hand);
+      // The sweet sits on his fingertips, not in them.
+      starOn.position.y += aboveFingers;
+      starOn.scale.setScalar(size * (sweet ? height : unit));
+      starOn.rotation.set(0, 0, -.12);
+      if (sweet) (starOn.getObjectByName('glow') as Mesh).scale.setScalar(calm ? 1 : 1 + .12 * Math.sin(lastT * 5.3));
     },
     birds: jayFlies ? [jay.getObjectByName('bird')!] : [],
     // Read each time: a model from Blender may have taken a rehearsal figure's place since.
@@ -756,7 +773,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     update(frame, flags, elof, clock, dt, calm) {
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
-      starOn = scene?.stage?.star === true;
+      starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
       const t = frame?.seconds ?? 0;
       const ghostKeys = scene?.stage?.actors?.ghost;
       const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;

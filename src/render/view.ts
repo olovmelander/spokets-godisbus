@@ -65,6 +65,7 @@ import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
 import { createSharedSweets } from './shared-sweets';
 import { createRescuedFigures } from './rescued-figures';
+import { goldSweet } from './gold-sweet';
 import { createHomeTrail } from './home-trail';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
@@ -995,6 +996,14 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     carriedGold.visible = false;
     scene.add(carriedGold);
   }
+  // The old trägubbe's golden geléhallon in Stormens öga ("Ett geléhallon i guldpapper!"): held up before him from when he
+  // takes it until he tastes it, when the scene `stor` has it in his hand (./stage.ts).
+  const carriedGift = chapter.id === 'stormoga' ? goldSweet() : null;
+  if (carriedGift) {
+    carriedGift.name = 'carried-gift';
+    drawnWhile(carriedGift, false);
+    scene.add(carriedGift);
+  }
   // Moa's leaf drawing, found under the shaving bridge: a sheet of paper with a green leaf drawn on it in crayon.
   const carriedDrawing = new Group();
   carriedDrawing.name = 'carried-drawing';
@@ -1106,7 +1115,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // What the water mirrors as it is (./water.ts): him, what he rides and carries, the ghost, the family, the candy
       // and what goes over the water; tagged here, so that a model which arrived late is tagged too.
       water.mirrorNear(scene, [
-        elof.group, ghostPlace, trail.group, stage.group, helper.group, afloat.group, carriedBerry, carriedGold, carriedDrawing, carriedCap,
+        elof.group, ghostPlace, trail.group, stage.group, helper.group, afloat.group, carriedBerry, carriedGold, carriedDrawing, carriedCap, ...(carriedGift ? [carriedGift] : []),
         ...carriers.map((carrier) => carrier.prop), ...family.flatMap((one) => [one.rig.group, one.paddle?.mesh]), ...moversOnWater,
       ]);
       scene.traverse((object) => {
@@ -1201,16 +1210,19 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Rings where he touches the water (./water.ts): his steps as he wades, a bigger one as he lands in it or falls
     // in, and a wake behind what he rides on it.
     const surface = water.surfaceAt(x);
+    // A walked ride (Ride.ground): he goes on his own feet, wading where it goes through the water, and is drawn walking.
+    const walkedRide = curr.mode === 'ride' && carriers.some((c) => c.ride.ground && x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5);
     if (surface !== null && dt > 0 && !calmStory) {
-      const feet = curr.standY ?? y;
-      const wading = curr.mode === 'free' && curr.grounded && feet > surface - 0.7 && feet < surface + 0.3;
+      const feet = walkedRide ? y : curr.standY ?? y;
+      const wading = (walkedRide || curr.mode === 'free' && curr.grounded) && feet > surface - 0.7 && feet < surface + 0.3;
       if (wading) {
         rippleWalked += Math.abs(curr.x - prev.x);
-        if (rippleWalked > 0.55) { rippleWalked = 0; water.ripple(x, 0.05, 0.5); }
-        if (!prev.grounded) water.ripple(x, 0.05, 1.1);
+        // A boy grown big wades with bigger steps, and bigger rings.
+        if (rippleWalked > 0.55 * Math.max(1, tall * 0.6)) { rippleWalked = 0; water.ripple(x, 0.05, 0.5 * Math.max(1, tall * 0.6)); }
+        if (!prev.grounded && !walkedRide) water.ripple(x, 0.05, 1.1);
       } else rippleWalked = 0;
       if (curr.mode === 'bubble' && prev.mode !== 'bubble' && y < surface + 0.6) water.ripple(x, 0.05, 1.4);
-      const afloatHere = curr.mode === 'ride' && Math.abs(y - surface) < 0.8 && Math.abs(curr.x - prev.x) > 1e-4;
+      const afloatHere = curr.mode === 'ride' && !walkedRide && Math.abs(y - surface) < 0.8 && Math.abs(curr.x - prev.x) > 1e-4;
       rippleWake = afloatHere ? rippleWake + dt : 0.3;
       if (rippleWake >= 0.3) {
         rippleWake = 0;
@@ -1360,8 +1372,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     hangWeight = calmStory ? (curr.hook ? 1 : 0) : hangWeight + ((curr.hook ? 1 : 0) - hangWeight) * ease(curr.hook ? 18 : 9, dt);
     const hang = hangLast * hangWeight;
 
-    // The simulation says where to look; the view only smooths it.
-    const want = { ...cameraIntent(curr, chapter.cameras) };
+    // The simulation says where to look; the view only smooths it. Walking a ride he is looked at as he walks, at the
+    // height of the way's two ends, not dipping into the shallows with his feet.
+    const walked = walkedRide ? carriers.find((c) => c.ride.ground && x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5)!.ride : null;
+    const level = walked ? lerp(walked.from.y, walked.to.y, clamp((x - walked.from.x) / (walked.to.x - walked.from.x), 0, 1)) : 0;
+    const want = { ...cameraIntent(walked ? { ...curr, y: level, mode: 'free', grounded: true, groundY: level, standY: level } : curr, chapter.cameras) };
     codaFor = coda && atGoal ? Math.min(CODA_EASE, codaFor + dt) : 0;
     if (codaFor > 0) {
       const out = codaFor / CODA_EASE;
@@ -1472,7 +1487,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     // The visual upgrade's systems, after the dressing, so that this frame's wind is set (./lift/).
     for (const lift of lifts) {
-      lift.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', vx: curr.vx, vy: curr.vy, facing: curr.facing, grounded: curr.grounded, mode: curr.mode, darkness });
+      lift.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride' && !walkedRide, vx: curr.vx, vy: curr.vy, facing: curr.facing, grounded: curr.grounded, mode: curr.mode, darkness });
     }
 
     rimLight.setStrength(scene.backgroundIntensity * (1 - darkness));
@@ -1652,6 +1667,23 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (playerBody.socket) playerBody.socket(0, BERRY, carriedGold.position);
       else playerBody.hand(0, carriedGold.position);
       carriedGold.scale.setScalar(tall * (1 - smooth((bite - 0.32) / 0.12)));
+    }
+    // The old one's golden sweet in Stormens öga, held up before him in his left hand from when he takes it until he tastes
+    // it: it turns in the moonlight and its glow breathes.
+    const gift = !!carriedGift && flags.has('gift') && !flags.has('taste') && !curr.hook && !!playerBody && elof.group.visible;
+    if (carriedGift) drawnWhile(carriedGift, gift);
+    if (gift && carriedGift && playerBody) {
+      elof.group.updateWorldMatrix(true, false);
+      berryHand.set(0.34, 0.7, 0.2).applyMatrix4(elof.group.matrixWorld);
+      playerBody.reach(0, berryHand, calmStory ? 0.75 : 0.7 + 0.05 * Math.sin(clock * 2.1));
+      playerBody.hold?.(0, BERRY);
+      if (playerBody.socket) playerBody.socket(0, BERRY, carriedGift.position);
+      else playerBody.hand(0, carriedGift.position);
+      // On his fingertips, not in them.
+      carriedGift.position.y += 0.07 * tall;
+      carriedGift.scale.setScalar(tall);
+      carriedGift.rotation.y = calmStory ? 0 : clock * 0.9;
+      carriedGift.getObjectByName('glow')!.scale.setScalar(calmStory ? 1 : 1 + 0.12 * Math.sin(clock * 5.3));
     }
     // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
     // hand, lighting the floor ahead; once given, Pappa has it in his left (Stormkvällen).

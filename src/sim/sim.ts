@@ -22,7 +22,7 @@ import {
   LACE_REACH, LACE_REEL, SWING_DAMP, SWING_FLIGHT, SWING_HOLD_MAX, SWING_MAX, SWING_MIN_LENGTH, SWING_PUMP, SWING_PUMP_HELP,
 } from './constants';
 import type {
-  ChapterData, Checkpoint, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
+  Beat, ChapterData, Checkpoint, Climb, GhostPerch, HelpState, Hook, Jump, Mode, Mover, PlayerState, Ride, SimOptions, SimStart, Spot, StepInput, Vec, Verb,
 } from './types';
 
 // 1 EL is the length unit. This scales Box2D's tolerances to a hero who is one unit tall (plan §6.4).
@@ -134,6 +134,16 @@ export interface DripState {
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** The height of a walked ride's ground at x, point to point (Ride.ground). */
+export function groundAlong(ground: readonly Vec[], x: number): number {
+  if (x <= ground[0]!.x) return ground[0]!.y;
+  for (let i = 1; i < ground.length; i++) {
+    const a = ground[i - 1]!, b = ground[i]!;
+    if (x <= b.x) return b.x > a.x ? mix(a.y, b.y, (x - a.x) / (b.x - a.x)) : b.y;
+  }
+  return ground[ground.length - 1]!.y;
+}
 
 /**
  * The pure simulation: no three, no DOM, no clock. One call to step() is 1/120 s.

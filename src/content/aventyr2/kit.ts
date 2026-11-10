@@ -60,6 +60,23 @@ export function elderWalk(from: number, to: number, ground: (x: number) => numbe
 /** Candy all along a ride, at these shares of the way. */
 export const alongAll = (ride: Arc, at: readonly number[]): Candy[] => at.map((t) => along(ride, t));
 
+/** A walked ride (Ride.ground): eased along, his feet on its ground, point to point. */
+export interface Walk { from: Vec; to: Vec; ground: readonly Vec[] }
+
+/** Where the feet are on a walked ride's ground at x. */
+export function walkedHeight(walk: Walk, x: number): number {
+  const at = walk.ground.findIndex((point) => point.x >= x);
+  if (at <= 0) return at === 0 ? walk.ground[0]!.y : walk.ground[walk.ground.length - 1]!.y;
+  const a = walk.ground[at - 1]!, b = walk.ground[at]!;
+  return a.y + (b.y - a.y) * (x - a.x) / (b.x - a.x);
+}
+
+/** Candy all along a walked ride, at these shares of the way, half an EL over where his feet are. */
+export const walkedAll = (walk: Walk, at: readonly number[]): Candy[] => at.map((t) => {
+  const x = walk.from.x + (walk.to.x - walk.from.x) * t * t * (3 - 2 * t);
+  return { x: round(x, 1), y: round(walkedHeight(walk, x) + 0.5, 1) };
+});
+
 /** A candy in the arc over a hop from one edge to a landing. */
 export const hopCandy = (from: Vec, to: Vec, lift = 1.1): Candy => ({ x: round((from.x + to.x) / 2, 1), y: round(Math.max(from.y, to.y) + lift) });
 
