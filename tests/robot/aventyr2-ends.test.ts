@@ -154,13 +154,29 @@ describe('Äventyr 2: Stormens öga', () => {
 });
 
 describe('Äventyr 2: Morgonen efter', () => {
+  it('is the room of the evening of the storm: the shelf, the window by it, the table and its chairs where they stood', () => {
+    // Olov, 9 November 2026: "Hyllan med trägubbarna har bytt plats i huset. Den ska stå där den stod i Stormkvällen."
+    expect(morgonen.shelf).toEqual(stormkvall.shelf);
+    expect(morgonen.house!.windows).toEqual(expect.arrayContaining([...stormkvall.house!.windows]));
+    expect(morgonen.furniture).toEqual(stormkvall.furniture);
+    // The new latch is on the window the storm blew open, by the shelf.
+    expect(morgonen.decor!.find((thing) => thing.look === 'latch')!.at.x).toBe(stormkvall.house!.opens);
+  });
+
+  it('ends in a scene of its own, at the door after the cup of cocoa, and only then', () => {
+    expect(endsInScene(morgonen)).toBe(true);
+    const last = morgonen.scenes!.find((scene) => scene.cues?.some((cue) => cue.flag === morgonen.goalNeeds))!;
+    expect(last.needs).toBe('beat:moAll');
+    expect(morgonen.beats!.find((beat) => beat.id === 'moAll')!.needs).toBe('beat:moAnswer');
+  });
+
   it('puts both figures back, turns the latch, names the little one Fjun and ends on a cup of cocoa', () => {
     const result = playThrough(60, morgonen, {}, 300);
     expect(result.goal).toBe(true);
     expect(result.flags).toEqual(expect.arrayContaining(['shelf:old', 'shelf:small', 'latch', 'beat:moName', 'cocoa']));
     const order = ['moOld', 'moSmall', 'moLatched', 'moFluff', 'moName', 'moNice', 'moWelcome', 'moKnew', 'moAnswer', 'moAll'];
     expect(result.said.filter((id) => order.includes(id))).toEqual(order);
-    expect(morgonen.decor).toContainEqual(expect.objectContaining({ look: 'tiny-cap', word: 'worn', after: 'shelf:small' }));
+    expect(morgonen.decor).toContainEqual(expect.objectContaining({ look: 'tiny-cap', word: 'home', after: 'shelf:small' }));
   });
 
   it('does not end before the cocoa: walking past everything leaves him at the end of the room', () => {

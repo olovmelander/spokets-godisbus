@@ -117,7 +117,7 @@ export const prolog: ChapterData = {
   ],
   beats: [
     { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
-    { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', priority: true },
+    { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood' },
     { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
     // Their promises, one from each as he passes them on the deck.
     { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou', read: true },

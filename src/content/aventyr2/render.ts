@@ -442,7 +442,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   }
   const storm = chapter.storm;
   const dim = DIM[chapter.id];
-  if (!storm && dim === undefined) return null;
+  // Out of the storm, the morning after, there is none of it to draw; but the pack's looks there still follow the story
+  // (the new latch hooked, ../chapters/morgonen.ts).
+  if (!storm && dim === undefined) {
+    return chapter.id === 'morgonen' ? { update({ x, flags, still }: ExtraFrame) { elof.x = x; elof.flags = flags; elof.still = still; } } : null;
+  }
   const group = new Group();
   group.name = 'storm';
   scene.add(group);
@@ -1819,13 +1823,15 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // Its gladness starts when it has its cap back, from the ground, and grows in over a moment: no hop is caught
       // halfway up, and the trembling fades into the sway.
       let gladFor = 0;
+      // Home on the shelf the morning after (`home`), it sways happily with both feet planted on the shelf.
+      const home = spot.word === 'home';
       return standing(spot, figure, (clock, dt) => {
-        const glad = elof.flags?.has('scene:motet') ?? false;
+        const glad = home || (elof.flags?.has('scene:motet') ?? false);
         gladFor = glad ? gladFor + dt : 0;
         const k = smooth(gladFor / 0.4);
         const tremble = Math.sin(clock * 5.3) * 0.03 + Math.sin(clock * 8.1 + 1) * 0.012;
         figure.rotation.z = tremble * (1 - k) + Math.sin(gladFor * 1.7) * 0.06 * k;
-        figure.position.y = glad ? gladHop(gladFor) * k : 0;
+        figure.position.y = glad && !home ? gladHop(gladFor) * k : 0;
       }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
     },
     pumpkin: (spot) => {
@@ -1914,8 +1920,12 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     cocoa: (spot) => {
       // Sunday's cup of hot chocolate ("Varm choklad efter stormen"): a white mug with a red heart, brown to the
-      // brim, and its steam curling up.
+      // brim, and its steam curling up. It stands at the front of the breakfast table, poured for him, where he stands to
+      // take it (`breakfast`): taken, it goes from the table.
+      const root = new Group();
+      root.position.set(spot.at.x, spot.at.y + TABLE_TOP, -0.75);
       const group = new Group();
+      root.add(group);
       const mug = new Mesh(new CylinderGeometry(0.17, 0.15, 0.32, 14), solid('#f4f1ea', 0.5));
       mug.position.y = 0.16;
       const cocoa = new Mesh(new CylinderGeometry(0.15, 0.15, 0.01, 14), solid('#5a3420', 0.3));
@@ -1933,14 +1943,23 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         group.add(puff);
         return puff;
       });
-      return standing(spot, group, (clock) => {
-        for (const [i, puff] of puffs.entries()) {
-          const k = (clock * 0.45 + i / 3) % 1;
-          puff.position.set(Math.sin(clock * 1.7 + i * 2.1) * 0.05 * (1 + k), 0.34 + k * 0.5, 0);
-          puff.scale.setScalar(0.6 + k * 1.4);
-        }
-        steam.opacity = 0.2;
-      });
+      let since = 0;
+      return {
+        group: root,
+        update(used, clock, dt) {
+          // Taken, it goes from the table where it stands: smaller, and gone.
+          since = used ? since + dt : 0;
+          const size = Math.max(0, 1 - since / 0.4);
+          group.scale.setScalar(size);
+          drawnWhile(root, size > 0);
+          for (const [i, puff] of puffs.entries()) {
+            const k = (clock * 0.45 + i / 3) % 1;
+            puff.position.set(Math.sin(clock * 1.7 + i * 2.1) * 0.05 * (1 + k), 0.34 + k * 0.5, 0);
+            puff.scale.setScalar(0.6 + k * 1.4);
+          }
+          steam.opacity = 0.2;
+        },
+      };
     },
     flashlight: (spot) => {
       const group = new Group();
@@ -1969,7 +1988,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       const group = new Group();
       const cap = new Mesh(new ConeGeometry(0.16, 0.3, 10), solid('#c23a2e', 0.9));
       // Back on its head it sits straight and goes with its hops; lost, it lies on its side and bobs.
-      const worn = spot.word === 'worn';
+      const home = spot.word === 'home';
+      const worn = home || spot.word === 'worn';
       cap.rotation.z = worn ? 0 : 1.2;
       cap.position.y = worn ? 0.15 : 0.1;
       group.add(cap, ball(0.06, solid('#f4efe4', 0.9), worn ? 0 : 0.17, worn ? 0.32 : 0.2, 0));
@@ -2007,15 +2027,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       };
     },
     casement: (spot) => casement(spot),
-    latch: (spot) => {
-      const group = new Group();
-      const brass = solid('#c8a040', 0.35, { metalness: 0.6 });
-      const hook = new Mesh(new TorusGeometry(0.16, 0.03, 6, 14, Math.PI * 1.4), brass);
-      const eye = new Mesh(new TorusGeometry(0.06, 0.02, 6, 10), brass);
-      eye.position.set(0.3, 0, 0);
-      group.add(hook, eye);
-      return standing(spot, group);
-    },
+    latch: (spot) => latch(spot),
     football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
     whiteWater: (spot) => {
       // The rapids: wet boulders the river breaks over, and standing waves of white water that heave and never go.
@@ -2238,6 +2250,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return { group, update: () => {} };
     },
     aftermath: () => aftermath(),
+    breakfast: (spot) => breakfast(spot),
     doll: (spot) => {
       // The doll at the foot of the toy shelf, in the small yellow raincoat Elof takes for the storm (../../render/elof-coat.ts):
       // without it once he has taken it. The room's models from Blender (art/blender/a2-room.py) take the plain shapes' place.
@@ -2372,31 +2385,39 @@ const paneLight = () => drawnPicture(128, 128, (c) => {
   for (const [x, y] of [[14, 14], [68, 14], [14, 68], [68, 68]] as const) c.fillRect(x, y, 46, 46);
 });
 
+/** The top of the morning's kitchen table, from the floor: the room kit's table (../../render/stage.ts, `bord`). */
+const TABLE_TOP = 1.65;
 /**
- * Sunday morning's room: what the night left. Wet raincoats on their hooks and boots in a pool, leaves blown in at the
- * window, mormor's lantern put out on the table, and the sun lying on the floor. All of it stands in the room's own
- * places, counted from the room's start. The coats go on dripping.
+ * The windows of the family's room the morning after, the same as on the evening of the storm and on to the room's end:
+ * the first is the one the storm blew open, by Pappa's shelf, with the new latch.
+ */
+const MORNING_WINDOWS = morgonen.house!.windows;
+
+/**
+ * Sunday morning's room: what the night left. Wet raincoats on their hooks in the hall and boots in a pool, leaves blown
+ * in at the window the storm opened, and the sun lying on the floor. The room's things stand where they stood on the
+ * evening of the storm (../chapters/stormkvall.ts, `homeEvening`), counted from the room's start. The coats go on dripping.
  */
 function aftermath(): SpotProp {
   const group = new Group();
   const WALL = -8.5;
   const SILL = 3.2;
   const coats: BufferGeometry[] = [];
-  // The very coats and boots they wore through the storm (../../render/rain-gear.ts).
+  // The very coats and boots they wore through the storm (../../render/rain-gear.ts), on the hall's wall between two windows.
   const WHO = ['pappa', 'mamma', 'moa', 'bertil'] as const;
-  const COATS = WHO.map((who, i) => ({ x: [15.9, 17, 18.1, 19][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
-  coats.push(paint(new BoxGeometry(4.8, 0.16, 0.16).translate(17.75, 5.6, WALL - 0.24), '#6a4a2c'));
+  const COATS = WHO.map((who, i) => ({ x: [37.6, 38.7, 39.8, 40.7][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
+  coats.push(paint(new BoxGeometry(4.8, 0.16, 0.16).translate(39.45, 5.6, WALL - 0.24), '#6a4a2c'));
   for (const coat of COATS) {
     const mid = 5.45 - coat.tall / 2;
     coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
     coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
   }
   // And beside them, small, the doll's raincoat Elof wore through the storm when he was small (../../render/elof-coat.ts).
-  const LITTLE = { x: 19.85, tall: 0.6 };
+  const LITTLE = { x: 41.55, tall: 0.6 };
   coats.push(paint(new CylinderGeometry(0.09, 0.2, LITTLE.tall, 10).scale(1, 1, 0.4).translate(LITTLE.x, 5.45 - LITTLE.tall / 2, WALL), ELOF_COAT));
   coats.push(paint(new SphereGeometry(0.1, 10, 8).scale(1, 0.85, 0.6).translate(LITTLE.x, 5.47, WALL), ELOF_COAT));
   for (const side of [-1, 1]) coats.push(paint(new CylinderGeometry(0.04, 0.045, 0.34, 6).rotateZ(side * 0.28).translate(LITTLE.x + side * 0.15, 5.2, WALL + 0.02), ELOF_COAT));
-  const BOOTS = WHO.map((who, i) => ({ x: [15.8, 16.9, 18, 19][i]!, colour: RAIN_GEAR[who].boots }));
+  const BOOTS = WHO.map((who, i) => ({ x: [37.5, 38.6, 39.7, 40.7][i]!, colour: RAIN_GEAR[who].boots }));
   for (const boot of BOOTS) {
     for (const side of [-0.2, 0.2]) {
       coats.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), boot.colour));
@@ -2404,23 +2425,25 @@ function aftermath(): SpotProp {
     }
   }
   group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
-  group.add(roomThings({ sofa: 44.5, lamp: 36.4, plant: 55, drawings: 0, rug: 10, blanket: true }));
+  // The sofa, the lamp, the plant, the rug and Moa's drawings where they were on the evening of the storm; the blanket
+  // pulled half off the sofa now.
+  group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: true }));
   // The pool they stand in: flat, and giving back the room's light.
-  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(17.4, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
+  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(39.1, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
   // The sun on the floor, one window's worth from each, lying a little aslant.
   const light = new PlaneGeometry(4.8, 10.5, 1, 1).rotateX(-Math.PI / 2);
   const at = light.getAttribute('position');
   for (let i = 0; i < at.count; i++) at.setX(i, at.getX(i) + at.getZ(i) * -0.42);
-  const panes = mergeGeometries([4, 13, 22, 40, 49].map((x) => light.clone().translate(x + 0.8, 0.02, 1)));
+  const panes = mergeGeometries(MORNING_WINDOWS.map((x) => light.clone().translate(x + 0.8, 0.02, 1)));
   group.add(new Mesh(panes, new MeshBasicMaterial({ map: paneLight(), color: '#ffe6b0', transparent: true, opacity: 0.2, blending: AdditiveBlending, depthWrite: false, fog: false })));
-  // Birch leaves that came in at the window with the storm.
+  // Birch leaves that came in at the window the storm blew open, and blew on across the floor.
   const random = scatter(61);
   const leaves = new InstancedMesh(new SphereGeometry(0.2, 6, 4).scale(1, 0.05, 0.68), new MeshStandardMaterial({ roughness: 0.75 }), 30);
   const place = new Object3D();
   const tint = new Color();
   for (let i = 0; i < leaves.count; i++) {
-    const near = i % 3 === 0 ? 22 : i % 3 === 1 ? 13 : 40;
+    const near = i % 3 === 0 ? MORNING_WINDOWS[0] : i % 3 === 1 ? MORNING_WINDOWS[0] + 6 : 22;
     place.position.set(near + (random() - 0.5) * 8, 0.03, 0.5 + random() * 5.5);
     place.rotation.set(0, random() * 6.28, (random() - 0.5) * 0.14);
     place.updateMatrix();
@@ -2428,15 +2451,10 @@ function aftermath(): SpotProp {
     leaves.setColorAt(i, tint.set(random() < 0.6 ? '#c9a23a' : '#a8703a').multiplyScalar(0.8 + random() * 0.3));
   }
   group.add(leaves);
-  // Mormor's lantern on the table, put out.
-  const out = lantern();
-  out.light.visible = false;
-  out.group.position.set(8, 2.68, -1.5);
-  group.add(out.group);
   // A great tit on the sill of the window with the new latch: the storm is over, and it has come for what the night left.
   const tit = new Mesh(smallBird(BIRDS.tit), new MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }));
   tit.scale.setScalar(1);
-  tit.position.set(22, SILL, WALL + 0.12);
+  tit.position.set(MORNING_WINDOWS[0], SILL, WALL + 0.12);
   group.add(tit);
   // Three slow drops from the coats' hems.
   const fall = new SphereGeometry(0.05, 6, 4);
@@ -2455,7 +2473,7 @@ function aftermath(): SpotProp {
       const hop = Math.max(0, 1 - Math.abs(round - 2) / 0.22);
       const back = Math.max(0, 1 - Math.abs(round - 5.4) / 0.22);
       const along = Math.min(1, Math.max(0, (round - 1.8) / 0.4)) - Math.min(1, Math.max(0, (round - 5.2) / 0.4));
-      tit.position.x = 21.4 + along * 1.5;
+      tit.position.x = MORNING_WINDOWS[0] - 0.6 + along * 1.5;
       tit.position.y = SILL + (hop + back) * 0.16;
       tit.rotation.y = round > 2.2 && round < 5.2 ? Math.PI + 0.5 : 0.5;
       tit.rotation.z = (round > 3 && round < 3.4) || (round > 6.2 && round < 6.6) ? -0.6 : 0;
@@ -2463,6 +2481,144 @@ function aftermath(): SpotProp {
         const k = (clock * 0.45 + phase) % 1;
         drop.position.y = from * (1 - k * k);
       }
+    },
+  };
+}
+
+/** A mug, standing on its foot at (x, z), its handle out to the right: in vertex colours, to merge with the rest. */
+function mugParts(x: number, z: number, colour: string, turn = 0): BufferGeometry[] {
+  const tall = 0.26, wide = 0.13;
+  const place = (geometry: BufferGeometry) => geometry.rotateY(turn).translate(x, 0, z);
+  return [
+    paint(place(new CylinderGeometry(wide, wide * 0.88, tall, 12).translate(0, tall / 2, 0)), colour),
+    // Hot chocolate to the brim.
+    paint(place(new CylinderGeometry(wide * 0.88, wide * 0.88, 0.012, 12).translate(0, tall - 0.02, 0)), '#5a3420'),
+    paint(place(new TorusGeometry(0.06, 0.017, 6, 10, Math.PI).rotateZ(-Math.PI / 2).translate(wide, tall * 0.55, 0)), colour),
+  ];
+}
+
+/**
+ * Sunday's breakfast on the kitchen table (Olov, 9 November 2026: "Mormor och den varma chokladen ska synas, med koppar och
+ * en termos på bordet"): mormor's thermos of hot chocolate, a cup poured for each at the table, steaming, a plate of
+ * buns, and her lantern from the night, put out. Elof's own cup stands at the front, for him to take (`cocoa`). Its place
+ * is the middle of the table's top; the table is 5 long and 2.2 deep (../../render/stage.ts).
+ */
+function breakfast(spot: Spot): SpotProp {
+  const group = new Group();
+  group.position.set(spot.at.x, spot.at.y, -1.5);
+  const parts: BufferGeometry[] = [];
+  // The thermos: a tall green flask with its cup screwed on as a lid, a steel band, and a handle on its side.
+  const THERMOS = { x: -1.55, z: -0.05 };
+  const flask: (readonly [number, number])[] = [[0.001, 0], [0.15, 0], [0.165, 0.04], [0.165, 0.5], [0.14, 0.56], [0.1, 0.6], [0.001, 0.6]];
+  parts.push(paint(new LatheGeometry(flask.map(([r, y]) => new Vector2(r, y)), 14).translate(THERMOS.x, 0, THERMOS.z), '#4f7f62'));
+  parts.push(paint(new CylinderGeometry(0.168, 0.168, 0.05, 14).translate(THERMOS.x, 0.47, THERMOS.z), '#a9afb3'));
+  parts.push(paint(new CylinderGeometry(0.13, 0.115, 0.17, 14).translate(THERMOS.x, 0.68, THERMOS.z), '#e4dccb'));
+  parts.push(paint(new TorusGeometry(0.11, 0.022, 6, 12, Math.PI).rotateZ(-Math.PI / 2).translate(THERMOS.x + 0.16, 0.3, THERMOS.z), '#3c6650'));
+  // A cup for each at the table, poured: mormor's, Bertil's, Moa's and morfar's (Mamma and Pappa hold theirs).
+  const CUPS = [
+    { x: -0.95, z: 0.62, colour: '#f2eee6' }, { x: 0.1, z: -0.72, colour: '#4a7fb0' },
+    { x: 2.05, z: -0.15, colour: '#e8c040' }, { x: 0.45, z: 0.55, colour: '#a8714a' },
+  ];
+  CUPS.forEach((cup, i) => parts.push(...mugParts(cup.x, cup.z, cup.colour, i * 0.9)));
+  // A plate of cinnamon buns.
+  parts.push(paint(new CylinderGeometry(0.34, 0.3, 0.035, 18).translate(-0.4, 0.02, -0.2), '#f4f0e6'));
+  for (const [dx, dz] of [[-0.12, -0.08], [0.12, -0.04], [0, 0.12]] as const) {
+    parts.push(paint(new SphereGeometry(0.12, 10, 6).scale(1, 0.55, 1).translate(-0.4 + dx, 0.09, -0.2 + dz), '#c98b4c'));
+  }
+  const table = new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }));
+  parts.forEach((part) => part.dispose());
+  group.add(table);
+  // Mormor's lantern from the night, put out, at the table's back corner.
+  const out = lantern();
+  out.light.visible = false;
+  out.group.position.set(-2.05, 0.78, -0.72);
+  group.add(out.group);
+  // The steam over each cup: two soft puffs curling up, in one draw.
+  const steam = new InstancedMesh(new SphereGeometry(0.06, 8, 6), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.2, depthWrite: false }), CUPS.length * 2);
+  steam.frustumCulled = false;
+  group.add(steam);
+  const place = new Object3D();
+  const rise = (clock: number) => {
+    for (let i = 0; i < steam.count; i++) {
+      const cup = CUPS[i >> 1]!;
+      const k = (clock * 0.4 + (i & 1) * 0.5 + (i >> 1) * 0.27) % 1;
+      place.position.set(cup.x + Math.sin(clock * 1.6 + i * 2.1) * 0.05 * (1 + k), 0.3 + k * 0.5, cup.z);
+      place.scale.setScalar(0.6 + k * 1.3);
+      place.updateMatrix();
+      steam.setMatrixAt(i, place.matrix);
+    }
+    steam.instanceMatrix.needsUpdate = true;
+  };
+  rise(0);
+  return { group, update: (_used, clock) => { if (!elof.still) rise(clock); } };
+}
+
+/**
+ * The flag that hooks the new latch, and how long after it his hand has come to it: when the scene `haken` is close on
+ * it (../chapters/morgonen.ts), so that its click comes with the scene's.
+ */
+const LATCH_HOOKED = 'latch';
+const LATCH_REACH = 1.1;
+
+/**
+ * The new latch Pappa fitted the morning after (Olov, 9 November 2026: "Fönsterhaken ska se snyggare ut när man hakar fast
+ * den"), on the meeting stiles of the window the storm blew open: a brass hook on its pin and a round plate on the left
+ * half, and a screw eye on the right. Until it is hooked it hangs loose from its pin and sways a little. Hooked (the flag
+ * `latch`), it swings up, a little past the eye, drops into it and settles with a small bounce. A game taken up later
+ * finds it hooked; with less motion it is simply hooked. Its pin is half a hand left of its place, the eye as far right.
+ */
+function latch(spot: Spot): SpotProp {
+  const root = new Group();
+  root.position.set(spot.at.x, spot.at.y, -8.78);
+  const brass = solid('#d6ae4c', 0.3, { metalness: 0.7 });
+  // A storm hook, long and stout enough to hold the window in a gale, and to be seen across the room.
+  const PIN = { x: -0.45, z: 0.11 }, EYE = { x: 0.45, y: -0.1, z: 0.11 };
+  const fixed = [
+    // The hook's plate, its pin and the pin's head.
+    new CylinderGeometry(0.1, 0.1, 0.035, 16).rotateX(Math.PI / 2).translate(PIN.x, 0, 0.018),
+    new CylinderGeometry(0.024, 0.024, 0.12, 8).rotateX(Math.PI / 2).translate(PIN.x, 0, 0.06),
+    new SphereGeometry(0.04, 10, 8).translate(PIN.x, 0, PIN.z + 0.04),
+    // The eye's plate, its shank out from the stile, and its ring, lying flat for the hook to drop into.
+    new CylinderGeometry(0.07, 0.07, 0.03, 14).rotateX(Math.PI / 2).translate(EYE.x, EYE.y, 0.015),
+    new CylinderGeometry(0.02, 0.02, 0.1, 8).rotateX(Math.PI / 2).translate(EYE.x, EYE.y, 0.05),
+    new TorusGeometry(0.07, 0.022, 8, 18).rotateX(Math.PI / 2).translate(EYE.x, EYE.y, EYE.z),
+  ];
+  root.add(new Mesh(mergeGeometries(fixed.map((part) => part.toNonIndexed())), brass));
+  fixed.forEach((part) => part.dispose());
+  // The hook: a ring round the pin, a rod as long as from the pin to the eye, and its end bent down, to drop into the eye.
+  const LONG = EYE.x - PIN.x;
+  const hook = new Group();
+  hook.position.set(PIN.x, 0, PIN.z);
+  const arm = [
+    new TorusGeometry(0.05, 0.018, 6, 12),
+    new CylinderGeometry(0.032, 0.032, LONG - 0.04, 8).rotateZ(Math.PI / 2).translate((LONG + 0.03) / 2, 0, 0),
+    new SphereGeometry(0.036, 8, 6).translate(LONG, 0, 0),
+    new CylinderGeometry(0.026, 0.02, 0.16, 8).translate(LONG, -0.08, 0),
+  ];
+  hook.add(new Mesh(mergeGeometries(arm.map((part) => part.toNonIndexed())), brass));
+  arm.forEach((part) => part.dispose());
+  root.add(hook);
+  /** Hanging loose, the rod points down from its pin. */
+  const LOOSE = -Math.PI / 2;
+  let since = 0, known = false;
+  const angle = (u: number, clock: number) => {
+    // Hanging, a slow small sway.
+    if (u < 0) return LOOSE + 0.05 * Math.sin(clock * 1.3) * Math.min(1, -u + 0.4);
+    // Up, a little past level so that its end clears the eye; then it drops in, faster as it falls; then a small bounce.
+    if (u < 0.5) return LOOSE + (-LOOSE + 0.22) * smooth(u / 0.5);
+    if (u < 0.72) { const v = (u - 0.5) / 0.22; return 0.22 * (1 - v * v); }
+    if (u < 1.2) { const w = (u - 0.72) / 0.48; return 0.04 * Math.sin(Math.PI * w) * (1 - w); }
+    return 0;
+  };
+  return {
+    group: root,
+    update(_used, clock, dt) {
+      const hooked = elof.flags?.has(LATCH_HOOKED) ?? false;
+      // Hooked already when the picture first sees it (a game taken up later): it is simply hooked.
+      if (!known) since = hooked ? 99 : 0;
+      known = true;
+      since = hooked ? since + dt : 0;
+      hook.rotation.z = elof.still ? (hooked ? 0 : LOOSE) : angle(hooked ? since - LATCH_REACH : -1, clock);
     },
   };
 }

@@ -465,6 +465,13 @@ async function start(): Promise<void> {
     byId(id).hidden = !canEnter('epilog') || !storyFinished(save.flags);
     byId(id).addEventListener('click', openExplore);
   }
+  // From the second adventure's last card to the start page, calmly: the title comes over the card, which is there again
+  // behind it, and nothing is played again.
+  byId('endHome').addEventListener('click', () => {
+    if (platformBlocked() || profileMutationPending || title.open || !ended) return;
+    writeSave();
+    showTitle();
+  });
   let auto = !benchOn && requestedGraphics === 'auto' && view.info().tier === 'mid' ? createAutoTier() : null;
   let resolution = !benchOn && requestedGraphics === 'auto' ? createDynamicResolution() : null;
   let busyMs = 0;
@@ -1286,7 +1293,12 @@ async function start(): Promise<void> {
       const hidden = (chapter.hidden ?? []).map((h) => ({ kind: h.kind, found: game.sim.flags.has(foundFlag(h.kind)) }));
       storyReminder.handoff(storyHandoff(chapter.id, game.sim.flags));
       hud.end(title, game.sim.candyCount, playAgain, next ? () => goOn(next.id) : undefined, sv.end.closing[chapter.id], hidden, next ? codeFor(next.id) : null, onward, kicker);
-      byId(canExplore ? 'endExplore' : next ? 'endOnward' : 'endAgain').focus();
+      // The second adventure's last card, with nothing after it, has a calm way back to the start page as well as to the
+      // map of the chapters; and never "Spela igen" under a press meant for the last words (Olov, 9 November 2026: it all
+      // went black and began again).
+      const last = !next && isAdventure2(chapter.id);
+      byId('endHome').hidden = !last;
+      byId(canExplore ? 'endExplore' : next ? 'endOnward' : last ? 'endHome' : 'endAgain').focus();
       if (chapter.id === 'epilog') {
         byId('endPhotos').hidden = false;
         photoAlbum.credits();

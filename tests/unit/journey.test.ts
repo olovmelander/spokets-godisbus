@@ -25,6 +25,9 @@ describe('visiting the story after its ending', () => {
     const loaded = readSave(JSON.stringify({ ...newSave(1, 'epilog'), flags: { epilog: flags } }));
     expect(loaded.kind === 'save' && storyFinished(loaded.save.flags)).toBe(true);
     expect(storyFinished({ berget: ['goal'] })).toBe(false);
+    // The second adventure's end counts too: its last card leads back to the map of the chapters.
+    expect(storyFinished({ morgonen: ['goal'] })).toBe(true);
+    expect(storyFinished({ stormoga: ['goal'] })).toBe(false);
     expect(ghostNamed({ epilog: ['partied'] })).toBe(false);
     expect(ghostNamed({ epilog: ['beat:named'] })).toBe(true);
   });
