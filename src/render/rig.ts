@@ -490,12 +490,13 @@ export function createRehearsalRig(who: Role): Rig {
     set('handR', 'elbowR', 0, -FORE, 0, p.wristR);
     // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
     const lean = swayLean(p.sway);
-    // A leg turned at the hip (`yawL`) turns about the upright of the body as it leans, and swings out in its own way.
-    leg('hipL', HIP_X, p.legL, -p.hipRoll - lean, p.splayL, p.yawL ?? 0);
+    // Leg targets are in the body's frame: undo the pelvis's counter-twist before their own hip turns.
+    const untwist = p.twist * .45;
+    leg('hipL', HIP_X, p.legL, -p.hipRoll - lean, p.splayL, (p.yawL ?? 0) + untwist);
     set('kneeL', 'hipL', 0, -THIGH, 0, -p.kneeL);
     // The foot stays level across, whatever the leg's lean: the ankle gives.
     foot('footL', 'kneeL', p.footL, -p.splayL, lean, p.yawL ?? 0);
-    leg('hipR', -HIP_X, p.legR, -p.hipRoll - lean, -p.splayR, p.yawR ?? 0);
+    leg('hipR', -HIP_X, p.legR, -p.hipRoll - lean, -p.splayR, (p.yawR ?? 0) + untwist);
     set('kneeR', 'hipR', 0, -THIGH, 0, -p.kneeR);
     foot('footR', 'kneeR', p.footR, p.splayR, lean, p.yawR ?? 0);
   }
@@ -806,6 +807,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
   const chestUp = axis(bones.chest, Y), pelvisUp = axis(bones.pelvis, Y);
   // A whole leg turns about the upright through its hip (`yawL`, `yawR`): the body's up in each thigh's own terms.
   const legUp = [axis(bones.legL, Y), axis(bones.legR, Y)], footUp = [axis(bones.footL, Y), axis(bones.footR, Y)];
+  const pelvisLegs = [bones.legL, bones.legR].map(leg => {
+    for (let parent = leg?.node.parent; parent; parent = parent.parent) if (parent === bones.pelvis?.node) return true;
+    return false;
+  });
   const bodyAhead = new Vector3();
   /** A thigh: tipped across with the body (`body`), turned about the upright (`yaw`), out to its side (`splay`), swung. */
   const thighBend = (b: Bone | null, swing: number, up: Vector3 | null, yaw: number, side: Vector3 | null, body: number, splay: number) => {
@@ -1032,9 +1037,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
       }
       bend(bones.elbowL, p.elbowL);
       bend(bones.elbowR, p.elbowR);
-      // The legs hang plumb from a tipped pelvis, and lean in under shifted hips so that the feet stay where they stood.
-      thighBend(bones.legL, p.legL, legUp[0]!, p.yawL ?? 0, ahead.legL, -p.hipRoll - lean, p.splayL);
-      thighBend(bones.legR, p.legR, legUp[1]!, p.yawR ?? 0, ahead.legR, -p.hipRoll - lean, -p.splayR);
+      // Leg targets are body-relative. Keep the pelvis's counter-twist out of each descendant leg's own hip turn.
+      const untwist = p.twist * .45;
+      thighBend(bones.legL, p.legL, legUp[0]!, (p.yawL ?? 0) + (pelvisLegs[0] ? untwist : 0), ahead.legL, -p.hipRoll - lean, p.splayL);
+      thighBend(bones.legR, p.legR, legUp[1]!, (p.yawR ?? 0) + (pelvisLegs[1] ? untwist : 0), ahead.legR, -p.hipRoll - lean, -p.splayR);
       bend(bones.kneeL, p.kneeL);
       bend(bones.kneeR, p.kneeR);
       // (A model without a pelvis has no legs to lean in under it either: it stays as it is.)
