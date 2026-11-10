@@ -386,7 +386,7 @@ export const sv = {
     goldHope: 'Guldgodiset kan göra dig stor igen.',
     goldInBag: 'Det ligger kvar i spökets påse!',
     findBag: 'Jag följer godiset och hittar påsen!',
-    onlyWood: 'Det är ju bara trä.',
+    onlyWood: 'Jag fångar honom. Stanna där!',
     snuck: 'Det smiter!',
     nearYou: 'Vi är nära dig hela tiden.',
     mapForYou: 'Jag ritar en karta åt dig!',

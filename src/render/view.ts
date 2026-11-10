@@ -1869,6 +1869,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
         ghostStaged = true;
+        if (prologue.kind === 'pappa') {
+          const catcher = stage.actors.get('pappa')?.rig;
+          const caught = smooth(clamp((prologue.seconds - .7) / .4, 0, 1))
+            * (1 - smooth(clamp((prologue.seconds - 2.8) / .25, 0, 1)));
+          if (catcher && caught > 0) {
+            holdCarving(catcher, 1, boot.copy(ghostPlace.position).addScaledVector(carryUp, .43),
+              carryUp, .43, .13, seat, carryAxis, caught);
+            ghostPlace.position.lerp(seat, caught);
+          }
+        }
       } else if (chapter.prologue && flags.has('pappa:done') && !chapter.prologue.edge) {
         ghostSize = 0;
         ghostPlace.scale.setScalar(0);

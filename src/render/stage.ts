@@ -392,7 +392,10 @@ function thing(kind: Thing, drawing: CanvasTexture): Mesh {
       return crayon;
     }
     case 'drawing': {
-      const sheet = new Mesh(new PlaneGeometry(1.9, 1.5), new MeshBasicMaterial({ map: drawing, side: DoubleSide }));
+      const sheet = new Mesh(new PlaneGeometry(1.9, 1.5), new MeshBasicMaterial({ map: drawing }));
+      // An actual front and a plain back: the story must never be read mirrored through the paper.
+      const back = new Mesh(sheet.geometry, new MeshBasicMaterial({ color: '#eee4d2' }));
+      back.rotation.y = Math.PI; back.position.z = -.004; sheet.add(back);
       return sheet;
     }
   }
@@ -1248,7 +1251,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           rig.hand(1, hand); rig.hand(0, otherHand); hand.add(otherHand).multiplyScalar(.5).addScaledVector(up, .18);
           const arrival = calm || leavesShowing ? 1 : smooth(since(state.actAt) / .5);
           sheet.position.copy(hand).lerp(heldPoint, arrival);
-          sheet.rotation.set(0, yaw(face), 0); sheet.scale.setScalar(.52);
+          // Her page faces Elof in front of her, and the audience alongside him. Body turns may follow a
+          // speaker, but never turn the explanation back to front or reverse its left-to-right pictures.
+          sheet.rotation.set(0, 0, 0); sheet.scale.setScalar(.52);
+          across.set(1, 0, 0);
           sheetLeft.position.copy(sheet.position).addScaledVector(across, .494).addScaledVector(up, -.18);
           sheetRight.position.copy(sheet.position).addScaledVector(across, -.494).addScaledVector(up, -.18);
           const weight = showsDrawing ? arrival : 1 - smooth(elapsed / .45);
@@ -1532,7 +1538,17 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const onto = { x: 0, y: 0, z: 0 };
       if (carrier && elofNow!.rideWeight > 0) {
         carrier.hand(1, hand);
-        Object.assign(onto, { x: hand.x, y: hand.y + PALM_TOP, z: hand.z });
+        // Open, level palms make a small platform. The left hand supports the side of the right,
+        // rather than both wrists reaching through Elof at the same point.
+        const weight = elofNow!.rideWeight;
+        heldPoint.copy(hand);
+        fingerDirection.set(-1, 0, 0);
+        if (carrier.grasp) carrier.grasp(1, FLAT, heldPoint, fingerDirection, hand, weight);
+        else { carrier.grip(1, heldPoint, forward.set(0, 0, 1), hand, weight); carrier.hold?.(1, FLAT, weight); }
+        heldPoint.copy(hand).addScaledVector(up, -.08); heldPoint.x += .22;
+        if (carrier.grasp) carrier.grasp(0, FLAT, heldPoint, fingerDirection, otherHand, weight);
+        else { carrier.grip(0, heldPoint, forward.set(0, 0, 1), otherHand, weight); carrier.hold?.(0, FLAT, weight); }
+        Object.assign(onto, { x: hand.x, y: hand.y + PALM_TOP * .35, z: hand.z });
       }
       return {
         shot: shot ? { ...shot.shot, blend: shot.blend } : null,

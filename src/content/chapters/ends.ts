@@ -53,7 +53,7 @@ export const prolog: ChapterData = {
   ],
   scenes: PROLOG_SCENES,
   // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away.
-  later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: 2.2 }],
+  later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: 4.1 }],
   // In reach of the brush Pappa holds out, so the morning ends with "Måla ögonen!" lit on Använd: the first thing
   // asked of him has its button ready (docs/ux-audit/first-minutes.md row 19). The move lesson waits for the hall.
   spawn: { x: 2.6, y: 0.01 },
@@ -117,7 +117,7 @@ export const prolog: ChapterData = {
   ],
   beats: [
     { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
-    { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood' },
+    { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', read: true },
     { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
     // Their promises, one from each as he passes them on the deck.
     { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou', read: true },

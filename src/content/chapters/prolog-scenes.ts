@@ -405,24 +405,31 @@ export const PROLOG_SCENES: SceneDef[] = [
     // "carving" up on the railing's post; behind his back it hops down and scurries to the deck's edge.
     id: 'prologue:pappa',
     by: { done: 'pappa:done' },
-    seconds: 3,
+    seconds: 5.2,
     stage: {
+      shots: [
+        { at: 0, x: 43.7, y: .8, height: 5, width: 6.6, move: .5 },
+        { at: 1.4, x: 45.6, y: 1.2, z: -1.3, height: 5.4, width: 7, move: 1.2 },
+        { at: 3.4, x: 48.6, y: .9, height: 5.4, width: 9, move: .9 },
+      ],
       actors: {
         pappa: [
           { at: 0, act: 'look', aim: { x: 44.4, y: -0.4, z: 0 }, face: 0.15 },
-          { at: 0.4, act: 'reach', aim: { x: 44.4, y: -0.2, z: 0 } },
+          { at: .25, x: 43.2, z: .25, move: .65, act: 'kneel', face: .08 },
+          { at: .7, act: 'reach', aim: { x: 44.4, y: -.38, z: .1 } },
           // He gets up with it and takes it to the railing behind them, at his waist.
-          { at: 0.7, act: 'stand' },
-          // A few long strides, not a dash: the ghost has his back for that long.
-          { at: 0.8, x: 45.6, z: RAIL.z + 1.0, move: 0.85, act: 'lift', aim: { x: 46.6, y: 2.1, z: RAIL.z }, face: 0.88 },
-          { at: 1.7, act: 'kneel', face: 0.4, aim: { x: STAR, y: -0.4, z: 0 } },
-          { at: 2.6, act: 'shrug', face: 0.3 },
+          { at: 1.1, act: 'stand' },
+          { at: 1.3, x: 45.6, z: RAIL.z + .8, move: 1.5, act: 'lift', aim: { x: 46.6, y: 2.1, z: RAIL.z }, face: .88 },
+          // He deliberately turns his back: the rigid carving comes alive where everyone else can see it.
+          { at: 3.05, act: 'look', face: .4, aim: { x: STAR, y: -.4, z: 0 } },
+          { at: 3.4, x: 43.8, z: -.6, move: .9, act: 'kneel', face: .4 },
+          { at: 4.7, act: 'shrug', face: .3 },
         ],
-        moa: [{ at: 1.9, act: 'look', aim: { x: 50, y: -0.3, z: 0 } }],
-        bertil: [{ at: 1.9, act: 'point', aim: { x: 50, y: -0.3, z: 0 } }],
+        moa: [{ at: 3.5, act: 'look', aim: { x: 50, y: -0.3, z: 0 } }],
+        bertil: [{ at: 3.5, act: 'point', aim: { x: 50, y: -0.3, z: 0 } }],
         mamma: [{ at: 0.4, act: 'look', aim: { x: 46.6, y: 2, z: RAIL.z } }],
       },
-      elof: [{ at: 1.8, act: 'point', aim: { x: 50, y: 0, z: 0 } }],
+      elof: [{ at: 3.5, act: 'point', aim: { x: 50, y: 0, z: 0 } }],
     },
   },
   {
