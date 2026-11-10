@@ -13,6 +13,7 @@ import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
 import { LEDGE_CORNER, LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
 import { hintFor } from './help';
+import { rideY } from './ride-path';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
@@ -767,7 +768,10 @@ export class Sim {
     const open = Math.sin(Math.PI * state.t);
     const k = smooth(state.t);
     this.facing = ride.to.x >= ride.from.x ? 1 : -1;
-    this.place(mix(ride.from.x, ride.to.x, k), mix(ride.from.y, ride.to.y, k) + open * (ride.rise + state.offset));
+    const x = mix(ride.from.x, ride.to.x, k);
+    // Walking follows the ground; an owl can skim its candy before climbing again.
+    const y = ride.ground ? groundAlong(ride.ground, x) : rideY(ride, state.t) + open * state.offset;
+    this.place(x, y);
     if (state.t >= 1) this.release(ride.to.y);
   }
 

@@ -1,6 +1,7 @@
 import { lessMotion } from '../platform/motion';
 import { buildBraid } from './braid';
 import { createPaddle, type Paddle } from './paddle';
+import { createScarves } from './scarf';
 import { heldInOther, rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
@@ -357,6 +358,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const ledges = buildLedges(chapter.ledges ?? [], rods(chapter), chapter.place);
   const glitter = buildGlitter();
   const lace = buildLace();
+  // A scarf held down to him from above for a ride, in the hands of whoever lowers it (./scarf.ts): Pappa's in Älven.
+  const scarves = createScarves(chapter);
+  if (scarves) scene.add(scarves.group);
+  const scarfLower = new Vector3(), scarfUpper = new Vector3(), scarfTop = new Vector3(), scarfBottom = new Vector3();
+  let scarfHeld = false;
   // What Använd will do, over each thing it can act on (in-play.md row 6).
   const glints = buildVerbMarks(chapter);
   const lawnSong = songGlitter(chapter);
@@ -1171,6 +1177,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     shoulderT = calmStory ? shoulderWant : shoulderT + Math.sign(shoulderWant - shoulderT) * Math.min(Math.abs(shoulderWant - shoulderT), dt / 0.5);
     shoulderLift = 4.25 * smooth(shoulderT);
     clock += dt;
+    // A scarf lowered to him, hanging, carrying him or gathered in: he hangs by his hands while it carries him.
+    scarves?.frame(flags, curr.mode === 'ride', x, dt);
+    const onScarf = scarves?.carrying === true;
     // What lives on a mover moves of itself: the ants under Granskogen's needle mats.
     for (const mesh of moverMeshes) (mesh.children[0]?.userData.tick as ((at: number) => void) | undefined)?.(clock);
     // The scene playing now, if any: where the family and the ghost are, what they do, and the shot (./stage.ts).
@@ -1546,6 +1555,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hand(1, laceHand);
     }
     lace.update(curr.hook, laceHand);
+    if (onScarf && scarves) {
+      // Both hands closed round the scarf over his head, the one over the other along it; the lower holds just over its end.
+      scarves.grip(x, y, tall, scarfLower, scarfUpper);
+      playerBody.reach(0, scarfLower);
+      playerBody.reach(1, scarfUpper);
+      const grip = { kind: 'power' as const, size: .03 * tall };
+      playerBody.hold?.(0, grip);
+      playerBody.hold?.(1, grip);
+      if (playerBody.socket) playerBody.socket(0, grip, scarfBottom); else playerBody.hand(0, scarfBottom);
+    }
     // In the mist he holds the lysklubba up before him, as a lantern (./view.ts buildMist).
     lanternHeld = !!chapter.mist && flags.has(chapter.mist.after) && !curr.hook && !!playerBody;
     if (lanternHeld && playerBody) {
@@ -1776,13 +1795,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     ghostThought?.update(ghostState, flags, { x, y }, camera, clock, dt,
       lessMotion(), ghostPlace.visible);
     // The same jointed body greets him at help points and in the story; its outer root remains the place's.
+    scarfHeld = false;
     for (const one of family) {
       const now = one.glad !== undefined && flags.has(one.glad);
       // Called, they walk over to where they help from (Spot.goesTo): an easy walk, slowing as they come. On the first
       // frame (a game taken up) and without motion they are simply there.
       let heading: number | null = null;
+      // A scarf in their hands (./scarf.ts): while it carries him they walk along with him, so that it hangs straight down.
+      const scarf = scarves && one.walk ? scarves.holder(one.glad) : null;
       if (one.walk) {
-        const w = one.walk, place = w.place.position, to = (w.when !== undefined ? flags.has(w.when) : now) ? w.to : w.home;
+        const w = one.walk, place = w.place.position;
+        const to = scarf?.walk != null ? { x: scarf.walk, y: w.to.y, z: w.to.z } : (w.when !== undefined ? flags.has(w.when) : now) ? w.to : w.home;
         const dx = to.x - place.x, dz = to.z - place.z, far = Math.hypot(dx, dz);
         if (!w.seen || calmStory) { place.set(to.x, to.y, to.z); w.pace = 0; }
         else if (dt > 0 && far > 1e-3) {
@@ -1940,12 +1963,21 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // the one Elof brought him; in Stormskogen he holds Klonk in its beam until Elof is over.
       let shown = true;
       for (let node: Object3D | null = one.rig.group; node; node = node.parent) if (!node.visible) shown = false;
-      const lit = shown && !one.paddle && !one.seated && gesture.pull < 0.5 && !carrying
+      // With a scarf in both hands, the lamp is set down where the chapter says, and lights him from there (and stays).
+      const setDown = scarf ? scarf.lamp : null;
+      const lit = shown && !one.paddle && !one.seated && gesture.pull < 0.5 && !carrying && !(scarf && scarf.weight > 0.001 && !setDown)
         && (rainGearFor(chapter, one.who, flags) !== null || (chapter.id === 'stormkvall' && one.who === 'pappa' && flags.has('lamp:give')));
       if (lit && !one.lamp) { one.lamp = litLamp(); one.lamp.name = 'family-lamp'; scene.add(one.lamp); }
       if (one.lamp) {
         one.lamp.visible = lit;
-        if (lit) {
+        if (lit && setDown) {
+          lampAim.set(x - setDown.x, y + tall * 0.4 - setDown.y, -setDown.z);
+          lampAim.z = Math.min(lampAim.z, Math.hypot(lampAim.x, lampAim.y) * 0.3);
+          one.lamp.position.set(setDown.x, setDown.y, setDown.z);
+          one.lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim.normalize());
+          one.lamp.scale.setScalar(Math.max(0.7, one.rig.height / 5.2));
+          one.lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
+        } else if (lit) {
           const u = one.rig.height / 5.2;
           one.rig.group.updateWorldMatrix(true, false);
           one.rig.group.getWorldPosition(lampFrom);
@@ -2003,6 +2035,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);
     }
+    // The scarf from the holder's hands, hanging, or straight down to Elof's while it carries him (./scarf.ts).
+    scarves?.update(scarfHeld ? scarfTop : null, onScarf ? scarfBottom : null, dt, clock, gale * windAt(x), calmStory);
     // The family in a scene, too: their hair and caps in the same wind, where each stands now.
     for (const actor of stage.actors.values()) {
       if (actor.visible()) actor.rig.breeze?.(gale * windAt(actor.rig.group.matrixWorld.elements[12]!), dt, calmStory);

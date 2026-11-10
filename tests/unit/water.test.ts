@@ -1,10 +1,19 @@
 import { Color, type Mesh } from 'three';
-import { describe, expect, it } from 'vitest';
-import { BONUS, STORY } from '../../src/content/chapters';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { ADVENTURE2, BONUS, STORY, loadAdventure2 } from '../../src/content/chapters';
 import { PLACES } from '../../src/render/dressing';
-import { createWater, waterKind, waterShape, type WaterShape } from '../../src/render/water';
+import { PACK } from '../../src/render/extensions';
+import { createWater, isOpenWater, levelLine, levelOn, waterKind, waterShape, type WaterShape } from '../../src/render/water';
 import { STREET_DEPTH } from '../../src/render/village';
 import type { ChapterData } from '../../src/sim/types';
+
+beforeAll(async () => {
+  // The pack's looks draw on canvases: there are none here, and none are needed.
+  const fake: object = new Proxy(function () {}, { get: (_, key) => (key === Symbol.toPrimitive ? () => 0 : fake), apply: () => fake, set: () => true });
+  vi.stubGlobal('document', { createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => fake }) });
+  await loadAdventure2();
+});
+afterAll(() => vi.unstubAllGlobals());
 
 const wet = [...STORY, ...BONUS].filter((chapter) => (chapter.water ?? []).length > 0);
 const ground = (chapter: ChapterData, x: number) => {
@@ -68,17 +77,20 @@ describe('the water, as it is drawn', () => {
     }
   });
 
-  it('lies behind the whole bog, and in front of its tussocks', () => {
+  it('lies in front of the whole bog and behind it, and its tussocks stand in it: no cut of it is ever seen', () => {
     const myren = wet.find((chapter) => chapter.id === 'myren')!;
     const kind = waterKind('bog');
-    const surface = corners(shapeOf(myren)).filter((corner) => corner.part === 0);
+    const all = corners(shapeOf(myren));
+    const surface = all.filter((corner) => corner.part === 0);
     expect(Math.min(...surface.map((corner) => corner.x))).toBeLessThan(myren.ground[0]!.x - 16);
     expect(Math.max(...surface.map((corner) => corner.x))).toBeGreaterThan(myren.ground[myren.ground.length - 1]!.x + 16);
-    // The moss's shoulder goes under the water 1.65 EL in front of the path (ground.ts): open water lies in
-    // front of that, and the cut meets the ground at a pool's two ends where the shoulder is still dry.
-    expect(kind.front).toBeGreaterThan(2);
-    expect(kind.corner).toBeLessThan(1.65);
-    // Behind firm ground it begins under the moss, which sinks below the water's height about 6.5 EL back.
+    // It was cut 2.4 in front of the path, and on a phone held upright the lower third of the picture was that cut:
+    // the water seen from the side, under its surface (Olov, 9 November 2026). It runs on past the camera now, which
+    // stands about 24 EL in front of the path then, so that it is all surface and has no cut in the picture.
+    expect(kind.front).toBeGreaterThan(40);
+    expect(all.every((corner) => corner.part === 0), 'no cut face').toBe(true);
+    expect(Math.max(...surface.map((corner) => corner.z))).toBeGreaterThan(40);
+    // Behind firm ground it is under the moss, which sinks below the water's height about 6.5 EL back.
     expect(kind.behind).toBeGreaterThan(-6.4);
   });
 
@@ -112,5 +124,79 @@ describe('the water, as it is drawn', () => {
     const bog = waterKind('bog');
     expect(light(bog.faceDeep)).toBeLessThan(0.02);
     expect(bog.mirror).toBeLessThanOrEqual(0.6);
+  });
+});
+
+describe('open water: a river, a lake and the bog', () => {
+  /** The water a chapter is drawn with, as createWater makes it, and its corners. */
+  const drawnOf = (chapter: ChapterData) => {
+    const look = PACK.looks.get(chapter.id) ?? PLACES[chapter.place!];
+    const water = createWater(chapter, look.water, look.sun.from, { place: look.id, street: (x) => ground(chapter, x) });
+    const geometry = (water.group.children[0] as Mesh).geometry;
+    const position = geometry.getAttribute('position'), part = geometry.getAttribute('part');
+    return Array.from({ length: position.count }, (_, i) => ({ x: position.getX(i), y: position.getY(i), z: position.getZ(i), part: part.getX(i), level: part.getW(i) }));
+  };
+  const open = () => ADVENTURE2.filter((chapter) => isOpenWater(chapter));
+
+  it('is Älven\'s river, Flärken\'s lake and the narrow at Stormens öga, as Myren\'s bog is', () => {
+    expect(open().map((chapter) => chapter.id).sort()).toEqual(['alven', 'flarken', 'stormoga']);
+    expect([...STORY, ...BONUS].filter((chapter) => isOpenWater(chapter)).map((chapter) => chapter.id)).toEqual(['myren']);
+  });
+
+  it('lies over the whole chapter from past the camera to the haze, all surface, with no cut and no edge in the picture', () => {
+    for (const chapter of open()) {
+      const all = drawnOf(chapter);
+      expect(all.every((corner) => corner.part === 0), chapter.id).toBe(true);
+      // Columns from well before the chapter to well after it, each from past the camera to the far haze: in front of
+      // the banks too, where it ended in the air over their floor (Olov: "som om vattnet bara vore en platt skiva").
+      const xs = [...new Set(all.map((corner) => corner.x))].sort((a, b) => a - b);
+      expect(xs[0]!, chapter.id).toBeLessThan(chapter.ground[0]!.x - 16);
+      expect(xs[xs.length - 1]!, chapter.id).toBeGreaterThan(chapter.ground[chapter.ground.length - 1]!.x + 16);
+      for (const x of xs) {
+        const column = all.filter((corner) => corner.x === x).map((corner) => corner.z);
+        expect(Math.max(...column), `${chapter.id} at ${x}`).toBeGreaterThan(40);
+        expect(Math.min(...column), `${chapter.id} at ${x}`).toBeLessThan(-26);
+      }
+    }
+  });
+
+  it('extends past even the widest portrait scene camera, so the reunion cannot expose an underwater cut edge', () => {
+    for (const chapter of open()) {
+      const front = Math.max(...drawnOf(chapter).map((corner) => corner.z));
+      for (const scene of chapter.scenes ?? []) for (const shot of scene.stage?.shots ?? []) {
+        const height = Math.max(shot.height, (shot.width ?? 0) / (390 / 844));
+        const eye = (shot.z ?? 0) + height / 2 / Math.tan(Math.PI / 12);
+        expect(front, `${chapter.id}: ${scene.id}`).toBeGreaterThan(eye + 2);
+      }
+    }
+  });
+
+  it('lies at each stretch\'s own height where the simulation has water, and goes from one to the next across a bank', () => {
+    for (const chapter of open()) {
+      const all = drawnOf(chapter);
+      const line = levelLine(chapter.water!);
+      for (const corner of all) {
+        expect(corner.y, `${chapter.id} at ${corner.x}`).toBeCloseTo(levelOn(line, corner.x), 6);
+        expect(corner.level, chapter.id).toBeCloseTo(corner.y, 6);
+      }
+      for (const pool of chapter.water!) {
+        for (const x of [pool.from, (pool.from + pool.to) / 2, pool.to]) expect(levelOn(line, x), `${chapter.id} at ${x}`).toBe(pool.y);
+      }
+    }
+    // Älven's water steps down and up from stretch to stretch: the current, the stones, the rapids, the lake, the brook.
+    const alven = open().find((chapter) => chapter.id === 'alven')!;
+    const line = levelLine(alven.water!);
+    expect(levelOn(line, 51.3)).toBeGreaterThan(-0.4);
+    expect(levelOn(line, 51.3)).toBeLessThan(-0.15);
+  });
+
+  it('is under the ground of every bank where he walks: a bank stands in it, never in the air over it', () => {
+    for (const chapter of open()) {
+      const line = levelLine(chapter.water!);
+      for (let x = chapter.ground[0]!.x; x <= chapter.ground[chapter.ground.length - 1]!.x; x += 0.25) {
+        const wet = chapter.water!.some((pool) => x > pool.from - 0.01 && x < pool.to + 0.01);
+        if (!wet) expect(ground(chapter, x), `${chapter.id} at ${x}`).toBeGreaterThan(levelOn(line, x));
+      }
+    }
   });
 });

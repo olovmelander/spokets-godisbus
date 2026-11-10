@@ -26,6 +26,9 @@ import { box, building, paint, PANE, rock } from './buildings';
 import { createGrandparent, type Going, type Grandparent } from './grandparents';
 import { afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
+import { logSeed, riverLogShape, riverLogWood } from './river-log';
+import { beaverLife } from './beaver';
+import { morgonen } from './chapters/morgonen';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -50,7 +53,6 @@ const ball = (radius: number, material: Material, x = 0, y = 0, z = 0, squash: r
   return mesh;
 };
 const UP = new Vector3(0, 1, 0);
-const tmp = new Vector3();
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
 /**
  * A creature's look about, from -1 to 1: it holds one way, then turns to the next over `ease` of a hold, at uneven
@@ -797,16 +799,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     });
   }
 
-  // A rope or Pappa's scarf from above down to his hands, while he rides on it.
-  const ropes = (storm?.ropes ?? []).map((def) => {
-    const ride = chapter.rides?.find((r) => r.id === def.ride);
-    // Whoever holds it lowers it first ("Jag sänker ner min halsduk."): it hangs down to where he takes hold.
-    const boarding = chapter.spots?.find((spot) => spot.ride === def.ride);
-    const mesh = new Mesh(new CylinderGeometry(0.09, 0.09, 1, 6).translate(0, 0.5, 0), solid(def.colour ?? '#c8372a', 0.9));
-    mesh.visible = false;
-    group.add(mesh);
-    return { def, ride, boarding, mesh };
-  });
+  // Pappa's scarf from the bridge is drawn with the family who hold it (../../render/scarf.ts).
 
   const owlWings: Object3D[] = [];
   let first = true;
@@ -1086,20 +1079,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const lit = b.def.lit !== undefined && (b.def.lit === '' || flags.has(b.def.lit));
         b.panes.color.copy(lit ? (b.def.kind === 'car' ? PANE.cabin : PANE.lit) : PANE.dark);
         if (lit && !still) b.panes.color.multiplyScalar(0.92 + 0.08 * Math.sin(clock * 2.1 + b.def.x));
-      }
-      for (const rope of ropes) {
-        const on = riding && !!rope.ride && x >= Math.min(rope.ride.from.x, rope.ride.to.x) - 0.3 && x <= Math.max(rope.ride.from.x, rope.ride.to.x) + 0.3;
-        const hangs = !on && !!rope.ride && !!rope.boarding && !flags.has(rope.boarding.id) && (rope.boarding.needs === undefined || flags.has(rope.boarding.needs));
-        rope.mesh.visible = on || hangs;
-        if (!on && !hangs) continue;
-        // From where it is held to his raised hands; lowered and waiting, to just over where he takes hold, swaying.
-        const sway = hangs && !still ? Math.sin(clock * 1.6) * 0.25 : 0;
-        const hx = hangs ? rope.ride!.from.x + 0.3 + sway : x, hy = hangs ? rope.ride!.from.y + 1.4 : y + 1.05, hz = 0.1, fz = rope.def.z ?? -1;
-        const dx = rope.def.from.x - hx, dy = rope.def.from.y - hy, dz = fz - hz;
-        const length = Math.hypot(dx, dy, dz);
-        rope.mesh.position.set(hx, hy, hz);
-        rope.mesh.scale.set(1, length, 1);
-        rope.mesh.quaternion.setFromUnitVectors(UP, tmp.set(dx, dy, dz).normalize());
       }
       starMaterial.opacity = calm;
       drawnWhile(starField, calm > 0);
@@ -2192,6 +2171,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       if (spot.word === 'and' || spot.word === 'and-hona') {
         return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
       }
+      // The beaver gnaws, looks at him, thumps its tail, and swims home to its lodge (./beaver.ts).
+      if (spot.word === 'baver') return beaverLife(spot, group, model, () => pools, elof);
       // The hedgehog snuffles, the frog hops on the spot, the snail creeps (../../render/kit-life.ts).
       if (spot.word === 'igelkott' || spot.word === 'groda' || spot.word === 'snigel') {
         const rest = { x: 0, y: 0, turn: 0, size: 1 };
@@ -2738,21 +2719,14 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       return group;
     },
     riverLog: (mover) => {
-      // A wet trunk floating half under: dark bark, and pale sawn ends that catch what light there is. The kit's, once it
-      // has come: art/blender/a2-nature.py.
+      // A sawn log floating half under, its top level where he stands (./river-log.ts): the kit's fallen branch, fitted
+      // to the thing's box, lay 0.47 to 0.78 under his feet.
       const group = new Group();
-      group.userData.model = 'stock-flod';
-      group.userData.block = { width: mover.width * 1.04, height: mover.height * 1.1, depth: mover.height * 1.1, x: 0, y: mover.height / 2 };
-      const r = mover.height / 2;
-      const bark = new Mesh(new CylinderGeometry(r, r * 1.05, mover.width, 14).rotateZ(Math.PI / 2), solid('#42342a', 0.62));
-      bark.position.y = r;
-      bark.castShadow = true;
-      const pale = solid('#c2a678', 0.8);
-      const near = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(Math.PI / 2), pale);
-      near.position.set(mover.width / 2 + 0.002, r, 0);
-      const far = new Mesh(new CircleGeometry(r * 0.98, 14).rotateY(-Math.PI / 2), pale);
-      far.position.set(-mover.width / 2 - 0.002, r, 0);
-      group.add(bark, near, far);
+      const log = new Mesh(riverLogShape(mover.width, mover.height, logSeed(mover.id)), riverLogWood());
+      log.name = 'river-log';
+      log.castShadow = true;
+      log.receiveShadow = true;
+      group.add(log);
       return group;
     },
     lid: (mover) => {

@@ -218,6 +218,17 @@ export interface Ride {
   corridor?: number;
   /** What he rides on, for the picture. Left out: Moa's paper plane. */
   look?: RideLook;
+  /**
+   * Over this stretch it goes low, his feet at most `y` high, and climbs again after it (./ride-path.ts): the owl over
+   * the shallows in Älven, so that what lies there is in reach of the stick.
+   */
+  skim?: { from: number; to: number; y: number };
+  /**
+   * He walks it on his own feet, along this ground, and is not carried through the air: where his feet are, point to
+   * point along the way (the bed of the shallows where he wades). It takes the arc's place, and the stick does not
+   * steer him. The picture draws him walking.
+   */
+  ground?: readonly Vec[];
 }
 
 /**
@@ -523,6 +534,8 @@ export interface ChapterData {
   challenges?: Challenge[];
   /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
   surfaces?: { from: number; to: number; kind: SurfaceKind }[];
+  /** For the picture: clear the near trunks where people come down from a road or stand in a clearing. */
+  treeGaps?: { from: number; to: number; back: number }[];
   /**
    * For the picture only, and never read by the simulation: what a raised block of the ground is. A model
    * stands over the block (src/render/forest-kit.ts), with its top where the outline has the block's.
@@ -746,10 +759,12 @@ export interface Storm {
    */
   bars?: 'goal';
   /**
-   * A rope or a scarf held down to him from above while he is on a ride: from where it is held (`from`) to his
-   * hands, for the ride's whole way. Pappa's scarf from the bridge.
+   * A scarf held down to him from above for a ride (src/render/scarf.ts): Pappa's from the bridge. `held`: the spot whose
+   * call lowers it, whose one holds it in both hands and walks along with him while it carries him. `from`: where it is
+   * held from, its height the hands'; `z`, how far behind the path they hold it out. `colour`: its wool. `lamp`: where
+   * the holder sets their flashlight down meanwhile, still lighting him. Picture only.
    */
-  ropes?: { ride: string; from: Vec; z?: number; colour?: string }[];
+  ropes?: { ride: string; from: Vec; z?: number; colour?: string; held?: string; lamp?: { x: number; y: number; z: number } }[];
   /** What falls at the chapter's drips, where it is not water: cones shaken from the spruces. */
   drips?: 'cone';
   /**

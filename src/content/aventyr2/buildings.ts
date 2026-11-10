@@ -591,58 +591,63 @@ function spruce(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
-/** How long the model of the car is, in the metres it is made in (art/blender/a2-props.py, build_leaf). */
-const CAR_LONG = 4.5;
+/**
+ * The family's car as art/blender/a2-props.py makes it (`HATCH`, built as `bil`), in its own metres: its length, its
+ * line from the tail to the nose, its axles and wheels, how far out its side glass stands at most, and its three side
+ * windows, each from the back of its foot along the belt and back along the roof's edge (`window_patch`, its glass).
+ */
+export const FAMILY_CAR = {
+  long: 4.5,
+  top: [[-2.25, 0.96], [-2.2, 1.116], [-2.0, 1.254], [-1.6, 1.452], [-1.2, 1.521], [-0.6, 1.551], [0.0, 1.549], [0.3, 1.496], [0.6, 1.353],
+    [1.0, 1.1], [1.2, 0.994], [1.6, 0.919], [2.0, 0.841], [2.2, 0.73], [2.25, 0.58]],
+  sill: 0.27,
+  axles: [-1.35, 1.35],
+  wheel: 0.33,
+  /** Half its width, and how far out from its middle its side glass reaches, at the belt. */
+  wide: 0.895,
+  glass: 0.865,
+  windows: [
+    [[-0.27, 0.971], [1.02, 0.955], [0.34, 1.396], [0.238, 1.428], [0.137, 1.45], [0.035, 1.461], [-0.067, 1.465], [-0.168, 1.466], [-0.27, 1.467]],
+    [[-1.3, 0.997], [-0.37, 0.973], [-0.37, 1.467], [-0.525, 1.466], [-0.68, 1.463], [-0.835, 1.458], [-0.99, 1.45], [-1.145, 1.44], [-1.3, 1.424]],
+    [[-1.94, 1.054], [-1.767, 1.043], [-1.593, 1.024], [-1.42, 1.003], [-1.42, 1.406], [-1.487, 1.393], [-1.553, 1.378], [-1.62, 1.36]],
+  ],
+} as const;
+/** How far out from its middle the lit panes stand, in metres: just out from the model's side glass. */
+const PANES_OUT = FAMILY_CAR.glass + 0.012;
 
 function car(def: BuildingDef) {
   // The family's car, a silver electric hatchback as theirs is (Olov, 7 November 2026): no badge, no plate, only its
-  // shape. This stands in until the model from Blender (art/blender/a2-props.py, build_leaf) has come.
+  // shape. This stands in until the model from Blender (art/blender/a2-props.py, `bil`) has come, at its size.
   const w = def.width ?? 29;
-  const side = (x: number) => x * w;
-  // Its side, drawn once and pushed out to its width: low nose, raked windscreen, a roof that slopes to the tailgate.
+  const metre = w / FAMILY_CAR.long;
+  // Its side, drawn once and pushed out to its width: its line from the tail over the roof to the nose, and its sill.
   const shape = new Shape();
-  shape.moveTo(side(-0.5), 2.4);
-  shape.quadraticCurveTo(side(-0.505), 4.4, side(-0.495), 5.6);
-  shape.quadraticCurveTo(side(-0.48), 7.6, side(-0.42), 8.8);
-  shape.quadraticCurveTo(side(-0.34), 10.2, side(-0.22), 10.6);
-  shape.lineTo(side(0.06), 10.5);
-  shape.quadraticCurveTo(side(0.14), 10.3, side(0.19), 9.2);
-  shape.lineTo(side(0.28), 7.1);
-  shape.quadraticCurveTo(side(0.4), 6.6, side(0.48), 5.9);
-  shape.quadraticCurveTo(side(0.51), 5, side(0.5), 2.4);
+  const [first, ...rest] = FAMILY_CAR.top;
+  shape.moveTo(first[0] * metre, FAMILY_CAR.sill * metre);
+  shape.lineTo(first[0] * metre, first[1] * metre);
+  for (const [x, z] of rest) shape.lineTo(x * metre, z * metre);
+  shape.lineTo(rest[rest.length - 1]![0] * metre, FAMILY_CAR.sill * metre);
   shape.closePath();
-  const body = new ExtrudeGeometry(shape, { depth: 11, bevelEnabled: true, bevelSize: 0.45, bevelThickness: 0.5, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -5.5);
+  const half = (FAMILY_CAR.wide - 0.06) * metre;
+  const body = new ExtrudeGeometry(shape, { depth: half * 2, bevelEnabled: true, bevelSize: 0.03 * metre, bevelThickness: 0.03 * metre, bevelSegments: 2, curveSegments: 8 })
+    .translate(0, 0, -half);
   const parts: BufferGeometry[] = [paint(body.toNonIndexed(), '#b0b5ba')];
-  const NEAR = 6.03;
-  const dark = '#1a1d22';
-  // The dark sill, and the seams of its doors, on the side that shows.
-  parts.push(box(w * 0.94, 0.9, 0.08, 0, 2.5, NEAR, dark));
-  for (const x of [-0.15, 0.07]) parts.push(box(0.14, 6.6, 0.06, side(x), 6, NEAR, '#7d838a'));
-  for (const x of [-0.11, 0.11]) parts.push(box(1.4, 0.3, 0.1, side(x), 7.3, NEAR, '#8a929c'));
-  // Wheels in their arches: a dark arch, a tyre, a pale rim and its hub.
-  for (const x of [-0.31, 0.32]) {
-    parts.push(paint(new CircleGeometry(3.3, 20).translate(side(x), 2.9, NEAR + 0.01), dark));
-    for (const z of [-5.2, 5.2]) parts.push(paint(new CylinderGeometry(2.7, 2.7, 1.8, 20).rotateX(Math.PI / 2).translate(side(x), 2.7, z), '#14161a'));
-    parts.push(paint(new CylinderGeometry(1.5, 1.5, 0.3, 16).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.2), '#9aa2ac'));
-    parts.push(paint(new CylinderGeometry(0.5, 0.5, 0.36, 10).rotateX(Math.PI / 2).translate(side(x), 2.7, 6.26), '#4a5058'));
+  const near = half + 0.035 * metre;
+  // The dark sill, and wheels: a tyre and a pale rim, on both sides.
+  parts.push(box(1.9 * metre, 0.1 * metre, 0.02 * metre, 0, (FAMILY_CAR.sill + 0.05) * metre, near, '#1a1d22'));
+  for (const x of FAMILY_CAR.axles) {
+    for (const z of [-1, 1]) parts.push(paint(new CylinderGeometry(FAMILY_CAR.wheel * metre, FAMILY_CAR.wheel * metre, 0.2 * metre, 20).rotateX(Math.PI / 2).translate(x * metre, FAMILY_CAR.wheel * metre, z * (near - 0.08 * metre)), '#14161a'));
+    parts.push(paint(new CylinderGeometry(0.22 * metre, 0.22 * metre, 0.02 * metre, 16).rotateX(Math.PI / 2).translate(x * metre, FAMILY_CAR.wheel * metre, near + 0.02 * metre), '#9aa2ac'));
   }
-  // A lamp at the nose and one at the tail.
-  parts.push(box(1.6, 1, 0.1, side(0.46), 5.4, NEAR, '#d6d8cc'), box(0.9, 2.2, 0.1, side(-0.485), 6.6, NEAR, '#6e2a24'));
-  // Its side windows, where the model's are (art/blender/a2-props.py), in the car's own metres.
-  const metre = w / CAR_LONG;
+  // Its side windows, where the model's glass is, a little out from it: they light up when the car does.
   const pane = (points: readonly (readonly [number, number])[]) => {
     const glass = new Shape();
     glass.moveTo(points[0]![0] * metre, points[0]![1] * metre);
     for (const [x, y] of points.slice(1)) glass.lineTo(x * metre, y * metre);
     glass.closePath();
-    return new ShapeGeometry(glass).translate(0, 0, NEAR + 0.02);
+    return new ShapeGeometry(glass).translate(0, 0, PANES_OUT * metre);
   };
-  // The two doors' windows (the pillar behind them is dark, not glass).
-  const panes = [
-    pane([[-1.3, 1.05], [-1.3, 1.4], [-0.38, 1.42], [-0.38, 0.96]]),
-    pane([[-0.3, 0.96], [-0.3, 1.42], [0.3, 1.43], [0.99, 1.02], [0.99, 0.95]]),
-  ];
-  return { parts, panes };
+  return { parts, panes: FAMILY_CAR.windows.map(pane) };
 }
 
 function kota(def: BuildingDef) {
@@ -1076,11 +1081,11 @@ export function building(def: BuildingDef): Building {
     group.userData.fit = 2;
     group.userData.shift = -6;
   }
-  // The car takes the model's place, and keeps its windows, so that they can light up.
+  // The car takes the model's place, and keeps its windows where they are, on its glass, so that they can light up.
   if (def.kind === 'car') {
     group.userData.model = 'bil';
-    group.userData.fit = (def.width ?? 29) / CAR_LONG;
-    group.children[1]!.userData.keep = -0.022 * (def.width ?? 29);
+    group.userData.fit = (def.width ?? 29) / FAMILY_CAR.long;
+    group.children[1]!.userData.keep = 0;
   }
   // Olympia's goals: the training goal, and the big one at the far end.
   if (def.kind === 'goal') {

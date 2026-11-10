@@ -20,7 +20,7 @@ const FLARKEN = ['hopptorn', 'hydda', 'hydda-skjutdorr', 'hydda-tjarad', 'schack
 /** Flärken's stone and bark, which roll, slide and float: no weather laid on them where they stand, or it would swim. */
 const FLARKEN_MOVING = ['grasten', 'barkbit'];
 const ROOM = ['soffa', 'soffa-filt', 'golvlampa', 'krukvaxt', 'bord', 'stol', 'pall', 'holme', 'leksakshylla', 'docka', 'docka-rock'];
-const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
+const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'utter', 'baver', 'igelkott', 'snigel', 'groda', 'and', 'and-hona'];
 /** Pappa's carvings are made after his own, so they are in the private pack with the family, and the stand-ins stay where it is not. */
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
@@ -46,7 +46,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
  * The creatures whose head is a thing of its own in the kit (art/blender/a2-creatures.py, `<name>-huvud`), and where
  * their neck is in the model's own space (glTF's: y up, the front towards +z): the pivot the head turns about.
  */
-const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], igelkott: [0, 0.3, 0.55], groda: [0, 0.36, 0.12] };
+const NECKS: Record<string, readonly [number, number, number]> = { uggla: [0, 1.42, 0], utter: [0, 1.3, 0.04], baver: [0, 1.24, 0.08], igelkott: [0, 0.3, 0.55], groda: [0, 0.36, 0.12] };
 
 /** What stands outdoors and is shown weathered: the built things, the nature kit, Flärkenbadet's, and Olympia's hall and stand. */
 const WEATHERED = new Set([...BUILT, ...YARD, ...FLARKEN, ...NATURE, 'olympia-hall', 'olympia-stand']);

@@ -1,4 +1,5 @@
-import type { Candy, Jump, Vec } from '../../sim/types';
+import { rideY } from '../../sim/ride-path';
+import type { Candy, Flyby, Jump, Ride, Vec } from '../../sim/types';
 
 /**
  * Small helpers for authoring Äventyr 2's courses (docs/aventyr-2.md). Units: EL, as everywhere. They are the
@@ -24,15 +25,18 @@ export function slopeRow(from: number, to: number, x0: number, y0: number, x1: n
   return out;
 }
 
-/** A ride as the simulation flies it: eased along, with a sine's rise over the straight line between its ends. */
-export interface Arc { from: Vec; to: Vec; rise: number }
+/**
+ * A ride as the simulation flies it: eased along, with a sine's rise over the straight line between its ends, low over
+ * a stretch it skims (../../sim/ride-path.ts).
+ */
+export interface Arc { from: Vec; to: Vec; rise: number; skim?: Ride['skim'] }
 
 /** A candy on a ride's arc, at `t` of the way, half an EL over where his feet are. */
 export function along(ride: Arc, t: number): Candy {
   const k = t * t * (3 - 2 * t);
   return {
     x: round(ride.from.x + (ride.to.x - ride.from.x) * k, 1),
-    y: round(ride.from.y + (ride.to.y - ride.from.y) * k + Math.sin(Math.PI * t) * ride.rise + 0.5, 1),
+    y: round((ride.skim ? rideY(ride, t) : ride.from.y + (ride.to.y - ride.from.y) * k + Math.sin(Math.PI * t) * ride.rise) + 0.5, 1),
   };
 }
 

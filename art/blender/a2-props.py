@@ -465,305 +465,695 @@ if wanted('pumpa'):
     finish(part, 'pumpa', sharp=70.0, strength=0.5, reach=0.3, floor=0.0, leaf=True)
 
 
-# --- the family's car -----------------------------------------------------------------------------------------
-# An estate car, plain as a car is with nothing written on it: no badge, no plate. 4.7 long in its own metres, its nose towards
-# +X, standing on its origin. The game fits it to the length the place wants. Two coats: the family's slate blue, and a grey.
+# --- the cars ---------------------------------------------------------------------------------------------------------------
+# Two cars, made the same way, in metres: the family's own, a silver electric five-door hatchback as theirs is (Olov,
+# 7 November 2026), and the grey estate that drives past behind Byn's street in the storm. Neither has a badge, a plate, an
+# emblem or a letter: only the shape of a car, and neither copies any maker's design. Each stands on its origin with its
+# wheels on the ground, its nose towards +X and its near side towards -Y.
+#
+# The body is one shell: rings across it from the tail to the nose, every ring the same points in the same order (along
+# the floor, round the sill, up the door to the shoulder and the belt, up the glass to the roof's edge and over the roof),
+# so that the shell is smooth along it and across it. Over the wheels the rings' lower points rise to the arch. Glass,
+# lamps, the dark trim, the seams of the doors and the mirrors lie on the shell, each a little out from it.
+#
+# The wheels are things of their own, one pair for each axle, hanging from a pivot on its axle (`<car>-hjul-fram` and
+# `<car>-hjul-bak`): the game turns the pivots as the car rolls. Tyres with round shoulders and a tread, rims with their
+# spokes, the brake disc behind them, and a plain cap with no mark.
 
-CAR_LONG = 4.7
-CAR_ROOF = 0.68      # half across the roof
-CAR_BODY = 0.9       # half across at the belt
-SILL = 0.27
+CAR = MATERIAL.copy()
+CAR.name = 'kit-car'
+for node in CAR.node_tree.nodes:
+    if node.type == 'BSDF_PRINCIPLED':
+        # Wet, all of it: the paint, the glass, the tyres and the trim have the rain on them.
+        node.inputs['Roughness'].default_value = 0.34
 
-def car_top(x):
-    """The car's line from tail to nose, as (x, height)."""
-    return along(((-2.35, 0.98), (-2.3, 1.08), (-2.2, 1.4), (-2.05, 1.47), (0.15, 1.5), (0.42, 1.42), (1.28, 0.99), (2.05, 0.87), (2.3, 0.72), (2.35, 0.58)), x)
-
-
-def car_belt(x):
-    return along(((-2.35, 0.88), (-1.0, 0.92), (1.2, 0.93), (2.0, 0.83), (2.35, 0.62)), x)
-
-
-def car_wide(x):
-    """How far out its side stands, narrowing a little at both ends."""
-    t = abs(x) / 2.35
-    return CAR_BODY * (1.0 - 0.09 * t ** 3.6)
-
-
-def greenhouse(x, z, side):
-    """A point on the sloped side above the belt, for laying glass on."""
-    belt = car_belt(x)
-    top = car_top(x) - 0.07
-    t = 0.0 if top <= belt else min(1.0, max(0.0, (z - belt) / (top - belt)))
-    return Vector((x, side * (car_wide(x) * 0.975 + (CAR_ROOF + 0.02 - car_wide(x) * 0.975) * t + 0.022), z))
+SECTION = 27          # points on a half ring, from the floor's middle round to the roof's middle
+FLOOR = 4             # the first of them that are the floor's and the sill's, dark
 
 
-def build_car(name, COAT, seed):
-    if not wanted(name):
-        return
-    part = new_part()
-    DARK = tone('#16181c')
-    PLASTIC = tone('#23262c')
-    GLASS = tone('#12202c')
-    CHROME = tone('#b8c0c8')
-    stations = [-2.35, -2.32, -2.2, -2.05, -1.7, -1.2, -0.7, -0.2, 0.15, 0.42, 0.8, 1.28, 1.7, 2.05, 2.28, 2.35]
+def smooth_along(table, t):
+    """A value read from a table of (at, value) rows, through its rows on a smooth curve (Catmull-Rom)."""
+    n = len(table)
+    if t <= table[0][0]:
+        return table[0][1]
+    if t >= table[-1][0]:
+        return table[-1][1]
+    i = 1
+    while table[i][0] < t:
+        i += 1
+    x1 = table[i - 1][0]
+    x2 = table[i][0]
+    y1 = table[i - 1][1]
+    y2 = table[i][1]
+    x0 = table[i - 2][0] if i >= 2 else x1 - (x2 - x1)
+    y0 = table[i - 2][1] if i >= 2 else y1 - (y2 - y1)
+    x3 = table[i + 1][0] if i + 1 < n else x2 + (x2 - x1)
+    y3 = table[i + 1][1] if i + 1 < n else y2 + (y2 - y1)
+    s = (t - x1) / (x2 - x1)
+    # Tangents measured over the spacing on each side, so that uneven rows don't overshoot.
+    m1 = (y2 - y0) / (x2 - x0) * (x2 - x1)
+    m2 = (y3 - y1) / (x3 - x1) * (x2 - x1)
+    return (2 * s ** 3 - 3 * s ** 2 + 1) * y1 + (s ** 3 - 2 * s ** 2 + s) * m1 + (-2 * s ** 3 + 3 * s ** 2) * y2 + (s ** 3 - s ** 2) * m2
+
+
+def smoothstep(a, b, t):
+    k = max(0.0, min(1.0, (t - a) / (b - a)))
+    return k * k * (3.0 - 2.0 * k)
+
+
+def car_low(spec, x):
+    """How high the body's lower edge stands at x: the sill, the bumpers, or the round of an arch over a wheel."""
+    low = smooth_along(spec['bottom'], x)
+    for ax in spec['axles']:
+        d = abs(x - ax)
+        if d < spec['arch']:
+            low = max(low, spec['radius'] + math.sqrt(spec['arch'] ** 2 - d * d))
+    return low
+
+
+def car_section(spec, x):
+    """The half ring at x, from the middle of the floor to the middle of the roof: SECTION (y, z) pairs, the same
+    features at the same places along every ring. Over the bonnet and the tail, where there is no cabin, the points of
+    the glass and the roof lie across the top instead. Also gives the belt's height and how much cabin there is."""
+    w = smooth_along(spec['wide'], x)
+    top = smooth_along(spec['top'], x)
+    belt = min(smooth_along(spec['belt'], x), top - 0.02)
+    roof_w = min(smooth_along(spec['roof'], x), w - 0.08)
+    # The ring is made down to the sill, and only then are its lowest points lifted to an arch over a wheel.
+    low = smooth_along(spec['bottom'], x)
+    cabin = smoothstep(0.03, 0.17, top - belt)
+    if cabin < 1.0:
+        belt = belt * cabin + (top - 0.075) * (1.0 - cabin)
+    shoulder = belt - spec['shoulder']
+    tuck = spec['tuck']
+    pts = []
+    # The floor, from the middle out, and round the sill (4).
+    for k in (0.0, 0.5, 0.82):
+        pts.append((w * k, low))
+    pts.append((w - tuck - 0.03, low + 0.004))
+    # Round the sill to the door (2).
+    pts.append((w - tuck + 0.004, low + 0.034))
+    pts.append((w - tuck * 0.55, low + 0.09))
+    # Up the door to the shoulder, bellied a little (5).
+    side_from = low + 0.09
+    span = max(0.04, shoulder - side_from)
+    for k in (0.2, 0.42, 0.64, 0.84, 1.0):
+        pts.append((w - tuck * 0.55 * (1.0 - k) ** 1.5 + 0.005 * math.sin(k * math.pi), side_from + span * k))
+    # The shoulder's soft crease, and in to the belt (3).
+    pts.append((w - 0.004, shoulder + (belt - shoulder) * 0.4))
+    pts.append((w - 0.018, shoulder + (belt - shoulder) * 0.78))
+    pts.append((w - 0.036, belt))
+    # The glass leaning in to the roof's edge (5).
+    roof_top = top - 0.004
+    rail = roof_top - spec['rail']
+    lean_from = w - 0.036
+    for k in (0.2, 0.4, 0.6, 0.8, 1.0):
+        y = lean_from + (roof_w + 0.035 - lean_from) * k - 0.01 * math.sin(k * math.pi)
+        z = belt + (rail - belt) * k
+        if cabin < 1.0:
+            y = y * cabin + (lean_from - lean_from * 0.1 * k) * (1.0 - cabin)
+            z = z * cabin + (belt + (top - 0.016 - belt) * k ** 0.55) * (1.0 - cabin)
+        pts.append((y, z))
+    # Over the roof's edge (4).
+    ey, ez = pts[-1]
+    for k in (0.3, 0.6, 0.85, 1.0):
+        a = k * math.pi * 0.5
+        y = roof_w + 0.035 - 0.05 * (1.0 - math.cos(a)) - 0.012 * k
+        z = rail + (roof_top - 0.012 - rail) * math.sin(a)
+        if cabin < 1.0:
+            y = y * cabin + ey * (1.0 - 0.16 * k) * (1.0 - cabin)
+            z = z * cabin + (top - 0.016 + 0.01 * k) * (1.0 - cabin)
+        pts.append((y, z))
+    # Across the roof to its middle (4).
+    ay, az = pts[-1]
+    for k in (0.3, 0.55, 0.8, 1.0):
+        pts.append((ay * (1.0 - k), az + (top - az) * math.sin(k * math.pi * 0.5)))
+    # Over a wheel the lower part of the ring is drawn up into the arch, smoothly, the more the higher the arch: the
+    # floor becomes the well's roof, the sill's round the arch's lip, and the side above it stays as it is anywhere.
+    arch = car_low(spec, x)
+    if arch > low + 0.001:
+        ceiling = spec['radius'] + spec['arch'] + 0.07
+        for j in range(len(pts)):
+            y, z = pts[j]
+            if z < ceiling:
+                pts[j] = (y, arch + (z - low) * (ceiling - arch) / (ceiling - low))
+    return pts, belt, cabin
+
+
+def car_shell(part, spec, stations):
+    """The body's shell: a ring at each station, closed at both ends. Gives the points as [station][j], j going round
+    from the floor's middle up the near side, over the roof and down the far side."""
     rings = []
     tones = []
     for x in stations:
-        wide = car_wide(x)
-        belt = min(car_belt(x), car_top(x) - 0.01)
-        top = car_top(x)
-        high = belt < top - 0.06
-        bottom = SILL + (0.12 if abs(x) > 2.1 else 0.0)
-        half = [
-            (0.0, bottom), (wide * 0.74, bottom), (wide * 0.96, bottom + 0.05), (wide, bottom + 0.16), (wide * 1.005, 0.62 if belt > 0.7 else belt - 0.02), (wide * 0.995, belt - 0.03), (wide * 0.975, belt),
-        ]
-        if high:
-            half += [(CAR_ROOF + 0.02, top - 0.07), (CAR_ROOF - 0.1, top - 0.015), (CAR_ROOF * 0.5, top)]
-        else:
-            half += [(wide * 0.9, top - 0.015), (wide * 0.68, top - 0.002), (wide * 0.34, top)]
-        half.append((0.0, top + (0.01 if high else 0.0)))
+        half, belt, cabin = car_section(spec, x)
         ring = []
-        shades = []
         for y, z in half:
             ring.append(Vector((x, -y, z)))
         for y, z in half[-2:0:-1]:
             ring.append(Vector((x, y, z)))
         rings.append(ring)
-        for point in ring:
-            k = 0.9 + 0.2 * min(1.0, max(0.0, (point.z - 0.3) / 0.7))
-            shades.append(lit(COAT, k) if point.z > 0.36 else PLASTIC)
+        shades = []
+        for j in range(len(ring)):
+            jj = j if j < SECTION else 2 * SECTION - 2 - j
+            point = ring[j]
+            if jj < FLOOR:
+                shades.append(spec['under'])
+            else:
+                # The coat, brighter towards the roof where it takes the sky.
+                shades.append(lit(spec['coat'], 0.82 + 0.3 * min(1.0, max(0.0, (point.z - 0.35) / 1.0))))
         tones.append(shades)
-    skin(part, rings, tones, (Vector((-2.36, 0.0, 0.62)), COAT), (Vector((2.36, 0.0, 0.48)), COAT))
-    out = Vector((0.0, -1.0, 0.0))
-    for side in (-1.0, 1.0):
-        out = Vector((0.0, side, 0.0))
-        # Its side windows, each following the roof, with its pillars left in the coat.
-        for points in (
-            ((-2.02, 0.97), (-2.03, 1.38), (-1.3, 1.42), (-1.3, 0.96)),
-            ((-1.22, 0.96), (-1.22, 1.42), (-0.36, 1.43), (-0.36, 0.95)),
-            ((-0.28, 0.95), (-0.28, 1.43), (0.2, 1.43), (0.98, 1.0), (0.98, 0.94)),
-        ):
-            at = [greenhouse(x, z, side) for x, z in points]
-            made = face(part, [put(part, p, GLASS) for p in at])
-            part['flat'][made] = GLASS
-            # A long soft shine, low along each pane, as there is on wet glass at night.
-            top = [greenhouse(points[0][0] + 0.04, points[0][1] + (points[1][1] - points[0][1]) * 0.52, side), greenhouse(points[-1][0] - 0.1, points[-1][1] + 0.12, side)]
-            strip(part, top, 0.018, tone('#3a5068'), out)
-        # The doors' seams, and their handles.
-        for x, low, high in ((-1.26, 0.34, 0.94), (-0.32, 0.34, 0.95), (0.94, 0.34, 0.95)):
-            strip(part, [Vector((x, side * (car_wide(x) + 0.008), low)), Vector((x, side * (car_wide(x) + 0.008), high))], 0.0055, DARK, out)
-        for x in (-1.15, -0.2):
-            lump(part, Vector((x, side * (car_wide(x) + 0.012), 0.86)), (0.075, 0.012, 0.016), 1, lit(COAT, 1.25))
-        # Dark sill trim and the belt's bright line.
-        strip(part, [Vector((x, side * (car_wide(x) + 0.008), 0.97 if 0 else 0.915)) for x in (-2.0, -1.2, -0.3, 0.5, 0.98)], 0.007, CHROME, out)
-        # The mirror.
-        lump(part, Vector((0.92, side * 1.0, 1.0)), (0.075, 0.09, 0.055), 2, COAT)
-        lump(part, Vector((0.9, side * 0.93, 0.98)), (0.04, 0.05, 0.02), 1, DARK)
-        for x in (-1.46, 1.46):
-            # A wheel in its arch: a dark round, the tyre, a five-spoked rim and its hub.
-            arch = [Vector((x + 0.415 * math.cos(TAU * k / 22.0), side * (car_wide(x) + 0.006), 0.335 + 0.415 * math.sin(TAU * k / 22.0))) for k in range(22)]
-            face(part, [put(part, p, DARK) for p in arch])
-            y0 = side * (car_wide(x) - 0.18)
-            y1 = side * (car_wide(x) + 0.02)
-            tyre = []
-            for y, r in ((y0, 0.33), (y1 - side * 0.03, 0.335), (y1, 0.3)):
-                tyre.append(circle(Vector((x, y, 0.335)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 24))
-            skin(part, tyre, [tone('#17181b'), tone('#1e2024'), tone('#26282c')], closed=True, flip=side > 0.0)
-            hub = Vector((x, y1 + side * 0.004, 0.335))
-            rim = circle(hub, Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), 0.235, 24)
-            face(part, [put(part, p, tone('#1a1c20')) for p in rim])
-            ring_out = circle(hub, Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), 0.3, 24)
-            ring_in = circle(hub, Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), 0.235, 24)
-            skin(part, [ring_out, ring_in], [tone('#20222a'), CHROME], closed=True, flip=side > 0.0)
-            for k in range(5):
-                turn = TAU * k / 5.0 + 0.3
-                a = hub + Vector((0.238 * math.cos(turn - 0.2), side * 0.004, 0.238 * math.sin(turn - 0.2)))
-                b = hub + Vector((0.238 * math.cos(turn + 0.2), side * 0.004, 0.238 * math.sin(turn + 0.2)))
-                c = hub + Vector((0.05 * math.cos(turn + 0.5), side * 0.012, 0.05 * math.sin(turn + 0.5)))
-                d = hub + Vector((0.05 * math.cos(turn - 0.5), side * 0.012, 0.05 * math.sin(turn - 0.5)))
-                face(part, [put(part, p, CHROME) for p in (a, b, c, d)])
-            lump(part, hub + Vector((0.0, side * 0.014, 0.0)), (0.055, 0.016, 0.055), 1, tone('#6a7078'))
-    # The windscreen and the tailgate's window.
-    wind = [greenhouse(0.44, 1.41, -1.0), greenhouse(0.44, 1.41, 1.0), greenhouse(1.2, 1.02, 1.0), greenhouse(1.2, 1.02, -1.0)]
-    for p in wind:
-        p.z += 0.03
-    wind[0].y += 0.1; wind[1].y -= 0.1; wind[2].y -= 0.06; wind[3].y += 0.06
-    part['flat'][face(part, [put(part, p, GLASS) for p in wind])] = GLASS
-    tail = [Vector((-2.24, -0.56, 1.36)), Vector((-2.24, 0.56, 1.36)), Vector((-2.34, 0.66, 1.0)), Vector((-2.34, -0.66, 1.0))]
-    part['flat'][face(part, [put(part, p, GLASS) for p in tail])] = GLASS
-    # Lamps at the nose, a plain dark grille between them, and the tail's lamps up its corners.
-    for side in (-1.0, 1.0):
-        lamp = [Vector((2.2, side * 0.5, 0.82)), Vector((2.14, side * 0.82, 0.82)), Vector((2.26, side * 0.78, 0.68)), Vector((2.34, side * 0.5, 0.66))]
-        part['flat'][face(part, [put(part, p, tone('#e6e8dc')) for p in lamp])] = tone('#e6e8dc')
-        lamp = [Vector((-2.24, side * 0.82, 1.2)), Vector((-2.31, side * 0.85, 0.96)), Vector((-2.33, side * 0.68, 0.96)), Vector((-2.26, side * 0.66, 1.2))]
-        part['flat'][face(part, [put(part, p, tone('#6e2420')) for p in lamp])] = tone('#6e2420')
-    grille = [Vector((2.345, -0.42, 0.66)), Vector((2.345, 0.42, 0.66)), Vector((2.37, 0.5, 0.46)), Vector((2.37, -0.5, 0.46))]
-    part['flat'][face(part, [put(part, p, DARK) for p in grille])] = DARK
-    for k in range(4):
-        z = 0.5 + k * 0.05
-        strip(part, [Vector((2.372, -0.42, z)), Vector((2.372, 0.42, z))], 0.006, tone('#40444c'), Vector((1.0, 0.0, 0.0)))
-    # Bumpers, in dark plastic.
-    for x, depth in ((2.34, 0.12), (-2.34, 0.1)):
-        cut = 1.0 if x > 0.0 else -1.0
-        lump(part, Vector((x, 0.0, 0.36)), (depth, 0.84, 0.1), 2, PLASTIC)
-    # Roof rails on their feet, and a short fin of an aerial.
-    for side in (-1.0, 1.0):
-        tube(part, [Vector((-1.95, side * 0.58, 1.47)), Vector((-1.85, side * 0.58, 1.53)), Vector((0.05, side * 0.58, 1.55)), Vector((0.16, side * 0.58, 1.49))], [0.02, 0.02, 0.02, 0.02], [tone('#2a2e34')] * 4, 5)
-    lump(part, Vector((-1.8, 0.0, 1.5)), (0.09, 0.02, 0.05), 1, DARK)
-    # The wipers, lying at the foot of the windscreen.
-    for y in (-0.3, 0.32):
-        strip(part, [Vector((1.15, y, 1.07)), Vector((1.1, y + 0.3, 1.09))], 0.007, DARK, Vector((0.5, 0.0, 0.86)))
-    finish(part, name, sharp=30.0, strength=0.5, reach=0.5, floor=0.0, leaf=True)
+    tail = Vector((stations[0] - 0.004, 0.0, (rings[0][SECTION - 1].z * 0.4 + rings[0][0].z * 0.6)))
+    nose = Vector((stations[-1] + 0.004, 0.0, (rings[-1][SECTION - 1].z * 0.4 + rings[-1][0].z * 0.6)))
+    return skin(part, rings, tones, (tail, spec['coat']), (nose, spec['coat']))
 
 
-# --- The family's own car: a silver electric hatchback, as theirs is (Olov, 7 November 2026), with no badge or plate ---
+# --- what lies on the shell -------------------------------------------------------------------------------------------------
 
-LEAF_LONG = 2.25     # half its length: 4.5 m
-LEAF_ROOF = 0.64
-LEAF_BODY = 0.89
-
-
-def leaf_top(x):
-    """Its line from tail to nose: a short sloping tailgate, a long roof, a raked windscreen and a short sloping bonnet."""
-    return along(((-2.25, 0.96), (-2.22, 1.06), (-2.12, 1.18), (-1.9, 1.33), (-1.55, 1.46), (-1.1, 1.52), (0.1, 1.54), (0.42, 1.47), (1.22, 1.03), (1.95, 0.9), (2.18, 0.78), (2.25, 0.56)), x)
-
-
-def leaf_belt(x):
-    """The windows' lower edge, kicking up to the rear pillar."""
-    return along(((-2.25, 0.9), (-1.95, 1.0), (-1.4, 1.02), (-1.0, 0.96), (1.2, 0.92), (1.95, 0.84), (2.25, 0.62)), x)
-
-
-def leaf_wide(x):
-    t = abs(x) / LEAF_LONG
-    return LEAF_BODY * (1.0 - 0.1 * t ** 3.2)
-
-
-def leaf_glass(x, z, side):
-    """A point on the sloped side above the belt, for laying glass on."""
-    belt = leaf_belt(x)
-    top = leaf_top(x) - 0.07
-    t = 0.0 if top <= belt else min(1.0, max(0.0, (z - belt) / (top - belt)))
-    return Vector((x, side * (leaf_wide(x) * 0.975 + (LEAF_ROOF + 0.02 - leaf_wide(x) * 0.975) * t + 0.022), z))
+def shell_point(spec, x, z, side, out=0.0):
+    """The point of the shell's side at x and height z, between its lowest edge and its roof's edge, pushed `out`
+    along its normal: found up the half ring by its height."""
+    half, belt, cabin = car_section(spec, x)
+    if z <= half[FLOOR][1]:
+        a = half[FLOOR]
+        b = half[FLOOR + 1]
+        y = a[0]
+        dy = b[0] - a[0]
+        dz = b[1] - a[1]
+        length = math.sqrt(dy * dy + dz * dz)
+        return Vector((x, side * (y + dz / length * out), z - dy / length * out))
+    for j in range(FLOOR, SECTION - 5):
+        a = half[j]
+        b = half[j + 1]
+        if (a[1] - z) * (b[1] - z) <= 0.0 and abs(b[1] - a[1]) > 1e-7:
+            t = (z - a[1]) / (b[1] - a[1])
+            y = a[0] + (b[0] - a[0]) * t
+            dy = b[0] - a[0]
+            dz = b[1] - a[1]
+            length = math.sqrt(dy * dy + dz * dz)
+            return Vector((x, side * (y + dz / length * out), z - dy / length * out))
+    a = half[SECTION - 5]
+    return Vector((x, side * (a[0] + out), a[1]))
 
 
-def build_leaf(name, COAT):
+def top_point(spec, x, y, out=0.0):
+    """The point of the shell's top (bonnet, windscreen, roof or tailgate) at x and y across, lifted by `out`."""
+    half, belt, cabin = car_section(spec, x)
+    for j in range(SECTION - 1, FLOOR + 6, -1):
+        a = half[j]
+        b = half[j - 1]
+        if (a[0] - abs(y)) * (b[0] - abs(y)) <= 0.0 and abs(b[0] - a[0]) > 1e-7:
+            t = (abs(y) - a[0]) / (b[0] - a[0])
+            return Vector((x, y, a[1] + (b[1] - a[1]) * t + out))
+    return Vector((x, y, half[SECTION - 1][1] + out))
+
+
+def side_patch(part, spec, corners, side, out, colour, rows=3, step=0.08):
+    """A patch lying on the side of the shell. `corners` are (x, z) as (bottom-back, top-back, top-front,
+    bottom-front); between them it is sampled finely along x, so that it follows the shell's curves."""
+    bb, tb, tf, bf = corners
+    cols = max(2, int(max(abs(bf[0] - bb[0]), abs(tf[0] - tb[0])) / step) + 1)
+    grid = []
+    for i in range(rows + 1):
+        v = i / rows
+        row = []
+        for c in range(cols + 1):
+            u = c / cols
+            x = (bb[0] + (bf[0] - bb[0]) * u) * (1.0 - v) + (tb[0] + (tf[0] - tb[0]) * u) * v
+            z = (bb[1] + (bf[1] - bb[1]) * u) * (1.0 - v) + (tb[1] + (tf[1] - tb[1]) * u) * v
+            row.append(put(part, shell_point(spec, x, z, side, out), colour))
+        grid.append(row)
+    for i in range(rows):
+        for c in range(cols):
+            quad = (grid[i][c], grid[i][c + 1], grid[i + 1][c + 1], grid[i + 1][c])
+            face(part, quad if side > 0 else quad[::-1], colour)
+    return grid
+
+
+def roof_rail(spec, x):
+    """How high the roof's edge is at x: the top of the side glass."""
+    return smooth_along(spec['top'], x) - 0.004 - spec['rail']
+
+
+def window_patch(part, spec, xs, side, out, colour, gap=0.0, rows=4):
+    """A side window from its belt up to the roof's edge: `xs` are its corners' x as (bottom-back, top-back,
+    top-front, bottom-front); its foot follows the belt, its head the roof's edge, `gap` in from both."""
+    bb, tb, tf, bf = xs
+    cols = max(3, int(max(abs(bf - bb), abs(tf - tb)) / 0.1) + 1)
+    grid = []
+    for i in range(rows + 1):
+        v = i / rows
+        row = []
+        for c in range(cols + 1):
+            u = c / cols
+            xb = bb + (bf - bb) * u
+            xt = tb + (tf - tb) * u
+            x = xb + (xt - xb) * v
+            low = car_section(spec, xb)[1] + gap
+            high = roof_rail(spec, xt) - gap
+            row.append(put(part, shell_point(spec, x, low + (high - low) * v, side, out), colour))
+        grid.append(row)
+    for i in range(rows):
+        for c in range(cols):
+            quad = (grid[i][c], grid[i][c + 1], grid[i + 1][c + 1], grid[i + 1][c])
+            face(part, quad if side > 0 else quad[::-1], colour)
+    return grid
+
+
+def side_band(part, spec, path, wide, side, out, colour):
+    """A thin band lying on the side of the shell along a path of (x, z): a seam, a trim line, a light's strip."""
+    prev = None
+    for i in range(len(path)):
+        a = path[max(i - 1, 0)]
+        b = path[min(i + 1, len(path) - 1)]
+        dx = b[0] - a[0]
+        dz = b[1] - a[1]
+        length = math.sqrt(dx * dx + dz * dz) or 1.0
+        nx = -dz / length * wide
+        nz = dx / length * wide
+        x, z = path[i]
+        pair = (put(part, shell_point(spec, x - nx, z - nz, side, out), colour), put(part, shell_point(spec, x + nx, z + nz, side, out), colour))
+        if prev is not None:
+            quad = (prev[0], prev[1], pair[1], pair[0])
+            face(part, quad if side < 0 else quad[::-1], colour)
+        prev = pair
+
+
+def top_patch(part, spec, x0, x1, half0, half1, out, colour, cols=8, rows=6):
+    """A patch lying on the top of the shell from x0 to x1, across from -half to +half, each read at its end."""
+    grid = []
+    for i in range(rows + 1):
+        v = i / rows
+        x = x0 + (x1 - x0) * v
+        half = half0 + (half1 - half0) * v
+        row = []
+        for c in range(cols + 1):
+            y = -half + 2.0 * half * c / cols
+            row.append(put(part, top_point(spec, x, y, out), colour))
+        grid.append(row)
+    for i in range(rows):
+        for c in range(cols):
+            quad = (grid[i][c], grid[i][c + 1], grid[i + 1][c + 1], grid[i + 1][c])
+            face(part, quad if x1 > x0 else quad[::-1], colour)
+    return grid
+
+
+def end_patch(part, x, y0, y1, z0, z1, colour, out):
+    """A flat patch on an end face at x, facing `out` (+1 the nose's way, -1 the tail's), rounded at its corners."""
+    corners = []
+    cy = (y0 + y1) * 0.5
+    cz = (z0 + z1) * 0.5
+    hy = abs(y1 - y0) * 0.5
+    hz = abs(z1 - z0) * 0.5
+    r = min(hy, hz) * 0.45
+    for qy, qz, a0 in ((1.0, 1.0, 0.0), (-1.0, 1.0, 90.0), (-1.0, -1.0, 180.0), (1.0, -1.0, 270.0)):
+        for k in range(4):
+            a = math.radians(a0 + 90.0 * k / 3.0)
+            corners.append(Vector((x + out * 0.004, cy + qy * (hy - r) + r * math.cos(a), cz + qz * (hz - r) + r * math.sin(a))))
+    pts = [put(part, p, colour) for p in corners]
+    middle = put(part, Vector((x + out * 0.004, cy, cz)), colour)
+    for k in range(len(pts)):
+        tri = (pts[k], pts[(k + 1) % len(pts)], middle)
+        face(part, tri if out > 0 else tri[::-1], colour)
+
+
+# --- a pair of wheels on an axle ---------------------------------------------------------------------------------------------
+
+def wheel(part, spec, side, sides):
+    """One wheel round the origin on the axle (along Y), its outer face towards `side`: the tyre, the rim and its
+    spokes, the brake disc behind them and the plain cap. Gives nothing: its points are in `part`."""
+    R = spec['radius']
+    half = spec['tyre'] * 0.5
+    y0 = side * spec['track']
+    rim_r = spec['rim']
+    TYRE = spec['tyre_tone']
+    WALL = lit(TYRE, 1.25)
+    RIM = spec['rim_tone']
+    DEEP = tone('#0d0e10')
+    # The tyre: a round-shouldered ring, from inside the rim's lip round its outer wall, the tread and its inner wall.
+    profile = [
+        (rim_r - 0.004, -half * 0.86, WALL), (rim_r + 0.02, -half * 0.98, WALL), (R - 0.05, -half, WALL), (R - 0.016, -half * 0.92, TYRE),
+        (R - 0.002, -half * 0.62, TYRE), (R, -half * 0.2, lit(TYRE, 0.86)), (R, half * 0.2, lit(TYRE, 0.86)), (R - 0.002, half * 0.62, TYRE),
+        (R - 0.016, half * 0.92, TYRE), (R - 0.05, half, WALL), (rim_r + 0.02, half * 0.98, WALL), (rim_r - 0.004, half * 0.86, WALL),
+    ]
+    rings = []
+    tones = []
+    for r, y, colour in profile:
+        rings.append(circle(Vector((0.0, y0 + side * y, 0.0)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, sides))
+        tones.append(colour)
+    # Tread: every other point of the tread's rows a little darker, as its blocks are.
+    made = skin(part, rings, tones, closed=True, flip=side < 0.0)
+    for i in (5, 6):
+        for j in range(0, sides, 2):
+            part['paint'][made[i][j]] = lit(TYRE, 0.6)
+    # The rim's barrel inside the tyre, dark, and its bright lip at the face.
+    face_y = y0 + side * (half * 0.8)
+    barrel = [
+        (rim_r - 0.004, y0 - side * half * 0.8, DEEP), (rim_r - 0.012, face_y - side * 0.03, DEEP),
+        (rim_r, face_y, lit(RIM, 0.85)), (rim_r - 0.022, face_y + side * 0.004, RIM), (rim_r - 0.03, face_y - side * 0.006, lit(RIM, 0.7)),
+    ]
+    rings = []
+    tones = []
+    for r, y, colour in barrel:
+        rings.append(circle(Vector((0.0, y, 0.0)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, sides))
+        tones.append(colour)
+    skin(part, rings, tones, closed=True, flip=side > 0.0)
+    # The brake disc in the dark behind the spokes, and the rim's well around it.
+    back_y = face_y - side * 0.05
+    disc = circle(Vector((0.0, back_y, 0.0)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), rim_r - 0.03, sides)
+    well = [put(part, p, DEEP) for p in disc]
+    centre = put(part, Vector((0.0, back_y, 0.0)), tone('#3a3d42'))
+    for j in range(sides):
+        k = (j + 1) % sides
+        tri = (well[j], well[k], centre)
+        face(part, tri if side < 0.0 else tri[::-1])
+    ring_disc = circle(Vector((0.0, back_y + side * 0.003, 0.0)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), (rim_r - 0.03) * 0.78, sides)
+    inner_disc = circle(Vector((0.0, back_y + side * 0.003, 0.0)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), (rim_r - 0.03) * 0.4, sides)
+    skin(part, [ring_disc, inner_disc], [tone('#56595e'), tone('#3a3d42')], closed=True, flip=side > 0.0)
+    # The spokes: each a little arched box from the hub out to the lip, bright on its face and darker on its sides.
+    count = spec['spokes']
+    for s in range(count):
+        turn = TAU * s / count + 0.2
+        for twin in spec['twin']:
+            a0 = turn + twin
+            spread_in = spec['spoke_in']
+            spread_out = spec['spoke_out']
+            pts = []
+            for k in range(4):
+                t = k / 3.0
+                r = 0.055 + (rim_r - 0.03 - 0.055) * t
+                spread = (spread_in + (spread_out - spread_in) * t) / r
+                dip = -side * 0.016 * math.sin(t * math.pi) + side * 0.006
+                for sgn in (-1.0, 1.0):
+                    a = a0 + sgn * spread * 0.5
+                    pts.append((Vector((r * math.cos(a), face_y + dip, r * math.sin(a))), Vector((r * math.cos(a), face_y + dip - side * 0.028, r * math.sin(a)))))
+            front = [put(part, p[0], RIM) for p in pts]
+            back = [put(part, p[1], lit(RIM, 0.55)) for p in pts]
+            for k in range(3):
+                i0 = k * 2
+                quads = [
+                    (front[i0], front[i0 + 1], front[i0 + 3], front[i0 + 2]),
+                    (front[i0], front[i0 + 2], back[i0 + 2], back[i0]),
+                    (front[i0 + 1], back[i0 + 1], back[i0 + 3], front[i0 + 3]),
+                ]
+                for quad in quads:
+                    face(part, quad if side < 0.0 else quad[::-1])
+    # The hub, and a plain cap on it, with its nuts round it.
+    hub = [(0.075, face_y - side * 0.01, lit(RIM, 0.8)), (0.07, face_y + side * 0.012, RIM), (0.045, face_y + side * 0.02, lit(RIM, 1.1)), (0.0, face_y + side * 0.022, lit(RIM, 1.15))]
+    rings = []
+    tones = []
+    for r, y, colour in hub[:-1]:
+        rings.append(circle(Vector((0.0, y, 0.0)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 16))
+        tones.append(colour)
+    skin(part, rings, tones, None, (Vector((0.0, hub[-1][1], 0.0)), hub[-1][2]), closed=True, flip=side > 0.0)
+    for s in range(5):
+        a = TAU * s / 5.0 + 0.5
+        lump(part, Vector((0.058 * math.cos(a), face_y + side * 0.012, 0.058 * math.sin(a))), (0.011, 0.008, 0.011), 1, lit(RIM, 0.6))
+
+
+def axle(spec, name, x, wheel_mesh=None):
+    """A pair of wheels on the axle at x, under its pivot `<name>`; both axles share one mesh."""
+    pivot = bpy.data.objects.new(name, None)
+    pivot.empty_display_size = 0.2
+    bpy.context.scene.collection.objects.link(pivot)
+    pivot.location = (x, 0.0, spec['radius'])
+    # For the game: how far it rolls in a turn, and how far out from the middle the tyres' outer faces are.
+    pivot['radius'] = spec['radius']
+    pivot['track'] = spec['track'] + spec['tyre'] * 0.5
+    if wheel_mesh is None:
+        part = new_part()
+        for side in (-1.0, 1.0):
+            wheel(part, spec, side, spec['sides'])
+        made = finish(part, name + '-par', sharp=40.0, strength=0.35, reach=0.12, floor=None)
+    else:
+        made = bpy.data.objects.new(name + '-par', wheel_mesh)
+        bpy.context.scene.collection.objects.link(made)
+        # It shares the first pair's mesh: its shade is baked once, there.
+        made['shade'] = 0.0
+        made['reach'] = 0.1
+        made['floor'] = -1000.0
+    made.data.materials[0] = CAR
+    made.parent = pivot
+    return pivot, made
+
+
+def build_car(name, spec):
     if not wanted(name):
         return
     part = new_part()
-    DARK = tone('#16181c')
-    PLASTIC = tone('#23262c')
-    GLASS = tone('#12202c')
-    PILLAR = tone('#0e1218')
-    CHROME = tone('#c4cad0')
-    LAMP = tone('#e8eae0')
-    stations = [-2.25, -2.22, -2.12, -1.98, -1.65, -1.2, -0.7, -0.2, 0.15, 0.42, 0.8, 1.22, 1.6, 1.95, 2.18, 2.25]
-    rings = []
-    tones = []
-    for x in stations:
-        wide = leaf_wide(x)
-        belt = min(leaf_belt(x), leaf_top(x) - 0.01)
-        top = leaf_top(x)
-        high = belt < top - 0.06
-        bottom = SILL + (0.12 if abs(x) > 2.0 else 0.0)
-        half = [
-            (0.0, bottom), (wide * 0.74, bottom), (wide * 0.96, bottom + 0.05), (wide, bottom + 0.16), (wide * 1.005, 0.62 if belt > 0.7 else belt - 0.02), (wide * 0.995, belt - 0.03), (wide * 0.975, belt),
-        ]
-        if high:
-            half += [(LEAF_ROOF + 0.02, top - 0.07), (LEAF_ROOF - 0.1, top - 0.015), (LEAF_ROOF * 0.5, top)]
-        else:
-            half += [(wide * 0.9, top - 0.015), (wide * 0.68, top - 0.002), (wide * 0.34, top)]
-        half.append((0.0, top + (0.01 if high else 0.0)))
-        ring = []
-        shades = []
-        for y, z in half:
-            ring.append(Vector((x, -y, z)))
-        for y, z in half[-2:0:-1]:
-            ring.append(Vector((x, y, z)))
-        rings.append(ring)
-        for point in ring:
-            # Silver paint: brighter towards the roof, as it takes the sky.
-            k = 0.86 + 0.26 * min(1.0, max(0.0, (point.z - 0.3) / 0.9))
-            shades.append(lit(COAT, k) if point.z > 0.36 else PLASTIC)
-        tones.append(shades)
-    skin(part, rings, tones, (Vector((-2.26, 0.0, 0.62)), COAT), (Vector((2.26, 0.0, 0.48)), COAT))
+    stations = spec['stations']
+    car_shell(part, spec, stations)
+    COAT = spec['coat']
+    BLACK = spec['plastic']
+    GLASS = spec['glass']
+    FRAME = tone('#0b0d10')
     for side in (-1.0, 1.0):
-        out = Vector((0.0, side, 0.0))
-        # The front and rear doors' windows, and behind them the black pillar that makes the roof seem to float.
-        for points, colour in (
-            (((-1.3, 1.05), (-1.3, 1.41), (-0.38, 1.43), (-0.38, 0.96)), GLASS),
-            (((-0.3, 0.96), (-0.3, 1.43), (0.3, 1.44), (1.0, 1.02), (1.0, 0.94)), GLASS),
-            (((-1.96, 1.1), (-1.72, 1.33), (-1.38, 1.42), (-1.38, 1.06)), PILLAR),
-        ):
-            at = [leaf_glass(x, z, side) for x, z in points]
-            made = face(part, [put(part, p, colour) for p in at])
-            part['flat'][made] = colour
-            top = [leaf_glass(points[0][0] + 0.04, points[0][1] + (points[1][1] - points[0][1]) * 0.52, side), leaf_glass(points[-1][0] - 0.1, points[-1][1] + 0.12, side)]
-            strip(part, top, 0.016, tone('#3a5068'), out)
-        # The doors' seams, and their handles set flush.
-        for x, low, high in ((-1.34, 0.34, 1.03), (-0.34, 0.34, 0.95), (1.02, 0.34, 0.93)):
-            strip(part, [Vector((x, side * (leaf_wide(x) + 0.008), low)), Vector((x, side * (leaf_wide(x) + 0.008), high))], 0.0055, DARK, out)
-        for x in (-1.2, -0.22):
-            lump(part, Vector((x, side * (leaf_wide(x) + 0.01), 0.86)), (0.07, 0.01, 0.014), 1, lit(COAT, 1.2))
-        # A bright line under the windows, and the dark sill.
-        strip(part, [Vector((x, side * (leaf_wide(x) + 0.008), leaf_belt(x) - 0.012)) for x in (-1.95, -1.4, -0.4, 0.5, 1.0)], 0.006, CHROME, out)
-        # The mirror, on the door.
-        lump(part, Vector((0.96, side * 0.99, 1.0)), (0.07, 0.085, 0.05), 2, COAT)
-        lump(part, Vector((0.94, side * 0.92, 0.98)), (0.04, 0.05, 0.02), 1, DARK)
-        for x in (-1.35, 1.35):
-            # A wheel in its arch: a dark round, the tyre, a rim of ten thin spokes and its hub.
-            arch = [Vector((x + 0.41 * math.cos(TAU * k / 22.0), side * (leaf_wide(x) + 0.006), 0.33 + 0.41 * math.sin(TAU * k / 22.0))) for k in range(22)]
-            face(part, [put(part, p, DARK) for p in arch])
-            y0 = side * (leaf_wide(x) - 0.18)
-            y1 = side * (leaf_wide(x) + 0.02)
-            tyre = []
-            for y, r in ((y0, 0.325), (y1 - side * 0.03, 0.33), (y1, 0.295)):
-                tyre.append(circle(Vector((x, y, 0.33)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), r, 24))
-            skin(part, tyre, [tone('#17181b'), tone('#1e2024'), tone('#26282c')], closed=True, flip=side > 0.0)
-            hub = Vector((x, y1 + side * 0.004, 0.33))
-            rim = circle(hub, Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), 0.235, 24)
-            face(part, [put(part, p, tone('#1a1c20')) for p in rim])
-            ring_out = circle(hub, Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), 0.295, 24)
-            ring_in = circle(hub, Vector((1.0, 0.0, 0.0)), Vector((0.0, 0.0, 1.0)), 0.235, 24)
-            skin(part, [ring_out, ring_in], [tone('#20222a'), CHROME], closed=True, flip=side > 0.0)
-            for k in range(10):
-                turn = TAU * k / 10.0 + 0.3
-                a = hub + Vector((0.236 * math.cos(turn - 0.07), side * 0.004, 0.236 * math.sin(turn - 0.07)))
-                b = hub + Vector((0.236 * math.cos(turn + 0.07), side * 0.004, 0.236 * math.sin(turn + 0.07)))
-                c = hub + Vector((0.05 * math.cos(turn + 0.25), side * 0.012, 0.05 * math.sin(turn + 0.25)))
-                d = hub + Vector((0.05 * math.cos(turn - 0.25), side * 0.012, 0.05 * math.sin(turn - 0.25)))
-                face(part, [put(part, p, CHROME) for p in (a, b, c, d)])
-            lump(part, hub + Vector((0.0, side * 0.014, 0.0)), (0.05, 0.016, 0.05), 1, tone('#6a7078'))
-        # Headlamps that sweep back up along the wing, and a running light along their lower edge.
-        lamp = [Vector((2.23, side * 0.3, 0.76)), Vector((2.12, side * 0.62, 0.83)), Vector((1.93, side * 0.82, 0.88)), Vector((2.0, side * 0.86, 0.81)), Vector((2.19, side * 0.72, 0.7)), Vector((2.25, side * 0.4, 0.68))]
-        part['flat'][face(part, [put(part, p, LAMP) for p in lamp])] = LAMP
-        strip(part, [Vector((2.25, side * 0.42, 0.675)), Vector((2.2, side * 0.72, 0.695)), Vector((2.02, side * 0.865, 0.8))], 0.008, tone('#f6f4ea'), Vector((1.0, side * 0.4, 0.0)))
-        # Tail lamps round the rear corners, in the same sweep.
-        lamp = [Vector((-2.17, side * 0.83, 1.2)), Vector((-2.23, side * 0.87, 0.98)), Vector((-2.27, side * 0.72, 0.9)), Vector((-2.24, side * 0.66, 0.98)), Vector((-2.2, side * 0.7, 1.12))]
-        part['flat'][face(part, [put(part, p, tone('#7a2420')) for p in lamp])] = tone('#7a2420')
-    # The windscreen, and the tailgate's window sloping down to its spoiler.
-    wind = [leaf_glass(0.44, 1.42, -1.0), leaf_glass(0.44, 1.42, 1.0), leaf_glass(1.2, 1.04, 1.0), leaf_glass(1.2, 1.04, -1.0)]
-    for p in wind:
-        p.z += 0.03
-    wind[0].y += 0.1; wind[1].y -= 0.1; wind[2].y -= 0.06; wind[3].y += 0.06
-    part['flat'][face(part, [put(part, p, GLASS) for p in wind])] = GLASS
-    # The tailgate's glass lies along the sloping back, under a small spoiler in the coat at the roof's end.
-    tail = [Vector((-1.62, -0.5, leaf_top(-1.62) + 0.006)), Vector((-1.62, 0.5, leaf_top(-1.62) + 0.006)), Vector((-2.1, 0.62, leaf_top(-2.1) - 0.01)), Vector((-2.1, -0.62, leaf_top(-2.1) - 0.01))]
-    part['flat'][face(part, [put(part, p, GLASS) for p in tail])] = GLASS
-    lump(part, Vector((-1.6, 0.0, leaf_top(-1.6) + 0.015)), (0.07, 0.56, 0.02), 1, lit(COAT, 1.1))
-    # A closed nose, for it is electric: a dark gloss panel with a bright V across it, and no badge.
-    grille = [Vector((2.255, -0.34, 0.73)), Vector((2.255, 0.34, 0.73)), Vector((2.272, 0.44, 0.5)), Vector((2.272, -0.44, 0.5))]
-    part['flat'][face(part, [put(part, p, tone('#141820')) for p in grille])] = tone('#141820')
-    strip(part, [Vector((2.262, -0.36, 0.735)), Vector((2.276, 0.0, 0.47)), Vector((2.262, 0.36, 0.735))], 0.012, CHROME, Vector((1.0, 0.0, 0.0)))
-    # Bumpers in dark plastic, a low intake at the nose, and a short fin of an aerial.
-    for x, depth in ((2.24, 0.12), (-2.24, 0.1)):
-        lump(part, Vector((x, 0.0, 0.36)), (depth, 0.84, 0.1), 2, PLASTIC)
-    lump(part, Vector((2.3, 0.0, 0.42)), (0.03, 0.5, 0.05), 1, DARK)
-    lump(part, Vector((-1.65, 0.0, 1.53)), (0.09, 0.02, 0.05), 1, DARK)
-    # The wipers, lying at the foot of the windscreen.
-    for y in (-0.3, 0.32):
-        strip(part, [Vector((1.17, y, 1.09)), Vector((1.12, y + 0.3, 1.11))], 0.007, DARK, Vector((0.5, 0.0, 0.86)))
-    finish(part, name, sharp=30.0, strength=0.5, reach=0.5, floor=0.0, leaf=True)
+        # The sill's and the bumpers' dark plastic, and the arches' edges.
+        for x0, x1 in spec['sills']:
+            low0 = car_low(spec, x0)
+            low1 = car_low(spec, x1)
+            side_patch(part, spec, ((x0, low0 - 0.01), (x0, spec['sill_top']), (x1, spec['sill_top']), (x1, low1 - 0.01)), side, 0.004, BLACK, rows=2)
+        # The windows: first their black surround, a little bigger, then the glass on it.
+        for bb, tb, tf, bf in spec['windows']:
+            grow = 0.024
+            window_patch(part, spec, (bb - grow, tb - grow, tf + grow, bf + grow), side, 0.004, FRAME, gap=-0.012, rows=3)
+            grid = window_patch(part, spec, (bb, tb, tf, bf), side, 0.008, GLASS, gap=0.012, rows=4)
+            # A soft long shine low along each pane, as there is on wet glass.
+            for c in range(len(grid[1])):
+                part['paint'][grid[1][c]] = blend(GLASS, tone('#4c6178'), 0.55)
+        # The pillars between the windows, black, so that the glass reads as one band under the roof.
+        for x0, x1 in spec['pillars']:
+            window_patch(part, spec, (x0, x0, x1, x1), side, 0.006, FRAME, gap=-0.012, rows=3)
+        # The doors' seams and their handles.
+        for path in spec['seams']:
+            side_band(part, spec, path, 0.0045, side, 0.003, tone('#202328'))
+        for x, z in spec['handles']:
+            lump(part, shell_point(spec, x, z, side, 0.012), (0.075, 0.012, 0.014), 1, lit(COAT, 1.2))
+            side_band(part, spec, ((x - 0.07, z - 0.02), (x + 0.07, z - 0.02)), 0.004, side, 0.004, tone('#2a2d32'))
+        # The lamps: lenses, the light inside them, and a strip of running light.
+        for lamp in spec['heads']:
+            side_patch(part, spec, lamp, side, 0.007, spec['lens'], rows=3, step=0.035)
+        for path in spec['running']:
+            side_band(part, spec, path, 0.009, side, 0.011, tone('#f4f2ea'))
+        for lamp in spec['tails']:
+            side_patch(part, spec, lamp, side, 0.007, spec['tail'], rows=3, step=0.035)
+        # The mirror on the door, its cap in the coat on a dark foot.
+        mx, mz = spec['mirror']
+        root = shell_point(spec, mx, mz, side, 0.0)
+        lump(part, root + Vector((-0.02, side * 0.05, 0.0)), (0.05, 0.05, 0.03), 1, BLACK)
+        cap = lump(part, root + Vector((0.0, side * 0.13, 0.04)), (0.085, 0.09, 0.06), 2, COAT)
+        for vert in cap:
+            if (vert.co.x - root.x) < -0.04:
+                part['paint'][vert] = BLACK
+        # Inside each arch, a dark wall, so that the wheel stands in a well and nothing shows through.
+        for ax in spec['axles']:
+            ring = []
+            w = smooth_along(spec['wide'], ax)
+            for k in range(13):
+                a = math.pi * k / 12.0
+                ring.append(Vector((ax + spec['arch'] * math.cos(a), side * (w - 0.27), spec['radius'] + spec['arch'] * math.sin(a))))
+            pts = [put(part, p, spec['under']) for p in ring]
+            hub_pt = put(part, Vector((ax, side * (w - 0.27), spec['radius'])), spec['under'])
+            for k in range(12):
+                tri = (pts[k], pts[k + 1], hub_pt)
+                face(part, tri if side < 0 else tri[::-1])
+    # The windscreen and the back glass, each on a black surround.
+    for x0, x1, h0, h1 in spec['screens']:
+        top_patch(part, spec, x0 - 0.02 * (1 if x1 > x0 else -1), x1 + 0.02 * (1 if x1 > x0 else -1), h0 + 0.02, h1 + 0.02, 0.004, FRAME)
+        grid = top_patch(part, spec, x0, x1, h0, h1, 0.008, GLASS)
+        for c in range(len(grid[2])):
+            part['paint'][grid[2][c]] = blend(GLASS, tone('#4c6178'), 0.5)
+    # On the flat end faces: the tail lamps, the corners of the headlamps, and the nose's low intake.
+    tail_x = spec['stations'][0] - 0.006
+    nose_x = spec['stations'][-1] + 0.006
+    for y0, y1, z0, z1 in spec['tail_faces']:
+        for side in (-1.0, 1.0):
+            end_patch(part, tail_x, side * y0, side * y1, z0, z1, spec['tail'], -1.0)
+    for y0, y1, z0, z1 in spec['head_faces']:
+        for side in (-1.0, 1.0):
+            end_patch(part, nose_x, side * y0, side * y1, z0, z1, spec['lens'], 1.0)
+    for y0, y1, z0, z1 in spec['intakes']:
+        end_patch(part, nose_x, y0, y1, z0, z1, FRAME, 1.0)
+    # Roof rails on their feet, where the car has them.
+    for x0, x1 in spec['rails']:
+        for side in (-1.0, 1.0):
+            across = smooth_along(spec['roof'], (x0 + x1) * 0.5) - 0.07
+            path = []
+            for k in range(7):
+                x = x0 + (x1 - x0) * k / 6.0
+                lift = 0.055 if 0 < k < 6 else 0.0
+                path.append(top_point(spec, x, side * across, lift))
+            tube(part, path, [0.016] * 7, [tone('#2a2d33')] * 7, 6)
+    # The wipers at the foot of the windscreen.
+    for y in spec['wipers']:
+        a = top_point(spec, spec['wiper_x'], y, 0.02)
+        b = top_point(spec, spec['wiper_x'] - 0.12, y + 0.42, 0.02)
+        tube(part, [a, b], [0.009, 0.007], [FRAME, FRAME], 5)
+    finish(part, name, sharp=34.0, strength=0.5, reach=0.5, floor=0.0)
+    body = bpy.data.objects[name]
+    body.data.materials[0] = CAR
+    front, shared = axle(spec, name + '-hjul-fram', spec['axles'][1])
+    back, ignored = axle(spec, name + '-hjul-bak', spec['axles'][0], shared.data)
+    front.parent = body
+    back.parent = body
+    # Where its near headlamp and tail lamp are, for the game to light: two marks, nothing drawn.
+    for mark, lamp in (('-lykta-fram', spec['heads'][0]), ('-lykta-bak', spec['tails'][0])):
+        x = (lamp[0][0] + lamp[1][0] + lamp[2][0] + lamp[3][0]) * 0.25
+        z = (lamp[0][1] + lamp[1][1] + lamp[2][1] + lamp[3][1]) * 0.25
+        at = shell_point(spec, x, z, -1.0, 0.03)
+        light = bpy.data.objects.new(name + mark, None)
+        bpy.context.scene.collection.objects.link(light)
+        light.location = at
+        light.parent = body
 
 
-build_leaf('bil', tone('#b4b9be'))
-build_car('bil-gra', tone('#a8a69a'), 2.0)
+def car_stations(tail, nose, axles, arch, middle_step=0.19):
+    """Where the rings stand: close together at the rounded ends, round each arch evenly along its curve, and every
+    `middle_step` between."""
+    xs = []
+    ends = (0.0, 0.006, 0.016, 0.032, 0.054, 0.084, 0.124, 0.174, 0.234, 0.304, 0.384)
+    for k in ends:
+        xs.append(tail + k)
+        xs.append(nose - k)
+    for ax in axles:
+        for k in range(17):
+            xs.append(ax - arch * math.cos(math.pi * k / 16.0))
+    for a, b in ((tail + 0.384, axles[0] - arch), (axles[0] + arch, axles[1] - arch), (axles[1] + arch, nose - 0.384)):
+        count = max(1, int(round((b - a) / middle_step)))
+        for k in range(1, count):
+            xs.append(a + (b - a) * k / count)
+    out = []
+    for x in sorted(xs):
+        if not out or x - out[-1] > 0.003:
+            out.append(x)
+    return out
+
+
+def arch_seam(ax, reach, angles):
+    """Points round an arch at `reach` from its axle, at the given angles in degrees from the front."""
+    out = []
+    for a in angles:
+        out.append((ax + reach * math.cos(math.radians(a)), 0.33 + reach * math.sin(math.radians(a))))
+    return tuple(out)
+
+
+# The family's car: a five-door electric hatchback 4.5 long, with a raked windscreen and a long roof sloping down to the
+# tailgate, a closed nose, lamps that sweep back along its wings, and the belt kicking up behind the rear door. Silver.
+HATCH = {
+    'coat': tone('#b4b9be'),
+    'plastic': tone('#1d1f23'),
+    'under': tone('#141518'),
+    'glass': tone('#141c26'),
+    'lens': tone('#d6dde2'),
+    'tail': tone('#6a1c1a'),
+    'axles': (-1.35, 1.35),
+    'radius': 0.33,
+    'arch': 0.4,
+    'track': 0.775,
+    'tyre': 0.21,
+    'rim': 0.235,
+    'tyre_tone': tone('#1a1b1e'),
+    'rim_tone': tone('#aab0b6'),
+    'spokes': 5,
+    'twin': (-0.13, 0.13),
+    'spoke_in': 0.03,
+    'spoke_out': 0.026,
+    'sides': 28,
+    'shoulder': 0.11,
+    'tuck': 0.045,
+    'rail': 0.07,
+    'top': ((-2.25, 0.96), (-2.243, 1.04), (-2.225, 1.09), (-2.18, 1.13), (-2.08, 1.2), (-1.88, 1.33), (-1.64, 1.44), (-1.3, 1.51), (-0.8, 1.545),
+            (-0.2, 1.552), (0.14, 1.535), (0.42, 1.45), (0.72, 1.28), (1.0, 1.1), (1.18, 1.0), (1.5, 0.935), (1.85, 0.88),
+            (2.06, 0.82), (2.18, 0.75), (2.235, 0.67), (2.25, 0.58)),
+    'belt': ((-2.25, 1.0), (-2.05, 1.04), (-1.75, 1.03), (-1.4, 0.99), (-0.6, 0.965), (0.4, 0.95), (1.1, 0.935), (1.5, 0.9), (2.25, 0.8)),
+    'roof': ((-2.25, 0.5), (-1.95, 0.58), (-1.55, 0.635), (-0.6, 0.665), (0.25, 0.655), (0.65, 0.68), (1.0, 0.74), (1.3, 0.8), (2.25, 0.8)),
+    'wide': ((-2.25, 0.7), (-2.243, 0.79), (-2.225, 0.84), (-2.19, 0.87), (-2.1, 0.888), (-1.35, 0.898), (0.0, 0.895), (1.35, 0.893),
+             (1.85, 0.882), (2.05, 0.866), (2.16, 0.84), (2.215, 0.8), (2.242, 0.74), (2.25, 0.66)),
+    'bottom': ((-2.25, 0.42), (-2.21, 0.34), (-2.05, 0.3), (-1.75, 0.29), (-0.95, 0.27), (0.95, 0.27), (1.75, 0.27), (2.05, 0.255),
+               (2.2, 0.27), (2.25, 0.34)),
+    'sill_top': 0.37,
+    'sills': ((-0.95, 0.95),),
+    'windows': ((-0.27, -0.27, 0.34, 1.02), (-1.3, -1.3, -0.37, -0.37), (-1.94, -1.62, -1.42, -1.42)),
+    'pillars': ((-0.37, -0.27), (-1.42, -1.3)),
+    'seams': (
+        ((0.9, 0.38), (0.91, 0.62), (0.93, 0.91)),
+        ((-0.32, 0.38), (-0.32, 0.7), (-0.32, 0.95)),
+        ((-1.3, 0.98), (-1.3, 0.8)) + arch_seam(-1.35, 0.44, (80, 65, 50, 35, 20, 8)),
+        ((1.18, 0.925), (1.45, 0.875), (1.7, 0.84), (1.9, 0.8)),
+    ),
+    'handles': ((0.6, 0.865), (-0.66, 0.88)),
+    'mirror': (0.98, 0.985),
+    'heads': (((1.86, 0.72), (1.8, 0.81), (2.2, 0.725), (2.245, 0.615)),),
+    'running': (((1.87, 0.728), (2.05, 0.69), (2.24, 0.625)),),
+    'tails': (((-2.247, 0.86), (-2.235, 1.0), (-1.98, 1.02), (-1.99, 0.88)),),
+    # On the end faces, (y from, y to, z from, z to): the tail lamps round the corners, and the nose's low dark intake.
+    'tail_faces': ((0.46, 0.69, 0.87, 0.99),),
+    'head_faces': ((0.5, 0.64, 0.6, 0.66),),
+    'intakes': ((-0.5, 0.5, 0.37, 0.45),),
+    'screens': ((1.12, 0.36, 0.7, 0.6), (-1.66, -2.1, 0.56, 0.6)),
+    'wipers': (-0.52, 0.04),
+    'wiper_x': 1.1,
+    'rails': (),
+}
+HATCH['stations'] = car_stations(-2.25, 2.25, HATCH['axles'], HATCH['arch'])
+
+# The car that drives past behind the street in Byn: an older estate, 4.7 long, square-backed, with roof rails, a plain
+# dark grille between square lamps and tall lamps up the corners of its tailgate. Warm grey.
+ESTATE = {
+    'coat': tone('#a8a69a'),
+    'plastic': tone('#24262a'),
+    'under': tone('#141518'),
+    'glass': tone('#16202a'),
+    'lens': tone('#d8dcd8'),
+    'tail': tone('#6e2420'),
+    'axles': (-1.42, 1.42),
+    'radius': 0.32,
+    'arch': 0.39,
+    'track': 0.765,
+    'tyre': 0.2,
+    'rim': 0.215,
+    'tyre_tone': tone('#1b1c1f'),
+    'rim_tone': tone('#a2a6aa'),
+    'spokes': 5,
+    'twin': (0.0,),
+    'spoke_in': 0.05,
+    'spoke_out': 0.044,
+    'sides': 24,
+    'shoulder': 0.1,
+    'tuck': 0.04,
+    'rail': 0.065,
+    'top': ((-2.35, 0.98), (-2.345, 1.12), (-2.335, 1.3), (-2.31, 1.41), (-2.25, 1.465), (-2.1, 1.488), (-1.0, 1.5), (0.0, 1.5),
+            (0.22, 1.48), (0.45, 1.39), (0.8, 1.2), (1.15, 1.0), (1.32, 0.955), (1.8, 0.9), (2.15, 0.845), (2.3, 0.76),
+            (2.345, 0.66), (2.35, 0.56)),
+    'belt': ((-2.35, 0.95), (-2.0, 0.952), (0.0, 0.932), (1.15, 0.92), (1.6, 0.89), (2.35, 0.8)),
+    'roof': ((-2.35, 0.6), (-2.25, 0.645), (-1.8, 0.68), (0.2, 0.68), (0.7, 0.72), (1.1, 0.78), (1.4, 0.8), (2.35, 0.8)),
+    'wide': ((-2.35, 0.72), (-2.343, 0.8), (-2.32, 0.845), (-2.27, 0.868), (-2.15, 0.88), (0.0, 0.885), (2.15, 0.875), (2.27, 0.84),
+             (2.325, 0.79), (2.345, 0.72), (2.35, 0.64)),
+    'bottom': ((-2.35, 0.42), (-2.3, 0.34), (-2.1, 0.3), (-1.81, 0.29), (1.81, 0.28), (2.1, 0.27), (2.3, 0.3), (2.35, 0.36)),
+    'sill_top': 0.36,
+    'sills': ((-1.03, 1.03),),
+    'windows': ((-0.25, -0.25, 0.42, 1.12), (-1.28, -1.28, -0.35, -0.35), (-2.2, -2.16, -1.38, -1.38)),
+    'pillars': ((-0.35, -0.25), (-1.38, -1.28)),
+    'seams': (
+        ((0.98, 0.37), (0.99, 0.62), (1.0, 0.9)),
+        ((-0.3, 0.37), (-0.3, 0.7), (-0.3, 0.93)),
+        ((-1.28, 0.95), (-1.28, 0.8)) + arch_seam(-1.42, 0.43, (78, 62, 46, 30, 16, 6)),
+    ),
+    'handles': ((0.66, 0.85), (-0.62, 0.86)),
+    'mirror': (1.08, 0.975),
+    'heads': (((2.0, 0.7), (1.99, 0.8), (2.3, 0.765), (2.335, 0.665)),),
+    'running': (),
+    'tails': (((-2.345, 0.8), (-2.343, 1.3), (-2.27, 1.3), (-2.27, 0.8)),),
+    'tail_faces': ((0.56, 0.71, 0.8, 1.3),),
+    'head_faces': ((0.5, 0.66, 0.64, 0.74),),
+    'intakes': ((-0.55, 0.55, 0.38, 0.5), (-0.44, 0.44, 0.58, 0.7)),
+    'screens': ((1.2, 0.44, 0.74, 0.62),),
+    'wipers': (-0.5, 0.06),
+    'wiper_x': 1.18,
+    'rails': ((-2.0, 0.05),),
+}
+ESTATE['stations'] = car_stations(-2.35, 2.35, ESTATE['axles'], ESTATE['arch'])
+
+
+build_car('bil', HATCH)
+build_car('bil-gra', ESTATE)

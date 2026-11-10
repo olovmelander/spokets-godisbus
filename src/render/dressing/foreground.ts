@@ -2,7 +2,9 @@ import { Group, Matrix4, MeshBasicMaterial, Vector3, type CanvasTexture, type In
 import { FALL_LIMIT } from '../../sim/constants';
 import type { ChapterData } from '../../sim/types';
 import { quadBatch } from '../quads';
+import { openWaterAt } from '../water';
 import { bendAt, windAt } from '../wind';
+import { floorDrop } from './ground';
 import { KIT, drawn, grows, heightAt, sequence, surfaceAt } from './kit';
 
 // --- L4: the foreground ---------------------------------------------------------------------------------
@@ -407,6 +409,19 @@ export function ceilingAt(chapter: ChapterData, walk: (x: number, standing?: boo
 }
 
 /**
+ * Whether the forest's floor at x, z in front of the path has gone down into a river's open water (../water.ts), so
+ * that ferns and lingonberries would stand in it: they do not grow there. The bog's sedge and cotton grass stand in its
+ * shallow water as well as on its islands.
+ */
+function flooded(chapter: ChapterData, x: number, z: number): boolean {
+  if (chapter.place !== 'forest' && chapter.place !== 'garden') return false;
+  const water = openWaterAt(chapter, x);
+  if (water === null) return false;
+  // Past the floor's lip it is cut down into the water.
+  return heightAt(chapter, x) - (floorDrop(chapter, x, z) ?? Infinity) < water + 0.1;
+}
+
+/**
  * Where the cards in front stand, for a chapter and its growth: one every few EL, 2.6 to 5.6 EL in front of
  * the path, each with its top as high as it may be there (`ceilingAt`) or a little lower. None stands tall:
  * what passed in front of him hid him, and what he was looking for.
@@ -427,7 +442,7 @@ export function tufts(chapter: ChapterData, growth: Growth): Card[] {
     const lower = Math.max(0, next() - 0.5) * 0.6;
     const thin = next() < 0.5;
     const built = surfaceAt(chapter, x);
-    const wet = (chapter.water ?? []).some((w) => x >= w.from - 0.5 && x <= w.to + 0.5);
+    const wet = (chapter.water ?? []).some((w) => x >= w.from - 0.5 && x <= w.to + 0.5) || flooded(chapter, x, z);
     // Sedge stands up out of the bog's water, thinly. Nothing else grows in water, on boards or indoors.
     if (wet && growth === 'straw' && thin) picture = 3;
     else if (wet || (kerb ? (built !== undefined && built !== 'paving') || (!!chapter.shop && x > chapter.shop.door - 6) : !grows(chapter, x))) continue;
