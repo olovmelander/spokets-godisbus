@@ -49,6 +49,22 @@ async function until(read, accepts, name, timeout = 12000) {
   } while (Date.now() < end);
   assert.fail(`${name}: timed out; last value ${JSON.stringify(value)}`);
 }
+/** Wait for an authored scene while it advances, with a separate guard against a stuck scene. */
+async function untilScene(read, accepts, name) {
+  const started = Date.now(), absoluteLimit = 180000, inactivityLimit = 20000;
+  let value, previous, advanced = started;
+  do {
+    value = await read();
+    if (accepts(value)) return value;
+    // Body motion and ordinary simulation steps do not count: the scene clock or its dialogue must advance.
+    const progress = JSON.stringify([value.scene?.id, value.scene?.seconds, value.said, value.storyReading]);
+    if (progress !== previous) { previous = progress; advanced = Date.now(); }
+    assert.ok(Date.now() - advanced < inactivityLimit, `${name}: no scene/dialogue progress for 20 s; last value ${JSON.stringify(value)}`);
+    if (value.storyReading && read.page) await continueDialogue(read.page);
+    await sleep(35);
+  } while (Date.now() - started < absoluteLimit);
+  assert.fail(`${name}: exceeded the 180 s scene limit; last value ${JSON.stringify(value)}`);
+}
 /**
  * Runs him right until Använd offers `word`. Watching in the page's own RAF catches the first offered frame,
  * with room to release the key and stop. Holding Shift for the whole trip instead made long walks time out on
@@ -244,7 +260,8 @@ try {
     await page.evaluate(installPad);
     await padPress(page, 0);
     await until(state, (s) => s.flags.includes('paint'), 'gamepad paints with help');
-    await until(state, (s) => s.flags.includes('blink'), 'the ghost blinks', 90000);
+    // The wake-up scene ends at 18 authored seconds; slow CI can still be making progress after 90 wall seconds.
+    await untilScene(state, (s) => s.flags.includes('blink'), 'the ghost blinks');
     check('gamepad painting releases the prologue chase', (await state()).flags.includes('blink'));
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('finished eyes persist with this player', saved.flags.prolog.includes('eye') && saved.flags.prolog.includes('paint'));
@@ -284,7 +301,9 @@ try {
     check('three cuts and both eyes are saved', ['cut1', 'cut2', 'cut3', 'dots'].every((flag) => saved.flags.epilog.includes(flag)));
     await until(state, (s) => s.flags.includes('scene:first-carving'), 'Pappa admires the completed Lillgubben', 30000);
     await reach(page, 'brush', 'bathroom door is reachable');
-    await page.keyboard.press('e'); await until(state, (s) => s.flags.includes('goal'), 'the epilogue reaches bedtime after brushing', 30000);
+    await page.keyboard.press('e');
+    // Walking in, brushing and walking out take 11.6 authored seconds even when software frames are slow.
+    await untilScene(state, (s) => s.flags.includes('goal'), 'the epilogue reaches bedtime after brushing');
     const finished = await state();
     check('the epilogue finishes only after brushing', finished.flags.includes('teeth') && finished.flags.includes('bedtime'));
     await finish();

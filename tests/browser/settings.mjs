@@ -201,7 +201,9 @@ try {
       const viewport = page.viewportSize();
       // Above the action buttons, on the actual game surface.
       const followDirection = before.playerScreen.x > viewport.width * 0.6 ? -1 : 1;
-      const finger = { x: Math.max(28, Math.min(viewport.width - 28, before.playerScreen.x + followDirection * 115)), y: Math.max(100, before.playerScreen.y - 70), id: 1 };
+      // Keep room below Follow finger's 120 px run threshold: turning towards this finger also
+      // moves Elof's camera projection. A 115 px target could become a run during that turn.
+      const finger = { x: Math.max(28, Math.min(viewport.width - 28, before.playerScreen.x + followDirection * 80)), y: Math.max(100, before.playerScreen.y - 70), id: 1 };
       await touch('touchStart', [finger]);
       const walking = await until(state, (s) => (s.x - before.x) * followDirection > 0.45 && s.vx * followDirection > 0, `${layout}: follows held finger`);
       check(`${layout}: a held finger walks towards its position`, Math.abs(walking.vx) <= 1.3);

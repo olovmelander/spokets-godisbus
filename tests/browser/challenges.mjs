@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { picture } from './picture.mjs';
 import { withinDraws } from './budget.mjs';
+import { continueDialogue } from './dialogue.mjs';
 
 const BASE = '/spokets-godisbus/';
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
@@ -163,6 +164,7 @@ try {
       for (const stop of ['entry', 'prize']) {
         const at = stop === 'entry' ? '152.3,33.31' : '146.9,40.91';
         const name = `c4-${stop}-${viewport.width}-${tier}`;
+        if (process.env.CHALLENGE_CASE && name !== process.env.CHALLENGE_CASE) continue;
         const { page, state, info, finish } = await open(name, { viewport }, `?dev&debug&standin&course=berget&tier=${tier}&at=${at}&flags=lift,memory`);
         if (await page.locator('#startBtn').isVisible()) await page.locator('#startBtn').click();
         const start = await until(state, s => s.steps > 90 && s.grounded, name);
@@ -170,6 +172,13 @@ try {
         check(`${name}: draw-call budget`, drawn.drawCalls > 0 && withinDraws(drawn.drawCalls, drawn.tier));
         check(`${name}: player framed`, start.playerScreen && start.playerScreen.x > 30 && start.playerScreen.x < viewport.width - 30 && start.playerScreen.y > 35 && start.playerScreen.y < viewport.height - 30);
         for (const step of [1, 2, 3]) {
+          // Spawning at the prize queues thanks, the memory response and the return clue. Their backlog
+          // legitimately holds controls even before a manual reading stop; ask only after they release it.
+          await until(async () => {
+            const current = await state();
+            if (current.storyReading) await continueDialogue(page);
+            return current;
+          }, s => !s.held && !s.storyReading, `${name}: story releases helper controls`);
           await page.keyboard.press('h');
           await until(state, s => s.help.step === step, `${name}: hint ${step}`);
         }

@@ -1,4 +1,5 @@
 // Untimed goals, accessible recap and real saved-game/lifecycle integration in the source app.
+// STORY_READING_ONLY and STORY_FAST_ONLY select the resume or complete reunion route for a focused rerun.
 import assert from 'node:assert/strict';
 import { mkdirSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -31,7 +32,7 @@ async function open(viewport = { width: 844, height: 390 }, save) {
   }, save);
   const page = await context.newPage();
   const errors = [];
-  page.on('pageerror', (error) => errors.push(String(error)));
+  page.on('pageerror', (error) => { errors.push(String(error)); console.error(`  page error: ${error}`); });
   return { page, context, finish: async () => { assert.deepEqual(errors, [], 'browser errors'); await context.close(); } };
 }
 async function ready(page) {
@@ -74,14 +75,16 @@ async function fastEnd(page, fromSteps) {
     assert.ok(!current.paused && !current.title && !current.contextLost && !current.documentHidden &&
       !current.messageShown && current.dialogs.length === 0, `fast route is blocked: ${diagnostic}`);
     if (current.steps > previous) { previous = current.steps; advanced = Date.now(); }
-    assert.ok(Date.now() - advanced < 5000, `fast route stopped advancing: ${diagnostic}`);
+    // A busy software renderer can pause a single frame for several seconds; keep the Sim budget
+    // and absolute deadline strict while distinguishing that stall from a route which stops advancing.
+    assert.ok(Date.now() - advanced < 20000, `fast route stopped advancing: ${diagnostic}`);
     assert.ok(Date.now() - started < 120000, `fast route exceeded its wall-time safety deadline: ${diagnostic}`);
     await page.waitForTimeout(100);
   }
 }
 
 try {
-  if (!process.env.STORY_READING_ONLY) {
+  if (!process.env.STORY_READING_ONLY && !process.env.STORY_FAST_ONLY) {
   for (const [width, height, chapter, flags, expected] of [
     [390, 844, 'granskog', 'seesaw:trial', 'coneRetry'],
     [780, 360, 'norrsken', 'placed:tragubbe,eyes,bag', 'share'],
@@ -95,13 +98,15 @@ try {
     check(`${width}×${height}: current purpose is the real story stage`, await purpose(page) === expected);
     const layout = await page.evaluate(() => {
       const node = document.getElementById('storyPurpose'), rect = node.getBoundingClientRect();
-      const help = document.getElementById('helpBtn').getBoundingClientRect();
-      const bag = document.getElementById('bag').getBoundingClientRect();
-      return { inside: rect.left >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight,
-        readable: node.scrollWidth <= node.clientWidth, clear: rect.right <= help.left && rect.top >= bag.bottom,
+      // Portrait puts the reminder below the bag; short landscape uses the space between corners.
+      // Both layouts must leave every corner control clear, without requiring either arrangement.
+      const controls = ['bag', 'pauseBtn', 'helpBtn'].map(id => document.getElementById(id).getBoundingClientRect());
+      return { inside: rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight,
+        readable: node.scrollWidth <= node.clientWidth,
+        clear: controls.every(button => rect.right <= button.left || rect.left >= button.right || rect.bottom <= button.top || rect.top >= button.bottom),
         animated: node.getAnimations({ subtree: true }).length, live: node.getAttribute('aria-live') };
     });
-    check(`${width}×${height}: big text fits below the bag and beside the helper`, layout.inside && layout.readable && layout.clear);
+    check(`${width}×${height}: big text fits without overlapping the bag, pause or helper`, layout.inside && layout.readable && layout.clear);
     check(`${width}×${height}: reminder is untimed and politely announced`, layout.animated === 0 && layout.live === 'polite');
     await picture(page, join(shots, `purpose-${width}x${height}.png`));
     await page.evaluate(() => { document.getElementById('bubble').hidden = false; });
@@ -286,6 +291,7 @@ try {
   await known.finish();
 
   }
+  if (!process.env.STORY_FAST_ONLY) {
   // The arriving family first asks how Elof is. Saving or restarting must not mark unread words as read.
   const reading = await open({ width: 844, height: 390 }, saved('norrsken', 1, { norrsken: ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste'] }));
   await reading.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low`);
@@ -321,6 +327,7 @@ try {
   await reading.page.waitForFunction(() => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === 'Den täljde jag till dig');
   check('checkpoint restart re-arms the unread reveal', (await state(reading.page)).storyReading);
   await reading.finish();
+  }
 
   if (!process.env.STORY_READING_ONLY) {
   // The saved route keeps its old travel bound plus the newly authored reunion's 10.8 seconds.
@@ -350,6 +357,7 @@ try {
     'Spöket hjälpte mig hela vägen hit.', 'Trägubben satt fast i sprickan.', 'Han var alldeles ensam.',
     'Nu behöver han aldrig vara ensam.', 'Ni hjälptes åt. Vad modigt!', 'Båda ska få följa med hem.', 'Ja. Nu går vi hem tillsammans.']) {
     await fast.page.waitForFunction((line) => window.__godis.state().storyReading && document.getElementById('bubbleLine').textContent === line, words);
+    console.log(`  read ${words}`);
     await continueDialogue(fast.page);
   }
   await fast.page.keyboard.down('ArrowRight');
