@@ -71,6 +71,7 @@ import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING,
 import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
+import { createBootPull } from './boot-pull';
 import { facingBetween, turnFamily } from './family-turning';
 import { createSharedSweets } from './shared-sweets';
 import { createRescuedFigures } from './rescued-figures';
@@ -1002,6 +1003,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const capKneel: Pose = { ...STANDING };
   /** How far into each of the family's own gestures they are, 0 to 1: Bertil's boot pull, Moa's reach into the root. */
   const gestures = new Map<string, { pull: number; reach: number; lift: number; liftFor: number; hold: number; stoop: number }>();
+  const bootPull = createBootPull();
   /** Granskogen's seesaw board, which Pappa holds (props.ts); found the first time it is wanted. */
   let seesawPlank: Object3D | null | undefined;
   const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0, hold: 0, stoop: 0 }); return g; };
@@ -2056,8 +2058,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // boot lying on the water, he leans down, lifts that foot and tugs at the boot with both hands.
       // Each such gesture comes and goes over a moment (`gestureOf`), never in one frame.
       const gesture = gestureOf(one.who);
-      const pulling = one.who === 'bertil' && chapter.id === 'stormgard' && flags.has('sg:bertil') && !flags.has('sg:boot-ready');
-      gesture.pull = calmStory ? (pulling ? 1 : 0) : gesture.pull + ((pulling ? 1 : 0) - gesture.pull) * ease(7, dt);
+      const pullsBoot = one.who === 'bertil' && chapter.id === 'stormgard';
+      const pulling = pullsBoot && flags.has('sg:bertil') && !flags.has('sg:boot-ready');
+      gesture.pull = pullsBoot ? bootPull(pulling, dt, calmStory) : 0;
       if (gesture.pull > 0.001) {
         const w = gesture.pull, tug = calmStory ? 0 : Math.sin(clock * 9) * 0.08;
         const toward = (joint: 'lean' | 'legR' | 'kneeR' | 'kneeL', v: number) => { posed[joint] += (v - posed[joint]) * w; };
