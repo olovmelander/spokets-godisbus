@@ -7,6 +7,7 @@ import { createTutorial } from './ui/tutorial';
 import { createFingerMarks } from './ui/finger';
 import { MOTION_QUERY, applyMotion, lessMotion } from './platform/motion';
 import { Game } from './app/game';
+import { createHomeConsole, homeConsoleAvailable } from './app/home-console';
 import { STEP } from './sim/constants';
 import { createAudio } from './audio/audio';
 import { arrangementFor } from './audio/music';
@@ -54,6 +55,7 @@ import { openingCues, openingQuiet } from './audio/opening';
 import { endsInScene, sceneBeats, sceneWaits } from './sim/scene';
 import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
 import './ui/ui.css';
+import './ui/home-console.css';
 
 declare global {
   interface Window {
@@ -441,6 +443,7 @@ async function start(): Promise<void> {
   // Pause: the game stands still, and the panel has the play style and "Jag har fastnat" (plan §6.10).
   let paused = false;
   let ended = false;
+  let homeConsole: ReturnType<typeof createHomeConsole> | null = null;
   // The story's last page glues the frame the story ends on, once the ending's shot is left (story-presentation.md row 6).
   let reglue = false;
   const ending = createEnding(document, () => {
@@ -477,10 +480,11 @@ async function start(): Promise<void> {
     return !bootReady || contextLost || !byId('message').hidden || document.hidden;
   }
   function menuOpen(): boolean {
-    return paused || ended || title.open || memories.open || photoAlbum.open || story.open || explore.open || ending.open;
+    return !!homeConsole?.open || paused || ended || title.open || memories.open || photoAlbum.open || story.open || explore.open || ending.open;
   }
   function focusScope(): HTMLElement | null {
     if (!byId('message').hidden) return byId('message');
+    if (homeConsole?.open) return homeConsole.element;
     if (ending.open) return ending.element;
     if (story.open) return story.element;
     if (explore.open) return explore.element;
@@ -805,6 +809,66 @@ async function start(): Promise<void> {
     },
   );
 
+  // An optional game on the family's TV owns a modal surface, never a chapter or a save transition.
+  const consolePrompt = document.createElement('button');
+  consolePrompt.type = 'button'; consolePrompt.id = 'homeConsolePlay'; consolePrompt.className = 'home-console-prompt';
+  consolePrompt.textContent = sv.kart.playPrompt; consolePrompt.hidden = true;
+  document.body.append(consolePrompt);
+  const consoleInert = new Map<HTMLElement, boolean>();
+  const consoleAvailable = () => homeConsoleAvailable(chapter, game.sim.curr,
+    menuOpen() || platformBlocked() || game.sim.held || !!game.sim.story || hud.reading() || game.sim.flags.has('goal'));
+  const openConsole = () => { if (consoleAvailable()) void homeConsole?.show(); };
+  consolePrompt.addEventListener('click', openConsole);
+  homeConsole = createHomeConsole({
+    mount() {
+      const host = document.createElement('section'); host.id = 'homeConsole'; host.className = 'home-console-host';
+      host.setAttribute('role', 'dialog'); host.setAttribute('aria-modal', 'true'); host.setAttribute('aria-label', sv.kart.playPrompt);
+      const loading = document.createElement('div'); loading.className = 'home-console-loading';
+      const label = document.createElement('p'); label.textContent = sv.kart.loading; label.setAttribute('role', 'status');
+      const back = document.createElement('button'); back.type = 'button'; back.textContent = sv.kart.back;
+      back.addEventListener('click', () => homeConsole?.close());
+      loading.append(label, back); host.append(loading); document.body.append(host);
+      host.addEventListener('keydown', event => {
+        if (!homeConsole?.loading || platformBlocked()) return;
+        if (event.key === 'Escape') { event.preventDefault(); homeConsole.close(); }
+        else if (event.key === 'Tab') { event.preventDefault(); back.focus(); }
+      });
+      back.focus();
+      return host;
+    },
+    async load(host, onClose) {
+      const { openKart } = await import('./kart/game');
+      const session = await openKart({ host, onClose, effects: settings.sound ? settings.effectsVolume : 0,
+        music: settings.music ? settings.musicVolume : 0, calm: lessMotion(), tier: view.info().tier,
+        storage: benchOn ? null : storage(), playerId: store.currentId, debug: debugOn });
+      host.querySelector('.home-console-loading')?.remove();
+      return session;
+    },
+    enter() {
+      document.body.classList.add('home-console-open'); consolePrompt.hidden = true;
+      for (const node of document.body.children) {
+        if (!(node instanceof HTMLElement) || node.id === 'homeConsole' || node.id === 'message') continue;
+        consoleInert.set(node, node.inert); node.inert = true;
+      }
+      pointing.cancel(); askedForUse = askedForHelp = false;
+      input.setEnabled(false); input.release();
+      hud.paused(true); pauseVoice(); audio.sleep(true);
+      tutorialView.show(null, device, settings.followFinger, null); fingerMarks.show(null, null, null);
+      auto?.suspend(); resolution?.suspend();
+    },
+    leave() {
+      for (const [node, inert] of consoleInert) node.inert = inert;
+      consoleInert.clear(); document.body.classList.remove('home-console-open');
+      pointing.cancel(); askedForUse = askedForHelp = false;
+      // Sample the pad while disabled, so a held race button cannot become a fresh world action.
+      input.poll(); input.setEnabled(true); input.release(); game.resume();
+      hud.paused(menuOpen()); audio.sleep(platformBlocked()); audio.menu(menuOpen());
+      resumeVoice(!menuOpen() && !platformBlocked());
+      if (!platformBlocked()) { audio.unlock(); canvas.focus(); }
+    },
+    failed() { hud.notice(sv.kart.loadFailed, 6); },
+  });
+
   // A chapter reached from the page before it ("Nästa kapitel", "Spela igen", a code) opens on its time card: the
   // title shows when the game is opened, not between chapters (src/save/onward.ts).
   const onward = takeOnward(chapter.id);
@@ -855,10 +919,11 @@ async function start(): Promise<void> {
   document.addEventListener('visibilitychange', () => {
     auto?.suspend();
     resolution?.suspend();
-    audio.sleep(platformBlocked());
+    audio.sleep(platformBlocked() || !!homeConsole?.open);
     audio.menu(menuOpen());
     devicePlay.setPlaying(!platformBlocked() && !menuOpen());
     memories.suspend(platformBlocked());
+    homeConsole?.suspend(platformBlocked());
     if (document.hidden) { input.release(); pointing.cancel(); askedForUse = askedForHelp = false; story.interrupt(); writeSave(); }
     else {
       game.resume();
@@ -888,6 +953,7 @@ async function start(): Promise<void> {
         bubbles: game.sim.bubbles, knocks: game.sim.knocks, bowled: game.sim.bowled, sinks: game.sim.sinks, blown: game.sim.blown, help: { ...game.sim.help }, checkpoint: game.sim.checkpoint, style: settings.style, paused, device,
         pointing: { last: pointing.last, walking: pointing.walking }, tutorial: tutorial.shown, playerId: store.currentId, playerName: store.players().find(p => p.id === store.currentId)?.name ?? save.name, course: chapter.id, said: [...game.sim.said], title: title.open, settings: { ...settings }, playerScreen: view.playerScreen(), noteHits: game.sim.noteHits, bootReady, contextLost, ending: { open: ending.open, seconds: ending.seconds }, prologue: game.sim.prologue?.frame ?? null,
         scene: game.sim.sceneFrame, held: game.sim.held, storyReading: hud.reading(), pendingDialogue: [...game.sim.pendingDialogue], ghost: game.sim.ghost ? { ...game.sim.ghost } : null,
+        homeConsole: { available: consoleAvailable(), ...homeConsole?.debug() },
       }),
       screen: (at) => view.worldScreen(at),
       info: () => ({ ...view.info(), busyMs, autoSettled: auto?.settled ?? true,
@@ -948,7 +1014,8 @@ async function start(): Promise<void> {
           : [...panel.querySelectorAll<HTMLElement>('button,input')].find((element) => element.getClientRects().length > 0 && !element.hasAttribute('disabled'));
         target?.focus();
       } else canvas.focus();
-      audio.sleep(platformBlocked());
+      audio.sleep(platformBlocked() || !!homeConsole?.open);
+      homeConsole?.suspend(platformBlocked());
       audio.menu(menuOpen());
       resumeVoice((memories.open || !menuOpen()) && !platformBlocked());
       if (!menuOpen()) audio.unlock();
@@ -979,6 +1046,7 @@ async function start(): Promise<void> {
       focusBeforeLoss = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }
     contextLost = true;
+    homeConsole?.suspend(true);
     restoreReady = false;
     restoreGeneration++;
     pointing.cancel();
@@ -1040,6 +1108,7 @@ async function start(): Promise<void> {
   let stormSeen = 0;
   let shown = false;
   let lastTime = 0;
+  let consoleBackHeld = false;
   let savedAt = game.sim.checkpoint;
   // What is said, for the picture (src/render/talk.ts): the line in the bubble, how long it has been up, and whether the story
   // waits on it. While it waits the picture goes on living: breathing, looking at whoever speaks, a mouth that says the words.
@@ -1049,7 +1118,8 @@ async function start(): Promise<void> {
     requestAnimationFrame(frame);
     const began = performance.now();
     timer.update(time);
-    devicePlay.setPlaying(!platformBlocked() && !menuOpen());
+    devicePlay.setPlaying(!platformBlocked() && (!menuOpen() || !!homeConsole?.open));
+    homeConsole?.suspend(platformBlocked());
     if (document.hidden) { lastTime = time; return; }
     const dt = Math.min(timer.getDelta(), 0.25);
     const beforeSteps = game.sim.steps;
@@ -1058,9 +1128,11 @@ async function start(): Promise<void> {
     storyReminder.show(storyContext(chapter.id, game.sim.flags, game.sim.curr, save.flags), !blocked && !menuOpen(), isKlonk());
     // Under a menu the world is still and the tune goes on, muffled; on a chapter's last page the place's air goes on,
     // and the tune's last note rings out (docs/ux-audit/style-and-sound.md rows 20 and 21).
-    audio.sleep(blocked);
+    audio.sleep(blocked || !!homeConsole?.open);
     audio.menu(menuOpen() && !ending.open && !(ended && coda));
     if (blocked) {
+      // The recovery message can still use the ordinary menu input while the TV game is suspended.
+      if (homeConsole?.open) input.setEnabled(true);
       pointing.cancel();
       askedForUse = askedForHelp = false;
       tutorialView.show(null, device, settings.followFinger, null);
@@ -1070,6 +1142,20 @@ async function start(): Promise<void> {
       lastTime = time;
       return;
     }
+    if (homeConsole?.open) {
+      input.setEnabled(false);
+      // The TV owns its input and render loop. No world step, dialogue receipt, photo, save or render advances.
+      hud.paused(true); auto?.suspend(); resolution?.suspend();
+      if (homeConsole.loading) {
+        const pad = [...navigator.getGamepads?.() ?? []].find(pad => pad?.connected);
+        const back = !!pad?.buttons[1]?.pressed;
+        if (back && !consoleBackHeld) homeConsole.close();
+        consoleBackHeld = back;
+      }
+      lastTime = time;
+      return;
+    }
+    consoleBackHeld = false;
     // The wood knocks while the ghost is in the picture: the chase (plan §5.8).
     const ghost = game.sim.ghost;
     if (!ending.open) audio.tick(ghost !== null && !ghost.gone && Math.abs(ghost.x - game.sim.curr.x) < 9);
@@ -1084,6 +1170,9 @@ async function start(): Promise<void> {
       let edges = input.consume();
       if (bench && !bench.done) ({ held, edges } = bench.play(game.sim.curr, time));
       edges = { ...edges, helper: edges.helper || askedForHelp, act: edges.act || askedForUse };
+      if (edges.act && !game.sim.curr.verb && consoleAvailable()) {
+        openConsole(); lastTime = time; return;
+      }
       held = pointing.steer(held, edges);
       if (!learned && device !== 'touch') {
         if (Math.abs(held.x) > 0.3) taught.move = true;
@@ -1208,7 +1297,11 @@ async function start(): Promise<void> {
       pictureSaid = said;
       canvas.setAttribute('aria-label', said);
     }
-    hud.verb(game.sim.curr.verb, game.sim.curr.word);
+    const tvAvailable = consoleAvailable();
+    // Usually the existing Använd/E/X affordance is enough. Keep a separate explicit choice only when a
+    // nearby story action owns that button, so opening the TV cannot steal the story's interaction.
+    consolePrompt.hidden = !tvAvailable || !game.sim.curr.verb;
+    hud.verb(game.sim.curr.verb ?? (tvAvailable ? 'turn' : null), game.sim.curr.word ?? (tvAvailable ? 'playConsole' : null));
     hud.knock(game.sim.help.step >= 2 ? game.sim.help : null);
     // A story's own visit is the helper looking by itself, not a step he asked for.
     hud.helped(game.sim.help.visit ? 0 : game.sim.help.step);

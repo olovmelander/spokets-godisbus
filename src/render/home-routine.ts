@@ -4,6 +4,7 @@ import type { ChapterData } from '../sim/types';
 import type { SceneFrame } from '../sim/scene';
 import type { Rig } from './rig';
 import { HOME_BATHROOM, HOME_LAYOUT } from '../content/home-layout';
+import { createHomeConsoleModel } from './home-console-model';
 
 /** The same doorway in the hall, behind the walking path, in every home chapter. */
 export const BATHROOM = HOME_BATHROOM;
@@ -112,6 +113,7 @@ export function createHomeRoutine(chapter: ChapterData) {
   const screen = new Mesh(new BoxGeometry(tv.screenWidth, tv.screenHeight, .025), new MeshBasicMaterial({ map: screenMap, color: screenMap ? '#ffffff' : '#8fc6d2', fog: false }));
   screen.name = 'home-tv-programme'; screen.userData.keep = 0;
   screen.position.set(0, tv.screenY, tv.screenZ); television.add(screen);
+  television.add(createHomeConsoleModel());
   const brush = new Group();
   brush.userData.model = 'home-toothbrush'; brush.userData.disposeFallback = true;
   brush.add(joined([box(.035, .26, .04, 0, 0, 0, '#409bbc'), box(.075, .095, .065, 0, .17, 0, '#eeeade')]));
