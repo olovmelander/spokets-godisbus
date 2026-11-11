@@ -104,8 +104,10 @@ async function familyCaptures(page) {
         await page.evaluate(() => {
           const bubble = document.getElementById('bubble'), button = document.getElementById('sceneNext');
           const b = bubble.getBoundingClientRect(), c = button.getBoundingClientRect();
-          return b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= c.top &&
-            c.left >= 0 && c.right <= innerWidth && c.bottom <= innerHeight && !document.getElementById('sceneReading').hidden;
+          const fits = rect => rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight;
+          // Portrait stacks the action below the words; wide layouts place it beside them.
+          const separate = b.right <= c.left || c.right <= b.left || b.bottom <= c.top || c.bottom <= b.top;
+          return fits(b) && fits(c) && separate && c.width >= 64 && c.height >= 64 && !document.getElementById('sceneReading').hidden;
         }));
       check(`${width}×${height}: Elof stays visible above or beside the reading controls`, await page.evaluate(() => {
         const state = window.__godis.state(), center = state.playerScreen;

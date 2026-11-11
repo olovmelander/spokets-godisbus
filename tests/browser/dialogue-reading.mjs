@@ -20,6 +20,7 @@ try {
     const { mountShell } = await import('/src/ui/shell.ts');
     const { createHud } = await import('/src/ui/hud.ts');
     const { createSceneUi } = await import('/src/ui/scene.ts');
+    await import('/src/content/aventyr2/aventyr2.ts');
     mountShell(document.body);
     const { setVoiceSettings } = await import('/src/audio/voice-player.ts');
     setVoiceSettings(false, 0); // Synchronous fixture: real audio cannot finish inside this JS task.
@@ -89,11 +90,18 @@ try {
     await page.setViewportSize({ width, height });
     const layout = await page.evaluate(() => {
       document.body.classList.add('big-text');
-      window.dialogue.scene.reading(true, 'keys', 'Stjärnan från påsen');
+      // The reading action belongs to a real protected line. An empty action-only fixture cannot
+      // validate the combined dialogue layout, even if its button alone fits the viewport.
+      const { hud, scene } = window.dialogue;
+      hud.clear(); hud.say('pappa', 'skTinyTogether', true, 'layout'); hud.tick(0);
+      scene.reading(hud.reading(), 'keys', 'Stjärnan från påsen');
       const button = document.getElementById('sceneNext'), rect = button.getBoundingClientRect();
       const panel = document.getElementById('sceneReading').getBoundingClientRect();
-      return rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight && rect.height >= 44 && button.scrollWidth <= button.clientWidth
+      const bubble = document.getElementById('bubble').getBoundingClientRect();
+      return rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight && rect.height >= 64 && button.scrollWidth <= button.clientWidth
         && panel.left >= 0 && panel.right <= innerWidth && panel.top >= 0 && panel.bottom <= innerHeight
+        && bubble.left >= 0 && bubble.right <= innerWidth && bubble.top >= 0 && bubble.bottom <= innerHeight
+        && document.getElementById('bubbleLine').textContent === 'Då hjälps vi åt. Ropa när du behöver oss.'
         && document.getElementById('sceneMoment').textContent === 'Stjärnan från påsen';
     });
     assert.ok(layout, `${width}×${height}: large reading control stays in view`);
