@@ -11,7 +11,7 @@
 @media(prefers-reduced-motion:reduce){.kart-game *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 /* Keep the primary choice visible beside the settings on a short landscape screen. */
 .kart-title>.kart-title-actions{display:none}
-@media(max-height:500px) and (min-width:600px){.kart-title>.kart-title-actions{display:flex;flex-direction:column;gap:8px;margin-top:22px}.kart-start-card>.kart-primary,.kart-start-card>.kart-back{display:none}.kart-title>.kart-title-actions>.kart-back{width:100%}}
+@media(max-height:500px) and (min-width:600px){.kart-title>.kart-title-actions{display:flex;flex-direction:column;gap:8px;margin-top:22px}.kart-game .kart-start-card>.kart-primary,.kart-game .kart-start-card>.kart-back{display:none}.kart-title>.kart-title-actions>.kart-back{width:100%}}
 /* Small artwork can have generous hit areas; every touch target remains at least 64 CSS pixels. */
 @media(pointer:coarse){
  .kart-game button{min-width:64px;min-height:64px}.kart-game .kart-modes button,.kart-game .kart-back,.kart-game .kart-primary{min-height:64px}.kart-game .kart-pause{width:64px;height:64px;min-height:64px}.kart-map{top:91px}
