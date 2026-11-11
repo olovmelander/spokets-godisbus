@@ -166,7 +166,7 @@ describe('the family bathroom and first carving', () => {
           expect(Math.abs(point.y)).toBeLessThan(.85);
         }
         const left = new Vector3(8.85, 4.5, -8.67).project(camera), right = new Vector3(9.92, 4.5, -8.67).project(camera);
-        expect((right.x - left.x) / 2 * (aspect < 1 ? 390 : 844)).toBeGreaterThan(80);
+        expect((right.x - left.x) / 2 * (aspect < 1 ? 390 : 844)).toBeGreaterThan(75);
       }
     } finally { vi.unstubAllGlobals(); }
   });

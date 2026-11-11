@@ -181,7 +181,8 @@ const SCENES: SceneDef[] = [
     stage: {
       shots: [
         { at: 0, x: WINDOW.x + 0.4, y: 3.6, height: 6.4, width: 8.6, move: 0.6 },
-        { at: 0.5, x: LATCH.x + .2, y: 5, z: LATCH.z, height: 4.8, width: 3, move: 0.7 },
+        // Lift the detail above the foreground family on portrait; its extra height keeps the bird's feet in landscape.
+        { at: 0.5, x: LATCH.x + .2, y: 5.4, z: LATCH.z, height: 5.6, width: 3, move: 0.7 },
         { at: 2.6, x: WINDOW.x + 0.4, y: 3.6, height: 6.4, width: 8.6, move: 0.9 },
       ],
       fx: [{ at: 1.8, kind: 'sparkle', from: { x: LATCH.x + 0.45, y: LATCH.y - 0.1, z: LATCH.z + 0.2 }, seconds: 1.2 }],
