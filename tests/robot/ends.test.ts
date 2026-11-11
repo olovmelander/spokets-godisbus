@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { STORY, chapterNumber, courseFor, nextAfter } from '../../src/content/chapters';
 import { epilog, prolog } from '../../src/content/chapters/ends';
+import { HOME_BATHROOM } from '../../src/content/home-layout';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
@@ -272,14 +273,14 @@ describe('Epilog, Godiskalaset, in greybox', () => {
 
 
   it('walks into the bathroom and finishes brushing before the ending can begin', () => {
-    const sim = new Sim({ ...epilog, spawn: { x: 35.5, y: .01 } }, {}, { flags: ['dots', 'scene:first-carving', 'teeth'] });
-    run(sim, 5);
+    const sim = new Sim({ ...epilog, spawn: { x: HOME_BATHROOM.x, y: .01 } }, {}, { flags: ['dots', 'scene:first-carving', 'teeth'] });
+    run(sim, HOME_BATHROOM.brushEnd);
     expect(sim.sceneFrame?.id).toBe('bathroom');
     expect(sim.curr.mode).toBe('free');
     expect(sim.curr.grounded).toBe(true);
     expect(sim.flags.has('goal')).toBe(false);
     expect(sim.flags.has('bedtime')).toBe(false);
-    run(sim, 7);
+    run(sim, HOME_BATHROOM.seconds - HOME_BATHROOM.brushEnd + .4);
     expect(sim.said).toContain('bathroom:1');
     expect(sim.flags.has('bedtime')).toBe(true);
     expect(sim.flags.has('goal')).toBe(true);

@@ -3,6 +3,7 @@ import type { SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
 import { jump, round, row } from '../kit';
 import { DOLL_Z, TAKE } from '../../../render/elof-coat';
+import { HOME_LAYOUT } from '../../home-layout';
 
 /**
  * Äventyr 2, Prolog: Stormkvällen (docs/aventyr-2.md). Units: EL. A Saturday evening at the end of October, at
@@ -32,7 +33,7 @@ import { DOLL_Z, TAKE } from '../../../render/elof-coat';
  */
 
 /** Pappa's shelf on the wall, and where the two figures stand on it until the gust. */
-const SHELF = { x: 7, y: 5.4 };
+const SHELF = HOME_LAYOUT.shelf;
 const OLD = { x: SHELF.x - 3.6, y: SHELF.y + 0.08, z: -8.5 };
 const LITTLE = { x: SHELF.x - 2.9, y: SHELF.y + 0.08, z: -8.3 };
 /** The window by the shelf that the storm bursts open. */
@@ -371,7 +372,6 @@ export const stormkvall: ChapterData = {
     glows: [
       { at: { x: CANDLE.x, y: CANDLE.y + 0.4 }, z: CANDLE.z, size: 0.9, after: 'beat:kvall:0' },
       { at: { x: 21, y: 3.3 }, z: -8.6, size: 0.8, after: 'beat:kvall:0' },
-      { at: { x: 34, y: 3.3 }, z: -8.6, size: 0.8, after: 'beat:kvall:0' },
     ],
   },
   decor: [
@@ -390,9 +390,8 @@ export const stormkvall: ChapterData = {
     { look: 'toyShelf', at: { x: TOY_SHELF.x, y: 0 }, z: TOY_SHELF.z },
   ],
   furniture: [
-    { look: 'table', at: { x: 14, y: 0 }, z: -1.5 },
-    { look: 'chair', at: { x: 14, y: 0 }, z: -3.5, face: 0.25 },
-    { look: 'chair', at: { x: 17.2, y: 0 }, z: -1.5, face: 0.5 },
+    { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z },
+    ...Object.values(HOME_LAYOUT.dining.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
   ],
   scenes: SCENES,
   spawn: { x: 2.6, y: 0.01 },
@@ -418,7 +417,7 @@ export const stormkvall: ChapterData = {
   ],
   surfaces: [{ from: -19, to: 54, kind: 'wood' }],
   // The window by the shelf is the one the storm blows open: the wall has a real opening there.
-  house: { from: -40, to: 38, windows: [WINDOW.x, 21, 34], opens: WINDOW.x },
+  house: { from: -40, to: 38, windows: HOME_LAYOUT.windows, opens: WINDOW.x },
   outdoors: 38,
   // The trail's big candies: the first where the old trägubbe landed, under the window.
   checkpoints: [{ x: 10.6, y: 0, after: TRAIL }, { x: 18, y: 0, after: TRAIL }, { x: 36, y: 0, after: TRAIL }, { x: 45.5, y: -0.8, after: TRAIL }],

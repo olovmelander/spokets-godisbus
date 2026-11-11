@@ -3,6 +3,7 @@ import type { SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
 import { row } from '../kit';
 import { DOLL_Z } from '../../../render/elof-coat';
+import { HOME_LAYOUT } from '../../home-layout';
 
 /**
  * Äventyr 2, Epilog: Morgonen efter (docs/aventyr-2.md). Units: EL. Sunday morning at home, still and bright
@@ -21,7 +22,7 @@ import { DOLL_Z } from '../../../render/elof-coat';
  */
 
 /** Pappa's shelf, its first place, as on the evening of the storm; and the window by it, with the new latch. */
-const SHELF = { x: 7, y: 5.4 };
+const SHELF = HOME_LAYOUT.shelf;
 const FIRST = { x: SHELF.x - 3.6, y: SHELF.y + 0.08, z: -8.5 };
 const WINDOW = { x: 9.4, y: 6, z: -8.9 };
 /**
@@ -30,7 +31,7 @@ const WINDOW = { x: 9.4, y: 6, z: -8.9 };
  */
 const LATCH = { x: WINDOW.x, y: 4.5, z: -8.78 };
 /** The table and its two chairs, as on the evening of the storm. It is 5 long and 2.2 deep (x 11.5 to 16.5, z -2.6 to -0.4). */
-const TABLE = { x: 14, z: -1.5 };
+const TABLE = HOME_LAYOUT.dining;
 const TABLE_TOP = 1.65;
 /** Where each of the family is at breakfast, clear of the table and its chairs. Mormor and morfar stand by. */
 const MAMMA = { x: 12.2, z: -3.4 };
@@ -40,7 +41,7 @@ const PAPPA = { x: 18.4, z: -3 };
 const MORMOR = { x: 10.6, z: -1.3 };
 const MORFAR = { x: 20.2, z: -1.2 };
 /** Pappa by the window when the latch is to be hooked, beside it, not in front of it. */
-const BY_WINDOW = { x: 7.9, z: -6.6 };
+const BY_WINDOW = { x: 7.1, z: -6.6 };
 /** The toy shelf in front of the sofa, as on the evening of the storm. */
 const TOY_SHELF = { x: 21.3, z: DOLL_Z - 0.8 };
 /** Where he takes his cup of cocoa: at the front of the table, where it stands poured for him. */
@@ -170,7 +171,8 @@ const SCENES: SceneDef[] = [
     },
   },
   {
-    // 3. He hooks the new latch: close on it, the hook swings up from its pin and drops into its eye (the `latch` look).
+    // 3. He hooks the new latch. A window detail keeps the little carvings and the bird whole around it;
+    // the former brass-only macro cut their heads and bodies off at the edges on a portrait phone.
     id: 'haken',
     on: 'latch',
     seconds: 3.6,
@@ -179,7 +181,7 @@ const SCENES: SceneDef[] = [
     stage: {
       shots: [
         { at: 0, x: WINDOW.x + 0.4, y: 3.6, height: 6.4, width: 8.6, move: 0.6 },
-        { at: 0.5, x: LATCH.x, y: LATCH.y, z: LATCH.z, height: 1.1, width: 1.6, move: 0.7 },
+        { at: 0.5, x: LATCH.x + .2, y: 5, z: LATCH.z, height: 4.8, width: 3, move: 0.7 },
         { at: 2.6, x: WINDOW.x + 0.4, y: 3.6, height: 6.4, width: 8.6, move: 0.9 },
       ],
       fx: [{ at: 1.8, kind: 'sparkle', from: { x: LATCH.x + 0.45, y: LATCH.y - 0.1, z: LATCH.z + 0.2 }, seconds: 1.2 }],
@@ -276,11 +278,10 @@ export const morgonen: ChapterData = {
   ],
   surfaces: [{ from: -19, to: 62, kind: 'wood' }],
   // The windows of the evening of the storm, and on along the room; the first is the one it blew open, by the shelf.
-  house: { from: -40, to: 76, windows: [WINDOW.x, 21, 34, 46] },
+  house: { from: -40, to: 76, windows: [...HOME_LAYOUT.windows, 46] },
   furniture: [
     { look: 'table', at: { x: TABLE.x, y: 0 }, z: TABLE.z },
-    { look: 'chair', at: { x: TABLE.x, y: 0 }, z: -3.5, face: 0.25 },
-    { look: 'chair', at: { x: 17.2, y: 0 }, z: -1.5, face: 0.5 },
+    ...Object.values(TABLE.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
   ],
   checkpoints: [{ x: 3, y: 0 }, { x: 12, y: 0 }, { x: 21, y: 0 }],
   spots: [
