@@ -51,10 +51,13 @@ export function createHomeRoutine(chapter: ChapterData) {
   const walls: BufferGeometry[] = [];
   const x = BATHROOM.x, z = BATHROOM.doorZ;
   // The loaded fixture and its fallback occupy the same real room behind the house wall.
-  const b = BATHROOM, depth = z - b.backZ, middle = (z + b.backZ) / 2;
+  const b = BATHROOM;
+  // Structural walls end behind the rear wall; only the door trim projects into the living room.
+  const front = HOME_LAYOUT.wall.z - .01, depth = front - b.backZ, middle = (front + b.backZ) / 2;
+  const floorFront = z - .18, floorDepth = floorFront - b.backZ;
   walls.push(box(b.width + b.wallThickness, b.height, b.wallThickness, x, b.height / 2, b.backZ, '#e6e0d3'),
-    box(b.width + b.wallThickness, b.wallThickness, depth + b.wallThickness, x, b.height - b.wallThickness / 2, middle, '#f1ebdf'),
-    box(b.width - b.wallThickness, .04, depth - .18, x, b.floorY - .02, middle - .09, '#aebbb3'));
+    box(b.width + b.wallThickness, b.wallThickness, depth + b.wallThickness / 2, x, b.height - b.wallThickness / 2, middle - b.wallThickness / 4, '#f1ebdf'),
+    box(b.width - b.wallThickness, .04, floorDepth, x, b.floorY - .02, (floorFront + b.backZ) / 2, '#aebbb3'));
   for (const side of [-1, 1]) {
     const sx = x + side * b.width / 2;
     walls.push(box(b.wallThickness, b.height, depth, sx, b.height / 2, middle, '#e6e0d3'),
