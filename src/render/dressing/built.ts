@@ -143,9 +143,21 @@ export function built(chapter: ChapterData, indoors = false): Group {
       const { x, y, filled } = chapter.shelf;
       const dim = evening ? 0.62 : 1;
       const wood = (hex: string) => new MeshStandardMaterial({ color: new Color(hex).multiplyScalar(dim), roughness: 0.85 });
-      const board = new Mesh(new BoxGeometry(9.8, 0.16, 0.9), wood('#8a6a44'));
-      board.position.set(x + 0.6, y, -8.5);
+      // The shelf bridges the window, but stands forward of its joinery. Its rear still supports the
+      // widest carving's turned feet (the bear reaches z -8.771); the frame ends at z -8.8.
+      const board = new Mesh(new BoxGeometry(9.8, 0.16, 0.8), wood('#8a6a44'));
+      board.name = 'home-carving-shelf';
+      board.position.set(x + 0.6, y, -8.38);
       group.add(board);
+      // Wall brackets support the two ends on solid wall, outside both window jambs.
+      const brackets = [x - 4, x + 5.3].flatMap(at => [
+        new BoxGeometry(0.14, 0.84, 0.12).translate(at, y - 0.5, -8.94),
+        new BoxGeometry(0.14, 0.14, 0.92).translate(at, y - 0.15, -8.48),
+      ]);
+      const support = new Mesh(mergeGeometries(brackets), wood('#795a39'));
+      support.name = 'home-shelf-brackets';
+      group.add(support);
+      brackets.forEach(part => part.dispose());
       const tones = ['#d9bd8b', '#c9a877', '#e2c898', '#b99262', '#d2b07e', '#c4a070', '#dcc08e'];
       // The pieces stand in for his carvings, which take their place where their private pack exists.
       const carved = ['tragubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
