@@ -50,7 +50,11 @@ function bank(shape: OutletShape, away: 1 | -1, seed: number, out: { position: n
     const column: [number, number, number][] = [];
     const tone: Color[] = [];
     for (const [k, [d, h]] of across.entries()) {
-      const y = h > 0 ? h * shape.high * rise * (1 + bump) : h;
+      // Before the bank emerges, its whole profile belongs below the water. Collapsing its crown to y=0
+      // made a broad flat shelf at the exact waterline; the swell exposed and hid that shelf every half-cycle.
+      // Begin in the shallow bed and meet the unchanged mature bank over the same four lengths.
+      const submerged = h >= 0 ? -0.12 * (1 - rise) : 0;
+      const y = (h > 0 ? h * shape.high * rise * (1 + bump) : h) + submerged;
       const noise = Math.sin(x * 3.1 + d * 2.3 + seed) * 0.5 + Math.sin(x * 7.7 - d * 5.1) * 0.5;
       column.push([x, y + (h > 0 ? 0.06 * noise * rise : 0), away * (d + wander * (k < 3 ? 1 : 0.3))]);
       // Dark wet earth at the water, then sedge, old straw and grass up its slope, varied along it.
