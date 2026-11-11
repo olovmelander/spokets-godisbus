@@ -202,7 +202,10 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   standing.add(outdoor);
   const landmarks = forestLandmarks(chapter);
   fitOutdoorLandmarks(chapter, landmarks);
-  const ground = bank(landChapter, own, look.id === 'village' ? footShade(chapter) ?? undefined : undefined);
+  // The bush owns the green foliage. Beneath it the bank is ordinary lawn, continuous with either side;
+  // keep the hedge markers on the scatter copy so grass does not grow through the walkable clipped lip.
+  const groundChapter = bushes ? { ...landChapter, surfaces: landChapter.surfaces?.filter(surface => surface.kind !== 'hedge') } : landChapter;
+  const ground = bank(groundChapter, own, look.id === 'village' ? footShade(chapter) ?? undefined : undefined);
   if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
   const air = effects(landChapter, from, to, look.id, standing);
   const front = foreground(landChapter, from, to, OWN[look.id].growth, standing);
