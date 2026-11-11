@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
 import { STEP } from '../../src/sim/constants';
 import { MAMMA_TIME, PAPPA_TIME, prologuePose } from '../../src/sim/prologue';
+import { sceneBeats } from '../../src/sim/scene';
 import { Sim } from '../../src/sim/sim';
 import type { StepInput } from '../../src/sim/types';
 
@@ -78,6 +79,15 @@ describe('the star is a choice', () => {
 });
 
 describe('the shared kitchen keeps opening saves playable', () => {
+  it('retains the awakening dialogue receipts when the window visit gains a new observation', () => {
+    const scene = prolog.scenes!.find(scene => scene.id === 'vaknar')!;
+    const receipts = new Map(sceneBeats([scene]).map(beat => [beat.line, beat.id]));
+    expect(receipts.get('jayWindow')).toBe('vaknar:0');
+    expect(receipts.get('eyesAlive')).toBe('vaknar:1');
+    expect(receipts.get('bagGlitters')).toBe('vaknar:2');
+    expect(receipts.get('stolenBag')).toBe('vaknar:3');
+  });
+
   it('keeps all saved candy indices in the forward trail after the relocated hinge', () => {
     const collected = [0, 5, 10, 11, 16];
     const sim = new Sim(prolog, {}, { checkpoint: 1, flags: ['eye', 'paint', 'blink'], collected });
@@ -104,6 +114,27 @@ describe('the shared kitchen keeps opening saves playable', () => {
 });
 
 describe('the prologue freeze jokes', () => {
+  it('keeps the ghost wooden while the family walks back from the window', () => {
+    const scene = prolog.scenes!.find(scene => scene.id === 'prologue:mamma')!;
+    const arrivals = Object.values(scene.stage!.actors!).flatMap(keys => keys!
+      .filter(key => key.follow === undefined && (key.x !== undefined || key.z !== undefined))
+      .map(key => key.at + (key.move ?? 0)));
+    const lastArrival = Math.max(...arrivals);
+    expect(scene.seconds).toBe(MAMMA_TIME);
+    expect(lastArrival).toBeLessThan(MAMMA_TIME);
+    const ghost = { x: layout.doorway.x - 1, y: 0.8 };
+    // Moving the family farther away must not leave the ghost standing up halfway through their return.
+    for (let seconds = 0.8; seconds < lastArrival - 0.01; seconds += 0.1) {
+      const pose = prologuePose(layout, { kind: 'mamma', seconds, ghost });
+      expect(pose.tilt, `wooden during return at ${seconds}`).toBeCloseTo(-Math.PI / 2);
+      expect(pose.y).toBeCloseTo(layout.doorway.y + 0.29);
+      expect(pose.x).toBe(ghost.x);
+    }
+    const onward = prologuePose(layout, { kind: 'mamma', seconds: MAMMA_TIME, ghost });
+    expect(onward.tilt).toBeCloseTo(0);
+    expect(onward.y).toBeCloseTo(ghost.y);
+  });
+
   it('freezes and topples the hopping ghost before the hinge tears the bag', () => {
     const sim = new Sim({ ...prolog, spawn: { x: prolog.spawn.x + 2.9, y: 0.01 } }, {}, { flags: ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar'] });
     for (let i = 0; i < 240 && !sim.prologue!.frame; i++) sim.step(go);

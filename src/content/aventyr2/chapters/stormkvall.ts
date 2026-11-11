@@ -64,7 +64,7 @@ const CANDLE = { x: 13, y: 1.65, z: -2.1 };
 /** Pappa left of the table, feeling about in the dark: Elof gives him the flashlight here. */
 const PAPPA = { x: 10.6, z: -1.6 };
 /** Moa on the chair at the table's end, drawing, as she does in the first adventure's prologue. */
-const MOA = { x: 16.95, z: -1.5 };
+const MOA = { x: HOME_LAYOUT.dining.chairs.end.x - 0.395, z: HOME_LAYOUT.dining.chairs.end.z };
 /** Bertil by the wall between the shelf and the window he watches. */
 const BERTIL = { x: 8.4, z: -4.4 };
 

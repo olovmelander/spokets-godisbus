@@ -232,6 +232,9 @@ try {
     await capture(page, 'bird-discovery');
     check('waking: draw budget', withinDraws((await info()).drawCalls, (await info()).tier));
     await continueDialogue(page);
+    await readStop(page, state, 'vaknar:jayClose', 'Den är ju inte rädd för oss!');
+    check('waking: the family watches the bird before Elof sees the ghost awaken', !(await state()).flags.includes('woke'));
+    await continueDialogue(page);
     await readStop(page, state, 'vaknar:1', 'Du blinkade! Kan du se mig?');
     check('waking: Elof and the painted ghost meet before the bag is taken', !(await state()).flags.includes('grab'));
     await continueDialogue(page);

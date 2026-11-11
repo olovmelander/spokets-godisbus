@@ -1,5 +1,27 @@
 # Handover
 
+## State (11 November 2026, evening): the family visits the jay
+
+- **Olov asked:** after the shared home redesign, the family must walk over to the window to look at the
+  lavskrika when it arrives in the opening. This continuation starts from PR #263's published merge `ea7ec8b`.
+- **Cause:** the window remained fixed while the dining table moved. The awakening still used short steps
+  beside the table, and Moa stayed seated, leaving the family far from the bird.
+- **Staging:** Mamma, Pappa, Moa and Bertil leave their places and take separate, staggered paths around the
+  furniture to the window. The camera gives the walk and their shared attention time to read. Elof remains
+  with the carving, preserving the secret awakening; Moa still notices the glittering bag. The subsequent
+  freeze joke and return to following Elof use continuous routes from the new positions. Their waiting marks
+  stay behind his earliest painting position, so they follow forwards even if he waits beside the table.
+- **Scope and verification:** existing words, recordings, story receipts, collections, home models and the
+  release boundary are retained. Bertil adds one short observation at the window, giving the shared look a
+  readable moment without extending uninterrupted acting beyond the existing pacing limit. The baseline
+  passes all 2,690 tests and native private-model 390×844
+  development boot/movement. Final path, furniture, Pause/seek, browser and published-scene evidence is
+  recorded in this continuation's PR. Private captures remain ignored; viewport checks do not establish
+  physical-device performance. No work needs Olov's computer or Blender.
+- **Shared chair:** the end chair sits slightly farther from the table so Moa can turn without clipping it.
+  Her seated anchors in Prolog, Stormkvällen and Morgonen follow that same chair and preserve their support;
+  the room models and other furniture stay as they are. Drawing contact is checked with the shared-home scenes.
+
 ## State (11 November 2026): responsive dialogue and storybook interface
 
 - **Olov asked:** review UX, UI and HUD on phones and computers, especially conversations obscuring the
@@ -5447,6 +5469,11 @@ record identify the exact published revision.
 
 ## Next
 
+**The jay in the opening (11 November, evening).** Keep the bird fixed at the actual window, and give all
+four family actors time to rise, walk around the furniture and settle before focusing on the awakening.
+Check their return route too: changing the window marks must not create a fast jump back to the doorway or
+cut through the table. Preserve Elof's viewpoint, Moa's bag glance and the shared simulation/scene clock.
+
 **Responsive interface (11 November).** Preserve the single dialogue card, complete text and generous touch
 areas. Docking belongs to the visible line, not to the availability of Continue. Keep safe areas and larger
 text in the phone matrix, and check actual actors and props as well as DOM rectangles. Reward messages yield
@@ -5899,6 +5926,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Opening's bird (Olov, 11 November 2026):** the family walks over to watch the lavskrika at the window,
+  with paths and framing that fit the redesigned house.
 - **Flärken's outlet (Olov, 11 November 2026):** the near river bank must remain visually stable while
   Lillgubben floats downstream; water may lap naturally against its sloping edge.
 - **Garden endings (Olov, 11 November 2026):** both Gården and Stormgården need a large green hedge visually,
@@ -6002,6 +6031,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Family at the opening window (11 Nov, evening) | Let the family walk over to the arriving jay in the redesigned home | One cloud continuation with staging and independent native review | — / 1 request | Separate furniture-clear routes, visible shared attention and a continuous return to the chase; original story receipts retained. |
 | Responsive interface (11 Nov) | Improve mobile/desktop UX, HUD and dialogue composition | One cloud continuation with parallel dialogue, HUD, menus, native review and regression worktrees | — / 1 request | Unified speech card, retained readable text/targets, quieter HUD, navigable collections and responsive menus; actual-scene and safe-area checks. |
 | TV console / Godisracet (11 Nov) | Port Varggropen and add an optional TV kart race with improved handling and story-linked visuals | One cloud continuation with parallel core, renderer, controls, host and browser review | — / 1 request | Original trace and physics, drift/sweet boosts, wooden toys, shared-home entry and exact return; local player records and mobile controls. |
 | Shared home composition (11 Nov) | Separate TV and sofa, integrate the bathroom and align the interior across home chapters | One cloud continuation with parallel public modelling, staging, geometry and native visual review | — / 1 request | One shared layout, complete bathroom and clear furniture; adapted scenes, saved-progress checks and phone composition review. |
@@ -6058,6 +6088,9 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Opening's window visit (11 November, evening):** the old table-relative steps and seated Moa are
+  replaced with actual paths to the fixed bird. Final temporal and mobile review is recorded in the PR.
 
 - **CI package mirror (11 November):** all browser shards hit Azure Ubuntu mirror DNS failures while
   downloading supplemental font packages, before any game test ran. Browser jobs now pin the observed
@@ -6281,6 +6314,9 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 11 November evening request for the family to walk to the opening's lavskrika is handled in this
+  continuation, including the return to the chase.
+
 - The 11 November responsive UI/HUD and dialogue presentation request is implemented in this continuation.
 
 - The requested TV console and Varggropen kart game are implemented in this continuation; no part is deferred to a later chapter.
@@ -6315,7 +6351,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore, shared home, requested TV console and responsive interface add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore, shared home, requested TV console, responsive interface and opening's window visit add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

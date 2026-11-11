@@ -1,5 +1,6 @@
 import type { SceneDef } from '../../sim/scene';
 import { HOME_LAYOUT } from '../home-layout';
+import { MAMMA_TIME } from '../../sim/prologue';
 
 /**
  * The prologue as it is told now (docs/narrative-audit.md, "the intro"): a Saturday morning at home, the ghost
@@ -20,7 +21,19 @@ const BAG = { x: atTable(1.6), y: 1.65, z: -1.25 };
 /** The empty place first in the row on Pappa's shelf (the shelf's middle less 3.6). */
 const EMPTY = { x: HOME_LAYOUT.shelf.x - 3.6, y: HOME_LAYOUT.shelf.y + 0.7, z: -8.5 };
 // The right end of the sill stays visible beside the family when they turn toward the bird.
-const WINDOW = { x: 11.2, y: 3.55, z: -9 };
+const WINDOW = { x: HOME_LAYOUT.windows[0]! + 1.8, y: 3.55, z: HOME_LAYOUT.wall.z };
+/** Four distinct floor marks leave the landed bird visible between the children. */
+const WINDOW_FAMILY = {
+  pappa: { x: WINDOW.x + 1.7, z: -7.3 },
+  mamma: { x: WINDOW.x - 2.6, z: -7.05 },
+  bertil: { x: WINDOW.x + 0.6, z: -7.8 },
+  moa: { x: WINDOW.x - 1.1, z: -6.3 },
+};
+const faceWindow = (from: { x: number; z: number }) => 0.25 - Math.atan2(WINDOW.x - from.x, WINDOW.z - from.z) / (2 * Math.PI);
+// Elof can paint without leaving his starting mark. The ghost reaches the doorway independently of him;
+// the family therefore waits behind this earliest position, then follows him forwards when he sets off.
+const REJOIN = atTable(-2.9);
+const FOLLOW = { mamma: 5.2, pappa: 2.7, moa: 3.7, bertil: 4.5 };
 /** The deck mark for the star encounter: Elof stops here to look, taste, and become small. */
 const STAR = 40.5;
 const PALM = { x: STAR + 0.8, y: 1.3, z: 0.05 };
@@ -45,7 +58,7 @@ export const TITLE_TABLEAU: SceneDef = {
       ghost: [{ at: 0, x: atTable(0.45), y: 1.75, z: -2.05, face: 0.25, move: 0.01, act: 'carved', rough: 0.76 }],
       mamma: [{ at: 0, x: atTable(4.9), y: 0, z: -2.0, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug', aim: { x: atTable(0.5), y: 2.5, z: -2 } }],
       bertil: [{ at: 0, x: atTable(2.2), y: 0, z: -3.3, face: 0.28, move: 0.01, act: 'look', aim: { x: atTable(0.4), y: 2.2, z: -2 } }],
-      moa: [{ at: 0, x: atTable(3.05), y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
+      moa: [{ at: 0, x: HOME_LAYOUT.dining.chairs.end.x - 0.395, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
     },
     elof: [{ at: 0, act: 'watch', aim: { x: atTable(0.4), y: 2.3, z: -2 } }],
     fx: [{ at: 0, kind: 'shavings', from: { x: atTable(0.45), y: 2.4, z: -1.9 }, seconds: 3600 }],
@@ -101,7 +114,7 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 7.3, act: 'look', aim: { x: CARVING.x, y: 2.2, z: CARVING.z } },
         ],
         moa: [
-          { at: 0, x: atTable(3.05), y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' },
+          { at: 0, x: HOME_LAYOUT.dining.chairs.end.x - 0.395, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' },
           { at: 8.4, act: 'sit', holds: null, aim: { x: CARVING.x, y: 2.2, z: CARVING.z } },
         ],
       },
@@ -113,7 +126,7 @@ export const PROLOG_SCENES: SceneDef[] = [
     },
   },
   {
-    // 2. The ghost wakes. The jay lands at the window and every grown-up turns to it: only Elof sees the painted
+    // 2. The ghost wakes. The jay lands at the window and the family walks over to watch it: only Elof sees the painted
     // eyes catch the light. It blinks, wobbles, looks at him, at the empty place on the shelf, and at the bag.
     // It takes the bag in both hands, and its magic runs into it: two sweets inside begin to glitter.
     id: 'vaknar',
@@ -121,70 +134,95 @@ export const PROLOG_SCENES: SceneDef[] = [
     // Reload an interrupted awakening beside the carving, even if the saved kitchen candy is farther left.
     resumeAt: { x: atTable(-1.8), y: 0.01 },
     until: 'blink',
-    seconds: 18,
+    seconds: 27.7,
     hold: true,
     // Each settled picture waits for its line to be read. The bird, the first shared look and the bag's
     // magic are separate discoveries; the chase starts only after Elof has seen whose bag it took.
-    sounds: [{ at: 1.6, sound: 'bird' }, { at: 5.2, sound: 'blink' }, { at: 13.3, sound: 'paper' }],
-    cues: [{ at: 11.5, flag: 'woke' }, { at: 13.3, flag: 'grab' }, { at: 18, flag: 'blink' }],
+    sounds: [{ at: 1.6, sound: 'bird' }, { at: 14.9, sound: 'blink' }, { at: 23.0, sound: 'paper' }],
+    cues: [{ at: 21.2, flag: 'woke' }, { at: 23.0, flag: 'grab' }, { at: 27.7, flag: 'blink' }],
     lines: [
-      { at: 2.0, who: 'mamma', line: 'jayWindow' },
-      { at: 7.2, who: 'elof', line: 'eyesAlive' },
-      { at: 14.5, who: 'moa', line: 'bagGlitters' },
-      { at: 16.5, who: 'elof', line: 'stolenBag' },
+      { id: 'vaknar:0', at: 2.0, who: 'mamma', line: 'jayWindow' },
+      { id: 'vaknar:jayClose', at: 12.9, who: 'bertil', line: 'jayClose' },
+      { id: 'vaknar:1', at: 16.9, who: 'elof', line: 'eyesAlive' },
+      { id: 'vaknar:2', at: 24.2, who: 'moa', line: 'bagGlitters' },
+      { id: 'vaknar:3', at: 26.2, who: 'elof', line: 'stolenBag' },
     ],
     stage: {
       shots: [
         // The window gets a real establishing shot: the bird lands before Mamma names it.
-        { at: 0, x: 13.2, y: 4.0, height: 7.4, width: 14, move: 1.3 },
-        { at: 3.4, x: atTable(-0.8), y: 2.35, height: 3.1, width: 5.2, move: 1.0 },
-        { at: 8.4, x: (EMPTY.x + CARVING.x) / 2, y: 4.1, height: 7.2, width: CARVING.x - EMPTY.x + 3, move: 1.1 },
-        { at: 10.4, x: atTable(0.2), y: 2.5, height: 4.2, width: 7.2, move: 1.1 },
-        { at: 15.5, x: atTable(1.9), y: 2.7, height: 6.4, width: 12, move: 0.9 },
+        { at: 0, x: 13.2, y: 3.5, z: -3.5, height: 7.4, width: 14, move: 1.3 },
+        // After the spoken invitation the camera follows the unhurried walk to the rear wall.
+        { at: 2.1, x: 13.2, y: 3.1, z: -2.5, height: 8.0, width: 14.5, move: 1.5 },
+        { at: 8.6, x: 10.8, y: 3.0, z: -5.5, height: 7.0, width: 10.5, move: 3.7 },
+        { at: 13.1, x: atTable(-0.8), y: 2.35, height: 3.1, width: 5.2, move: 1.0 },
+        { at: 18.1, x: (EMPTY.x + CARVING.x) / 2, y: 4.1, height: 7.2, width: CARVING.x - EMPTY.x + 3, move: 1.1 },
+        { at: 20.1, x: atTable(0.2), y: 2.5, height: 4.2, width: 7.2, move: 1.1 },
+        { at: 23.4, x: 12.5, y: 3.2, z: -2.5, height: 7.6, width: 13, move: 0.7 },
+        { at: 25.2, x: atTable(1.9), y: 2.7, height: 6.4, width: 12, move: 0.9 },
       ],
       actors: {
         mamma: [
           { at: 0, act: 'point', aim: WINDOW, face: 0.6 },
-          { at: 0.7, x: atTable(4.4), z: -3.7, move: 0.8, face: 0.6, act: 'look', aim: WINDOW },
+          // Give Moa's pushed chair room before she stands, keeping the invitation still at the line.
+          { at: 0.65, x: atTable(6.1), move: 0.8 },
+          // The new sofa occupies the old rear aisle: go round the table's open front and left side.
+          { at: 2.1, x: atTable(6.1), z: 3.5, move: 2.1, act: 'walk', aim: WINDOW },
+          { at: 4.3, x: WINDOW_FAMILY.mamma.x, z: 3.5, move: 4.2 },
+          { at: 8.6, ...WINDOW_FAMILY.mamma, move: 4.1, face: faceWindow(WINDOW_FAMILY.mamma) },
+          { at: 12.7, act: 'look', aim: WINDOW },
         ],
         pappa: [
-          { at: 0.2, x: atTable(0.5), move: 0.5, act: 'stand', holds: null },
-          // Leave beside the chair before turning behind its back towards the window: two unhurried side steps,
-          // then look back left towards the fixed window.
-          { at: 0.7, x: atTable(1.8), move: 0.7, face: 0, act: 'look', aim: WINDOW },
-          { at: 1.4, x: atTable(1.9), z: -4.3, move: 0.8, face: 0.62 },
+          { at: 0.2, x: atTable(0.3), move: 0.5, act: 'stand', holds: null },
+          // Rise, then leave the pushed chair on its left, away from the sofa.
+          { at: 0.7, x: atTable(-1.7), z: -3.5, move: 1.0, face: 0.5, act: 'look', aim: WINDOW },
+          { at: 2.15, x: atTable(-1.7), z: -6.3, move: 2, act: 'walk', aim: WINDOW },
+          { at: 4.25, ...WINDOW_FAMILY.pappa, move: 1.1, face: faceWindow(WINDOW_FAMILY.pappa) },
+          { at: 5.35, act: 'look', aim: WINDOW },
         ],
-        bertil: [{ at: 0.3, x: atTable(2.9), z: -4.7, move: 0.9, face: 0.61, act: 'look', aim: WINDOW }],
+        bertil: [
+          { at: 0.3, x: atTable(2.5), z: -3.26, face: 0, move: 1.2, act: 'walk', aim: WINDOW },
+          { at: 2.2, x: atTable(5.8), z: -3.26, move: 1.6, act: 'walk', face: 0, aim: WINDOW },
+          { at: 3.9, x: atTable(5.8), z: 0.6, move: 1.4, act: 'walk' },
+          { at: 5.4, x: WINDOW_FAMILY.bertil.x - 1.2, z: 0.6, move: 3.2 },
+          { at: 8.7, x: WINDOW_FAMILY.bertil.x - 1.2, z: -4.2, move: 2.0 },
+          { at: 10.8, ...WINDOW_FAMILY.bertil, move: 1.6, face: faceWindow(WINDOW_FAMILY.bertil) },
+          { at: 12.5, act: 'look', aim: WINDOW },
+        ],
         moa: [
-          { at: 0.4, face: 0.63, act: 'sit', aim: WINDOW },
-          // Only Moa looks back at the table, as the magic runs into the bag: she sees it glitter (she says so
-          // on the deck), and is turned to the jay again before the ghost hops away.
-          { at: 14.0, face: 0.5, move: 0.5, aim: { x: BAG.x, y: BAG.y + 0.3, z: BAG.z } },
-          { at: 15.8, face: 0.63, move: 0.5, aim: WINDOW },
+          { at: 1.35, x: HOME_LAYOUT.dining.chairs.end.x - 0.55, move: 0.5, act: 'stand', aim: WINDOW },
+          // Finish rising, turn while still in the gap, then step through the chair's front side.
+          { at: 2.1, face: 0.25, move: 0.65, act: 'look', aim: WINDOW },
+          { at: 2.9, z: 2.0, move: 1.5, act: 'walk' },
+          { at: 4.5, x: WINDOW_FAMILY.moa.x, z: 2.0, move: 3.5 },
+          { at: 9.3, ...WINDOW_FAMILY.moa, move: 3.2, face: faceWindow(WINDOW_FAMILY.moa) },
+          { at: 12.5, act: 'look', aim: WINDOW },
+          // Only Moa glances back when the bag glitters. Her feet remain by the window.
+          { at: 23.1, face: 0.12, move: 0.9, aim: { x: BAG.x, y: BAG.y + 0.3, z: BAG.z } },
+          { at: 25.1, face: faceWindow(WINDOW_FAMILY.moa), move: 0.9, aim: WINDOW },
         ],
         ghost: [
           { at: 0, x: CARVING.x, y: CARVING.y, z: CARVING.z, face: 0.25, move: 0.01, act: 'carved' },
-          { at: 4.0, act: 'wake' },
-          { at: 6.4, act: 'look', aim: { x: atTable(-1.8), y: 2.6, z: 0.2 }, face: 0.38, move: 0.6 },
-          { at: 8.7, act: 'look', aim: EMPTY, face: 0.6, move: 0.7 },
-          { at: 10.6, act: 'look', aim: { x: BAG.x, y: BAG.y + 0.4, z: BAG.z }, face: 0, move: 0.7 },
-          { at: 11.5, act: 'waddle', x: atTable(1), y: CARVING.y, z: -1.2, move: 0.8 },
-          { at: 13.3, act: 'grab' },
-          { at: 16.0, act: 'hop', face: 0 },
+          { at: 13.7, act: 'wake' },
+          { at: 16.1, act: 'look', aim: { x: atTable(-1.8), y: 2.6, z: 0.2 }, face: 0.38, move: 0.6 },
+          { at: 18.4, act: 'look', aim: EMPTY, face: 0.6, move: 0.7 },
+          { at: 20.3, act: 'look', aim: { x: BAG.x, y: BAG.y + 0.4, z: BAG.z }, face: 0, move: 0.7 },
+          { at: 21.2, act: 'waddle', x: atTable(1), y: CARVING.y, z: -1.2, move: 0.8 },
+          { at: 23.0, act: 'grab' },
+          { at: 25.7, act: 'hop', face: 0 },
         ],
       },
       elof: [
         { at: 0, act: 'watch', aim: WINDOW },
-        { at: 4.4, act: 'startle', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
-        { at: 6.3, act: 'watch', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
-        { at: 8.9, act: 'watch', aim: EMPTY },
-        { at: 10.7, act: 'watch', aim: { x: BAG.x, y: 2.0, z: BAG.z } },
-        { at: 15.8, act: 'point', aim: { x: atTable(1), y: 2.2, z: -1.2 } },
+        { at: 14.1, act: 'startle', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
+        { at: 16.0, act: 'watch', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
+        { at: 18.6, act: 'watch', aim: EMPTY },
+        { at: 20.4, act: 'watch', aim: { x: BAG.x, y: 2.0, z: BAG.z } },
+        { at: 25.5, act: 'point', aim: { x: atTable(1), y: 2.2, z: -1.2 } },
       ],
       fx: [
-        { at: 0, kind: 'jay', from: { x: WINDOW.x, y: WINDOW.y, z: -8.6 }, seconds: 18 },
-        { at: 4.0, kind: 'sparkle', from: { x: CARVING.x, y: 2.0, z: CARVING.z }, seconds: 1.9 },
-        { at: 13.4, kind: 'stream', from: { x: atTable(1), y: 2.5, z: -1.2 }, to: { x: atTable(1.5), y: 2.25, z: -1.35 }, seconds: 2.0 },
+        { at: 0, kind: 'jay', from: { x: WINDOW.x, y: WINDOW.y, z: -8.6 }, seconds: 27.7 },
+        { at: 13.7, kind: 'sparkle', from: { x: CARVING.x, y: 2.0, z: CARVING.z }, seconds: 1.9 },
+        { at: 23.1, kind: 'stream', from: { x: atTable(1), y: 2.5, z: -1.2 }, to: { x: atTable(1.5), y: 2.25, z: -1.35 }, seconds: 2.0 },
       ],
     },
   },
@@ -193,29 +231,41 @@ export const PROLOG_SCENES: SceneDef[] = [
     // ghost drops stiff in mid-hop, and Mamma sees only a carving on the floor. Then they all go after Elof.
     id: 'prologue:mamma',
     by: { done: 'mamma:passed' },
-    seconds: 2.6,
+    seconds: MAMMA_TIME,
     stage: {
+      shots: [
+        { at: 0, x: 14.0, y: 3.0, z: -2, height: 8, width: 17, move: 0.01 },
+        { at: 2.9, x: 12.5, y: 3.1, z: -1.5, height: 8, width: 18, move: 2.0 },
+      ],
       actors: {
+        // The window is left of the table. Return through that clear side aisle, then join Elof in front;
+        // handing a window mark directly to the followers would cut diagonally through the table.
         mamma: [
-          { at: 0, face: 0.05, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.5, x: atTable(4.9), z: -1.9, move: 0.9, face: 0.08, act: 'look', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
-          { at: 1.5, act: 'shrug' },
-          { at: 2.4, act: 'stand', follow: 5.2, holdsLeft: null },
+          { at: 0, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.6, x: REJOIN - FOLLOW.mamma, z: -5.4, move: 2.2, act: 'walk' },
+          { at: 2.9, x: REJOIN - FOLLOW.mamma, z: 3.0, move: 2.4 },
+          { at: 5.4, face: 0.05, act: 'look', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
+          { at: 6.7, act: 'shrug', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.mamma, holdsLeft: null },
         ],
         pappa: [
-          { at: 0.2, face: 0.32, act: 'look', aim: { x: atTable(0.5), y: 1.5, z: 0 } },
-          { at: 2.4, act: 'stand', follow: 2.7, z: -2.5 },
+          { at: 0.2, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 1.5, x: REJOIN - FOLLOW.pappa, z: 0.3, move: 4.95, act: 'walk' },
+          { at: 6.5, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.pappa },
         ],
         moa: [
-          { at: 0.3, act: 'stand', face: 0.3 },
-          // Rise first, then step beside the chair into the clear aisle before following Elof: far enough from the table
-          // that her swinging hand clears its edge.
-          { at: 0.8, z: 0.45, move: 1.1 },
-          { at: 2.4, act: 'stand', follow: 3.7 },
+          { at: 0.15, act: 'look', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.35, x: REJOIN - FOLLOW.moa, z: 3.6, move: 3.65, act: 'walk' },
+          { at: 4.1, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.moa },
         ],
         bertil: [
-          { at: 0.25, act: 'startle', face: 0.3 },
-          { at: 2.4, act: 'stand', follow: 4.5, z: -0.9 },
+          { at: 0.25, act: 'startle', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.55, x: atTable(-4.3), z: -4.6, move: 2.3, act: 'walk' },
+          { at: 2.9, x: atTable(-4.3), z: 1.7, move: 2.15 },
+          { at: 5.2, x: REJOIN - FOLLOW.bertil, z: 1.7, move: 2, face: 0 },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.bertil },
         ],
       },
       elof: [{ at: 0.2, act: 'watch', aim: { x: atTable(5.4), y: 0.6, z: 0 } }],

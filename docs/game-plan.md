@@ -301,6 +301,11 @@ and theft, and changes the star from a touch trigger to a deliberate taste follo
 and family reassurance (§3.4). Since 10 November, complete reading time and recordings govern dialogue;
 Fortsätt is optional in held scenes, and ordinary conversations allow movement.
 
+In the redesigned home, the arriving lavskrika draws Mamma, Pappa, Moa and Bertil over to the actual window
+(Olov, 11 November 2026). They rise and walk around the furniture while the camera lets the visit read.
+Elof stays beside the carving and witnesses its awakening. Moa's later glance at the glittering bag and the
+family's return to follow Elof remain continuous with those window positions.
+
 | Time | Experience | What it proves |
 | --- | --- | --- |
 | 0:00–2:00 | The kitchen table on a Saturday morning, close up. Pappa's figures stand on their shelf behind, with one empty place first in the row. Pappa's hands give Elof the brush; he paints the ghost's two eyes. *Pling* — it blinks, glances at the empty place, grabs the giant candy bag and wobbles off. Elof chases it across the veranda (an animated hand shows the stick only if he hasn't moved within a few seconds); the bag tears, candy trickles out. He catches a glittering star: POFF. Pappa sees tiny Elof, picks up the frozen ghost and puts it on the railing, and it sneaks off behind his back. "Följ godisspåret, Elof. Vi är nära dig hela tiden." Title. | The hook, the likeness, the magic, the Toy Story gag, the seed of the secret. Works without reading or sound. |

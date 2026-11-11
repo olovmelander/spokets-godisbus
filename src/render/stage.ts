@@ -1039,7 +1039,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           return from && age < .45 ? mix(chairBack(from.stance, from.previous, from.t, hips, pushed), now, smooth(age / .45)) : now;
         };
         getUp(pose, state.stance, state.before, elapsed);
-        if (state.before && elapsed < 0.45) {
+        // Reduced-motion drawing settles its lean with its immediate hand contact; a prior upright gesture
+        // must not leave the page out of reach. Chair rise/sit-down still comes from getUp above.
+        if (state.before && elapsed < 0.45 && !(calm && state.act === 'draw')) {
           const previous = (old: NonNullable<State['before']>, out: Pose): Pose => {
             actPose(old.act, { t: old.t + (old.settledLow && (old.act === 'kneel' || old.act === 'crouch') ? CLIPS[old.act].seconds : 0), aim: aimFor(old.aim), stride: 0, pace: 0, calm, role: who, legs: rig.legs, clock: time + LOOP[who], seat: sitsAt }, out, old.stance);
             getUp(out, old.stance, old.previous, old.t);
@@ -1115,7 +1117,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const offSpeed = behindSpeed.get(who) ?? behindSpeed.set(who, { ...STANDING }).get(who)!;
         const target = asking.get(who), targetStep = askingStep.get(who) ?? askingStep.set(who, { ...STANDING }).get(who)!;
         const wantedNow = { ...pose };
-        if (flowing && !cut && shown && target) {
+        if (flowing && !cut && shown && target && !(calm && state.act === 'draw')) {
           const handing = had !== undefined && had !== legs;
           for (const joint of LIMBS) {
             const step = pose[joint] - target[joint], excess = step - targetStep[joint];
@@ -1312,6 +1314,12 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           sheet.position.set((drawingHome.x ?? x) + Math.sin(turn) * 1.15 / unit, table.at.y + 1.658,
             (drawingHome.z ?? z) + Math.cos(turn) * 1.15 / unit);
           sheet.rotation.set(-Math.PI / 2, turn, 0, 'YXZ'); sheet.scale.setScalar(.43);
+          // The chair can move back for a safe exit; the paper stays supported by the tabletop.
+          // Its rotated half extents use the same 5 × 2.2 table and 1.9 × 1.5 sheet as the furniture above.
+          const paperX = .43 * (.95 * Math.abs(Math.cos(turn)) + .75 * Math.abs(Math.sin(turn)));
+          const paperZ = .43 * (.95 * Math.abs(Math.sin(turn)) + .75 * Math.abs(Math.cos(turn)));
+          sheet.position.x = Math.max(table.at.x - 2.5 + paperX + .01, Math.min(table.at.x + 2.5 - paperX - .01, sheet.position.x));
+          sheet.position.z = Math.max(table.z - 1.1 + paperZ + .01, Math.min(table.z + 1.1 - paperZ - .01, sheet.position.z));
           holding.add(sheet);
           if (state.act === 'draw' || leavesDrawing) {
             drawingContact = true;
@@ -1323,7 +1331,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             paperContact.position.copy(sheet.position).addScaledVector(across, pen.across / unit).addScaledVector(forward, pen.ahead / unit);
             paperContact.position.y += .008 + pen.lift / unit;
             paperContact.userData.contact = pen.contact;
-            paperSupport.position.copy(sheet.position).addScaledVector(across, .3).addScaledVector(forward, -.08);
+            // Steady the near corner, within the page and comfortably in reach from the pushed-back chair.
+            paperSupport.position.copy(sheet.position).addScaledVector(across, .3).addScaledVector(forward, -.24);
             paperSupport.position.y += .045;
             fingerDirection.copy(forward).addScaledVector(up, -.15).normalize();
             rig.grip(0, paperSupport.position, fingerDirection, otherHand, weight);

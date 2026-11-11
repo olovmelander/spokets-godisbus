@@ -137,6 +137,7 @@ export const VOICE_LINES = [
   { key: 'familyCapReady', speaker: 'bertil', situation: 'Cap floating in stream', tag: '[encouraging, supportive older brother]', text: 'Kliv i när du vill. Jag hejar på dig.' },
   { key: 'heja', speaker: 'bertil', situation: 'Cheering for brother from shore', tag: '[loud cheering, enthusiastic older brother]', text: 'Heja, lillebror!' },
   { key: 'partyBertilThanks', speaker: 'bertil', situation: 'Celebrating the candy party after Elof shares with him', tag: '[joyful older brother, friendly excitement]', text: 'Tack! Nu är det ett riktigt godiskalas.' },
+  { key: 'jayClose', speaker: 'bertil', situation: 'Äventyr 1, prolog', tag: '[cheerful, supportive older brother]', text: 'Den är ju inte rädd för oss!' },
 
   // MAMMA
   { key: 'familyMamma', speaker: 'mamma', situation: 'Building log bridge over puddle', tag: '[warm, maternal, calm]', text: 'Jag lägger en stock över vattnet.' },
