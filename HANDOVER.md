@@ -1,5 +1,29 @@
 # Handover
 
+## State (11 November 2026): responsive dialogue and storybook interface
+
+- **Olov asked:** review UX, UI and HUD on phones and computers, especially conversations obscuring the
+  picture, and give the presentation a coherent visual design. This continuation starts from PR #262's
+  published merge `7977865`, with parallel dialogue, HUD, menu, native visual and browser-regression worktrees.
+- **Dialogue:** one paper card holds the speaker, full readable text and optional Continue. Ordinary dialogue
+  stays above play; held portrait conversations dock near the bottom, clearing the family's close-up faces.
+  Wide held scenes use an inline button. The visible line retains its dock through Pause and completion linger.
+  Reading text remains 22 px or 27.5 px with Större text; original words, automatic timing, recordings, movement
+  policy and dialogue receipts are preserved. The action sits outside the speech live region.
+- **HUD:** Help and Pause share one top utility row. Smaller painted discs, restrained shadows and lighter
+  controls leave more of the scene visible while preserving generous touch areas. Objectives keep their full
+  wording. Reward notices wait for the conversation and keep their remaining readable lifetime.
+- **Menus and collecting:** title and Pause layouts put primary actions within reach, without asking portrait
+  players to rotate. Godispåsen has persistent Godis/Fynd/Minnen/Foton bookmarks, local focus navigation and
+  the same complete collection across both adventures. Wide galleries show four picture columns with labels.
+- **Review:** the starting revision passes all 2,685 tests and native private-model phone movement. Actual
+  scene captures exposed the small-phone family-face obstruction; the revised dock clears it. Additional
+  checks cover narrow phones, both orientations, larger text, nonzero safe areas, complete authored lines,
+  touch/keyboard/gamepad continuation, Pause, focus and reward timing. Final gates, exact CI and deployed
+  browser evidence are recorded in this continuation's PR before delivery. Viewport checks do not establish
+  physical-device performance. No private asset, recording, release boundary or rule change is needed; no
+  work is deferred to Olov's computer.
+
 ## State (11 November 2026): Godisracet at the television
 
 - **Olov asked:** connect an interactive console to the TV, port the kart game from `pekkas-pokal`, retain
@@ -5423,6 +5447,12 @@ record identify the exact published revision.
 
 ## Next
 
+**Responsive interface (11 November).** Preserve the single dialogue card, complete text and generous touch
+areas. Docking belongs to the visible line, not to the availability of Continue. Keep safe areas and larger
+text in the phone matrix, and check actual actors and props as well as DOM rectangles. Reward messages yield
+the foreground without losing their reading time. Collection bookmarks move local focus and retain both
+adventures' content. No local Blender work is needed.
+
 **TV console (11 November).** Preserve the exact Varggropen trace and the source tyre model underneath the
 explicit arcade extension. Keep one owner of modal input/time/audio: the live house must not advance or
 save while a race runs, and exiting must release controls. New racer figures are original wooden toys;
@@ -5957,7 +5987,7 @@ The older list, still true where it is not struck:
 | Between chapters | "Nästa kapitel", "Spela igen" and a chapter code open the chapter on its time card; the title shows when the game is opened. Chapter changes replace the page, so Back never goes a chapter back | Session, 5 Oct (the UX audit) |
 | Settings | Lugnt's four helps are each a row, and changing one makes the style the player's own (*Ditt eget sätt*). A volume is five pips in fifths, one at the least: its picture is the way to silence. A row shows only where it works (the silent switch on an iPhone, the home-screen help on a phone or tablet not already running from it, the key reference once a key or pad has been used) | Session, 6 Oct (`docs/ux-audit/menus.md` rows 5–10) |
 | Story first | The narrative is the heart of the game: story is put into play (scenes the player stands in, choices that are his, the family's help shown), measured against `docs/narrative-audit.md` and its order of work. | Olov, 5 Oct: "we really need to shift our focus to the storytelling" |
-| Story scenes | Authored moments use the simulation's clock (`src/sim/scene.ts`). Uninterrupted acting stays short; essential lines wait for **Fortsätt**, so the player's reading time sets the overall pace. Only finished scenes and acknowledged lines are saved. Unfinished transformation scenes resume at their safe deck mark; completed ones are passed over by their flags. | Session, 5 Oct; revised for Olov's slower, clearer opening request, 10 Oct |
+| Story scenes | Authored moments use the simulation's clock (`src/sim/scene.ts`). Uninterrupted acting stays short; held lines finish after their full reading time and recording, with optional **Fortsätt**. Ordinary dialogue allows movement. Only finished scenes and acknowledged lines are saved. Unfinished transformation scenes resume at their safe deck mark; completed ones are passed over by their flags. | Session, 5 Oct; clearer opening, 10 Oct; automatic dialogue and responsive presentation, 10–11 Nov |
 | Chapter endings | A chapter ends on a coda of about 3 s (the picture looks back and up, the tune closes on a held note, one of the family answers in their three notes) and a storybook page: the coda's picture, the chapter's name, what comes next, Moa's map with the way on. Every chapter after the prologue opens on a time card (plan §4.9). The prologue and the epilogue keep their own endings. | Session, 5 Oct, for Olov's "the chapter endings feel too sudden and flat" |
 | Byn's place | After the epilogue, as built: a week after the story's Saturday, on an October morning after rain. Its story stands on the ending (Klonk named and a friend, a star taken by choice, the Saturday candy bought together), and the chase runs out from the house and home again in one day; a shopping street between the forest and the bog would break both. Its card says *en vecka senare*. | Olov, 5 Oct: first "I want byn to be between granskogen and myren.", then "Place byn where it is best fitted into the game and story" and "Maybe it is perfectly where it is now?". The place is the session's judgement. |
 | Why he shrinks | The ghost's magic runs into the Saturday bag as it takes it: a star from the bag makes Elof small, and the gold sweet glitters too and can make him big again. Moa saw the glitter and draws it; Pappa reads the hope. | Session's proposal, 5 Oct (question 15) |
@@ -5972,6 +6002,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Responsive interface (11 Nov) | Improve mobile/desktop UX, HUD and dialogue composition | One cloud continuation with parallel dialogue, HUD, menus, native review and regression worktrees | — / 1 request | Unified speech card, retained readable text/targets, quieter HUD, navigable collections and responsive menus; actual-scene and safe-area checks. |
 | TV console / Godisracet (11 Nov) | Port Varggropen and add an optional TV kart race with improved handling and story-linked visuals | One cloud continuation with parallel core, renderer, controls, host and browser review | — / 1 request | Original trace and physics, drift/sweet boosts, wooden toys, shared-home entry and exact return; local player records and mobile controls. |
 | Shared home composition (11 Nov) | Separate TV and sofa, integrate the bathroom and align the interior across home chapters | One cloud continuation with parallel public modelling, staging, geometry and native visual review | — / 1 request | One shared layout, complete bathroom and clear furniture; adapted scenes, saved-progress checks and phone composition review. |
 | Flärken's flickering shore (11 Nov) | Stabilise the near outlet bank while the carving floats downstream | One focused cloud continuation with geometry work and independent source/temporal review | — / 1 report | A submerged mouth replaces the water-level shelf; the regression measures real mesh area against the animated swell. |
@@ -6027,6 +6058,10 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Interface review (11 November):** small-phone dialogue placement, split Continue panels and overlapping
+  foreground messages are addressed together. The review distinguishes actor visibility and full-text/input
+  checks from physical-phone frame rate; exact final browser evidence is in the continuation's PR.
 
 - **Flärken's flickering shore (11 November):** the broad water-level shelf is corrected at its geometry source.
   Normal wetting along a sloping shoreline remains; temporal browser review is recorded separately from device FPS.
@@ -6240,6 +6275,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 11 November responsive UI/HUD and dialogue presentation request is implemented in this continuation.
+
 - The requested TV console and Varggropen kart game are implemented in this continuation; no part is deferred to a later chapter.
 
 - The 11 November request for a coherent home, separate TV and integrated bathroom is addressed in this continuation.
@@ -6272,7 +6309,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore shared-home changes and the requested TV console add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore, shared home, requested TV console and responsive interface add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
