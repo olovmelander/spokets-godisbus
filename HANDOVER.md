@@ -1,5 +1,26 @@
 # Handover
 
+## State (11 November 2026): exploring chapters from their beginning
+
+- **Olov asked:** selecting a chapter in **Utforska vidare** after finishing an adventure should start at the
+  beginning of that chapter. This continuation starts from PR #257's published merge, `0a07255`.
+- **Behavior:** title, pause and ending chapter selectors now start the chosen chapter at its entrance,
+  including a new selection of the current chapter. This explicit Explore operation resets only that chapter's
+  transient story and puzzle placements, preventing completed scenes from moving Elof back to the ending.
+  Ordinary Continue and next-chapter navigation keep their existing saved-progress behavior.
+- **Preserved:** both adventures' collected sweets, side sweets, found objects, keepsakes, memories, photos,
+  musical discoveries, completion, checkpoint history and Klonk's discovered name. Older story-triggered
+  collection entries become permanent receipts before their triggers reset. Photos remain in their existing
+  player-owned store. No save format, release boundary, artwork or family model changes.
+- **Validation:** baseline 2,592 unit/robot tests passed and the development game booted and moved on a
+  390×844 viewport. Focused save/simulation checks cover actual Epilog, Norrsken and Morgonen entrances and
+  preservation of collections across all 18 chapters. The expanded built-browser journey suite exercises
+  title/pause/ending selection, the same chapter twice, both adventures and both phone orientations.
+  It reproduces the old checkpoint failure before the change and passes with the change. Typecheck, all 2,599
+  tests in 271 files, production build/size gates (646.8 KB gzipped JS; 5,762.8 KB boot) and the built-in privacy
+  scan pass. Independent save/scene review found no blocking loss or resume issue. Exact-head CI and publication
+  results are recorded in this continuation's PR. No work needs Olov's computer.
+
 ## State (10 November 2026): playing while characters talk
 
 - **Olov asked:** ordinary speech must stop interrupting movement; calmer staging belongs only where the scene
@@ -5294,6 +5315,11 @@ record identify the exact published revision.
 
 ## Next
 
+**Exploring from the beginning (11 November).** Preserve the distinction between explicit **Utforska vidare**
+chapter choices and ordinary Continue. Clear transient progress only for the selected Explore chapter, after
+preserving its permanent collection receipts. Do not globally reset every save with checkpoint −1: a normal
+visit can have genuine progress before its first checkpoint. This request needs no local Blender session.
+
 **Playing while talking (10 November).** Continue from the newest State and
 `docs/verification/2026-11-10-walk-and-talk.md`. Preserve the separation between movement, explicit physical
 holds and completed dialogue receipts; ordinary queues must not seize the controls. Keep reveal pictures with
@@ -5715,6 +5741,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Chapter exploration (Olov, 11 November 2026):** selecting a chapter after the adventure starts at that
+  chapter's beginning, including the current chapter; discoveries and collections remain shared and saved.
 - **The owl's tree (Olov, 10 November 2026):** its bark must match the visual detail of the surrounding trees.
 - **Living northern lights (Olov, 10 November 2026):** visibly flowing, soft curtains on the summit, including
   during dialogue; preserve Pause and Mindre rörelse, and avoid whole-sky flashing.
@@ -5812,6 +5840,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Explore chapter starts (11 Nov) | Start each selected chapter at its beginning after the ending | One focused cloud continuation with save implementation and independent review | — / 1 request | Explicit Explore reset preserves both adventures' collections and ordinary Continue; simulation and built-browser chapter selection checks. |
 | Playing while talking (10 Nov) | Remove ordinary dialogue stops; retain appropriate calmer scenes | One cloud continuation with parallel simulation, HUD/audio, content and browser worktrees | — / 1 request | Automatic dialogue with playable traversal, explicit scene holds, completion receipts, reveal/save safeguards and phone checks; primary design sources and validation in the walk-and-talk record. |
 | Shared visual details and all-character motion (10 Nov) | Olov's five screenshot requests, then natural arms, heads and whole-body movement throughout the game | One continuing cloud session with six parallel implementation/review worktrees | — / 1 screenshot round plus expanded motion request | Cars, footballs, Swedish labels and consistent illustrated cast; shared pose/turn/grip/contact/head/Pause fixes, actual private geometry and phone-view checks. Evidence and limits in the visual follow-up record. |
 | Owl-tree bark (10 Nov) | Match nearby tree textures | One focused cloud follow-up with independent code review | — / 1 screenshot report | Shared bark texture on every tier, correctly scaled UVs, close trunk/rim detail and an attached grain on the moving branch. |
@@ -5863,6 +5892,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Explore chapter starts (11 November):** stale checkpoints and late scene triggers are addressed together.
+  Browser checks cover native portrait/landscape viewports; physical-device performance is not measured by them.
 - **Software GPU test (10 November):** two CI attempts hit the old 30-second Granskog quality-click deadline,
   while the full unchanged GPU-memory first shard passed locally. The test now allows a bounded 120 seconds
   only for real quality clicks, logs elapsed/observed tier and retains every memory gate. This is test timing,
@@ -6069,6 +6100,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 11 November request to start each chosen Explore chapter at its beginning is implemented; no part is deferred.
 - The 10 November request to keep playing during ordinary dialogue is implemented in this continuation.
   Existing calm scenes keep their staging and advance automatically; the verification record explains the policy.
 - The 10 November car/football/illustration/collection-label requests and confirmed runtime motion defects are
@@ -6095,7 +6127,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore change add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

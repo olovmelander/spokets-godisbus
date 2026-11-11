@@ -34,7 +34,7 @@ import { changeStyle, settingsFor, simOptions, tempoOf, type PlayStyle, type Set
 import { codeFor } from './save/codes';
 import { createStore, newSave, type PlayerSave } from './save/store';
 import { createPhotoStore } from './save/photos';
-import { ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
+import { exploreChapter, ghostNamed, rememberFlags, storyFinished, visitChapter } from './save/journey';
 import { markOnward, takeOnward } from './save/onward';
 import { keysLearned, learnKeys } from './save/keys';
 import type { SimStart, Speaker, Vec } from './sim/types';
@@ -450,7 +450,7 @@ async function start(): Promise<void> {
     audio.setPlace(arrangementFor(chapter.id, chapter.place));
   });
   const explore = createExplore(document, (id) => {
-    if (!platformBlocked() && offline.canStart()) goOn(id);
+    if (!platformBlocked() && offline.canStart()) goOn(id, true);
   }, canEnter);
   function openExplore(): void {
     if (platformBlocked() || !offline.canStart() || ending.open || story.open || photoAlbum.open || memories.open || !canEnter('epilog') || !storyFinished(save.flags)) return;
@@ -898,12 +898,12 @@ async function start(): Promise<void> {
   // ?bench plays the course by itself for 30 seconds and then shows numbers to paste into a session.
   const bench = benchOn && devtools ? devtools.createBench(30, chapter) : null;
 
-  /** "Nästa kapitel": the saved game moves on to the next chapter's start, and the page loads it. */
-  function goOn(id: string): void {
+  /** Chapter navigation preserves progress; an explicit Explore choice reopens the chapter from its beginning. */
+  function goOn(id: string, exploring = false): void {
     if (!canEnter(id)) return;
     writeSave();
     keepSavedPosition = false;
-    save = visitChapter(save, id);
+    save = exploring ? exploreChapter(save, id) : visitChapter(save, id);
     store.write(save);
     again = true;
     markOnward(id, undefined, cardOf(id));
