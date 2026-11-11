@@ -101,7 +101,10 @@ def join(name, objects):
 
 x, front, back = bath['x'], bath['doorZ'], bath['backZ']
 width, height, thickness = bath['width'], bath['height'], bath['wallThickness']
-depth, middle = front - back, (front + back) / 2
+# The room sits behind the house wall. Only its doorway trim reaches forward;
+# exposed structural ends would otherwise outline a second, oversized doorway.
+shell_front = layout['wall']['z'] - .01
+depth, middle = shell_front - back, (shell_front + back) / 2
 inside_width = width - thickness
 tile_top = 3.05
 floor_y = bath['floorY']
@@ -109,7 +112,8 @@ floor_front = front - .18
 floor_depth = floor_front - back
 floor_middle = (floor_front + back) / 2
 walls = [box(width + thickness, height, thickness, x, height / 2, back, '#e6e0d3'),
-    box(width + thickness, thickness, depth + thickness, x, height - thickness / 2, middle, '#f1ebdf'),
+    box(width + thickness, thickness, depth + thickness / 2, x, height - thickness / 2,
+        middle - thickness / 4, '#f1ebdf'),
     # A thin tile finish sits above the continuous wood base. The shallow threshold
     # ramps up from y=0 instead of introducing a vertical step in Elof's walk.
     box(inside_width, .034, floor_depth, x, floor_y - .023, floor_middle, '#d0d7ce', 0)]
