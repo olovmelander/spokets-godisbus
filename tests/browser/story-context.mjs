@@ -44,6 +44,24 @@ const saved = (chapter, checkpoint, flags) => ({ v: 1, name: 'Elof', updated: 1,
   candy: {}, placed: {}, flags, playMs: 0 });
 const state = (page) => page.evaluate(() => window.__godis.state());
 const purpose = (page) => page.locator('#storyPurpose').getAttribute('data-purpose');
+const readableMotive = (node) => {
+  const rect = node.getBoundingClientRect();
+  const controls = ['bag', 'pauseBtn', 'helpBtn'].map(id => document.getElementById(id).getBoundingClientRect());
+  const clear = controls.every(button => rect.right <= button.left || rect.left >= button.right || rect.bottom <= button.top || rect.top >= button.bottom);
+  const textParts = [...node.querySelectorAll('#storyPurposeText, #storyPurposeReveal')];
+  const fullText = textParts.length === 2 && textParts.every(part => {
+    const range = document.createRange();
+    range.selectNodeContents(part);
+    const text = range.getBoundingClientRect();
+    return part.textContent.trim().length > 0 && text.width > 0 && text.height > 0 &&
+      text.left >= rect.left && text.right <= rect.right && text.top >= rect.top && text.bottom <= rect.bottom;
+  });
+  // The phone bookmark now sits below the utility row. Keep real separation, full text and an open lower
+  // playfield, without requiring the reminder to be horizontally to the left of every corner button.
+  return node.scrollWidth <= node.clientWidth && node.scrollHeight <= node.clientHeight && fullText && clear &&
+    rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom < innerHeight / 2 &&
+    node.getAnimations({ subtree: true }).length === 0;
+};
 
 /**
  * The four Pappa lines' 14.135 seconds, and the coda the chapter now ends on before its last page (3.2 s longer
@@ -202,11 +220,7 @@ try {
     (await unknown.page.locator('#pauseStoryRecap').textContent()).includes(genericMotive) &&
     !/min gamla|min första/.test(await unknown.page.locator('#storyPurpose, #pauseStory').allTextContents().then((texts) => texts.join(' '))));
   await unknown.page.evaluate(() => document.body.classList.add('big-text'));
-  check('the fallback is untimed and readable in larger phone text during play', await unknown.page.locator('#storyPurpose').evaluate((node) => {
-    const rect = node.getBoundingClientRect(), help = document.getElementById('helpBtn').getBoundingClientRect();
-    return node.scrollWidth <= node.clientWidth && rect.left >= 0 && rect.right <= help.left && rect.bottom < innerHeight / 2 &&
-      node.getAnimations({ subtree: true }).length === 0;
-  }));
+  check('the fallback is untimed and readable in larger phone text during play', await unknown.page.locator('#storyPurpose').evaluate(readableMotive));
   await frames(unknown.page, 20);
   check('missing the memory cannot make the normal-play explanation expire',
     await unknown.page.locator('#storyPurposeReveal').isVisible() && await unknown.page.locator('#storyPurposeReveal').textContent() === genericMotive);
@@ -264,10 +278,7 @@ try {
     (await known.page.locator('#storyPurposeReveal').textContent()).includes('Spöket tog godiset för att välkomna min gamla trägubbe hem') &&
     !(await state(known.page)).paused && await known.page.locator('[role=dialog]:visible').count() === 0);
   await known.page.evaluate(() => document.body.classList.add('big-text'));
-  check('the untimed motive is readable on the phone with larger text', await known.page.locator('#storyPurpose').evaluate((node) => {
-    const rect = node.getBoundingClientRect(), help = document.getElementById('helpBtn').getBoundingClientRect();
-    return node.scrollWidth <= node.clientWidth && rect.left >= 0 && rect.right <= help.left && rect.bottom < innerHeight / 2;
-  }));
+  check('the untimed motive is readable on the phone with larger text', await known.page.locator('#storyPurpose').evaluate(readableMotive));
   const learned = await known.page.locator('#storyPurposeReveal').textContent();
   await frames(known.page, 20);
   check('the normal-play explanation persists while the game continues', await known.page.locator('#storyPurposeReveal').isVisible() && await known.page.locator('#storyPurposeReveal').textContent() === learned);
