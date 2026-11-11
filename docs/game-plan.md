@@ -1277,7 +1277,10 @@ The tier says what must be *built*; none of these is ever needed to finish.
   - "Kapitel N" is computed from the released order, so inserting Forsen in 1.1 renumbers the labels but never
     breaks a save.
 - **After the ending,** Moa's map is chapter select, with each chapter's candy rows, stickers and challenge
-  route.
+  route. **Olov, 11 November 2026:** choosing a chapter in **Utforska vidare** starts at that chapter's beginning,
+  even when selecting the current chapter. Its story and puzzle placements restart; collected sweets, finds,
+  keepsakes, memories, photos, completion and Klonk's discovered name stay. Ordinary **Fortsätt** still resumes
+  the current visit from its saved progress.
 
 | Chapter | Required | Ends on | Estimate for Elof (main path) |
 | --- | --- | --- | --- |

@@ -41,13 +41,40 @@ async function open(query = '') {
   await page.goto(`${origin}${base}?dev&debug&standin&tier=low&${query}`);
   await ready();
 }
+async function choose(id, keyboard = false) {
+  const choice = page.locator(`#explore [data-chapter="${id}"]`);
+  if (keyboard) await choice.focus();
+  // URL matching alone would already be satisfied when selecting the current chapter again.
+  await Promise.all([
+    page.waitForEvent('framenavigated', frame => frame === page.mainFrame()),
+    keyboard ? page.keyboard.press('Enter') : choice.tap(),
+  ]);
+  await ready();
+  assert.equal((await state()).course, id);
+}
+async function atBeginning(id, x, y) {
+  const current = await state();
+  assert.equal(current.course, id);
+  assert.equal(current.checkpoint, -1, `${id}: an Explore choice leaves the old checkpoint behind`);
+  assert.ok(Math.abs(current.x - x) < .25 && Math.abs(current.y - y) < .3,
+    `${id}: starts at its entrance, observed ${current.x}, ${current.y}`);
+}
 try {
   await page.addInitScript(() => {
     window.__testPad = { connected: true, mapping: 'standard', index: 0, id: 'test controller', axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ pressed: false, value: 0 })) };
     Object.defineProperty(navigator, 'getGamepads', { value: () => [window.__testPad] });
     if (!localStorage.getItem('journey-test')) {
       localStorage.setItem('journey-test', 'yes');
-      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', chapter: 'epilog', checkpoint: 2, settings: { style: 'aventyr' }, updated: 1, playMs: 0, checkpoints: { garden: 1 }, candy: { garden: [0, 1, 4] }, placed: { garden: ['curl'] }, flags: { epilog: ['goal', 'beat:named'], garden: ['goal', 'found:gelehallon', 'memory'] } }));
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({
+        v: 1, name: 'Elof', chapter: 'epilog', checkpoint: 2, settings: { style: 'aventyr' }, updated: 1, playMs: 0,
+        checkpoints: { garden: 1, morgonen: 0 }, candy: { garden: [0, 1, 4], morgonen: [0, 2] },
+        side: { garden: [0] }, placed: { garden: ['curl'] },
+        flags: {
+          epilog: ['goal', 'beat:named', 'dots', 'teeth', 'scene:bathroom'],
+          garden: ['goal', 'found:gelehallon', 'memory', 'plane:board'],
+          morgonen: ['goal', 'shelf', 'latch', 'cocoa', 'a2slut', 'found:norrskensruta', 'lost:lanternstar'],
+        },
+      }));
     }
   });
   await open('course=epilog&title');
@@ -73,10 +100,8 @@ try {
   assert.equal(await page.evaluate(() => document.activeElement?.className), 'panel-close', 'Tab stays inside selector');
   await page.keyboard.press('Shift+Tab');
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('data-chapter')), last);
-  await page.locator('#explore [data-chapter="garden"]').focus();
-  await Promise.all([page.waitForURL(/course=garden/), page.keyboard.press('Enter')]);
-  await ready();
-  assert.equal((await state()).checkpoint, 1, 'Revisit resumes at remembered safe place');
+  await choose('garden', true);
+  await atBeginning('garden', 1, 6.01);
   assert.ok((await state()).flags.includes('found:gelehallon'));
   assert.ok(!(await state()).flags.includes('goal'), 'The live chapter can be reached again');
   await page.keyboard.press('Escape');
@@ -84,7 +109,9 @@ try {
   assert.ok((await page.locator('#pauseMap').textContent()).includes('Klonk'), 'The name follows him into earlier chapters');
   for (const flag of ['goal', 'found:gelehallon', 'memory']) assert.ok(after.flags.garden.includes(flag));
   assert.ok(after.flags.epilog.includes('goal'), 'The ending stays unlocked');
-  assert.deepEqual(after.placed.garden, ['curl']);
+  assert.deepEqual(after.placed.garden, [], 'Puzzle pieces are available again on this visit');
+  assert.ok(after.flags.garden.includes('keepsake:paperwing'), 'A legacy story discovery survives its scene reset');
+  assert.deepEqual(after.side.garden, [0]);
   for (const candy of [0, 1, 4]) assert.ok(after.candy.garden.includes(candy));
   await page.locator('#pauseExplore').tap();
   if (process.env.JOURNEY_SHOT) await picture(page, process.env.JOURNEY_SHOT);
@@ -92,11 +119,27 @@ try {
   assert.ok(await page.locator('#pause').isVisible(), 'Escape returns to pause');
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'pauseExplore');
   await page.locator('#pauseExplore').tap();
-  await Promise.all([page.waitForURL(/course=byn/), page.locator('#explore [data-chapter="byn"]').tap()]);
-  await ready();
+  await choose('garden');
+  await atBeginning('garden', 1, 6.01);
+  await page.keyboard.press('Escape');
+  await page.locator('#pauseExplore').tap();
+  await choose('byn');
   await page.keyboard.press('Escape');
   assert.equal((await saved()).checkpoints.garden, 1);
   assert.equal((await saved()).checkpoints.epilog, 2);
+  // The second adventure uses the same selector and keeps both adventures' collection on a portrait phone.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#pauseExplore').tap();
+  await choose('morgonen');
+  await atBeginning('morgonen', 1, .01);
+  assert.ok(!(await state()).flags.includes('a2slut'), 'The old ending cannot immediately finish the new visit');
+  await page.keyboard.press('Escape');
+  const morning = await saved();
+  assert.deepEqual(morning.candy.garden, [0, 1, 4]);
+  assert.deepEqual(morning.candy.morgonen, [0, 2]);
+  assert.ok(morning.flags.morgonen.includes('found:norrskensruta'));
+  assert.ok(morning.flags.morgonen.includes('lost:lanternstar'));
+  assert.ok(morning.flags.epilog.includes('beat:named'));
   // A new ending offers the selector too; no explicit course URL can trap the next chapter button.
   await open('course=epilog&flags=goal');
   // Automatic credits temporarily hide their source end card. Dismiss them before waiting for it.
@@ -108,8 +151,13 @@ try {
   await pad(1);
   assert.ok(await page.locator('#endCard').isVisible());
   assert.equal(await page.evaluate(() => document.activeElement?.id), 'endExplore');
+  await page.locator('#endExplore').tap();
+  await choose('epilog');
+  await atBeginning('epilog', 1, .01);
+  assert.ok(!(await state()).flags.includes('teeth'), 'The completed bathroom scene cannot teleport Elof to the end');
+  assert.ok((await saved()).flags.epilog.includes('beat:named'), 'Klonk keeps his discovered name');
   assert.deepEqual(errors, []);
-  console.log('Journey: title/pause/end selector, touch/keyboard/controller and preserved save passed.');
+  console.log('Journey: title/pause/end Explore starts, same-chapter restart, both adventures, both phone orientations, touch/keyboard/controller and preserved collections passed.');
 } finally {
   await browser.close();
   await new Promise((resolve) => server.close(resolve));
