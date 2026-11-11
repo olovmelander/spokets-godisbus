@@ -1,5 +1,4 @@
-import { sceneUiHtml } from './scene-html';
-import { toneEdgesHtml } from './tones';
+import { sceneReadingHtml, sceneUiHtml } from './scene-html';
 import { sv } from '../content/sv';
 import { endingHtml } from './ending';
 import { photoAlbumHtml } from './photos';
@@ -105,7 +104,10 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
      <i class="follow-arrow" id="followArrow" aria-hidden="true" hidden>${use('toward')}</i>
      <div class="key-prompt" id="keyPrompt" aria-hidden="true"><kbd id="keyPromptKey">E</kbd>${HAND}<span id="keyPromptWord"></span></div>
      ${sceneUiHtml}
-     <div class="bubble" id="bubble" role="status" hidden>${toneEdgesHtml}<span class="face" id="bubbleFace" aria-hidden="true"></span><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
+     <div class="dialogue" id="dialogue">
+       <div class="bubble" id="bubble" role="status" hidden><span class="face" id="bubbleFace" aria-hidden="true"></span><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
+       ${sceneReadingHtml}
+     </div>
      <div class="hint" id="hint" hidden></div>
      <div class="story-purpose" id="storyPurpose" role="status" aria-live="polite" aria-atomic="true" hidden><span id="storyPurposeIcon" aria-hidden="true"></span><span><small>${sv.storyContext.now}</small><span id="storyPurposeText"></span><span id="storyPurposeReveal" class="story-purpose-reveal" hidden></span></span></div>
      <div class="tutorial" id="tutorial" role="img" hidden>
