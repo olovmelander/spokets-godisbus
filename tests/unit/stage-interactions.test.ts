@@ -91,7 +91,8 @@ describe('3D story interactions', () => {
     const stage = createStage(prolog, () => 0);
     show(stage, 'morgon', 9.6);
     const { shoulder, elbow, hand } = arm(rigFor(stage));
-    const target = new Vector3(2.3, 2.3, 0);
+    const aim = prolog.scenes!.find(scene => scene.id === 'morgon')!.stage!.actors!.pappa!.find(key => key.act === 'offer')!.aim!;
+    const target = new Vector3(aim.x, aim.y, aim.z);
     const full = .84 + Math.hypot(.92, .05);
     // Straight towards him, but held out as a thing to be taken is: most of the arm's length, not all of it.
     expect(hand.clone().sub(shoulder).angleTo(target.clone().sub(shoulder))).toBeLessThan(1e-5);
