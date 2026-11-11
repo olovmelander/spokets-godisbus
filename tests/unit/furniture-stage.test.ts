@@ -15,7 +15,7 @@ const scenes = prolog.scenes!, index = scenes.findIndex(scene => scene.id === 'p
 const flags = (complete = false) => new Set(scenes.slice(0, index + Number(complete)).map(scene => scene.by?.done ?? `scene:${scene.id}`));
 const actor = (stage: Stage) => stage.actors.get('moa')!.rig;
 function show(stage: Stage, seconds: number, calm = false, dt = 1 / 60, clock = seconds) {
-  stage.update({ id: 'prologue:mamma', seconds }, flags(), { x: 10.9, y: 0 }, clock, dt, calm);
+  stage.update({ id: 'prologue:mamma', seconds }, flags(), { x: prolog.prologue!.doorway.x - 1.1, y: 0 }, clock, dt, calm);
   stage.group.updateMatrixWorld(true);
 }
 function snapshot(stage: Stage) {
@@ -52,7 +52,7 @@ describe('Moa leaves the kitchen chair', () => {
     show(stage, 2.6, calm);
     const before = actor(stage).group.position.clone();
     for (let frame = 1; frame <= 180; frame++) {
-      stage.update(null, flags(true), { x: 10.9, y: 0 }, 2.6 + frame / 60, 1 / 60, calm);
+      stage.update(null, flags(true), { x: prolog.prologue!.doorway.x - 1.1, y: 0 }, 2.6 + frame / 60, 1 / 60, calm);
       const now = actor(stage).group.position;
       expect(now.distanceTo(before)).toBeLessThan(.05);
       expect(overlaps(stage), `following frame ${frame}`).toEqual([]);
@@ -97,14 +97,14 @@ it.each([false, true])('Pappa keeps his body and legs beside the chair before tu
   // His two side steps take until 2.2 (the motion pass of 6 November 2026): the second, behind the chair, from 1.4.
   for (let frame = 0; frame <= 96; frame++) {
     const seconds = .6 + frame / 60;
-    stage.update({ id: 'vaknar', seconds }, told, { x: 2.6, y: 0 }, seconds, 1 / 60, calm);
+    stage.update({ id: 'vaknar', seconds }, told, prolog.spawn, seconds, 1 / 60, calm);
     const hits = overlaps(stage, 'pappa', true);
     // The rehearsal figure has wider swinging arms than the imported body; the trunk and legs
     // must never cross the back, and the entire figure must clear it before walking behind it.
     expect(hits.filter(part => part === 0 || part >= 11), `chair back at ${seconds}`).toEqual([]);
-    if (seconds >= 1.4) expect(hits).toEqual([]);
+    if (seconds >= 1.4) expect(hits, `chair back at ${seconds}`).toEqual([]);
     if (previous) expect(rig.group.position.distanceTo(previous)).toBeLessThan(.07);
     previous = rig.group.position.clone();
   }
-  expect(rig.group.position.toArray()).toEqual([7.2, 0, -4.3]);
+  expect(rig.group.position.toArray()).toEqual([15.9, 0, -4.3]);
 });

@@ -1,4 +1,5 @@
 import type { Candy, ChapterData } from '../../sim/types';
+import { HOME_BATHROOM, HOME_LAYOUT } from '../home-layout';
 import { timeCard } from './cards';
 import { PROLOG_SCENES } from './prolog-scenes';
 
@@ -40,28 +41,29 @@ export const prolog: ChapterData = {
   // He is a boy among small things, until the star shrinks him. The POFF scene says when he is drawn small.
   size: { scale: 3, until: 'scene:poff' },
   // Pappa's shelf, with the first place in the row empty: the first trägubbe is not there.
-  shelf: { x: 2.4, y: 5.4 },
+  shelf: HOME_LAYOUT.shelf,
   decor: [
     // The shavings Pappa's knife left, and the Saturday bag on the table, until the ghost takes it.
-    { look: 'shavings', at: { x: 5.6, y: 0 } },
-    { look: 'bag', at: { x: 7.1, y: 1.65 }, until: 'grab', z: -1.25 },
+    { look: 'shavings', at: { x: HOME_LAYOUT.dining.x + 0.1, y: 0 } },
+    { look: 'bag', at: { x: HOME_LAYOUT.dining.x + 1.6, y: 1.65 }, until: 'grab', z: -1.25 },
   ],
   furniture: [
-    { look: 'table', at: { x: 5.5, y: 0 }, z: -1.5 },
-    { look: 'chair', at: { x: 5.5, y: 0 }, z: -3.5, face: 0.25 },
-    { look: 'chair', at: { x: 8.8, y: 0 }, z: -1.5, face: 0.5 },
+    { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z },
+    ...Object.values(HOME_LAYOUT.dining.chairs).map(chair => ({
+      look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face,
+    })),
   ],
   scenes: PROLOG_SCENES,
   // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away.
   later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: 4.1 }],
   // In reach of the brush Pappa holds out, so the morning ends with "Måla ögonen!" lit on Använd: the first thing
   // asked of him has its button ready (docs/ux-audit/first-minutes.md row 19). The move lesson waits for the hall.
-  spawn: { x: 2.6, y: 0.01 },
+  spawn: { x: HOME_LAYOUT.dining.x - 2.9, y: 0.01 },
   goalX: 51.0,
   goalNeeds: 'titel',
   prologue: {
     // Pappa notices the ghost once Moa's drawing is told, as Elof sets off towards it.
-    doorway: { x: 12, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 52.6, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
+    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 52.6, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
     // The deck's railing runs along its far side: Pappa puts the frozen ghost up on its top rail.
     rail: { from: 38.4, to: 53.8, z: -3.4 },
   },
@@ -84,15 +86,15 @@ export const prolog: ChapterData = {
   ],
   // The floors and the deck are boards; the garden below the deck's edge is lawn (picture and footsteps only).
   surfaces: [{ from: -19, to: 54, kind: 'wood' }],
-  house: { from: -40, to: 38, windows: [9.4, 21, 34] },
+  house: { from: -40, to: 38, windows: HOME_LAYOUT.windows },
   outdoors: 38,
   // The big candies keep their meaning in older saves: in the kitchen at the start (behind him, out of the
   // morning's pictures), at the end of the hall, and on the deck after the shrinking.
-  checkpoints: [{ x: 0.6, y: 0 }, { x: 26, y: 0 }, { x: 45.5, y: -0.8 }],
+  checkpoints: [{ x: HOME_LAYOUT.dining.x - 4.9, y: 0 }, { x: 26, y: 0 }, { x: 45.5, y: -0.8 }],
   spots: [
     // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
-    { id: 'eye', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
-    { id: 'paint', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
+    { id: 'eye', at: { x: HOME_LAYOUT.dining.x - 1.8, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
+    { id: 'paint', at: { x: HOME_LAYOUT.dining.x - 1.8, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
     // He first sees where the star came from, then chooses to taste it. Walking past never consumes it.
     { id: 'star', look: 'star', at: { x: 41.7, y: -0.8 }, verb: 'take', word: 'tasteStar', needs: 'scene:stjarnan' },
     // Pappa's open hand on the planks: he chooses to step onto it.
@@ -103,10 +105,10 @@ export const prolog: ChapterData = {
   ],
   ghost: [
     // On the table, new, with no eyes yet. Awake, it hops to the bag, and with the bag off the table.
-    { at: { x: 4.6, y: 1.65 }, z: -1.15, until: 'woke' },
-    { at: { x: 6.5, y: 1.65 }, z: -1.2, until: 'blink', near: 99 },
-    { at: { x: 16, y: 0 } },
-    { at: { x: 22, y: 0 } },
+    { at: { x: HOME_LAYOUT.dining.x - 0.9, y: 1.65 }, z: -1.15, until: 'woke' },
+    { at: { x: HOME_LAYOUT.dining.x + 1, y: 1.65 }, z: -1.2, until: 'blink', near: 99 },
+    { at: { x: 24.5, y: 0 } },
+    { at: { x: 26.5, y: 0 } },
     { at: { x: 28.6, y: 0 } },
     { at: { x: 35, y: 0 } },
     // On the deck, beyond the star it lost: it waits there until Pappa's joke.
@@ -129,7 +131,8 @@ export const prolog: ChapterData = {
   cameras: [{ from: -3, to: 38, zoom: 1.5, lift: 0.3 }, { from: 38, to: 60, zoom: 1.7, lift: 1.5 }],
   candy: [
     // Nothing lies there until the bag has torn on the doorway's hinge.
-    ...row(13, 29, 0, 1.6, 'bag:torn'),
+    // Keep all eleven original save indices, in order, along the shorter hall after the new hinge.
+    ...row(21.5, 29, 0, 0.75, 'bag:torn'),
     { x: 30.6, y: 1.25, after: 'bag:torn' },
     ...row(32.4, 36.4, 0, 2, 'bag:torn'),
     { x: 38.6, y: -0.2, after: 'bag:torn' },
@@ -146,7 +149,8 @@ const GUESTS = [
 ] as const;
 
 /** The party table's top (`furniture`, below, and the room's table in ../../render/stage.ts): its two ends and middle. */
-const TABLE_HOP = { left: 11.4, middle: 13.4, right: 15.4, top: 1.68, z: -3.1 };
+const TABLE_HOP = { left: HOME_LAYOUT.dining.x - 2, middle: HOME_LAYOUT.dining.x,
+  right: HOME_LAYOUT.dining.x + 2, top: 1.68, z: HOME_LAYOUT.dining.z };
 
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
@@ -169,9 +173,12 @@ export const epilog: ChapterData = {
   // He has grown back: a boy among small things, all through.
   size: { scale: 3 },
   // The first trägubbe has its place again, first in the row.
-  shelf: { x: 7, y: 5.4, filled: true },
+  shelf: { ...HOME_LAYOUT.shelf, filled: true },
   // The party's table, behind the family where they stand to be given their candy.
-  furniture: [{ look: 'table', at: { x: 13.4, y: 0 }, z: -3.1, cloth: '#f1ead8' }],
+  furniture: [
+    { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z, cloth: '#f1ead8' },
+    ...Object.values(HOME_LAYOUT.dining.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
+  ],
   epilogue: { window: { x: 9.4, y: 3.43, z: -8.3 } },
   spawn: { x: 1, y: 0.01 },
   scenes: [
@@ -179,13 +186,19 @@ export const epilog: ChapterData = {
     timeCard('epilog', 1),
     // The naming: given its candy, the ghost hops up onto the party table and across it, klonk, klonk, and down again
     // to where it waits for the carving. He is free all the while.
-    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 5.6, stage: { actors: { ghost: [
+    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 7.2, stage: { actors: { ghost: [
       { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
-      { at: 0.05, x: TABLE_HOP.right, y: TABLE_HOP.top, z: TABLE_HOP.z, move: 1.1 },
-      { at: 1.2, x: TABLE_HOP.middle, move: 1 },
-      { at: 2.2, x: TABLE_HOP.left, move: 1 },
-      { at: 3.4, x: 26.6, y: 0, z: 0, move: 2 },
-      { at: 5.4, act: 'tilt' },
+      // Up over the front edge, clear of the chair at the end; both landings happen above the tabletop.
+      { at: .05, x: TABLE_HOP.right + .8, y: TABLE_HOP.top + .42, z: 1.65, move: 1.15 },
+      { at: 1.2, x: TABLE_HOP.right, y: TABLE_HOP.top, z: TABLE_HOP.z, move: .6 },
+      { at: 1.85, x: TABLE_HOP.middle, move: .8 },
+      { at: 2.7, x: TABLE_HOP.left, move: .8 },
+      // First clear the cloth, then land and run along the open floor in front of the family.
+      { at: 3.55, y: TABLE_HOP.top + .37, z: 1.65, move: .65 },
+      { at: 4.25, y: 0, move: .45 },
+      { at: 4.75, x: 26.6, move: 1.8, act: 'run' },
+      { at: 6.55, z: 0, move: .4 },
+      { at: 6.95, act: 'tilt' },
     ] } } },
     // The panel closes onto the actual finished carving, supported in his open hand.
     { id: 'first-carving', on: 'dots', until: 'teeth', resumeAt: { x: 32, y: 0 }, seconds: 6, hold: true,
@@ -194,15 +207,20 @@ export const epilog: ChapterData = {
         elof: [{ at: 0, face: .22, act: 'offer', aim: { x: 32.9, y: 1.65 } }],
         actors: { pappa: [{ at: 0, x: 35.4, z: -2.2, act: 'kneel', face: .38, aim: { x: 32, y: 2.2 }, move: .001 }] } } },
     // He opens the real bathroom door, walks in on his own feet, and brushes before the ending is allowed.
-    { id: 'bathroom', on: 'teeth', until: 'goal', resumeAt: { x: 35.5, y: 0 }, seconds: 11.6, hold: true,
-      lines: [{ at: .1, who: 'elof', line: 'brushNow' }, { at: 9.5, who: 'mamma', line: 'goodnight' }],
-      cues: [{ at: 11.4, flag: 'bedtime' }],
-      stage: { shots: [{ at: 0, x: 35.5, y: 3.05, z: -4.5, height: 7.3, width: 5.8, move: .001 },
-        { at: 3.2, x: 35.5, y: 1.9, z: -6.1, height: 4.5, width: 4.2, move: .7 }],
+    { id: 'bathroom', on: 'teeth', until: 'goal', resumeAt: { x: HOME_BATHROOM.x, y: 0 }, seconds: HOME_BATHROOM.seconds, hold: true,
+      lines: [{ at: .1, who: 'elof', line: 'brushNow' }, { at: HOME_BATHROOM.goodnight, who: 'mamma', line: 'goodnight' }],
+      cues: [{ at: HOME_BATHROOM.bedtime, flag: 'bedtime' }],
+      stage: { shots: [
+        // Begin at the hall floor, then follow his whole walk in depth. Focusing on the basin from the
+        // start enlarged the boy still in front of the lens and cut his boots off in landscape.
+        { at: 0, x: HOME_BATHROOM.x, y: 2.55, z: 0, height: 7.4, width: 6.8, move: .001 },
+        { at: HOME_BATHROOM.walkStart, x: HOME_BATHROOM.x, y: 2.1, z: HOME_BATHROOM.feetZ,
+          height: 5.6, width: 5.8, move: HOME_BATHROOM.walkEnd - HOME_BATHROOM.walkStart },
+      ],
         elof: [{ at: 0, act: 'stand', face: .75 }],
         actors: { pappa: [
-          { at: .7, x: 31.8, y: 0, z: -2.4, face: .9, move: .8, act: 'walk' },
-          { at: 1.5, act: 'stand', aim: { x: 35.5, y: 2.2, z: -6.1 } },
+          { at: HOME_BATHROOM.walkStart, x: 31.8, y: 0, z: -2.4, face: .9, move: .8, act: 'walk' },
+          { at: HOME_BATHROOM.walkStart + .8, act: 'stand', aim: { x: HOME_BATHROOM.x, y: 2.2, z: HOME_BATHROOM.feetZ } },
         ] } } },
   ],
   goalX: 34.2,
@@ -216,12 +234,14 @@ export const epilog: ChapterData = {
     { x: 62, y: 3 },
     { x: 62, y: 12 },
   ],
-  house: { from: -40, to: 76, windows: [9.4, 21, 34] },
+  house: { from: -40, to: 76, windows: HOME_LAYOUT.windows },
   // It is evening from the first moment: the lights are low, and the northern lights show in the windows.
   night: { after: null },
   checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 33, y: 0 }],
   spots: [
     ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const,
+      // Moa stands in front of the shared dining table, with the gift still offered at the same mark.
+      ...(g.id === 'moa' ? { standsAt: { x: g.x, y: 0, z: .45 } } : {}),
       // Pappa comes over to the carving once Elof has the knife, and kneels at his side, behind the line he walks.
       ...(g.id === 'pappa' ? { goesTo: { x: 35.4, y: 0, z: -2.2 }, goesWhen: 'knife' } : {}) })),
     { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost', story: 'party' },
@@ -233,13 +253,13 @@ export const epilog: ChapterData = {
     { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
     // A deliberate action at the bathroom door begins the walk to the basin and his toothbrush.
-    { id: 'teeth', at: { x: 35.5, y: 0 }, verb: 'take', word: 'brush', needs: 'scene:first-carving' },
+    { id: 'teeth', at: { x: HOME_BATHROOM.x, y: 0 }, verb: 'take', word: 'brush', needs: 'scene:first-carving' },
   ],
   // What he found under the deck came with him: each thing lies by the one it belongs to, until it is given back
   // ("Mitt hårspänne! Tack, lillebror!"); the found coin is returned to Pappa.
   decor: [
-    { look: 'coin', at: { x: 12.4, y: 0 }, after: 'lost:coin', until: 'back:coin' },
-    { look: 'clip', at: { x: 16.4, y: 0 }, after: 'lost:clip', until: 'back:clip' },
+    { look: 'coin', at: { x: HOME_LAYOUT.dining.x - 1.6, y: TABLE_HOP.top }, z: HOME_LAYOUT.dining.z, after: 'lost:coin', until: 'back:coin' },
+    { look: 'clip', at: { x: HOME_LAYOUT.dining.x + 1.7, y: TABLE_HOP.top }, z: HOME_LAYOUT.dining.z, after: 'lost:clip', until: 'back:clip' },
     { look: 'marble', at: { x: 20.2, y: 0 }, after: 'lost:marble', until: 'back:marble' },
     { look: 'brick', at: { x: 21, y: 0 }, after: 'lost:brick' },
   ],

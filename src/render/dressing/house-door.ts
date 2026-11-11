@@ -1,5 +1,5 @@
 import {
-  BoxGeometry, Color, DoubleSide, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry,
+  BoxGeometry, Color, DoubleSide, Group, Mesh, MeshStandardMaterial, PlaneGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData } from '../../sim/types';
@@ -10,7 +10,7 @@ import { drawn } from './kit';
  * utomhus genom en dörr, nu ser det bara ut som att hela huset är öppet mellan inne och ute"). After the photograph
  * he gave of the house, which is in no repository: a red house of upright boards with white corner boards and white
  * window frames, and a glazed veranda with a door out to the deck.
- * - The veranda's back wall is glass in white frames, with the garden beyond it.
+ * - The veranda is glazed on its outside face; the rooms share one continuous rear wall inside.
  * - At the veranda's end the path goes out through a door frame, its door standing open against the outside wall.
  * - Out on the deck the house is a house again: its red front fades in over the cut-away rooms as the camera
  *   passes the door, and fades out again when he goes back in.
@@ -119,36 +119,10 @@ export function houseDoor(chapter: ChapterData, floor: number): HouseDoor | null
   const dim = evening ? 0.62 : 1;
   const white = new MeshStandardMaterial({ color: new Color(WHITE).multiplyScalar(dim), roughness: 0.75 });
 
-  // The veranda's back wall is glass, with the garden or the night beyond (the room's own outlook stands behind it).
+  // The shared rear wall (built.ts) owns the room's windows and bathroom opening. An older veranda
+  // overlay used to put glass, rails and a red sill across that bathroom in only these two chapters.
+  // Keep the glazing on the outside facade below, and the real glass exit door beside the path.
   const frames: BoxGeometry[] = [];
-  const panes = Math.max(2, Math.round((door - veranda) / 2.1));
-  const paneW = (door - veranda) / panes;
-  for (let i = 0; i <= panes; i++) frames.push(new BoxGeometry(0.22, 8.2, 0.3).translate(veranda + i * paneW, floor + 6.1, -8.7));
-  frames.push(new BoxGeometry(door - veranda, 0.3, 0.4).translate((veranda + door) / 2, floor + 10.2, -8.7));
-  frames.push(new BoxGeometry(door - veranda, 0.26, 0.6).translate((veranda + door) / 2, floor + 2.0, -8.6));
-  // Under the glass a low red wall, as the veranda in the photograph has.
-  const sillWall = new Mesh(new BoxGeometry(door - veranda, 2.0, 0.2).translate((veranda + door) / 2, floor + 1.0, -8.75),
-    new MeshStandardMaterial({ color: new Color(RED).multiplyScalar(evening ? 0.5 : 0.9), roughness: 0.85 }));
-  group.add(sillWall);
-  // Through the glass, the garden (or the storm's night): sky, the trees at the edge of the lawn, and the lawn.
-  const outside = drawn(256, 128, (c) => {
-    const sky = c.createLinearGradient(0, 0, 0, 80);
-    sky.addColorStop(0, evening ? '#0b1220' : '#cfe3ef');
-    sky.addColorStop(1, evening ? '#25304a' : '#eef3ee');
-    c.fillStyle = sky;
-    c.fillRect(0, 0, 256, 128);
-    c.fillStyle = evening ? '#0f1a1c' : '#5f7d4a';
-    c.beginPath();
-    c.moveTo(0, 128);
-    for (let x = 0; x <= 256; x += 8) c.lineTo(x, 62 + 9 * Math.sin(x * 0.11) + 5 * Math.sin(x * 0.37));
-    c.lineTo(256, 128);
-    c.fill();
-    c.fillStyle = evening ? '#18241c' : '#8fae5a';
-    c.fillRect(0, 92, 256, 36);
-  });
-  const glassBack = new Mesh(new PlaneGeometry(door - veranda, 8.0).translate((veranda + door) / 2, floor + 6.1, -8.82),
-    new MeshBasicMaterial({ map: outside, color: evening ? '#9aa4b8' : '#ffffff', fog: false }));
-  group.add(glassBack);
 
   // The door out: a frame across the path at the veranda's end, with the outside wall beside it.
   frames.push(new BoxGeometry(0.34, DOOR.high, 0.34).translate(door, floor + DOOR.high / 2, DOOR.back));

@@ -17,7 +17,7 @@ describe('painting with Pappa', () => {
   });
   it('cannot award an unpainted eye, cancelled attempt or malformed completed trace', () => {
     // After the morning's scene, which holds him while Pappa carves.
-    const sim = new Sim({ ...prolog, spawn: { x: 3.4, y: .01 } }, {}, { flags: ['scene:morgon'] });
+    const sim = new Sim({ ...prolog, spawn: { x: prolog.spots!.find(spot => spot.id === 'eye')!.at.x - .3, y: .01 } }, {}, { flags: ['scene:morgon'] });
     settle(sim); sim.step({ ...idle, act: true });
     expect(sim.story).toEqual({ kind: 'paint', spot: 'eye' });
     expect(sim.flags.has('eye')).toBe(false);
@@ -31,7 +31,7 @@ describe('painting with Pappa', () => {
     expect(sim.flags.has('paint')).toBe(false);
   });
   it('restores the first finished eye, then starts the blink only after the second', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 3.4, y: .01 } }, {}, { flags: ['scene:morgon', 'eye'] });
+    const sim = new Sim({ ...prolog, spawn: { x: prolog.spots!.find(spot => spot.id === 'eye')!.at.x - .3, y: .01 } }, {}, { flags: ['scene:morgon', 'eye'] });
     settle(sim); sim.step({ ...idle, act: true });
     expect(sim.story?.spot).toBe('paint');
     expect(sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] })).toBe(false);

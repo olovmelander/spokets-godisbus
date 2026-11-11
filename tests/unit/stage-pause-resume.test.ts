@@ -1,6 +1,7 @@
 import { InstancedMesh } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { epilog } from '../../src/content/chapters/ends';
+import { HOME_BATHROOM } from '../../src/content/home-layout';
 import { norrsken } from '../../src/content/chapters/norrsken';
 import { sv } from '../../src/content/sv';
 import { JOINTS, type Pose, type Role } from '../../src/render/rig';
@@ -89,7 +90,7 @@ describe('resuming an authored scene after Pause', () => {
   it.each([
     { chapter: norrsken, sceneId: 'aterfunna', at: 3 },
     { chapter: norrsken, sceneId: 'aterfunna', at: 9 },
-    { chapter: epilog, sceneId: 'bathroom', at: 9.5 },
+    { chapter: epilog, sceneId: 'bathroom', at: HOME_BATHROOM.goodnight },
   ])('$chapter.id/$sceneId at $at preserves the same smooth joint path as uninterrupted reading', ({ chapter, sceneId, at }) => {
     const continuous = replay(chapter, sceneId, at, false);
     const resumed = replay(chapter, sceneId, at, true);

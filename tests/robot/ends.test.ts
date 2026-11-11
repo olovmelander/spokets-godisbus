@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { STORY, chapterNumber, courseFor, nextAfter } from '../../src/content/chapters';
 import { epilog, prolog } from '../../src/content/chapters/ends';
+import { HOME_BATHROOM } from '../../src/content/home-layout';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
@@ -79,7 +80,7 @@ describe('Prolog, Lördagsmorgon', () => {
     run(sim, 40, { x: 1, hopHeld: true });
     expect(sim.flags.has('goal')).toBe(false);
     // The ghost has not moved from the table.
-    expect(sim.ghost!.x).toBeCloseTo(4.6, 1);
+    expect(sim.ghost!.x).toBeCloseTo(prolog.ghost![0]!.at.x, 1);
     // And the star can't be taken before the ghost has run.
     const early = new Sim({ ...prolog, spawn: { x: 41, y: -0.79 } });
     run(early, 0.3);
@@ -134,7 +135,7 @@ describe('Prolog, Lördagsmorgon', () => {
 describe('the blink: a beat of the story that takes time', () => {
   /** Elof at the ghost, having painted one eye. */
   const atTheGhost = () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 3.4, y: 0.01 } }, {}, { flags: ['scene:morgon'] });
+    const sim = new Sim({ ...prolog, spawn: { x: prolog.spots!.find(spot => spot.id === 'eye')!.at.x - 0.3, y: 0.01 } }, {}, { flags: ['scene:morgon'] });
     run(sim, 0.2);
     sim.step({ ...idle, act: true });
     sim.finishStory({ kind: 'paint', traces: [guidedEye(116)] });
@@ -170,16 +171,16 @@ describe('the blink: a beat of the story that takes time', () => {
     expect(sim.flags.has('blink')).toBe(false);
     expect(sim.curr.x).toBeCloseTo(x, 1);
     expect(sim.curr.grounded).toBe(true);
-    expect(sim.ghost!.x).toBeCloseTo(4.6, 1);
+    expect(sim.ghost!.x).toBeCloseTo(prolog.ghost![0]!.at.x, 1);
     // It takes the bag, and the bag's magic begins: the chase starts at the scene's end.
     run(sim, 3.5);
     expect(sim.flags.has('grab')).toBe(true);
-    expect(sim.ghost!.x).toBeCloseTo(6.5, 1);
+    expect(sim.ghost!.x).toBeCloseTo(prolog.ghost![1]!.at.x, 1);
     run(sim, 4.2);
     expect(sim.flags.has('blink')).toBe(true);
     run(sim, 6, { x: 1 });
     expect(sim.curr.x).toBeGreaterThan(x + 2);
-    expect(sim.ghost!.x).toBeGreaterThan(8);
+    expect(sim.ghost!.x).toBeGreaterThan(prolog.ghost![1]!.at.x + 1.5);
     expect(sim.candyCount).toBeGreaterThan(0);
   });
 
@@ -188,7 +189,7 @@ describe('the blink: a beat of the story that takes time', () => {
   });
 
   it('begins again from its start in a game saved in the middle of it', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 3.4, y: 0.01 } }, {}, { flags: ['scene:morgon', 'eye', 'paint', 'woke'] });
+    const sim = new Sim({ ...prolog, spawn: { x: prolog.spots!.find(spot => spot.id === 'eye')!.at.x - 0.3, y: 0.01 } }, {}, { flags: ['scene:morgon', 'eye', 'paint', 'woke'] });
     run(sim, 0.1);
     expect(sim.sceneFrame).toEqual({ id: 'vaknar', seconds: expect.any(Number) });
     expect(sim.sceneFrame!.seconds).toBeLessThan(0.2);
@@ -272,14 +273,14 @@ describe('Epilog, Godiskalaset, in greybox', () => {
 
 
   it('walks into the bathroom and finishes brushing before the ending can begin', () => {
-    const sim = new Sim({ ...epilog, spawn: { x: 35.5, y: .01 } }, {}, { flags: ['dots', 'scene:first-carving', 'teeth'] });
-    run(sim, 5);
+    const sim = new Sim({ ...epilog, spawn: { x: HOME_BATHROOM.x, y: .01 } }, {}, { flags: ['dots', 'scene:first-carving', 'teeth'] });
+    run(sim, HOME_BATHROOM.brushEnd);
     expect(sim.sceneFrame?.id).toBe('bathroom');
     expect(sim.curr.mode).toBe('free');
     expect(sim.curr.grounded).toBe(true);
     expect(sim.flags.has('goal')).toBe(false);
     expect(sim.flags.has('bedtime')).toBe(false);
-    run(sim, 7);
+    run(sim, HOME_BATHROOM.seconds - HOME_BATHROOM.brushEnd + .4);
     expect(sim.said).toContain('bathroom:1');
     expect(sim.flags.has('bedtime')).toBe(true);
     expect(sim.flags.has('goal')).toBe(true);

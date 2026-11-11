@@ -1,0 +1,27 @@
+{
+  "wall": { "z": -9, "floorY": 0, "skirtingHeight": 0.3, "skirtingDepth": 0.16 },
+  "windows": [9.4, 21],
+  "dining": {
+    "x": 14, "z": -1.5,
+    "chairs": { "back": { "x": 14, "z": -3.5, "face": 0.25 }, "end": { "x": 17.3, "z": -1.5, "face": 0.5 } }
+  },
+  "shelf": { "x": 7, "y": 5.4 },
+  "living": {
+    "sofa": { "x": 21.8, "z": -5.9 },
+    "lamp": { "x": 25.7, "z": -7.8 },
+    "plant": { "x": 0.6, "z": -7.8 },
+    "drawings": -20.5, "drawingsLift": 2.2
+  },
+  "television": {
+    "x": 30.8, "z": -7.5, "yaw": -0.12,
+    "consoleWidth": 4.1, "consoleDepth": 1.4, "consoleTop": 1.52,
+    "screenWidth": 3.5, "screenHeight": 1.97, "screenY": 2.76, "screenZ": 0.145
+  },
+  "bathroom": {
+    "x": 35.5, "doorZ": -8.85, "backZ": -14.1, "sinkZ": -12.8, "feetZ": -11.6,
+    "width": 4.6, "height": 8.2, "wallThickness": 0.18, "floorY": 0.025,
+    "doorWidth": 3.6, "doorHeight": 5.9, "openingWidth": 3.8, "openingHeight": 6.1,
+    "doorOpen": 0.65, "walkStart": 0.7, "walkEnd": 5.1,
+    "brushStart": 5.2, "brushEnd": 10.9, "goodnight": 11.0, "bedtime": 13.4, "seconds": 13.6
+  }
+}

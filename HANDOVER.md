@@ -1,5 +1,40 @@
 # Handover
 
+## State (11 November 2026): one coherent home interior
+
+- **Olov asked:** separate the television from the sofa, make the bathroom a real part of the house, and
+  compose the furniture and architecture consistently in every chapter at home. This continuation starts
+  from PR #260's published merge, `873884f`, with parallel model, staging, geometry and visual-review worktrees.
+- **The room:** Prolog, Godiskalaset, Stormkvällen and Morgonen share one original game-layout contract.
+  The sofa clears both the TV cabinet and the window sill; the TV has its own cabinet and retained animated
+  programme. Wall drawings sit above the sofa and the lamp stands behind its right side. Dining table,
+  chairs, rug and carving shelf use the same anchors throughout. The shelf has
+  supports and clears the window frame while keeping every existing carving supported.
+- **The bathroom:** a real opening in the rear wall leads into a complete room with side walls, ceiling,
+  tiled floor, shallow threshold, vanity, basin, mirror and towel. The obsolete window behind it is removed.
+  Elof walks through the open door, rises only with the thin tile finish, and brushes at the basin. The camera
+  follows his full body in depth; the door sweep clears both him and the TV.
+- **Staging:** the opening's painting, family reactions, candy-bag theft and cameras follow the shared table.
+  The fixed window and veranda retain their story positions. Klonk reaches and leaves the party table over
+  its clear front edge; Moa and returned keepsakes stay clear of the furniture. The morning window detail
+  frames complete carvings, latch and bird. Checkpoint and candy indices, collection receipts, story IDs and
+  recordings are retained; opening resume positions follow the new kitchen.
+- **Art and privacy:** only original public fixture geometry was rebuilt, in a fresh `bpy` 5.2.3 scene through
+  `scripts/bake/export.py`. No existing `.blend`, private likeness, house reference or exterior model changed.
+  The private pack remains at `fd8c283`; private review captures remain ignored. Door and toothbrush geometry
+  are unchanged. No release-boundary or rule changes. No part of this task needs Olov's computer.
+- **Evidence:** the baseline passes all 2,600 tests and the development game boots and moves at 390×844.
+  New regressions measure installed public models, floor and doorway geometry, private carving support and
+  authored camera sightlines. All eight original TV/sofa and sofa/sill collision checks fail before the fix.
+  The integrated code passes all 2,630 tests, typecheck, build/size gates and the built-in privacy scan.
+  Native mobile review then exposed protruding bathroom shell edges and a gallery hidden by the sofa; both
+  were corrected, with a real-mesh facade-occlusion regression and focused checks. Cross-chapter review
+  also removed an obsolete rear-veranda overlay in Prolog/Stormkvällen and adjusted the morning detail
+  to keep a foreground hair fragment outside the portrait frame. The assembled-room tests include the exit
+  dressing as well as the room and bathroom, while the exterior glazing and doorway are retained.
+  Final automated, built-browser and visual results, exact CI revision and publication are recorded in this
+  continuation's PR before delivery. Browser viewport review does not establish physical-device performance.
+
 ## State (11 November 2026): stable shore at Flärken's outlet
 
 - **Olov reported:** the river bank nearest the camera flickers in and out at the end of Flärken while
@@ -5357,6 +5392,12 @@ record identify the exact published revision.
 
 ## Next
 
+**Shared home (11 November).** Keep `src/content/home-layout.json` as the common placement contract for
+content, renderer and public fixture generator. The bathroom occupies the real rear-wall opening; preserve
+its floor/threshold separation from the continuous wood floor. Keep the TV programme in its model holder
+when replacing fallback geometry. Check new furniture against real model bounds and all four home chapters;
+private captures stay outside git. This work needs no local Blender session.
+
 **Flärken's outlet (11 November).** Preserve the submerged start of both bank profiles. Do not flatten a broad
 mouth shelf onto the animated waterline: that makes it appear and disappear with the swell. Keep the existing
 water movement and the unobstructed views of both floating carvings. No local Blender session is needed.
@@ -5894,6 +5935,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Shared home composition (11 Nov) | Separate TV and sofa, integrate the bathroom and align the interior across home chapters | One cloud continuation with parallel public modelling, staging, geometry and native visual review | — / 1 request | One shared layout, complete bathroom and clear furniture; adapted scenes, saved-progress checks and phone composition review. |
 | Flärken's flickering shore (11 Nov) | Stabilise the near outlet bank while the carving floats downstream | One focused cloud continuation with geometry work and independent source/temporal review | — / 1 report | A submerged mouth replaces the water-level shelf; the regression measures real mesh area against the animated swell. |
 | Green garden hedges (11 Nov) | Make both final hedges large, green and visibly leafy | One focused cloud continuation with shared renderer work and phone-view review | — / 1 request | Existing playable geometry and flights retained; shared foliage visible in day and storm lighting, including Low. |
 | Explore chapter starts (11 Nov) | Start each selected chapter at its beginning after the ending | One focused cloud continuation with save implementation and independent review | — / 1 request | Explicit Explore reset preserves both adventures' collections and ordinary Continue; simulation and built-browser chapter selection checks. |
@@ -6160,6 +6202,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 11 November request for a coherent home, separate TV and integrated bathroom is addressed in this continuation.
 - The 11 November report of Flärken's flickering near river bank is addressed in this continuation.
 - The 11 November request for large green hedges at both garden endings is addressed in this continuation.
 - The 11 November request to start each chosen Explore chapter at its beginning is implemented; no part is deferred.
@@ -6189,7 +6232,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge and Flärken shore changes add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore and shared-home changes add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

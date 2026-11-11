@@ -17,7 +17,7 @@ const actor = (stage: Stage) => stage.actors.get('pappa')!.rig;
 const thing = (stage: Stage, name: string) => stage.group.getObjectByName(name)!;
 const position = (stage: Stage, name: string) => thing(stage, name).getWorldPosition(new Vector3());
 function show(stage: Stage, scene: SceneDef, seconds: number, calm = false, dt = 1 / 60, clock = seconds) {
-  stage.update({ id: scene.id, seconds }, new Set(), { x: 2.2, y: 0 }, clock, dt, calm);
+  stage.update({ id: scene.id, seconds }, new Set(), { x: morning.at!, y: 0 }, clock, dt, calm);
   stage.group.updateMatrixWorld(true);
 }
 function snapshot(stage: Stage) {

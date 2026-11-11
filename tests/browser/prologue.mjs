@@ -411,7 +411,8 @@ try {
     if (process.env.PROLOGUE_SCENE && !name.startsWith(process.env.PROLOGUE_SCENE)) continue;
     const pappa = kind === 'pappa';
     const flags = pappa ? `${VERANDA},star,scene:poff,scene:familj,hand,scene:handen` : 'scene:morgon,eye,paint,woke,grab,blink,scene:vaknar';
-    const at = pappa ? '41.6,-0.79' : '5.5,0.01';
+    // Keep the bag perch strictly ahead of spawn+1, so the ghost hops into Mamma's doorway joke.
+    const at = pappa ? '41.6,-0.79' : '13.9,0.01';
     const { page, state, info, finish } = await open(name, { viewport, hasTouch: true },
       `?dev&debug&standin&course=prolog&tier=${tier}&at=${at}&flags=${flags}`);
     await until(state, (s) => s.prologue?.kind === kind && s.prologue.seconds >= (pappa ? 1.45 : 0.85), `${name}: tableau`, 90000);
@@ -434,10 +435,11 @@ try {
       await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
       check(`${name}: scene continues to chapter card`, await page.locator('#endCard').isVisible());
     } else {
+      const chaseStart = (await state()).x;
       await page.keyboard.down('ArrowRight');
       await until(state, (s) => s.flags.includes('bag:torn') && s.candy > 0, `${name}: torn bag trail`, 60000);
       await page.keyboard.up('ArrowRight');
-      check(`${name}: chase resumes and candy can be collected`, (await state()).x > 8);
+      check(`${name}: chase resumes and candy can be collected`, (await state()).x > chaseStart + 2);
     }
     await finish();
   }

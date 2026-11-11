@@ -9,6 +9,7 @@ import { PLACES } from '../../render/dressing';
 import { heightAt, type PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
 import { roomThings } from '../../render/home-room';
+import { HOME_LAYOUT } from '../home-layout';
 import { littleCarving } from '../../render/little-carving';
 import { glowTexture } from '../../render/glow';
 import { wingbeat } from '../../render/wingbeat';
@@ -2297,7 +2298,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return { group: root, update: () => {} };
     },
     // The same room on the evening of the storm, before anything has happened to it.
-    homeEvening: () => ({ group: roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: false }), update: () => {} }),
+    homeEvening: () => ({ group: roomThings({ rug: HOME_LAYOUT.dining.x, blanket: false }), update: () => {} }),
     mormor: (spot) => figure(spot, 'mormor'),
     morfar: (spot) => figure(spot, 'morfar'),
     // At home in the morning her lantern has been put out.
@@ -2424,7 +2425,7 @@ function aftermath(): SpotProp {
   group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
   // The sofa, the lamp, the plant, the rug and Moa's drawings where they were on the evening of the storm; the blanket
   // pulled half off the sofa now.
-  group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: true }));
+  group.add(roomThings({ rug: HOME_LAYOUT.dining.x, blanket: true }));
   // The pool they stand in: flat, and giving back the room's light.
   const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(39.1, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
