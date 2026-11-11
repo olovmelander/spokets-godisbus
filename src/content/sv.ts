@@ -4,6 +4,37 @@
  */
 export const sv = {
   title: 'Elof och det stora godisäventyret',
+  kart: {
+    title: 'Godisracet', place: 'Varggropen', subtitle: 'Ett litet spel i Elofs stora äventyr',
+    play: 'Spela på TV:n', playPrompt: 'Spela på TV:n', loading: 'Startar Godisracet…',
+    loadFailed: 'Spelet kunde inte starta. Prova TV:n igen om en stund.', back: 'Tillbaka till huset',
+    story: 'En träkart med guldkrona, en skog full av ljus och tre vänner att köra ikapp. Vem hinner först till godiskalaset?',
+    start: 'Kör tre varv', again: 'Kör igen', ready: 'Redo för ett varv till?',
+    steer: 'Styr', drift: 'Sladda', boost: 'Godisboost', brake: 'Broms', gas: 'Gas',
+    left: 'Styr vänster', right: 'Styr höger',
+    steerTip: 'Följ banan genom skogen.', driftTip: 'Håll i kurvan. Släpp när gnistorna lyser!',
+    boostTip: 'Plocka guldgodis. Använd det för extra fart.',
+    keys: '← → / A D styr · ↑ / W gas · ↓ / S broms · Mellanslag / Shift sladd · E / Enter godisboost',
+    pad: 'Spaken styr · A / RT gas · B / LT broms · X sladd · Y godisboost · Start paus',
+    touch: 'Styr med pilarna. Håll Sladda i kurvan och släpp för extra fart.',
+    autoGas: 'Automatisk gas', autoGasTip: 'Du styr och sladdar. Karten gasar själv.',
+    easy: 'Lugnt', normal: 'Äventyr', easyTip: 'Lite lägre fart och extra hjälp i kurvorna.',
+    normalTip: 'Snabba vänner och större fart genom kurvorna.',
+    modeLabel: 'Välj körsätt', controlsLabel: 'Så kör du',
+    pause: 'Pausa loppet', paused: 'Loppet väntar', resume: 'Fortsätt köra',
+    pauseHint: 'Ta det lugnt. Både loppet och äventyret väntar på dig.',
+    pictureLost: 'Bilden tog en paus. Gå tillbaka till huset och prova TV:n igen.',
+    go: 'KÖR!', lap: 'Varv', placeLabel: 'Plats', time: 'Tid', speed: 'km/h',
+    lapAnnouncement: 'Varv {lap} av 3', finalLap: 'Sista varvet!',
+    charge: 'Ladda sladden', blue: 'Blå gnistor!', gold: 'Guldgnistor!', release: 'Släpp sladden!',
+    boostActive: 'Extra fart!', itemReady: 'Guldgodis redo!', itemEmpty: 'Hitta guldgodis',
+    finish: 'I mål!', winner: 'Först till godiskalaset!', finishHint: 'Alla kom fram. Vilket lopp!',
+    result: 'Du kom på plats {place} av 4.', bestLap: 'Bästa varv', bestRace: 'Ditt rekord',
+    newRecord: 'Nytt rekord!', noRecord: 'Ditt första lopp väntar.', recordLocal: 'Rekordet sparas för din spelare på den här enheten.',
+    recordUnavailable: 'Rekordet kunde inte sparas på den här enheten.',
+    racers: { player: 'Du', fox: 'Räven', owl: 'Ugglan', hare: 'Haren' },
+    map: 'Varggropens bana och de fyra kartarna',
+  },
   homeScreen: {
     shortName: 'Elofs äventyr',
     title: 'Lägg till på hemskärmen',
@@ -69,6 +100,7 @@ export const sv = {
 
   // What Använd says when there is something to use: one word for each thing Elof can do.
   verbs: {
+    playConsole: 'Spela på TV:n',
     slide: 'Åk ner',
     lace: 'Kasta snöret',
     push: 'Knuffa',

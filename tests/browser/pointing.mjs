@@ -252,7 +252,9 @@ try {
   }
   {
     const { page, state, finish } = await open('gamepad lesson', {}, query('29.4,0.01', '&flags=blink'), installPad);
-    await padPress(page, 2); // X selects the pad, without moving or discovering Hoppa here.
+    // B selects the pad without using the nearby TV. X is the real Använd action at this hall position.
+    await padPress(page, 1);
+    check('selecting the gamepad does not open the nearby TV console', !(await state()).homeConsole.open);
     await shown(page, 'hop');
     check('gamepad cue shows A for Hoppa', (await state()).device === 'pad' && (await page.locator('#tutorialKey').innerText()) === 'A');
     await padPress(page, 0);
