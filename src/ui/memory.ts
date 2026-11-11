@@ -14,13 +14,13 @@ const CURL = '<svg viewBox="0 0 64 40" aria-hidden="true"><path d="M10 30c6-16 3
 
 /** Only discovered memories show their pictures. The other slots keep the story to themselves. */
 export function memoryAlbumHtml(flags: Record<string, string[]>): string {
-  return `<h3>${sv.memories.title}</h3><div class="memory-album">${Object.entries(MEMORIES).map(([id, pictures]) =>
+  return `<section id="albumMemories" class="album-section" tabindex="0" aria-label="${sv.album.sections.memories}"><h3>${sv.memories.title}</h3><div class="memory-album">${Object.entries(MEMORIES).map(([id, pictures]) =>
     flags[id]?.includes('memory')
       ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span>${use('play', 'memory-play')}</button>`
       : `<div class="memory-missing" role="img" aria-label="${sv.memories.waiting}">${CURL}</div>`,
   ).join('')}</div><h3>${sv.collection.stormTitle}</h3><p class="setting-hint">${sv.collection.stormHint}</p><div class="memory-album">${Object.keys(STORM_MEMORIES).map(id => memoryFound(id, flags)
     ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.collection.stories[id]!.title}">${stormMemoryPictures(id)![0]}<span>${sv.collection.stories[id]!.title}</span>${use('play', 'memory-play')}</button>`
-    : `<div class="memory-missing" role="img" aria-label="${sv.memories.waiting}">${CURL}</div>`).join('')}</div>`;
+    : `<div class="memory-missing" role="img" aria-label="${sv.memories.waiting}">${CURL}</div>`).join('')}</div></section>`;
 }
 
 export interface Memory {

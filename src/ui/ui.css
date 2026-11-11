@@ -801,7 +801,11 @@ body.lefty .key-prompt {
 .panel.pause {
   padding-top: 0;
   scroll-padding-top: 76px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--paper-edge) var(--paper);
 }
+
+#pause[data-page='bag'] .panel.pause { scroll-padding-top: 140px; }
 
 @media (min-width: 700px) {
   .panel.pause {
@@ -833,6 +837,51 @@ body.lefty .key-prompt {
 .panel-head .panel-close {
   position: static;
   grid-column: 3;
+}
+
+/* A phone keeps the same generous hit area without repeating the parent page's name beside the arrow. */
+@media (max-width: 600px) {
+  .panel-head .panel-up { width: 64px; padding: 0; justify-content: center; }
+  .panel-head .panel-up span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .panel-head { padding-left: 4px; }
+  .panel .panel-head h2 { font-size: 24px; }
+}
+
+/* Four little paper bookmarks stay beside the album's heading, even deep into the second adventure. */
+.album-nav {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(64px, 1fr));
+  gap: 4px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--paper-edge);
+  box-shadow: 0 5px 5px -5px rgb(70 45 20 / 0.25);
+}
+.album-nav[hidden] { display: none; }
+.panel .album-nav button {
+  min-height: 64px;
+  min-width: 64px;
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  box-shadow: none;
+}
+.panel .album-nav button[aria-current] {
+  border-bottom-color: var(--crayon-red);
+  background-color: var(--paper-2);
+  color: var(--ink);
+}
+body.big-text .album-nav button { font-size: 20px; }
+.album-section:focus-visible, .album-photos:focus-visible { outline: none; }
+.album-section:focus-visible > h3:first-child, .album-photos:focus-visible > h3:first-child {
+  outline: 2px solid var(--crayon-blue);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 .panel-up {
@@ -887,7 +936,27 @@ body.lefty .key-prompt {
   align-content: start;
 }
 
-/* Moa's map is the picture of the goal (plan §4.6): first in Pause, with its name on it. */
+/* The way back to play and the bag are the first things under a thumb. The map and diary follow on phones. */
+@media (max-width: 699px) {
+  .pause-actions { grid-row: 1; }
+}
+.pause-home .tiles { gap: 8px; }
+.pause-home .tile { font-size: 16px; }
+.pause-home .tile svg { width: 28px; height: 28px; }
+.pause-home #pauseExplore {
+  grid-column: 1 / -1;
+  grid-template-columns: 28px auto;
+  justify-content: center;
+  gap: 10px;
+}
+body.big-text .pause-home .tile { font-size: 20px; }
+@media (min-width: 700px) {
+  .pause-home .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pause-home .tile { padding: 8px 6px; }
+  .pause-home #pauseExplore { grid-column: 2 / -1; }
+}
+
+/* Moa's map is the picture of the goal (plan §4.6), beside the actions or just below them on a phone. */
 .map-card {
   display: grid;
   gap: 4px;
@@ -1134,6 +1203,11 @@ body.lefty .key-prompt {
 .memory-thumb .memory-play { width: 26px; height: 26px; border-radius: 0; }
 .memory-missing { border-style: dashed; color: var(--ink-faint); }
 .memory-missing svg { width: 64px; height: 40px; opacity: 0.6; }
+@media (min-width: 700px) {
+  .memory-album { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .panel .memory-thumb { font-size: 16px; line-height: 1.25; }
+  body.big-text .panel .memory-thumb { font-size: 20px; }
+}
 
 .memory-card svg {
   position: absolute;
@@ -1415,6 +1489,9 @@ body.lefty .key-prompt {
   display: grid;
   gap: 10px;
 }
+
+.album-chapters > h4 { grid-column: 1 / -1; margin-top: 14px; }
+.album-section + .album-section { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--paper-edge); }
 
 @media (min-width: 700px) {
   .album-chapters {
@@ -2395,63 +2472,6 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   max-height: 150px;
 }
 
-/* A phone held sideways: the card's parts draw in, so all of it is in view (rows 6 and 12). */
-@media (max-height: 500px) {
-  .title .panel {
-    padding: 10px 14px 12px;
-  }
-
-  .title #titleFront {
-    gap: 8px;
-  }
-
-  .title-sign {
-    max-height: 72px;
-  }
-
-  .start-style {
-    min-height: 0;
-    padding: 6px;
-  }
-
-  .start-style svg {
-    height: 40px;
-  }
-
-  .start-style b {
-    font-size: 20px;
-  }
-
-  .start-style small {
-    font-size: 14px;
-    line-height: 1.15;
-  }
-
-  .round svg {
-    width: 52px;
-    height: 52px;
-    padding: 12px;
-  }
-
-  .round {
-    gap: 2px;
-    font-size: 14px;
-  }
-
-  .title .story-title p {
-    display: none;
-  }
-
-  .title #startBtn {
-    min-height: 56px;
-  }
-
-  .title #titleStartOverBtn {
-    min-height: 36px;
-    font-size: 14px;
-  }
-}
-
 /* A first start: the two play styles are the start buttons, Äventyr the larger (row 12). */
 .start-styles {
   display: grid;
@@ -2516,10 +2536,9 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 
 /* Under the start: round buttons with a word under each (row 7). */
 .round-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .round {
@@ -2543,6 +2562,15 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   border-radius: 50%;
   background-color: var(--linden);
 }
+
+.title .round {
+  min-height: 72px;
+  align-content: center;
+  font-size: 15px;
+  line-height: 1.2;
+}
+.title .round svg { width: 44px; height: 44px; padding: 10px; }
+.title .round span { overflow-wrap: anywhere; }
 
 /* Each page of the title has its way back at its top left, beside its heading (row 10). */
 .section-head {
@@ -2596,6 +2624,33 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 #playerList {
   display: grid;
   gap: 12px;
+}
+
+.title-intro, .title-play { display: grid; gap: 12px; min-width: 0; align-content: center; }
+.title .title-play { align-content: start; }
+
+/* The title is an open storybook on a wide screen: the remembered story on the left, every way on at the right.
+   Only the front is wide; profile and code forms keep their comfortable reading width. */
+@media (orientation: landscape) and (min-width: 700px) {
+  .title .panel:has(#titleFront:not([hidden])) { width: min(100%, 760px); }
+  .title #titleFront { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+  .title .title-play { border-left: 1px solid var(--paper-edge); padding-left: 24px; }
+  .title-sign { max-height: 110px; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (min-width: 700px) {
+  .title .panel { padding: 12px 16px; }
+  .title #titleFront { gap: 16px; }
+  .title .title-intro, .title .title-play { gap: 8px; }
+  .title .title-play { padding-left: 16px; }
+  .title .start-style { min-height: 96px; padding: 6px; }
+  .title .start-style svg { height: 30px; }
+  .title .start-style b { font-size: 19px; }
+  .title .start-style small { font-size: 14px; line-height: 1.15; }
+  .title .round-row { gap: 4px; }
+  .title .round { min-height: 64px; font-size: 14px; gap: 2px; }
+  .title .round svg { width: 40px; height: 40px; padding: 9px; }
+  .title .story-title p { font-size: 15px; }
 }
 
 /* A button has its own display, which would show it although it is hidden. */
@@ -2714,28 +2769,6 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 .code-wrong {
   margin: 0;
   font-size: 16px;
-}
-
-/* The picture of a phone turning shows only when the screen is held upright. */
-.rotate {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-.rotate svg {
-  width: 44px;
-  height: 36px;
-}
-
-/* Only a phone held upright is asked to turn: an iPad held upright is as wide as a phone held sideways. */
-@media (orientation: portrait) and (pointer: coarse) and (max-width: 600px) {
-  .rotate {
-    display: flex;
-  }
 }
 
 /* A find hangs from the bag after speech has had its turn. The HUD preserves its remaining reading time. */

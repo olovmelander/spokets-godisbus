@@ -30,7 +30,6 @@ const HOME = use('home');
 const BIG_CANDY = use('big-candy');
 const LEAP = use('leap');
 const STROLL = use('stroll');
-const TURN = use('turn');
 const START_LEAP = use('start-leap');
 const START_STROLL = use('start-stroll');
 const TITLE_SIGN = use('sign', 'title-sign', '0 0 620 172');
@@ -121,6 +120,12 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
            <button class="panel-up" id="pauseBack" type="button" hidden>${BACK}<span id="pauseBackWord">${p.title}</span></button>
            <h2 id="pauseTitle">${p.title}</h2>
            <button class="panel-close" id="pauseClose" type="button" aria-label="${p.close}">${CROSS}</button>
+           <nav class="album-nav" id="albumNav" aria-label="${sv.album.navigation}" hidden>
+             <button type="button" data-album-section="albumSweets">${sv.album.sections.sweets}</button>
+             <button type="button" data-album-section="albumFinds">${sv.album.sections.finds}</button>
+             <button type="button" data-album-section="albumMemories">${sv.album.sections.memories}</button>
+             <button type="button" data-album-section="albumPhotos">${sv.album.sections.photos}</button>
+           </nav>
          </div>
          <div class="pause-options" id="pauseOptions">
          <div class="pause-page pause-home" id="pauseHome">
@@ -146,7 +151,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
          </div>
          <div class="pause-page" id="pauseBagPage" hidden>
            <div class="album" id="pauseAlbum" tabindex="-1"></div>
-           <section id="albumPhotos" class="album-photos" aria-label="${sv.photos.title}"></section>
+           <section id="albumPhotos" class="album-photos" tabindex="0" aria-label="${sv.photos.title}"></section>
          </div>
          <div class="pause-page pause-settings" id="pauseSettingsPage" hidden>
            <section class="group" aria-labelledby="groupPlay">
@@ -217,10 +222,12 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
      <div class="panel-back title" id="title" hidden>
        <div class="panel" role="dialog" aria-modal="true" aria-labelledby="titleName">
          <div id="titleFront">
+           <div class="title-intro">
            <h1 id="titleName" class="title-name"><span class="sr-only">${sv.title}</span>${TITLE_SIGN}</h1>
            <div class="story-title" id="titleStory" hidden><span class="story-card" id="titleStoryCard"></span><b id="titleStoryPurpose"></b><p id="titleStoryRecap"></p></div>
-           <p class="rotate">${TURN}<span>${sv.start.rotate}</span></p>
            <p id="playerUnreadable" role="status" hidden>${sv.players.preserved}</p>
+           </div>
+           <div class="title-play">
            <div class="start-styles" id="startStyles">
              <button class="start-style go" id="startAventyr" type="button">${START_LEAP}<b>${p.aventyr}</b><small>${p.aventyrHint}</small></button>
              <button class="start-style" id="startLugnt" type="button">${START_STROLL}<b>${p.lugnt}</b><small>${p.lugntHint}</small></button>
@@ -232,6 +239,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
              <button class="round" id="titleSettingsBtn" type="button">${COG}<span>${sv.players.settings}</span></button>
              <button class="round" id="codeBtn" type="button">${TAG}<span>${sv.code.short}</span></button>
              <button class="round" id="titleExplore" type="button" hidden>${FOLDED_MAP}<span>${sv.explore.short}</span></button>
+           </div>
            </div>
          </div>
          <div id="titleCode" hidden>

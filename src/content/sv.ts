@@ -492,7 +492,12 @@ export const sv = {
   vittraSticker: 'Vittrornas tack',
   vittraFound: 'Ett klistermärke! Tack för lingonet.',
   // The album in the pause panel: every kind, found or not.
-  album: { title: 'Godisalbumet', count: '{found} av {total} sorter', chapterCount: '{found} av {total}', golden: 'Det gyllene geléhallonet', goldenFound: 'Alla sorter i Äventyr 1! Ett geléhallon i guld.' },
+  album: {
+    title: 'Godisalbumet', count: '{found} av {total} sorter', chapterCount: '{found} av {total}',
+    golden: 'Det gyllene geléhallonet', goldenFound: 'Alla sorter i Äventyr 1! Ett geléhallon i guld.',
+    navigation: 'Hitta i godispåsen',
+    sections: { sweets: 'Godis', finds: 'Fynd', memories: 'Minnen', photos: 'Foton' },
+  },
   photos: {
     title: 'Foton', journey: 'Vårt äventyr', empty: 'Här samlas bilder från ditt äventyr.',
     open: 'Titta på {name}', previous: 'Förra', next: 'Nästa', back: 'Tillbaka', done: 'Klart',

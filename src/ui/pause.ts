@@ -36,6 +36,9 @@ export interface Pause {
 export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const back = byId('pause');
+  const panel = back.querySelector<HTMLElement>('.panel')!;
+  const albumNav = byId('albumNav');
+  const albumLinks = [...albumNav.querySelectorAll<HTMLButtonElement>('[data-album-section]')];
   const styles: Record<PlayStyle, HTMLButtonElement> = { aventyr: byId('styleAventyr'), lugnt: byId('styleLugnt') };
   const switches: Record<Switch, HTMLInputElement> = {
     followFinger: byId('setFollowFinger'),
@@ -75,6 +78,33 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   };
   let settings = settingsFor('aventyr');
   let open = false;
+
+  // These are places on the same paper, not routes or filtered collections. Focus follows the jump so
+  // Tab and the gamepad continue into that section, and the browser's Back button keeps its usual meaning.
+  function markAlbumSection(): void {
+    if (!open || page !== 'bag') return;
+    const edge = albumNav.getBoundingClientRect().bottom + 20;
+    const sections = albumLinks.map(button => ({ button, section: byId(button.dataset.albumSection!) }));
+    const visible = sections.filter(({ section }) => section && !section.hidden);
+    const current = panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 2
+      ? visible.at(-1)
+      : visible.filter(({ section }) => section.getBoundingClientRect().top <= edge).at(-1) ?? visible[0];
+    for (const { button } of sections) {
+      if (button === current?.button) button.setAttribute('aria-current', 'location');
+      else button.removeAttribute('aria-current');
+    }
+  }
+  for (const button of albumLinks) {
+    button.setAttribute('aria-controls', button.dataset.albumSection!);
+    button.addEventListener('click', () => {
+      const section = byId(button.dataset.albumSection!);
+      if (!section || section.hidden) return;
+      section.focus({ preventScroll: true });
+      section.scrollIntoView({ block: 'start' });
+      markAlbumSection();
+    });
+  }
+  panel.addEventListener('scroll', markAlbumSection, { passive: true });
 
   /** How many of the five pips a level fills. */
   const pipsOf = (level: number) => Math.round(level * 5);
@@ -182,6 +212,8 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   function go(next: PausePage, from?: PausePage, turn = true): void {
     const returning = from !== undefined;
     page = next;
+    back.dataset.page = next;
+    albumNav.hidden = next !== 'bag';
     for (const [name, element] of Object.entries(pages)) element.hidden = name !== next;
     options.hidden = next === 'reference';
     reference.hidden = next !== 'reference';
@@ -196,7 +228,8 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
       byId('pauseBack').setAttribute('aria-label', p.backTo.replace('{page}', titles[up]));
     }
     if (next !== 'home') stuck(false);
-    byId<HTMLElement>('pause').querySelector<HTMLElement>('.panel')!.scrollTop = 0;
+    panel.scrollTop = 0;
+    markAlbumSection();
     // Focus where the hand is wanted: coming back, on the tile that opened the page left behind.
     const focus = returning && next === 'home' ? (from === 'bag' ? 'pauseBagBtn' : from === 'settings' ? 'pauseSettingsBtn' : 'resumeBtn')
       : returning && next === 'settings' ? 'controlsReferenceBtn'
