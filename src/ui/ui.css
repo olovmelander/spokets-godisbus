@@ -389,7 +389,7 @@ body.lefty .btn-act span {
 
 /* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
 body.big-text .bubble {
-  font-size: calc(27.5px * var(--k));
+  font-size: calc(25px * var(--k));
 }
 
 body.big-text .notice {
@@ -2035,7 +2035,7 @@ details.info-row p {
   column-gap: 9px;
   row-gap: 2px;
   align-items: start;
-  font-size: calc(22px * var(--k));
+  font-size: calc(20px * var(--k));
   line-height: 1.25;
   text-align: left;
   text-wrap: pretty;

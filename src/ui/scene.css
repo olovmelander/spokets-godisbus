@@ -97,6 +97,11 @@ body:has(#bubble[data-protected='true']:not([hidden])) :is(.controls, .bag, #hel
 @media (max-width: 360px) and (orientation: portrait) {
   .dialogue,
   .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) { padding-block: 4px; }
+  .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 4px;
+  }
+  .scene-reading { padding-top: 4px; }
 }
 @media (max-width: 700px) and (max-height: 380px) and (orientation: landscape) {
   .dialogue {
