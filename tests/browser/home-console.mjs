@@ -112,6 +112,7 @@ try {
     const game = await open(chapter, { viewport, hasTouch: touch });
     check(`${chapter}: tävlingsmodulen hämtas först när TV:n används`, !game.requests.some(url => new URL(url).pathname === kartPath));
     const frozen = await enter(game, method);
+    check(`${chapter}: en enda synlig startknapp i skärmens format`, await game.page.locator('[data-action="start"]:visible').count() === 1);
     await game.page.keyboard.down('ArrowRight'); await frames(game.page, 8); await game.page.keyboard.up('ArrowRight');
     assert.deepEqual(world(await game.state()), world(frozen), `${chapter}: huset, dialogen och insamlingen står stilla bakom TV:n`); checks++;
     check(`${chapter}: endast en TV-vy och en tävlingsduk`, await game.page.locator('#homeConsole').count() === 1 && await game.page.locator('.kart-canvas').count() === 1);
