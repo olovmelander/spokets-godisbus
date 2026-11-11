@@ -73,7 +73,9 @@ jobs:
   browser:
     needs: scope
     if: needs.scope.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    # Noble's hosted image already has Chromium's native libraries, Liberation and emoji fonts.
+    # Keep that known host instead of downloading unused CJK/legacy X-font packages via apt in every shard.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -93,5 +95,14 @@ jobs:
       - run: npm ci
       - run: npm run build
       # Playwright is pinned to 1.56.1, the version whose browser cloud sessions have (CLAUDE.md).
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
+      # Launch the pinned browser before the suites: missing host libraries must fail, never be ignored.
+      - name: Check Chromium runtime
+        run: |
+          node --input-type=module <<'JS'
+          import { chromium } from 'playwright';
+          const browser = await chromium.launch();
+          console.log('Chromium', browser.version());
+          await browser.close();
+          JS
       - run: node tests/browser/run.mjs --part ${{ matrix.part }}/12

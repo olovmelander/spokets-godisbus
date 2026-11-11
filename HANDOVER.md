@@ -6059,6 +6059,12 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **CI package mirror (11 November):** all browser shards hit Azure Ubuntu mirror DNS failures while
+  downloading supplemental font packages, before any game test ran. Browser jobs now pin the observed
+  Ubuntu 24.04 host, which already supplies Chromium's native libraries and Latin/emoji fonts, and download
+  the same pinned Playwright browser without the redundant apt font batch. A real launch preflight fails on
+  missing libraries; every browser suite remains required. The game keeps its bundled Andika/Playpen fonts.
+
 - **Interface review (11 November):** small-phone dialogue placement, split Continue panels and overlapping
   foreground messages are addressed together. The review distinguishes actor visibility and full-text/input
   checks from physical-phone frame rate; exact final browser evidence is in the continuation's PR.
