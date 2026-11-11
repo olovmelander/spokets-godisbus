@@ -2029,6 +2029,22 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
 /* Preserve both authored continuation spans and their order, but let the complete sentence wrap naturally. */
 #bubbleLine .said { display: inline; }
 
+/* On the smallest upright phone the words use the full paper width below their speaker. */
+@media (max-width: 360px) and (orientation: portrait) {
+  .bubble .face { grid-row: 1; }
+  .bubble b { align-self: center; }
+  #bubbleLine { grid-column: 1 / -1; }
+}
+/* A short landscape phone has room for two broad lines, not a tall narrow column. The speaker
+   starts that same paragraph; only the secondary utility buttons yield, never Pause or play. */
+@media (max-width: 700px) and (max-height: 380px) and (orientation: landscape) {
+  .bubble { display: block; }
+  .bubble .face { float: left; margin-top: 2px; margin-right: 8px; }
+  .bubble b { display: inline; margin-right: 8px; }
+  #bubbleLine { display: inline; }
+  body:has(#bubble:not([hidden])) :is(.bag, #helpBtn) { visibility: hidden; pointer-events: none; }
+}
+
 /* The card at a chapter's end: the candy in rows of ten, with the number beside it (plan §4.3). */
 .panel.end {
   justify-items: center;

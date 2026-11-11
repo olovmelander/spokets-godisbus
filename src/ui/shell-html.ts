@@ -104,7 +104,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
      <div class="key-prompt" id="keyPrompt" aria-hidden="true"><kbd id="keyPromptKey">E</kbd>${HAND}<span id="keyPromptWord"></span></div>
      ${sceneUiHtml}
      <div class="dialogue" id="dialogue">
-       <div class="bubble" id="bubble" role="status" hidden><span class="face" id="bubbleFace" aria-hidden="true"></span><b id="bubbleWho"></b><span id="bubbleLine"></span></div>
+       <div class="bubble" id="bubble" role="status" hidden><span class="face" id="bubbleFace" aria-hidden="true"></span><b id="bubbleWho"></b> <span id="bubbleLine"></span></div>
        ${sceneReadingHtml}
      </div>
      <div class="hint" id="hint" hidden></div>
