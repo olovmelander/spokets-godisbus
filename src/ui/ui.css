@@ -2746,12 +2746,7 @@ body.big-text .title .round { font-size: 18px; }
 /* A short landscape phone keeps the main action and every shortcut on the sheet. Its longer recap is still
    in Pause; the lesser restart action rests under the title rather than pushing shortcuts below the fold. */
 @media (orientation: landscape) and (max-height: 360px), (orientation: portrait) and (max-height: 650px) {
-  .title .story-title :is(.story-card, b) {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-  }
+  .title .story-title b { display: none; }
 }
 @media (orientation: landscape) and (max-height: 360px) and (min-width: 500px) {
   .title .title-sign { max-height: 64px; }
