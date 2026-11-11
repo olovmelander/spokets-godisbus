@@ -16,10 +16,12 @@ import { createHomeRoutine } from '../../src/render/home-routine';
 import { installSharedModels } from '../../src/render/shared-models';
 import { createStage } from '../../src/render/stage';
 import { heightAt } from '../../src/render/dressing/kit';
+import { houseDoor } from '../../src/render/dressing/house-door';
 
 const chapters = [prolog, epilog, stormkvall, morgonen];
 const rooms = new Map<string, Awaited<ReturnType<typeof makeHome>>>();
 const bounds = (object: Object3D) => new Box3().setFromObject(object, true);
+const visible = (object: Object3D): boolean => object.visible && (object.parent ? visible(object.parent) : true);
 
 async function readKit(file: string): Promise<Group> {
   const bytes = readFileSync(new URL(`../../art/baked/aventyr2/${file}.glb`, import.meta.url));
@@ -31,6 +33,8 @@ async function makeHome(chapter: ChapterData, assets: Assets) {
   const group = new Group(), house = built(chapter, true), routine = createHomeRoutine(chapter), floor = bank(chapter, 'wood');
   const stage = createStage(chapter, x => heightAt(chapter, x));
   group.add(house, routine.group, floor, stage.group);
+  const exit = chapter.outdoors === undefined ? null : houseDoor(chapter, heightAt(chapter, chapter.outdoors - 1));
+  if (exit) group.add(exit.group);
   for (const [index, decor] of (chapter.decor ?? []).entries()) if (decor.look === 'homeEvening' || decor.look === 'aftermath') {
     const piece = PACK.spots.get(decor.look)?.({ ...decor, id: `decor:${index}`, verb: 'take' });
     expect(piece, `${chapter.id}: authored room furniture`).toBeTruthy();
@@ -39,7 +43,7 @@ async function makeHome(chapter: ChapterData, assets: Assets) {
   const fallbackSofa = bounds(group.getObjectByName(chapter.id === 'morgonen' ? 'room:soffa-filt' : 'room:soffa')!);
   expect(await installSharedModels(assets, group, true)).toBe(true);
   group.updateMatrixWorld(true);
-  return { chapter, group, house, routine, floor, fallbackSofa };
+  return { chapter, group, house, routine, floor, fallbackSofa, exit };
 }
 
 beforeAll(async () => {
@@ -121,12 +125,13 @@ describe('the actual furnished home has physical clearances', () => {
   });
 
   it.each(chapters)('$id: has a real doorway in the wall, with valid outward normals and UVs', chapter => {
-    const { house } = rooms.get(chapter.id)!;
+    const { house, exit } = rooms.get(chapter.id)!;
     const wall = house.children.find(child => child.renderOrder === -2) as Mesh;
     expect(wall).toBeDefined();
     // Rays must pass through the aperture but stop at both piers and the lintel. A painted door fails this.
     for (const dx of [-1.5, 0, 1.5]) for (const y of [.2, 2.8, 5.6]) {
-      const hits = new Raycaster(new Vector3(BATHROOM.x + dx, y, 0), new Vector3(0, 0, -1), 0, 12).intersectObject(house, true);
+      const hits = new Raycaster(new Vector3(BATHROOM.x + dx, y, 0), new Vector3(0, 0, -1), 0, 12)
+        .intersectObjects([house, ...(exit ? [exit.group] : [])], true).filter(hit => visible(hit.object));
       // Include window glass and trim too: cutting only the wall while retaining the old window34
       // would still cover the bathroom mirror and upper doorway.
       expect(hits, `${chapter.id}: wall covers doorway (${dx}, ${y})`).toHaveLength(0);
@@ -179,6 +184,38 @@ describe('the actual furnished home has physical clearances', () => {
     }
   });
 
+  it.each([prolog, stormkvall])('$id: keeps the exterior door without painting veranda glass across the shared bathroom', chapter => {
+    const { group, house, routine, exit } = rooms.get(chapter.id)!;
+    expect(exit).not.toBeNull();
+    const facade = exit!.group.getObjectByName('house-front') as Mesh;
+    expect(facade).toBeDefined();
+    exit!.update(chapter.outdoors! + 5);
+    expect(facade.visible).toBe(true);
+    exit!.update(BATHROOM.x);
+    expect(facade.visible).toBe(false);
+    // Inspect the shared door in its open pose; these two chapters do not themselves play the brushing scene.
+    routine.update(new Set(), { id: 'bathroom', seconds: BATHROOM.walkEnd }, BATHROOM.walkEnd);
+    group.updateMatrixWorld(true);
+    const layers = [house, routine.group, exit!.group];
+    const rear = (x: number, y: number) => new Raycaster(new Vector3(x, y, 0), new Vector3(0, 0, -1), 0, 20)
+      .intersectObjects(layers, true).filter(hit => visible(hit.object))[0];
+    const wall = house.getObjectByName('home-back-wall')!;
+    // The full assembly formerly hit the extra glass at z−8.82, even though built() had a valid wall hole.
+    for (const [x, y] of [[31, 5], [BATHROOM.x, 7]]) {
+      const hit = rear(x!, y!);
+      expect(hit?.object === wall, `${chapter.id}: veranda overlay covers the shared rear wall at z=${hit?.point.z}`).toBe(true);
+      expect(hit!.point.z).toBeCloseTo(HOME_LAYOUT.wall.z);
+    }
+    const throughDoor = rear(BATHROOM.x, 3.8);
+    expect(throughDoor, `${chapter.id}: no bathroom beyond the open doorway`).toBeDefined();
+    expect(throughDoor!.point.z).toBeLessThan(HOME_LAYOUT.wall.z - 2);
+    // The perpendicular outer end wall still closes the house beside the real exit.
+    const endWall = new Raycaster(new Vector3(chapter.outdoors! - 2, 5, -5), new Vector3(1, 0, 0), 0, 4)
+      .intersectObject(exit!.group, true).filter(hit => visible(hit.object))[0];
+    expect(endWall).toBeDefined();
+    expect(endWall!.point.x).toBeCloseTo(chapter.outdoors! - .15, 3);
+  });
+
   it('keeps the whole door swing clear of the TV and the actual walking approach', () => {
     const { group, routine } = rooms.get(epilog.id)!;
     const door = group.getObjectByName('bathroom-door')!;
@@ -225,7 +262,7 @@ describe('the actual furnished home has physical clearances', () => {
   });
 
   it.each([[390, 844], [844, 390]])('frames brushing through the actual open doorway at %i×%i', (width, height) => {
-    const { group, house, routine } = rooms.get(epilog.id)!;
+    const { group, house, routine, exit } = rooms.get(epilog.id)!;
     const seconds = BATHROOM.brushStart + 1;
     routine.update(new Set(['teeth']), { id: 'bathroom', seconds }, seconds);
     group.updateMatrixWorld(true);
@@ -244,7 +281,8 @@ describe('the actual furnished home has physical clearances', () => {
       const projected = target.clone().project(camera);
       expect(Math.abs(projected.x)).toBeLessThan(.9); expect(Math.abs(projected.y)).toBeLessThan(.9);
       const direction = target.clone().sub(camera.position);
-      const blockers = new Raycaster(camera.position, direction.clone().normalize(), 0, direction.length() - .02).intersectObjects([house, routine.group], true);
+      const blockers = new Raycaster(camera.position, direction.clone().normalize(), 0, direction.length() - .02)
+        .intersectObjects([house, routine.group, ...(exit ? [exit.group] : [])], true).filter(hit => visible(hit.object));
       expect(blockers.map(hit => hit.object.name), `bathroom hides body point ${dx},${y}`).toEqual([]);
     }
   });
