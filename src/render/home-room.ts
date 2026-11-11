@@ -4,6 +4,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { sequence } from './dressing/kit';
+import { HOME_LAYOUT } from '../content/home-layout';
 
 // Shared by both adventures. The room models can load without importing the second adventure's story pack.
 const paint = (geometry: BufferGeometry, colour: string): BufferGeometry => {
@@ -50,10 +51,11 @@ function ragRug(): CanvasTexture | null {
  * The family's room, which the evening of the storm and Sunday morning share: a rag rug, a sofa, a floor lamp, a plant and
  * Moa's drawings taped to the wall, each in its own place in that chapter's stretch of it.
  */
-export function roomThings(at: { sofa: number; lamp: number; plant: number; drawings: number; rug: number; blanket: boolean }): Group {
+export function roomThings(at: { rug: number; blanket: boolean }): Group {
   const group = new Group();
   group.name = 'family-room';
-  const WALL = -8.5;
+  const { sofa: SOFA, lamp: LAMP, plant: PLANT, drawings: d } = HOME_LAYOUT.living;
+  const WALL = HOME_LAYOUT.wall.z + .5;
   const home: BufferGeometry[] = [];
   /** A piece of the room as plain shapes, until its model has come (art/blender/a2-room.py). */
   const piece = (name: string, parts: BufferGeometry[], x: number, z: number) => {
@@ -66,8 +68,7 @@ export function roomThings(at: { sofa: number; lamp: number; plant: number; draw
     held.userData.back = z;
     group.add(held);
   };
-  const SOFA = { x: at.sofa, z: -6.6 };
-  const couch = [box(11, 1.5, 3.6, SOFA.x, 1.15, SOFA.z, '#5c6c4c'), box(11, 3.4, 1, SOFA.x, 2.5, SOFA.z - 1.6, '#566644')];
+  const couch = [box(11, 1.5, 3.6, SOFA.x, 1.15, SOFA.z, '#5c6c4c'), box(11, 3.4, .9, SOFA.x, 2.5, SOFA.z - 1.35, '#566644')];
   for (const side of [-5.6, 5.6]) couch.push(box(1, 2.5, 3.8, SOFA.x + side, 1.55, SOFA.z, '#4e5c3e'));
   for (const side of [-1, 1]) couch.push(box(0.3, 0.45, 3.2, SOFA.x + side * 4.8, 0.22, SOFA.z, '#3a2c20'));
   // Bertil's blanket, pulled half off it the morning after, and a cushion.
@@ -77,18 +78,17 @@ export function roomThings(at: { sofa: number; lamp: number; plant: number; draw
   // The floor lamp, and the plant.
   const lamp: BufferGeometry[] = [];
   const plant: BufferGeometry[] = [];
-  lamp.push(paint(new CylinderGeometry(0.7, 0.8, 0.14, 12).translate(at.lamp, 0.07, -7.4), '#3a3e44'), paint(new CylinderGeometry(0.07, 0.07, 6, 8).translate(at.lamp, 3, -7.4), '#3a3e44'));
-  lamp.push(paint(new CylinderGeometry(0.75, 1.15, 1.2, 14, 1, true).translate(at.lamp, 6.4, -7.4), '#e4d8bc'));
-  piece('golvlampa', lamp, at.lamp, -7.4);
-  plant.push(paint(new CylinderGeometry(0.72, 0.56, 1.1, 12).translate(at.plant, 0.55, -7.8), '#a8704a'));
+  lamp.push(paint(new CylinderGeometry(0.7, 0.8, 0.14, 12).translate(LAMP.x, 0.07, LAMP.z), '#3a3e44'), paint(new CylinderGeometry(0.07, 0.07, 6, 8).translate(LAMP.x, 3, LAMP.z), '#3a3e44'));
+  lamp.push(paint(new CylinderGeometry(0.75, 1.15, 1.2, 14, 1, true).translate(LAMP.x, 6.4, LAMP.z), '#e4d8bc'));
+  piece('golvlampa', lamp, LAMP.x, LAMP.z);
+  plant.push(paint(new CylinderGeometry(0.72, 0.56, 1.1, 12).translate(PLANT.x, 0.55, PLANT.z), '#a8704a'));
   for (let i = 0; i < 9; i++) {
     const turn = (i / 9) * Math.PI * 2;
     const lean = 0.35 + (i % 3) * 0.22;
-    plant.push(paint(new ConeGeometry(0.28, 2.8, 5).scale(1, 1, 0.3).rotateZ(lean).rotateY(turn).translate(at.plant - Math.cos(turn) * lean * 1.2, 2.3, -7.8 + Math.sin(turn) * lean * 1.2), i % 2 ? '#4a7238' : '#3a5e30'));
+    plant.push(paint(new ConeGeometry(0.28, 2.8, 5).scale(1, 1, 0.3).rotateZ(lean).rotateY(turn).translate(PLANT.x - Math.cos(turn) * lean * 1.2, 2.3, PLANT.z + Math.sin(turn) * lean * 1.2), i % 2 ? '#4a7238' : '#3a5e30'));
   }
-  piece('krukvaxt', plant, at.plant, -7.8);
+  piece('krukvaxt', plant, PLANT.x, PLANT.z);
   // Moa's drawings: paper on the wall, each with a sun, a house or two figures in crayon, and no words.
-  const d = at.drawings;
   for (const [x, y, wide] of [[33.6, 3.2, 1.9], [35.8, 3.5, 1.6], [37.6, 3, 1.5]] as const) {
     home.push(box(wide, wide * 1.3, 0.04, x + d, y, WALL - 0.34, '#f4f0e4'), box(0.14, 0.14, 0.05, x + d, y + wide * 0.62, WALL - 0.31, '#d8c078'));
   }

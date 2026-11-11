@@ -3,9 +3,10 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { ChapterData } from '../sim/types';
 import type { SceneFrame } from '../sim/scene';
 import type { Rig } from './rig';
+import { HOME_BATHROOM, HOME_LAYOUT } from '../content/home-layout';
 
 /** The same doorway in the hall, behind the walking path, in every home chapter. */
-export const BATHROOM = { x: 35.5, doorZ: -3.8, sinkZ: -7.3, feetZ: -6.1, seconds: 11.6 } as const;
+export const BATHROOM = HOME_BATHROOM;
 const BRUSH_SCALE = 1.6;
 const smooth = (n: number) => { const t = Math.max(0, Math.min(1, n)); return t * t * (3 - 2 * t); };
 
@@ -49,26 +50,55 @@ export function createHomeRoutine(chapter: ChapterData) {
   const room = chapter.place === 'home';
   const walls: BufferGeometry[] = [];
   const x = BATHROOM.x, z = BATHROOM.doorZ;
-  // A proper panelled door and frame; a tiled recess, mirror, basin and towel make the room beyond legible.
-  for (const side of [-1, 1]) walls.push(box(.18, 6.2, .32, x + side * 1.9, 3.1, z, '#ede7d8'));
-  walls.push(box(4, .22, .34, x, 6.15, z, '#ede7d8'), box(4, .07, .55, x, .02, z, '#b6a28b'));
-  walls.push(box(4.2, 6.2, .12, x, 3.1, -8.6, '#bdd6d3'), box(4.2, .035, 4.9, x, .01, -6.2, '#a4bdbb'));
-  for (let y = .7; y < 6; y += .7) walls.push(box(4.2, .022, .02, x, y, -8.52, '#eef0df'));
-  for (let dx = -1.8; dx < 2; dx += .7) walls.push(box(.022, 6.1, .02, x + dx, 3.05, -8.52, '#eef0df'));
-  walls.push(box(1.9, 2.2, .12, x, 4, -8.4, '#e9e5d7'), box(1.62, 1.92, .03, x, 4, -8.31, '#8eabb8'));
-  walls.push(box(2.2, .18, 1.1, x, 1.65, BATHROOM.sinkZ, '#f4f0e3'), box(.28, 1.6, .3, x, .8, BATHROOM.sinkZ, '#dddcd2'));
-  walls.push(colour(new SphereGeometry(.67, 12, 8).scale(1.3, .35, .65).translate(x, 1.65, BATHROOM.sinkZ), '#c8dfdf'));
-  walls.push(box(.1, .5, .1, x, 1.98, -7.65, '#909da3'), box(.1, .1, .35, x, 2.18, -7.51, '#a5afb1'));
-  walls.push(box(.65, 1.2, .05, x - 1.45, 2.4, -8.33, '#3e8ca5'));
-  // The TV and its low stand live beside the sofa, clear of the doorway.
-  walls.push(box(4.1, .2, 1.2, 30.8, 1.42, -5.9, '#83634b'), box(.17, 1.4, .6, 29.1, .7, -5.9, '#73533b'), box(.17, 1.4, .6, 32.5, .7, -5.9, '#73533b'));
-  walls.push(box(3.9, 2.3, .24, 30.8, 2.76, -5.9, '#29363b'), box(.25, .4, .5, 30.8, 1.6, -5.9, '#29363b'));
+  // The loaded fixture and its fallback occupy the same real room behind the house wall.
+  const b = BATHROOM, depth = z - b.backZ, middle = (z + b.backZ) / 2;
+  walls.push(box(b.width + b.wallThickness, b.height, b.wallThickness, x, b.height / 2, b.backZ, '#e6e0d3'),
+    box(b.width + b.wallThickness, b.wallThickness, depth + b.wallThickness, x, b.height - b.wallThickness / 2, middle, '#f1ebdf'),
+    box(b.width - b.wallThickness, .04, depth - .18, x, b.floorY - .02, middle - .09, '#aebbb3'));
+  for (const side of [-1, 1]) {
+    const sx = x + side * b.width / 2;
+    walls.push(box(b.wallThickness, b.height, depth, sx, b.height / 2, middle, '#e6e0d3'),
+      box(.028, 3.05, depth - .1, sx - side * (b.wallThickness / 2 + .014), 1.525, middle, '#c9d9d1'),
+      box(.17, b.openingHeight, .30, x + side * (b.openingWidth / 2 + .085), b.openingHeight / 2, z, '#eee6d6'));
+  }
+  walls.push(box(b.openingWidth + .34, .19, .30, x, b.openingHeight + .095, z, '#eee6d6'),
+    box(b.width - b.wallThickness, 3.05, .028, x, 1.525, b.backZ + .104, '#c9d9d1'));
+  const threshold = new BoxGeometry(b.openingWidth, .04, .36).translate(x, .005, z);
+  const vertices = threshold.getAttribute('position');
+  for (let i = 0; i < vertices.count; i++) {
+    const ramp = (z + .18 - vertices.getZ(i)) / .36;
+    vertices.setY(i, vertices.getY(i) > 0 ? b.floorY * ramp : -.015);
+  }
+  threshold.computeVertexNormals(); walls.push(colour(threshold, '#c8c3b4'));
+  const backFace = b.backZ + b.wallThickness / 2;
+  for (let y = .6; y < 3; y += .6) walls.push(box(b.width - b.wallThickness, .018, .006, x, y, backFace + .031, '#e6ece2'));
+  walls.push(box(2.08, 2.46, .13, x, 3.82, backFace + .105, '#b79c74'),
+    box(1.88, 2.26, .025, x, 3.82, backFace + .184, '#91adb1'),
+    box(2.18, 1.05, .94, x, .925, b.sinkZ, '#a9815e'),
+    box(2.28, .12, 1.05, x, 1.46, b.sinkZ, '#d4bea0'));
+  walls.push(colour(new SphereGeometry(.67, 16, 8).scale(1.4, .25, .72).translate(x, 1.65, b.sinkZ), '#edf1e8'));
+  walls.push(box(.1, .67, .1, x, 1.855, b.sinkZ - .4, '#909da3'),
+    box(.1, .1, .32, x, 2.19, b.sinkZ - .25, '#a5afb1'),
+    box(.57, 1.12, .05, x - 1.42, 2.10, backFace + .26, '#6da4a5'));
+  // A separate local-origin cabinet leaves air between the screen and the sofa.
+  const tv = HOME_LAYOUT.television;
+  const television = new Group(); television.name = 'home-tv-console';
+  television.position.set(tv.x, 0, tv.z); television.rotation.y = tv.yaw;
+  television.userData.model = 'home-tv'; television.userData.disposeFallback = true;
+  television.add(joined([
+    box(tv.consoleWidth, 1.15, tv.consoleDepth - .06, 0, tv.consoleTop - .695, -.03, '#886348'),
+    box(tv.consoleWidth, .12, tv.consoleDepth, 0, tv.consoleTop - .06, 0, '#b28b62'),
+    ...[-1, 1].flatMap(side => [-1, 1].map(end => box(.16, .3, .16, side * 1.75, .15, end * .53, '#6f513c'))),
+    box(tv.screenWidth + .4, tv.screenHeight + .33, .24, 0, tv.screenY, 0, '#29363b'),
+    box(.25, .4, .5, 0, tv.consoleTop + .1, 0, '#29363b'),
+  ]));
+  group.add(television);
   const doorway = new Group(); doorway.name = 'bathroom-door';
   doorway.userData.model = 'home-routine-door'; doorway.userData.disposeFallback = true;
-  const door = joined([box(3.6, 5.9, .14, 1.8, 2.95, 0, '#e5ddcb'),
+  const door = joined([box(b.doorWidth, b.doorHeight, .14, b.doorWidth / 2, b.doorHeight / 2, 0, '#e5ddcb'),
     box(2.9, 2.15, .06, 1.8, 4.15, .1, '#f2ebdc'), box(2.9, 2.15, .06, 1.8, 1.65, .1, '#f2ebdc'),
     box(.45, .09, .12, 3.15, 2.6, .19, '#9a9b91')]);
-  doorway.add(door); doorway.position.set(x - 1.8, 0, z + .04);
+  doorway.add(door); doorway.position.set(x - b.doorWidth / 2, 0, z + .04);
   const surround = new Group(); surround.name = 'home-routine-room';
   surround.userData.model = 'home-routine-room'; surround.userData.disposeFallback = true;
   surround.add(joined(walls)); group.add(surround, doorway);
@@ -76,8 +106,9 @@ export function createHomeRoutine(chapter: ChapterData) {
   if (canvas) { canvas.width = 320; canvas.height = 180; programme(canvas, 0, true); }
   const screenMap = canvas ? new CanvasTexture(canvas) : null;
   if (screenMap) screenMap.colorSpace = SRGBColorSpace;
-  const screen = new Mesh(new BoxGeometry(3.5, 1.97, .025), new MeshBasicMaterial({ map: screenMap, color: screenMap ? '#ffffff' : '#8fc6d2', fog: false }));
-  screen.name = 'home-tv-programme'; screen.position.set(30.8, 2.76, -5.75); group.add(screen);
+  const screen = new Mesh(new BoxGeometry(tv.screenWidth, tv.screenHeight, .025), new MeshBasicMaterial({ map: screenMap, color: screenMap ? '#ffffff' : '#8fc6d2', fog: false }));
+  screen.name = 'home-tv-programme'; screen.userData.keep = 0;
+  screen.position.set(0, tv.screenY, tv.screenZ); television.add(screen);
   const brush = new Group();
   brush.userData.model = 'home-toothbrush'; brush.userData.disposeFallback = true;
   brush.add(joined([box(.035, .26, .04, 0, 0, 0, '#409bbc'), box(.075, .095, .065, 0, .17, 0, '#eeeade')]));
@@ -92,8 +123,8 @@ export function createHomeRoutine(chapter: ChapterData) {
       clock = seconds;
       active = chapter.id === 'epilog' && (frame?.id === 'bathroom' || flags.has('bedtime'));
       phase = frame?.id === 'bathroom' ? frame.seconds : flags.has('bedtime') ? BATHROOM.seconds : 0;
-      doorway.rotation.y = -1.38 * smooth(phase / .65);
-      brush.visible = active && phase >= 3.1 && phase < 9.2;
+      doorway.rotation.y = -1.38 * smooth(phase / b.doorOpen);
+      brush.visible = active && phase >= b.brushStart && phase < b.brushEnd;
       const now = Math.floor(seconds * 8);
       if (canvas && screenMap && now !== televisionFrame) {
         televisionFrame = now; programme(canvas, seconds, chapter.id !== 'stormkvall' || !flags.has('candles')); screenMap.needsUpdate = true;
@@ -101,8 +132,10 @@ export function createHomeRoutine(chapter: ChapterData) {
     },
     body(from: { x: number; y: number }) {
       if (!active) return null;
-      const k = smooth((phase - .7) / 2.3);
-      return { position: new Vector3(from.x + (x - from.x) * k, from.y, BATHROOM.feetZ * k),
+      const k = smooth((phase - b.walkStart) / (b.walkEnd - b.walkStart));
+      const depth = b.feetZ * k;
+      const floor = b.floorY * Math.max(0, Math.min(1, (b.doorZ + .18 - depth) / .36));
+      return { position: new Vector3(from.x + (x - from.x) * k, from.y + floor, depth),
         travel: -BATHROOM.feetZ * k, walking: k > 0 && k < 1, brushing: brush.visible, face: k < 1 ? .75 : .42 };
     },
     updateElof(rig: Pick<Rig, 'mouth' | 'hand' | 'reach' | 'hold' | 'grasp' | 'socket'>) {

@@ -6,6 +6,7 @@ import type { Assets } from '../../src/render/assets';
 import { built } from '../../src/render/dressing/built';
 import { createEpilogueStage } from '../../src/render/epilogue-stage';
 import { roomThings } from '../../src/render/home-room';
+import { HOME_LAYOUT } from '../../src/content/home-layout';
 import { installSharedModels } from '../../src/render/shared-models';
 
 const kit = (...names: string[]) => {
@@ -35,12 +36,13 @@ describe('the same home in both adventures', () => {
   });
 
   it('loads the public room in a public preview, once, while retaining each piece’s authored location', async () => {
-    const room = roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 5.5, blanket: false });
+    const room = roomThings({ rug: 5.5, blanket: false });
     const model = vi.fn(async () => kit('soffa', 'golvlampa', 'krukvaxt'));
     const assets = { model, manifest: async () => ({ packs: { aventyr2: { files: { 'room.glb': 1 } } } }) } as unknown as Assets;
     expect(await installSharedModels(assets, room, true)).toBe(true);
     expect(model).toHaveBeenCalledTimes(1);
-    for (const [name, x, z] of [['soffa', 24.4, -6.6], ['golvlampa', 18.2, -7.4], ['krukvaxt', 0.6, -7.8]] as const) {
+    const { sofa, lamp, plant } = HOME_LAYOUT.living;
+    for (const [name, x, z] of [['soffa', sofa.x, sofa.z], ['golvlampa', lamp.x, lamp.z], ['krukvaxt', plant.x, plant.z]] as const) {
       const holder = room.getObjectByName(`room:${name}`)!;
       expect(holder.children).toHaveLength(1);
       expect(holder.children[0]!.position.toArray()).toEqual([x, 0, z]);

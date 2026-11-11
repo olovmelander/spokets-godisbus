@@ -35,7 +35,7 @@ const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries([...FLARKEN, ...FLARKEN_MOVING].map((name) => [name, ['aventyr2', 'flarken'] as const])),
   ...Object.fromEntries(ROOM.map((name) => [name, ['aventyr2', 'room'] as const])),
   ...Object.fromEntries(NATURE.map((name) => [name, ['aventyr2', 'nature'] as const])),
-  ...Object.fromEntries(['home-routine-room', 'home-routine-door', 'home-toothbrush'].map(name => [name, ['aventyr2', 'home-routine'] as const])),
+  ...Object.fromEntries(['home-routine-room', 'home-tv', 'home-routine-door', 'home-toothbrush'].map(name => [name, ['aventyr2', 'home-routine'] as const])),
   'olympia-hall': ['aventyr2', 'olympia'],
   'olympia-stand': ['aventyr2', 'olympia'],
   'billsta-house': ['private', 'billsta-house'],

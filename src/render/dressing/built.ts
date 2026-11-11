@@ -8,29 +8,32 @@ import { outlook, outlookPane } from '../backdrop';
 import { BOARD, boards } from './ground';
 import { drawn, heightAt } from './kit';
 import { roomThings } from '../home-room';
+import { HOME_BATHROOM, HOME_LAYOUT } from '../../content/home-layout';
 
 /** Half the opening that a window which opens cuts through the wall: a little more than its glass, under its frame. */
 export const OPENING = { x: 2.6, y: 2.65 } as const;
 
 /**
- * The room's wall, as a plane `wide` by `tall`, with an opening for a window that opens (its middle relative to
- * the wall's), or none. Its texture lies as on a plane, 0 to 1 across.
+ * The room's wall with real window and bathroom openings, centred relative to the wall.
+ * Its texture lies as on a plane, 0 to 1 across.
  */
-function wallWithOpening(wide: number, tall: number, opening: { x: number; y: number } | null): BufferGeometry {
-  if (!opening) return new PlaneGeometry(wide, tall);
+function wallWithOpenings(wide: number, tall: number, openings: readonly { x: number; y: number; halfWidth: number; halfHeight: number }[]): BufferGeometry {
+  if (!openings.length) return new PlaneGeometry(wide, tall);
   const outline = new Shape();
   outline.moveTo(-wide / 2, -tall / 2);
   outline.lineTo(wide / 2, -tall / 2);
   outline.lineTo(wide / 2, tall / 2);
   outline.lineTo(-wide / 2, tall / 2);
   outline.closePath();
-  const hole = new Path();
-  hole.moveTo(opening.x - OPENING.x, opening.y - OPENING.y);
-  hole.lineTo(opening.x - OPENING.x, opening.y + OPENING.y);
-  hole.lineTo(opening.x + OPENING.x, opening.y + OPENING.y);
-  hole.lineTo(opening.x + OPENING.x, opening.y - OPENING.y);
-  hole.closePath();
-  outline.holes.push(hole);
+  for (const opening of openings) {
+    const hole = new Path();
+    hole.moveTo(opening.x - opening.halfWidth, opening.y - opening.halfHeight);
+    hole.lineTo(opening.x - opening.halfWidth, opening.y + opening.halfHeight);
+    hole.lineTo(opening.x + opening.halfWidth, opening.y + opening.halfHeight);
+    hole.lineTo(opening.x + opening.halfWidth, opening.y - opening.halfHeight);
+    hole.closePath();
+    outline.holes.push(hole);
+  }
   const geometry = new ShapeGeometry(outline);
   const position = geometry.getAttribute('position'), uv = geometry.getAttribute('uv');
   for (let i = 0; i < uv.count; i++) uv.setXY(i, position.getX(i) / wide + 0.5, position.getY(i) / tall + 0.5);
@@ -70,12 +73,29 @@ export function built(chapter: ChapterData, indoors = false): Group {
     panels.repeat.set(long / 12, 1);
     // In the evening the room is lit by candles: the wall is dim and warm, and the windows are dark.
     const evening = chapter.night !== undefined;
-    const wall = new Mesh(wallWithOpening(long, 26, house.opens === undefined ? null : {
-      x: house.opens - (house.from + house.to) / 2, y: heightAt(chapter, house.opens) + 6 - (floor + 11),
-    }), new MeshBasicMaterial({ map: panels, color: evening ? '#8c7252' : '#ffffff' }));
-    wall.position.set((house.from + house.to) / 2, floor + 11, -9);
+    const centre = (house.from + house.to) / 2;
+    const openings: { x: number; y: number; halfWidth: number; halfHeight: number }[] = house.opens === undefined ? [] : [{
+      x: house.opens - centre, y: heightAt(chapter, house.opens) + 6 - (floor + 11),
+      halfWidth: OPENING.x, halfHeight: OPENING.y,
+    }];
+    const bath = HOME_BATHROOM;
+    const bathroomHere = bath.x - bath.openingWidth / 2 > house.from && bath.x + bath.openingWidth / 2 < roomTo;
+    if (bathroomHere) openings.push({ x: bath.x - centre, y: bath.openingHeight / 2 - .03 - 11,
+      halfWidth: bath.openingWidth / 2, halfHeight: bath.openingHeight / 2 + .03 });
+    const wall = new Mesh(wallWithOpenings(long, 26, openings),
+      new MeshBasicMaterial({ map: panels, color: evening ? '#8c7252' : '#ffffff' }));
+    wall.name = 'home-back-wall';
+    wall.position.set(centre, floor + 11, HOME_LAYOUT.wall.z);
     wall.renderOrder = -2;
     group.add(wall);
+    // Continuous painted skirting joins the furniture to the room. It stops at the real doorway rather than
+    // running across Elof's feet or covering the tiled threshold behind it.
+    const spans = bathroomHere ? [[house.from, bath.x - bath.openingWidth / 2], [bath.x + bath.openingWidth / 2, roomTo]] : [[house.from, roomTo]];
+    const skirting = spans.filter(([from, to]) => to! > from!).map(([from, to]) =>
+      new BoxGeometry(to! - from!, HOME_LAYOUT.wall.skirtingHeight, HOME_LAYOUT.wall.skirtingDepth)
+        .translate((from! + to!) / 2, floor + HOME_LAYOUT.wall.skirtingHeight / 2, HOME_LAYOUT.wall.z + .1));
+    const trim = new Mesh(mergeGeometries(skirting), new MeshStandardMaterial({ color: '#e4dccb', roughness: .8 }));
+    trim.name = 'home-wall-skirting'; group.add(trim); skirting.forEach(shape => shape.dispose());
     // A room has a continuous floor towards the viewer. The platformer's cutaway remains outdoors;
     // indoors it used to leave a black pit beneath the family on a tall phone screen.
     const roomWidth = roomTo - house.from;
@@ -89,8 +109,8 @@ export function built(chapter: ChapterData, indoors = false): Group {
     group.add(roomFloor);
     // The same recognisable furniture as Stormkvällen. It stands behind the actors and the walking plane;
     // the sofa stays beside the hall; the shelf and final windowsill remain clear in the same home.
-    if (chapter.id === 'prolog') group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 5.5, blanket: false }));
-    if (chapter.id === 'epilog') group.add(roomThings({ sofa: 24.4, lamp: 18.2, plant: 0.6, drawings: -20.6, rug: 14, blanket: false }));
+    if (chapter.id === 'prolog') group.add(roomThings({ rug: HOME_LAYOUT.dining.x, blanket: false }));
+    if (chapter.id === 'epilog') group.add(roomThings({ rug: HOME_LAYOUT.dining.x, blanket: false }));
     // Where the chapter goes out of doors the house ends: its white corner board, and the garden beyond it.
     if (chapter.outdoors !== undefined) {
       const corner = new Mesh(new BoxGeometry(0.7, 26, 0.5), new MeshStandardMaterial({ color: '#efe8da', roughness: 0.8 }));
@@ -113,7 +133,9 @@ export function built(chapter: ChapterData, indoors = false): Group {
           bars.push(new BoxGeometry(w, h, 0.5).translate(x + dx, base + 6 + dy, -9.25));
         }
       }
-      group.add(new Mesh(mergeGeometries(bars), frame));
+      const joinery = new Mesh(mergeGeometries(bars), frame);
+      joinery.name = `home-window-frame:${x}`;
+      group.add(joinery);
       bars.forEach((part) => part.dispose());
     }
     // Pappa's shelf: his figures in a row, athletes and tomtar, and the first place in the row.
