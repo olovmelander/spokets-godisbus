@@ -620,7 +620,8 @@ async function start(): Promise<void> {
   let tableauSeconds = 0;
   // Where a game taken up again is, as its chapter's card says it, over the title's recap (first-minutes.md row 9).
   const cardWord = chapter.scenes?.find((scene) => scene.id === 'card' || scene.id === 'morgon')?.stage?.words?.find((word) => word.kind === 'caption')?.text;
-  byId('titleStoryCard').textContent = cardWord ? (sv.scene as Record<string, string>)[cardWord] ?? '' : '';
+  byId('titleStoryCard').textContent = (cardWord ? (sv.scene as Record<string, string>)[cardWord] : undefined)
+    ?? (sv.scene as Record<string, string>)[chapter.id] ?? sv.explore.chapters[chapter.id] ?? '';
   const tableauShown = () => hasTableau && morning !== undefined && title.open && !ended && game.sim.sceneFrame === null && sceneWaits(morning, game.sim.flags);
 
   // The title (plan §6.10). A chapter starts behind it; the test course and a debug session start at once.
