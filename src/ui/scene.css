@@ -68,7 +68,7 @@ body.story-reading :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .
 }
 /* Ordinary phone dialogue follows the utility row. A held scene uses the quiet lower edge,
    leaving its family close-ups clear; the controls it would cover have stepped aside. */
-@media (max-width: 599px) {
+@media (max-width: 599px) and (orientation: portrait) {
   .dialogue,
   .dialogue:has(> .scene-reading:not([hidden])) {
     --dialogue-left: calc(env(safe-area-inset-left) + 12px);
