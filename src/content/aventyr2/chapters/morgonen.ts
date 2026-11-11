@@ -36,7 +36,7 @@ const TABLE_TOP = 1.65;
 /** Where each of the family is at breakfast, clear of the table and its chairs. Mormor and morfar stand by. */
 const MAMMA = { x: 12.2, z: -3.4 };
 const BERTIL = { x: 14, z: -3.15 };
-const MOA = { x: 17.15, z: -1.5 };
+const MOA = { x: TABLE.chairs.end.x - 0.395, z: TABLE.chairs.end.z };
 const PAPPA = { x: 18.4, z: -3 };
 const MORMOR = { x: 10.6, z: -1.3 };
 const MORFAR = { x: 20.2, z: -1.2 };
