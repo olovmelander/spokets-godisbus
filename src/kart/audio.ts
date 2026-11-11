@@ -41,6 +41,8 @@ export function createKartAudio(settings: KartAudioSettings, env: KartAudioEnv =
   let engine: OscillatorNode | null = null, overtone: OscillatorNode | null = null;
   let windLevel: GainNode | null = null, slideLevel: GainNode | null = null;
   let rpm = IDLE_RPM, songClock = 0, songStep = 0;
+  let resumePending = false, pendingState: KartSoundState | null = null;
+  const pendingEvents: KartSoundEvent[] = [];
   const nodes = new Set<AudioNode>();
   const continuous = new Set<AudioScheduledSourceNode>();
   const notes = new Map<AudioScheduledSourceNode, AudioNode[]>();
@@ -94,7 +96,14 @@ export function createKartAudio(settings: KartAudioSettings, env: KartAudioEnv =
   function resumeContext(): void {
     if (!ctx || disposed || suspended) return;
     master?.gain.setValueAtTime(.65, ctx.currentTime);
-    if (ctx.state !== 'running') void ctx.resume().catch(() => { /* A later gesture can unlock sound. */ });
+    if (ctx.state === 'running') { flushPending(); return; }
+    if (resumePending) return;
+    const current = ctx;
+    resumePending = true;
+    void current.resume().then(() => {
+      resumePending = false;
+      if (ctx === current) flushPending();
+    }).catch(() => { resumePending = false; /* A later gesture can unlock sound. */ });
   }
   function unlock(): void {
     if (disposed || (effectsVolume === 0 && musicVolume === 0)) return;
@@ -136,44 +145,69 @@ export function createKartAudio(settings: KartAudioSettings, env: KartAudioEnv =
     oscillator.start(at); oscillator.stop(at + duration + .025);
   }
 
-  return {
-    unlock,
-    tick(state: KartSoundState, dt: number) {
-      if (!ctx || disposed || suspended || ctx.state !== 'running') return;
-      const step = clamp(finite(dt), 0, .1), now = ctx.currentTime;
-      const racing = state.phase === 'racing', active = racing || state.phase === 'countdown';
-      rpm = kartRpm(rpm, state.speed, state.throttle, step, state.boost ? .3 : 0);
-      const speed = clamp(finite(state.speed) / 25, 0, 1), throttle = clamp(finite(state.throttle), 0, 1);
-      engine?.frequency.setTargetAtTime(rpm / 45, now, .055);
-      overtone?.frequency.setTargetAtTime(rpm / 22.5, now, .055);
-      engineFilter?.frequency.setTargetAtTime(260 + speed * 400 + throttle * 230, now, .06);
-      engineLevel?.gain.setTargetAtTime(active ? (settings.calm ? .045 : .06) + throttle * .025 : 0, now, .06);
-      windLevel?.gain.setTargetAtTime(racing ? speed * speed * (settings.calm ? .025 : .04) : 0, now, .09);
-      slideLevel?.gain.setTargetAtTime(racing && state.drifting ? .035 * speed : 0, now, .05);
-      // An original light wooden melody; its clock freezes with the race.
-      if (state.phase !== 'countdown' && musicVolume > 0) {
-        songClock += step;
-        if (songClock >= .32) {
-          songClock -= .32;
-          const melody = [74, 78, 81, 78, 76, 74, 69, 71, 74, 78, 83, 81, 78, 76, 74, 69];
-          note(melody[songStep % melody.length]!, .24, .055, 0, true);
-          if (songStep % 4 === 0) note(songStep % 8 === 0 ? 50 : 57, .48, .055, 0, true);
-          songStep++;
-        }
+  function tick(state: KartSoundState, dt: number): void {
+    if (!ctx || disposed || suspended) return;
+    if (ctx.state !== 'running') { pendingState = { ...state }; return; }
+    pendingState = null;
+    const step = clamp(finite(dt), 0, .1), now = ctx.currentTime;
+    const racing = state.phase === 'racing', active = racing || state.phase === 'countdown';
+    rpm = kartRpm(rpm, state.speed, state.throttle, step, state.boost ? .3 : 0);
+    const speed = clamp(finite(state.speed) / 25, 0, 1), throttle = clamp(finite(state.throttle), 0, 1);
+    engine?.frequency.setTargetAtTime(rpm / 45, now, .055);
+    overtone?.frequency.setTargetAtTime(rpm / 22.5, now, .055);
+    engineFilter?.frequency.setTargetAtTime(260 + speed * 400 + throttle * 230, now, .06);
+    engineLevel?.gain.setTargetAtTime(active ? (settings.calm ? .045 : .06) + throttle * .025 : 0, now, .06);
+    windLevel?.gain.setTargetAtTime(racing ? speed * speed * (settings.calm ? .025 : .04) : 0, now, .09);
+    slideLevel?.gain.setTargetAtTime(racing && state.drifting ? .035 * speed : 0, now, .05);
+    // An original light wooden melody; its clock freezes with the race.
+    if (state.phase !== 'countdown' && musicVolume > 0) {
+      songClock += step;
+      if (songClock >= .32) {
+        songClock -= .32;
+        const melody = [74, 78, 81, 78, 76, 74, 69, 71, 74, 78, 83, 81, 78, 76, 74, 69];
+        note(melody[songStep % melody.length]!, .24, .055, 0, true);
+        if (songStep % 4 === 0) note(songStep % 8 === 0 ? 50 : 57, .48, .055, 0, true);
+        songStep++;
       }
-    },
-    event(name: KartSoundEvent) {
-      if (name === 'countdown') note(74, .15, .16);
-      else if (name === 'go') { note(86, .3, .16); note(81, .32, .11, .06); }
-      else if (name === 'pickup') { note(81, .16, .12); note(86, .24, .11, .08); }
-      else if (name === 'boost') [74, 78, 81, 86].forEach((midi, i) => note(midi, .22, .10, i * .045));
-      else if (name === 'finish') [74, 78, 81, 86, 81, 86].forEach((midi, i) => note(midi, .42, .13, i * .14));
-    },
+    }
+  }
+  function event(name: KartSoundEvent): void {
+    if (!ctx || disposed || suspended) return;
+    if (ctx.state !== 'running') {
+      // Resume is asynchronous on Safari too. Retain the current cue, never an
+      // old countdown burst, and discard the queue on a genuine later pause.
+      if (name === 'finish') pendingEvents.length = 0;
+      if (name === 'countdown' || name === 'go') {
+        const previous = pendingEvents.indexOf('countdown');
+        if (previous >= 0) pendingEvents.splice(previous, 1);
+      }
+      if (pendingEvents.length < 8) pendingEvents.push(name);
+      return;
+    }
+    if (name === 'countdown') note(74, .15, .16);
+    else if (name === 'go') { note(86, .3, .16); note(81, .32, .11, .06); }
+    else if (name === 'pickup') { note(81, .16, .12); note(86, .24, .11, .08); }
+    else if (name === 'boost') [74, 78, 81, 86].forEach((midi, i) => note(midi, .22, .10, i * .045));
+    else if (name === 'finish') [74, 78, 81, 86, 81, 86].forEach((midi, i) => note(midi, .42, .13, i * .14));
+  }
+  function flushPending(): void {
+    if (!ctx || disposed || suspended || ctx.state !== 'running') return;
+    const state = pendingState; pendingState = null;
+    // Apply the latest engine state before the fanfare; the result screen no
+    // longer ticks audio, so retaining its last racing engine would buzz forever.
+    if (state) tick(state, 0);
+    const queued = pendingEvents.splice(0);
+    queued.forEach(event);
+  }
+
+  return {
+    unlock, tick, event,
     suspend(next: boolean) {
       if (suspended === next || disposed) return;
       suspended = next;
       if (!ctx) return;
       if (next) {
+        pendingEvents.length = 0; pendingState = null;
         master?.gain.cancelScheduledValues(ctx.currentTime);
         master?.gain.setValueAtTime(0, ctx.currentTime);
         stopNotes();
@@ -182,7 +216,7 @@ export function createKartAudio(settings: KartAudioSettings, env: KartAudioEnv =
     },
     dispose() {
       if (disposed) return;
-      disposed = true; stopNotes();
+      disposed = true; pendingEvents.length = 0; pendingState = null; stopNotes();
       if (ctx) master?.gain.setValueAtTime(0, ctx.currentTime);
       for (const source of continuous) { try { source.stop(); } catch { /* Already ended. */ } }
       continuous.clear();

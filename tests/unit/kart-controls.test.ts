@@ -110,6 +110,13 @@ describe('Godisracet controller ownership', () => {
     expect(pause).not.toHaveBeenCalled(); expect(buttons.left.captured.size).toBe(0);
     expect(input.read(.05).steer).toBe(0);
   });
+  it('reports the first real keyboard action even when the host initially showed touch hints', () => {
+    input.dispose(); const changed = vi.fn();
+    input = createKartInput({ querySelectorAll: () => Object.values(buttons) } as unknown as HTMLElement,
+      { pause, device: changed }, { win, doc, gamepads: () => [] });
+    input.setEnabled(true); key(win, 'ArrowLeft'); key(win, 'Space');
+    expect(changed).toHaveBeenCalledExactlyOnceWith('keys');
+  });
 });
 
 describe('source steering and audio feel', () => {
@@ -188,5 +195,35 @@ describe('Godisracet audio lifecycle', () => {
     sound.suspend(true); const paused = f.nodes.length;
     for (let i = 0; i < 8; i++) sound.tick(state, .1);
     expect(f.nodes).toHaveLength(paused); sound.dispose();
+  });
+  it('keeps the finish engine state and fanfare through an asynchronous context resume', async () => {
+    const f = soundEnv(), sound = createKartAudio({ effects: 1, music: 0, calm: false }, f.env);
+    sound.unlock(); await Promise.resolve();
+    sound.tick({ speed: 15, throttle: 1, drifting: false, boost: false, phase: 'racing' }, .05);
+    const engineGain = f.nodes[5]!; expect(engineGain.gain.value).toBeGreaterThan(0);
+    sound.suspend(true); await Promise.resolve();
+    let finishResume = () => {};
+    f.context.resume.mockImplementation(() => new Promise<void>(resolve => {
+      finishResume = () => { f.context.state = 'running'; resolve(); };
+    }));
+    sound.suspend(false);
+    sound.tick({ speed: 0, throttle: 0, drifting: false, boost: false, phase: 'finished' }, 0);
+    sound.event('finish');
+    const before = f.nodes.length; expect(f.nodes.filter(n => n.starts > 0)).toHaveLength(3);
+    finishResume(); await Promise.resolve();
+    expect(engineGain.gain.value).toBe(0);
+    expect(f.nodes.length).toBe(before + 12); // Six fanfare notes, each with its own envelope.
+    sound.dispose();
+  });
+  it('does not replay queued cues when a pending resume is interrupted by another pause', async () => {
+    const f = soundEnv(); let resume = () => {};
+    f.context.resume.mockImplementation(() => new Promise<void>(resolve => {
+      resume = () => { f.context.state = 'running'; resolve(); };
+    }));
+    const sound = createKartAudio({ effects: 1, music: 0, calm: false }, f.env);
+    sound.unlock(); sound.event('go'); const count = f.nodes.length;
+    sound.suspend(true); resume(); await Promise.resolve();
+    expect(f.nodes).toHaveLength(count);
+    sound.dispose();
   });
 });

@@ -83,11 +83,12 @@ export function createKartInput(root: HTMLElement, callbacks: KartInputCallbacks
   const fingers = new Map<number, { control: KartControl; element: HTMLElement }>();
   const buttons = [...root.querySelectorAll<HTMLElement>('[data-kart-control]')];
   let enabled = false, disposed = false, autoGas = true, windowActive = true, device: KartDevice = 'keys';
+  let deviceReported = false;
   let item = false, padItem = false, padPause = false, padReady = false;
   let smooth = neutral();
   const switchDevice = (next: KartDevice) => {
-    if (device === next) return;
-    device = next; callbacks.device?.(next);
+    if (device === next && deviceReported) return;
+    device = next; deviceReported = true; callbacks.device?.(next);
   };
   const down = (control: KartControl) => [...keys.values()].includes(control) || [...fingers.values()].some(finger => finger.control === control);
   const refresh = () => buttons.forEach(button => button.classList.toggle('is-held', down(controlOf(button)!)));
