@@ -22,7 +22,7 @@ export interface TalkFrame {
   text: string;
   /** Seconds since this line came up. A paused game holds it. */
   seconds: number;
-  /** The story waits for Fortsätt: the authored moment, its actors and its clock, hold until it is pressed. */
+  /** A protected moment holds while the complete line is read and heard; Fortsätt is an optional advance. */
   reading: boolean;
   /** A matching recording's playback position; absent for unrecorded or muted lines. */
   voice?: { seconds: number; duration: number } | null;

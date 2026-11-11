@@ -296,7 +296,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       if (noticeFor > 0) {
         // A reward waits its turn behind the whole exchange, including the brief continuation linger.
         // Its time belongs to the visible notice, so it cannot expire unseen behind a speech card.
-        tag.hidden = speechHasFloor();
+        const hidden = speechHasFloor();
+        if (tag.hidden !== hidden) tag.hidden = hidden;
         if (!tag.hidden) {
           noticeFor -= dt;
           // A find's sticker drops into the bag as its tag goes (a fade under Mindre rörelse).
