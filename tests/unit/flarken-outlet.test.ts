@@ -173,6 +173,40 @@ describe("Flärken's outlet, the å", () => {
     for (let x = outlet.from; x <= outlet.to; x += 2) expect(openWaterAt(chapter, x)).toBe(outlet.y);
   });
 
+  it('keeps the unopened near bank below the entire swell instead of exposing a broad shelf each half-cycle', () => {
+    const chapter = flarken();
+    const def = chapter.storm!.buildings!.find(one => one.kind === 'outlet')!;
+    const look = PACK.looks.get(chapter.id)!;
+    const water = createWater(chapter, look.water, look.sun.from, { place: look.id });
+    const levels: number[] = [];
+    // Use the real animated water, including both extrema, rather than a duplicate of its swell formula.
+    for (let clock = 0; clock <= 10; clock += 1 / 60) {
+      water.update(clock);
+      levels.push(water.level);
+    }
+    const low = Math.min(...levels), high = Math.max(...levels);
+    expect(low).toBeLessThan(-.02);
+    expect(high).toBeGreaterThan(.02);
+    const mesh = building(def).group.children[0] as Mesh;
+    const points = mesh.geometry.getAttribute('position');
+    const a = new Vector3(), b = new Vector3(), c = new Vector3();
+    let mouthArea = 0, crossedArea = 0, dryBankArea = 0;
+    for (let i = 0; i < points.count; i += 3) {
+      a.fromBufferAttribute(points, i); b.fromBufferAttribute(points, i + 1); c.fromBufferAttribute(points, i + 2);
+      if (Math.min(a.z, b.z, c.z) <= 2) continue; // Near bank only; exclude the stream and its stones.
+      const area = Math.abs((b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x)) / 2;
+      const bottom = Math.min(a.y, b.y, c.y), top = Math.max(a.y, b.y, c.y);
+      if (Math.max(a.x, b.x, c.x) <= def.opens!) {
+        mouthArea += area;
+        if (top >= low && bottom <= high) crossedArea += area;
+      } else if (Math.min(a.x, b.x, c.x) > def.opens! + 4 && bottom > high) dryBankArea += area;
+    }
+    expect(mouthArea).toBeGreaterThan(20);
+    expect(crossedArea, 'surface area alternately exposed and submerged at the unopened bank').toBe(0);
+    // Submerging the mouth must not remove the mature near bank farther downstream.
+    expect(dryBankArea).toBeGreaterThan(20);
+  });
+
   it('has its two banks, low over the water, and stones in its bed off the middle line, where what it carries floats', () => {
     const shape = { long: 43, wide: 6, high: 1.3, opens: 8.5 };
     const geometry = outletShape(shape);

@@ -1,5 +1,25 @@
 # Handover
 
+## State (11 November 2026): stable shore at Flärken's outlet
+
+- **Olov reported:** the river bank nearest the camera flickers in and out at the end of Flärken while
+  Lillgubben floats in the water. This continuation starts from PR #259's published merge, `7b0dea7`.
+- **Cause:** before the near bank rises past the jetty, its profile collapsed into a broad shelf exactly at
+  water level. The water's existing swell repeatedly covered and exposed that shelf; this was not a changing
+  visibility flag or frustum-culling failure.
+- **Correction:** each bank starts below the water and rises into its existing profile over the same four EL.
+  Mature bank positions and colours, stones, water animation, cameras, carried figures, collision and saves
+  are preserved. No new geometry, draw calls, downloads, private assets, recordings or release boundary changes.
+- **Evidence:** the new regression measures actual outlet triangles against the real water's animated extrema.
+  It fails on the old geometry: 63.89 square EL of the unopened near bank crosses the swell. The corrected mouth
+  stays submerged, while the mature bank remains dry. The focused outlet/water/Flärken robot checks pass 55 tests;
+  an independent source review found no blocker. The starting revision passes all 2,599 tests in 271 files,
+  and the development game boots and moves on a 390×844 viewport. Final code passes typecheck, all 2,600 tests
+  in 271 files, production build/size gates (649.3 KB gzipped JS; 5,765.3 KB boot) and the built-in privacy scan.
+  Native temporal before/after review, chapter browser checks and exact CI/Pages/live results are recorded in
+  this continuation's PR before delivery.
+  Browser viewport evidence is distinct from physical-device performance. No work needs Olov's computer or Blender.
+
 ## State (11 November 2026): green hedges at the garden endings
 
 - **Olov asked:** a large, visibly green hedge at the end of both Gården and Stormgården, so the flight over
@@ -5337,6 +5357,10 @@ record identify the exact published revision.
 
 ## Next
 
+**Flärken's outlet (11 November).** Preserve the submerged start of both bank profiles. Do not flatten a broad
+mouth shelf onto the animated waterline: that makes it appear and disappear with the swell. Keep the existing
+water movement and the unobstructed views of both floating carvings. No local Blender session is needed.
+
 **Green hedges (11 November).** Keep the final hedges visibly leafy on every tier, including Stormgården's
 night lighting. Preserve the clear flight corridor and the existing playable ground; the taller rear foliage
 must not hide Lillgubben as the camera follows him over the crown. This visual change needs no local Blender work.
@@ -5767,6 +5791,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Flärken's outlet (Olov, 11 November 2026):** the near river bank must remain visually stable while
+  Lillgubben floats downstream; water may lap naturally against its sloping edge.
 - **Garden endings (Olov, 11 November 2026):** both Gården and Stormgården need a large green hedge visually,
   with the flight over it clearly readable.
 - **Chapter exploration (Olov, 11 November 2026):** selecting a chapter after the adventure starts at that
@@ -5868,6 +5894,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Flärken's flickering shore (11 Nov) | Stabilise the near outlet bank while the carving floats downstream | One focused cloud continuation with geometry work and independent source/temporal review | — / 1 report | A submerged mouth replaces the water-level shelf; the regression measures real mesh area against the animated swell. |
 | Green garden hedges (11 Nov) | Make both final hedges large, green and visibly leafy | One focused cloud continuation with shared renderer work and phone-view review | — / 1 request | Existing playable geometry and flights retained; shared foliage visible in day and storm lighting, including Low. |
 | Explore chapter starts (11 Nov) | Start each selected chapter at its beginning after the ending | One focused cloud continuation with save implementation and independent review | — / 1 request | Explicit Explore reset preserves both adventures' collections and ordinary Continue; simulation and built-browser chapter selection checks. |
 | Playing while talking (10 Nov) | Remove ordinary dialogue stops; retain appropriate calmer scenes | One cloud continuation with parallel simulation, HUD/audio, content and browser worktrees | — / 1 request | Automatic dialogue with playable traversal, explicit scene holds, completion receipts, reveal/save safeguards and phone checks; primary design sources and validation in the walk-and-talk record. |
@@ -5921,6 +5948,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Flärken's flickering shore (11 November):** the broad water-level shelf is corrected at its geometry source.
+  Normal wetting along a sloping shoreline remains; temporal browser review is recorded separately from device FPS.
 - **Garden hedge request (11 November):** the old ground tint supplied no leaf volume. The shared visual
   replacement is checked separately from the unchanged collision and flight paths.
 - **Explore chapter starts (11 November):** stale checkpoints and late scene triggers are addressed together.
@@ -6131,6 +6160,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 11 November report of Flärken's flickering near river bank is addressed in this continuation.
 - The 11 November request for large green hedges at both garden endings is addressed in this continuation.
 - The 11 November request to start each chosen Explore chapter at its beginning is implemented; no part is deferred.
 - The 10 November request to keep playing during ordinary dialogue is implemented in this continuation.
@@ -6159,7 +6189,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore and hedge changes add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge and Flärken shore changes add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
