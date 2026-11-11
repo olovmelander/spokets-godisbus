@@ -6,6 +6,7 @@ import { HOME_BATHROOM } from '../../src/content/home-layout';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
+import { MAMMA_TIME } from '../../src/sim/prologue';
 import { guidedCarve, guidedEye } from '../../src/sim/story-stroke';
 import { Sim } from '../../src/sim/sim';
 import type { ChapterData, StepInput } from '../../src/sim/types';
@@ -48,7 +49,7 @@ describe('Prolog, Lördagsmorgon', () => {
       // The title is still on the screen when the chapter reaches its goal: its scene ends behind the card.
       expect(did(result.flags).filter((flag) => flag.startsWith('scene:'))).toEqual(
         ['scene:morgon', 'scene:vaknar', 'scene:stjarnan', 'scene:poff', 'scene:familj', 'scene:handen', 'scene:lofte']);
-      expect(result.said).toEqual(['morgon:0', 'morgon:1', 'vaknar:0', 'vaknar:1', 'vaknar:2', 'vaknar:3', 'dropped', 'stjarnan:0', 'stjarnan:1', 'poff:0', 'poff:1', 'familj:0', 'familj:1', 'familj:2', 'familj:3',
+      expect(result.said).toEqual(['morgon:0', 'morgon:1', 'vaknar:0', 'vaknar:jayClose', 'vaknar:1', 'vaknar:2', 'vaknar:3', 'dropped', 'stjarnan:0', 'stjarnan:1', 'poff:0', 'poff:1', 'familj:0', 'familj:1', 'familj:2', 'familj:3',
         'handen:0', 'handen:1', 'handen:2', 'handen:3', 'onlyWood', 'snuck', 'nearYou', 'mapForYou', 'heja', 'followTrail', 'titel:0']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
@@ -133,6 +134,9 @@ describe('Prolog, Lördagsmorgon', () => {
 });
 
 describe('the blink: a beat of the story that takes time', () => {
+  const awakening = prolog.scenes!.find(scene => scene.id === 'vaknar')!;
+  const wakeAt = awakening.cues!.find(cue => cue.flag === 'woke')!.at;
+  const grabAt = awakening.cues!.find(cue => cue.flag === 'grab')!.at;
   /** Elof at the ghost, having painted one eye. */
   const atTheGhost = () => {
     const sim = new Sim({ ...prolog, spawn: { x: prolog.spots!.find(spot => spot.id === 'eye')!.at.x - 0.3, y: 0.01 } }, {}, { flags: ['scene:morgon'] });
@@ -167,18 +171,19 @@ describe('the blink: a beat of the story that takes time', () => {
     sim.finishStory({ kind: 'paint', traces: [guidedEye(204)] });
     const x = sim.curr.x;
     // He watches: the stick does nothing, and the ghost is still on the table.
-    run(sim, 10.5, { x: 1, hop: true, hopHeld: true });
+    run(sim, wakeAt - 1, { x: 1, hop: true, hopHeld: true });
     expect(sim.flags.has('blink')).toBe(false);
     expect(sim.curr.x).toBeCloseTo(x, 1);
     expect(sim.curr.grounded).toBe(true);
     expect(sim.ghost!.x).toBeCloseTo(prolog.ghost![0]!.at.x, 1);
     // It takes the bag, and the bag's magic begins: the chase starts at the scene's end.
-    run(sim, 3.5);
+    run(sim, grabAt - sim.sceneFrame!.seconds + STEP);
     expect(sim.flags.has('grab')).toBe(true);
     expect(sim.ghost!.x).toBeCloseTo(prolog.ghost![1]!.at.x, 1);
-    run(sim, 4.2);
+    run(sim, awakening.seconds - sim.sceneFrame!.seconds + STEP);
     expect(sim.flags.has('blink')).toBe(true);
-    run(sim, 6, { x: 1 });
+    // The family first returns from the window while the ghost plays dead; then the chase reaches the candy.
+    run(sim, MAMMA_TIME + 6, { x: 1 });
     expect(sim.curr.x).toBeGreaterThan(x + 2);
     expect(sim.ghost!.x).toBeGreaterThan(prolog.ghost![1]!.at.x + 1.5);
     expect(sim.candyCount).toBeGreaterThan(0);
@@ -193,7 +198,7 @@ describe('the blink: a beat of the story that takes time', () => {
     run(sim, 0.1);
     expect(sim.sceneFrame).toEqual({ id: 'vaknar', seconds: expect.any(Number) });
     expect(sim.sceneFrame!.seconds).toBeLessThan(0.2);
-    run(sim, 18);
+    run(sim, awakening.seconds);
     expect(sim.flags.has('blink')).toBe(true);
   });
 
