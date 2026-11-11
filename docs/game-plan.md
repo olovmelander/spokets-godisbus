@@ -1648,8 +1648,8 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
 
 - **Panels** keep the storybook's warm paper, forest-painted wood and restrained shadows. Moa's map stays
   crayon on paper; Playpen Sans headings and Andika reading text share the same visual hierarchy.
-- **Buttons** have an icon and a clear action. Touch targets stay at least 64 px; lighter painted shapes do
-  not reduce their hit areas. Active, unavailable and keyboard-focus states remain distinct.
+- **Buttons** have an icon and a clear action. Primary actions and HUD touch targets stay at least 64 px;
+  lighter painted shapes do not reduce their hit areas. Active, unavailable and keyboard-focus states remain distinct.
 - **Font: Andika** (SIL, OFL 1.1), designed for beginning readers, with clear å, ä and ö.
   - Self-hosted as a latin WOFF2 subset; `@fontsource/andika` 5.3.0 is on npm under OFL-1.1.
   - Dialogue body text is 20 px; *Större text* adds 25% (Olov's smaller-text decision, 11 November). Labels
