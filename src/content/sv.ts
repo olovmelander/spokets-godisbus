@@ -409,6 +409,7 @@ export const sv = {
     // The prologue as it is told now (docs/narrative-audit.md): a cosy morning, the ghost wakes, Elof shrinks.
     notYet: 'Bertil! Godiset öppnar vi ikväll.',
     jayWindow: 'Titta! En lavskrika!',
+    jayClose: 'Den är ju inte rädd för oss!',
     eyesAlive: 'Du blinkade! Kan du se mig?',
     bagGlitters: 'Två godisar lyser i påsen!',
     starWonder: 'En godisstjärna … den lyser!',

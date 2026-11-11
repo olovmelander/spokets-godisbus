@@ -2,6 +2,7 @@ import { stubCanvas } from './canvas-stub';
 import { InstancedMesh, Matrix4, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
+import { morgonen } from '../../src/content/aventyr2/chapters/morgonen';
 import { kneeling, sitting } from '../../src/render/acting';
 import { SITTING_ON } from '../../src/render/gait';
 import { heightOf, STANDING, type Pose, type Role } from '../../src/render/rig';
@@ -12,8 +13,8 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-function watch(who: Role) {
-  const stage = createStage(prolog, () => 0), rig = stage.actors.get(who)!.rig;
+function watch(who: Role, chapter = prolog) {
+  const stage = createStage(chapter, () => 0), rig = stage.actors.get(who)!.rig;
   let pose: Pose;
   const original = rig.pose;
   rig.pose = next => { pose = { ...next }; original(next); };
@@ -30,7 +31,7 @@ function show(stage: Stage, id: string, seconds: number, calm = false, dt = 1 / 
 describe('authored changes of stance', () => {
   it.each([false, true])('lets Moa stand up from her chair instead of retaining the seat (calm=%s)', calm => {
     const { stage, pose } = watch('moa');
-    show(stage, 'prologue:mamma', 2.1, calm);
+    show(stage, 'vaknar', 2.0, calm);
     expect(pose().seat).toBeNull();
     // Standing, as anyone stands: the weight on one leg, the other knee easy (the motion pass of 8 November 2026).
     for (const joint of ['legL', 'legR'] as const) expect(Math.abs(pose()[joint])).toBeLessThan(.15);
@@ -47,13 +48,13 @@ describe('authored changes of stance', () => {
     expect(pose().legL).toBeLessThan(.15);
     expect(pose().kneeR).toBeLessThan(.3);
     expect(rig.mouth(new Vector3()).y).toBeGreaterThan(seated.y + .8);
-    // At the window, his two side steps done: standing, as anyone stands.
-    show(stage, 'vaknar', 2.4);
+    // Clear of the chair, he stands for the jay call before walking to the window.
+    show(stage, 'vaknar', 2.0);
     expect(pose().seat).toBeNull();
     expect(Math.abs(pose().legL)).toBeLessThan(.15);
   });
 
-  it.each([['prologue:mamma', .3, 'moa'], ['vaknar', .2, 'pappa']] as const)('clears the floor throughout %s’s rise and replays it backwards', (id, at, who) => {
+  it.each([['vaknar', 1.35, 'moa'], ['vaknar', .2, 'pappa']] as const)('clears the floor throughout %s’s rise and replays it backwards', (id, at, who) => {
     const { stage, rig } = watch(who), mesh = rig.group.children[0] as InstancedMesh, matrix = new Matrix4();
     for (const frames of [Array.from({ length: 28 }, (_, i) => i), Array.from({ length: 28 }, (_, i) => 27 - i)]) {
       for (const frame of frames) {
@@ -91,8 +92,9 @@ describe('authored changes of stance', () => {
   });
 
   it('retains sitting and kneeling underneath looking and reaching', () => {
-    const moa = watch('moa');
-    show(moa.stage, 'vaknar', 4);
+    const moa = watch('moa', morgonen);
+    // Breakfast explicitly goes from drawing seated to looking at Bertil, with no new sit key.
+    moa.stage.update({ id: 'frukost', seconds: 4.6 }, new Set(), morgonen.spawn, 4.6, 1 / 60, false);
     const seated = seatedOn('moa', moa.rig);
     expect(moa.pose().seat).toBeCloseTo(seated.seat!, 9);
     expect(moa.pose().legL).toBeCloseTo(seated.legL, 9);
@@ -138,29 +140,29 @@ describe('authored changes of stance', () => {
     expect(restored.rig.mouth(new Vector3()).toArray()).toEqual(held.mouth);
   });
 
-  it('turns Moa’s head smoothly between the jay and the bag without restarting her seated action', () => {
-    const { stage, rig, pose } = watch('moa'), seat = seatedOn('moa', rig).seat!;
-    for (const at of [14, 15.8]) {
+  it('turns Moa’s head smoothly between the jay and the bag while she stands by the window', () => {
+    const { stage, rig, pose } = watch('moa');
+    for (const at of [23.1, 25.1]) {
       show(stage, 'vaknar', at - 1e-6);
       let previous = rig.mouth(new Vector3());
       const initial = previous.clone();
       show(stage, 'vaknar', at);
       expect(rig.mouth(new Vector3()).distanceTo(previous)).toBeLessThan(1e-5);
-      for (let frame = 1; frame <= 18; frame++) {
+      for (let frame = 1; frame <= 60; frame++) {
         show(stage, 'vaknar', at + frame / 60);
         const now = rig.mouth(new Vector3());
         expect(now.distanceTo(previous)).toBeLessThan(.1);
         previous.copy(now);
-        expect(pose().seat).toBeCloseTo(seat, 9);
+        expect(pose().seat).toBeNull();
       }
       expect(previous.distanceTo(initial)).toBeGreaterThan(.25);
     }
-    show(stage, 'vaknar', 14.15);
+    show(stage, 'vaknar', 23.25);
     const halfway = rig.mouth(new Vector3()).toArray();
-    show(stage, 'vaknar', 16.1);
-    show(stage, 'vaknar', 14.15);
+    show(stage, 'vaknar', 25.4);
+    show(stage, 'vaknar', 23.25);
     expect(rig.mouth(new Vector3()).toArray()).toEqual(halfway);
-    show(stage, 'vaknar', 14.15, false, 0, 900);
+    show(stage, 'vaknar', 23.25, false, 0, 900);
     expect(rig.mouth(new Vector3()).toArray()).toEqual(halfway);
   });
 });

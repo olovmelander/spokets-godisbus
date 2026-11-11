@@ -12,7 +12,8 @@ export interface PrologueLayout {
   rail?: { from: number; to: number; z: number };
 }
 export interface PrologueFrame { kind: 'mamma' | 'pappa'; seconds: number; ghost: Vec }
-export const MAMMA_TIME = 2.6;
+// The family returns from the window around the kitchen table before the frozen carving moves again.
+export const MAMMA_TIME = 9.9;
 export const PAPPA_TIME = 5.2;
 
 /**
@@ -91,7 +92,7 @@ const PLAY_Z = 0.1;
 export function prologuePose(layout: PrologueLayout, frame: PrologueFrame) {
   const t = frame.seconds;
   if (frame.kind === 'mamma') {
-    const fall = between(t, 0.25, 0.7) - between(t, 2.0, 2.6);
+    const fall = between(t, 0.25, 0.7) - between(t, MAMMA_TIME - 0.6, MAMMA_TIME);
     return { x: frame.ghost.x, y: mix(frame.ghost.y, layout.doorway.y + 0.29, fall), z: PLAY_Z, tilt: -Math.PI / 2 * fall, turn: 0.4, scale: 1 };
   }
   const lift = between(t, 1.1, 2.8), sneak = between(t, 3.4, 4.9);

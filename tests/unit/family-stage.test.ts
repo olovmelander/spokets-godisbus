@@ -2,9 +2,12 @@ import { stubCanvas } from './canvas-stub';
 import { Box3, Group, InstancedMesh, Material, Mesh, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
+import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
+import { morgonen } from '../../src/content/aventyr2/chapters/morgonen';
 import { drawingAt, sippingAt } from '../../src/render/acting';
 import { createStage, type Stage } from '../../src/render/stage';
 import type { Rig, Role } from '../../src/render/rig';
+import { MAMMA_TIME } from '../../src/sim/prologue';
 
 beforeEach(() => {
   stubCanvas();
@@ -51,6 +54,31 @@ it('releases a replaced rehearsal actor without disposing geometry shared by the
   expect(material).toHaveBeenCalledTimes(1);
   expect(geometry).not.toHaveBeenCalled();
   geometry.mockRestore();
+});
+
+it.each([
+  { chapter: prolog, id: 'morgon' }, { chapter: stormkvall, id: 'kvall' }, { chapter: morgonen, id: 'frukost' },
+])('supports Moa’s paper and both hands after the shared chair moves ($id)', ({ chapter, id }) => {
+  const stage = createStage(chapter, () => 0), rig = actor(stage, 'moa');
+  for (const seconds of [.025, .6, 1.25, 2.4]) {
+    stage.update({ id, seconds }, new Set(), chapter.spawn, seconds, 1 / 60, false);
+    stage.group.updateMatrixWorld(true);
+    const table = new Box3().setFromObject(thing(stage, 'furniture:table'));
+    const sheet = thing(stage, 'stage-thing:drawing') as Mesh, vertices = sheet.geometry.getAttribute('position');
+    for (let i = 0; i < vertices.count; i++) {
+      const point = new Vector3().fromBufferAttribute(vertices, i).applyMatrix4(sheet.matrixWorld);
+      expect(point.x).toBeGreaterThan(table.min.x); expect(point.x).toBeLessThan(table.max.x);
+      expect(point.z).toBeGreaterThan(table.min.z); expect(point.z).toBeLessThan(table.max.z);
+      expect(point.y - table.max.y).toBeGreaterThan(0); expect(point.y - table.max.y).toBeLessThan(.02);
+    }
+    for (const name of ['drawing-paper-support', 'drawing-paper-contact']) {
+      const onPaper = sheet.worldToLocal(position(stage, name));
+      expect(Math.abs(onPaper.x)).toBeLessThan(.95); expect(Math.abs(onPaper.y)).toBeLessThan(.75);
+    }
+    expect(palm(rig, 0).distanceTo(position(stage, 'drawing-paper-support'))).toBeLessThan(1e-5);
+    expect(palm(rig, 1).distanceTo(position(stage, 'drawing-crayon-grip'))).toBeLessThan(1e-5);
+    expect(position(stage, 'drawing-crayon-tip').distanceTo(position(stage, 'drawing-paper-contact'))).toBeLessThan(1e-5);
+  }
 });
 
 describe.each(['title', 'morgon'])('%s paper and mug contacts', id => {
@@ -225,12 +253,12 @@ it('finishes the sip during free play, freezes on pause, and keeps its actual ph
 
 it('releases the discarded mug hand through the scene end and finishes lowering in free play', () => {
   const stage = stageFor(), rig = actor(stage, 'mamma');
-  show(stage, 'prologue:mamma', 2.4 - 1e-6);
+  show(stage, 'prologue:mamma', MAMMA_TIME - .2 - 1e-6);
   const raised = palm(rig, 0);
-  show(stage, 'prologue:mamma', 2.4);
+  show(stage, 'prologue:mamma', MAMMA_TIME - .2);
   expect(palm(rig, 0).distanceTo(raised)).toBeLessThan(1e-4);
   expect(thing(stage, 'stage-thing:mug').visible).toBe(false);
-  show(stage, 'prologue:mamma', 2.6);
+  show(stage, 'prologue:mamma', MAMMA_TIME);
   const halfway = palm(rig, 0), flags = new Set(['scene:morgon', 'scene:vaknar', 'mamma:passed']);
   // Keep the follower at its existing place so this measures only the hand's release.
   const elof = { x: rig.group.position.x + 5.2, y: 0 };
