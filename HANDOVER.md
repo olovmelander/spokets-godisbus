@@ -1,5 +1,18 @@
 # Handover
 
+## State (11 November 2026, late evening): Bertil's next adventure in slippers
+
+- **Olov asked:** give Bertil a short wish for an adventure in slippers before he mentions Thailand near the
+  end of Äventyr 2. This continuation starts from PR #264's published merge `804ca43`.
+- **Words:** in Stormens öga he first says “Hoppas att nästa äventyr blir i tofflor!”, then the existing
+  “Jag drömmer om Thailand. Snart åker vi!”. Two short reading cards preserve the 42-character line limit;
+  each finishes before the next. All original `stor:0`–`stor:6` receipts are explicit and retained, with a new
+  `stor:slippers` receipt for the joke. The future recording catalog matches. Scene duration, recordings,
+  models and release boundary stay as they are.
+- **Validation:** the published baseline already passes all 2,703 tests and its production checks. This text-only
+  continuation uses the existing catalog/scene checks and a built-game phone/desktop reading review; final gates,
+  CI and publication evidence are recorded in its PR. No new bug or blocking question; no work needs Olov's computer.
+
 ## State (11 November 2026, evening): the family visits the jay
 
 - **Olov asked:** after the shared home redesign, the family must walk over to the window to look at the
@@ -5469,6 +5482,10 @@ record identify the exact published revision.
 
 ## Next
 
+**Bertil's slippers (11 November, late evening).** Keep `soBertilSlippers` before the coming Thailand trip in
+`soBertil`, with separate short reading cards and matching future-recording metadata. Preserve both complete
+lines' reading time before Mormor and keep the original scene receipts stable.
+
 **The jay in the opening (11 November, evening).** Keep the bird fixed at the actual window, and give all
 four family actors time to rise, walk around the furniture and settle before focusing on the awakening.
 Check their return route too: changing the window marks must not create a fast jump back to the doorway or
@@ -5926,6 +5943,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Bertil's farewell joke (Olov, 11 November 2026):** before mentioning Thailand, he hopes the next adventure
+  will be in slippers.
 - **Opening's bird (Olov, 11 November 2026):** the family walks over to watch the lavskrika at the window,
   with paths and framing that fit the redesigned house.
 - **Flärken's outlet (Olov, 11 November 2026):** the near river bank must remain visually stable while
@@ -6031,6 +6050,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Bertil's slippers (11 Nov, late evening) | Add a slipper wish before the Thailand trip | One text-only cloud continuation | — / 1 request | Existing dialogue receipt and reading hold retained; future recording metadata aligned. |
 | Family at the opening window (11 Nov, evening) | Let the family walk over to the arriving jay in the redesigned home | One cloud continuation with staging and independent native review | — / 1 request | Separate furniture-clear routes, visible shared attention and a continuous return to the chase; original story receipts retained. |
 | Responsive interface (11 Nov) | Improve mobile/desktop UX, HUD and dialogue composition | One cloud continuation with parallel dialogue, HUD, menus, native review and regression worktrees | — / 1 request | Unified speech card, retained readable text/targets, quieter HUD, navigable collections and responsive menus; actual-scene and safe-area checks. |
 | TV console / Godisracet (11 Nov) | Port Varggropen and add an optional TV kart race with improved handling and story-linked visuals | One cloud continuation with parallel core, renderer, controls, host and browser review | — / 1 request | Original trace and physics, drift/sweet boosts, wooden toys, shared-home entry and exact return; local player records and mobile controls. |
@@ -6089,6 +6109,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Bertil's slippers (11 November, late evening):** the joke uses its own short card so neither line exceeds
+  the adventure's reading-length limit; existing saved dialogue receipts remain stable.
 - **Opening's window visit (11 November, evening):** the old table-relative steps and seated Moa are
   replaced with actual paths to the fixed bird. Final temporal and mobile review is recorded in the PR.
 
@@ -6314,6 +6336,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 11 November request for Bertil's slipper wish before Thailand is handled in this continuation.
 - The 11 November evening request for the family to walk to the opening's lavskrika is handled in this
   continuation, including the return to the chase.
 
@@ -6351,7 +6374,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore, shared home, requested TV console, responsive interface and opening's window visit add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore, shared home, requested TV console, responsive interface, opening's window visit and Bertil's slipper wish add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

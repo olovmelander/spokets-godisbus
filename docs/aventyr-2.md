@@ -330,7 +330,8 @@ The worlds were authored from this design and keep its beats, with these details
   everyone and welcome them ("Hemma hos oss finns det varm choklad."), and come to breakfast in Morgonen efter.
   (9 November 2026, Olov's play-through:) the meeting waits until Elof has gone up to the figures; at its end the old
   one holds out the golden sweet on its paper in a glitter. He carries it up before him, looks at it in his hands,
-  tastes it, and grows in its glitter. Bertil dreams of Thailand, where the family is going soon. *Gå hem* is walked:
+  tastes it, and grows in its glitter. Bertil hopes the next adventure will be in slippers, then mentions the family's
+  approaching trip to Thailand (Olov, 11 November 2026). *Gå hem* is walked:
   off the stone, through the shallows and up onto the shore, where the family come to meet him and walk on with him,
   mormor lifting her lantern and Klonk hopping ahead.
 - **Morgonen efter** is the room of Stormkvällen, each thing where it stood: Pappa's shelf, the window the storm blew
