@@ -143,6 +143,42 @@ describe('the actual furnished home has physical clearances', () => {
     }
   });
 
+  it.each(chapters)('$id: recesses the upper bathroom shell behind the house wall while leaving its trim visible', chapter => {
+    const { house, routine } = rooms.get(chapter.id)!;
+    const wall = house.getObjectByName('home-back-wall') as Mesh;
+    // Check both render paths: the real public model and the geometry shown while it loads.
+    for (const [kind, room] of [['baked', routine.group], ['fallback', createHomeRoutine(chapter).group]] as const) {
+      const shell = room.getObjectByName('home-routine-room')!;
+      room.updateMatrixWorld(true);
+      const upper: Vector3[] = [];
+      shell.traverse(object => {
+        if (!(object instanceof Mesh)) return;
+        const position = object.geometry.getAttribute('position'), point = new Vector3();
+        for (let i = 0; i < position.count; i++) {
+          point.fromBufferAttribute(position, i).applyMatrix4(object.matrixWorld);
+          // The normal door casing ends just below here. The taller sidewalls and ceiling belong
+          // inside the bathroom, not as another huge frame on the living room's facade.
+          if (point.y > BATHROOM.openingHeight + .2) upper.push(point.clone());
+        }
+      });
+      expect(upper.length, `${kind}: actual upper-room geometry`).toBeGreaterThan(10);
+      const front = Math.max(...upper.map(point => point.z));
+      expect(front, `${chapter.id} ${kind}: upper shell protrudes in front of the house wall`).toBeLessThanOrEqual(HOME_LAYOUT.wall.z - .005);
+      for (const point of upper.filter(vertex => vertex.z > front - .03)) {
+        const origin = point.clone(); origin.z = 0;
+        const first = new Raycaster(origin, new Vector3(0, 0, -1), 0, -point.z + .1).intersectObject(wall)[0];
+        expect(first, `${kind}: facade fails to cover upper-room edge`).toBeDefined();
+        expect(first!.distance).toBeLessThan(-point.z - .005);
+      }
+      // Recessing the structural shell must not bury the normal door casing with it.
+      const trimRay = new Raycaster(new Vector3(BATHROOM.x, BATHROOM.openingHeight + .095, 0), new Vector3(0, 0, -1), 0, 15);
+      const trim = trimRay.intersectObjects([wall, shell], true)[0];
+      expect(trim, `${kind}: missing lintel`).toBeDefined();
+      expect(trim!.object).not.toBe(wall);
+      expect(trim!.point.z).toBeGreaterThan(HOME_LAYOUT.wall.z + .1);
+    }
+  });
+
   it('keeps the whole door swing clear of the TV and the actual walking approach', () => {
     const { group, routine } = rooms.get(epilog.id)!;
     const door = group.getObjectByName('bathroom-door')!;
