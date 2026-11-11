@@ -150,7 +150,14 @@ try {
     await page.waitForFunction(() => window.__godis.state().help.step >= 2);
     check(`actual ${course} page: further hints keep the player in place`, Math.abs((await page.evaluate(() => window.__godis.state())).x - Number(at.split(',')[0])) < 0.2);
     // The knock shows as a ring round Använd; out of reach the button stays half bright, never looking ready.
-    const knocked = await page.locator('#actBtn').evaluate((e) => ({ pulse: e.classList.contains('pulse'), disabled: e.disabled, opacity: getComputedStyle(e).opacity, ring: getComputedStyle(e).boxShadow }));
+    const knocked = await page.locator('#actBtn').evaluate(async (e) => {
+      // The unavailable hand fades into its knocked state. Wait for its finite CSS transitions,
+      // while leaving the repeating helper pulse running, before measuring the exact settled paint.
+      await Promise.all(e.getAnimations()
+        .filter(animation => animation.effect?.getTiming().iterations !== Infinity)
+        .map(animation => animation.finished.catch(() => {})));
+      return { pulse: e.classList.contains('pulse'), disabled: e.disabled, opacity: getComputedStyle(e).opacity, ring: getComputedStyle(e).boxShadow };
+    });
     check(`actual ${course} page: the knock is a ring round Använd`, knocked.pulse && knocked.ring.includes('255, 215, 106'));
     if (knocked.disabled) check(`actual ${course} page: out of reach the knocked button is half bright`, knocked.opacity === '0.6');
     await page.close();

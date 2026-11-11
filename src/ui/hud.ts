@@ -135,6 +135,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
   };
   let stuck: string[] | null = null;
   let noticeFor = 0;
+  const speechHasFloor = () => current !== null || queue.length > 0 || lingers > 0 || playingVoice() !== null;
   // How long the bag's number stays after a candy, and whether a menu is open, which keeps it.
   const COUNT_TIME = 3;
   let countFor = 0;
@@ -149,7 +150,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     words.textContent = text;
     mark.replaceChildren(...(picture ? [picture] : []));
     mark.innerHTML ||= SPARKLE;
-    tag.hidden = false;
+    tag.hidden = speechHasFloor();
     tag.classList.remove('dropping');
     noticeFor = seconds;
   };
@@ -255,6 +256,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       if (!lines[line]) return;
       // It waits its turn, a story line too: nothing is cut short or dropped to make room for it.
       queue.push({ who, line, read, beatId });
+      if (noticeFor > 0) tag.hidden = true;
     },
     reading() {
       return current?.read === true;
@@ -292,10 +294,16 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
     tick(dt) {
       if (pausedNow) return;
       if (noticeFor > 0) {
-        noticeFor -= dt;
-        // A find's sticker drops into the bag as its tag goes (a fade under Mindre rörelse).
-        if (noticeFor <= DROP_TIME && tag.dataset.find && !tag.classList.contains('dropping')) tag.classList.add('dropping');
-        if (noticeFor <= 0) tag.hidden = true;
+        // A reward waits its turn behind the whole exchange, including the brief continuation linger.
+        // Its time belongs to the visible notice, so it cannot expire unseen behind a speech card.
+        const hidden = speechHasFloor();
+        if (tag.hidden !== hidden) tag.hidden = hidden;
+        if (!tag.hidden) {
+          noticeFor -= dt;
+          // A find's sticker drops into the bag as its tag goes (a fade under Mindre rörelse).
+          if (noticeFor <= DROP_TIME && tag.dataset.find && !tag.classList.contains('dropping')) tag.classList.add('dropping');
+          if (noticeFor <= 0) tag.hidden = true;
+        }
       }
       if (countFor > 0) {
         countFor -= dt;
@@ -351,6 +359,9 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       else delete bubble.dataset.tone;
       byId('bubbleFace').innerHTML = faceSvg(next.who);
       bubble.dataset.who = next.who;
+      // The complete visible line keeps its dock during Pause and its continuation linger, even
+      // after it no longer offers Continue. Only a newly presented line changes this display mode.
+      bubble.dataset.protected = String(next.read);
       bubble.hidden = false;
       current = next;
       readFor = 0;

@@ -269,8 +269,52 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   // A first start: the two play styles, with their pictures, are the start buttons (first-minutes.md row 12).
   check('with no saved game the two styles are the start buttons, and there is nothing to start over', (await page.locator('#startAventyr').isVisible()) && (await page.locator('#startLugnt').isVisible()) && (await page.locator('#startBtn').isHidden()) && (await page.locator('#startOverBtn').isHidden()));
   check('the name is drawn, and its words are the heading', (await page.locator('#titleName .title-sign').isVisible()) && (await page.locator('#titleName').textContent()).includes('Elof och det stora godisäventyret'));
-  const card = await page.locator('#title .panel').boundingBox();
-  check('the card keeps to the left, and the picture shows beside it', card.x + card.width <= 844 * 0.6 && card.y >= 0 && card.y + card.height <= 390);
+  await page.evaluate(() => document.fonts.ready);
+  const titleLayout = await page.locator('#title .panel').evaluate((panel) => {
+    const box = (element) => {
+      const r = element.getBoundingClientRect();
+      return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    };
+    const card = box(panel), intro = box(panel.querySelector('.title-intro')), play = box(panel.querySelector('.title-play'));
+    const inside = (child, parent) => child.left >= parent.left && child.top >= parent.top
+      && child.right <= parent.right && child.bottom <= parent.bottom;
+    const viewport = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+    const visible = (element) => element.getClientRects().length > 0 && !element.closest('[hidden]');
+    const actions = [...panel.querySelectorAll('.title-play button')].filter(visible);
+    const words = [...panel.querySelectorAll('.title-play span, .title-play b, .title-play small')].filter(visible);
+    const readable = (word) => {
+      // Playpen's ascenders/descenders can exceed its line box without being clipped. Check the actual
+      // text fragments against their button and the ancestors that really clip, not scrollHeight.
+      const range = document.createRange();
+      range.selectNodeContents(word);
+      const fragments = [...range.getClientRects()];
+      const button = box(word.closest('button'));
+      if (!fragments.length || !fragments.every((r) => inside(r, button) && inside(r, play) && inside(r, card))) return false;
+      for (let ancestor = word; ancestor !== panel; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor), clip = box(ancestor);
+        if (fragments.some((r) => (style.overflowX !== 'visible' && (r.left < clip.left || r.right > clip.right))
+          || (style.overflowY !== 'visible' && (r.top < clip.top || r.bottom > clip.bottom)))) return false;
+      }
+      return true;
+    };
+    return {
+      inView: inside(card, viewport) && panel.scrollWidth <= panel.clientWidth + 1,
+      columns: inside(intro, card) && inside(play, card) && intro.right <= play.left,
+      logo: inside(box(panel.querySelector('.title-sign')), intro),
+      actions: actions.length >= 2 && actions.every((action) => {
+        const r = box(action);
+        return inside(r, viewport) && r.width >= 64 && r.height >= 64;
+      }),
+      words: words.length > 0 && words.every(readable),
+      area: card.width * card.height / (innerWidth * innerHeight),
+    };
+  });
+  check('the open-book title fits the viewport', titleLayout.inView);
+  check('the title has separate intro and action columns, with the whole logo and all words visible', titleLayout.columns && titleLayout.logo && titleLayout.words);
+  check('the first-start actions are visible with 64px touch targets', titleLayout.actions);
+  // The reviewed 844×390 spread covers about 65% of the view. Preserve at least 30% for the living scene
+  // around the paper rather than requiring the former narrow sidebar's right edge.
+  check('the living picture remains visible around the title', titleLayout.area <= 0.70, `${(titleLayout.area * 100).toFixed(1)}% paper`);
   await page.tap('#startLugnt');
   const started = await until(state, (s) => s.said.length >= 1);
   check('choosing Lugnt starts the game on Lugnt', (await page.locator('#title').isHidden()) && started.style === 'lugnt' && started.paused === false, started.style);

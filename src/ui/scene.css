@@ -1,58 +1,112 @@
-/* A quiet reading control below the staged picture. Nothing advances on a timer. */
-.scene-reading {
+/* One compact speech card. Lines finish automatically after their reading time and recording;
+   Continue is optional, and its button remains separate from the live text region. */
+.dialogue {
+  --dialogue-left: calc(env(safe-area-inset-left) + 120px * var(--k));
+  --dialogue-right: calc(env(safe-area-inset-right) + var(--hud-tools-width, 152px) + 12px);
+  box-sizing: border-box;
   position: absolute;
   z-index: 7;
-  left: 50%;
-  transform: translateX(-50%);
+  left: var(--dialogue-left);
+  right: var(--dialogue-right);
+  top: var(--dialogue-top, calc(env(safe-area-inset-top) + 12px));
+  margin-inline: auto;
   width: max-content;
-  max-width: calc(100% - 32px);
-  bottom: calc(env(safe-area-inset-bottom) + 20px);
-  display: flex;
+  max-width: min(var(--dialogue-max-width, 680px), calc(100% - var(--dialogue-left) - var(--dialogue-right)));
+  display: none;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 9px 10px 9px 20px;
-  border: 1px solid #ecd6a85c;
-  border-radius: 32px;
-  background: #243b32ed;
-  box-shadow: 0 5px 24px #0004;
-  color: #fff0ce;
-  font-size: calc(15px * var(--k));
-  text-shadow: 0 1px 5px #000;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 9px 12px 10px;
+  border: 1px solid var(--paper-edge);
+  border-inline-start: 3px solid var(--who, var(--who-spoket));
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--grain, none), var(--paper);
+  box-shadow: 0 3px 12px rgb(0 0 0 / .2);
+  pointer-events: none;
 }
+.dialogue:has(> .bubble:not([hidden])),
+.dialogue:has(> .scene-reading:not([hidden])) { display: grid; }
+.dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
+  --dialogue-left: calc(env(safe-area-inset-left) + 12px);
+  --dialogue-right: calc(env(safe-area-inset-right) + var(--hud-hit, 64px) + 24px);
+  grid-template-columns: minmax(0, 1fr) auto;
+  max-width: min(var(--dialogue-max-width, 740px), calc(100% - var(--dialogue-left) - var(--dialogue-right)));
+}
+.scene-reading { min-width: 0; display: flex; align-items: center; justify-content: flex-end; }
 .scene-reading[hidden] { display: none; }
-.scene-reading-copy { display: grid; gap: 3px; line-height: 1.25; }
-.scene-reading-copy strong { font-size: .95em; font-weight: 700; }
-.scene-reading-copy span { font-size: .8em; opacity: .85; }
+/* Pause and a completed line's brief linger remove the action, not its space. Visibility keeps
+   the hidden action out of pointer, focus and accessibility interaction while the card stays still. */
+.dialogue:has(> .bubble[data-protected='true']:not([hidden])) > .scene-reading[hidden] {
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+}
 .scene-reading-copy [hidden] { display: none; }
 .scene-reading button {
-  display: flex;
+  box-sizing: border-box;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  padding: 10px 22px;
-  border: 2px solid #e4bd6d;
-  border-radius: 999px;
-  background: var(--paper);
+  justify-content: center;
+  gap: 8px;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 9px 14px;
+  border: 1px solid var(--paper-edge);
+  border-radius: 12px;
+  background: var(--paper-2);
   color: var(--ink);
-  box-shadow: 0 4px 18px #0006;
   font: inherit;
+  font-size: calc(18px * var(--k));
   font-weight: 700;
+  line-height: 1.15;
   cursor: pointer;
+  pointer-events: auto;
 }
-.scene-reading button:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
-.scene-reading kbd { font: inherit; font-size: .75em; opacity: .72; }
+body.big-text .scene-reading button { font-size: calc(22px * var(--k)); }
+.scene-reading button svg { width: 20px; height: 20px; flex: 0 0 20px; }
+.scene-reading button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.scene-reading kbd { font: inherit; font-size: .75em; opacity: .8; }
 .scene-reading kbd:empty { display: none; }
-body.story-reading :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .hint) {
+body.story-reading :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .hint),
+body:has(#bubble[data-protected='true']:not([hidden])) :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .hint) {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
-@media (max-width: 480px) {
-  .scene-reading { gap: 8px; padding: 10px 16px; flex-direction: column; border-radius: 24px; text-align: center; bottom: calc(env(safe-area-inset-bottom) + 14px); }
+/* Ordinary phone dialogue follows the utility row. A held scene uses the quiet lower edge,
+   leaving its family close-ups clear; the controls it would cover have stepped aside. */
+@media (max-width: 599px) and (orientation: portrait) {
+  .dialogue,
+  .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
+    --dialogue-left: calc(env(safe-area-inset-left) + 12px);
+    --dialogue-right: calc(env(safe-area-inset-right) + 12px);
+    top: var(--dialogue-top, var(--hud-content-top, calc(env(safe-area-inset-top) + 84px)));
+    max-width: calc(100% - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .scene-reading { border-top: 1px solid var(--paper-edge); padding-top: 8px; }
+  .scene-reading button { padding-inline: 16px; }
+  .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
+    top: auto;
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
+  }
 }
-/* A landscape phone needs its centre for tiny Elof and the family's hands. */
-@media (min-width: 481px) and (max-height: 480px) {
-  .scene-reading { left: auto; right: calc(env(safe-area-inset-right) + 16px); transform: none; padding: 6px; bottom: calc(env(safe-area-inset-bottom) + 14px); }
-  .scene-reading-copy { display: none; }
+@media (max-width: 360px) and (orientation: portrait) {
+  .dialogue,
+  .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) { padding-block: 4px; }
+  .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
+    bottom: max(8px, env(safe-area-inset-bottom));
+    gap: 4px;
+  }
+  .scene-reading { padding-top: 4px; }
+}
+@media (max-width: 700px) and (max-height: 380px) and (orientation: landscape) {
+  .dialogue {
+    --dialogue-left: calc(env(safe-area-inset-left) + 12px);
+    --dialogue-right: calc(env(safe-area-inset-right) + var(--hud-hit, 64px) + 24px);
+    padding: 5px 10px;
+  }
 }

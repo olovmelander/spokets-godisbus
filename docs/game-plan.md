@@ -296,9 +296,10 @@ online features, accounts, ads, purchases, analytics or tracking, or live AI.
 
 ### The first minutes, as Elof should experience them
 
-The original times below are rough route estimates. The 10 October revision lets essential dialogue wait
-for the player, separates the bird, awakening and theft, and changes the star from a touch trigger to a
-deliberate taste followed by a gradual transformation and family reassurance (§3.4).
+The original times below are rough route estimates. The 10 October revision separates the bird, awakening
+and theft, and changes the star from a touch trigger to a deliberate taste followed by a gradual transformation
+and family reassurance (§3.4). Since 10 November, complete reading time and recordings govern dialogue;
+Fortsätt is optional in held scenes, and ordinary conversations allow movement.
 
 | Time | Experience | What it proves |
 | --- | --- | --- |
@@ -1645,16 +1646,26 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
 
 ### 5.7 Menus and HUD look
 
-- **Panels** are brown kraft paper like a candy bag, with tape. Headings look carved in wood, like the signpost
-  on Olov's "Spökets Godisbus" poster ("JAGA · HITTA · SAMLA"). Moa's map is crayon on paper.
-- **Buttons** are round and candy-coloured, each with an icon. Every verb has an icon, so nothing depends on
-  reading.
-- **Font: Andika** (SIL, OFL 1.1), a typeface designed for beginning readers, with clear å, ä and ö.
+- **Panels** keep the storybook's warm paper, forest-painted wood and restrained shadows. Moa's map stays
+  crayon on paper; Playpen Sans headings and Andika reading text share the same visual hierarchy.
+- **Buttons** have an icon and a clear action. Primary actions and HUD touch targets stay at least 64 px;
+  lighter painted shapes do not reduce their hit areas. Active, unavailable and keyboard-focus states remain distinct.
+- **Font: Andika** (SIL, OFL 1.1), designed for beginning readers, with clear å, ä and ö.
   - Self-hosted as a latin WOFF2 subset; `@fontsource/andika` 5.3.0 is on npm under OFL-1.1.
-  - Body text at least 22 px; *Större text* adds 25%.
-- **The first screen** offers the two play styles as two pictures, *Äventyr* and *Lugnt* (§4.1).
-- **HUD:** the candy bag (top left), pause (top left), the companion (top right), the stick and two buttons
-  (bottom). Nothing else stays on screen during play.
+  - Dialogue body text is 20 px; *Större text* adds 25% (Olov's smaller-text decision, 11 November). Labels
+    and secondary navigation have their own hierarchy. Full lines remain readable: no clipping, ellipsis, artificial page breaks or shorter timers.
+- **Dialogue (Olov, 11 November 2026):** speaker, complete text and optional **Fortsätt** form one compact
+  card. Ordinary speech leaves movement available. Held scenes use the lower edge on narrow portrait phones
+  to clear family close-ups; wide views place Continue beside the text. The visible line retains its dock
+  through Pause and its brief continuation linger, independently of whether Continue is available.
+  Layout accounts for safe areas, phone rotation, larger text and the still-active controls. The text region
+  announces speech; Continue remains a separate accessible button. Voice completion, reading time and saved
+  dialogue receipts keep their existing ownership.
+- **The first screen** offers *Äventyr* and *Lugnt* (§4.1), with primary actions visible on phone and desktop.
+  Wide screens use the two sides of an open storybook. Portrait is supported without a request to rotate.
+- **HUD:** the candy bag stays at top left, Help and Pause share one row at top right, and movement/actions
+  stay at the lower edges. Objective and reward messages yield to dialogue. A reward waits with its remaining
+  reading time intact, so it neither competes with a conversation nor disappears unread behind one.
 
 ### 5.8 Sound and music
 
@@ -2074,7 +2085,7 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
 - **Screens:**
   - the loading card;
   - the first start: the two play-style pictures, *Äventyr* and *Lugnt* (§4.1);
-  - the title: **Börja**/**Fortsätt**, *Byt spelare*, *Inställningar*, and the rotate picture in portrait;
+  - the title: **Börja**/**Fortsätt**, *Byt spelare* and *Inställningar*, adapted to portrait and landscape;
   - pause: **Spela vidare**, *Godispåsen*, *Moas karta*, *Jag har fastnat*, *Inställningar*, *Till startsidan*;
   - settings (§4.1);
   - Godispåsen: candy stickers from both adventures by chapter, *Pappas minnen*, *Stormens spår*, *Hittegods*, *Små minnen* and *Foton*;
@@ -2101,6 +2112,10 @@ docs/                          game-plan.md (this plan), art-bible.md, shots/<ch
   the aurora, the carving lesson). The renderer saves a small frame to IndexedDB, and the credits show them.
   Elof can tap through the credits. Äventyr 2 adds ten authored pictures: tiny again, the hedge flight, Moa’s umbrella, the football shot, the outlet, the raft, the owl, the lamps, the reunion and the morning chocolate.
 - **Shared collection (Olov, 10 November 2026).** The bag always shows both adventures together. The original sixteen sweets and their golden reward remain; eight new special sweets lie on authored detours in Stormgården, Stormskogen, Stormbyn, Olympia, Flärken, Älven, Billsta and Stormens öga. Twelve new unbranded lost objects extend Hittegods beyond the yard into both journeys. Small keepsake cards commemorate kindness and travel moments. *Stormens spår* is eight replayable picture stories about the old carving following the little one, unlocked only by discoveries Elof has witnessed. Stable collection receipts survive resetting scene/dialogue flags during a replay. Existing local profiles and their photos are kept; no upload or new account is involved.
+- **Collection navigation (11 November).** Persistent *Godis*, *Fynd*, *Minnen* and *Foton* bookmarks move
+  focus within the same complete bag; both adventures remain together. They do not change the URL or browser
+  history. The map and diary remain in Pause, while its main actions come first on a narrow phone. Wide memory
+  galleries use four columns and portrait galleries two, keeping picture labels and replay buttons visible.
 - **Accessibility:**
   - all text is DOM text and can be resized;
   - every button has an accessible label;

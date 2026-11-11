@@ -7,8 +7,10 @@ export const sceneUiHtml = `<div class="scene-ui" id="sceneUi" aria-hidden="true
   <p class="scene-caption" id="sceneCaption"></p>
   <h1 class="scene-title" id="sceneTitle"></h1>
 </div>
-<div class="scene-reading" id="sceneReading" hidden>
-  <div class="scene-reading-copy"><strong id="sceneMoment" hidden></strong><span>${sv.dialogue.pace}</span></div>
-  <button id="sceneNext" type="button" aria-describedby="bubbleWho bubbleLine"><span>${sv.dialogue.next}</span><kbd id="sceneNextKey"></kbd><svg class="i" aria-hidden="true"><use href="#i-next"/></svg></button>
-</div>
 <p class="sr-only" id="sceneSaid" role="status" aria-live="polite"></p>`;
+
+/** Optional continuation is part of the speech card, outside its live text region. */
+export const sceneReadingHtml = `<div class="scene-reading" id="sceneReading" hidden>
+  <div class="scene-reading-copy sr-only"><strong id="sceneMoment" hidden></strong><span>${sv.dialogue.pace}</span></div>
+  <button id="sceneNext" type="button" aria-describedby="bubbleWho bubbleLine"><span>${sv.dialogue.next}</span><kbd id="sceneNextKey"></kbd><svg class="i" aria-hidden="true"><use href="#i-next"/></svg></button>
+</div>`;

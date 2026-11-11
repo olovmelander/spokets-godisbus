@@ -127,10 +127,15 @@
   --dur-panel: 240ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-paper: cubic-bezier(0.3, 1.25, 0.5, 1);
-  /* A sheet lying on the scene; a plank's light top and shaded foot, and the shadow it throws. */
-  --sheet-shadow: 0 1px 0 var(--paper-edge), 0 12px 26px rgb(30 20 10 / 0.34);
-  --bevel: inset 0 2px 0 rgb(255 247 228 / 0.6), inset 0 -2px 0 rgb(90 58 30 / 0.22);
-  --wood-shadow: 0 7px 12px rgb(30 18 8 / 0.26);
+  /* Warm paper and carved paint share soft edges; the live HUD sits lightly over the picture. */
+  --sheet-shadow: 0 1px 0 var(--paper-edge), 0 10px 24px rgb(30 20 10 / 0.22);
+  --bevel: inset 0 1px 0 rgb(255 247 228 / 0.55), inset 0 -1px 0 rgb(90 58 30 / 0.16);
+  --wood-shadow: 0 4px 9px rgb(30 18 8 / 0.18);
+  --hud-paper: #fff8eb;
+  --hud-line: #dfcfb1;
+  --hud-shadow: 0 1px 2px rgb(30 20 10 / 0.12), 0 4px 12px rgb(30 20 10 / 0.12);
+  --hud-edge: 12px;
+  --hud-gap: 12px;
 }
 
 /* The page never scrolls, selects or zooms: it is a game surface (plan §6.7). */
@@ -155,6 +160,12 @@ body {
   color: var(--ink);
   /* Touch sizes grow by 15% on tablets (plan §4.1). */
   --k: 1;
+  /* One utility row. Speech and reminders use the same lower edge, including tablet-sized targets. */
+  --hud-hit: calc(64px * var(--k));
+  --hud-row-top: calc(env(safe-area-inset-top) + 10px);
+  --hud-row-bottom: calc(var(--hud-row-top) + var(--hud-hit));
+  --hud-content-top: calc(var(--hud-row-bottom) + 10px);
+  --hud-tools-width: calc(var(--hud-edge) + var(--hud-hit) * 2 + var(--hud-gap));
 }
 
 @media (pointer: coarse) and (min-width: 600px) and (min-height: 600px) {
@@ -220,9 +231,9 @@ textarea {
   height: 116px;
   margin: -58px 0 0 -58px;
   border-radius: 50%;
-  border: 2px solid rgb(255 255 255 / 0.7);
-  background: rgb(255 255 255 / 0.16);
-  opacity: 0.4;
+  border: 2px solid rgb(255 255 255 / 0.58);
+  background: rgb(255 255 255 / 0.09);
+  opacity: 0.32;
   transition: opacity 0.15s ease;
 }
 
@@ -242,6 +253,17 @@ textarea {
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
 }
 
+/* At rest, two light rings show where a thumb can begin without a filled disc over the world.
+   Pointer contact restores the full knob immediately; the stick's bounds and travel stay unchanged. */
+.stick-base:not(.on) {
+  background: transparent;
+}
+
+.stick-base:not(.on) .stick-knob {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.65);
+}
+
 .stick-base.run .stick-knob {
   background-color: var(--knock-light);
 }
@@ -254,15 +276,17 @@ textarea {
   gap: 2px;
   padding: 0;
   border-radius: 50%;
-  border: 3px solid var(--linden-rim);
+  border: 3px solid var(--hud-line);
   color: var(--ink-on-paint);
   font-size: calc(15px * var(--k));
   font-weight: 700;
   line-height: 1.05;
   pointer-events: auto;
   touch-action: none;
-  box-shadow: 0 3px 8px rgb(0 0 0 / 0.3);
-  transition: transform 0.06s ease;
+  background-image: var(--woodgrain, none);
+  background-blend-mode: soft-light;
+  box-shadow: var(--bevel), var(--hud-shadow);
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-release) ease, opacity var(--dur-quick) ease;
 }
 
 .btn svg {
@@ -280,7 +304,9 @@ textarea {
 /* With nothing to use, Använd keeps its place but nearly steps out of the picture; it comes forward when there is
    something to do (research §2: controls follow the context). */
 .btn:disabled {
-  opacity: 0.2;
+  opacity: 0.22;
+  filter: saturate(0.6);
+  box-shadow: none;
 }
 
 /* Hoppa: 116 px, lower right, about 2 cm on the family's phones. Använd: 100 px, up and to the left of it on the
@@ -303,6 +329,16 @@ textarea {
   background-color: var(--paint-green);
 }
 
+/* An unavailable hand keeps its place as a quiet outline. Green paint and the helper's yellow ring
+   return when there is something to do; no button size, hit area or position changes between states. */
+.btn-act:disabled:not(.pulse) {
+  background-color: transparent;
+  background-image: none;
+  border-color: rgb(255 248 236 / 0.26);
+  opacity: 0.42;
+  filter: none;
+}
+
 /* Använd says only its hand until there is something to do; then the word stands beside it on a scrap of
    paper, so no word has to squeeze inside the disc (docs/ux-audit/in-play.md row 5). */
 .btn-act span {
@@ -313,13 +349,13 @@ textarea {
   width: max-content;
   max-width: 150px;
   padding: 6px 10px;
-  border-radius: 6px;
-  background-color: var(--paper);
+  border-radius: 10px;
+  background-color: var(--hud-paper);
   color: var(--ink);
   font-size: 16px;
   line-height: 1.15;
   text-align: center;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  box-shadow: var(--hud-shadow);
 }
 
 .btn-act:disabled:not(.pulse) span {
@@ -353,12 +389,11 @@ body.lefty .btn-act span {
 
 /* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
 body.big-text .bubble {
-  font-size: calc(26px * var(--k));
-  max-width: min(76%, 640px, 100% - 256px);
+  font-size: calc(25px * var(--k));
 }
 
 body.big-text .notice {
-  font-size: 19px;
+  font-size: 24px;
 }
 
 body.big-text .btn {
@@ -422,8 +457,8 @@ body.big-text {
 .bag {
   position: absolute;
   z-index: 2;
-  left: calc(env(safe-area-inset-left) + 12px);
-  top: calc(env(safe-area-inset-top) + 10px);
+  left: calc(env(safe-area-inset-left) + var(--hud-edge));
+  top: var(--hud-row-top);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -533,7 +568,7 @@ body.big-text {
   z-index: 1;
   width: calc(44px * var(--k));
   height: calc(52px * var(--k));
-  filter: drop-shadow(0 2px 3px rgb(30 18 8 / 0.45));
+  filter: drop-shadow(0 2px 2px rgb(30 18 8 / 0.24));
 }
 
 /* The count and the stickers on a tag of Moa's paper, tucked under the bag's edge. */
@@ -543,10 +578,10 @@ body.big-text {
   gap: 6px;
   margin-left: -6px;
   padding: 4px 10px 5px 12px;
-  border-radius: 3px 7px 5px 4px;
-  background-color: var(--paper);
-  box-shadow: 0 2px 6px rgb(30 18 8 / 0.35);
-  rotate: -2deg;
+  border-radius: 8px 12px 10px 8px;
+  background-color: var(--hud-paper);
+  box-shadow: var(--hud-shadow);
+  rotate: -1deg;
 }
 
 .bag-tag #bagCount {
@@ -563,32 +598,45 @@ body.big-text {
   transition: transform 0.2s ease-out;
 }
 
-/* --- the pause button, top right: 64 px (plan §4.1) ---------------------------------------------- */
+/* --- A single utility row. The carved discs are smaller than their unchanged 64 px touch targets. */
 .corner {
   position: absolute;
   z-index: 2;
-  right: calc(env(safe-area-inset-right) + 12px);
-  top: calc(env(safe-area-inset-top) + 10px);
-  width: calc(64px * var(--k));
-  height: calc(64px * var(--k));
+  right: calc(env(safe-area-inset-right) + var(--hud-edge));
+  top: var(--hud-row-top);
+  width: var(--hud-hit);
+  height: var(--hud-hit);
   display: grid;
   place-items: center;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background-color: var(--linden);
+  background: transparent;
   color: var(--wood-dark);
   touch-action: manipulation;
 }
 
+.corner::before {
+  content: '';
+  position: absolute;
+  inset: calc(8px * var(--k));
+  border-radius: 50%;
+  background: var(--woodgrain, none), var(--hud-paper);
+  background-blend-mode: soft-light;
+  box-shadow: inset 0 0 0 1px var(--hud-line), var(--bevel), 0 2px 0 var(--linden-edge), var(--hud-shadow);
+  pointer-events: none;
+  transition: transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
+}
+
 .corner svg {
+  position: relative;
   width: 30px;
   height: 30px;
 }
 
-/* The helper's button sits under the pause button, as big as it, 14 px below (plan §4.1's 64 px and 12 px). */
+/* Help sits beside Pause, leaving the next row to the story; the hit targets remain 12 px apart. */
 .corner.help {
-  top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 14px);
+  right: calc(env(safe-area-inset-right) + var(--hud-edge) + var(--hud-hit) + var(--hud-gap));
 }
 
 /* Under the portrait, three 8 px pips: how far the helper has come, filled one by one as he asks again and emptied
@@ -599,7 +647,7 @@ body.big-text {
 .help-pips {
   position: absolute;
   left: 50%;
-  bottom: calc(9px * var(--k));
+  bottom: calc(12px * var(--k));
   display: flex;
   gap: 3px;
   translate: -50% 0;
@@ -629,6 +677,7 @@ body.big-text {
 
 .btn-act.pulse:disabled {
   opacity: 0.6;
+  filter: none;
 }
 
 @keyframes act-breath {
@@ -651,13 +700,13 @@ body.big-text {
   align-items: center;
   gap: 8px;
   padding: 6px 12px 6px 6px;
-  border-radius: 10px;
-  background-color: var(--paper);
+  border-radius: 12px;
+  background-color: var(--hud-paper);
   color: var(--ink);
   font-size: 16px;
   font-weight: 700;
   line-height: 1.15;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  box-shadow: var(--hud-shadow);
   pointer-events: none;
 }
 
@@ -773,6 +822,10 @@ body.lefty .key-prompt {
 .panel.pause {
   padding-top: 0;
   scroll-padding-top: 76px;
+  scroll-padding-bottom: 12px;
+  container: album-panel / inline-size;
+  scrollbar-width: thin;
+  scrollbar-color: var(--paper-edge) var(--paper);
 }
 
 @media (min-width: 700px) {
@@ -800,11 +853,76 @@ body.lefty .key-prompt {
 .panel .panel-head h2 {
   grid-column: 2;
   margin: 0 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .panel-head .panel-close {
   position: static;
   grid-column: 3;
+}
+
+/* A phone keeps the same generous hit area without repeating the parent page's name beside the arrow. */
+@media (max-width: 600px) {
+  .panel-head .panel-up { width: 64px; padding: 0; justify-content: center; }
+  .panel-head .panel-up span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .panel-head { padding-left: 4px; }
+  .panel .panel-head h2 { font-size: 24px; }
+}
+
+/* Four little paper bookmarks stay beside the album's heading, even deep into the second adventure. */
+.album-nav {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(64px, 1fr));
+  gap: 0;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--paper-edge);
+  box-shadow: 0 5px 5px -5px rgb(70 45 20 / 0.25);
+}
+.album-nav[hidden] { display: none; }
+.panel .album-nav button {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-height: 64px;
+  min-width: 64px;
+  padding: 6px 2px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--ink-soft);
+  box-shadow: none;
+}
+.panel .album-nav button[hidden] { display: none; }
+.album-nav svg { width: 20px; height: 20px; }
+.panel .album-nav button[aria-current] {
+  border-bottom-color: var(--crayon-red);
+  background-color: var(--paper-2);
+  color: var(--ink);
+}
+body.big-text .album-nav button { font-size: 20px; }
+@container album-panel (max-width: 240px) {
+  .album-nav { padding-inline: 0; }
+}
+@container album-panel (max-width: 227px) {
+  .album-nav { grid-template-columns: repeat(2, minmax(64px, 1fr)); }
+}
+@media (max-width: 360px) {
+  .panel .panel-head h2 { font-size: 20px; }
+  .panel .album-nav button { font-size: 14px; }
+  body.big-text .album-nav button { font-size: 17.5px; }
+}
+.album-section:focus-visible, .album-photos:focus-visible { outline: none; }
+.album-section:focus-visible > h3:first-child, .album-photos:focus-visible > h3:first-child {
+  outline: 2px solid var(--crayon-blue);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 .panel-up {
@@ -859,7 +977,45 @@ body.lefty .key-prompt {
   align-content: start;
 }
 
-/* Moa's map is the picture of the goal (plan §4.6): first in Pause, with its name on it. */
+/* The way back to play and the bag are the first things under a thumb. The map and diary follow on phones. */
+@media (max-width: 699px) {
+  .pause-actions { grid-row: 1; }
+}
+.pause-home .tiles { gap: 8px; }
+.pause-home .tile { font-size: 16px; line-height: 1.2; }
+.pause-home .tile svg { width: 28px; height: 28px; }
+.pause-home #pauseExplore {
+  grid-column: 1 / -1;
+  grid-template-columns: 28px auto;
+  justify-content: center;
+  gap: 10px;
+}
+body.big-text .pause-home .tile { font-size: 20px; }
+@media (min-width: 700px) {
+  .pause-home .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pause-home .tile { padding: 8px 6px; }
+}
+
+/* The smallest phones have room for six clear choices before the diary, without squeezing their hit areas.
+   In a short landscape view the same choices make two rows across the wider paper. */
+@media (max-width: 360px), (orientation: landscape) and (min-width: 500px) and (max-height: 500px) {
+  .pause-home { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .pause-home .pause-actions, .pause-home .tiles:not([hidden]) { display: contents; }
+  .pause-home .pause-story { grid-column: 1 / -1; grid-row: 4; margin-top: 8px; }
+  .pause-home #stuckAsk { grid-column: 1 / -1; }
+  .pause-home #pauseExplore { grid-column: auto; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .pause-home #resumeBtn { display: grid; justify-items: center; gap: 4px; padding: 8px 6px; font-size: 16px; line-height: 1.2; }
+  .pause-home #resumeBtn svg, .pause-home .tile svg { width: 24px; height: 24px; }
+  .pause-home .tile { padding: 8px 6px; }
+  body.big-text .pause-home #resumeBtn { font-size: 20px; }
+}
+@media (orientation: landscape) and (min-width: 500px) and (max-height: 500px) {
+  .panel.pause { width: min(100%, 760px); }
+  .pause-home { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pause-home .pause-story { grid-row: 3; }
+}
+
+/* Moa's map is the picture of the goal (plan §4.6), beside the actions or just below them on a phone. */
 .map-card {
   display: grid;
   gap: 4px;
@@ -1106,6 +1262,21 @@ body.lefty .key-prompt {
 .memory-thumb .memory-play { width: 26px; height: 26px; border-radius: 0; }
 .memory-missing { border-style: dashed; color: var(--ink-faint); }
 .memory-missing svg { width: 64px; height: 40px; opacity: 0.6; }
+@media (min-width: 700px) {
+  .memory-album { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .panel .memory-thumb { font-size: 16px; line-height: 1.25; }
+  body.big-text .panel .memory-thumb { font-size: 20px; }
+}
+/* On the shortest screen a print sits beside its caption, so focus can reveal the complete choice below
+   the bookmarks. Opening it still gives the picture the full memory viewer. */
+@media (orientation: landscape) and (max-height: 360px) {
+  .memory-album { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .panel .memory-thumb { grid-template-columns: 60px minmax(0, 1fr); gap: 4px 6px; min-height: 80px; padding: 6px; font-size: 16px; line-height: 1.2; }
+  .memory-thumb > svg:first-child { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+  .memory-thumb > span { grid-column: 2; overflow-wrap: anywhere; }
+  .memory-thumb .memory-play { grid-column: 2; width: 20px; height: 20px; }
+  body.big-text .panel .memory-thumb { font-size: 20px; }
+}
 
 .memory-card svg {
   position: absolute;
@@ -1349,6 +1520,9 @@ body.lefty .key-prompt {
   grid-template-columns: repeat(4, 1fr);
   gap: 10px 6px;
 }
+@media (max-width: 360px) {
+  .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 .album-grid li {
   display: grid;
@@ -1387,6 +1561,9 @@ body.lefty .key-prompt {
   display: grid;
   gap: 10px;
 }
+
+.album-chapters > h4 { grid-column: 1 / -1; margin-top: 14px; }
+.album-section + .album-section { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--paper-edge); }
 
 @media (min-width: 700px) {
   .album-chapters {
@@ -1846,155 +2023,77 @@ details.info-row p {
   background-color: var(--linden);
 }
 
-/* --- a bubble: what someone says. The game has no voices (plan §3.7). -----------------------------
-   A scrap of Moa's paper with the speaker's face, name and colour, so whoever can't read the name still sees who
-   speaks (docs/ux-audit/in-play.md rows 14-16). Its full width, between the corner buttons and above them. */
+/* Speech and optional Continue share one paper card (scene.css). The live region contains only the
+   speaker and complete words; its action is a sibling so screen readers do not announce it with every line. */
 .bubble {
   box-sizing: border-box;
-  position: absolute;
-  z-index: 3;
-  left: 0;
-  right: 0;
-  margin-inline: auto;
-  width: max-content;
-  top: calc(env(safe-area-inset-top) + 16px);
-  max-width: min(64%, 560px, 100% - 256px);
+  min-width: 0;
   display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 12px;
-  align-items: center;
-  padding: 8px 18px 10px 10px;
-  border-left: 6px solid var(--who, var(--who-spoket));
-  border-radius: 8px;
-  background-color: var(--paper);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
-  rotate: var(--tilt, 0deg);
-  font-size: calc(21px * var(--k));
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  row-gap: 2px;
+  align-items: start;
+  font-size: calc(20px * var(--k));
   line-height: 1.25;
   text-align: left;
-  text-wrap: balance;
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+  background: none;
   pointer-events: none;
 }
-
-.bubble[hidden] {
-  display: none;
-}
-
+.bubble[hidden] { display: none; }
 .bubble .face {
-  grid-row: span 2;
-  width: calc(36px * var(--k));
-  height: calc(36px * var(--k));
+  grid-row: 1 / 3;
+  width: calc(28px * var(--k));
+  height: calc(28px * var(--k));
+  margin-top: 1px;
   border-radius: 50%;
   background-color: var(--paper-2);
   overflow: hidden;
 }
-
-.bubble .face svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
+.bubble .face svg { display: block; width: 100%; height: 100%; }
 .bubble b {
   font-size: calc(15px * var(--k));
-  letter-spacing: 0.04em;
+  line-height: 1.1;
+  letter-spacing: .025em;
   text-transform: uppercase;
   color: var(--who-ink, var(--who-none));
 }
+body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
 
-/* Each speaker's colour: the colour of their sign in the world (src/render/props.ts), and a darker ink for the
-   name, 4.9:1 or more on the paper. */
-.bubble[data-who='mamma'] { --who: var(--who-mamma); --who-ink: var(--who-mamma); --tilt: 0.5deg; }
-.bubble[data-who='pappa'] { --who: var(--who-pappa); --who-ink: var(--who-pappa-ink); --tilt: -0.4deg; }
-.bubble[data-who='moa'] { --who: var(--who-moa); --who-ink: var(--who-moa-ink); --tilt: -0.6deg; }
-.bubble[data-who='bertil'] { --who: var(--who-bertil); --who-ink: var(--who-bertil-ink); --tilt: 0.4deg; }
-.bubble[data-who='elof'] { --who: var(--who-elof); --who-ink: var(--who-elof); --tilt: 0deg; }
-.bubble[data-who='spoket'] { --who: var(--who-spoket); --who-ink: var(--who-spoket); --tilt: -0.3deg; }
+/* The wrapper carries the speaker's colour across the text and its optional action. */
+.dialogue:has(> .bubble[data-who='mamma']) { --who: var(--who-mamma); --who-ink: var(--who-mamma); }
+.dialogue:has(> .bubble[data-who='pappa']) { --who: var(--who-pappa); --who-ink: var(--who-pappa-ink); }
+.dialogue:has(> .bubble[data-who='moa']) { --who: var(--who-moa); --who-ink: var(--who-moa-ink); }
+.dialogue:has(> .bubble[data-who='bertil']) { --who: var(--who-bertil); --who-ink: var(--who-bertil-ink); }
+.dialogue:has(> .bubble[data-who='elof']) { --who: var(--who-elof); --who-ink: var(--who-elof); }
+.dialogue:has(> .bubble[data-who='spoket']) { --who: var(--who-spoket); --who-ink: var(--who-spoket); }
 
-/* How a line is said (src/content/tones.ts; docs/ux-audit/story-presentation.md row 22). A shout bursts, bigger and
-   bold, and pops as it lands; a worry wavers; a gentle word is smaller and lies flat on the picture; a thought is a
-   cloud trailing three small rings down towards Elof. The burst, the wavering line and the cloud are drawn round the
-   paper in the speaker's colour, in place of its straight edge and its colour bar (src/ui/tones.ts). */
-.tone-edge,
-.think-rings {
-  display: none;
-  position: absolute;
-  overflow: visible;
-  pointer-events: none;
-}
-.tone-edge {
-  inset: -7px;
-  z-index: -1;
-  width: calc(100% + 14px);
-  height: calc(100% + 14px);
-  filter: drop-shadow(0 4px 7px rgb(0 0 0 / 0.22));
-}
-.tone-edge path,
-.think-rings circle {
-  display: none;
-  fill: var(--paper);
-  stroke: var(--who, var(--who-spoket));
-  stroke-width: 2.5px;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-.bubble:is([data-tone='call'], [data-tone='worry'], [data-tone='think']) {
-  border-left-color: transparent;
-  background: none;
-  box-shadow: none;
-}
-.bubble:is([data-tone='call'], [data-tone='worry'], [data-tone='think']) .tone-edge {
-  display: block;
-}
-.bubble[data-tone='call'] .edge-call,
-.bubble[data-tone='worry'] .edge-worry,
-.bubble[data-tone='think'] .edge-think,
-.bubble[data-tone='think'] .think-rings circle {
-  display: inline;
-}
-.bubble[data-tone='call'] {
-  font-size: calc(24px * var(--k));
-  font-weight: 700;
-}
-body.big-text .bubble[data-tone='call'] {
-  font-size: calc(30px * var(--k));
-}
-.bubble[data-tone='call']:not([hidden]) {
-  animation: call-pop 0.2s var(--ease-paper);
-}
-@keyframes call-pop {
-  from {
-    opacity: 0;
-    scale: 0.82;
-  }
-}
-.bubble[data-tone='soft'] {
-  font-size: calc(18px * var(--k));
-  box-shadow: none;
-}
-body.big-text .bubble[data-tone='soft'] {
-  font-size: calc(22px * var(--k));
-}
-.bubble[data-tone='think'] .think-rings {
-  display: block;
-  top: calc(100% + 3px);
-  left: calc(50% - 34px);
-  width: 34px;
-  height: 30px;
-  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.2));
-}
-/* A line that goes on from the one before stands under it, in the same bubble. */
-#bubbleLine .said {
-  display: block;
-}
+/* Tone stays inside the measured card. Calls gain weight, never a larger font or an oversized burst;
+   gentle speech keeps the same readable size, and thoughts/worry have a quieter border treatment. */
+.bubble[data-tone='call'] #bubbleLine { font-weight: 700; }
+.dialogue:has(> .bubble[data-tone='call']) { border-inline-start-width: 5px; }
+.dialogue:has(> .bubble[data-tone='worry']) { border-inline-start-style: dashed; }
+.dialogue:has(> .bubble[data-tone='soft']) { box-shadow: 0 2px 8px rgb(0 0 0 / .16); }
+.dialogue:has(> .bubble[data-tone='think']) { border-radius: 16px; border-inline-start-style: dotted; }
+/* Preserve both authored continuation spans and their order, but let the complete sentence wrap naturally. */
+#bubbleLine .said { display: inline; }
 
-/* Held upright the top is the corner buttons' row: what is said hangs below it, across the screen. */
-@media (orientation: portrait) {
-  .bubble,
-  body.big-text .bubble {
-    top: calc(env(safe-area-inset-top) + 160px);
-    max-width: calc(100% - 24px);
-  }
+/* On the smallest upright phone the words use the full paper width below their speaker. */
+@media (max-width: 360px) and (orientation: portrait) {
+  .bubble .face { grid-row: 1; }
+  .bubble b { align-self: center; }
+  #bubbleLine { grid-column: 1 / -1; }
+}
+/* A short landscape phone has room for two broad lines, not a tall narrow column. The speaker
+   starts that same paragraph; only the secondary utility buttons yield, never Pause or play. */
+@media (max-width: 700px) and (max-height: 380px) and (orientation: landscape) {
+  .bubble { display: block; }
+  .bubble .face { float: left; margin-top: 2px; margin-right: 8px; }
+  .bubble b { display: inline; margin-right: 8px; }
+  #bubbleLine { display: inline; }
+  body:has(#bubble:not([hidden])) :is(.bag, #helpBtn) { visibility: hidden; pointer-events: none; }
 }
 
 /* The card at a chapter's end: the candy in rows of ten, with the number beside it (plan §4.3). */
@@ -2461,67 +2560,10 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   max-height: 150px;
 }
 
-/* A phone held sideways: the card's parts draw in, so all of it is in view (rows 6 and 12). */
-@media (max-height: 500px) {
-  .title .panel {
-    padding: 10px 14px 12px;
-  }
-
-  .title #titleFront {
-    gap: 8px;
-  }
-
-  .title-sign {
-    max-height: 72px;
-  }
-
-  .start-style {
-    min-height: 0;
-    padding: 6px;
-  }
-
-  .start-style svg {
-    height: 40px;
-  }
-
-  .start-style b {
-    font-size: 20px;
-  }
-
-  .start-style small {
-    font-size: 14px;
-    line-height: 1.15;
-  }
-
-  .round svg {
-    width: 52px;
-    height: 52px;
-    padding: 12px;
-  }
-
-  .round {
-    gap: 2px;
-    font-size: 14px;
-  }
-
-  .title .story-title p {
-    display: none;
-  }
-
-  .title #startBtn {
-    min-height: 56px;
-  }
-
-  .title #titleStartOverBtn {
-    min-height: 36px;
-    font-size: 14px;
-  }
-}
-
 /* A first start: the two play styles are the start buttons, Äventyr the larger (row 12). */
 .start-styles {
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: minmax(64px, 3fr) minmax(64px, 2fr);
   gap: 12px;
 }
 
@@ -2582,10 +2624,9 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 
 /* Under the start: round buttons with a word under each (row 7). */
 .round-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .round {
@@ -2609,6 +2650,16 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   border-radius: 50%;
   background-color: var(--linden);
 }
+
+.title .round {
+  min-height: 72px;
+  align-content: center;
+  font-size: 15px;
+  line-height: 1.2;
+}
+.title .round svg { width: 44px; height: 44px; padding: 10px; }
+.title .round span { overflow-wrap: anywhere; }
+body.big-text .title .round { font-size: 18px; }
 
 /* Each page of the title has its way back at its top left, beside its heading (row 10). */
 .section-head {
@@ -2662,6 +2713,67 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 #playerList {
   display: grid;
   gap: 12px;
+}
+
+.title-intro, .title-play { display: grid; gap: 12px; min-width: 0; align-content: center; }
+.title .title-play { align-content: start; }
+
+/* The title is an open storybook on a wide screen: the remembered story on the left, every way on at the right.
+   Only the front is wide; profile and code forms keep their comfortable reading width. */
+@media (orientation: landscape) and (min-width: 500px) {
+  .title .panel:has(#titleFront:not([hidden])) { width: min(100%, 760px); }
+  .title #titleFront { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: center; }
+  .title .title-play { border-left: 1px solid var(--paper-edge); padding-left: 24px; }
+  .title-sign { max-height: 110px; }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (min-width: 500px) {
+  .title .panel { padding: 12px 16px; }
+  .title #titleFront { gap: 16px; }
+  .title .title-intro, .title .title-play { gap: 8px; }
+  .title .title-play { padding-left: 16px; }
+  .title .start-style { min-height: 96px; padding: 6px; }
+  .title .start-style svg { height: 30px; }
+  .title .start-style b { font-size: 19px; }
+  .title .start-style small { font-size: 14px; line-height: 1.15; }
+  .title .round-row { gap: 4px; }
+  .title .round { min-height: 64px; font-size: 14px; gap: 2px; }
+  .title .round svg { width: 40px; height: 40px; padding: 9px; }
+  .title .story-title p { font-size: 15px; }
+}
+
+/* A short landscape phone keeps the main action and every shortcut on the sheet. Its longer recap is still
+   in Pause; the lesser restart action rests under the title rather than pushing shortcuts below the fold. */
+@media (orientation: landscape) and (max-height: 360px), (orientation: portrait) and (max-height: 650px) {
+  .title .story-title b { display: none; }
+}
+@media (orientation: landscape) and (max-height: 360px) and (min-width: 500px) {
+  .title .title-sign { max-height: 64px; }
+  .title .story-title { padding: 8px; }
+  .title .story-title p { display: none; }
+  .title[data-saved='true'] .title-intro { padding-bottom: 52px; }
+  .title #titleStartOverBtn { position: absolute; left: 16px; bottom: 12px; width: calc(50% - 24px); }
+  .title[data-saved='false'] .title-play { display: contents; }
+  .title[data-saved='false'] .title-intro { grid-column: 1; grid-row: 1; }
+  .title[data-saved='false'] .start-styles { grid-column: 1; grid-row: 2; }
+  .title[data-saved='false'] .round-row { grid-column: 2; grid-row: 1 / 3; }
+}
+@media (orientation: landscape) and (max-height: 360px) and (min-width: 500px) and (max-width: 699px) {
+  .title #titleFront { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+  .title #titleStartOverBtn { width: calc(40% - 24px); }
+}
+
+@media (orientation: portrait) and (max-height: 650px) {
+  .title .panel { padding: 12px; }
+  .title #titleFront, .title .title-intro, .title .title-play { gap: 8px; }
+  .title .title-sign { max-height: 64px; }
+  .title .story-title { padding: 8px; }
+  .title .story-title .story-card { font-size: 18px; }
+  .title .story-title p { display: none; }
+  .title .round-row { gap: 4px; }
+  .title .round { min-height: 64px; font-size: 14px; gap: 2px; }
+  .title .round svg { width: 40px; height: 40px; padding: 9px; }
+  body.big-text .title .round { font-size: 18px; }
 }
 
 /* A button has its own display, which would show it although it is hidden. */
@@ -2782,59 +2894,36 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   font-size: 16px;
 }
 
-/* The picture of a phone turning shows only when the screen is held upright. */
-.rotate {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-.rotate svg {
-  width: 44px;
-  height: 36px;
-}
-
-/* Only a phone held upright is asked to turn: an iPad held upright is as wide as a phone held sideways. */
-@media (orientation: portrait) and (pointer: coarse) and (max-width: 600px) {
-  .rotate {
-    display: flex;
-  }
-}
-
-/* A line of news at the top, gone after a few seconds. */
-/* A find or a thanks: like a bubble, its full width between the corners and above them (in-play.md rows 14-15). */
+/* A find hangs from the bag after speech has had its turn. The HUD preserves its remaining reading time. */
 .notice {
   position: absolute;
   z-index: 3;
-  left: 0;
-  right: 0;
-  margin-inline: auto;
+  left: calc(env(safe-area-inset-left) + var(--hud-edge));
+  top: var(--hud-content-top);
+  margin: 0;
   width: max-content;
-  top: calc(env(safe-area-inset-top) + 14px);
-  max-width: min(70%, 520px, 100% - 256px);
-  padding: 10px 18px;
-  border-radius: 6px 9px 7px 8px;
-  background-color: var(--paper);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
-  font-size: 17px;
-  text-align: center;
-  text-wrap: balance;
+  max-width: min(400px, calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right) - var(--hud-edge) * 2));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid var(--hud-line);
+  border-radius: 12px 16px 14px 10px;
+  background-color: var(--hud-paper);
+  box-shadow: var(--hud-shadow);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: left;
   pointer-events: none;
-}
-
-@media (orientation: portrait) {
-  .notice {
-    top: calc(env(safe-area-inset-top) + 160px);
-    max-width: calc(100% - 24px);
-  }
 }
 
 .notice[hidden] {
   display: none;
 }
+
+body:has(#bubble:not([hidden])) .notice { visibility: hidden; }
 
 /* --- small text over the game ------------------------------------------------------------------- */
 .hint {
@@ -2948,32 +3037,33 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   display: none;
 }
 
-/* An untimed purpose below the corner buttons. Dialogue gets the player's attention while it is said. */
+/* One quiet bookmark below the utility row. Its full goal and motive remain untimed; dialogue takes priority. */
 .story-purpose {
   position: absolute;
-  left: calc(env(safe-area-inset-left) + 12px);
-  top: calc(env(safe-area-inset-top) + 82px);
-  right: calc(env(safe-area-inset-right) + 82px);
+  left: calc(env(safe-area-inset-left) + var(--hud-edge));
+  top: var(--hud-content-top);
   width: max-content;
-  max-width: min(390px, calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right) - 94px));
+  max-width: min(430px, calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right) - var(--hud-edge) * 2));
   box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 7px 11px;
-  border-radius: 6px 9px 7px 8px;
-  background-color: var(--paper);
-  box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
+  border: 1px solid var(--hud-line);
+  border-left: 3px solid var(--paint-green);
+  border-radius: 4px 12px 12px 4px;
+  background-color: var(--hud-paper);
+  box-shadow: var(--hud-shadow);
   color: var(--ink);
   font-size: 17px;
   line-height: 1.3;
   pointer-events: none;
 }
-.story-purpose > span:last-child { display: grid; gap: 1px; }
-.story-purpose small { font-size: 13px; color: var(--ink-soft); }
-.story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--paper-edge); }
+.story-purpose > span:last-child { min-width: 0; }
+.story-purpose small { margin-right: 6px; font-size: 13px; color: var(--ink-soft); }
+.story-purpose-reveal { display: block; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--hud-line); }
 .story-purpose-reveal[hidden] { display: none; }
-#storyPurposeIcon { display: grid; color: var(--crayon-blue); }
+#storyPurposeIcon { display: grid; flex: none; color: var(--paint-green); }
 #storyPurposeIcon svg { width: 24px; height: 24px; }
 .story-purpose[data-guide]:not([data-guide=""]) { border-left: 3px solid var(--crayon-blue); }
 .story-purpose[data-guide]:not([data-guide=""]) #storyPurposeIcon svg { width: 36px; height: 36px; }
@@ -2981,22 +3071,23 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }
 body.big-text .story-purpose { font-size: 21px; }
-/* Short landscape screens have room between the corner buttons, above the people in the scene. */
+/* On short landscape screens the bookmark uses the sky between the bag and both utility buttons. */
 @media (max-height: 500px) and (orientation: landscape) {
   .story-purpose {
     left: calc(env(safe-area-inset-left) + 120px);
-    right: calc(env(safe-area-inset-right) + 82px);
-    top: calc(env(safe-area-inset-top) + 10px);
+    right: calc(env(safe-area-inset-right) + var(--hud-tools-width) + var(--hud-gap));
+    top: var(--hud-row-top);
     width: auto;
     max-width: none;
     padding-block: 3px;
   }
   .story-purpose > span:last-child {
+    display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 8px;
+    column-gap: 6px;
     align-items: baseline;
-    min-width: 0;
   }
+  .story-purpose small { margin-right: 0; }
   .story-purpose-reveal { grid-column: 1 / -1; }
 }
 .story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background-color: var(--paper-2); line-height: 1.4; }
@@ -3195,7 +3286,8 @@ body.follow-finger .stick-base {
 }
 
 button.bag {
-  min-height: 64px;
+  min-width: var(--hud-hit);
+  min-height: var(--hud-hit);
   border: 0;
   color: inherit;
   font-family: inherit;
@@ -3553,22 +3645,17 @@ body.scene-bars .scene-caption .place {
   rotate: 4deg;
 }
 
-/* Linden's grain under everything pressed, its light top, its 4 px thickness and its shadow. */
+/* Linden's grain on the book's buttons; the live utility discs and touch paint have their lighter treatment. */
 :where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute, .ask button,
-  .corner, .panel-close svg, .panel-up svg, .btn) {
+  .panel-close svg, .panel-up svg) {
   background-image: var(--woodgrain, none);
   box-shadow: var(--bevel), 0 4px 0 var(--wood-dark), var(--wood-shadow);
   transition: transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
 }
 
 /* The small discs in a header and the round buttons lie lower: 3 px. */
-:where(.corner, .panel-close svg, .panel-up svg, .round svg, .round-back, .photo-step) {
+:where(.panel-close svg, .panel-up svg, .round svg, .round-back, .photo-step) {
   box-shadow: inset 0 0 0 2px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
-}
-
-/* The corner discs have a worn rim, and the icon is cut in: a light lip under it. */
-.corner {
-  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
 }
 
 :where(.corner, .round-back, .tile, .wide:not(.go)) svg {
@@ -3584,10 +3671,13 @@ body.scene-bars .scene-caption .place {
 }
 
 .btn-hop {
-  box-shadow: var(--bevel), 0 4px 0 var(--paint-red-dark), var(--wood-shadow);
+  box-shadow: var(--bevel), 0 2px 0 var(--paint-red-dark), var(--hud-shadow);
 }
 
-.btn-act,
+.btn-act {
+  box-shadow: var(--bevel), 0 2px 0 var(--paint-green-dark), var(--hud-shadow);
+}
+
 .ask .yes {
   box-shadow: var(--bevel), 0 4px 0 var(--paint-green-dark), var(--wood-shadow);
 }
@@ -3597,7 +3687,7 @@ body.scene-bars .scene-caption .place {
 }
 
 /* Pressed, a plank sinks 3 px onto its edge in 80 ms; it rises again in 140 ms. */
-:where(.wide:not(.small), .tile, .start-style, .round-back, .photo-step, .ask button, .corner):active,
+:where(.wide:not(.small), .tile, .start-style, .round-back, .photo-step, .ask button):active,
 :where(.round, .panel-close, .panel-up):active svg,
 .mute:active {
   transform: translateY(3px);
@@ -3625,8 +3715,10 @@ body.scene-bars .scene-caption .place {
   box-shadow: none;
 }
 
-.corner:active {
-  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 1px 0 var(--wood-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+.corner:active::before {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 1px var(--hud-line), var(--bevel), 0 1px 0 var(--linden-edge), var(--hud-shadow);
+  transition-duration: var(--dur-press);
 }
 
 /* Candy's shine, the only one in the UI: a white gleam at the upper left of each sweet (row 19). */
@@ -3634,37 +3726,7 @@ body.scene-bars .scene-caption .place {
   background-image: radial-gradient(ellipse 30% 34% at 42% 30%, rgb(255 255 255 / 0.55), transparent 72%);
 }
 
-/* --- what the HUD keeps to itself (docs/ux-audit/in-play.md rows 1, 13 and 18) -------------------------------
-   A find, a thanks: a tag of Moa's paper hanging from the bag, with the sweet's sticker or a drawn sparkle, for
-   three seconds. It never covers what is being said, which goes on beside it. */
-.notice {
-  left: calc(env(safe-area-inset-left) + 14px);
-  right: auto;
-  margin: 0;
-  top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
-  max-width: min(330px, calc(100% - 28px));
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px 8px 8px;
-  font-size: 19px;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: left;
-  rotate: -1.5deg;
-}
-
-.notice[hidden] {
-  display: none;
-}
-
-@media (orientation: portrait) {
-  .notice {
-    top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
-    max-width: min(330px, calc(100% - 28px));
-  }
-}
-
+/* --- what the HUD keeps to itself: the little mark on a find's tag ------------------------------- */
 .notice-mark {
   flex: none;
   display: grid;
@@ -3786,7 +3848,8 @@ body.keys-learned .hint {
 @keyframes tag-swing {
   from {
     opacity: 0;
-    rotate: -9deg;
+    translate: 0 -4px;
+    rotate: -1.5deg;
   }
 }
 
@@ -3796,8 +3859,8 @@ body.keys-learned .hint {
   }
 }
 
-.bubble:not([hidden]) {
-  animation: scrap-land var(--dur-quick) var(--ease-out);
+.dialogue:has(> .bubble:not([hidden])) {
+  animation: only-fade var(--dur-quick) var(--ease-out);
 }
 
 .notice:not([hidden]) {
@@ -3872,8 +3935,9 @@ body.keys-learned .hint {
 :root[data-motion="reduce"] body.scene-bars .scene-bar {
   opacity: 1;
 }
+:root[data-motion="reduce"] .corner::before,
 :root[data-motion="reduce"] :where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute,
-  .ask button, .corner, .panel-close svg, .panel-up svg, .btn) {
+  .ask button, .panel-close svg, .panel-up svg, .btn) {
   transition: box-shadow var(--dur-release) var(--ease-out);
 }
 :root[data-motion="reduce"] #hopBtn {
