@@ -10,6 +10,7 @@ export const VERB_ICON: Record<string, IconId> = {
   slide: 'slide', lace: 'lace', push: 'push', pull: 'push', turn: 'push', take: 'take', call: 'call', give: 'give', grab: 'take',
   // By the word, where it says more than its verb.
   callMoa: 'call', callPappa: 'call', callBertil: 'call', callMamma: 'call',
+  playConsole: 'console',
   gardenBoard: 'climb', capBoard: 'climb', climbOn: 'climb', boardCrane: 'climb', board: 'climb', rideAnts: 'climb', standOn: 'climb',
   gardenGiveDrawing: 'give', giveTragubbe: 'give', giveGhost: 'give', giveJay: 'give', giveMamma: 'give', givePappa: 'give',
   giveMoa: 'give', giveBertil: 'give', leaveBerry: 'give',

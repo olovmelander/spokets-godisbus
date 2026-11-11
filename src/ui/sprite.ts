@@ -32,6 +32,8 @@ export const ICONS = {
   check: lines('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 2.8),
   /** Go on; watch again. */
   play: '<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>',
+  /** The plain controller connected to the family's television. */
+  console: lines('<path d="M8 7h8c3 0 4 2 5 7s-1 7-4 3l-2-2H9l-2 2c-3 4-5 2-4-3s2-7 5-7Z"/><path d="M7 10v4m-2-2h4"/><circle cx="16" cy="10.5" r=".6"/><circle cx="18" cy="13" r=".6"/><path d="M12 7V3"/>', 1.6),
   /** Back to the beginning of what was watched. */
   again: lines('<path d="M4.5 12a7.5 7.5 0 1 0 2.4-5.5M4 4v4.5h4.5"/>', 2.4),
   /** The corner's pause. */
