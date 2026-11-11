@@ -57,7 +57,13 @@ export function createHomeConsole(options: HomeConsoleOptions) {
       }
     },
     close,
-    suspend(on: boolean) { blocked = on; session?.suspend(on); },
+    suspend(on: boolean) {
+      blocked = on;
+      // A chunk may finish while the recovery dialog owns focus. Its newly mounted buttons must not
+      // take focus through that dialog, including before the session promise has resolved.
+      if (host) host.inert = on;
+      session?.suspend(on);
+    },
     debug: () => ({ open: host !== null, loading: host !== null && session === null, blocked, ...(session?.debug() ?? {}) }),
   };
 }

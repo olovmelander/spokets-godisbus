@@ -73,9 +73,11 @@ describe('the optional shared-home TV activity', () => {
 
   it('passes visibility/context suspension through even if the race loads under recovery', async () => {
     const s = setup(), opened = s.console.show();
-    s.console.suspend(true); s.loading.resolve(s.session); await opened;
+    s.console.suspend(true); expect(s.console.element?.inert).toBe(true);
+    s.loading.resolve(s.session); await opened;
     expect(s.session.suspend).toHaveBeenLastCalledWith(true);
     s.console.suspend(false); expect(s.session.suspend).toHaveBeenLastCalledWith(false);
+    expect(s.console.element?.inert).toBe(false);
     expect(s.leave).not.toHaveBeenCalled(); expect(s.console.open).toBe(true);
   });
 

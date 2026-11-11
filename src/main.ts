@@ -934,11 +934,13 @@ async function start(): Promise<void> {
   });
   window.addEventListener('pagehide', () => {
     devicePlay.setPlaying(false);
+    homeConsole?.suspend(true);
     input.release(); pointing.cancel(); askedForUse = askedForHelp = false;
     writeSave();
   });
   window.addEventListener('pageshow', (event) => {
     if (!event.persisted) return;
+    homeConsole?.suspend(platformBlocked());
     game.resume();
     input.release();
     // BFCache keeps the current bubble and its recording. A menu still owns the pause on return.
