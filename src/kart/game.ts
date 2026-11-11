@@ -119,7 +119,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     if (disposed || suspended) return;
     if (mode === 'race') show('paused');
     else if (mode === 'paused' && !suspended) { sound?.unlock(); show('race'); }
-    else if (mode === 'intro' || mode === 'result') options.onClose();
+    else if (mode === 'intro' || mode === 'result' || mode === 'error') options.onClose();
   }
   function notice(text: string): void { query('.kart-notice').textContent = text; noticeUntil = race.state.elapsed + 2.3; }
   function finishRace(): void {
