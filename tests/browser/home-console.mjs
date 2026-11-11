@@ -22,6 +22,7 @@ const server = createServer((req, res) => {
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
+const cases = new Set((process.env.HOME_CONSOLE_CASES ?? 'homes,race,save,loading').split(','));
 let browser, checks = 0;
 const check = (name, condition) => { assert.ok(condition, name); checks++; console.log(`  ok   ${name}`); };
 const FLAGS = {
@@ -31,6 +32,8 @@ const FLAGS = {
   stormkvall: ['scene:kvall', 'candles', 'lamp:take', 'lamp:give', 'goodnight', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans'],
   morgonen: ['scene:frukost'],
 };
+const SAVED_FLAGS = ['scene:card', 'partied', 'scene:klonk-table', 'beat:klonk', 'beat:named', 'knife', 'beat:away',
+  ...['mamma', 'pappa', 'moa', 'bertil', 'spoket'].flatMap(who => [`party:${who}`, `beat:partyThanks:${who}`])];
 const world = state => Object.fromEntries(['x', 'y', 'vx', 'vy', 'facing', 'grounded', 'mode', 'steps', 'flags', 'candy', 'checkpoint', 'said', 'pendingDialogue', 'scene', 'prologue', 'ghost'].map(key => [key, state[key]]));
 const frames = (page, count = 4) => page.evaluate(left => new Promise(done => {
   const frame = () => { if (--left <= 0) done(); else requestAnimationFrame(frame); }; requestAnimationFrame(frame);
@@ -58,7 +61,7 @@ async function open(chapter = 'epilog', options = {}, setup = async () => {}, sa
     localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, chapter: 'epilog', checkpoint: 2,
       checkpoints: { epilog: 2 }, settings: { style: 'aventyr', sound: false, music: false }, candy: { garden: [0, 1], epilog: Array.from({ length: 100 }, (_, i) => i) },
       side: { garden: [1] }, placed: { garden: ['cone'] }, flags: { garden: ['goal', 'lost:coin'], epilog: flags }, playMs: 12345 }));
-  }, FLAGS.epilog);
+  }, SAVED_FLAGS);
   const page = await context.newPage(), errors = [], external = [], requests = [];
   page.on('pageerror', error => errors.push(String(error)));
   page.on('request', request => {
@@ -100,7 +103,7 @@ async function closeAndCheck(game, frozen, label, method = 'keys') {
 }
 try {
   browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
-  for (const [chapter, viewport, touch, method] of [
+  if (cases.has('homes')) for (const [chapter, viewport, touch, method] of [
     ['prolog', { width: 1180, height: 820 }, false, 'keys'],
     ['epilog', { width: 391, height: 844 }, true, 'touch'],
     ['stormkvall', { width: 844, height: 391 }, false, 'pad'],
@@ -120,6 +123,7 @@ try {
     await game.page.keyboard.up('ArrowRight'); await game.finish();
   }
 
+  if (cases.has('race')) {
   const race = await open('epilog', { viewport: { width: 391, height: 844 }, hasTouch: true });
   const frozen = await enter(race, 'touch');
   await race.page.locator('[data-action="start"]:visible').first().tap();
@@ -157,14 +161,18 @@ try {
   await race.page.keyboard.up('KeyE'); await pad(race.page, 2, false);
   const third = await enter(race, 'pad'); await closeAndCheck(race, third, 'En ny X-tryckning', 'pad');
   await race.finish();
+  }
 
+  if (cases.has('save')) {
   const saved = await open('epilog', {}, async () => {}, true);
-  check('Berättelsens tandborste behåller den vanliga användknappen', (await saved.state()).word === 'brush' && await saved.page.locator('#homeConsolePlay').isVisible());
+  check('Berättelsens täljning behåller den vanliga användknappen', (await saved.state()).word === 'carve' && await saved.page.locator('#homeConsolePlay').isVisible());
   const beforeSave = await saved.page.evaluate(() => localStorage.getItem('godisbus.v1.player.elof'));
   const savedFrozen = await enter(saved, 'choice'); await frames(saved.page, 6); await closeAndCheck(saved, savedFrozen, 'Sparad berättelse');
   check('TV-spel ändrar varken kapitel, checkpoint, samling eller befintlig sparfil', await saved.page.evaluate(() => window.__consoleVisits.at(-1).save) === beforeSave);
   await saved.finish();
+  }
 
+  if (cases.has('loading')) {
   let releaseChunk, requested = false;
   const chunkGate = new Promise(done => { releaseChunk = done; });
   const cancelled = await open('epilog', {}, async page => page.route(url => url.pathname === kartPath, async route => { requested = true; await chunkGate; await route.continue(); }));
@@ -182,5 +190,6 @@ try {
   const start = (await failed.state()).x;
   await failed.page.keyboard.down('ArrowRight'); await until(failed.state, s => s.x > start + .3, 'Rörelse fungerar efter nedladdningsfel'); await failed.page.keyboard.up('ArrowRight');
   await failed.finish();
+  }
   console.log(`TV-konsolen: ${checks} webbläsarkontroller godkända.`);
 } finally { if (browser) await browser.close(); await new Promise(done => server.close(done)); }
