@@ -28,7 +28,10 @@
   authored camera sightlines. All eight original TV/sofa and sofa/sill collision checks fail before the fix.
   The integrated code passes all 2,630 tests, typecheck, build/size gates and the built-in privacy scan.
   Native mobile review then exposed protruding bathroom shell edges and a gallery hidden by the sofa; both
-  were corrected, with a real-mesh facade-occlusion regression and focused checks.
+  were corrected, with a real-mesh facade-occlusion regression and focused checks. Cross-chapter review
+  also removed an obsolete rear-veranda overlay in Prolog/Stormkvällen and adjusted the morning detail
+  to keep a foreground hair fragment outside the portrait frame. The assembled-room tests include the exit
+  dressing as well as the room and bathroom, while the exterior glazing and doorway are retained.
   Final automated, built-browser and visual results, exact CI revision and publication are recorded in this
   continuation's PR before delivery. Browser viewport review does not establish physical-device performance.
 
