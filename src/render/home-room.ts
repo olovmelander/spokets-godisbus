@@ -96,7 +96,9 @@ export function roomThings(at: { rug: number; blanket: boolean }): Group {
   home.push(box(0.9, 0.7, 0.02, 33.8 + d, 2.6, WALL - 0.31, '#a84a3a'), paint(new ConeGeometry(0.72, 0.5, 4).rotateY(Math.PI / 4).scale(1, 1, 0.02).translate(33.8 + d, 3.2, WALL - 0.31), '#3f5a7a'));
   home.push(box(0.3, 0.9, 0.02, 35.5 + d, 3.4, WALL - 0.31, '#3f6a8a'), box(0.24, 0.66, 0.02, 36.1 + d, 3.28, WALL - 0.31, '#b89a30'));
   home.push(box(1.1, 0.5, 0.02, 37.6 + d, 2.6, WALL - 0.31, '#5c7a48'), paint(new CircleGeometry(0.3, 10).translate(37.5 + d, 3.3, WALL - 0.31), '#4a6a9a'));
-  group.add(new Mesh(mergeGeometries(home), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })));
+  const gallery = new Mesh(mergeGeometries(home), new MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }));
+  gallery.name = 'home-drawing-gallery'; gallery.position.y = HOME_LAYOUT.living.drawingsLift;
+  group.add(gallery);
   // The rug under the table, running out under his feet.
   group.add(new Mesh(new PlaneGeometry(13, 9).rotateX(-Math.PI / 2).translate(at.rug, 0.01, -0.8), new MeshStandardMaterial({ map: ragRug(), roughness: 0.95 })));
   return group;
