@@ -113,17 +113,26 @@ export function hedge(chapter: ChapterData): Group | null {
 
     /** A spray on one rounded face. The front, sides and crown are dense; the unseen back needs no overdraw. */
     const face = (axis: 0 | 1 | 2, side: -1 | 1, u: 0 | 1 | 2, v: 0 | 1 | 2) => {
-      const nu = Math.ceil(half.getComponent(u) * 2 / .48), nv = Math.ceil(half.getComponent(v) * 2 / .48);
+      const spacing = axis === 1 ? .36 : .48;
+      const nu = Math.ceil(half.getComponent(u) * 2 / spacing), nv = Math.ceil(half.getComponent(v) * 2 / spacing);
       for (let a = 0; a < nu; a++) for (let b = 0; b < nv; b++) {
         const point = new Vector3();
         point.setComponent(axis, side * half.getComponent(axis));
-        point.setComponent(u, ((a + .2 + next() * .6) / nu * 2 - 1) * half.getComponent(u));
-        point.setComponent(v, ((b + .2 + next() * .6) / nv * 2 - 1) * half.getComponent(v));
+        point.setComponent(u, ((a + next()) / nu * 2 - 1) * half.getComponent(u));
+        point.setComponent(v, ((b + next()) / nv * 2 - 1) * half.getComponent(v));
         const inside = point.clone().clamp(half.clone().multiplyScalar(-1).addScalar(radius), half.clone().addScalar(-radius));
         const normal = point.clone().sub(inside).normalize();
         point.copy(inside).addScaledVector(normal, radius + .055).add(centre);
         // Keep the top of the playable strip bare at boot height. The foliage behind it can crest gently.
         if (axis === 1 && point.z > -.7 && plantWalksHere(point.x, plants)) continue;
+        if (axis === 1) {
+          // A clipped crown still has leaf tips at different heights and angles. Flat coplanar sprays
+          // fight for depth and look like slats from the plane; gentle uneven growth keeps the leaf drawing.
+          point.y -= .02 + next() * .06;
+          normal.x += (next() - .5) * .16;
+          normal.z += .08 + next() * .18;
+          normal.normalize();
+        }
         const shade = Math.min(2.99, .8 + (point.y - volume.bottom) / high * 1.1 + next() * .8 + Math.max(0, normal.y) * .3);
         const tone = Math.floor(shade);
         leaves.push({ at: point, normal, size: .75 + next() * .3, turn: (next() - .5) * Math.PI * 2,
@@ -182,5 +191,6 @@ export function hedge(chapter: ChapterData): Group | null {
 }
 
 function plantWalksHere(x: number, plants: readonly Hedge[]): boolean {
-  return plants.some(plant => x >= plant.from && x <= plant.to);
+  // The first garden is crossed in Moa's plane; only the storm garden has a low lip to walk along.
+  return plants.some(plant => plant.terminal && x >= plant.from && x <= plant.to);
 }
