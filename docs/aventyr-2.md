@@ -131,6 +131,8 @@ number, sign or coordinates appear anywhere, no real map shows it (Moa's crayon 
    Optional: the trampoline's bounces up to the roof ridge for a hidden candy.
 7. **The hedge:** a lightning flash shows the little one tumbling over the hedge towards the forest. Elof stops and
    watches him go, slowly and near, pale in his own glow (Olov, 9 November 2026: he must be clearly seen).
+   The hedge is large and visibly green, with dense leaves and a distinct crown under his flight, matching the
+   leafy boundary at the end of Gården (Olov, 11 November 2026).
 
 ### Kapitel 2: Stormskogen (forest at night)
 

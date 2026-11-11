@@ -683,6 +683,8 @@ and challenge routes **C1–C4** (§4.7).
   - "Ropa på Moa": she folds a paper plane from her drawing, climbs onto the deck railing (Modig) and throws it
     as far as she can. Elof flies to the forest edge, steering up and down through arcs of candy.
 - **End.** Elof lands in the moss at the forest edge, and the ghost slips in under the spruces.
+  - **Olov, 11 November 2026:** the garden's final hedge must read as a large, green leafy hedge, in both
+    Gården and Stormgården. Its visible crown sits below the crossing flight, with enough clear view to follow it.
   - End card: **Kapitel 1 klart!**, with the candy shown in rows of ten and new stickers.
   - Moa's map gets its first drawn part.
 

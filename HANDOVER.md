@@ -1,5 +1,27 @@
 # Handover
 
+## State (11 November 2026): green hedges at the garden endings
+
+- **Olov asked:** a large, visibly green hedge at the end of both Gården and Stormgården, so the flight over
+  the hedge has a clear visual setting. This continuation starts from PR #258's published merge, `4cdd8d4`.
+- **Cause and scope:** the existing hedge surfaces supplied green ground colouring but no actual leafy hedge.
+  Shared scenic foliage now gives those boundaries depth, dense green leaves and an irregular crown.
+  Gården's paper plane crosses above its hedge; Stormgården's taller rear foliage sits behind Lillgubben's
+  rising flight. The existing collision profile, candy, scenes, flight paths and save progress stay unchanged.
+- **Rendering:** the hedge reuses the game's leaf atlas, foliage lighting and wind. It is present on Low too;
+  wind uses the existing Pause and reduced-motion controls. No model, texture download, recording, private
+  asset, release boundary or rule changes. Original procedural geometry is listed in LICENSES.md.
+  Each chapter adds two batches: about 2,500 triangles in Gården and 15,000 in Stormgården. The garden's visual
+  ground is rebuilt at the hedge's base, with ordinary lawn beneath it; collision data remains separate.
+  Leaf sprays on the crown have varied heights and angles, avoiding coplanar rows in the view from the plane.
+- **Validation:** baseline and final code pass all 2,599 tests in 271 files. The development game starts and
+  moves in a portrait phone viewport; typecheck, production build/size gates (649.3 KB gzipped JS; 5,765.3 KB
+  boot) and the built-in privacy scan pass. The initial renderer passed the 42-check Äventyr 2 suite and the
+  150-check garden-home suite. Native built private-model before/after stills exposed the crown stripes and
+  old ground cutaway, prompting the final polish. Matching final phone views, targeted browser checks and
+  exact-head CI/publication results are recorded in this continuation's PR. Paused art-review stills are not
+  physical-device frame-rate measurements. No work needs Olov's computer or a local Blender session.
+
 ## State (11 November 2026): exploring chapters from their beginning
 
 - **Olov asked:** selecting a chapter in **Utforska vidare** after finishing an adventure should start at the
@@ -5315,6 +5337,10 @@ record identify the exact published revision.
 
 ## Next
 
+**Green hedges (11 November).** Keep the final hedges visibly leafy on every tier, including Stormgården's
+night lighting. Preserve the clear flight corridor and the existing playable ground; the taller rear foliage
+must not hide Lillgubben as the camera follows him over the crown. This visual change needs no local Blender work.
+
 **Exploring from the beginning (11 November).** Preserve the distinction between explicit **Utforska vidare**
 chapter choices and ordinary Continue. Clear transient progress only for the selected Explore chapter, after
 preserving its permanent collection receipts. Do not globally reset every save with checkpoint −1: a normal
@@ -5741,6 +5767,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Garden endings (Olov, 11 November 2026):** both Gården and Stormgården need a large green hedge visually,
+  with the flight over it clearly readable.
 - **Chapter exploration (Olov, 11 November 2026):** selecting a chapter after the adventure starts at that
   chapter's beginning, including the current chapter; discoveries and collections remain shared and saved.
 - **The owl's tree (Olov, 10 November 2026):** its bark must match the visual detail of the surrounding trees.
@@ -5840,6 +5868,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Green garden hedges (11 Nov) | Make both final hedges large, green and visibly leafy | One focused cloud continuation with shared renderer work and phone-view review | — / 1 request | Existing playable geometry and flights retained; shared foliage visible in day and storm lighting, including Low. |
 | Explore chapter starts (11 Nov) | Start each selected chapter at its beginning after the ending | One focused cloud continuation with save implementation and independent review | — / 1 request | Explicit Explore reset preserves both adventures' collections and ordinary Continue; simulation and built-browser chapter selection checks. |
 | Playing while talking (10 Nov) | Remove ordinary dialogue stops; retain appropriate calmer scenes | One cloud continuation with parallel simulation, HUD/audio, content and browser worktrees | — / 1 request | Automatic dialogue with playable traversal, explicit scene holds, completion receipts, reveal/save safeguards and phone checks; primary design sources and validation in the walk-and-talk record. |
 | Shared visual details and all-character motion (10 Nov) | Olov's five screenshot requests, then natural arms, heads and whole-body movement throughout the game | One continuing cloud session with six parallel implementation/review worktrees | — / 1 screenshot round plus expanded motion request | Cars, footballs, Swedish labels and consistent illustrated cast; shared pose/turn/grip/contact/head/Pause fixes, actual private geometry and phone-view checks. Evidence and limits in the visual follow-up record. |
@@ -5892,6 +5921,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
+- **Garden hedge request (11 November):** the old ground tint supplied no leaf volume. The shared visual
+  replacement is checked separately from the unchanged collision and flight paths.
 - **Explore chapter starts (11 November):** stale checkpoints and late scene triggers are addressed together.
   Browser checks cover native portrait/landscape viewports; physical-device performance is not measured by them.
 - **Software GPU test (10 November):** two CI attempts hit the old 30-second Granskog quality-click deadline,
@@ -6100,6 +6131,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 11 November request for large green hedges at both garden endings is addressed in this continuation.
 - The 11 November request to start each chosen Explore chapter at its beginning is implemented; no part is deferred.
 - The 10 November request to keep playing during ordinary dialogue is implemented in this continuation.
   Existing calm scenes keep their staging and advance automatically; the verification record explains the policy.
@@ -6127,7 +6159,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore change add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore and hedge changes add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
