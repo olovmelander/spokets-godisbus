@@ -359,6 +359,9 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       else delete bubble.dataset.tone;
       byId('bubbleFace').innerHTML = faceSvg(next.who);
       bubble.dataset.who = next.who;
+      // The complete visible line keeps its dock during Pause and its continuation linger, even
+      // after it no longer offers Continue. Only a newly presented line changes this display mode.
+      bubble.dataset.protected = String(next.read);
       bubble.hidden = false;
       current = next;
       readFor = 0;

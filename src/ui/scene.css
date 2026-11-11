@@ -27,7 +27,7 @@
 }
 .dialogue:has(> .bubble:not([hidden])),
 .dialogue:has(> .scene-reading:not([hidden])) { display: grid; }
-.dialogue:has(> .scene-reading:not([hidden])) {
+.dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
   --dialogue-left: calc(env(safe-area-inset-left) + 12px);
   --dialogue-right: calc(env(safe-area-inset-right) + var(--hud-hit, 64px) + 24px);
   grid-template-columns: minmax(0, 1fr) auto;
@@ -35,6 +35,13 @@
 }
 .scene-reading { min-width: 0; display: flex; align-items: center; justify-content: flex-end; }
 .scene-reading[hidden] { display: none; }
+/* Pause and a completed line's brief linger remove the action, not its space. Visibility keeps
+   the hidden action out of pointer, focus and accessibility interaction while the card stays still. */
+.dialogue:has(> .bubble[data-protected='true']:not([hidden])) > .scene-reading[hidden] {
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+}
 .scene-reading-copy [hidden] { display: none; }
 .scene-reading button {
   box-sizing: border-box;
@@ -70,7 +77,7 @@ body.story-reading :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .
    leaving its family close-ups clear; the controls it would cover have stepped aside. */
 @media (max-width: 599px) and (orientation: portrait) {
   .dialogue,
-  .dialogue:has(> .scene-reading:not([hidden])) {
+  .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
     --dialogue-left: calc(env(safe-area-inset-left) + 12px);
     --dialogue-right: calc(env(safe-area-inset-right) + 12px);
     top: var(--dialogue-top, var(--hud-content-top, calc(env(safe-area-inset-top) + 84px)));
@@ -81,7 +88,7 @@ body.story-reading :is(.controls, .bag, #helpBtn, .key-prompt, .story-purpose, .
   }
   .scene-reading { border-top: 1px solid var(--paper-edge); padding-top: 8px; }
   .scene-reading button { padding-inline: 16px; }
-  .dialogue:has(> .scene-reading:not([hidden])) {
+  .dialogue:has(> :is(.scene-reading:not([hidden]), .bubble[data-protected='true']:not([hidden]))) {
     top: auto;
     bottom: calc(env(safe-area-inset-bottom) + 12px);
   }
