@@ -121,10 +121,10 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
            <h2 id="pauseTitle">${p.title}</h2>
            <button class="panel-close" id="pauseClose" type="button" aria-label="${p.close}">${CROSS}</button>
            <nav class="album-nav" id="albumNav" aria-label="${sv.album.navigation}" hidden>
-             <button type="button" data-album-section="albumSweets">${sv.album.sections.sweets}</button>
-             <button type="button" data-album-section="albumFinds">${sv.album.sections.finds}</button>
-             <button type="button" data-album-section="albumMemories">${sv.album.sections.memories}</button>
-             <button type="button" data-album-section="albumPhotos">${sv.album.sections.photos}</button>
+             <button type="button" data-album-section="albumSweets">${use('taste')}<span>${sv.album.sections.sweets}</span></button>
+             <button type="button" data-album-section="albumFinds">${use('take')}<span>${sv.album.sections.finds}</span></button>
+             <button type="button" data-album-section="albumMemories">${use('sparkle')}<span>${sv.album.sections.memories}</span></button>
+             <button type="button" data-album-section="albumPhotos">${CAMERA}<span>${sv.album.sections.photos}</span></button>
            </nav>
          </div>
          <div class="pause-options" id="pauseOptions">

@@ -37,6 +37,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   const byId = <T extends HTMLElement>(id: string) => doc.getElementById(id) as T;
   const back = byId('pause');
   const panel = back.querySelector<HTMLElement>('.panel')!;
+  const head = panel.querySelector<HTMLElement>('.panel-head')!;
   const albumNav = byId('albumNav');
   const albumLinks = [...albumNav.querySelectorAll<HTMLButtonElement>('[data-album-section]')];
   const styles: Record<PlayStyle, HTMLButtonElement> = { aventyr: byId('styleAventyr'), lugnt: byId('styleLugnt') };
@@ -78,6 +79,12 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   };
   let settings = settingsFor('aventyr');
   let open = false;
+
+  // Safe insets and larger words may wrap the bookmarks. The next focused item must still clear the whole
+  // sticky heading, including when a bonus course has only its photo section and needs no bookmarks.
+  const sizeHeader = () => { panel.style.scrollPaddingTop = `${head.offsetHeight + 12}px`; };
+  const Resize = doc.defaultView?.ResizeObserver;
+  if (Resize) new Resize(sizeHeader).observe(head);
 
   // These are places on the same paper, not routes or filtered collections. Focus follows the jump so
   // Tab and the gamepad continue into that section, and the browser's Back button keeps its usual meaning.
@@ -213,7 +220,12 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
     const returning = from !== undefined;
     page = next;
     back.dataset.page = next;
-    albumNav.hidden = next !== 'bag';
+    for (const button of albumLinks) {
+      const section = byId(button.dataset.albumSection!);
+      button.hidden = !section || section.hidden;
+    }
+    albumNav.hidden = next !== 'bag' || albumLinks.filter(button => !button.hidden).length < 2;
+    sizeHeader();
     for (const [name, element] of Object.entries(pages)) element.hidden = name !== next;
     options.hidden = next === 'reference';
     reference.hidden = next !== 'reference';
