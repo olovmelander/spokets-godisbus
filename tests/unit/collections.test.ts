@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { Mesh, Box3, Vector3 } from 'three';
-import { COURSES, loadAdventure2 } from '../../src/content/chapters';
-import { addCollections, COLLECTION_PLACES, collectionReceipts, keepsakesFound, memoryFound, STORM_MEMORIES } from '../../src/content/collections';
+import { ADVENTURE2, BONUS, COURSES, STORY, loadAdventure2 } from '../../src/content/chapters';
+import { addCollections, COLLECTION_PLACES, collectionReceipts, KEEPSAKES, keepsakesFound, memoryFound, STORM_MEMORIES } from '../../src/content/collections';
 import { album, albumComplete, KINDS } from '../../src/content/kinds';
-import { lostFound } from '../../src/content/lost';
+import { lostFound, YARD_LOST } from '../../src/content/lost';
 import { STORM_SWEETS, stormSticker } from '../../src/content/storm-sweets';
 import { FIND_SHAPES } from '../../src/content/collection-items';
 import { sv } from '../../src/content/sv';
 import { stormSweet } from '../../src/render/storm-sweet';
 import { souvenir } from '../../src/render/souvenir';
-import { rememberFlags, visitChapter } from '../../src/save/journey';
+import { exploreChapter, ghostNamed, rememberFlags, storyFinished, visitChapter } from '../../src/save/journey';
 import { newSave, readSave } from '../../src/save/store';
 import { Sim } from '../../src/sim/sim';
 import { STEP } from '../../src/sim/constants';
 import { createPhotoMoments } from '../../src/content/photos';
+import { cobbleMemory } from '../../src/content/cobbles';
+import { albumHtml } from '../../src/ui/album';
 
 await loadAdventure2();
 const idle = {x:0,y:0,hop:false,hopHeld:false,act:false};
@@ -34,6 +36,60 @@ describe('one collection through both adventures',()=>{
     expect(keepsakesFound(loaded.save.flags)).toContain('lampfriends');
     expect(visitChapter(loaded.save,'garden',true).flags).toEqual(loaded.save.flags);
     expect(albumComplete(Object.keys(KINDS).filter(id=>!STORM_SWEETS[id]))).toBe(true);
+  });
+
+  it('preserves both adventures’ complete collections and the music discoveries while explicitly restarting every chapter', () => {
+    const chapters = [...STORY, ...BONUS, ...ADVENTURE2];
+    const save = newSave(1, 'morgonen');
+    save.checkpoint = 2;
+    save.checkpoints = {};
+    for (const chapter of chapters) {
+      save.flags[chapter.id] = ['goal'];
+      save.candy[chapter.id] = [0, 1];
+      save.side ??= {};
+      save.side[chapter.id] = [0];
+      save.placed[chapter.id] = (chapter.movers ?? []).map(mover => mover.id);
+      save.checkpoints[chapter.id] = (chapter.checkpoints?.length ?? 0) - 1;
+    }
+    for (const [kind, item] of Object.entries(KINDS)) save.flags[item.chapter]!.push(`found:${kind}`);
+    for (const thing of YARD_LOST) save.flags.garden!.push(`lost:${thing}`);
+    for (const [chapter, item] of Object.entries(COLLECTION_PLACES)) save.flags[chapter]!.push(`lost:${item.find}`);
+    for (const item of Object.values(KEEPSAKES)) save.flags[item.chapter]!.push(item.flag);
+    for (const item of Object.values(STORM_MEMORIES)) save.flags[item.chapter]!.push(item.flag);
+    for (const id of ['garden', 'granskog', 'myren', 'berget']) save.flags[id]!.push('memory');
+    save.flags.epilog!.push('beat:named', 'heard:cobbles', 'teeth', 'bedtime');
+    save.flags.garden!.push('dewsong', 'note:dew1', 'note:dew2', 'note:dew3', 'note:dew4');
+    save.flags.berget!.push('note:1', 'note:2', 'note:3', 'note:4', 'note:5');
+    const before = structuredClone(save);
+    const collection = (flags: typeof save.flags) => ({
+      sweets: album(flags), lost: lostFound(flags), keepsakes: keepsakesFound(flags),
+      memories: [...['garden', 'granskog', 'myren', 'berget'], ...Object.keys(STORM_MEMORIES)].filter(id => memoryFound(id, flags)),
+      cobbles: cobbleMemory(flags), golden: albumComplete(album(flags)),
+    });
+    const expected = collection(save.flags);
+    let replay = save;
+    for (const chapter of chapters) {
+      replay = exploreChapter(replay, chapter.id);
+      expect(replay.checkpoint, chapter.id).toBe(-1);
+      expect(replay.placed[chapter.id], chapter.id).toEqual([]);
+      // The first autosave sees the old chapter completion in history and fresh live progress.
+      replay.flags[chapter.id] = rememberFlags(replay.flags[chapter.id]!, new Set(replay.flags[chapter.id]!.filter(flag => flag !== 'goal')), chapter.id);
+      const loaded = readSave(JSON.stringify(replay));
+      expect(loaded.kind).toBe('save');
+      if (loaded.kind !== 'save') return;
+      replay = loaded.save;
+      expect(collection(replay.flags), chapter.id).toEqual(expected);
+      expect(replay.candy).toEqual(before.candy);
+      expect(replay.side).toEqual(before.side);
+      expect(replay.checkpoints).toEqual(before.checkpoints);
+      expect(storyFinished(replay.flags)).toBe(true);
+      expect(ghostNamed(replay.flags)).toBe(true);
+    }
+    expect(replay.flags.garden).toEqual(expect.arrayContaining(['dewsong', 'note:dew1', 'note:dew2', 'note:dew3', 'note:dew4']));
+    expect(replay.flags.epilog).toContain('heard:cobbles');
+    expect(replay.flags.epilog).not.toContain('teeth');
+    expect(albumHtml(album(replay.flags), lostFound(replay.flags), keepsakesFound(replay.flags))).toContain('data-reward="golden"');
+    expect(save).toEqual(before);
   });
 
   it('adds exactly eight distinct special sweets without renumbering the trail or side candy',()=>{
