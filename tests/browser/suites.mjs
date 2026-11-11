@@ -60,6 +60,7 @@ export const SUITES = [
   ['finale-stage', 196],
   ['model-installation', 39],
   ['shared-home', 43],
+  ['home-console', 160],
   ['aventyr2', 91],
 ];
 

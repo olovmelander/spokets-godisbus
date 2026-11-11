@@ -1,5 +1,34 @@
 # Handover
 
+## State (11 November 2026): Godisracet at the television
+
+- **Olov asked:** connect an interactive console to the TV, port the kart game from `pekkas-pokal`, retain
+  Varggropen, improve the arcade handling and visuals, and connect its identity to Elof's story. This work starts
+  from PR #261's published merge `c9a8b4f`, with separate core, renderer, controls, home and review worktrees.
+- **The port:** source `776236004403fb18423cc078ba4a82a6324bde14`; the original 77-point, 665-metre trace,
+  tyre/yaw/contact model, racing-line AI, track materials and camera remain the foundation. The original app's
+  shell, participant identities and advertisements are excluded. Attribution and interpretation limits are
+  in `LICENSES.md` and `docs/tv-console.md`.
+- **The game:** **Godisracet – Varggropen**, three laps against original wooden fox/owl/hare toys. The player's
+  crown kart, golden sweets, forest light and northern-light colours link the activity to Elof's world without
+  introducing new family likenesses or spoiling the ghost's name. Deliberate cornering charges blue/gold drift
+  boosts; golden sweets hold one extra boost. Automatic gas, manual controls, Lugnt and keyboard/touch/gamepad
+  input support different players. Race candy never changes the adventure's collection.
+- **The house:** one small console, controller and connected cables sit at the shared television in all four
+  home chapters. Nearby story actions keep their ordinary button; the TV is an explicit optional choice.
+  The same live house/character/story state waits while the race owns input, rendering and sound. Closing
+  returns to that state and releases race controls. Loading cancellation/failure, Pause, visibility and
+  context recovery have explicit ownership. Optional local records are scoped by player, reset generation
+  and difficulty, without writing an adventure save.
+- **Validation:** the starting revision passes all 2,636 tests and a native private-model 390×844 touch
+  boot/movement check with no runtime/resource errors. New core regressions include full digital-steering
+  three-lap races in both modes, exact trace and original physics fixtures, real drift/boost/pickup behavior,
+  frame-rate independence and recovery. Input/audio, record and home lifecycle checks pass separately.
+  The final combined build, browser suites, mobile visual review, exact CI and publication evidence are
+  recorded in this continuation's PR before delivery. Browser viewport checks do not establish device FPS.
+- **Scope:** no private export, voice recording, release boundary or rule changes; no external game requests
+  or paid tools. All new models/textures/effects and sound are procedural. No work needs Olov's computer.
+
 ## State (11 November 2026): one coherent home interior
 
 - **Olov asked:** separate the television from the sofa, make the bathroom a real part of the house, and
@@ -5392,6 +5421,12 @@ record identify the exact published revision.
 
 ## Next
 
+**TV console (11 November).** Preserve the exact Varggropen trace and the source tyre model underneath the
+explicit arcade extension. Keep one owner of modal input/time/audio: the live house must not advance or
+save while a race runs, and exiting must release controls. New racer figures are original wooden toys;
+family likenesses stay private. Best times remain optional and independent of adventure collections.
+`docs/tv-console.md` records controls and provenance. No local Blender work is needed.
+
 **Shared home (11 November).** Keep `src/content/home-layout.json` as the common placement contract for
 content, renderer and public fixture generator. The bathroom occupies the real rear-wall opening; preserve
 its floor/threshold separation from the continuous wood floor. Keep the TV programme in its model holder
@@ -5935,6 +5970,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| TV console / Godisracet (11 Nov) | Port Varggropen and add an optional TV kart race with improved handling and story-linked visuals | One cloud continuation with parallel core, renderer, controls, host and browser review | — / 1 request | Original trace and physics, drift/sweet boosts, wooden toys, shared-home entry and exact return; local player records and mobile controls. |
 | Shared home composition (11 Nov) | Separate TV and sofa, integrate the bathroom and align the interior across home chapters | One cloud continuation with parallel public modelling, staging, geometry and native visual review | — / 1 request | One shared layout, complete bathroom and clear furniture; adapted scenes, saved-progress checks and phone composition review. |
 | Flärken's flickering shore (11 Nov) | Stabilise the near outlet bank while the carving floats downstream | One focused cloud continuation with geometry work and independent source/temporal review | — / 1 report | A submerged mouth replaces the water-level shelf; the regression measures real mesh area against the animated swell. |
 | Green garden hedges (11 Nov) | Make both final hedges large, green and visibly leafy | One focused cloud continuation with shared renderer work and phone-view review | — / 1 request | Existing playable geometry and flights retained; shared foliage visible in day and storm lighting, including Low. |
@@ -6202,6 +6238,8 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The requested TV console and Varggropen kart game are implemented in this continuation; no part is deferred to a later chapter.
+
 - The 11 November request for a coherent home, separate TV and integrated bathroom is addressed in this continuation.
 - The 11 November report of Flärken's flickering near river bank is addressed in this continuation.
 - The 11 November request for large green hedges at both garden endings is addressed in this continuation.
@@ -6232,7 +6270,7 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore and shared-home changes add no blocking question. The existing questions below remain separate.
+The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore shared-home changes and the requested TV console add no blocking question. The existing questions below remain separate.
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.

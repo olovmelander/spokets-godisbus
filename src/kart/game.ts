@@ -64,6 +64,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
   let easy = false, race = createRace({ easy }), disposed = false, suspended = false, mode: 'intro' | 'race' | 'paused' | 'result' | 'error' = 'intro';
   let raf = 0, previous = 0, frames = 0, lastHud = -1, lastCountdown = -1, previousLap = 1, noticeUntil = 0;
   let lastPickup = 0, lastBoost = 0, lastPhase = race.state.phase;
+  let padSelect = false, padBack = false, padDirection = 0;
   let view: ReturnType<typeof createKartView> | undefined;
   let sound: ReturnType<typeof createKartAudio> | undefined;
   let input: ReturnType<typeof createKartInput> | undefined;
@@ -90,6 +91,10 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
   function focusAction(action: string): void { [...root.querySelectorAll<HTMLElement>(`.kart-menu:not([hidden]) [data-action="${action}"]`)].find(e => e.getClientRects().length > 0)?.focus(); }
   function show(next: typeof mode): void {
     mode = next; root.dataset.mode = next;
+    // Held gas/brake at the finish or Pause must not become a menu click.
+    if (next !== 'race') {
+      const held = menuPad(); padSelect = held.a; padBack = held.b; padDirection = held.direction;
+    }
     intro.hidden = next !== 'intro'; pausedPanel.hidden = next !== 'paused'; results.hidden = next !== 'result'; errorPanel.hidden = next !== 'error'; raceUi.hidden = next !== 'race';
     input?.setEnabled(next === 'race' && !suspended); sound?.suspend(next !== 'race' || suspended);
     if (next === 'race') canvas.focus(); else focusAction(next === 'intro' ? 'start' : next === 'paused' ? 'resume' : next === 'result' ? 'restart' : 'exit');
@@ -157,13 +162,16 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     if (noticeUntil && state.elapsed > noticeUntil) { query('.kart-notice').textContent = ''; noticeUntil = 0; }
     drawMap();
   }
-  let padSelect = false, padBack = false, padDirection = 0;
+  function menuPad(): { a: boolean; b: boolean; direction: number } {
+    let pad: Gamepad | null | undefined;
+    try { pad = navigator.getGamepads?.().find(p => p?.connected && (!p.mapping || p.mapping === 'standard')); } catch { /* Keyboard and touch still work. */ }
+    return { a: !!pad?.buttons[0]?.pressed, b: !!pad?.buttons[1]?.pressed,
+      direction: pad?.buttons[13]?.pressed || (pad?.axes[1] ?? 0) > .6 ? 1 : pad?.buttons[12]?.pressed || (pad?.axes[1] ?? 0) < -.6 ? -1 : 0 };
+  }
   function pollMenu(): void {
     input?.pollMenu();
     if (disposed || mode === 'race') return;
-    const pad = navigator.getGamepads?.().find(p => p?.connected);
-    const a = !!pad?.buttons[0]?.pressed, b = !!pad?.buttons[1]?.pressed;
-    const direction = pad?.buttons[13]?.pressed || (pad?.axes[1] ?? 0) > .6 ? 1 : pad?.buttons[12]?.pressed || (pad?.axes[1] ?? 0) < -.6 ? -1 : 0;
+    const { a, b, direction } = menuPad();
     if (direction && direction !== padDirection) {
       const items = focusable().filter(e => e !== canvas), index = items.indexOf(document.activeElement as HTMLElement);
       items[(index + direction + items.length) % items.length]?.focus();
@@ -245,6 +253,8 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
       position: race.state.position, lap: race.state.player.lap, driftCharge: race.state.player.driftCharge,
       boostTime: race.state.player.boostTime, item: race.state.item, events: { ...race.state.events },
       result: race.state.result, autoGas: input?.autoGas, device: input?.device, render: view?.stats(),
+      drivers: race.state.drivers.map(({ id, distance, lane, heading, yawRate, u, w, speed, slip, assist, finishTime }) =>
+        ({ id, distance, lane, heading, yawRate, u, w, speed, slip, assist, finishTime })),
     } : {},
   };
 }
