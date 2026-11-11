@@ -127,10 +127,15 @@
   --dur-panel: 240ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-paper: cubic-bezier(0.3, 1.25, 0.5, 1);
-  /* A sheet lying on the scene; a plank's light top and shaded foot, and the shadow it throws. */
-  --sheet-shadow: 0 1px 0 var(--paper-edge), 0 12px 26px rgb(30 20 10 / 0.34);
-  --bevel: inset 0 2px 0 rgb(255 247 228 / 0.6), inset 0 -2px 0 rgb(90 58 30 / 0.22);
-  --wood-shadow: 0 7px 12px rgb(30 18 8 / 0.26);
+  /* Warm paper and carved paint share soft edges; the live HUD sits lightly over the picture. */
+  --sheet-shadow: 0 1px 0 var(--paper-edge), 0 10px 24px rgb(30 20 10 / 0.22);
+  --bevel: inset 0 1px 0 rgb(255 247 228 / 0.55), inset 0 -1px 0 rgb(90 58 30 / 0.16);
+  --wood-shadow: 0 4px 9px rgb(30 18 8 / 0.18);
+  --hud-paper: #fff8eb;
+  --hud-line: #dfcfb1;
+  --hud-shadow: 0 1px 2px rgb(30 20 10 / 0.12), 0 4px 12px rgb(30 20 10 / 0.12);
+  --hud-edge: 12px;
+  --hud-gap: 12px;
 }
 
 /* The page never scrolls, selects or zooms: it is a game surface (plan §6.7). */
@@ -155,6 +160,12 @@ body {
   color: var(--ink);
   /* Touch sizes grow by 15% on tablets (plan §4.1). */
   --k: 1;
+  /* One utility row. Speech and reminders use the same lower edge, including tablet-sized targets. */
+  --hud-hit: calc(64px * var(--k));
+  --hud-row-top: calc(env(safe-area-inset-top) + 10px);
+  --hud-row-bottom: calc(var(--hud-row-top) + var(--hud-hit));
+  --hud-content-top: calc(var(--hud-row-bottom) + 10px);
+  --hud-tools-width: calc(var(--hud-edge) + var(--hud-hit) * 2 + var(--hud-gap));
 }
 
 @media (pointer: coarse) and (min-width: 600px) and (min-height: 600px) {
@@ -220,9 +231,9 @@ textarea {
   height: 116px;
   margin: -58px 0 0 -58px;
   border-radius: 50%;
-  border: 2px solid rgb(255 255 255 / 0.7);
-  background: rgb(255 255 255 / 0.16);
-  opacity: 0.4;
+  border: 2px solid rgb(255 255 255 / 0.58);
+  background: rgb(255 255 255 / 0.09);
+  opacity: 0.32;
   transition: opacity 0.15s ease;
 }
 
@@ -254,15 +265,17 @@ textarea {
   gap: 2px;
   padding: 0;
   border-radius: 50%;
-  border: 3px solid var(--linden-rim);
+  border: 3px solid var(--hud-line);
   color: var(--ink-on-paint);
   font-size: calc(15px * var(--k));
   font-weight: 700;
   line-height: 1.05;
   pointer-events: auto;
   touch-action: none;
-  box-shadow: 0 3px 8px rgb(0 0 0 / 0.3);
-  transition: transform 0.06s ease;
+  background-image: var(--woodgrain, none);
+  background-blend-mode: soft-light;
+  box-shadow: var(--bevel), var(--hud-shadow);
+  transition: transform var(--dur-press) ease, box-shadow var(--dur-release) ease, opacity var(--dur-quick) ease;
 }
 
 .btn svg {
@@ -280,7 +293,9 @@ textarea {
 /* With nothing to use, Använd keeps its place but nearly steps out of the picture; it comes forward when there is
    something to do (research §2: controls follow the context). */
 .btn:disabled {
-  opacity: 0.2;
+  opacity: 0.22;
+  filter: saturate(0.6);
+  box-shadow: none;
 }
 
 /* Hoppa: 116 px, lower right, about 2 cm on the family's phones. Använd: 100 px, up and to the left of it on the
@@ -313,13 +328,13 @@ textarea {
   width: max-content;
   max-width: 150px;
   padding: 6px 10px;
-  border-radius: 6px;
-  background-color: var(--paper);
+  border-radius: 10px;
+  background-color: var(--hud-paper);
   color: var(--ink);
   font-size: 16px;
   line-height: 1.15;
   text-align: center;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  box-shadow: var(--hud-shadow);
 }
 
 .btn-act:disabled:not(.pulse) span {
@@ -358,7 +373,7 @@ body.big-text .bubble {
 }
 
 body.big-text .notice {
-  font-size: 19px;
+  font-size: 24px;
 }
 
 body.big-text .btn {
@@ -422,8 +437,8 @@ body.big-text {
 .bag {
   position: absolute;
   z-index: 2;
-  left: calc(env(safe-area-inset-left) + 12px);
-  top: calc(env(safe-area-inset-top) + 10px);
+  left: calc(env(safe-area-inset-left) + var(--hud-edge));
+  top: var(--hud-row-top);
   display: flex;
   align-items: center;
   gap: 2px;
@@ -533,7 +548,7 @@ body.big-text {
   z-index: 1;
   width: calc(44px * var(--k));
   height: calc(52px * var(--k));
-  filter: drop-shadow(0 2px 3px rgb(30 18 8 / 0.45));
+  filter: drop-shadow(0 2px 2px rgb(30 18 8 / 0.24));
 }
 
 /* The count and the stickers on a tag of Moa's paper, tucked under the bag's edge. */
@@ -543,10 +558,10 @@ body.big-text {
   gap: 6px;
   margin-left: -6px;
   padding: 4px 10px 5px 12px;
-  border-radius: 3px 7px 5px 4px;
-  background-color: var(--paper);
-  box-shadow: 0 2px 6px rgb(30 18 8 / 0.35);
-  rotate: -2deg;
+  border-radius: 8px 12px 10px 8px;
+  background-color: var(--hud-paper);
+  box-shadow: var(--hud-shadow);
+  rotate: -1deg;
 }
 
 .bag-tag #bagCount {
@@ -563,32 +578,45 @@ body.big-text {
   transition: transform 0.2s ease-out;
 }
 
-/* --- the pause button, top right: 64 px (plan §4.1) ---------------------------------------------- */
+/* --- A single utility row. The carved discs are smaller than their unchanged 64 px touch targets. */
 .corner {
   position: absolute;
   z-index: 2;
-  right: calc(env(safe-area-inset-right) + 12px);
-  top: calc(env(safe-area-inset-top) + 10px);
-  width: calc(64px * var(--k));
-  height: calc(64px * var(--k));
+  right: calc(env(safe-area-inset-right) + var(--hud-edge));
+  top: var(--hud-row-top);
+  width: var(--hud-hit);
+  height: var(--hud-hit);
   display: grid;
   place-items: center;
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background-color: var(--linden);
+  background: transparent;
   color: var(--wood-dark);
   touch-action: manipulation;
 }
 
+.corner::before {
+  content: '';
+  position: absolute;
+  inset: calc(8px * var(--k));
+  border-radius: 50%;
+  background: var(--woodgrain, none), var(--hud-paper);
+  background-blend-mode: soft-light;
+  box-shadow: inset 0 0 0 1px var(--hud-line), var(--bevel), 0 2px 0 var(--linden-edge), var(--hud-shadow);
+  pointer-events: none;
+  transition: transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
+}
+
 .corner svg {
+  position: relative;
   width: 30px;
   height: 30px;
 }
 
-/* The helper's button sits under the pause button, as big as it, 14 px below (plan §4.1's 64 px and 12 px). */
+/* Help sits beside Pause, leaving the next row to the story; the hit targets remain 12 px apart. */
 .corner.help {
-  top: calc(env(safe-area-inset-top) + 10px + 64px * var(--k) + 14px);
+  right: calc(env(safe-area-inset-right) + var(--hud-edge) + var(--hud-hit) + var(--hud-gap));
 }
 
 /* Under the portrait, three 8 px pips: how far the helper has come, filled one by one as he asks again and emptied
@@ -599,7 +627,7 @@ body.big-text {
 .help-pips {
   position: absolute;
   left: 50%;
-  bottom: calc(9px * var(--k));
+  bottom: calc(12px * var(--k));
   display: flex;
   gap: 3px;
   translate: -50% 0;
@@ -629,6 +657,7 @@ body.big-text {
 
 .btn-act.pulse:disabled {
   opacity: 0.6;
+  filter: none;
 }
 
 @keyframes act-breath {
@@ -651,13 +680,13 @@ body.big-text {
   align-items: center;
   gap: 8px;
   padding: 6px 12px 6px 6px;
-  border-radius: 10px;
-  background-color: var(--paper);
+  border-radius: 12px;
+  background-color: var(--hud-paper);
   color: var(--ink);
   font-size: 16px;
   font-weight: 700;
   line-height: 1.15;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+  box-shadow: var(--hud-shadow);
   pointer-events: none;
 }
 
@@ -2804,37 +2833,36 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   }
 }
 
-/* A line of news at the top, gone after a few seconds. */
-/* A find or a thanks: like a bubble, its full width between the corners and above them (in-play.md rows 14-15). */
+/* A find hangs from the bag after speech has had its turn. The HUD preserves its remaining reading time. */
 .notice {
   position: absolute;
   z-index: 3;
-  left: 0;
-  right: 0;
-  margin-inline: auto;
+  left: calc(env(safe-area-inset-left) + var(--hud-edge));
+  top: var(--hud-content-top);
+  margin: 0;
   width: max-content;
-  top: calc(env(safe-area-inset-top) + 14px);
-  max-width: min(70%, 520px, 100% - 256px);
-  padding: 10px 18px;
-  border-radius: 6px 9px 7px 8px;
-  background-color: var(--paper);
-  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
-  font-size: 17px;
-  text-align: center;
-  text-wrap: balance;
+  max-width: min(400px, calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right) - var(--hud-edge) * 2));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid var(--hud-line);
+  border-radius: 12px 16px 14px 10px;
+  background-color: var(--hud-paper);
+  box-shadow: var(--hud-shadow);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: left;
   pointer-events: none;
-}
-
-@media (orientation: portrait) {
-  .notice {
-    top: calc(env(safe-area-inset-top) + 160px);
-    max-width: calc(100% - 24px);
-  }
 }
 
 .notice[hidden] {
   display: none;
 }
+
+body:has(#bubble:not([hidden])) .notice { visibility: hidden; }
 
 /* --- small text over the game ------------------------------------------------------------------- */
 .hint {
@@ -2948,32 +2976,33 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   display: none;
 }
 
-/* An untimed purpose below the corner buttons. Dialogue gets the player's attention while it is said. */
+/* One quiet bookmark below the utility row. Its full goal and motive remain untimed; dialogue takes priority. */
 .story-purpose {
   position: absolute;
-  left: calc(env(safe-area-inset-left) + 12px);
-  top: calc(env(safe-area-inset-top) + 82px);
-  right: calc(env(safe-area-inset-right) + 82px);
+  left: calc(env(safe-area-inset-left) + var(--hud-edge));
+  top: var(--hud-content-top);
   width: max-content;
-  max-width: min(390px, calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right) - 94px));
+  max-width: min(430px, calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right) - var(--hud-edge) * 2));
   box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 7px 11px;
-  border-radius: 6px 9px 7px 8px;
-  background-color: var(--paper);
-  box-shadow: 0 3px 10px rgb(0 0 0 / 0.22);
+  border: 1px solid var(--hud-line);
+  border-left: 3px solid var(--paint-green);
+  border-radius: 4px 12px 12px 4px;
+  background-color: var(--hud-paper);
+  box-shadow: var(--hud-shadow);
   color: var(--ink);
   font-size: 17px;
   line-height: 1.3;
   pointer-events: none;
 }
-.story-purpose > span:last-child { display: grid; gap: 1px; }
-.story-purpose small { font-size: 13px; color: var(--ink-soft); }
-.story-purpose-reveal { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--paper-edge); }
+.story-purpose > span:last-child { min-width: 0; }
+.story-purpose small { margin-right: 6px; font-size: 13px; color: var(--ink-soft); }
+.story-purpose-reveal { display: block; margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--hud-line); }
 .story-purpose-reveal[hidden] { display: none; }
-#storyPurposeIcon { display: grid; color: var(--crayon-blue); }
+#storyPurposeIcon { display: grid; flex: none; color: var(--paint-green); }
 #storyPurposeIcon svg { width: 24px; height: 24px; }
 .story-purpose[data-guide]:not([data-guide=""]) { border-left: 3px solid var(--crayon-blue); }
 .story-purpose[data-guide]:not([data-guide=""]) #storyPurposeIcon svg { width: 36px; height: 36px; }
@@ -2981,22 +3010,23 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 body:has(#bubble:not([hidden])) .story-purpose,
 body:has(#notice:not([hidden])) .story-purpose { visibility: hidden; }
 body.big-text .story-purpose { font-size: 21px; }
-/* Short landscape screens have room between the corner buttons, above the people in the scene. */
+/* On short landscape screens the bookmark uses the sky between the bag and both utility buttons. */
 @media (max-height: 500px) and (orientation: landscape) {
   .story-purpose {
     left: calc(env(safe-area-inset-left) + 120px);
-    right: calc(env(safe-area-inset-right) + 82px);
-    top: calc(env(safe-area-inset-top) + 10px);
+    right: calc(env(safe-area-inset-right) + var(--hud-tools-width) + var(--hud-gap));
+    top: var(--hud-row-top);
     width: auto;
     max-width: none;
     padding-block: 3px;
   }
   .story-purpose > span:last-child {
+    display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 8px;
+    column-gap: 6px;
     align-items: baseline;
-    min-width: 0;
   }
+  .story-purpose small { margin-right: 0; }
   .story-purpose-reveal { grid-column: 1 / -1; }
 }
 .story-recap, .story-title, .story-handoff { padding: 12px; border-radius: 14px; background-color: var(--paper-2); line-height: 1.4; }
@@ -3195,7 +3225,8 @@ body.follow-finger .stick-base {
 }
 
 button.bag {
-  min-height: 64px;
+  min-width: var(--hud-hit);
+  min-height: var(--hud-hit);
   border: 0;
   color: inherit;
   font-family: inherit;
@@ -3553,22 +3584,17 @@ body.scene-bars .scene-caption .place {
   rotate: 4deg;
 }
 
-/* Linden's grain under everything pressed, its light top, its 4 px thickness and its shadow. */
+/* Linden's grain on the book's buttons; the live utility discs and touch paint have their lighter treatment. */
 :where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute, .ask button,
-  .corner, .panel-close svg, .panel-up svg, .btn) {
+  .panel-close svg, .panel-up svg) {
   background-image: var(--woodgrain, none);
   box-shadow: var(--bevel), 0 4px 0 var(--wood-dark), var(--wood-shadow);
   transition: transform var(--dur-release) var(--ease-out), box-shadow var(--dur-release) var(--ease-out);
 }
 
 /* The small discs in a header and the round buttons lie lower: 3 px. */
-:where(.corner, .panel-close svg, .panel-up svg, .round svg, .round-back, .photo-step) {
+:where(.panel-close svg, .panel-up svg, .round svg, .round-back, .photo-step) {
   box-shadow: inset 0 0 0 2px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
-}
-
-/* The corner discs have a worn rim, and the icon is cut in: a light lip under it. */
-.corner {
-  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
 }
 
 :where(.corner, .round-back, .tile, .wide:not(.go)) svg {
@@ -3584,10 +3610,13 @@ body.scene-bars .scene-caption .place {
 }
 
 .btn-hop {
-  box-shadow: var(--bevel), 0 4px 0 var(--paint-red-dark), var(--wood-shadow);
+  box-shadow: var(--bevel), 0 2px 0 var(--paint-red-dark), var(--hud-shadow);
 }
 
-.btn-act,
+.btn-act {
+  box-shadow: var(--bevel), 0 2px 0 var(--paint-green-dark), var(--hud-shadow);
+}
+
 .ask .yes {
   box-shadow: var(--bevel), 0 4px 0 var(--paint-green-dark), var(--wood-shadow);
 }
@@ -3597,7 +3626,7 @@ body.scene-bars .scene-caption .place {
 }
 
 /* Pressed, a plank sinks 3 px onto its edge in 80 ms; it rises again in 140 ms. */
-:where(.wide:not(.small), .tile, .start-style, .round-back, .photo-step, .ask button, .corner):active,
+:where(.wide:not(.small), .tile, .start-style, .round-back, .photo-step, .ask button):active,
 :where(.round, .panel-close, .panel-up):active svg,
 .mute:active {
   transform: translateY(3px);
@@ -3625,8 +3654,10 @@ body.scene-bars .scene-caption .place {
   box-shadow: none;
 }
 
-.corner:active {
-  box-shadow: inset 0 0 0 3px var(--linden-rim), var(--bevel), 0 1px 0 var(--wood-dark), 0 3px 6px rgb(30 18 8 / 0.2);
+.corner:active::before {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 1px var(--hud-line), var(--bevel), 0 1px 0 var(--linden-edge), var(--hud-shadow);
+  transition-duration: var(--dur-press);
 }
 
 /* Candy's shine, the only one in the UI: a white gleam at the upper left of each sweet (row 19). */
@@ -3634,37 +3665,7 @@ body.scene-bars .scene-caption .place {
   background-image: radial-gradient(ellipse 30% 34% at 42% 30%, rgb(255 255 255 / 0.55), transparent 72%);
 }
 
-/* --- what the HUD keeps to itself (docs/ux-audit/in-play.md rows 1, 13 and 18) -------------------------------
-   A find, a thanks: a tag of Moa's paper hanging from the bag, with the sweet's sticker or a drawn sparkle, for
-   three seconds. It never covers what is being said, which goes on beside it. */
-.notice {
-  left: calc(env(safe-area-inset-left) + 14px);
-  right: auto;
-  margin: 0;
-  top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
-  max-width: min(330px, calc(100% - 28px));
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 14px 8px 8px;
-  font-size: 19px;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: left;
-  rotate: -1.5deg;
-}
-
-.notice[hidden] {
-  display: none;
-}
-
-@media (orientation: portrait) {
-  .notice {
-    top: calc(env(safe-area-inset-top) + 10px + 56px * var(--k) + 4px);
-    max-width: min(330px, calc(100% - 28px));
-  }
-}
-
+/* --- what the HUD keeps to itself: the little mark on a find's tag ------------------------------- */
 .notice-mark {
   flex: none;
   display: grid;
@@ -3786,7 +3787,8 @@ body.keys-learned .hint {
 @keyframes tag-swing {
   from {
     opacity: 0;
-    rotate: -9deg;
+    translate: 0 -4px;
+    rotate: -1.5deg;
   }
 }
 
@@ -3872,8 +3874,9 @@ body.keys-learned .hint {
 :root[data-motion="reduce"] body.scene-bars .scene-bar {
   opacity: 1;
 }
+:root[data-motion="reduce"] .corner::before,
 :root[data-motion="reduce"] :where(.wide:not(.small), .tile, .start-style, .round svg, .round-back, .photo-step, .mute,
-  .ask button, .corner, .panel-close svg, .panel-up svg, .btn) {
+  .ask button, .panel-close svg, .panel-up svg, .btn) {
   transition: box-shadow var(--dur-release) var(--ease-out);
 }
 :root[data-motion="reduce"] #hopBtn {
