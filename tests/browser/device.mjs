@@ -90,12 +90,17 @@ try {
   const pausedSteps = value.state.steps;
   await frames(page);
   check('simulation stays stopped after resizing', (await read(page)).state.steps === pausedSteps);
-  await page.tap('#resumeBtn'); await frames(page, 8);
+  await page.tap('#resumeBtn');
+  // Resize releases input, not momentum. Braking from full speed takes at most 18 fixed 1/120 s steps;
+  // eight RAF callbacks can run fewer steps, depending on frame timing. Observe 60 actual
+  // steps, with a wall-clock bound, before checking the same strict stop while the key is still down.
+  await page.waitForFunction((from) => window.__godis.state().steps >= from + 60, pausedSteps, { timeout: 20000 });
   // The screen lock is asked for asynchronously: in CI's software drawing eight frames were once not enough for it
   // (7 November 2026). Wait for it, a few seconds at most, then hold both predicates exactly as before.
   for (let tries = 0; tries < 30 && (await read(page)).wakeRequests < 3; tries++) await frames(page);
   value = await read(page);
   check('resuming requests the screen lock again', value.wakeRequests === 3, `${value.wakeRequests} requests`);
+  check('resumed play stays active while braking finishes', !value.state.paused && !value.state.title);
   check('held movement was released, so resuming does not keep walking', Math.abs(value.state.vx) < 0.01, `vx ${value.state.vx}`);
   await page.keyboard.up('ArrowRight');
   await page.evaluate(() => { window.__device.hidden = true; document.dispatchEvent(new Event('visibilitychange')); }); await frames(page);
