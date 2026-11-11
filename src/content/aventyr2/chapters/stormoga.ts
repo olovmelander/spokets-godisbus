@@ -267,13 +267,15 @@ const SCENES: SceneDef[] = [
     soundQuiet: [0.6, 6.2],
     sounds: [{ at: 2.2, sound: 'taste' }, { at: 2.8, sound: 'swell' }, { at: 3.2, sound: 'poff' }],
     lines: [
-      { at: 5.6, who: 'mamma', line: 'soMamma' },
-      { at: 7.4, who: 'pappa', line: 'soPappa' },
-      { at: 9.2, who: 'moa', line: 'soMoa' },
-      { at: 11.0, who: 'bertil', line: 'soBertil' },
-      { at: 12.8, who: 'mormor', line: 'soMormor' },
-      { at: 14.6, who: 'morfar', line: 'soMorfar' },
-      { at: 16.4, who: 'elof', line: 'soHome' },
+      // Keep existing dialogue receipts stable when the slipper joke precedes the Thailand line.
+      { id: 'stor:0', at: 5.6, who: 'mamma', line: 'soMamma' },
+      { id: 'stor:1', at: 7.4, who: 'pappa', line: 'soPappa' },
+      { id: 'stor:2', at: 9.2, who: 'moa', line: 'soMoa' },
+      { id: 'stor:slippers', at: 11.0, who: 'bertil', line: 'soBertilSlippers' },
+      { id: 'stor:3', at: 11.9, who: 'bertil', line: 'soBertil' },
+      { id: 'stor:4', at: 12.8, who: 'mormor', line: 'soMormor' },
+      { id: 'stor:5', at: 14.6, who: 'morfar', line: 'soMorfar' },
+      { id: 'stor:6', at: 16.4, who: 'elof', line: 'soHome' },
     ],
     stage: {
       // The sweet is in his hand, held up and then at his lips (../../../render/stage.ts).

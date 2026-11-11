@@ -4,9 +4,11 @@
 
 - **Olov asked:** give Bertil a short wish for an adventure in slippers before he mentions Thailand near the
   end of Äventyr 2. This continuation starts from PR #264's published merge `804ca43`.
-- **Words:** in Stormens öga he now says “Hoppas att nästa äventyr blir i tofflor! Snart åker vi ju till Thailand.”
-  The existing `soBertil` line and receipt are retained; its reading hold gives the whole text time before Mormor.
-  The future recording catalog matches the words. No recording, scene timing, model or release boundary changes.
+- **Words:** in Stormens öga he first says “Hoppas att nästa äventyr blir i tofflor!”, then the existing
+  “Jag drömmer om Thailand. Snart åker vi!”. Two short reading cards preserve the 42-character line limit;
+  each finishes before the next. All original `stor:0`–`stor:6` receipts are explicit and retained, with a new
+  `stor:slippers` receipt for the joke. The future recording catalog matches. Scene duration, recordings,
+  models and release boundary stay as they are.
 - **Validation:** the published baseline already passes all 2,703 tests and its production checks. This text-only
   continuation uses the existing catalog/scene checks and a built-game phone/desktop reading review; final gates,
   CI and publication evidence are recorded in its PR. No new bug or blocking question; no work needs Olov's computer.
@@ -5480,8 +5482,9 @@ record identify the exact published revision.
 
 ## Next
 
-**Bertil's slippers (11 November, late evening).** Keep the slipper wish before the coming Thailand trip in
-`soBertil`, with the matching future-recording metadata. Preserve the complete line's reading time before Mormor.
+**Bertil's slippers (11 November, late evening).** Keep `soBertilSlippers` before the coming Thailand trip in
+`soBertil`, with separate short reading cards and matching future-recording metadata. Preserve both complete
+lines' reading time before Mormor and keep the original scene receipts stable.
 
 **The jay in the opening (11 November, evening).** Keep the bird fixed at the actual window, and give all
 four family actors time to rise, walk around the furniture and settle before focusing on the awakening.
@@ -6106,8 +6109,8 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **Bertil's slippers (11 November, late evening):** no new known bug; only the existing finale line and its
-  recording metadata change.
+- **Bertil's slippers (11 November, late evening):** the joke uses its own short card so neither line exceeds
+  the adventure's reading-length limit; existing saved dialogue receipts remain stable.
 - **Opening's window visit (11 November, evening):** the old table-relative steps and seated Moa are
   replaced with actual paths to the fixed bird. Final temporal and mobile review is recorded in the PR.
 

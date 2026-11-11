@@ -1876,11 +1876,18 @@
     "text": "Vi hittade dem, lillebror. Tillsammans!"
   },
   {
+    "key": "soBertilSlippers",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormoga",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Hoppas att nästa äventyr blir i tofflor!"
+  },
+  {
     "key": "soBertil",
     "speaker": "bertil",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cheerful older brother, excited]",
-    "text": "Hoppas att nästa äventyr blir i tofflor! Snart åker vi ju till Thailand."
+    "text": "Jag drömmer om Thailand. Snart åker vi!"
   },
   {
     "key": "soMormor",
