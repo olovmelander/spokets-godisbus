@@ -1,6 +1,7 @@
 import type { Candy, ChapterData } from '../../sim/types';
 import { timeCard } from './cards';
 import { PROLOG_SCENES } from './prolog-scenes';
+import { HOME_LAYOUT } from '../home-layout';
 
 /**
  * The story's two ends (plan §3.4): the prologue before Kapitel 1, and the epilogue after the final. Both
@@ -40,28 +41,29 @@ export const prolog: ChapterData = {
   // He is a boy among small things, until the star shrinks him. The POFF scene says when he is drawn small.
   size: { scale: 3, until: 'scene:poff' },
   // Pappa's shelf, with the first place in the row empty: the first trägubbe is not there.
-  shelf: { x: 2.4, y: 5.4 },
+  shelf: HOME_LAYOUT.shelf,
   decor: [
     // The shavings Pappa's knife left, and the Saturday bag on the table, until the ghost takes it.
-    { look: 'shavings', at: { x: 5.6, y: 0 } },
-    { look: 'bag', at: { x: 7.1, y: 1.65 }, until: 'grab', z: -1.25 },
+    { look: 'shavings', at: { x: HOME_LAYOUT.dining.x + 0.1, y: 0 } },
+    { look: 'bag', at: { x: HOME_LAYOUT.dining.x + 1.6, y: 1.65 }, until: 'grab', z: -1.25 },
   ],
   furniture: [
-    { look: 'table', at: { x: 5.5, y: 0 }, z: -1.5 },
-    { look: 'chair', at: { x: 5.5, y: 0 }, z: -3.5, face: 0.25 },
-    { look: 'chair', at: { x: 8.8, y: 0 }, z: -1.5, face: 0.5 },
+    { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z },
+    ...Object.values(HOME_LAYOUT.dining.chairs).map(chair => ({
+      look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face,
+    })),
   ],
   scenes: PROLOG_SCENES,
   // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away.
   later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: 4.1 }],
   // In reach of the brush Pappa holds out, so the morning ends with "Måla ögonen!" lit on Använd: the first thing
   // asked of him has its button ready (docs/ux-audit/first-minutes.md row 19). The move lesson waits for the hall.
-  spawn: { x: 2.6, y: 0.01 },
+  spawn: { x: HOME_LAYOUT.dining.x - 2.9, y: 0.01 },
   goalX: 51.0,
   goalNeeds: 'titel',
   prologue: {
     // Pappa notices the ghost once Moa's drawing is told, as Elof sets off towards it.
-    doorway: { x: 12, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 52.6, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
+    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 52.6, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
     // The deck's railing runs along its far side: Pappa puts the frozen ghost up on its top rail.
     rail: { from: 38.4, to: 53.8, z: -3.4 },
   },
@@ -88,11 +90,11 @@ export const prolog: ChapterData = {
   outdoors: 38,
   // The big candies keep their meaning in older saves: in the kitchen at the start (behind him, out of the
   // morning's pictures), at the end of the hall, and on the deck after the shrinking.
-  checkpoints: [{ x: 0.6, y: 0 }, { x: 26, y: 0 }, { x: 45.5, y: -0.8 }],
+  checkpoints: [{ x: HOME_LAYOUT.dining.x - 4.9, y: 0 }, { x: 26, y: 0 }, { x: 45.5, y: -0.8 }],
   spots: [
     // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
-    { id: 'eye', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
-    { id: 'paint', at: { x: 3.7, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
+    { id: 'eye', at: { x: HOME_LAYOUT.dining.x - 1.8, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
+    { id: 'paint', at: { x: HOME_LAYOUT.dining.x - 1.8, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
     // He first sees where the star came from, then chooses to taste it. Walking past never consumes it.
     { id: 'star', look: 'star', at: { x: 41.7, y: -0.8 }, verb: 'take', word: 'tasteStar', needs: 'scene:stjarnan' },
     // Pappa's open hand on the planks: he chooses to step onto it.
@@ -103,10 +105,10 @@ export const prolog: ChapterData = {
   ],
   ghost: [
     // On the table, new, with no eyes yet. Awake, it hops to the bag, and with the bag off the table.
-    { at: { x: 4.6, y: 1.65 }, z: -1.15, until: 'woke' },
-    { at: { x: 6.5, y: 1.65 }, z: -1.2, until: 'blink', near: 99 },
-    { at: { x: 16, y: 0 } },
-    { at: { x: 22, y: 0 } },
+    { at: { x: HOME_LAYOUT.dining.x - 0.9, y: 1.65 }, z: -1.15, until: 'woke' },
+    { at: { x: HOME_LAYOUT.dining.x + 1, y: 1.65 }, z: -1.2, until: 'blink', near: 99 },
+    { at: { x: 24.5, y: 0 } },
+    { at: { x: 26.5, y: 0 } },
     { at: { x: 28.6, y: 0 } },
     { at: { x: 35, y: 0 } },
     // On the deck, beyond the star it lost: it waits there until Pappa's joke.
@@ -129,7 +131,8 @@ export const prolog: ChapterData = {
   cameras: [{ from: -3, to: 38, zoom: 1.5, lift: 0.3 }, { from: 38, to: 60, zoom: 1.7, lift: 1.5 }],
   candy: [
     // Nothing lies there until the bag has torn on the doorway's hinge.
-    ...row(13, 29, 0, 1.6, 'bag:torn'),
+    // Keep all eleven original save indices, in order, along the shorter hall after the new hinge.
+    ...row(21.5, 29, 0, 0.75, 'bag:torn'),
     { x: 30.6, y: 1.25, after: 'bag:torn' },
     ...row(32.4, 36.4, 0, 2, 'bag:torn'),
     { x: 38.6, y: -0.2, after: 'bag:torn' },

@@ -96,7 +96,7 @@ try {
     });
     check(`${name}: each completed brush stroke paints exactly one eye`, strokes.first.eyes[0] && !strokes.first.eyes[1] && strokes.second.eyes.every(Boolean));
     const stolen = await page.evaluate(() => {
-      const p = window.probe; p.sim.flags.add('blink'); p.sim.ghost.x = 14; p.draw(.3); return p.snapshot();
+      const p = window.probe; p.sim.flags.add('blink'); p.sim.ghost.x = p.f.prolog.prologue.doorway.x + 2; p.draw(.3); return p.snapshot();
     });
     check(`${name}: awakening transfers the striped family bag onto the ghost`, stolen.bag && !stolen.tear && !stolen.star);
     const torn = await page.evaluate(() => {

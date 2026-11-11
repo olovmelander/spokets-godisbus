@@ -411,7 +411,7 @@ try {
     if (process.env.PROLOGUE_SCENE && !name.startsWith(process.env.PROLOGUE_SCENE)) continue;
     const pappa = kind === 'pappa';
     const flags = pappa ? `${VERANDA},star,scene:poff,scene:familj,hand,scene:handen` : 'scene:morgon,eye,paint,woke,grab,blink,scene:vaknar';
-    const at = pappa ? '41.6,-0.79' : '5.5,0.01';
+    const at = pappa ? '41.6,-0.79' : '14,0.01';
     const { page, state, info, finish } = await open(name, { viewport, hasTouch: true },
       `?dev&debug&standin&course=prolog&tier=${tier}&at=${at}&flags=${flags}`);
     await until(state, (s) => s.prologue?.kind === kind && s.prologue.seconds >= (pappa ? 1.45 : 0.85), `${name}: tableau`, 90000);

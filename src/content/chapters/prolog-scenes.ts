@@ -1,20 +1,24 @@
 import type { SceneDef } from '../../sim/scene';
+import { HOME_LAYOUT } from '../home-layout';
 
 /**
  * The prologue as it is told now (docs/narrative-audit.md, "the intro"): a Saturday morning at home, the ghost
  * waking from its wood, the theft, the shrinking whose cause is seen, and a family who are frightened for him
  * and then stand by him. Units: EL. Elof is drawn three times his small size until the star (`size`).
  *
- * The set: the kitchen table (x 3 to 8, behind the play plane), Pappa's chair behind it and Moa's at its end,
- * the window with the jay at x 9.4, Pappa's shelf with its empty first place over the table, the doorway at
- * x 12 whose hinge tears the bag, the hall, the veranda, and from x 38 the deck, out of doors.
+ * The set: the shared dining table (x 11.5 to 16.5, behind the play plane), Pappa's chair behind it and Moa's at its end,
+ * the window with the jay at x 9.4, Pappa's shelf with its empty first place left of the window, the doorway at
+ * x 20.5 whose hinge tears the bag, the hall, the veranda, and from x 38 the deck, out of doors.
  */
 
+/** Kitchen acting marks follow the same table used in every home chapter. */
+const atTable = (offset: number) => HOME_LAYOUT.dining.x + offset;
+
 /** Where the new carving stands on the table for its eyes, and where the bag stands. */
-const CARVING = { x: 4.6, y: 1.65, z: -1.15 };
-const BAG = { x: 7.1, y: 1.65, z: -1.25 };
+const CARVING = { x: atTable(-0.9), y: 1.65, z: -1.15 };
+const BAG = { x: atTable(1.6), y: 1.65, z: -1.25 };
 /** The empty place first in the row on Pappa's shelf (the shelf's middle less 3.6). */
-const EMPTY = { x: -1.2, y: 6.1, z: -8.5 };
+const EMPTY = { x: HOME_LAYOUT.shelf.x - 3.6, y: HOME_LAYOUT.shelf.y + 0.7, z: -8.5 };
 // The right end of the sill stays visible beside the family when they turn toward the bird.
 const WINDOW = { x: 11.2, y: 3.55, z: -9 };
 /** The deck mark for the star encounter: Elof stops here to look, taste, and become small. */
@@ -34,17 +38,17 @@ export const TITLE_TABLEAU: SceneDef = {
   by: { done: 'scene:morgon' },
   stage: {
     // High enough for Pappa's face under his cap, over the carving in his hands.
-    shots: [{ at: 0, x: 5.85, y: 2.75, height: 3.3, width: 4.6, eye: -0.55, move: 0.01 }],
+    shots: [{ at: 0, x: atTable(0.35), y: 2.75, height: 3.3, width: 4.6, eye: -0.55, move: 0.01 }],
     actors: {
-      pappa: [{ at: 0, x: 5.8, y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'carve', holds: 'knife' }],
+      pappa: [{ at: 0, x: atTable(0.3), y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'carve', holds: 'knife' }],
       // As far carved as the morning has it when the title gives way to it.
-      ghost: [{ at: 0, x: 5.95, y: 1.75, z: -2.05, face: 0.25, move: 0.01, act: 'carved', rough: 0.76 }],
-      mamma: [{ at: 0, x: 10.4, y: 0, z: -2.0, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug', aim: { x: 6, y: 2.5, z: -2 } }],
-      bertil: [{ at: 0, x: 7.7, y: 0, z: -3.3, face: 0.28, move: 0.01, act: 'look', aim: { x: 5.9, y: 2.2, z: -2 } }],
-      moa: [{ at: 0, x: 8.55, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
+      ghost: [{ at: 0, x: atTable(0.45), y: 1.75, z: -2.05, face: 0.25, move: 0.01, act: 'carved', rough: 0.76 }],
+      mamma: [{ at: 0, x: atTable(4.9), y: 0, z: -2.0, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug', aim: { x: atTable(0.5), y: 2.5, z: -2 } }],
+      bertil: [{ at: 0, x: atTable(2.2), y: 0, z: -3.3, face: 0.28, move: 0.01, act: 'look', aim: { x: atTable(0.4), y: 2.2, z: -2 } }],
+      moa: [{ at: 0, x: atTable(3.05), y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' }],
     },
-    elof: [{ at: 0, act: 'watch', aim: { x: 5.9, y: 2.3, z: -2 } }],
-    fx: [{ at: 0, kind: 'shavings', from: { x: 5.95, y: 2.4, z: -1.9 }, seconds: 3600 }],
+    elof: [{ at: 0, act: 'watch', aim: { x: atTable(0.4), y: 2.3, z: -2 } }],
+    fx: [{ at: 0, kind: 'shavings', from: { x: atTable(0.45), y: 2.4, z: -1.9 }, seconds: 3600 }],
   },
 };
 
@@ -56,7 +60,7 @@ export const PROLOG_SCENES: SceneDef[] = [
     // down before Elof, and holds out the brush: the eyes are Elof's to paint (plan §3.3 rule 1).
     id: 'morgon',
     // At the table where he starts (in reach of the brush): a game taken up further on has had its morning.
-    at: 2.2,
+    at: atTable(-3.3),
     until: 'eye',
     seconds: 10.5,
     hold: true,
@@ -68,43 +72,43 @@ export const PROLOG_SCENES: SceneDef[] = [
       fade: [{ at: 0, to: 1, move: 0.01 }, { at: 0.1, to: 0, move: 1.8 }],
       words: [{ at: 0.9, seconds: 3.6, kind: 'caption', text: 'morning' }],
       shots: [
-        { at: 0, x: 5.85, y: 2.75, height: 3.3, width: 4.6, eye: -0.55, move: 0.01 },
-        { at: 3.4, x: 6.1, y: 2.9, height: 5.8, width: 9.5, move: 3.4 },
-        { at: 7.4, x: 5.0, y: 3.4, height: 8.2, width: 15, move: 2.2 },
+        { at: 0, x: atTable(0.35), y: 2.75, height: 3.3, width: 4.6, eye: -0.55, move: 0.01 },
+        { at: 3.4, x: atTable(0.6), y: 2.9, height: 5.8, width: 9.5, move: 3.4 },
+        { at: 7.4, x: atTable(-0.5), y: 3.4, height: 8.2, width: 15, move: 2.2 },
       ],
       actors: {
         pappa: [
-          { at: 0, x: 5.8, y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'carve', holds: 'knife' },
+          { at: 0, x: atTable(0.3), y: 0, z: -3.15, face: 0.25, move: 0.01, act: 'carve', holds: 'knife' },
           { at: 7.2, act: 'blow', holds: null },
           { at: 8.0, act: 'reach', aim: { x: CARVING.x, y: CARVING.y + 0.35, z: CARVING.z } },
-          { at: 8.9, act: 'offer', holds: 'brush', aim: { x: 2.3, y: 2.3, z: 0 } },
+          { at: 8.9, act: 'offer', holds: 'brush', aim: { x: atTable(-3.2), y: 2.3, z: 0 } },
         ],
         ghost: [
-          { at: 0, x: 5.95, y: 1.75, z: -2.05, face: 0.25, move: 0.01, act: 'carved', rough: 1 },
+          { at: 0, x: atTable(0.45), y: 1.75, z: -2.05, face: 0.25, move: 0.01, act: 'carved', rough: 1 },
           { at: 0.3, rough: 0, move: 6.6 },
           { at: 8.0, x: CARVING.x, y: CARVING.y, z: CARVING.z, move: 0.8 },
         ],
         mamma: [
-          { at: 0, x: 10.4, y: 0, z: -2.0, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug', aim: { x: 6, y: 2.5, z: -2 } },
-          { at: 5.2, act: 'look', aim: { x: 7.7, y: 2.9, z: -3.3 } },
-          { at: 7.8, act: 'sip', aim: { x: 5, y: 2.2, z: -1.2 } },
+          { at: 0, x: atTable(4.9), y: 0, z: -2.0, face: 0.4, move: 0.01, act: 'sip', holdsLeft: 'mug', aim: { x: atTable(0.5), y: 2.5, z: -2 } },
+          { at: 5.2, act: 'look', aim: { x: atTable(2.2), y: 2.9, z: -3.3 } },
+          { at: 7.8, act: 'sip', aim: { x: atTable(-0.5), y: 2.2, z: -1.2 } },
         ],
         bertil: [
-          { at: 0, x: 7.7, y: 0, z: -3.3, face: 0.28, move: 0.01, act: 'look', aim: { x: 5.9, y: 2.2, z: -2 } },
+          { at: 0, x: atTable(2.2), y: 0, z: -3.3, face: 0.28, move: 0.01, act: 'look', aim: { x: atTable(0.4), y: 2.2, z: -2 } },
           { at: 3.6, act: 'sneak', aim: { x: BAG.x, y: BAG.y + 0.4, z: BAG.z } },
           { at: 5.6, act: 'startle' },
           { at: 6.3, act: 'shrug' },
           { at: 7.3, act: 'look', aim: { x: CARVING.x, y: 2.2, z: CARVING.z } },
         ],
         moa: [
-          { at: 0, x: 8.55, y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' },
+          { at: 0, x: atTable(3.05), y: 0, z: -1.5, face: 0.5, move: 0.01, act: 'draw', holds: 'crayon' },
           { at: 8.4, act: 'sit', holds: null, aim: { x: CARVING.x, y: 2.2, z: CARVING.z } },
         ],
       },
-      elof: [{ at: 0, act: 'watch', aim: { x: 5.9, y: 2.3, z: -2 } }],
+      elof: [{ at: 0, act: 'watch', aim: { x: atTable(0.4), y: 2.3, z: -2 } }],
       fx: [
-        { at: 0.3, kind: 'shavings', from: { x: 5.95, y: 2.4, z: -1.9 }, seconds: 6.7 },
-        { at: 7.4, kind: 'shavings', from: { x: 5.95, y: 2.5, z: -1.8 }, seconds: 0.9 },
+        { at: 0.3, kind: 'shavings', from: { x: atTable(0.45), y: 2.4, z: -1.9 }, seconds: 6.7 },
+        { at: 7.4, kind: 'shavings', from: { x: atTable(0.45), y: 2.5, z: -1.8 }, seconds: 0.9 },
       ],
     },
   },
@@ -114,6 +118,8 @@ export const PROLOG_SCENES: SceneDef[] = [
     // It takes the bag in both hands, and its magic runs into it: two sweets inside begin to glitter.
     id: 'vaknar',
     on: 'paint',
+    // Reload an interrupted awakening beside the carving, even if the saved kitchen candy is farther left.
+    resumeAt: { x: atTable(-1.8), y: 0.01 },
     until: 'blink',
     seconds: 18,
     hold: true,
@@ -130,39 +136,39 @@ export const PROLOG_SCENES: SceneDef[] = [
     stage: {
       shots: [
         // The window gets a real establishing shot: the bird lands before Mamma names it.
-        { at: 0, x: 8.8, y: 4.0, height: 6.2, width: 8.5, move: 1.3 },
-        { at: 3.4, x: 4.7, y: 2.35, height: 3.1, width: 5.2, move: 1.0 },
-        { at: 8.4, x: 2.4, y: 4.1, height: 6.8, width: 9, move: 1.1 },
-        { at: 10.4, x: 5.7, y: 2.5, height: 4.2, width: 7.2, move: 1.1 },
-        { at: 15.5, x: 7.4, y: 2.7, height: 6.4, width: 12, move: 0.9 },
+        { at: 0, x: 13.2, y: 4.0, height: 7.4, width: 14, move: 1.3 },
+        { at: 3.4, x: atTable(-0.8), y: 2.35, height: 3.1, width: 5.2, move: 1.0 },
+        { at: 8.4, x: (EMPTY.x + CARVING.x) / 2, y: 4.1, height: 7.2, width: CARVING.x - EMPTY.x + 3, move: 1.1 },
+        { at: 10.4, x: atTable(0.2), y: 2.5, height: 4.2, width: 7.2, move: 1.1 },
+        { at: 15.5, x: atTable(1.9), y: 2.7, height: 6.4, width: 12, move: 0.9 },
       ],
       actors: {
         mamma: [
-          { at: 0, act: 'point', aim: WINDOW, face: 0.72 },
-          { at: 0.7, x: 9.0, z: -3.7, move: 0.8, face: 0.74, act: 'look', aim: WINDOW },
+          { at: 0, act: 'point', aim: WINDOW, face: 0.6 },
+          { at: 0.7, x: atTable(4.4), z: -3.7, move: 0.8, face: 0.6, act: 'look', aim: WINDOW },
         ],
         pappa: [
-          { at: 0.2, x: 6, move: 0.5, act: 'stand', holds: null },
+          { at: 0.2, x: atTable(0.5), move: 0.5, act: 'stand', holds: null },
           // Leave beside the chair before turning behind its back towards the window: two unhurried side steps,
-          // there before Mamma names the bird.
-          { at: 0.7, x: 7, move: 0.7, face: 0, act: 'look', aim: WINDOW },
-          { at: 1.4, x: 7.2, z: -4.3, move: 0.8, face: 0.7 },
+          // then look back left towards the fixed window.
+          { at: 0.7, x: atTable(1.8), move: 0.7, face: 0, act: 'look', aim: WINDOW },
+          { at: 1.4, x: atTable(1.9), z: -4.3, move: 0.8, face: 0.62 },
         ],
-        bertil: [{ at: 0.3, x: 8.4, z: -4.7, move: 0.9, face: 0.76, act: 'look', aim: WINDOW }],
+        bertil: [{ at: 0.3, x: atTable(2.9), z: -4.7, move: 0.9, face: 0.61, act: 'look', aim: WINDOW }],
         moa: [
-          { at: 0.4, face: 0.66, act: 'sit', aim: WINDOW },
+          { at: 0.4, face: 0.63, act: 'sit', aim: WINDOW },
           // Only Moa looks back at the table, as the magic runs into the bag: she sees it glitter (she says so
           // on the deck), and is turned to the jay again before the ghost hops away.
           { at: 14.0, face: 0.5, move: 0.5, aim: { x: BAG.x, y: BAG.y + 0.3, z: BAG.z } },
-          { at: 15.8, face: 0.66, move: 0.5, aim: WINDOW },
+          { at: 15.8, face: 0.63, move: 0.5, aim: WINDOW },
         ],
         ghost: [
           { at: 0, x: CARVING.x, y: CARVING.y, z: CARVING.z, face: 0.25, move: 0.01, act: 'carved' },
           { at: 4.0, act: 'wake' },
-          { at: 6.4, act: 'look', aim: { x: 3.7, y: 2.6, z: 0.2 }, face: 0.38, move: 0.6 },
+          { at: 6.4, act: 'look', aim: { x: atTable(-1.8), y: 2.6, z: 0.2 }, face: 0.38, move: 0.6 },
           { at: 8.7, act: 'look', aim: EMPTY, face: 0.6, move: 0.7 },
           { at: 10.6, act: 'look', aim: { x: BAG.x, y: BAG.y + 0.4, z: BAG.z }, face: 0, move: 0.7 },
-          { at: 11.5, act: 'waddle', x: 6.5, y: CARVING.y, z: -1.2, move: 0.8 },
+          { at: 11.5, act: 'waddle', x: atTable(1), y: CARVING.y, z: -1.2, move: 0.8 },
           { at: 13.3, act: 'grab' },
           { at: 16.0, act: 'hop', face: 0 },
         ],
@@ -173,12 +179,12 @@ export const PROLOG_SCENES: SceneDef[] = [
         { at: 6.3, act: 'watch', aim: { x: CARVING.x, y: 2.4, z: CARVING.z } },
         { at: 8.9, act: 'watch', aim: EMPTY },
         { at: 10.7, act: 'watch', aim: { x: BAG.x, y: 2.0, z: BAG.z } },
-        { at: 15.8, act: 'point', aim: { x: 6.5, y: 2.2, z: -1.2 } },
+        { at: 15.8, act: 'point', aim: { x: atTable(1), y: 2.2, z: -1.2 } },
       ],
       fx: [
         { at: 0, kind: 'jay', from: { x: WINDOW.x, y: WINDOW.y, z: -8.6 }, seconds: 18 },
         { at: 4.0, kind: 'sparkle', from: { x: CARVING.x, y: 2.0, z: CARVING.z }, seconds: 1.9 },
-        { at: 13.4, kind: 'stream', from: { x: 6.5, y: 2.5, z: -1.2 }, to: { x: 7.0, y: 2.25, z: -1.35 }, seconds: 2.0 },
+        { at: 13.4, kind: 'stream', from: { x: atTable(1), y: 2.5, z: -1.2 }, to: { x: atTable(1.5), y: 2.25, z: -1.35 }, seconds: 2.0 },
       ],
     },
   },
@@ -191,13 +197,13 @@ export const PROLOG_SCENES: SceneDef[] = [
     stage: {
       actors: {
         mamma: [
-          { at: 0, face: 0.05, act: 'look', aim: { x: 10.9, y: 0.6, z: 0 } },
-          { at: 0.5, x: 10.4, z: -1.9, move: 0.9, face: 0.08, act: 'look', aim: { x: 10.9, y: 0.4, z: 0 } },
+          { at: 0, face: 0.05, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.5, x: atTable(4.9), z: -1.9, move: 0.9, face: 0.08, act: 'look', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
           { at: 1.5, act: 'shrug' },
           { at: 2.4, act: 'stand', follow: 5.2, holdsLeft: null },
         ],
         pappa: [
-          { at: 0.2, face: 0.32, act: 'look', aim: { x: 6, y: 1.5, z: 0 } },
+          { at: 0.2, face: 0.32, act: 'look', aim: { x: atTable(0.5), y: 1.5, z: 0 } },
           { at: 2.4, act: 'stand', follow: 2.7, z: -2.5 },
         ],
         moa: [
@@ -212,7 +218,7 @@ export const PROLOG_SCENES: SceneDef[] = [
           { at: 2.4, act: 'stand', follow: 4.5, z: -0.9 },
         ],
       },
-      elof: [{ at: 0.2, act: 'watch', aim: { x: 10.9, y: 0.6, z: 0 } }],
+      elof: [{ at: 0.2, act: 'watch', aim: { x: atTable(5.4), y: 0.6, z: 0 } }],
     },
   },
   {

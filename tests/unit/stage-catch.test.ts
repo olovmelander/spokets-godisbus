@@ -37,7 +37,7 @@ it('still blends a real sudden target change and preserves its unfinished catch 
 
 it.each([30, 60, 120])('settles Pappa’s real brush offer before releasing it after painting (%s Hz)', rate => {
   const stage = createStage(prolog, () => 0), rig = stage.actors.get('pappa')!.rig;
-  const elof = { x: 2.6, y: .01 }, flags = new Set<string>();
+  const elof = prolog.spawn, flags = new Set<string>();
   const shown: Pose = { ...STANDING }, original = rig.pose.bind(rig);
   vi.spyOn(rig, 'pose').mockImplementation(pose => { Object.assign(shown, pose); original(pose); });
   let clock = 0;
