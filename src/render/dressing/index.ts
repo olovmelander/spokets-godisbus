@@ -18,6 +18,7 @@ import { bank, type Ground } from './ground';
 import { rockLife } from './rocky';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
 import { houseDoor } from './house-door';
+import { hedge, hedgeGround } from './hedge';
 import { lawn } from './lawn';
 import { spang } from './spang';
 import { backdrop, stars } from './sky';
@@ -191,10 +192,12 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // scenery, and its lawn below the deck. What is built, the floors and the deck, says so with its surfaces.
   const out = look.id === 'home' && chapter.outdoors !== undefined;
   const own = out ? 'lawn' : look.ground ?? OWN[look.id].ground;
-  const landChapter = landscape(chapter);
+  const landChapter = hedgeGround(landscape(chapter));
   makeKit();
   // What stands on the ground comes first: the bee is told where the dandelions are.
   const standing = scatter(landChapter, from, to, look.id, own);
+  const bushes = hedge(chapter);
+  if (bushes) standing.add(bushes);
   const outdoor = outdoorModels(chapter);
   standing.add(outdoor);
   const landmarks = forestLandmarks(chapter);
