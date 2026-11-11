@@ -2,7 +2,6 @@ import type { Candy, ChapterData } from '../../sim/types';
 import { HOME_BATHROOM, HOME_LAYOUT } from '../home-layout';
 import { timeCard } from './cards';
 import { PROLOG_SCENES } from './prolog-scenes';
-import { HOME_LAYOUT } from '../home-layout';
 
 /**
  * The story's two ends (plan §3.4): the prologue before Kapitel 1, and the epilogue after the final. Both

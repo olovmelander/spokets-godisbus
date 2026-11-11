@@ -110,7 +110,7 @@ floor_depth = floor_front - back
 floor_middle = (floor_front + back) / 2
 walls = [box(width + thickness, height, thickness, x, height / 2, back, '#e6e0d3'),
     box(width + thickness, thickness, depth + thickness, x, height - thickness / 2, middle, '#f1ebdf'),
-    # A 2.5cm finish sits above the continuous wood base. The shallow threshold
+    # A thin tile finish sits above the continuous wood base. The shallow threshold
     # ramps up from y=0 instead of introducing a vertical step in Elof's walk.
     box(inside_width, .034, floor_depth, x, floor_y - .023, floor_middle, '#d0d7ce', 0)]
 half_opening = bath['openingWidth'] / 2
