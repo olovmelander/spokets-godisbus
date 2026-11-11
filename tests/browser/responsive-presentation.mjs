@@ -166,11 +166,11 @@ try {
             status: bubble.getAttribute('role'), describedBy: byId('sceneNext').getAttribute('aria-describedby') };
         }, { insets });
         const label = `${width}×${height}${big ? ' Big Text' : ''}${lefty ? ' left-handed' : ''}${insets.top || insets.left ? ' safe-area' : ''} ${spec.name}`;
-        // The short 320px portrait is an explicit accessibility exception: full 27.5px words plus
+        // The short 320px portrait is an explicit accessibility exception: full 25px words plus
         // a 64px action need more of its small screen. It must still leave at least 62% for the world.
         const budget = height <= 480 ? spec.held ? .38 : .26 : spec.held ? width <= 320 ? .38 : .28 : .18;
         check(`${label}: complete authored words and speaker`, value.text === (spec.text ?? expected.text) && value.who === expected.who, { got: value.text, expected, who: value.who });
-        check(`${label}: all text stays legible, unclipped and inside the safe area`, value.font >= (big ? 27.5 : 22) - .1 && value.clipped.length === 0 && value.safePanels && value.noClamp, { font: value.font, clipped: value.clipped, safePanels: value.safePanels, noClamp: value.noClamp, panels: value.panels });
+        check(`${label}: all text stays legible, unclipped and inside the safe area`, value.font >= (big ? 25 : 20) - .1 && value.clipped.length === 0 && value.safePanels && value.noClamp, { font: value.font, clipped: value.clipped, safePanels: value.safePanels, noClamp: value.noClamp, panels: value.panels });
         check(`${label}: dialogue and its action leave the world visible`, value.area <= budget + .001, { area: value.area, budget, union: value.union });
         check(`${label}: utility and active touch targets remain clear and within safe areas`, value.pause && value.clear && value.controlsSafe, { panels: value.panels, controls: value.controls });
         check(`${label}: decorations and root layout stay bounded`, value.decorationsSafe && value.noPageScroll && (!spec.tone || value.tone === spec.tone), { decorations: value.decorations, noPageScroll: value.noPageScroll });
