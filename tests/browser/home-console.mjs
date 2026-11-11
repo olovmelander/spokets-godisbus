@@ -27,7 +27,8 @@ const check = (name, condition) => { assert.ok(condition, name); checks++; conso
 const FLAGS = {
   prolog: ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar', 'mamma:passed'],
   epilog: ['scene:card', 'dots', 'scene:first-carving'],
-  stormkvall: ['scene:kvall'],
+  // After the power cut and shrinking, the optional console remains available while the TV programme is dark.
+  stormkvall: ['scene:kvall', 'candles', 'lamp:take', 'lamp:give', 'goodnight', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans'],
   morgonen: ['scene:frukost'],
 };
 const world = state => Object.fromEntries(['x', 'y', 'vx', 'vy', 'facing', 'grounded', 'mode', 'steps', 'flags', 'candy', 'checkpoint', 'said', 'pendingDialogue', 'scene', 'prologue', 'ghost'].map(key => [key, state[key]]));
