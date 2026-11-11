@@ -35,7 +35,7 @@ const server = await createServer({ root,
       export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
       export { norrsken } from ${JSON.stringify(join(root, 'src/content/chapters/norrsken.ts'))};
       export { mountShell } from ${JSON.stringify(join(root, 'src/ui/shell.ts'))};
-      export { createHud } from ${JSON.stringify(join(root, 'src/ui/hud.ts'))};
+      export { createHud, readingTime } from ${JSON.stringify(join(root, 'src/ui/hud.ts'))};
       let scene, camera; const before = Scene.prototype.onBeforeRender;
       Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) { scene = this; camera = args[2]; } before.apply(this, args); };
       export const renderedScene = () => scene;
@@ -178,10 +178,18 @@ try {
     // This fixture advances its own clock synchronously; real recordings cannot finish inside the same JS task.
     const {setVoiceSettings}=await import('/spokets-godisbus/src/audio/voice-player.ts');setVoiceSettings(false,0);
     const host=document.createElement('div');document.body.replaceChildren(host);f.mountShell(host);const hud=f.createHud(document,100);
-    const state=()=>({bubble:!document.getElementById('bubble').hidden,notice:!document.getElementById('notice').hidden,line:document.getElementById('bubbleLine').textContent});
+    const state=()=>({bubble:!document.getElementById('bubble').hidden,notice:!document.getElementById('notice').hidden,
+      noticeText:document.getElementById('noticeText').textContent,line:document.getElementById('bubbleLine').textContent,speaking:hud.speaking()});
     hud.say('pappa','tinyElof');hud.tick(0);const initial=state();hud.notice('Hittat!');hud.tick(1);const find=state();hud.tick(2.6);const resumed=state();hud.tick(1);const readable=state();
     // A line said while another is on the page waits its turn: the one on the page keeps its whole time (Olov, 9 November 2026).
     hud.say('elof','stolenBag');hud.tick(0);const waited=state();hud.tick(1.5);const turn=state();
+    // The discovery waits behind the complete exchange and its continuation linger. Its three
+    // seconds belong to the visible notice, not to the time spent reading either speaker's line.
+    hud.tick(f.readingTime(turn.line)-.01);const queuedEnd=state();
+    hud.tick(.02);const completed=state();hud.tick(.29);const linger=state();
+    hud.tick(.02);hud.tick(0);const noticeShown=state();
+    hud.paused(true);hud.tick(120);const noticePaused=state();hud.paused(false);
+    hud.tick(2.99);const noticeAlmostDone=state();hud.tick(.02);const noticeDone=state();
     // Pappa's sentence in two bubbles is read whole: the second half goes on under the first (story-presentation.md row 22).
     hud.say('pappa','first2');hud.tick(0);hud.say('pappa','first3');hud.tick(20);hud.tick(20);const bubble=document.getElementById('bubble');
     const more={shown:!bubble.hidden,lines:[...document.querySelectorAll('#bubbleLine .said')].map((said)=>said.textContent),tone:bubble.dataset.tone};
@@ -192,11 +200,18 @@ try {
     const held=state(),stillReading=hud.reading();hud.paused(false);hud.tick(.3);hud.advance();hud.tick(0);const second=state();
     hud.tick(20);const third=state(),thirdKey=hud.saying()?.key;hud.tick(20);const automatic=!hud.speaking();hud.clear();
     const cleared=!hud.reading()&&!hud.speaking()&&document.getElementById('bubble').hidden;
-    return{initial,find,resumed,readable,waited,turn,more,shout,remark,waits,manual,guard,held,stillReading,second,third,thirdKey,automatic,cleared};});
-  // A find hangs from the bag now, so what is being said goes on beside it (docs/ux-audit/in-play.md row 18).
-  check('Portrait: a find leaves speech where it is',speech.initial.bubble && speech.find.notice && speech.find.bubble && speech.find.line===speech.initial.line);
+    return{initial,find,resumed,readable,waited,turn,queuedEnd,completed,linger,noticeShown,noticePaused,noticeAlmostDone,noticeDone,
+      more,shout,remark,waits,manual,guard,held,stillReading,second,third,thirdKey,automatic,cleared};});
+  // Notices now wait their turn, so a discovery never competes with the full dialogue card.
+  check('Portrait: a find waits while the complete speech stays where it is',speech.initial.bubble && !speech.find.notice && speech.find.bubble && speech.find.line===speech.initial.line);
   check('Portrait: the causal line keeps its reading time after the find',speech.resumed.bubble && !speech.resumed.notice && speech.resumed.line===speech.initial.line && speech.readable.bubble);
   check('Portrait: a new line waits for the one being said, then takes its turn',speech.waited.line===speech.initial.line && speech.turn.bubble && speech.turn.line==='Pappa! Spöket tog min godispåse!');
+  check('Portrait: the queued line keeps its full reading time and the find stays hidden through its linger',
+    !speech.waited.notice && !speech.turn.notice && speech.queuedEnd.speaking && speech.queuedEnd.line===speech.turn.line && !speech.queuedEnd.notice &&
+    !speech.completed.speaking && speech.completed.bubble && !speech.completed.notice && speech.linger.bubble && !speech.linger.notice);
+  check('Portrait: after the exchange, the complete find receives its full visible lifetime even across Pause',
+    !speech.noticeShown.bubble && speech.noticeShown.notice && speech.noticeShown.noticeText==='Hittat!' &&
+    speech.noticePaused.notice && speech.noticePaused.noticeText===speech.noticeShown.noticeText && speech.noticeAlmostDone.notice && !speech.noticeDone.notice);
   check('Portrait: a line that goes on stands under the one before, said gently',speech.more.shown && speech.more.lines.join(' / ')==='Den täljde jag till dig / när du var liten, Elof.' && speech.more.tone==='soft');
   check('Portrait: a shout is drawn as one',speech.shout==='call');
   check('Reading: essential dialogue waits while a passing remark is read to its end, then takes the floor',speech.remark.line==='Ge tillbaka mitt godis!' && !speech.waits && speech.manual.line==='Min allra första trägubbe …');
