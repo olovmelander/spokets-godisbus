@@ -9,7 +9,8 @@
 - **Staging:** Mamma, Pappa, Moa and Bertil leave their places and take separate, staggered paths around the
   furniture to the window. The camera gives the walk and their shared attention time to read. Elof remains
   with the carving, preserving the secret awakening; Moa still notices the glittering bag. The subsequent
-  freeze joke and return to following Elof use continuous routes from the new positions.
+  freeze joke and return to following Elof use continuous routes from the new positions. Their waiting marks
+  stay behind his earliest painting position, so they follow forwards even if he waits beside the table.
 - **Scope and verification:** existing words, recordings, story receipts, collections, home models and the
   release boundary are retained. Bertil adds one short observation at the window, giving the shared look a
   readable moment without extending uninterrupted acting beyond the existing pacing limit. The baseline

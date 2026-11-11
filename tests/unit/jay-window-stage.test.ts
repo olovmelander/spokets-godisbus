@@ -26,7 +26,7 @@ beforeAll(async () => {
 afterAll(() => vi.unstubAllGlobals());
 
 function show(stage: Stage, id: string, seconds: number, calm: boolean, dt = 1 / 60, clock = seconds) {
-  stage.update({ id, seconds }, told(id), { x: prolog.prologue!.doorway.x - 1.1, y: 0 }, clock, dt, calm);
+  stage.update({ id, seconds }, told(id), { x: prolog.spawn.x, y: 0 }, clock, dt, calm);
   stage.group.updateMatrixWorld(true);
 }
 function parts(stage: Stage, who: Role) {
@@ -76,6 +76,40 @@ describe('the family visits the actual window in the furnished room', () => {
       }
     }
     expect([...problems.values()]).toEqual([]);
+  });
+
+  it.each([11.0, 11.1, 12.2, 13.14])('returns behind the real player at x=%s and follows forwards without reversing', elofX => {
+    // The eye can be painted from its left reach limit or the spawn; native play also reaches 13.14
+    // before Mamma reacts to the ghost at the doorway. The doorway is not Elof's position.
+    const complete = new Set([...told('prologue:mamma'), 'mamma:passed']);
+    for (const calm of [false, true]) for (const speed of [0, 4.2]) {
+      const stage = createStage(prolog, () => 0);
+      const player = new OBB().fromBox3(new Box3(new Vector3(elofX - .45, 0, -.35), new Vector3(elofX + .45, 3, .35)));
+      for (let f = 0; f <= Math.ceil(MAMMA_TIME * 60); f++) {
+        const seconds = Math.min(MAMMA_TIME, f / 60);
+        stage.update({ id: 'prologue:mamma', seconds }, told('prologue:mamma'), { x: elofX, y: 0 }, seconds, 1 / 60, calm);
+        stage.group.updateMatrixWorld(true);
+        for (const who of family) expect(parts(stage, who).some(part => part.intersectsOBB(player)), `${who} crosses held Elof at ${seconds}`).toBe(false);
+      }
+      const initial = family.map(who => stage.actors.get(who)!.rig.group.position.clone());
+      let previous = initial.map(point => point.clone());
+      for (let f = 1; f <= 180; f++) {
+        const seconds = MAMMA_TIME + f / 60;
+        stage.update(null, complete, { x: elofX + speed * f / 60, y: 0 }, seconds, 1 / 60, calm);
+        stage.group.updateMatrixWorld(true);
+        const obstacles = solids(stage);
+        for (const [i, who] of family.entries()) {
+          const now = stage.actors.get(who)!.rig.group.position;
+          expect(now.x, `${who} reverses away from Elof, speed ${speed}, frame ${f}`).toBeGreaterThanOrEqual(initial[i]!.x - .01);
+          expect(now.distanceTo(previous[i]!)).toBeLessThan(.09);
+          expect(parts(stage, who).some(part => obstacles.some(solid => part.intersectsOBB(solid.box))), `${who} crosses furniture after release`).toBe(false);
+          previous[i]!.copy(now);
+        }
+      }
+      if (speed > 0) for (const [i, who] of family.entries()) {
+        expect(stage.actors.get(who)!.rig.group.position.x, `${who} follows Elof onwards`).toBeGreaterThan(initial[i]!.x + 5);
+      }
+    }
   });
 
   it('gathers all four by the landed bird before the ghost wakes, keeping Elof with the carving', () => {

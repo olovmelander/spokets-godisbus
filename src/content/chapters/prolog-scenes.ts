@@ -30,6 +30,10 @@ const WINDOW_FAMILY = {
   moa: { x: WINDOW.x - 1.1, z: -6.3 },
 };
 const faceWindow = (from: { x: number; z: number }) => 0.25 - Math.atan2(WINDOW.x - from.x, WINDOW.z - from.z) / (2 * Math.PI);
+// Elof can paint without leaving his starting mark. The ghost reaches the doorway independently of him;
+// the family therefore waits behind this earliest position, then follows him forwards when he sets off.
+const REJOIN = atTable(-2.9);
+const FOLLOW = { mamma: 5.2, pappa: 2.7, moa: 3.7, bertil: 4.5 };
 /** The deck mark for the star encounter: Elof stops here to look, taste, and become small. */
 const STAR = 40.5;
 const PALM = { x: STAR + 0.8, y: 1.3, z: 0.05 };
@@ -231,37 +235,37 @@ export const PROLOG_SCENES: SceneDef[] = [
     stage: {
       shots: [
         { at: 0, x: 14.0, y: 3.0, z: -2, height: 8, width: 17, move: 0.01 },
-        { at: 7.2, x: atTable(1.5), y: 2.6, height: 7, width: 12, move: 2.1 },
+        { at: 2.9, x: 12.5, y: 3.1, z: -1.5, height: 8, width: 18, move: 2.0 },
       ],
       actors: {
         // The window is left of the table. Return through that clear side aisle, then join Elof in front;
         // handing a window mark directly to the followers would cut diagonally through the table.
         mamma: [
           { at: 0, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.6, x: atTable(-5.1), z: -5.4, move: 2.2, act: 'walk' },
-          { at: 2.9, x: atTable(-5.1), z: 3.0, move: 2.4 },
-          { at: 5.4, x: atTable(0.2), z: 3.0, move: 2.3, face: 0.05 },
-          { at: 7.7, act: 'shrug', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
-          { at: MAMMA_TIME - 0.2, act: 'stand', follow: 5.2, holdsLeft: null },
+          { at: 0.6, x: REJOIN - FOLLOW.mamma, z: -5.4, move: 2.2, act: 'walk' },
+          { at: 2.9, x: REJOIN - FOLLOW.mamma, z: 3.0, move: 2.4 },
+          { at: 5.4, face: 0.05, act: 'look', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
+          { at: 6.7, act: 'shrug', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.mamma, holdsLeft: null },
         ],
         pappa: [
           { at: 0.2, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 1.5, x: atTable(-5.8), z: 0.3, move: 4.95, act: 'walk' },
-          { at: 6.5, x: atTable(2.7), z: 0.3, move: 2.7, face: 0 },
-          { at: MAMMA_TIME - 0.2, act: 'stand', follow: 2.7 },
+          { at: 1.5, x: REJOIN - FOLLOW.pappa, z: 0.3, move: 4.95, act: 'walk' },
+          { at: 6.5, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.pappa },
         ],
         moa: [
           { at: 0.15, act: 'look', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.35, x: atTable(-4.6), z: 3.6, move: 3.65, act: 'walk' },
-          { at: 4.1, x: atTable(1.7), z: 3.6, move: 3.2, face: 0 },
-          { at: MAMMA_TIME - 0.2, act: 'stand', follow: 3.7 },
+          { at: 0.35, x: REJOIN - FOLLOW.moa, z: 3.6, move: 3.65, act: 'walk' },
+          { at: 4.1, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.moa },
         ],
         bertil: [
           { at: 0.25, act: 'startle', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.55, x: atTable(-3.5), z: -4.6, move: 2.3, act: 'walk' },
-          { at: 2.9, x: atTable(-3.5), z: 1.7, move: 2.15 },
-          { at: 5.2, x: atTable(0.9), z: 1.7, move: 2, face: 0 },
-          { at: MAMMA_TIME - 0.2, act: 'stand', follow: 4.5 },
+          { at: 0.55, x: atTable(-4.3), z: -4.6, move: 2.3, act: 'walk' },
+          { at: 2.9, x: atTable(-4.3), z: 1.7, move: 2.15 },
+          { at: 5.2, x: REJOIN - FOLLOW.bertil, z: 1.7, move: 2, face: 0 },
+          { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.bertil },
         ],
       },
       elof: [{ at: 0.2, act: 'watch', aim: { x: atTable(5.4), y: 0.6, z: 0 } }],

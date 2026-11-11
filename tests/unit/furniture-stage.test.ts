@@ -16,7 +16,7 @@ const scenes = prolog.scenes!, index = scenes.findIndex(scene => scene.id === 'p
 const flags = (complete = false) => new Set(scenes.slice(0, index + Number(complete)).map(scene => scene.by?.done ?? `scene:${scene.id}`));
 const actor = (stage: Stage) => stage.actors.get('moa')!.rig;
 function show(stage: Stage, seconds: number, calm = false, dt = 1 / 60, clock = seconds) {
-  stage.update({ id: 'prologue:mamma', seconds }, flags(), { x: prolog.prologue!.doorway.x - 1.1, y: 0 }, clock, dt, calm);
+  stage.update({ id: 'prologue:mamma', seconds }, flags(), { x: prolog.spawn.x, y: 0 }, clock, dt, calm);
   stage.group.updateMatrixWorld(true);
 }
 function snapshot(stage: Stage) {
@@ -53,7 +53,7 @@ describe('Moa leaves the kitchen chair', () => {
     show(stage, MAMMA_TIME, calm);
     const before = actor(stage).group.position.clone();
     for (let frame = 1; frame <= 180; frame++) {
-      stage.update(null, flags(true), { x: prolog.prologue!.doorway.x - 1.1, y: 0 }, MAMMA_TIME + frame / 60, 1 / 60, calm);
+      stage.update(null, flags(true), { x: prolog.spawn.x + 1.6 * frame / 60, y: 0 }, MAMMA_TIME + frame / 60, 1 / 60, calm);
       const now = actor(stage).group.position;
       expect(now.distanceTo(before)).toBeLessThan(.05);
       expect(overlaps(stage), `following frame ${frame}`).toEqual([]);
