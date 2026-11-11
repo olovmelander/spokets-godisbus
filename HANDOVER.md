@@ -8,8 +8,8 @@
 - **Dialogue:** one paper card holds the speaker, full readable text and optional Continue. Ordinary dialogue
   stays above play; held portrait conversations dock near the bottom, clearing the family's close-up faces.
   Wide held scenes use an inline button. The visible line retains its dock through Pause and completion linger.
-  Reading text remains 22 px or 27.5 px with Större text; original words, automatic timing, recordings, movement
-  policy and dialogue receipts are preserved. The action sits outside the speech live region.
+  At Olov's request after the phone preview, reading text is 20 px or 25 px with Större text. Original words,
+  automatic timing, recordings, movement policy and dialogue receipts are preserved. The action sits outside the speech live region.
 - **HUD:** Help and Pause share one top utility row. Smaller painted discs, restrained shadows and lighter
   controls leave more of the scene visible while preserving generous touch areas. Objectives keep their full
   wording. Reward notices wait for the conversation and keep their remaining readable lifetime.

@@ -1652,8 +1652,8 @@ Every source and licence goes into `LICENSES.md` (§7.5). Three categories are a
   not reduce their hit areas. Active, unavailable and keyboard-focus states remain distinct.
 - **Font: Andika** (SIL, OFL 1.1), designed for beginning readers, with clear å, ä and ö.
   - Self-hosted as a latin WOFF2 subset; `@fontsource/andika` 5.3.0 is on npm under OFL-1.1.
-  - Dialogue body text is at least 22 px; *Större text* adds 25%. Labels and secondary navigation have their
-    own hierarchy. Full lines remain readable: no clipping, ellipsis, artificial page breaks or shorter timers.
+  - Dialogue body text is 20 px; *Större text* adds 25% (Olov's smaller-text decision, 11 November). Labels
+    and secondary navigation have their own hierarchy. Full lines remain readable: no clipping, ellipsis, artificial page breaks or shorter timers.
 - **Dialogue (Olov, 11 November 2026):** speaker, complete text and optional **Fortsätt** form one compact
   card. Ordinary speech leaves movement available. Held scenes use the lower edge on narrow portrait phones
   to clear family close-ups; wide views place Continue beside the text. The visible line retains its dock
