@@ -30,7 +30,7 @@ export const words: ChapterWords = {
     soMamma: 'Elof! Där är du ju!',
     soPappa: 'Och du har båda trägubbarna!',
     soMoa: 'Vi hittade dem, lillebror. Tillsammans!',
-    soBertil: 'Jag drömmer om Thailand. Snart åker vi!',
+    soBertil: 'Hoppas att nästa äventyr blir i tofflor! Snart åker vi ju till Thailand.',
     soMormor: 'Nu ska ni få bli varma, allihop.',
     soMorfar: 'Vi följer med er hem till frukost!',
     soHome: 'Kom, nu åker vi hem!',
