@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Box3, Vector3 } from 'three';
+import { Box3, Mesh, Vector3 } from 'three';
 import { createHomeConsole, homeConsoleAvailable, type HomeConsoleSession } from '../../src/app/home-console';
 import { HOME_LAYOUT } from '../../src/content/home-layout';
 import { prolog, epilog } from '../../src/content/chapters/ends';
@@ -96,12 +96,26 @@ describe('the optional shared-home TV activity', () => {
       expect(console.parent?.getObjectByName('home-tv-programme')).toBeDefined();
       expect(console.getWorldPosition(new Vector3()).x).toBeCloseTo(HOME_LAYOUT.television.x);
     }
-    const bounds = new Box3().setFromObject(createHomeConsoleModel());
-    expect(bounds.min.x).toBeGreaterThan(-HOME_LAYOUT.television.consoleWidth / 2);
-    expect(bounds.max.x).toBeLessThan(HOME_LAYOUT.television.consoleWidth / 2);
-    expect(bounds.max.y).toBeLessThan(HOME_LAYOUT.television.screenY - HOME_LAYOUT.television.screenHeight / 2 + .22);
+    const model = createHomeConsoleModel(), tv = HOME_LAYOUT.television;
+    const bounds = new Box3().setFromObject(model);
+    // The TV lead hangs visibly outside the cabinet, with room before the sofa.
+    expect(bounds.min.x).toBeLessThan(-tv.consoleWidth / 2);
+    expect(bounds.min.x).toBeGreaterThan(-tv.consoleWidth / 2 - .6);
+    expect(bounds.max.x).toBeLessThan(tv.consoleWidth / 2);
+    expect(bounds.max.y).toBeLessThan(tv.screenY);
+    // Only the side lead rises above the console: nothing in front of the picture obscures it.
+    const frontHeights: number[] = [];
+    model.traverse(node => {
+      if (!(node instanceof Mesh)) return;
+      const points = node.geometry.getAttribute('position');
+      for (let i = 0; i < points.count; i++) {
+        if (Math.abs(points.getX(i)) < tv.screenWidth / 2 && points.getZ(i) > tv.screenZ) frontHeights.push(points.getY(i));
+      }
+    });
+    expect(frontHeights.length).toBeGreaterThan(0);
+    expect(Math.max(...frontHeights)).toBeLessThan(tv.screenY - tv.screenHeight / 2);
     // The controller cable visibly drapes over the front, staying well above the floor.
     expect(bounds.max.z).toBeGreaterThan(HOME_LAYOUT.television.consoleDepth / 2);
-    expect(bounds.min.y).toBeGreaterThan(1.2);
+    expect(bounds.min.y).toBeGreaterThan(1.0);
   });
 });

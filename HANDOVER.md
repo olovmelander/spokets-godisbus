@@ -14,8 +14,10 @@
   introducing new family likenesses or spoiling the ghost's name. Deliberate cornering charges blue/gold drift
   boosts; golden sweets hold one extra boost. Automatic gas, manual controls, Lugnt and keyboard/touch/gamepad
   input support different players. Race candy never changes the adventure's collection.
-- **The house:** one small console, controller and connected cables sit at the shared television in all four
-  home chapters. Nearby story actions keep their ordinary button; the TV is an explicit optional choice.
+- **The house:** one rounded cream-and-pine console, controller and connected cables sit at the shared
+  television in all four home chapters. The TV lead hangs visibly beside the cabinet, with plugs at both ends;
+  the controller's cable drapes over the front. The console leaves the TV picture clear. Nearby story actions
+  keep their ordinary button; the TV is an explicit optional choice.
   The same live house/character/story state waits while the race owns input, rendering and sound. Closing
   returns to that state and releases race controls. Loading cancellation/failure, Pause, visibility and
   context recovery have explicit ownership. Optional local records are scoped by player, reset generation
