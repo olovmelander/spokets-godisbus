@@ -64,7 +64,9 @@ export const prolog: ChapterData = {
   goalNeeds: 'titel',
   prologue: {
     // Pappa notices the ghost once Moa's drawing is told, as Elof sets off towards it.
-    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 52.6, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
+    // The ghost waits at the very edge of the boards, ready to jump: at 52.6 it stood at his side, the bag in reach,
+    // all the while the family said their promises (12 November 2026).
+    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 53.3, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
     // The deck's railing runs along its far side: Pappa puts the frozen ghost up on its top rail.
     rail: { from: 38.4, to: 53.8, z: -3.4 },
   },
@@ -115,7 +117,7 @@ export const prolog: ChapterData = {
     // On the deck, beyond the star it lost: it waits there until Pappa's joke.
     { at: { x: 44.4, y: -0.8 }, until: 'pappa:done', near: 0 },
     // At the deck's edge, where it hid behind his back; then down into the garden, as the title comes.
-    { at: { x: 52.6, y: -0.8 }, until: 'leap', near: 99 },
+    { at: { x: 53.3, y: -0.8 }, until: 'leap', near: 99 },
     { at: { x: 57.5, y: -7 }, near: 0 },
   ],
   beats: [
