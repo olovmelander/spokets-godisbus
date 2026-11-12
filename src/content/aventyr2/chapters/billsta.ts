@@ -112,6 +112,12 @@ const HAY = [67.6, 69.2].map((x, i) => ({ x, y: round(LOFT + 1.2 * (i + 1)) }));
  * end it slopes down to its low eaves, a soft drop over the ground behind the house.
  */
 const ROOF = { from: HAY[1]!.x, to: 99.6, y: HAY[1]!.y };
+/**
+ * Where the hay he climbs ends, at the barn's right gable (../barn-loft.ts, `LOFT_BARN.right`), and the roof outside
+ * begins. The outline has a point there, on the roof's own level, so that the picture's floor can run on under the
+ * hay to the gable (`landmarks`, 'bale') while the simulation's roof is as it was.
+ */
+const HAY_ENDS = 70.9;
 const ROOF_LEE = [72, 77.2, 82.4, 87.6, 92.8, 98];
 /** The loft's ground, for its picture (../barn-loft.ts): the planks up to it, its floor, the bale, the hatch, the hay. */
 export const LOFT_GROUND = { planks: PLANKS, floor: LOFT, bale: BALE, hatch: HATCH, hay: HAY, roof: { from: HAY[1]!.x, y: HAY[1]!.y } } as const;
@@ -129,7 +135,12 @@ const BEAMS: Ledge[] = [
 
 /** Where morfar and mormor stand, and he calls them. */
 const MORFAR = { x: 13.2, y: 0 };
-const MORMOR = { x: 47.4, y: 0 };
+/**
+ * He calls mormor from two and a half steps short of where she waits, as he comes down off the woodpile. Nearer, where
+ * the call was offered he stood where she holds her lantern out low as she bends to him (`MORMOR_WAITS`), and it was in
+ * front of him: he was hidden behind it while she spoke.
+ */
+const MORMOR = { x: 45.4, y: 0 };
 /**
  * Mormor (Olov, 9 November 2026: "Mormor döljs av en stubbe", and "Mormor ska gå fram och öppna ladan"). She waits by the
  * foot of the planks, in front of the woodshed's chopping block, and when he has called her she walks up the planks to
@@ -145,7 +156,7 @@ const MORMOR_WAITS = { x: 47.9, y: 0, z: -0.9 };
  */
 const MORMOR_AT_DOOR = { x: 54.6, y: ramp(54.6), z: 1.0 };
 const MORMOR_WALK = elderWalk(MORMOR_WAITS.x, MORMOR_AT_DOOR.x, (x) => (x < PLANKS.from ? 0 : ramp(x)));
-const MORMOR_SEEN = { x: 52.4, y: 5.4, height: 12.4, width: 13.6, seconds: round(MORMOR_WALK + 2.2, 1) };
+const MORMOR_SEEN = { x: 51.4, y: 5.4, height: 12.4, width: 13.6, seconds: round(MORMOR_WALK + 2.2, 1) };
 
 // --- 5. the forest behind the house, and Billaberget ---------------------------------------------------------------
 
@@ -389,7 +400,10 @@ export const billsta: ChapterData = {
     { x: BALE.to, y: LOFT },
     ...pit(HATCH.from, HATCH.to, 0, LOFT),
     ...steps(HAY, LOFT),
-    // the roof, out to where it slopes down to its low eaves, and the soft drop to the ground behind the house
+    // the gable at the hay's end, on the roof's level (`HAY_ENDS`), the roof, out to where it slopes down to its low
+    // eaves, and the soft drop to the ground behind the house
+    { x: HAY_ENDS, y: ROOF.y },
+    { x: round(HAY_ENDS + 0.05, 2), y: ROOF.y },
     { x: ROOF.to, y: ROOF.y },
     { x: EAVES.from, y: EAVES.y },
     { x: EAVES.to, y: EAVES.y },
@@ -434,8 +448,9 @@ export const billsta: ChapterData = {
     { from: PLANKS.from, to: BALE.from, kind: 'wood' },
     { from: BALE.from, to: BALE.to, kind: 'shavings' },
     { from: BALE.to, to: HAY[0]!.x, kind: 'wood' },
-    { from: HAY[0]!.x, to: ROOF.from, kind: 'shavings' },
-    { from: ROOF.from, to: EAVES.to, kind: 'roof' },
+    { from: HAY[0]!.x, to: HAY[1]!.x, kind: 'shavings' },
+    { from: HAY[1]!.x, to: HAY_ENDS, kind: 'shavings' },
+    { from: HAY_ENDS, to: EAVES.to, kind: 'roof' },
     // The forest floor behind the house, the stones in the brook, and Billaberget's boulders.
     { from: EDGE.from, to: EDGE.to, kind: 'moss' },
     ...STONES.map((s) => ({ from: s.from, to: s.to, kind: 'wetRock' as const })),
@@ -448,6 +463,11 @@ export const billsta: ChapterData = {
   // What the stones and the boulders are, for the picture only: granite of Billaberget's boulder field.
   landmarks: [
     { look: 'woodpile', from: STACK[0]!.x, to: STACK_TOP.to, base: 0 },
+    // The loft's bales are the barn's own (../barn-loft.ts): the picture's floor runs on under them. As steps of the
+    // ground, each had a front of its own reaching out under the bale towards the camera, a grey wedge of straw.
+    { look: 'bale', from: BALE.from, to: BALE.to, base: LOFT },
+    { look: 'bale', from: HAY[0]!.x, to: HAY[1]!.x, base: LOFT },
+    { look: 'bale', from: HAY[1]!.x, to: HAY_ENDS, base: LOFT },
     ...STONES.map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: BROOK_WATER - 1 })),
     { look: 'stone', from: B1.from, to: B1.to, base: TOP.y },
     { look: 'stone', from: B2.from, to: B2.to, base: SLOPE },

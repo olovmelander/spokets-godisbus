@@ -3,6 +3,7 @@ import { Game } from '../../src/app/game';
 import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
 import { alven } from '../../src/content/aventyr2/chapters/alven';
 import { words } from '../../src/content/aventyr2/lines/alven';
+import { OTTER_REACH } from '../../src/content/aventyr2/otter';
 import { nextAfter } from '../../src/content/chapters';
 import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
@@ -27,7 +28,7 @@ vi.setConfig({ testTimeout: 90000 });
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
   'al:arrive', 'al:klonk-floats', 'al:klonk', 'al:raft-seen', 'al:flash', 'al:current', 'al:logs-wait', 'al:old-one',
-  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:take-hold', 'al:up', 'al:thanks', 'al:follow', 'al:lodge', 'al:otter',
+  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:take-hold', 'al:up', 'al:thanks', 'al:follow', 'al:lodge',
   'al:lake', 'al:owl-seen', 'al:owl-here', 'al:owl-fly', 'al:see-little', 'al:owl-thanks',
   'al:moalven', 'al:old-ahead',
   'al:last', 'al:gone', 'al:afraid', 'al:klonk-near', 'al:moa-never', 'al:bertil-pocket', 'al:moa-trail',
@@ -514,6 +515,27 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       expect(sim.bubbles).toBe(0);
     });
 
+    it('says "En utter!" where the otter dives, as he comes out to it over the rolling logs, and never from the owl', () => {
+      // It was said on the lodge's far side, twenty EL before the otter was in the picture, sitting still.
+      const beat = alven.beats!.find((b) => b.id === 'al:otter')!;
+      const otter = alven.decor!.find((d) => d.look === 'otter')!;
+      expect(beat.at).toBeCloseTo(otter.at.x - OTTER_REACH, 1);
+      expect(beat.aside).toBe(true);
+      expect(beat.until).toBe('al:owl');
+      expect(lines[beat.line]).toMatch(/^En utter!.*Plask/);
+      // Out on the second rolling log, where the otter sees him: the line, and nothing of it before he got there.
+      const sim = new Sim(alven, {}, { checkpoint: CP.lake, flags: ['al:pappa', 'al:scarf', 'al:lift'] });
+      run(sim, 0.2);
+      const at = (i: number) => sim.movers.find((m) => m.def.id === rollers[i]!.id)!;
+      leap(sim, 1, 137.1);
+      waitFor(sim, () => at(1).x - at(0).x < 3.25 && at(0).x > 139.7);
+      expect(sim.said).not.toContain('al:otter');
+      leap(sim, 1, at(0).x + 0.7);
+      run(sim, 0.3);
+      expect(sim.curr.x).toBeGreaterThan(beat.at!);
+      expect(sim.said).toContain('al:otter');
+    });
+
     it('skims low over the shallows on the owl, so that the sweets seen under him are taken by dipping down to them', () => {
       // Olov: "När man flyger på ugglan över sjön syns godisar under. Går de att ta, eller är det omöjligt?" They are: the
       // owl flies low over the rolling logs, and down on the stick takes every one of them from its back.
@@ -575,6 +597,16 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
         }
         expect(f.to.x).toBeGreaterThan(f.from.x);
         expect(Math.max(f.from.y, f.to.y)).toBeLessThan(1);
+      }
+      // The old one rides his log half out of the water ("på en stock"): the picture stands him half his size under the
+      // flight's line, with his log a quarter of his size under his feet (src/content/aventyr2/render.ts, `flybys`).
+      // Lower, the log was under the water and he waded in the river.
+      for (const f of flybys.filter((one) => one.who === 'tragubbe')) {
+        const size = f.size ?? 1.2;
+        const water = alven.water!.find((w) => f.from.x > w.from && f.from.x < w.to)!.y;
+        const log = f.from.y - 0.75 * size;
+        expect(Math.abs(log - water), `the log at ${f.from.x}`).toBeLessThan(0.1);
+        expect(f.to.y).toBe(f.from.y);
       }
     });
 
@@ -687,6 +719,14 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       'alvenPappa/pappa', 'alvenScarf/pappa', 'alvenLifted/pappa', 'alvenLodge',
       'alvenLake', 'alvenBoard', 'alvenFly', 'alvenMoalven', 'alvenBillsta',
     ]);
+  });
+
+  it('asks for a jump over the eddies only where one is wanted: on Lugnt, or after a fall, he steps on as a log comes', () => {
+    const at = { x: 36, y: 0.3 };
+    expect(storyContext('alven', new Set(['al:raft']), at)?.purpose).toBe('Vänta in stockarna och hoppa.');
+    expect(storyContext('alven', new Set(['al:raft', FELL_IN]), at)?.purpose).toBe('Vänta tills stocken kommer och kliv på.');
+    // Lugnt sets it from the start.
+    expect(new Sim(alven, simOptions(settingsFor('lugnt'))).flags.has(FELL_IN)).toBe(true);
   });
 
   it('has its own words: new keys, short, no digits, and every one of them said', () => {

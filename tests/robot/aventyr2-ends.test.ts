@@ -5,6 +5,7 @@ import '../../src/content/aventyr2/aventyr2';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
 import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { morgonen } from '../../src/content/aventyr2/chapters/morgonen';
+import { storyContext } from '../../src/content/story-context';
 import { endsInScene } from '../../src/sim/scene';
 import { groundAlong } from '../../src/sim/sim';
 import { listenThrough } from './listener';
@@ -132,6 +133,17 @@ describe('Äventyr 2: Stormens öga', () => {
     const result = playThrough(60, stormoga, {}, 300);
     const ordered = ['lampa:bertil:0', 'lampa:bertil:1', 'soOwlThanks', 'oga:0'];
     expect(result.said.filter(id => ordered.includes(id))).toEqual(ordered);
+  });
+
+  it('says the storm has quietened only once its eye has opened: set down on the stone, it still blows', () => {
+    const owl = stormoga.rides!.find(ride => ride.id === 'owl')!;
+    const landed = storyContext('stormoga', new Set(['owl:call', 'owl:ready', 'owl']), owl.to);
+    expect(landed?.purpose).toBe('Gå fram till trägubbarna.');
+    expect(landed?.recap).not.toMatch(/tystnade/);
+    expect(landed?.family).not.toMatch(/uggla/i);
+    const eye = storyContext('stormoga', new Set(['owl:call', 'owl:ready', 'owl', 'eye']), owl.to);
+    expect(eye?.purpose).toBe('Gå fram till trägubbarna.');
+    expect(eye?.recap).toMatch(/tystnade/);
   });
 
   it('walks up with the cap and gives it back before the golden sweet is offered', () => {

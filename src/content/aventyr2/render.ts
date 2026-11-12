@@ -940,7 +940,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         } else if (carrying && landedAt >= 0) {
           const k = still ? 1 : (clock - landedAt) / 1.8;
           if (k < 1) {
-            ridden.position.set(setDown.x + k * 6 + k * k * 4, setDown.y + k * 1.2 + k * k * 8, setDown.z);
+            // It goes off behind him (Stormens öga, Älven; 12 November 2026): from where it set him down, its spread wings
+            // covered him on the stone as it rose.
+            ridden.position.set(setDown.x + k * 6 + k * k * 4, setDown.y + k * 1.2 + k * k * 8, setDown.z - 1.4 * smooth(k * 5) - 2 * k);
             ridden.rotation.z = 0.3 * smooth(k * 3);
             ridden.scale.setScalar(1);
           }
