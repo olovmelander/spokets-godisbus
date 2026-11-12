@@ -1,8 +1,9 @@
-import { BoxGeometry, BufferGeometry, Group, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import { BoxGeometry, BufferGeometry, Group, Mesh, MeshStandardMaterial, PlaneGeometry, Vector3 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ExtraContext, ViewExtra } from '../../render/extensions';
 import { paint } from './buildings';
 import { TEAM_BENCHES } from './chapters/olympia';
+import { crestMaterial } from './club-crest';
 
 /**
  * Olympia's two team benches by the touchline (Olov's playthrough pass, 12 November 2026): "Spring förbi bänkarna mellan
@@ -11,10 +12,11 @@ import { TEAM_BENCHES } from './chapters/olympia';
  * glas?"): a back wall and two end walls of upright stained boards, a roof of boards sloping down towards the pitch, on
  * wooden posts, and a row of red seats inside, open towards the pitch. They stand on the touchline just behind the path;
  * the roof's front edge reaches over it, and the drops that pour off that edge are the chapter's drips (`TEAM_BENCHES`
- * and `DRIPS` in ./chapters/olympia.ts). No mark, name or crest on any of it.
+ * and `DRIPS` in ./chapters/olympia.ts). On each back wall hangs Anundsjö IF's crest, the one on Bertil's cap (Olov's
+ * exception, 12 November 2026: ./club-crest.ts); no other mark, name or lettering.
  *
- * Picture only: the simulation has the drips, as before. Two draws for both benches: the wood in one mesh, the seats and
- * their steel beam in the other.
+ * Picture only: the simulation has the drips, as before. Three draws for both benches: the wood in one mesh, the seats
+ * and their steel beam in another, and the two crests in a third.
  */
 
 /** The roof's line across the bench, in EL: the back wall's top, sloping down to the front edge (the lip) over the path. */
@@ -107,6 +109,15 @@ function seats(from: number, to: number): BufferGeometry[] {
   return parts;
 }
 
+/**
+ * Where Anundsjö IF's crest hangs in each bench (./club-crest.ts; Olov, 12 November 2026): in the middle of the back
+ * wall, on the boards' face, over the seats' backs and under the roof, `size` across.
+ */
+export const CREST = { y: 4.4, z: SHELL.back + 0.02, size: 2 };
+export function crestPlaces(): { x: number; y: number; z: number }[] {
+  return TEAM_BENCHES.map(({ from, to }) => ({ x: (from + to) / 2, y: CREST.y, z: CREST.z }));
+}
+
 /** Olympia's team benches (registered by ./render.ts). Other chapters get nothing. */
 export function teamBenchesExtra({ chapter, scene }: ExtraContext): ViewExtra | null {
   if (chapter.id !== 'olympia') return null;
@@ -119,6 +130,14 @@ export function teamBenchesExtra({ chapter, scene }: ExtraContext): ViewExtra | 
   benches.add(new Mesh(timber, new MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0 })));
   // Red plastic seats and their steel beam.
   benches.add(new Mesh(chairs, new MeshStandardMaterial({ vertexColors: true, roughness: 0.4, metalness: 0.1 })));
+  // The club's crest on each back wall, both in one draw (none where there is nothing to draw it with).
+  const crest = crestMaterial();
+  const plates = mergeGeometries(crestPlaces().map(({ x, y, z }) => new PlaneGeometry(CREST.size, CREST.size).translate(x, y, z)));
+  if (crest && plates) {
+    const mesh = new Mesh(plates, crest);
+    mesh.name = 'club-crest';
+    benches.add(mesh);
+  }
   scene.add(benches);
   return { update() {} };
 }

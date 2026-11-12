@@ -2,7 +2,8 @@ import { Color, DirectionalLight, Group, HemisphereLight, Mesh, Scene } from 'th
 import { describe, expect, it } from 'vitest';
 import { ballBag } from '../../src/content/aventyr2/ball-bag';
 import { olympia, TEAM_BENCHES } from '../../src/content/aventyr2/chapters/olympia';
-import { hood, SHELL, teamBenchesExtra } from '../../src/content/aventyr2/team-benches';
+import { shield, wings } from '../../src/content/aventyr2/club-crest';
+import { CREST, crestPlaces, hood, SHELL, teamBenchesExtra } from '../../src/content/aventyr2/team-benches';
 import { DROP } from '../../src/render/rain';
 import { DROP_FROM } from '../../src/sim/constants';
 
@@ -52,6 +53,29 @@ describe("Olympia's team benches and ball bag", () => {
       expect(box.max.z).toBeLessThan(0.5);
     }
     expect(teamBenchesExtra(context({ ...olympia, id: 'flarken' }))).toBeNull();
+  });
+
+  it("carry Anundsjö IF's crest on each back wall, over the seats and under the roof (Olov, 12 November 2026)", () => {
+    const places = crestPlaces();
+    expect(places.length).toBe(TEAM_BENCHES.length);
+    for (const [i, at] of places.entries()) {
+      const bench = TEAM_BENCHES[i]!;
+      expect(at.x - CREST.size / 2).toBeGreaterThan(bench.from);
+      expect(at.x + CREST.size / 2).toBeLessThan(bench.to);
+      // Over the seats' backs (2.5 up) and under the roof's lowest line over the back wall.
+      expect(at.y - CREST.size / 2).toBeGreaterThan(2.5);
+      expect(at.y + CREST.size / 2).toBeLessThan(SHELL.wall);
+      // On the back wall's face, never out over the path.
+      expect(at.z).toBeGreaterThan(SHELL.back);
+      expect(at.z).toBeLessThan(SHELL.back + 0.1);
+    }
+    // The crest's shapes sit in its own square: the wings under and around the shield, all of it inside 0..100.
+    for (const [x, y] of [...wings(), ...shield(3.2)]) {
+      expect(x).toBeGreaterThanOrEqual(0);
+      expect(x).toBeLessThanOrEqual(100);
+      expect(y).toBeGreaterThanOrEqual(0);
+      expect(y).toBeLessThanOrEqual(100);
+    }
   });
 
   it('has a bag of small balls at the fence, smaller than the ball of the puzzle and the size of the ones that roll', () => {
