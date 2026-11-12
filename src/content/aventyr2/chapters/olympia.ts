@@ -560,6 +560,8 @@ export const olympia: ChapterData = {
 export const context: Chooser = (has, player) => {
   const at = player.x;
   if (has('beat:ol:gust')) return ['olympiaNorth', 'olympiaFamily', 'water'];
+  // Past the range's last target, up the floodlit trail: "to the ski stadium" was said there, past it.
+  if (at >= TARGETS[TARGETS.length - 1]! + 1.2) return ['olympiaForest', 'olympiaFamily'];
   if (at >= KICK.to.x - 0.5) return ['olympiaStadium', 'olympiaFamily'];
   if (has('ol:kick')) return ['olympiaFly', 'olympiaBertil', 'trail', 'bertil'];
   if (has('ol:bertil')) return ['olympiaBoard', 'olympiaBertil', 'trail', 'bertil'];

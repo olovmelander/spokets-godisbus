@@ -701,7 +701,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     expect(seen).toEqual([
       'olympiaArrive', 'olympiaFence', 'olympiaTrail', 'olympiaBalls', 'olympiaTrail', 'olympiaKick', 'olympiaHop',
       'olympiaTrail', 'olympiaBenches', 'olympiaTrail', 'olympiaCallBertil/bertil', 'olympiaBoard/bertil', 'olympiaFly/bertil',
-      'olympiaStadium', 'olympiaNorth',
+      'olympiaStadium', 'olympiaForest', 'olympiaNorth',
     ]);
     // Every purpose and helper the chooser can give has its words.
     for (const x of [0, 12, 30, 66, 76, 84, 100, 118, 130, 160, 176]) {
