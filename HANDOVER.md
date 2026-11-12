@@ -5692,11 +5692,9 @@ record identify the exact published revision.
 ## Next
 
 **Olov's Äventyr 2 list (12 November, night).** Next: the pass over candy, specials and finds in the whole adventure
-(laid out "fint och strukturerat och inte för plottrigt"), in its own PR. Then, on Olov's computer with Blender: an
-opening in the far goal's back net (`fotbollsmal-stort` in `art/blender/a2-yard.py`, re-baked), since Elof still walks
-out through it in Olympia. The MCP add-on in Blender 5.2 failed its handshake on 12 November (expected protocol 15):
-update it with `uvx mcp-for-blender install-addon`, re-enable it, start its server, and check `telemetry_consent` is
-false. Keep the power cut's single owner (`src/content/home-power.ts`) for lamp, TV, console and candle; keep
+(laid out "fint och strukturerat och inte för plottrigt"), in its own PR. The far goal's back net is torn open where
+he walks out (`goal(..., opening=-4.2)` in `art/blender/a2-yard.py`, baked on Olov's computer; `tests/unit/olympia-far-goal.test.ts`
+reads the baked kit). Keep the power cut's single owner (`src/content/home-power.ts`) for lamp, TV, console and candle; keep
 `lamp-hold.ts`'s forearm-along-the-beam hold for every family lamp; keep a handed-over sighting hidden at once.
 
 **Olov's Äventyr 1 playthrough (12 November, afternoon).** A ghost on a `still` perch waits for his help and never
@@ -6352,8 +6350,7 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **Äventyr 2 list (12 November, night):** the far goal in Olympia still has a closed back net that Elof walks out
-  through (needs Blender). Elof's coat hem, the flashlight fingers, Mamma's SUP stroke and the old one's lighting were
+- **Äventyr 2 list (12 November, night):** Elof's coat hem, the flashlight fingers, Mamma's SUP stroke and the old one's lighting were
   seen on stand-ins only. Billsta's bales are simple shapes, with a small grey wedge under one. A game loaded with Moa
   already called shows her upright for about a second before she crouches. "En utter! Den simmar ut mot stenen." is
   said while the otter still sits on its stone.
@@ -6562,6 +6559,15 @@ The older list, still true where it is not struck:
 
 ## Notes for sessions that drive Blender
 
+- **Olov's computer, 12 November 2026.** Blender 5.2.2 LTS also had Blender Lab's own "MCP" extension enabled, on the
+  same port 9876, so the session's server got answers it could not read ("Incomplete JSON response"). It is now disabled,
+  and "Interface: MCP for Blender" 2.0 is installed with `uvx mcp-for-blender install-addon` (protocol 16, telemetry
+  off, only Poly Haven on). Its safe mode needs `import bpy` in every script sent. Two more things on this computer:
+  the add-on serves one client at a time, so `scripts/bake/send-to-blender.mjs` waits forever while the session's own
+  server is connected; and inside the session's tool sandbox a second `uvx` server cannot start (Windows blocks
+  Python's `_ssl`). So send a kit through the session's `execute_blender_code` in three calls, as on 12 November for
+  the yard kit: build (`ONLY = None` + `kit-tools.py` + the kit), bake (`import bpy`, `BAKE = True` + `kit-bake.py`), and
+  export (`scripts/bake/export.py` with `OUT`). Objects stay in Blender between calls; functions do not.
 - **Blender 5.2 in a cloud session** (8 November 2026): `python3 -m venv …; pip install "bpy==5.2.*"` works on the
   sandbox's Python 3.13 (about 400 MB), and runs a script headless with
   `python -I -c "OUT='…'; exec(open('art/blender/motion.py').read())"`. Don't name a scratch script after a standard
@@ -6600,7 +6606,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
-- The 12 November Äventyr 2 list is handled in this continuation, except the candy layout pass (next PR) and the far goal's opening (Blender).
+- The 12 November Äventyr 2 list is handled in this continuation, except the candy layout pass (next PR).
 - The 12 November list from playing Äventyr 1 through (ten points) is handled in this continuation.
 - The 11 November request for Bertil's slipper wish before Thailand is handled in this continuation.
 - The 11 November evening request for the family to walk to the opening's lavskrika is handled in this

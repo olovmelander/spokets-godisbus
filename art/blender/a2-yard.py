@@ -419,7 +419,9 @@ if wanted('gungor'):
 # stays behind the path. `fotbollsmal` is the training goal, 7 deep and 8 high; `fotbollsmal-stort` the big one, 10 deep, 16 high.
 
 
-def goal(name, depth, high, span=12.0):
+def goal(name, depth, high, span=12.0, opening=None):
+    """`opening`: across the goal (Y), where the path goes out through the back net. The net is torn loose there, from a
+    ragged edge a little over his head, with its cut cords hanging (Olov, 12 November 2026: he walked out through it)."""
     part = new_part()
     WHITE__ = tone('#f2f2ee')
     NET = tone('#e2e2de')
@@ -440,6 +442,13 @@ def goal(name, depth, high, span=12.0):
 
     CELL = 0.9 if high < 10 else 1.3
     cord = 0.035 if high < 10 else 0.05
+
+    def tear_top(y):
+        """The ragged edge of the tear, at this place across: about 1.7 up, as the code-built goal's."""
+        return 1.7 + 0.22 * math.sin(y * 5.3 + 0.7)
+
+    def torn(y, z):
+        return opening is not None and abs(y - opening) < 1.15 and z < tear_top(y)
     # The sides' net: squares between the posts' line and the back, from the ground to the roof's line, bellying out a hair.
     for y in (-span / 2.0, span / 2.0):
         out = 1.0 if y > 0.0 else -1.0
@@ -463,7 +472,12 @@ def goal(name, depth, high, span=12.0):
     for k in range(1, steps_y):
         y = -span / 2.0 + span * k / steps_y
         path = [Vector((depth * i / 8, y, roof_z(depth * i / 8) - 0.12 * math.sin(math.pi * k / steps_y))) for i in range(9)]
-        path += [Vector((depth + 0.2 * math.sin(math.pi * j / 6), y, high * 0.62 * (1.0 - j / 6))) for j in range(1, 7)]
+        back = [Vector((depth + 0.2 * math.sin(math.pi * j / 6), y, high * 0.62 * (1.0 - j / 6))) for j in range(1, 7)]
+        whole = [p for p in back if not torn(y, p.z)]
+        path += whole
+        if len(whole) < len(back):
+            # Cut where the tear begins: its end hangs loose, a little out from the net.
+            path.append(Vector((depth + 0.35, y + 0.12, tear_top(y) + 0.25)))
         tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
     for i in range(1, max(2, int(depth / CELL))):
         x = depth * i / max(2, int(depth / CELL))
@@ -471,15 +485,32 @@ def goal(name, depth, high, span=12.0):
         tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
     for j in range(1, max(2, int(high * 0.62 / CELL))):
         z = high * 0.62 * j / max(2, int(high * 0.62 / CELL))
-        path = [Vector((depth + 0.2 * math.sin(math.pi * (1.0 - z / (high * 0.62))), -span / 2.0 + span * k / 10, z)) for k in range(11)]
-        tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+        samples = 41 if opening is not None and z < 2.2 else 11
+        row = [Vector((depth + 0.2 * math.sin(math.pi * (1.0 - z / (high * 0.62))), -span / 2.0 + span * k / (samples - 1), z)) for k in range(samples)]
+        # Across the tear the row is cut, each cut end drooping a little into the opening.
+        pieces, piece = [], []
+        for n, p in enumerate(row):
+            if torn(p.y, p.z):
+                if piece:
+                    pieces.append(piece + [Vector((p.x + 0.15, p.y, p.z - 0.3))])
+                    piece = []
+            else:
+                if not piece and n > 0 and torn(row[n - 1].y, z):
+                    piece = [Vector((p.x + 0.15, p.y, p.z - 0.3))]
+                piece.append(p)
+        if piece:
+            pieces.append(piece)
+        for path in pieces:
+            if len(path) > 1:
+                tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
     finish(part, name, sharp=50.0, strength=0.3, reach=0.5, floor=0.0, leaf=True)
 
 
 if wanted('fotbollsmal'):
     goal('fotbollsmal', 7.0, 8.0)
 if wanted('fotbollsmal-stort'):
-    goal('fotbollsmal-stort', 10.0, 16.0)
+    # The path goes out through it 4.2 in front of its middle (Olympia's far goal stands at z -4.2; -Y is the front).
+    goal('fotbollsmal-stort', 10.0, 16.0, opening=-4.2)
 
 
 # --- the club's kit table ---------------------------------------------------------------------------------------------------------
