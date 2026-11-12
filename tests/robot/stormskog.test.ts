@@ -21,7 +21,7 @@ import { decide, heightAt, playThrough } from './robot';
 
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
-  'ss:dark', 'ss:klonk', 'ss:flash', 'ss:cones', 'ss:owl', 'ss:owl-free', 'ss:windthrow',
+  'ss:dark', 'ss:klonk', 'ss:cones', 'ss:flash', 'ss:owl', 'ss:owl-free', 'ss:windthrow',
   'ss:owl-waits', 'ss:owl-fly', 'ss:wide', 'ss:pappa', 'ss:ljuset:0', 'ss:ljuset:1', 'ss:ljuset:2', 'ss:tiptoe',
   'ss:vaknar:0', 'ss:vaknar:1', 'ss:vaknar:2', 'ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why', 'ss:both', 'ss:jay', 'ss:jay-glad', 'ss:see-old',
   'ss:village', 'ss:onward',
@@ -281,6 +281,10 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       const sim = new Sim(stormskog, {}, { checkpoint: CP.jay, flags: ['ss:frozen'] });
       run(sim, 0.1);
       expect(sim.flags.has('ss:hollow')).toBe(true);
+      // The picture goes back to the hollow first (`ss:minnet`), and then he is told.
+      expect(sim.sceneFrame?.id).toBe('ss:minnet');
+      expect(sim.said.filter((id) => ['ss:alone', 'ss:why'].includes(id))).toEqual([]);
+      run(sim, 1.2);
       expect(sim.said.filter((id) => ['ss:alone', 'ss:why'].includes(id))).toEqual([
         'ss:alone', 'ss:why',
       ]);
@@ -306,7 +310,14 @@ describe('Äventyr 2, Kapitel 2: Stormskogen', () => {
       ]);
       expect(words.lines.ssAlone).toBe('Gamla trägubben låg ensam i flera år.');
       expect(words.lines.ssWhy).toBe('Därför skyndar han. Lillgubben är ensam!');
-      expect(sim.said).toEqual(['ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why']);
+      // He stands at the hollow while they are read (`ss:minnet`), and says his resolve as he sets off again.
+      const told = stormskog.scenes!.find((scene) => scene.id === 'ss:minnet')!;
+      expect(told.hold).toBe(true);
+      expect(told.dialogue).toEqual(memory.map((beat) => beat.id));
+      const resolve = stormskog.beats!.find((beat) => beat.id === 'ss:both')!;
+      expect(resolve.needs).toBe('beat:ss:why');
+      expect(resolve.at!).toBeGreaterThan(perch.at.x);
+      expect(sim.said).toEqual(['ss:hollow-seen', 'ss:hollow', 'ss:alone', 'ss:why', 'ss:both']);
       run(sim, 1);
       expect(sim.ghost!.perch).toBeGreaterThan(waiting);
     });

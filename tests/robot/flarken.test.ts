@@ -28,7 +28,7 @@ vi.setConfig({ testTimeout: 90000 });
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
   'sjon:arrive', 'sjon:dry-klonk', 'sjon:door', 'sjon:mats', 'sjon:wood', 'sjon:flash',
-  'sjon:jetty', 'sjon:posts', 'sjon:old-one',
+  'sjon:posts', 'sjon:old-one',
   'sjon:broken', 'sjon:family:mamma', 'sjon:boat-ready', 'sjon:steady', 'sjon:thanks',
   'sjon:near', 'sjon:tower', 'sjon:lookout',
   'sjon:gap', 'sjon:stone-idea', 'sjon:plop', 'sjon:plop-klonk', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',
@@ -834,7 +834,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     expect(flarken.checkpoints!.length).toBeGreaterThanOrEqual(8);
     expect(flarken.checkpoints!.length).toBeLessThanOrEqual(10);
     // The card, the lookout from the diving tower, and the stone going under.
-    expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card', 'sjon:utkik', 'sjon:strommen', 'sjon:stocken', 'sjon:plopp']);
+    expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card', 'sjon:gamla', 'sjon:utkik', 'sjon:strommen', 'sjon:stocken', 'sjon:plopp']);
     for (const kind of ['tower', 'hut', 'swings', 'picnic', 'birch'] as const) {
       expect(buildings.some((d) => d.kind === kind), kind).toBe(true);
     }

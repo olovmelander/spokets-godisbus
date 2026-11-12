@@ -1,3 +1,4 @@
+import type { SceneDef } from '../../sim/scene';
 import type { Candy, ChapterData } from '../../sim/types';
 import { HOME_BATHROOM, HOME_LAYOUT } from '../home-layout';
 import { timeCard } from './cards';
@@ -148,9 +149,26 @@ const GUESTS = [
   { id: 'bertil', x: 19, word: 'giveBertil' },
 ] as const;
 
+/**
+ * Each gift is a moment of its own (docs/dialogue.md): he stands with the one he gave to while they thank him, and
+ * while what goes with it is said: the thing of theirs he found under the deck (Hittegods), and for Pappa the round
+ * stones. Handed out quickly, the thanks used to come one after another long after their gifts, up to eighteen
+ * seconds late, while he was further along the table. The sweet is given from any of the party's places, to whom he
+ * chooses; a game taken up at the next big candy (x 25) has had its party, and stands for none of it. One saved
+ * after a thanks was read has had that moment (`until`).
+ */
+const THANKS: SceneDef[] = [...GUESTS.map((g) => g.id), 'spoket'].map((id) => ({
+  id: `tack:${id}`, on: `party:${id}`, until: `beat:partyThanks:${id}`, before: 24.8, seconds: 0.4, hold: true,
+  dialogue: [`partyThanks:${id}`, ...({ pappa: ['coinBack', 'cobbles1', 'cobbles2', 'cobbles3'], moa: ['clipBack'], bertil: ['marbleBack'] } as Record<string, string[]>)[id] ?? []],
+}));
+
 /** The party table's top (`furniture`, below, and the room's table in ../../render/stage.ts): its two ends and middle. */
 const TABLE_HOP = { left: HOME_LAYOUT.dining.x - 2, middle: HOME_LAYOUT.dining.x,
   right: HOME_LAYOUT.dining.x + 2, top: 1.68, z: HOME_LAYOUT.dining.z };
+
+/** In the naming's scene: when the ghost stands on the table's end, and when it has come down and tilts its head. */
+const KLONK_UP = 1.85;
+const KLONK_DOWN = 6.95;
 
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
@@ -184,9 +202,17 @@ export const epilog: ChapterData = {
   scenes: [
     // Where and when, as the evening opens (./cards.ts).
     timeCard('epilog', 1),
+    // Each one he gives a sweet to thanks him while he stands there (`THANKS`, above).
+    ...THANKS,
     // The naming: given its candy, the ghost hops up onto the party table and across it, klonk, klonk, and down again
     // to where it waits for the carving. He is free all the while.
-    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 7.2, stage: { actors: { ghost: [
+    //
+    // It waits until the family's thanks are said (`quiet`): a child who hands the sweets out quickly had the hop
+    // over the table under their thanks, and its two lines long after it. They come at the scene's own moments now
+    // (`cues`): the klonk as it stands up on the table, and the name as it has come down and looks at him.
+    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 7.2, quiet: true,
+      cues: [{ at: KLONK_UP, flag: 'party:klonk-up' }, { at: KLONK_DOWN, flag: 'party:klonk-down' }],
+      stage: { actors: { ghost: [
       { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
       // Up over the front edge, clear of the chair at the end; both landings happen above the tabletop.
       { at: .05, x: TABLE_HOP.right + .8, y: TABLE_HOP.top + .42, z: 1.65, move: 1.15 },
@@ -265,6 +291,10 @@ export const epilog: ChapterData = {
   ],
   sets: [
     { flag: 'partied', when: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket'] },
+    // A game saved after the hop, before its words were read (they were once said with `partied`), still names it:
+    // the knife waits for the name.
+    { flag: 'party:klonk-up', when: ['scene:klonk-table'] },
+    { flag: 'party:klonk-down', when: ['scene:klonk-table'] },
     // Pappa tells him why the musical beach stones lie so high up, if he found them.
     { flag: 'cobbles:explained', when: ['party:pappa', 'heard:cobbles'] },
     // A thing is given back when its owner has had candy and the thing was found.
@@ -284,14 +314,16 @@ export const epilog: ChapterData = {
     { id: 'partyThanks:moa', on: 'party:moa', who: 'moa', line: 'partyMoaThanks', read: true },
     { id: 'partyThanks:bertil', on: 'party:bertil', who: 'bertil', line: 'partyBertilThanks', read: true },
     { id: 'partyThanks:spoket', on: 'party:spoket', who: 'spoket', line: 'partyGhostThanks', read: true },
-    { id: 'cobbles1', on: 'cobbles:explained', who: 'elof', line: 'cobbles1' },
-    { id: 'cobbles2', on: 'cobbles:explained', who: 'pappa', line: 'cobbles2' },
-    { id: 'cobbles3', on: 'cobbles:explained', who: 'elof', line: 'cobbles3' },
+    // What he found goes back with the sweet, before Pappa and he talk of the stones: in this order.
     { id: 'coinBack', on: 'back:coin', who: 'pappa', line: 'coinBack' },
     { id: 'clipBack', on: 'back:clip', who: 'moa', line: 'clipBack' },
     { id: 'marbleBack', on: 'back:marble', who: 'bertil', line: 'marbleBack' },
-    { id: 'klonk', on: 'partied', who: 'spoket', line: 'klonk' },
-    { id: 'named', on: 'partied', who: 'elof', line: 'named' },
+    { id: 'cobbles1', on: 'cobbles:explained', who: 'elof', line: 'cobbles1' },
+    { id: 'cobbles2', on: 'beat:cobbles1', who: 'pappa', line: 'cobbles2' },
+    { id: 'cobbles3', on: 'beat:cobbles2', who: 'elof', line: 'cobbles3' },
+    // Said in the naming's scene (`klonk-table`), at its two moments.
+    { id: 'klonk', on: 'party:klonk-up', who: 'spoket', line: 'klonk' },
+    { id: 'named', on: 'party:klonk-down', who: 'elof', line: 'named' },
     { id: 'away', on: 'knife', who: 'pappa', line: 'away' },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],

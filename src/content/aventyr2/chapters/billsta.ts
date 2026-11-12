@@ -10,7 +10,8 @@ import { alongAll, elderWalk, hopCandy, jump, round, row, slopeRow, timeCard } f
  * seen only from the hill's brow at the end. The places, from the left:
  *
  * 1. **Vägen:** the family's car has just stopped on the road. Spruces stand across it, and mormor and morfar's
- *    white house with its two gables and a lit window is in sight behind the yard, the red barn beside it.
+ *    white house with its two gables and a lit window is in sight behind the yard, the red barn beside it. He stands
+ *    by the car while Moa points to the window and says whose trail it is now; then she and Bertil run ahead.
  * 2. **Diket:** the ditch along the road, full of rushing rain. "Ropa på morfar": he lays his long ladder across it
  *    while Elof watches, and Elof walks over.
  * 3. **Gården:** the gravel drive, the lawn, a rowing boat turned over on trestles, birches, the woodshed and its
@@ -50,6 +51,8 @@ const KIDS = { moa: { x: 6.4, z: -7.6 }, bertil: { x: 8.6, z: -6.4 } };
 /** Mamma by the car's headlight, Pappa by its front door, a little out from its near side; what their lamps light. */
 const PARENTS = { mamma: { x: 2.8, z: -10.8 }, pappa: { x: -1.6, z: -11.2 } };
 const ROAD = { x: 11, y: 0.4, z: 0 };
+/** Where Elof stands beside the car as the chapter opens, for them to look at and wave to. */
+const BY_CAR = { x: 1, y: 0.5, z: 0 };
 const UP_TO_HOUSE = { x: 16, y: 2, z: -40 };
 const WINDOW = { x: 14, y: 7.5, z: -66 };
 /**
@@ -267,23 +270,38 @@ export const billsta: ChapterData = {
   // Beside the family's car, on the road.
   spawn: { x: 1, y: 0.01 },
   scenes: [
-    // Where and when, as the chapter opens (src/content/chapters/cards.ts). Moa and Bertil have jumped out of the
-    // car and stand by its front, Moa looking up at mormor and morfar's lit window, Bertil at Elof. Mamma, who drove
-    // ("Hoppa in, Elof! Vi kör dit med bilen." at Älven's end), stands by the headlight and lights the road for him;
-    // Pappa beside the front door lights the way up to the house. They stay by the car (the coda's "family by the car").
-    { ...CARD, stage: { ...CARD.stage,
+    // Where and when, as the chapter opens (src/content/chapters/cards.ts), and the arrival. Moa and Bertil have
+    // jumped out of the car and stand by its front, Moa looking up at mormor and morfar's lit window, Bertil at Elof.
+    // Mamma, who drove ("Hoppa in, Elof! Vi kör dit med bilen." at Älven's end), stands by the headlight and lights
+    // the road for him; Pappa beside the front door lights the way up to the house. They stay by the car (the coda's
+    // "family by the car").
+    //
+    // He stands by the car while Moa says the two things the chapter rests on: there is light at mormor and morfar's,
+    // and the trail is hers and Bertil's now (Älven's end: "Då lägger vi ett eget spår åt dig!"). The road to morfar
+    // is fourteen EL: said on the run, her words were still up when morfar spoke, and his came late all the way to
+    // mormor. Each line is a reading stop of the scene, as in the evening at home.
+    { ...CARD, seconds: 5.2, hold: true,
+      lines: [
+        { at: 2.2, who: 'moa', line: 'biWindow', id: 'bi:window' },
+        { at: 3.8, who: 'moa', line: 'biNewTrail', id: 'bi:new-trail' },
+      ],
+      stage: { ...CARD.stage,
       // Establish the whole car and the family before following Elof, including on a portrait phone.
       shots: [{ at: 0, x: -2, y: 3.2, height: 12.5, width: 30, move: 0.01 }],
       actors: {
-      moa: [{ at: 0, ...KIDS.moa, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW }],
-      bertil: [{ at: 0, ...KIDS.bertil, y: 0, face: 0.35, move: 0.01, act: 'look', aim: { x: 1, y: 0.5, z: 0 } }],
+      // "Titta! Det lyser hos mormor och morfar.": she points, and Bertil looks; then both look to Elof.
+      moa: [
+        { at: 0, ...KIDS.moa, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW },
+        { at: 2, act: 'point', aim: WINDOW },
+        { at: 3.7, act: 'look', aim: BY_CAR },
+      ],
+      bertil: [
+        { at: 0, ...KIDS.bertil, y: 0, face: 0.35, move: 0.01, act: 'look', aim: BY_CAR },
+        { at: 2.4, act: 'look', aim: WINDOW },
+        { at: 3.9, act: 'look', aim: BY_CAR },
+      ],
       mamma: [{ at: 0, ...PARENTS.mamma, y: 0, face: 0.2, move: 0.01, act: 'shine', aim: ROAD, holds: 'lamp-mamma' }],
       pappa: [{ at: 0, ...PARENTS.pappa, y: 0, face: 0.12, move: 0.01, act: 'shine', aim: UP_TO_HOUSE, holds: 'lamp-pappa' }],
-    } } },
-    // "Titta! Det lyser hos mormor och morfar."
-    { id: 'bi:kids-window', on: 'beat:bi:window', until: 'beat:bi:new-trail', seconds: 2.6, stage: { actors: {
-      moa: [{ at: 0, act: 'point', aim: WINDOW }, { at: 2.2, act: 'look', aim: WINDOW }],
-      bertil: [{ at: 0.4, act: 'look', aim: WINDOW }],
     } } },
     // "Följ vårt godis! Vi springer före.": the trail is theirs now (docs/aventyr-2.md). Moa waves to him, and they
     // run off ahead of him up to mormor and morfar's house, round its left end, and in by its door at the back.
@@ -291,7 +309,7 @@ export const billsta: ChapterData = {
       // Mamma watches them go, and lights his road again.
       mamma: [{ at: 0.6, act: 'look', aim: RUN.corner }, { at: roundAt('moa') + 1, act: 'shine', aim: ROAD }],
       moa: [
-        { at: 0, act: 'wave', aim: { x: 7.4, y: 0.6, z: 0 } },
+        { at: 0, act: 'wave', aim: BY_CAR },
         { at: RUN.moa.from, ...RUN.corner, y: 0, move: RUN.moa.corner, act: 'look', aim: RUN.corner },
         { at: roundAt('moa'), ...RUN.door, y: 0, move: RUN.moa.door, act: 'look', aim: RUN.door },
         { at: inAt('moa') + 0.2, away: true },
@@ -598,45 +616,46 @@ export const billsta: ChapterData = {
     { at: { x: 199.4, y: BROW.y } },
   ],
   beats: [
-    // 1. the road
-    { id: 'bi:arrive', at: 1.4, who: 'elof', line: 'biArrive' },
-    { id: 'bi:klonk', at: 1.9, who: 'spoket', line: 'biKlonk' },
-    { id: 'bi:window', at: 4.6, who: 'moa', line: 'biWindow', read: true },
-    { id: 'bi:window-klonk', on: 'beat:bi:window', who: 'spoket', line: 'biKlonkKlonk' },
-    { id: 'bi:new-trail', at: 7.4, who: 'moa', line: 'biNewTrail' },
-    // 2. Morfar at the ditch
-    { id: 'bi:ditch', at: 10.6, who: 'elof', line: 'biDitch' },
-    { id: 'bi:morfar-here', at: 11.4, until: 'bi:morfar', who: 'morfar', line: 'biMorfarHere', read: true },
-    { id: 'bi:ladder-lay', on: 'bi:morfar', within: [6, 20], who: 'morfar', line: 'biLadderLay', read: true },
-    { id: 'bi:ladder', on: 'bi:ladder', within: [6, 20], who: 'morfar', line: 'biLadderOn' },
-    { id: 'bi:thanks', at: 19.8, needs: 'bi:ladder', who: 'elof', line: 'biThanksMorfar' },
-    { id: 'bi:to-mormor', at: 22.6, needs: 'bi:ladder', who: 'morfar', line: 'biToMormor' },
+    // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
+    // 1. the road: Moa's two lines are the arrival's, said by the car (`card`, above)
+    // 2. Morfar at the ditch. He sees Elof coming and greets him, and Elof answers with what stops him; called, he
+    // says what he does. The thanks is said on the far side of the ladder or not at all, and morfar answers it.
+    { id: 'bi:morfar-here', at: 6, until: 'bi:morfar', who: 'morfar', line: 'biMorfarHere', read: true },
+    { id: 'bi:ditch', on: 'beat:bi:morfar-here', until: 'bi:morfar', who: 'elof', line: 'biDitch', aside: true },
+    // What each of them is about to do is said while they do it: once the ladder lies there, or the door is open,
+    // the words for it are let go, and the next ones come in their place.
+    { id: 'bi:ladder-lay', on: 'bi:morfar', until: 'bi:ladder', within: [6, 20], who: 'morfar', line: 'biLadderLay', read: true },
+    { id: 'bi:ladder', on: 'bi:ladder', within: [6, 20], who: 'morfar', line: 'biLadderOn', aside: true },
+    { id: 'bi:thanks', at: 19.8, needs: 'bi:ladder', who: 'elof', line: 'biThanksMorfar', aside: true },
+    { id: 'bi:to-mormor', on: 'beat:bi:thanks', who: 'morfar', line: 'biToMormor', aside: true },
     // 3. the yard, and Mormor by the woodshed
-    { id: 'bi:yard', at: 26.4, who: 'elof', line: 'biYard' },
+    { id: 'bi:yard', at: 26.4, who: 'elof', line: 'biYard', aside: true },
     { id: 'bi:mormor-here', at: 45, until: 'bi:mormor', who: 'mormor', line: 'biMormorHere', read: true },
-    { id: 'bi:lantern', on: 'bi:mormor', who: 'mormor', line: 'biLantern', read: true },
+    { id: 'bi:lantern', on: 'bi:mormor', until: 'bi:door', who: 'mormor', line: 'biLantern', read: true },
     { id: 'bi:open', on: `placed:${DOOR.id}`, who: 'elof', line: 'biOpen', read: true },
-    // A lookout is the next lead after the river's trail ends; the barn is the way up to it.
-    { id: 'bi:lookout', on: 'beat:bi:open', within: [MORMOR.x - 2.6, ROOF.from], who: 'mormor', line: 'biLookout', read: true },
-    { id: 'bi:way', on: 'beat:bi:lookout', within: [MORMOR.x - 2.6, ROOF.from], who: 'mormor', line: 'biWay', read: true },
-    { id: 'bi:onward', on: 'beat:bi:way', within: [MORMOR.x - 2.6, ROOF.from], who: 'elof', line: 'biOnward', read: true },
+    // A lookout is the next lead after the river's trail ends; the barn is the way up to it. Told at the door and in
+    // the loft's first steps: on the roof the wind's words have to come at once.
+    { id: 'bi:lookout', on: 'beat:bi:open', within: [MORMOR.x - 2.6, HATCH.from], who: 'mormor', line: 'biLookout', read: true },
+    { id: 'bi:way', on: 'beat:bi:lookout', within: [MORMOR.x - 2.6, HATCH.from], who: 'mormor', line: 'biWay', read: true },
+    { id: 'bi:onward', on: 'beat:bi:way', within: [MORMOR.x - 2.6, HATCH.from], who: 'elof', line: 'biOnward', read: true },
     // 4. the hay loft, the roof, and down behind the house
-    { id: 'bi:loft', at: 57.8, needs: `placed:${DOOR.id}`, who: 'elof', line: 'biLoft' },
+    { id: 'bi:loft', at: 57.8, needs: `placed:${DOOR.id}`, who: 'elof', line: 'biLoft', aside: true },
     { id: 'bi:roof', at: 70.2, who: 'elof', line: 'biRoof' },
-    { id: 'bi:roof-klonk', at: 73.4, who: 'spoket', line: 'biKlonk' },
-    // 5. the brook, Klonk's seesaw, and Billaberget
+    { id: 'bi:roof-klonk', on: 'beat:bi:roof', who: 'spoket', line: 'biKlonk', aside: true },
+    // 5. the brook, Klonk's seesaw, and Billaberget. Each line of the puzzle belongs to its step, and is let go once
+    // that step is behind him: whoever sees the answer at once is not told the question afterwards.
     { id: 'bi:seesaw', at: 126.4, until: 'bi:call-klonk', who: 'elof', line: 'biSeesaw', read: true },
-    { id: 'bi:call', on: 'bi:call-klonk', who: 'elof', line: 'biJumpOn' },
-    { id: 'bi:klonk-jump', on: 'beat:bi:call', who: 'spoket', line: 'biKlonk' },
-    { id: 'bi:too-light', on: 'bi:klonk-on', who: 'elof', line: 'biTooLight' },
-    { id: 'bi:klonk-sorry', on: 'beat:bi:too-light', who: 'spoket', line: 'biKlonk' },
+    { id: 'bi:call', on: 'bi:call-klonk', until: 'bi:klonk-on', who: 'elof', line: 'biJumpOn' },
+    { id: 'bi:klonk-jump', on: 'beat:bi:call', who: 'spoket', line: 'biKlonk', aside: true },
+    { id: 'bi:too-light', on: 'bi:klonk-on', until: PIVOT_PLACED, who: 'elof', line: 'biTooLight' },
+    { id: 'bi:klonk-sorry', on: 'beat:bi:too-light', who: 'spoket', line: 'biKlonk', aside: true },
     { id: 'bi:middle', on: 'bi:think', until: PIVOT_PLACED, who: 'elof', line: 'biMiddle' },
     { id: 'bi:the-stone', on: 'bi:think-more', until: PIVOT_PLACED, who: 'elof', line: 'biTheStone' },
-    { id: 'bi:near-middle', on: PIVOT_PLACED, who: 'elof', line: 'biNearMiddle' },
-    { id: 'bi:fly', on: 'bi:fling', who: 'elof', line: 'biFly' },
+    { id: 'bi:near-middle', on: PIVOT_PLACED, until: 'bi:fling', who: 'elof', line: 'biNearMiddle' },
+    { id: 'bi:fly', on: 'bi:fling', within: [FLING.from.x - 1, FLING.to.x + 1], who: 'elof', line: 'biFly', aside: 12 },
     { id: 'bi:thanks-klonk', at: 141, needs: 'bi:fling', who: 'elof', line: 'biThanksKlonk' },
-    { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk' },
-    { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel' },
+    { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk', aside: true },
+    { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel', aside: true },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
     // 6. the brow: a flash, both trägubbar on a stone in the narrow far below, and the owl far off
     { id: 'bi:there', at: 193.2, needs: 'bi:strait-seen', who: 'elof', line: 'biThere', read: true },

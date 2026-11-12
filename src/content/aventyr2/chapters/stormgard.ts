@@ -2,7 +2,7 @@ import { GRAVITY, RUN_SPEED } from '../../../sim/constants';
 import type { SceneDef } from '../../../sim/scene';
 import type { Candy, ChapterData, Flyby, Ledge, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { alongAll, flightAt, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, flightAt, hopCandy, jump, round, row, sighting, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 1: Stormgården (docs/aventyr-2.md). Units: EL. The home garden at night, in the autumn
@@ -118,6 +118,15 @@ const flown = (k: number) => flightAt(FLIGHT, k);
  * way and up the hedge, so that he stays in the picture under Elof's words and goes from it over the hedge's top,
  * small, into the dark. Wide enough at the start to have Elof in it too, on a phone held upright as well.
  */
+/** The old one on the playhouse's ridge: he stands lit while Elof calls out, and leaps away towards the hedge. */
+const OLD_LEAP: Flyby = {
+  on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 160, y: 8.4 }, rise: 1.2, seconds: 3,
+  who: 'tragubbe', lit: [1],
+};
+/** Seen from the trampoline's edge, before the climb: Elof, the playhouse and the old one on its roof in one picture. */
+const OLD_SEEN = sighting('sg:lekstugan', 131.6, 135, 'sg:playhouse', 'sg:old-seen', OLD_LEAP,
+  { x: 142, y: 4.2, height: 9.6, width: 11 }, { x: 153.6, y: 6.2, height: 9.6, width: 10 });
+
 const HEDGE_SCENE: SceneDef = {
   id: 'haecken', at: 177, before: 180.5, seconds: 6.8, hold: true, dialogue: ['sg:flash'],
   // Finish the previous line, frame the hedge, then show and name the flight together.
@@ -185,7 +194,7 @@ export const stormgard: ChapterData = {
     lightning: 10,
     flybys: [
       // A flash: the old trägubbe on the playhouse roof leaps away towards the hedge.
-      { on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 172, y: 8 }, seconds: 2.5, who: 'tragubbe' },
+      OLD_LEAP,
       // And at the hedge: the little one, tumbling over it towards the forest, while Elof watches (`haecken`).
       FLIGHT,
     ],
@@ -230,11 +239,11 @@ export const stormgard: ChapterData = {
     // The pumpkin lantern, a little behind the step's big candy.
     { look: 'pumpkin', at: { x: LANTERN.x, y: LANTERN.y }, z: LANTERN.z },
     // The old trägubbe, seen ahead on the playhouse roof until the flash that shows it leaping away.
-    { look: 'tragubbe', at: PLAYHOUSE.ridge, until: 'beat:sg:playhouse', z: -0.4 },
+    { look: 'tragubbe', at: PLAYHOUSE.ridge, until: 'beat:sg:playhouse', z: -0.4, word: 'lit' },
   ],
   spawn: { x: 1, y: DECK + 0.01 },
   // Where and when, as the chapter opens (../kit.ts); and the little one over the hedge, watched.
-  scenes: [timeCard('stormgard', 1), HEDGE_SCENE],
+  scenes: [timeCard('stormgard', 1), OLD_SEEN, HEDGE_SCENE],
   goalX: 189,
   ground: [
     { x: -3, y: 16 },
@@ -371,35 +380,39 @@ export const stormgard: ChapterData = {
     { at: { x: 192, y: HEDGE.y } },
   ],
   beats: [
-    // 1. the veranda
+    // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
+    // 1. the veranda: Moa's lamp is what throws the drops' shadows, so her first words are the way past them, said
+    // before the first drop. What Elof sees for himself is a remark.
     { id: 'sg:moa', at: 1.4, who: 'moa', line: 'sgMoaLight' },
-    { id: 'sg:gutter', at: 5.2, who: 'elof', line: 'sgGutter' },
-    // 2. the pumpkin lantern
-    { id: 'sg:pumpkin', at: 29.2, who: 'elof', line: 'sgPumpkin', read: true },
-    { id: 'sg:pumpkin-klonk', at: 30.8, who: 'spoket', line: 'sgKlonk' },
-    // 3. Stormbyarna: Klonk lands in a flowerpot
+    { id: 'sg:gutter', at: 5.2, who: 'elof', line: 'sgGutter', aside: true },
+    // 2. the pumpkin lantern: said from the top of the steps, where its light and the trail down are first seen, so
+    // that it is read before the lawn's gusts need their own words.
+    { id: 'sg:pumpkin', at: 24.4, who: 'elof', line: 'sgPumpkin', read: true },
+    { id: 'sg:pumpkin-klonk', on: 'beat:sg:pumpkin', who: 'spoket', line: 'sgKlonk', aside: true },
+    // 3. Stormbyarna: Klonk lands in a flowerpot, and says so; Elof's answer follows it or is not said
     { id: 'sg:gusts', at: 40.8, who: 'elof', line: 'sgPots' },
-    { id: 'sg:pot-klonk', at: 45.2, who: 'spoket', line: 'sgKlonk' },
-    { id: 'sg:pot', at: 46.2, who: 'elof', line: 'sgFlowerpot' },
-    // 4. Regntunnan: Klonk on the barrel shows the way up
+    { id: 'sg:pot-klonk', at: 45.2, who: 'spoket', line: 'sgKlonk', aside: true },
+    { id: 'sg:pot', on: 'beat:sg:pot-klonk', who: 'elof', line: 'sgFlowerpot', aside: true },
+    // 4. Regntunnan: Klonk on the barrel answers, and shows the way up
     { id: 'sg:ditch', at: 77, who: 'elof', line: 'sgDitch' },
-    { id: 'sg:barrel', at: 78.4, who: 'spoket', line: 'sgKlonkKlonk' },
+    { id: 'sg:barrel', on: 'beat:sg:ditch', who: 'spoket', line: 'sgKlonkKlonk', aside: true },
     { id: 'sg:lid', on: 'placed:lid', who: 'elof', line: 'sgLid' },
-    // 5. Bertil and his boot
+    // 5. Bertil and his boot. He is proud of it as it sets off, and the ride is the time to read it; the thanks on the
+    // far shore gives way to the old one on the playhouse roof, which has to be seen before the climb.
     { id: 'sg:bertil-here', at: 101.8, until: 'sg:bertil', who: 'bertil', line: 'sgBertilHere', read: true },
     { id: 'sg:boot-ready', on: 'sg:boot-ready', until: 'sg:boot', within: [99, 108], who: 'bertil', line: 'sgBertilBoot', read: true },
-    { id: 'sg:heja', at: 116, who: 'bertil', line: 'sgBertilHeja' },
-    { id: 'sg:thanks', at: 128.4, who: 'elof', line: 'sgThanks' },
-    // 6. the playhouse: the old one seen, and its thought
-    { id: 'sg:playhouse', at: 131.6, who: 'elof', line: 'sgPlayhouse' },
+    { id: 'sg:heja', on: 'sg:boot', within: [104, 120], who: 'bertil', line: 'sgBertilHeja', aside: 12 },
+    { id: 'sg:thanks', at: 128.4, who: 'elof', line: 'sgThanks', aside: true },
+    // 6. the playhouse: the old one seen, and its thought. The question follows the picture's words directly.
+    { id: 'sg:playhouse', at: 131.6, needs: 'sg:old-seen', who: 'elof', line: 'sgPlayhouse' },
     { id: 'sg:lonely', on: 'sg:thought', who: 'elof', line: 'sgLonely', read: true },
-    { id: 'sg:why', at: 147.6, needs: 'sg:thought', who: 'elof', line: 'sgWhy', read: true },
-    { id: 'sg:lookout', on: 'sg:lookout', who: 'elof', line: 'sgLookout' },
+    { id: 'sg:why', on: 'beat:sg:lonely', who: 'elof', line: 'sgWhy', read: true },
+    { id: 'sg:lookout', on: 'sg:lookout', who: 'elof', line: 'sgLookout', aside: true },
     // 7. the hedge: said as the flash comes, while he stands and watches the little one go (`haecken`), so that the
     // words are under the flight and not in front of it.
     { id: 'sg:flash', on: 'sg:flight', who: 'elof', line: 'sgFlash' },
     { id: 'sg:forest', at: 180.2, who: 'elof', line: 'sgForest' },
-    { id: 'sg:end-klonk', at: 182.4, who: 'spoket', line: 'sgKlonkKlonk' },
+    { id: 'sg:end-klonk', on: 'beat:sg:forest', who: 'spoket', line: 'sgKlonkKlonk', aside: true },
   ],
   cameras: [
     // Up on the sills: wider, looking down at the deck and its drops.

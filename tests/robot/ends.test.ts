@@ -219,7 +219,7 @@ describe('Epilog, Godiskalaset, in greybox', () => {
       const result = playThrough(fps, epilog, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // The story's steps; the time card it opens on, and the ghost's hop across the table, are no steps of it.
-      const steps = did(result.flags).filter((flag) => !flag.startsWith('scene:'));
+      const steps = did(result.flags).filter((flag) => !flag.startsWith('scene:') && !flag.startsWith('party:klonk-'));
       expect(result.flags).toContain('scene:klonk-table');
       expect(steps.slice(0, 5).sort()).toEqual(['party:bertil', 'party:mamma', 'party:moa', 'party:pappa', 'party:spoket']);
       expect(steps.slice(5)).toEqual(['partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'teeth', 'bedtime', 'goal']);
@@ -247,11 +247,24 @@ describe('Epilog, Godiskalaset, in greybox', () => {
     // With one still waiting, the knife is not offered.
     const four = ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil'];
     expect(at(29, four).curr.verb).toBeNull();
-    // With everyone given, the ghost hops, he names it, and then the knife is.
+    // With everyone given, the ghost hops, he names it, and then the knife is: each word at its moment of the hop.
     const all = at(29, [...four, 'party:spoket']);
     expect(all.flags.has('partied')).toBe(true);
-    expect(all.said).toEqual(['partyThanks:mamma', 'partyThanks:pappa', 'partyThanks:moa', 'partyThanks:bertil', 'partyThanks:spoket', 'klonk', 'named']);
+    const thanks = ['partyThanks:mamma', 'partyThanks:pappa', 'partyThanks:moa', 'partyThanks:bertil', 'partyThanks:spoket'];
+    expect(all.said).toEqual(thanks);
+    expect(all.curr.verb).toBeNull();
+    const hop = epilog.scenes!.find((scene) => scene.id === 'klonk-table')!;
+    expect(hop.quiet).toBe(true);
+    run(all, hop.cues![0]!.at);
+    expect(all.said).toEqual([...thanks, 'klonk']);
+    expect(all.curr.verb).toBeNull();
+    run(all, hop.cues![1]!.at - hop.cues![0]!.at);
+    expect(all.said).toEqual([...thanks, 'klonk', 'named']);
     expect(all.curr.word).toBe('takeKnife');
+    // A game saved between the hop and its words (they were once said the moment everyone had theirs) is named too.
+    const saved = at(29, [...four, 'party:spoket', 'partied', 'scene:klonk-table', ...thanks.map((id) => `beat:${id}`)]);
+    expect(saved.said).toEqual(['klonk', 'named']);
+    expect(saved.curr.word).toBe('takeKnife');
   });
 
   it('takes three strokes, and then the eyes', () => {

@@ -192,3 +192,18 @@ export const ELOF_HEIGHT = 1;
 export const FELL_IN = 'fell-in';
 /** How far the camera looks ahead of Elof (plan §5.2: 2–3 EL). */
 export const CAMERA_LEAD = 2.5;
+
+/**
+ * A passing remark (`Beat.aside`) is said only near its moment: once he is further than this from where it came,
+ * what it was about has left the picture, and the remark is let go. At a run that is under two seconds.
+ */
+export const ASIDE_REACH = 6;
+/** A passing answer to a line (Klonk's "Klonk!") comes straight after that line, within this long, or not at all. */
+export const REPLY_PATIENCE = 0.5;
+/**
+ * A passing remark is not begun when one of the story's lines lies this near ahead: this many seconds at the speed he
+ * goes, and at least `ASIDE_NEAR` EL when he stands or climbs. A remark takes five seconds or so to read, so the
+ * story's line would have had to wait for most of it.
+ */
+export const ASIDE_ROOM = 3;
+export const ASIDE_NEAR = 1.5;

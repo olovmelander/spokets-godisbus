@@ -28,9 +28,9 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** What is said on the way, in the story's order. */
 const SAID = [
-  'ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top', 'ol:little',
-  'ol:wind', 'ol:jump', 'ol:klonk-balls', 'ol:phew',
-  'ol:puddle', 'ol:splash', 'ol:klonk-ball', 'ol:in-goal', 'ol:crowd', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks',
+  'ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top',
+  'ol:wind', 'ol:klonk-balls', 'ol:phew',
+  'ol:puddle', 'ol:splash', 'ol:klonk-ball', 'ol:in-goal', 'ol:crowd', 'ol:old-one', 'ol:bertil-here', 'ol:kick-ready', 'ol:fly', 'ol:cheer', 'ol:thanks',
   'ol:range', 'ol:all-white', 'ol:gust', 'ol:follow', 'ol:north', 'ol:car', 'ol:klonk-end',
 ];
 /** The ball floated, Bertil called, his ball ready and ridden, and the end. */
@@ -430,7 +430,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(sim.curr.x).toBeCloseTo(kick.to.x, 1);
       expect(sim.bubbles).toBe(0);
       run(sim, 0.5, { x: 1 });
-      expect(sim.said.slice(-4)).toEqual(['ol:fly', 'ol:goal', 'ol:cheer', 'ol:thanks']);
+      expect(sim.said.slice(-3)).toEqual(['ol:fly', 'ol:cheer', 'ol:thanks']);
     });
 
     it('the old trägubbe is seen at the circle, and blown over it ahead of him', () => {
@@ -621,7 +621,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     expect(olympia.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(olympia.place).toBe('garden');
     expect(olympia.coda).toBe('bertil');
-    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card', 'norrut']);
+    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card', 'ol:gamla', 'norrut']);
     expect(sv.end.kickers.olympia).toBe('Äventyr 2 · Kapitel 4');
   });
 });

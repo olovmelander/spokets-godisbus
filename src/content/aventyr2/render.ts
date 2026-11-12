@@ -525,6 +525,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const flybys = (storm?.flybys ?? []).map((def) => {
     const lit = !!def.lit;
     const figure = (def.who === 'lillgubbe' ? littleFigure : oldFigure)(!lit);
+    // The old one's grey wood is lost against the storm's blue-grey: watched, he is lit from within as where he stood.
+    if (lit && def.who === 'tragubbe') lightFromWithin(figure);
     const holder = new Group();
     holder.name = `flyby:${def.on}`;
     holder.add(figure);
@@ -570,11 +572,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     stone.position.y = -0.05;
     const figure = def.who === 'lillgubbe' ? littleFigure() : oldFigure();
     // Lit a little from within, as the meeting's pair are: pale wood that holds what light there is.
-    figure.userData.warm = true;
-    figure.traverse((node) => {
-      const material = (node as Mesh).material as MeshStandardMaterial | undefined;
-      if (material?.isMeshStandardMaterial) { material.emissive.set('#6a5236'); material.emissiveIntensity = 0.55; }
-    });
+    lightFromWithin(figure);
     figure.scale.setScalar(size);
     figure.position.y = 0.4;
     const halo = glow('#dfe8ff', 2.6 * size, 0.42);
@@ -1254,6 +1252,15 @@ function awningFlap(): Group {
 /** How high each figure's middle is over its feet: a watched flight tumbles about it. */
 const FIGURE_MIDDLE = { lillgubbe: 0.26, tragubbe: 0.5 } as const;
 
+/** Pale wood that holds what light there is: a carving seen in the storm's dark, warm from within. */
+function lightFromWithin(figure: Group): void {
+  figure.userData.warm = true;
+  figure.traverse((node) => {
+    const material = (node as Mesh).material as MeshStandardMaterial | undefined;
+    if (material?.isMeshStandardMaterial) { material.emissive.set('#6a5236'); material.emissiveIntensity = 0.55; }
+  });
+}
+
 /** Pappa's very first trägubbe: grey old wood, a pointed cap, a crooked smile and the crowberry eyes Elof gave it. */
 function oldFigure(silhouette = false): Group {
   const group = new Group();
@@ -1281,8 +1288,11 @@ function littleFigure(silhouette = false): Group {
   return littleCarving(silhouette);
 }
 
-/** A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there. */
-function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' | 'blown' = 'shrink', flyer?: Group): SpotProp {
+/**
+ * A thing that stands about: it shrinks away when its flag says it is gone, and may move a little while it is there.
+ * `handed`: it goes at once, where a flight of the same figure takes over from the same place.
+ */
+function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' | 'blown' | 'handed' = 'shrink', flyer?: Group): SpotProp {
   const root = new Group();
   root.position.set(spot.at.x, spot.at.y, -0.6);
   root.add(group);
@@ -1304,6 +1314,10 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
         root.rotation.z = 0;
         drawnWhile(root, size > 0);
         if (flyer) { drawnWhile(group, true); drawnWhile(flyer, false); group.scale.set(1, 1, 1); }
+        return;
+      }
+      if (leaves === 'handed') {
+        drawnWhile(root, false);
         return;
       }
       if (leaves === 'leap') {
@@ -1740,6 +1754,17 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // On the stone in the storm's eye it rocks the little one a little, and turns to him when he has come.
       const met = spot.word === 'lifted';
       figure.userData.warm = met;
+      // Where Elof sees him in the storm's dark and calls out (`lit`): lit from within, in a soft light of his own,
+      // as he is when he leaps away and flies (Olov, 12 November 2026: "Han ska synas tydligt överallt").
+      if (spot.word === 'lit') {
+        lightFromWithin(figure);
+        const shown = new Group();
+        const halo = glow('#dfe8ff', 2.4, 0.42);
+        halo.position.set(0, 0.5, -0.3);
+        shown.add(figure, halo);
+        // His flight starts from where he stands, lit as he is: it takes over at once.
+        return standing(spot, shown, undefined, 'handed');
+      }
       return standing(spot, figure, met ? (clock, dt) => {
         figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;

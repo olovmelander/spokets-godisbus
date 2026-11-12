@@ -336,21 +336,26 @@ export const stormbyn: ChapterData = {
     { at: { x: 183.4, y: UP } },
   ],
   beats: [
+    // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
     { id: 'sbDark', at: 1.6, who: 'elof', line: 'sbDark' },
-    { id: 'sbKlonkHere', at: 4.6, who: 'spoket', line: 'sbKlonkHere' },
-    { id: 'sbAwning', at: 14, who: 'elof', line: 'sbAwning' },
+    { id: 'sbKlonkHere', on: 'beat:sbDark', who: 'spoket', line: 'sbKlonkHere', aside: true },
+    // Said on the awning or not at all: a bell he rings just after it has to be answered at once.
+    { id: 'sbAwning', at: 14, who: 'elof', line: 'sbAwning', aside: 3 },
     { id: 'sbCandle', on: 'sb:bell-yarn', who: 'elof', line: 'sbCandle' },
-    { id: 'sbCandleTwo', on: 'sb:bell-shoes', who: 'elof', line: 'sbCandleTwo' },
+    // The shoemaker's bell hangs a few steps before the cap: its thanks gives way to the find.
+    { id: 'sbCandleTwo', on: 'sb:bell-shoes', who: 'elof', line: 'sbCandleTwo', aside: true },
     { id: 'sbCandleThree', on: 'sb:bell-bread', who: 'elof', line: 'sbCandleThree' },
-    { id: 'sbRiver', at: 34.4, who: 'elof', line: 'sbRiver' },
+    { id: 'sbRiver', at: 34.4, who: 'elof', line: 'sbRiver', aside: true },
     { id: 'family:moa', at: 97.4, until: 'umbrella:ready', who: 'moa', line: 'sbMoaHere', read: true },
     { id: 'family:umbrella', on: 'family:umbrella-ready', until: 'umbrella', within: [95, 104], who: 'moa', line: 'sbMoaHold', read: true },
-    { id: 'sbFloat', on: 'umbrella', within: [100, 120], who: 'elof', line: 'sbFloat' },
-    { id: 'sbLanded', at: 120.6, needs: 'umbrella', who: 'moa', line: 'sbMoaLanded' },
+    // Under the umbrella, as he lifts off, or not at all; and Moa's word as he lands, which stands by itself.
+    { id: 'sbFloat', on: 'umbrella', within: [100, 120], who: 'elof', line: 'sbFloat', aside: 8 },
+    { id: 'sbLanded', at: 120.6, needs: 'umbrella', who: 'moa', line: 'sbMoaLanded', aside: true },
     // Said once he holds the cap up and looks at it (`mossan`).
     { id: 'sbCap', on: CAP_SEEN, who: 'elof', line: 'sbCap', read: true },
     { id: 'sbToLake', on: CAP_SEEN, who: 'elof', line: 'sbToLake', read: true },
-    { id: 'sbKlonkCap', on: CAP_SEEN, who: 'spoket', line: 'sbKlonkCap' },
+    // Klonk answers the find, as the picture opens to him, before Elof reads the trail on.
+    { id: 'sbKlonkCap', on: 'beat:sbCap', who: 'spoket', line: 'sbKlonkCap' },
     { id: 'sbShore', at: 176, who: 'elof', line: 'sbShore' },
   ],
   cameras: [

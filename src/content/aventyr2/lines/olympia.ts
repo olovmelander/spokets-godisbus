@@ -12,11 +12,9 @@ export const words: ChapterWords = {
     olKlonk: 'Klonk!',
     olKlonkKlonk: 'Klonk, klonk!',
     olLights: 'Inte ens strålkastarna lyser!',
-    olTop: 'Blixten! Nu ser jag hela planen!',
-    olLittle: 'Lillgubben! Där flyger han!',
+    olTop: 'Blixten! Där flyger lillgubben!',
     // 2. the balls the wind rolls across the pitch
-    olWind: 'Vinden rullar bollar efter oss!',
-    olJump: 'De kommer bakifrån. Hoppa över!',
+    olWind: 'Vinden rullar bollar efter oss! Hoppa!',
     olPhew: 'Puh! Nu är jag förbi bollarna.',
     // 3. Bollen i målet
     olPuddle: 'Målet står mitt i en stor pöl!',
@@ -33,7 +31,6 @@ export const words: ChapterWords = {
     olBertilHere: 'Lillebror! Behöver du en frispark?',
     olBertilReady: 'Upp på bollen! Jag skjuter, du flyger!',
     olFly: 'Jag flyger med bollen!',
-    olGoal: 'Mål! Rakt in i nätet!',
     olBertilCheer: 'Snyggt, lillebror! Vi gjorde mål ihop!',
     olThanks: 'Tack! Du sköt, och jag flög!',
     // 7. the biathlon range

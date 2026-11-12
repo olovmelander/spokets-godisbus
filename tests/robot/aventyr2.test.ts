@@ -74,7 +74,9 @@ describe('Äventyr 2: the pack', () => {
       const card = chapter.scenes?.find((scene) => scene.id === 'card');
       if (chapter.id !== 'stormkvall' && chapter.id !== 'morgonen') {
         expect(card, chapter.id).toBeDefined();
-        expect(card!.hold, chapter.id).toBeFalsy();
+        // He can set off at once, except in Billsta, where the card is the arrival by the car as well: Moa's two
+        // lines are said while he stands there (./billsta.test.ts).
+        expect(card!.hold === true, chapter.id).toBe(chapter.id === 'billsta');
         expect(card!.at, chapter.id).toBeLessThan(chapter.spawn.x);
       }
       for (const scene of chapter.scenes ?? []) {

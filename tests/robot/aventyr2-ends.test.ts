@@ -6,6 +6,7 @@ import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { morgonen } from '../../src/content/aventyr2/chapters/morgonen';
 import { endsInScene } from '../../src/sim/scene';
 import { groundAlong } from '../../src/sim/sim';
+import { listenThrough } from './listener';
 import { playThrough } from './robot';
 
 /** Äventyr 2's beginning, final and end (docs/aventyr-2.md): every step is his own choice, and none can fail. */
@@ -198,8 +199,34 @@ describe('Äventyr 2: Morgonen efter', () => {
   it('ends in a scene of its own, at the door after the cup of cocoa, and only then', () => {
     expect(endsInScene(morgonen)).toBe(true);
     const last = morgonen.scenes!.find((scene) => scene.cues?.some((cue) => cue.flag === morgonen.goalNeeds))!;
-    expect(last.needs).toBe('beat:moAll');
-    expect(morgonen.beats!.find((beat) => beat.id === 'moAll')!.needs).toBe('beat:moAnswer');
+    // It is due at the door once the cocoa's words are read, and stands him there while his last line, said on the
+    // way to the door, is read (docs/dialogue.md): waiting for that line itself, it began wherever he had run on to.
+    expect(last.needs).toBe('beat:moAnswer');
+    expect(last.hold && last.quiet).toBe(true);
+    const all = morgonen.beats!.find((beat) => beat.id === 'moAll')!;
+    expect(all.needs).toBe('beat:moAnswer');
+    expect(all.at!).toBeLessThan(last.at!);
+    // The cocoa's words and the name are each told where they belong: he stands for them.
+    for (const [id, lines] of [['fjun', ['moLatched', 'moFluff', 'moName']], ['kakao', ['moCup', 'moKnew', 'moAnswer']]] as const) {
+      const scene = morgonen.scenes!.find((one) => one.id === id)!;
+      expect(scene.hold, id).toBe(true);
+      expect(scene.dialogue, id).toEqual(lines);
+    }
+  });
+
+  it('stands him at the window for the name, at the table for the cocoa and at the door for the end', () => {
+    // Read by a page, with the robot running on whenever it is let: the hardest player to keep in the picture.
+    const result = listenThrough(morgonen, {}, 60, 600);
+    expect(result.goal).toBe(true);
+    const at = Object.fromEntries(result.scenes.map((scene) => [scene.id, scene.x]));
+    const spot = (id: string) => morgonen.spots!.find((one) => one.id === id)!.at.x;
+    // Hooking the latch while Pappa is still on his way to the window holds him there for it, and for the name.
+    expect(Math.abs(at.haken! - spot('latch'))).toBeLessThan(1.5);
+    expect(Math.abs(at.fjun! - spot('latch'))).toBeLessThan(1.5);
+    // Taking the cup while the others still answer the name holds him at the table for what is said over it.
+    expect(Math.abs(at.kakao! - spot('cocoa'))).toBeLessThan(1.5);
+    // And his last line is read at the door, where they wave to him.
+    expect(Math.abs(at.slut! - morgonen.scenes!.find((scene) => scene.id === 'slut')!.at!)).toBeLessThan(1);
   });
 
   it('puts both figures back, turns the latch, names the little one Fjun and ends on a cup of cocoa', () => {

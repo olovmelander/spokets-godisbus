@@ -17,8 +17,7 @@ export const words: ChapterWords = {
     sjKlonkWood: 'Lätt för dig, Klonk. Trä flyter ju!',
     sjFlash: 'Lillgubben! Han blåser ut över sjön!',
     // 5. the jetty in the waves
-    sjJetty: 'Bryggan! Vågorna sköljer över den.',
-    sjPosts: 'Jag gömmer mig bakom stolparna.',
+    sjPosts: 'Vågor! Jag gömmer mig bakom stolparna.',
     sjOldOne: 'Spring, gamla trägubben! Vi kommer!',
     // 6. Mamma's paddle board
     sjBroken: 'Bryggan är trasig! Det är för långt.',

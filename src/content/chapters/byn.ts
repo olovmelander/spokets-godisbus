@@ -241,7 +241,8 @@ export const byn: ChapterData = {
     { id: 'again', at: 1.4, who: 'elof', line: 'again' },
     { id: 'lake', at: 37.4, who: 'elof', line: 'lake' },
     { id: 'shop', at: 114, who: 'elof', line: 'shop' },
-    { id: 'shopInside', at: 124, who: 'elof', line: 'shopInside' },
+    // Among the jars, past the door: where "Framme!" has been read at a run (docs/dialogue.md).
+    { id: 'shopInside', at: 130.4, who: 'elof', line: 'shopInside' },
     { id: 'shopBag', at: 154, who: 'elof', line: 'shopBag' },
   ],
   cameras: [

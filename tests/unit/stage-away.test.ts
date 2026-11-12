@@ -18,7 +18,7 @@ it('draws Moa and Bertil by the car, running to the house, and not once they hav
   expect(moa.visible() && bertil.visible()).toBe(true);
   const car = moa.rig.group.position.z;
   // On their way up to the house, at a child's sprint (their run takes the time their steps need).
-  const told = new Set(['scene:card', 'scene:bi:kids-window', 'beat:bi:new-trail']);
+  const told = new Set(['scene:card', 'beat:bi:new-trail']);
   stage.update({ id: run.id, seconds: 5 }, told, { x: 7.4, y: 0 }, 6, 1 / 60, false);
   expect(moa.visible() && bertil.visible()).toBe(true);
   expect(moa.rig.group.position.z).toBeLessThan(car - 10);

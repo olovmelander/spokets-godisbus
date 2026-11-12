@@ -256,6 +256,19 @@ const SCENES: SceneDef[] = [
     },
   },
   {
+    // The gift, in his hand: what it is, that it was the old one's last, and what that means, the line both adventures
+    // lead to ("Förut delade jag. Nu delar du med mig."). He stands by the two of them while he says it: said on the
+    // run, it was said as he wandered about the stone waiting for the taste, or fell off it. Its clock waits for the
+    // words, so its last half second is the breath after them; a child who knows them goes on with Fortsätt.
+    id: 'gavan', on: 'gift', until: 'taste', seconds: 1.4, hold: true, dialogue: ['soGold', 'soLast', 'soShare', 'soMagic'],
+    // The first word waits until the picture has closed in on him and the two of them.
+    cues: [{ at: 0.9, flag: 'so:gift-held' }],
+    stage: {
+      shots: [{ at: 0, x: FIGURES - 0.8, y: 1.3, height: 3.4, width: 7.2, move: 0.8 }],
+      elof: [{ at: 0, act: 'watch', aim: { x: FIGURES, y: 1.0, z: -0.4 } }],
+    },
+  },
+  {
     // 4. He holds the golden sweet up, tastes it, and in a swirl of its glitter grows, in the moonlight, with the two of
     // them in his hands. The family's lamps on the shore: they see him, and each says what they feel, looking to whoever
     // speaks.
@@ -515,11 +528,13 @@ export const stormoga: ChapterData = {
   ],
   beats: [
     { id: 'soFar', on: 'scene:lampa:bertil', who: 'elof', line: 'soFarLine', read: true },
-    { id: 'soOwl', on: 'owl:ready', who: 'elof', line: 'soOwlCome', read: true },
+    // Said to the owl as it lands beside him; once he is on its back it is let go.
+    { id: 'soOwl', on: 'owl:ready', until: 'owl', who: 'elof', line: 'soOwlCome', read: true },
     { id: 'soOwlThanks', at: OWL.to.x - 3.6, needs: 'owl', who: 'elof', line: 'soOwlThanks', read: true },
-    { id: 'soGold', on: 'gift', who: 'elof', line: 'soGoldLine', read: true },
-    { id: 'soLast', on: 'gift', who: 'elof', line: 'soLastOne', read: true },
-    { id: 'soShare', on: 'gift', who: 'elof', line: 'soShareLine', read: true },
+    // The gift's four lines are told standing by the two of them (`gavan`), in this order.
+    { id: 'soGold', on: 'gift', needs: 'so:gift-held', who: 'elof', line: 'soGoldLine', read: true },
+    { id: 'soLast', on: 'gift', needs: 'so:gift-held', who: 'elof', line: 'soLastOne', read: true },
+    { id: 'soShare', on: 'gift', needs: 'so:gift-held', who: 'elof', line: 'soShareLine', read: true },
     { id: 'soMagic', on: 'beat:soShare', until: 'taste', who: 'elof', line: 'soMagicLine', read: true },
   ],
   cameras: [

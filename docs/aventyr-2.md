@@ -100,6 +100,11 @@ number, sign or coordinates appear anywhere, no real map shows it (Moa's crayon 
 
 ## The worlds, beat by beat
 
+How the lines of each world are timed, which of them are passing remarks, and which moments are told standing is in
+[dialogue.md](dialogue.md) (12 November 2026). Six moments below are held scenes with their lines: the old one's
+memory in Stormskogen, the trail's end in Älven, the arrival in Billsta, the gift in Stormens öga, and the name and the
+cup of cocoa in Morgonen efter.
+
 ### Prolog: Stormkvällen (home)
 
 1. **Lördagskväll.** The time card. Elof is a boy among small things. Rain lashes the windows; the lights go out.
@@ -136,14 +141,16 @@ number, sign or coordinates appear anywhere, no real map shows it (Moa's crayon 
 
 ### Kapitel 2: Stormskogen (forest at night)
 
-1. **Kottregnet** (exciting sequence): cones shaken loose fall from the swaying spruces; read their shadows.
+1. **Kottregnet** (exciting sequence): cones shaken loose fall from the swaying spruces; read their shadows. Past
+   them a flash shows the little one blown past.
 2. **Gungande grenar:** boughs swaying in the wind are moving platforms over a ravine.
 3. **Ugglan** (puzzle): a storm-blown twig blocks the owl's hole. Pull it away with the lace.
 4. **Vindfällen:** fallen spruces. The owl flies Elof over the widest gap.
 5. **Pappas ficklampa** (puzzle, the Toy Story rule): "Ropa på Pappa". His beam falls on Klonk, who freezes stiff
    and topples across the gap like a plank. Elof walks over his friend; Pappa looks away and Klonk wakes.
 6. **Gamla trägubbens minne:** at a dark hollow Klonk shows the old one's thought: the crack on the mountain.
-   "Den var ensam i mörkret i flera år." "Därför väntar den inte."
+   "Gamla trägubben låg ensam i flera år." "Därför skyndar han. Lillgubben är ensam!" He stands at the hollow while
+   it is said, the thought in the middle of the picture.
 7. **Lavskrikan** from Äventyr 1 shelters in a hollow; a lingonberry, and it shows the way up.
 8. Down the hill towards the village, where every window is dark.
 

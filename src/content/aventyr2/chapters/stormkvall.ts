@@ -458,8 +458,9 @@ export const stormkvall: ChapterData = {
     { id: 'skEnough', on: 'beat:skHandful', who: 'bertil', line: 'skEnough', read: true },
     // The doll at the toy shelf, as he comes to it: its raincoat might fit him.
     { id: 'skDoll', at: DOLL.x - 2.2, needs: 'scene:tillsammans', until: TAKE, who: 'elof', line: 'skDollCoat', read: true },
-    { id: 'skSill', at: 27.6, needs: 'scene:tillsammans', who: 'spoket', line: 'skKlonkHop' },
-    { id: 'skRain', at: 39.4, needs: 'scene:tillsammans', who: 'elof', line: 'skRainLine' },
+    // Passing remarks (docs/dialogue.md): the one about the rain gives way to the family's promises on the deck.
+    { id: 'skSill', at: 27.6, needs: 'scene:tillsammans', who: 'spoket', line: 'skKlonkHop', aside: true },
+    { id: 'skRain', at: 39.4, needs: 'scene:tillsammans', who: 'elof', line: 'skRainLine', aside: true },
     // On the deck, the family's promises, as he passes them.
     { id: 'skNear', at: 44, needs: 'scene:tillsammans', who: 'mamma', line: 'nearYou', read: true },
     { id: 'skFollow', at: 48, needs: 'scene:tillsammans', who: 'pappa', line: 'followTrail', read: true },
