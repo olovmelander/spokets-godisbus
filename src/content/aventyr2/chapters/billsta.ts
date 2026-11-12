@@ -135,7 +135,12 @@ const BEAMS: Ledge[] = [
 
 /** Where morfar and mormor stand, and he calls them. */
 const MORFAR = { x: 13.2, y: 0 };
-const MORMOR = { x: 47.4, y: 0 };
+/**
+ * He calls mormor from two and a half steps short of where she waits, as he comes down off the woodpile. Nearer, where
+ * the call was offered he stood where she holds her lantern out low as she bends to him (`MORMOR_WAITS`), and it was in
+ * front of him: he was hidden behind it while she spoke.
+ */
+const MORMOR = { x: 45.4, y: 0 };
 /**
  * Mormor (Olov, 9 November 2026: "Mormor döljs av en stubbe", and "Mormor ska gå fram och öppna ladan"). She waits by the
  * foot of the planks, in front of the woodshed's chopping block, and when he has called her she walks up the planks to
@@ -151,7 +156,7 @@ const MORMOR_WAITS = { x: 47.9, y: 0, z: -0.9 };
  */
 const MORMOR_AT_DOOR = { x: 54.6, y: ramp(54.6), z: 1.0 };
 const MORMOR_WALK = elderWalk(MORMOR_WAITS.x, MORMOR_AT_DOOR.x, (x) => (x < PLANKS.from ? 0 : ramp(x)));
-const MORMOR_SEEN = { x: 52.4, y: 5.4, height: 12.4, width: 13.6, seconds: round(MORMOR_WALK + 2.2, 1) };
+const MORMOR_SEEN = { x: 51.4, y: 5.4, height: 12.4, width: 13.6, seconds: round(MORMOR_WALK + 2.2, 1) };
 
 // --- 5. the forest behind the house, and Billaberget ---------------------------------------------------------------
 
