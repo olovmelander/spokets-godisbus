@@ -47,6 +47,8 @@ export const words: ChapterWords = {
     soReach: { purpose: 'Ropa på ugglan längst ut på bryggan.', recap: 'Båda trägubbarna sitter på en sten långt ute i vågorna. Lamporna visar var vi är.' },
     soRide: { purpose: 'Flyg på ugglan ut till stenen.', recap: 'Ugglan från skogen kom tillbaka för att hjälpa mig.' },
     soMeet: { purpose: 'Gå fram till trägubbarna.', recap: 'Stormen tystnade. Trägubbarna sitter på stenen.' },
+    // Set down on the stone, before the storm's eye opens a few steps on: the storm still blows there.
+    soStone: { purpose: 'Gå fram till trägubbarna.', recap: 'Ugglan satte ner mig på stenen. Där sitter trägubbarna!' },
     soGift: { purpose: 'Ta emot guldgodiset av gamla trägubben.', recap: 'Stormen tystnade. Jag hittade dem båda, och lillgubben fick tillbaka sin mössa.' },
     soBoard: { purpose: 'Hoppa upp på ugglan.', recap: 'Ugglan har landat längst ut på bryggan. Den kan ta mig ut till stenen.' },
     soTaste: { purpose: 'Smaka på guldgodiset.', recap: 'Spåret tog slut, men gamla trägubben sparade sin allra sista bit åt mig.' },
