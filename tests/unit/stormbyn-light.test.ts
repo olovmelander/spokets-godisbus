@@ -6,7 +6,7 @@ import { stormbyn } from '../../src/content/aventyr2/chapters/stormbyn';
 import { byn } from '../../src/content/chapters/byn';
 import { UNLIT, assemble, powerOut, villageKit } from '../../src/render/village';
 import { WINDOW_CANDLE, windowCandle } from '../../src/render/window-candle';
-import { UMBRELLA, carrying, createUmbrellaCarry, handsOn, heldUp, holdAt } from '../../src/render/umbrella-hold';
+import { UMBRELLA, carrying, createHoldingOut, createUmbrellaCarry, handsOn, heldUp, holdAt } from '../../src/render/umbrella-hold';
 import type { ChapterData } from '../../src/sim/types';
 
 /** A chapter's houses as the game puts them together from the village kit (art/baked/boot/village.glb), each by itself. */
@@ -115,5 +115,25 @@ describe("Moa's umbrella, held", () => {
     prop.updateMatrixWorld(true);
     expect(prop.scale.x).toBeCloseTo(0.5);
     expect(UMBRELLA.grip.clone().applyMatrix4(prop.matrixWorld).distanceTo(new Vector3(103, 4.9 + UMBRELLA.hang, 0))).toBeLessThan(1e-6);
+  });
+
+  it('has Moa down at the edge from the first frame of a game taken up after the call, and down after a breath when called', () => {
+    // Taken up after the call, early on the view's clock: she was standing for a second and then crouched.
+    const resumed = createHoldingOut();
+    for (let frame = 0; frame < 300; frame++) {
+      const { down, stoop } = resumed.update(true, 0.02 + frame / 60, 1 / 60, frame === 0, false);
+      expect(down, `frame ${frame}`).toBe(1);
+      expect(stoop, `frame ${frame}`).toBe(1);
+    }
+    // Called while he watches: standing for a breath, then down, and up again once he has it.
+    const called = createHoldingOut();
+    expect(called.update(false, 0, 1 / 60, true, false).stoop).toBe(0);
+    let clock = 0;
+    const at = (seconds: number) => { let last = { down: 0, stoop: 0 }; for (; clock < seconds; clock += 1 / 60) last = called.update(true, 5 + clock, 1 / 60, false, false); return last; };
+    expect(at(0.3).stoop).toBeLessThan(0.01);
+    expect(at(2.5).stoop).toBeGreaterThan(0.99);
+    expect(called.update(false, 8, 1 / 60, false, false).down).toBe(0);
+    // Without motion, at once.
+    expect(createHoldingOut().update(true, 5, 1 / 60, false, true).stoop).toBe(1);
   });
 });

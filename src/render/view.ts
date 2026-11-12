@@ -9,7 +9,9 @@ import { buildBraid } from './braid';
 import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } from './myren-helper';
 import { createPaddle, type Paddle } from './paddle';
 import { createScarves } from './scarf';
-import { createUmbrellaCarry, handsOn, heldUp, holdAt, holdingOut, UMBRELLA } from './umbrella-hold';
+import { createHoldingOut, createUmbrellaCarry, handsOn, heldUp, holdAt, holdingOut, UMBRELLA } from './umbrella-hold';
+import { swayingBoughs } from './swaying-boughs';
+import { rootHollow } from './root-hollow';
 import { rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
@@ -450,6 +452,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const rain = createRain(chapter);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
+  // Stormskogen's swaying boughs: spruce boughs on young stems that lean as they swing (./swaying-boughs.ts).
+  const boughs = swayingBoughs(chapter, moverMeshes);
+  if (boughs) scene.add(boughs);
   // Drops thrown up at his feet as he runs and lands on wet ground, out in the storm (./foot-splash.ts).
   const footSplash = createFootSplash();
   const wetOutside = (chapter.storm?.rain ?? 0) > 0 && chapter.place !== 'home';
@@ -789,6 +794,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const family: Relative[] = [];
   if (chapter.id === 'myren') scene.add(mammaSteps());
   if (chapter.id === 'stormskog') scene.add(owlHollow());
+  // Stormskogen's dark hollow under the roots: a felled spruce's root plate behind the pit (./root-hollow.ts).
+  const hollow = rootHollow(chapter);
+  if (hollow) scene.add(hollow);
   /**
    * The rain gear and Bertil's own hair, made in Blender over each of the family's approved models (the private
    * repository's family/wardrobe.py): put on the model when it has come, if the private pack has it.
@@ -997,7 +1005,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const umbrellaCarry = umbrellaRide ? createUmbrellaCarry() : null;
   const umbrellaHand = new Vector3(), umbrellaHeld = new Vector3(), umbrellaAxis = new Vector3();
   const umbrellaLower = new Vector3(), umbrellaUpper = new Vector3();
-  let umbrellaCalled = -1;
+  /** How far down Moa is, holding it out to him at the wall's edge (./umbrella-hold.ts). */
+  const umbrellaOut = createHoldingOut();
   /** Her fist round the umbrella's crook (./fingers.ts). */
   const UMBRELLA_GRIP = { kind: 'power' as const, size: 0.05 };
   const creepTo = new Vector3();
@@ -2122,11 +2131,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // lets go and straightens (Olov, 12 November 2026: it stood there by itself before; ./umbrella-hold.ts).
       const umbrellaUp = one.who === 'moa' && !!umbrellaRide && !!umbrellaBoard && !flags.has(umbrellaBoard.id);
       const umbrellaAsked = umbrellaUp && one.glad !== undefined && flags.has(one.glad);
-      if (!umbrellaAsked) umbrellaCalled = -1;
-      // A game taken up after the call: it is down already.
-      else if (umbrellaCalled < 0) umbrellaCalled = hasFrame ? clock : clock - 9;
-      const down = umbrellaAsked ? (calmStory ? 1 : smooth((clock - umbrellaCalled - 0.35) / 0.95)) : 0;
-      gesture.stoop = calmStory ? down : gesture.stoop + (down - gesture.stoop) * ease(6, dt);
+      // A game taken up after the call has her down from its first frame (./umbrella-hold.ts `createHoldingOut`).
+      const { down, stoop } = one.who === 'moa' ? umbrellaOut.update(umbrellaAsked, clock, dt, !hasFrame, calmStory) : { down: 0, stoop: 0 };
+      gesture.stoop = stoop;
       // Down in a crouch at the edge, to hold it out low to him (./umbrella-hold.ts).
       if (gesture.stoop > 0.001) holdingOut(posed, one.rig.legs, gesture.stoop);
       // Bertil kicks the ball Elof rides ("Upp på bollen! Jag skjuter, du flyger!"): turned to it, a wind-up, the
@@ -2204,6 +2211,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
         && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
       if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
+      // Woken beside him, Klonk is out of the light: "Nu lyser jag på stigen", at Elof's heels (Klonk stood in its cone).
+      else if (frozenLedge && one.who === 'pappa' && chapter.storm?.wakes && flags.has(chapter.storm.wakes) && x < frozenLedge.x + frozenLedge.width / 2 + 3) lampTo.set(x - 0.8, y + 0.1, 0);
       else lampTo.set(x, y + tall * .4, 0);
       const lampSide = familyLampSide(one.who, !!umbrellaRide), lampWeight = lampCarryWeight(gesture.pull);
       // What is said (./talk.ts): they look at whoever speaks, from where their face was a moment ago, and speak with their

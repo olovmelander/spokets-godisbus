@@ -48,8 +48,9 @@ export const words: ChapterWords = {
     ssJaySeen: 'Lavskrikan! Den gömmer sig för regnet.',
     ssJayGlad: 'Ett lingon åt dig. Visa vägen, kompis!',
     // 9. the hill
-    ssSeeOld: 'Där vandrar gamla trägubben ner!',
-    ssVillage: 'Byn är alldeles mörk. Inte ett ljus.',
+    // From the high root the old one is seen hurrying down the hill; the village itself is not in the picture yet.
+    ssSeeOld: 'Där går gamla trägubben, ner mot byn!',
+    ssVillage: 'Nu går vi ner till byn, Klonk!',
     ssOnward: 'Klonk, klonk!',
   },
   verbs: {
@@ -69,7 +70,7 @@ export const words: ChapterWords = {
     ssMemory: { purpose: 'Följ spåret efter gamla trägubben.', recap: 'Gamla trägubben vet hur det är att vara ensam i mörkret. Därför skyndar han efter lillgubben.' },
     ssJay: { purpose: 'Plocka ett lingon och ge det till lavskrikan.', recap: 'Lavskrikan från förra äventyret gömmer sig för stormen.' },
     ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig vägen upp längs laven.' },
-    ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },
+    ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar ner mot byn. Klonk och jag följer efter.' },
   },
   moments: { 'ss:ljuset': 'Pappas ficklampa', 'ss:minnet': 'Gamla trägubbens minne', 'ss:vaknar': 'Klonk vaknar' },
   helpers: {
