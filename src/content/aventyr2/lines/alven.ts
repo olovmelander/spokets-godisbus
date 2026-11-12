@@ -13,12 +13,11 @@ export const words: ChapterWords = {
     alKlonkFloats: 'Klonk! Du simmar utan att sprattla!',
     alKlonk: 'Klonk!',
     alFlash: 'Blixten! Lillgubben guppar på ån!',
-    // 1. the current: the raft, the gravel bank, the birch leaf
+    // 1. the current: the raft, the gravel bank, the turning logs
     alRaftSeen: 'En liten flotte! Den kan bära mig.',
     alCurrent: 'Strömmen tar oss! Håll i dig, Klonk!',
     alOldOne: 'Där! Gamla trägubben på en stock!',
     alLogsWait: 'Stockar i virveln! Jag väntar in dem.',
-    alLeafSeen: 'Ett björklöv, som i rännstenen!',
     // 2. the stones, the bobbing logs and the eddy
     // 3. the bridge in Bredbyn, and Pappa's scarf
     alBredbyn: 'Bredbyn igen! Där borta är Olympia.',
@@ -63,7 +62,6 @@ export const words: ChapterWords = {
     alvenRaft: { purpose: 'Kliv på flotten vid stranden.', recap: 'Ån är för bred att hoppa över. En liten flotte ligger vid stranden.' },
     alvenCurrent: { purpose: 'Åk med strömmen nerför ån.', recap: 'Strömmen bär mig. Klonk flyter bredvid, för trä flyter.' },
     alvenEddy: { purpose: 'Vänta in stockarna och hoppa.', recap: 'Vattnet snurrar stockarna fram och tillbaka i virveln.' },
-    alvenLeaf: { purpose: 'Kliv på björklövet.', recap: 'Gamla trägubben flyter före på sin stock och lämnar godis åt mig.' },
     alvenStones: { purpose: 'Hoppa på stenarna och stockarna.', recap: 'Stockarna guppar i strömmen, men de håller mig.' },
     alvenPappa: { purpose: 'Ropa på Pappa vid bron.', recap: 'Forsen vid bron i Bredbyn är för vild. Pappa står uppe på bron.' },
     alvenScarf: { purpose: 'Ta tag i Pappas halsduk.', recap: 'Pappa har sänkt ner sin halsduk från bron. Han håller i den.' },

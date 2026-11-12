@@ -31,6 +31,8 @@ import { afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
+import { otterLife } from './otter';
+import { RAPID_LANE, RAPID_STONES, riverStones } from './river-stones';
 import { morgonen } from './chapters/morgonen';
 import { openWaterAt } from '../../render/water';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -81,7 +83,7 @@ function scatter(seed: number): () => number {
 }
 
 /** Where Elof is, for those who look at him, how far the story has come, and whether the picture keeps still. */
-const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean } = { x: 0, flags: null, still: false };
+const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean; y: number; riding: boolean } = { x: 0, flags: null, still: false, y: 0, riding: false };
 /** The chapter in the picture, for the things on rails that draw their own way there: Flärken's stone and bark. */
 const playing: { chapter: ChapterData | null } = { chapter: null };
 /** For the tests: where the storm says which chapter is in the picture. */
@@ -829,6 +831,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       elof.x = x;
       elof.flags = flags;
       elof.still = still;
+      // How high he is, and whether he rides: the otter goes when he walks out to it (./otter.ts).
+      elof.y = y;
+      elof.riding = riding;
       drift?.(dt, still);
       // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him. Its downstroke is
       // the slower, and between bursts it glides on wings held near level (a positive turn lowers its wings).
@@ -1824,7 +1829,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     otter: (spot) => {
       const { group, head } = otter();
-      return standing(spot, group, (clock) => {
+      // Gone out to, it jumps off its stone into the lake with a splash, and comes back once he is away (./otter.ts).
+      const life = otterLife(spot, group, elof, waterSplash(0.75), () => pools, (clock) => {
         group.position.y = Math.sin(clock * 1.7) * 0.03;
         // It looks about, holding each look, mostly out towards him, turning its head (the stand-in's, or the kit's on
         // its neck); a kit without a head of its own turns a little from its waist, more slowly.
@@ -1837,6 +1843,9 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
           turning.rotation.x = held(clock * 0.8, spot.at.x + 3, 0.5, 0.1) * 0.12;
         } else group.rotation.y = held(clock, spot.at.x, 0.25, 0.3) * 0.35 + 0.1;
       });
+      const prop = standing(spot, group, life.alive);
+      prop.group.add(life.splash);
+      return prop;
     },
     lillgubbe: (spot) => {
       const figure = littleFigure();
@@ -2053,26 +2062,31 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     latch: (spot) => latch(spot),
     football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
     whiteWater: (spot) => {
-      // The rapids: wet boulders the river breaks over, and standing waves of white water that heave and never go.
+      // The rapids: wet boulders the river breaks over, worn round (./river-stones.ts), behind the lane the raft
+      // goes down; and standing waves of white water that heave and never go, breaking white against the stones.
       const group = new Group();
       group.position.set(spot.at.x, spot.at.y, -0.2);
       const random = scatter(37);
-      const parts: BufferGeometry[] = [];
-      for (const [x, z, wide, tall] of [[-6.2, -1, 1.5, 0.9], [-3.4, -2.8, 1.9, 1.3], [-0.8, -0.5, 1.1, 0.7], [2.2, -3.2, 2.1, 1.4], [4.4, -1.1, 1.3, 0.8], [6.6, -2.4, 1.6, 1]] as const) {
-        parts.push(rock(Math.round(x * 10), wide, tall, wide * 0.8).clone().translate(x, 0.1, z));
-      }
-      const stones = new Mesh(mergeGeometries(parts.map((part) => (part.index ? part.toNonIndexed() : part))), solid('#3a3e3c', 0.32, { flatShading: true }));
-      group.add(stones);
-      const waves = new InstancedMesh(new SphereGeometry(1, 10, 6).scale(1, 0.4, 0.7), solid('#d8d0ba', 0.5), 34);
+      group.add(riverStones(RAPID_STONES, Math.round(spot.at.x)));
+      // White water, not pale pebbles: small heaped bits of froth, a little see-through, faintly light in the dark.
+      const waves = new InstancedMesh(new SphereGeometry(1, 12, 6).scale(1, 0.5, 0.8), solid('#eef3f1', 0.3, { emissive: '#56646a', emissiveIntensity: 0.22, transparent: true, opacity: 0.66, depthWrite: false }), 44);
       waves.frustumCulled = false;
-      const humps = Array.from({ length: waves.count }, () => ({ x: (random() - 0.5) * 14.6, z: -0.4 - random() * 4.4, size: 0.3 + random() * 0.55, phase: random() * 6.28 }));
+      const humps = Array.from({ length: waves.count }, (_, i) => {
+        // Half of them where the water breaks on a stone, at its upstream side; the rest over the rapid.
+        const on = i % 2 === 0 ? RAPID_STONES[(i / 2) % RAPID_STONES.length]! : null;
+        const hump = on
+          ? { x: on.x - on.wide * (0.7 + 0.35 * random()), z: on.z + on.wide * (0.1 + 0.5 * random()), size: 0.16 + 0.26 * random(), phase: random() * 6.28 }
+          : { x: (random() - 0.5) * 14.6, z: -0.7 - random() * 4.1, size: 0.16 + random() * 0.3, phase: random() * 6.28 };
+        // None reaches into the raft's lane.
+        return { ...hump, z: Math.min(hump.z, -RAPID_LANE - hump.size * 0.8) };
+      });
       group.add(waves);
       const place = new Object3D();
       const heave = (clock: number) => {
         for (const [i, hump] of humps.entries()) {
           const swell = 0.75 + 0.35 * Math.sin(clock * 5 + hump.phase);
           place.position.set(hump.x, 0.04 + 0.1 * Math.sin(clock * 4 + hump.phase), hump.z);
-          place.scale.set(hump.size * 1.5, hump.size * swell, hump.size);
+          place.scale.set(hump.size * 1.2, hump.size * swell, hump.size);
           place.updateMatrix();
           waves.setMatrixAt(i, place.matrix);
         }
@@ -2263,8 +2277,9 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       if (spot.word === 'and' || spot.word === 'and-hona') {
         return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
       }
-      // The beaver gnaws, looks at him, thumps its tail, and swims home to its lodge (./beaver.ts).
-      if (spot.word === 'baver') return beaverLife(spot, group, model, () => pools, elof);
+      // The beaver gnaws, looks at him, thumps its tail, goes into its lodge, comes out on its top, and swims out
+      // over the lake (./beaver.ts).
+      if (spot.word === 'baver') return beaverLife(spot, group, model, () => pools, elof, () => course?.storm?.buildings?.find((b) => b.kind === 'lodge'));
       // The hedgehog snuffles, the frog hops on the spot, the snail creeps (../../render/kit-life.ts).
       if (spot.word === 'igelkott' || spot.word === 'groda' || spot.word === 'snigel') {
         const rest = { x: 0, y: 0, turn: 0, size: 1 };

@@ -1,4 +1,3 @@
-import { FELL_IN } from '../../../sim/constants';
 import type { Candy, ChapterData, Flyby, GhostPerch, Jump, Mover, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
 import { alongAll, hopCandy, round, row, sighting, slopeRow, timeCard } from '../kit';
@@ -13,16 +12,20 @@ import { alongAll, hopCandy, round, row, sighting, slopeRow, timeCard } from '..
  * 1. **Strömmen:** from the outlet's bank a little raft carries him down the current to a gravel bank, and from the
  *    raft a flash shows the little one bobbing on the same water. Beyond it the
  *    water turns round in eddies with three logs in them, each a hop from the next only for a moment: he waits, and
- *    goes. Anyone who has fallen in, or plays on Lugnt, is offered a birch leaf as in the village's gutter, which
- *    carries him over. Klonk floats beside him: he is wood.
+ *    goes. Once a round each log comes end to end with the next, the first with the gravel bank and the last with the
+ *    bank after it, so that walking, and on Lugnt, he stops at the edge and steps across when it comes. (There was a
+ *    birch leaf for this; Olov, 12 November 2026: "Ta bort björklövet/lövbåten som inte behövs, man kan ju hoppa på
+ *    stockarna.") Klonk floats beside him: he is wood.
  * 2. **Stenar och stockar:** stones in the stream with logs between them, each a hop from the last. The logs bob a
  *    little in the eddies, never more than his feet can take; behind the big stone the water turns round.
  * 3. **Bron i Bredbyn:** the rapids under the bridge are far too wild. "Ropa på Pappa": from the bridge he lowers
  *    his scarf, and when Elof takes hold he lifts him up and over the rapids to the far bank.
- * 4. **Bäverhyddan:** stumps the beaver has gnawed are steps, and a gnawed stick up the lodge's steep front is the
- *    climb. Over its top, quietly, and down its far side; an otter swims out towards a stone in the lake.
+ * 4. **Bäverhyddan:** the lodge's mud is in steps, past the trunks the beaver is gnawing, and a gnawed stick up the
+ *    lodge's steep front is the climb. Over its top, quietly, while the beaver looks out of the very top of its lodge
+ *    at him, and down its far side; an otter sits on a stone out in the lake.
  * 5. **Sjön:** the widest water of all. The owl from Stormskogen has followed: "Ropa på ugglan", and it flies him
- *    over. Two logs roll in the shallows out to the otter's stone, a way of its own with sweets, never needed.
+ *    over. Two logs roll in the shallows out to the otter's stone, a way of its own with sweets, never needed: the
+ *    otter does not wait for him there, but jumps into the lake with a splash.
  * 6. **Moälven:** the river widens. From the owl's back the little one is seen far down it, and from the bank the old
  *    one floats past on the near water and on ahead. At the end the
  *    trail runs out, and he stands on the bank with Moa and Bertil while the night's lowest point and its turning
@@ -33,8 +36,8 @@ import { alongAll, hopCandy, round, row, sighting, slopeRow, timeCard } from '..
  */
 
 /**
- * Open water is a pit this deep to the simulation. Its surface is a little under the banks, where a raft and a leaf
- * sit in it; higher between the stones, where the logs float half under; and in the lake's shallows.
+ * Open water is a pit this deep to the simulation. Its surface is a little under the banks, where the raft and the
+ * logs sit in it; higher between the stones, where the logs float half under; and in the lake's shallows.
  */
 const DEEP = -6;
 const CURRENT = -0.4;
@@ -54,9 +57,13 @@ interface Stone {
 const OUTLET: Stone = { from: -3, to: 14, y: 0 };
 const GRAVEL: Stone = { from: 29.4, to: 37, y: 0.3 };
 const BANK: Stone = { from: 49.6, to: 53, y: 0 };
-/** The raft and the birch leaf: low on the water, steered only a little, from bank to bank. */
+/** The raft: low on the water, steered only a little, from bank to bank. */
 const RAFT = { from: { x: 13.4, y: 0 }, to: { x: 30.4, y: GRAVEL.y }, rise: 0.25, time: 5.4, corridor: 0.3 };
-const LEAF = { from: { x: 36.4, y: GRAVEL.y }, to: { x: 50.6, y: 0 }, rise: 0.25, time: 4.6, corridor: 0.3 };
+/**
+ * The arc the trail takes over the eddies, from the gravel bank's end to the bank after them: where the birch leaf
+ * once went. Its candies stay where they were, over the turning logs, so that a saved game's candies keep their places.
+ */
+const EDDY_WAY = { from: { x: 36.4, y: GRAVEL.y }, to: { x: 50.6, y: 0 }, rise: 0.25 };
 
 // 2. Stones in the stream, with a bobbing log between each two: every hop is as wide as a hop between Flärken's
 // reed mats.
@@ -83,7 +90,8 @@ const bobbing = (id: string, log: Stone, seconds: number, phase: number): Mover 
 
 /**
  * The eddies below the gravel bank: logs the water turns to and fro, at the gravel's height. Two neighbours go opposite
- * ways, so that each comes to the next once a round, end to end, and each end of the row comes to its bank.
+ * ways, so that each comes to the next once a round, end to end, and each end of the row comes to its bank: the first
+ * to the gravel bank's very edge, so that one who walks, or plays on Lugnt, steps onto it as it comes.
  */
 const TURN = 5.2;
 const EDDY_WIDTH = 2.2;
@@ -93,9 +101,9 @@ const turning = (id: string, from: number, to: number, phase: number): Mover => 
   stops: [{ x: from, y: round(GRAVEL.y - LOG_HIGH) }, { x: to, y: round(GRAVEL.y - LOG_HIGH) }],
 });
 const EDDY: Mover[] = [
-  turning('al-eddy-1', 38.7, 41.2, 0),
+  turning('al-eddy-1', round(GRAVEL.to + EDDY_WIDTH / 2, 1), 41.2, 0),
   turning('al-eddy-2', 43.4, 45.4, TURN / 2),
-  turning('al-eddy-3', 47.6, 48.4, 0),
+  turning('al-eddy-3', 47.6, round(BANK.from - EDDY_WIDTH / 2, 1), 0),
 ];
 
 // 3. Bredbyn: the bank, the rapids under the bridge, and the far bank. Pappa's scarf lifts him over.
@@ -125,6 +133,13 @@ const LODGE: Stone = { from: 119.8, to: 123.6, y: 4.8 };
 const SLOPE_END = 131;
 const lodgeSide = (x: number) => round(LODGE.y - ((x - LODGE.to) * LODGE.y) / (SLOPE_END - LODGE.to), 4);
 const STICK = { x: 119.5, bottom: STUMP2.y, top: LODGE.y, exit: 1 as const, look: 'root' as const };
+/**
+ * The beaver's gnawed trunks by the steps (the nature kit's `stubbe-gnagd`, art/blender/a2-nature.py): how far behind the
+ * path they stand, how deep their flared roots are sunk, how they are turned, so that their four roots point away at a
+ * slant and the nearest stays more than half an EL behind him, and how big they are, so that their roots stay on the
+ * step each stands on (tests/unit/alven-beaver-place.test.ts).
+ */
+const GNAWED = { z: -2, sunk: 0.3, turn: 0.36, scale: 0.85 };
 
 // 5. The lake: its shore, the owl, the otter's stone out in the shallows, and the far shore.
 const SHORE: Stone = { from: SLOPE_END, to: 137.4, y: 0 };
@@ -288,7 +303,7 @@ export const alven: ChapterData = {
   ground: [
     { x: -3, y: 12 },
     { x: OUTLET.from, y: OUTLET.y },
-    // 1. the outlet's bank, the current, the gravel bank in it, and the bank after the leaf
+    // 1. the outlet's bank, the current, the gravel bank in it, and the bank after the eddies
     { x: OUTLET.to, y: OUTLET.y },
     { x: OUTLET.to, y: DEEP },
     ...island(GRAVEL),
@@ -372,10 +387,8 @@ export const alven: ChapterData = {
   ],
   climbs: [STICK],
   spots: [
-    // The raft at the outlet's bank, and the birch leaf at the gravel bank's end: he steps on, the current carries him.
+    // The raft at the outlet's bank: he steps on, the current carries him.
     { id: 'al:raft', at: RAFT.from, verb: 'take', word: 'board', ride: 'al:raft' },
-    // The gentle way: offered to anyone who has fallen in, or plays on Lugnt.
-    { id: 'al:leaf', at: LEAF.from, verb: 'take', word: 'board', needs: FELL_IN, ride: 'al:leaf' },
     // On the bank before the rapids: he calls Pappa, who lowers his scarf from the bridge; then he takes hold.
     // Pappa himself is up on the bridge, at its railing over the bank's end ("Jag står här uppe på bron!"); while the
     // scarf lifts Elof he walks along the bridge with him, and stays at its far end.
@@ -391,7 +404,6 @@ export const alven: ChapterData = {
   ],
   rides: [
     { id: 'al:raft', look: 'raft', ...RAFT },
-    { id: 'al:leaf', look: 'leaf', ...LEAF },
     // Pappa's scarf: Elof hangs from it by his hands, lifted up towards the bridge and down on the far side.
     { id: 'al:lift', look: 'none', ...LIFT },
     { id: 'al:owl', look: 'owl', ...OWL },
@@ -452,18 +464,26 @@ export const alven: ChapterData = {
   decor: [
     // A frog on the bank, by the reeds.
     { look: 'kit', word: 'groda', at: { x: 111.6, y: 0 }, z: -1.3, turn: 0.5, scale: 0.8 },
-    // The beaver itself, on the bank by its stumps, gnawing a stick: it looks at Elof, thumps its tail and goes behind its
-    // lodge, and swims home over the lake while he is up on the roof (../beaver.ts).
+    // The beaver itself, on the bank by its stumps, gnawing a stick: it looks at Elof, thumps its tail and goes into its
+    // lodge at its foot; it comes out at the very top of the lodge as he comes up onto the roof, and swims out over the
+    // lake once he is down by it (../beaver.ts).
     { look: 'kit', word: 'baver', at: { x: 115.2, y: FAR_BANK.y }, z: -2.6 },
-    // Gnawed stumps on the beaver's steps, and what he has felled and dropped along the banks.
-    { look: 'kit', word: 'stubbe-gnagd', at: { x: 117.1, y: 0.9 }, z: -0.9, turn: 0.4 },
-    { look: 'kit', word: 'stubbe-gnagd', at: { x: 118.9, y: 1.8 }, z: -1.1, turn: 1.9, scale: 1.2 },
+    // Gnawed trunks by the beaver's steps, and what he has felled and dropped along the banks. They stand behind the path,
+    // between it and the lodge's mud, so that he climbs past them and never through them (Olov, 12 November 2026: "i
+    // bäverhyddan så går man rakt igenom de tuggade trädstammarna"). Each is sunk a little, its flared roots in the
+    // ground, and turned so that no root reaches out towards him (`GNAWED`).
+    { look: 'kit', word: 'stubbe-gnagd', at: { x: 117.5, y: round(STUMP1.y - GNAWED.sunk) }, z: GNAWED.z, turn: GNAWED.turn, scale: GNAWED.scale },
+    { look: 'kit', word: 'stubbe-gnagd', at: { x: 119.5, y: round(STUMP2.y - GNAWED.sunk) }, z: GNAWED.z, turn: round(GNAWED.turn + Math.PI / 2), scale: GNAWED.scale },
     { look: 'kit', word: 'stubbe-sagad', at: { x: 112.6, y: 0 }, z: -2.2, turn: 0.8 },
-    { look: 'kit', word: 'gren-a', at: { x: 110.4, y: 0 }, z: -1.4, turn: 0.3 },
-    { look: 'kit', word: 'gren-b', at: { x: 6.4, y: 0 }, z: -1.5, turn: 2.2 },
-    { look: 'kit', word: 'lag-mossig', at: { x: 171, y: 0.4 }, z: -2.6, turn: 0.2 },
-    { look: 'kit', word: 'gren-a', at: { x: 184, y: 0.4 }, z: -1.8, turn: 2.8 },
-    { look: 'kit', word: 'stubbe-gnagd', at: { x: 186.4, y: 0.4 }, z: -2, turn: 1 },
+    // The felled branches and the mossy log lie far enough behind the path that he never walks through an end of one
+    // (the one by the outlet reached out in front of him), nor the owl comes down through one.
+    { look: 'kit', word: 'gren-a', at: { x: 110.4, y: 0 }, z: -1.9, turn: 0.3 },
+    { look: 'kit', word: 'gren-b', at: { x: 6.4, y: 0 }, z: -2.5, turn: 2.2 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 171, y: 0.4 }, z: -3, turn: 0.2 },
+    { look: 'kit', word: 'gren-a', at: { x: 184, y: 0.4 }, z: -2.1, turn: 2.8 },
+    // At the trail's end, by the bank Moa and Bertil run down to: behind the path, as the beaver's own are, and beside
+    // Bertil's way from the car, so that he runs round it and not through it (`KIDS`).
+    { look: 'kit', word: 'stubbe-gnagd', at: { x: 188.2, y: round(ON.y - GNAWED.sunk) }, z: -2, turn: GNAWED.turn },
     // The rapids under the bridge: far too wild, and it should look it.
     { look: 'whiteWater', at: { x: (RAPIDS.from + RAPIDS.to) / 2, y: RAPID } },
     // And the forest torrent below the outlet, which the raft goes down.
@@ -501,8 +521,9 @@ export const alven: ChapterData = {
     { at: { x: 121.8, y: LODGE.y } },
     { at: { x: 126.8, y: lodgeSide(126.8) } },
     { at: { x: 135.4, y: SHORE.y } },
-    // Out on the otter's stone, and floating on the lake, while the owl carries Elof high over him.
-    { at: { x: 146.7, y: OTTER.y } },
+    // Out on the otter's stone, beside the otter and not in it, and floating on the lake, while the owl carries Elof
+    // high over him.
+    { at: { x: round(OTTER.from + 0.45, 1), y: OTTER.y } },
     afloat(155, LAKE),
     afloat(161, LAKE),
     { at: { x: 170.4, y: MOALVEN.y } },
@@ -523,7 +544,6 @@ export const alven: ChapterData = {
     { id: 'al:current', on: 'al:raft', within: [12, 31], who: 'elof', line: 'alCurrent', aside: true },
     // On the gravel bank the logs' own words come first, as he lands: they are what he has to do next.
     { id: 'al:logs-wait', at: 31.2, who: 'elof', line: 'alLogsWait', read: true },
-    { id: 'al:leaf-seen', on: FELL_IN, within: [GRAVEL.from, BANK.from], until: 'al:leaf', who: 'elof', line: 'alLeafSeen', read: true },
     // 2. the stones and the logs: from the bank after the eddies, the old one on his log among them
     { id: 'al:old-one', at: OLD_SEEN, needs: 'al:old-seen', who: 'elof', line: 'alOldOne' },
     // 3. Bredbyn, the rapids, and Pappa on the bridge. He sees the rapids as he steps onto the bank, and Pappa
@@ -581,10 +601,11 @@ export const alven: ChapterData = {
   candy: [
     // 0. the outlet's bank, up to the raft
     ...row(2.6, 12.6, 0),
-    // 1. on the raft down the current, across the gravel bank, and on the birch leaf
+    // 1. on the raft down the current, across the gravel bank, and over the turning logs
     ...alongAll(RAFT, [0.1, 0.2, 0.32, 0.44, 0.56, 0.68, 0.8, 0.92]),
     ...row(31.4, 35.4, GRAVEL.y),
-    ...alongAll(LEAF, [0.1, 0.22, 0.36, 0.5, 0.6, 0.8, 0.92]),
+    // Off a ride the trail keeps closer together: the sixth lies a little nearer the fifth than it did over the leaf.
+    ...alongAll(EDDY_WAY, [0.1, 0.22, 0.36, 0.5, 0.6, 0.78, 0.92]),
     { x: 51.8, y: 0.45 },
     // 2. from stone to log to stone, and along the flat stone
     ...over(STONES),
@@ -642,8 +663,7 @@ export const context: Chooser = (has, player) => {
   if (has('al:scarf')) return ['alvenScarf', 'alvenPappa', 'heart', 'pappa'];
   if (at >= BREDBYN.from + 3) return ['alvenPappa', 'alvenPappa', 'water', 'pappa'];
   if (at >= BANK.from + 2) return ['alvenStones', 'alvenFamily', 'water'];
-  if (has('al:leaf')) return ['alvenCurrent', 'alvenFamily', 'water'];
-  if (has('al:raft')) return at >= GRAVEL.from ? [has(FELL_IN) ? 'alvenLeaf' : 'alvenEddy', 'alvenFamily', 'water'] : ['alvenCurrent', 'alvenFamily', 'water'];
+  if (has('al:raft')) return at >= GRAVEL.from ? ['alvenEddy', 'alvenFamily', 'water'] : ['alvenCurrent', 'alvenFamily', 'water'];
   if (at >= 9) return ['alvenRaft', 'alvenFamily', 'water'];
   return ['alvenOutlet', 'alvenFamily', 'water'];
 };

@@ -185,20 +185,39 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
       expect(close / (5.2 * 60)).toBeGreaterThan(0.15);
       expect(close / (5.2 * 60)).toBeLessThan(0.4);
       expect(wide).toBeGreaterThan(0);
-      expect(spot('al:leaf').needs).toBe(FELL_IN);
     });
 
-    it('offers the birch leaf to one who has fallen in, and from the start on Lugnt, and never before', () => {
-      const leaf = ride('al:leaf');
-      const sim = new Sim(alven, {}, { checkpoint: 1 });
-      expect(sim.flags.has(FELL_IN)).toBe(false);
-      const gentle = new Sim(alven, simOptions(settingsFor('lugnt')));
-      expect(gentle.flags.has(FELL_IN)).toBe(true);
-      expect(leaf.look).toBe('leaf');
+    it('has no birch leaf (Olov: "man kan ju hoppa på stockarna"): each log comes end to end with what is next to it', () => {
+      expect(alven.rides!.map((r) => r.look)).not.toContain('leaf');
+      expect(alven.spots!.some((s) => s.needs === FELL_IN)).toBe(false);
+      expect(alven.beats!.some((b) => b.on === FELL_IN)).toBe(false);
+      // Once a round the first log lies against the gravel bank's edge, each log against the next, and the last
+      // against the bank after them: where one stops at an edge, the next comes to him.
+      const gravel = alven.ground.find((p, i, line) => p.x > 30 && p.x < 40 && line[i + 1]!.y < p.y - 3)!;
+      const left = (m: typeof eddy[number], i: number) => m.stops[i]!.x - m.width / 2;
+      const right = (m: typeof eddy[number], i: number) => m.stops[i]!.x + m.width / 2;
+      expect(left(eddy[0]!, 0)).toBeCloseTo(gravel.x, 1);
+      expect(left(eddy[1]!, 0)).toBeCloseTo(right(eddy[0]!, 1), 1);
+      expect(left(eddy[2]!, 0)).toBeCloseTo(right(eddy[1]!, 1), 1);
+      const bank = alven.ground.find((p, i, line) => p.x > 45 && p.x < 52 && line[i - 1]!.y < p.y - 3)!;
+      expect(right(eddy[2]!, 1)).toBeCloseTo(bank.x, 1);
     });
 
-    it('carries him on a raft and offers a birch leaf, low on the water, from bank to bank over water too wide to jump', () => {
-      for (const [id, look] of [['al:raft', 'raft'], ['al:leaf', 'leaf']] as const) {
+    it('on Lugnt, and after a fall, he walks over the eddies: stopped at each edge, on as the next log comes, never wet', () => {
+      for (const options of [simOptions(settingsFor('lugnt')), { stopAtEdges: false }]) {
+        const sim = new Sim(alven, options, { checkpoint: CP.gravel, flags: ['al:raft'] });
+        run(sim, 0.2);
+        // On Lugnt he holds the stick forward; after a fall on Äventyr he walks, and walking never steps off an edge.
+        const push = options.stopAtEdges ? 1 : 0.6;
+        for (let i = 0; i < 25 / STEP && sim.curr.x < 50.4; i++) sim.step({ ...idle, x: push });
+        for (let i = 0; i < 1 / STEP; i++) sim.step({ ...idle, x: push });
+        expect(sim.curr.x, JSON.stringify(options)).toBeGreaterThan(50.4);
+        expect(sim.bubbles, JSON.stringify(options)).toBe(0);
+      }
+    });
+
+    it('carries him on a raft, low on the water, from bank to bank over water too wide to jump', () => {
+      for (const [id, look] of [['al:raft', 'raft']] as const) {
         const r = ride(id);
         expect(r.look).toBe(look);
         expect(r.rise).toBeLessThanOrEqual(0.4);
