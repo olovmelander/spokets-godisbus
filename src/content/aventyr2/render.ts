@@ -1,6 +1,6 @@
 import {
   AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, ExtrudeGeometry, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
-  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, RingGeometry,
+  Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, RingGeometry,
   CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
@@ -24,7 +24,6 @@ import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { GRAVITY, STEP } from '../../sim/constants';
 import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { stepLength } from '../../render/acting';
-import { paintedWood } from '../../render/painted-wood';
 import { footballGeometry, footballMaterial } from '../../render/football';
 import { box, building, paint, PANE, rock } from './buildings';
 import { pitchFibres } from './pitch';
@@ -43,6 +42,9 @@ import { createPowerCut, LAMPLIT, LAMP_COLOUR } from '../../render/power-cut';
 import { CANDLES_LIT, POWER_CHAPTER } from '../home-power';
 import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
+import { jettyWavesExtra } from '../../render/jetty-waves';
+import { barnChimney } from './barn-chimney';
+import { barnLoft } from './barn-loft';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
@@ -545,8 +547,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     holder.add(figure);
     holder.scale.setScalar(def.size ?? 1.2);
     // Floating down the water, the old one rides a log.
+    let log: Mesh | null = null;
     if (def.who === 'tragubbe' && afloat(def)) {
-      const log = new Mesh(new CylinderGeometry(0.22, 0.25, 2.2, 8), solid('#5a4632', 0.9));
+      log = new Mesh(new CylinderGeometry(0.22, 0.25, 2.2, 8), solid('#5a4632', 0.9));
       log.rotation.z = Math.PI / 2;
       log.position.y = -0.25;
       log.name = 'flyby-log';
@@ -569,7 +572,29 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       const words = moment.dialogue.some(id => `beat:${id}` === def.on);
       return cue || words ? [{ id: moment.id, at: cue?.at ?? 0 }] : [];
     });
-    return { def, figure: holder, halo, elapsed: -1, seen: false, flashed: 0, reveals, restored: false, resumed: false };
+    // He boards his log from where he stood (Olov, 12 November 2026: "När gamla trägubben hoppar på en stock i slutet så
+    // syns han på två ställen samtidigt"): a standing figure of him marked `boards`, gone at once on this flight's flag,
+    // hops from there down onto the log, which waits for him in the water from the moment the flight's scene begins.
+    const stood = log && chapter.decor?.find((d) => d.look === 'tragubbe' && d.word === 'boards' && d.until === def.on);
+    let boards: Boarding | null = null;
+    if (log && stood) {
+      const size = def.size ?? 1.2, start = flightAt(def, 0);
+      const waits = new Group();
+      waits.name = 'waiting-log';
+      waits.position.set(start.x, start.y, start.z);
+      waits.scale.setScalar(size);
+      const floats = log.clone();
+      floats.name = 'waiting-log-wood';
+      floats.position.y += figure.position.y;
+      waits.add(floats);
+      drawnWhile(waits, false);
+      group.add(waits);
+      boards = {
+        from: new Vector3(stood.at.x, stood.at.y, stood.z ?? STANDING_Z), figure, log, waits,
+        rest: figure.position.clone(), logRest: log.position.clone(), local: new Vector3(), inverse: new Matrix4(),
+      };
+    }
+    return { def, figure: holder, halo, elapsed: -1, seen: false, flashed: 0, reveals, restored: false, resumed: false, boards };
   });
 
   // Someone seen far off (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): the carving itself, pale and
@@ -1088,12 +1113,25 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       for (const f of flybys) {
         const k = f.elapsed < 0 ? 1 : f.elapsed / f.def.seconds;
         f.figure.visible = k < 1 && f.elapsed >= 0;
+        // The log he will board waits in the water while the scene that plays his flight opens, bobbing as it will; it
+        // rocks once he stands on it.
+        if (f.boards) {
+          const waiting = !f.seen && !!moment && f.reveals.some((one) => one.id === moment.id) && !flags.has(`scene:${moment.id}`);
+          drawnWhile(f.boards.waits, waiting);
+          if (waiting) f.boards.waits.position.y = flightAt(f.def, 0).y + 0.12 * Math.sin(clock * 3);
+        }
         if (!f.figure.visible) continue;
         // On the water a figure floats, bobbing along; in the air it tumbles across the sky.
         const floating = afloat(f.def);
         const at = flightAt(f.def, k);
         f.figure.position.set(at.x, at.y + (floating ? 0.12 * Math.sin(clock * 3) : 0), at.z);
         f.figure.rotation.z = f.def.walk ? (still ? 0 : Math.sin(clock * 9) * .065) : still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
+        if (f.boards) {
+          const h = still || f.restored ? 1 : f.elapsed / BOARDING.seconds;
+          // In the air he does not rock with the log: it rocks under him once he stands on it.
+          f.figure.rotation.z *= smooth(h);
+          board(f.boards, f.figure, h);
+        }
         // Its glow comes up as the flash finds it, breathes with each flash, and goes as it is lost in the dark.
         if (f.halo) (f.halo.material as MeshBasicMaterial).opacity = (0.42 + 0.5 * flash) * smooth(k / 0.06) * (1 - smooth((k - 0.82) / 0.18));
       }
@@ -1178,19 +1216,9 @@ function boulder(x: number, y: number): Group {
   return stone;
 }
 
-/** A barn roof's ventilation hood: a little red-painted wooden box with its own pointed roof, standing on the ridge. */
+/** The long roof against the barn: its lee is a row of old brick ventilation chimneys (./barn-chimney.ts). */
 function roofVent(x: number, y: number): Group {
-  const group = new Group();
-  const box = new Mesh(new BoxGeometry(1.1, 1.9, 1.1), solid('#8a2c22', 0.9));
-  box.position.y = 0.95;
-  const slats = new Mesh(new BoxGeometry(1.14, 0.7, 1.14), solid('#2a1c18', 0.9));
-  slats.position.y = 1.35;
-  const cap = new Mesh(new ConeGeometry(0.95, 0.7, 4), solid('#5a5c60', 0.6, { metalness: 0.3 }));
-  cap.rotation.y = Math.PI / 4;
-  cap.position.y = 2.25;
-  group.add(box, slats, cap);
-  group.position.set(x, y, -1.2);
-  return group;
+  return barnChimney(x, y, Math.round(x));
 }
 
 /** A jetty's post, dark and wet, standing up out of the boards: a shelter from the waves' spray. */
@@ -1271,6 +1299,47 @@ function awningFlap(): Group {
 /** How high each figure's middle is over its feet: a watched flight tumbles about it. */
 const FIGURE_MIDDLE = { lillgubbe: 0.26, tragubbe: 0.5 } as const;
 
+/** How far behind the path a thing that stands about stands, where its decor gives no `z` (`standing`). */
+const STANDING_Z = -0.6;
+
+/** The old one's hop from where he stood onto his log: how long it takes, and how high it rises over the straight way. */
+export const BOARDING = { seconds: 0.85, rise: 1.1 } as const;
+
+/** A flight that begins with the old one boarding his log (`flybys`, above). */
+interface Boarding {
+  /** Where his feet were, standing. */
+  from: Vector3;
+  /** His figure in the flight's holder, and the log under it. */
+  figure: Object3D;
+  log: Object3D;
+  /** The log as it waits for him in the water, before the flight. */
+  waits: Group;
+  /** Where the figure and the log rest in the flight. */
+  rest: Vector3;
+  logRest: Vector3;
+  local: Vector3;
+  inverse: Matrix4;
+}
+
+/**
+ * The first moment of a boarding flight, `h` of the way through the hop (0 to 1, and on): his figure goes from where he
+ * stood, as big as he stood there, in an arc down onto the log, which stays where it floats under the holder.
+ */
+function board(b: Boarding, holder: Object3D, h: number): void {
+  const k = Math.min(1, Math.max(0, h));
+  const size = holder.scale.x || 1;
+  holder.updateMatrix();
+  b.local.copy(b.from).applyMatrix4(b.inverse.copy(holder.matrix).invert());
+  const e = smooth(k);
+  b.figure.position.copy(b.rest).lerp(b.local, 1 - e);
+  b.figure.position.y += (Math.sin(Math.PI * k) * BOARDING.rise) / size;
+  const scale = 1 / size + (1 - 1 / size) * e;
+  b.figure.scale.setScalar(scale);
+  // The log keeps its own place and size under the holder while the figure above it moves.
+  b.log.position.copy(b.rest).add(b.logRest).sub(b.figure.position).divideScalar(scale);
+  b.log.scale.setScalar(1 / scale);
+}
+
 /** Pale wood that holds what light there is: a carving seen in the storm's dark, warm from within. */
 function lightFromWithin(figure: Group): void {
   figure.userData.warm = true;
@@ -1313,7 +1382,7 @@ function littleFigure(silhouette = false): Group {
  */
 function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) => void, leaves: 'shrink' | 'leap' | 'fly' | 'blown' | 'handed' = 'shrink', flyer?: Group): SpotProp {
   const root = new Group();
-  root.position.set(spot.at.x, spot.at.y, -0.6);
+  root.position.set(spot.at.x, spot.at.y, STANDING_Z);
   root.add(group);
   // What flies off may fly as another shape, with wings that open: hidden until it goes.
   if (flyer) { root.add(flyer); drawnWhile(flyer, false); }
@@ -1325,6 +1394,12 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
     update(used, clock, dt) {
       since = used ? since + dt : 0;
       alive?.(clock, dt);
+      // Handed over, it is gone at once, even in a frame where no time passes (a line being read holds the picture, and
+      // the flight that takes over is already drawn).
+      if (leaves === 'handed' && used) {
+        drawnWhile(root, false);
+        return;
+      }
       if (leaves === 'shrink' || since === 0) {
         const size = Math.max(0, 1 - since / 0.4);
         root.scale.setScalar(size);
@@ -1333,10 +1408,6 @@ function standing(spot: Spot, group: Group, alive?: (clock: number, dt: number) 
         root.rotation.z = 0;
         drawnWhile(root, size > 0);
         if (flyer) { drawnWhile(group, true); drawnWhile(flyer, false); group.scale.set(1, 1, 1); }
-        return;
-      }
-      if (leaves === 'handed') {
-        drawnWhile(root, false);
         return;
       }
       if (leaves === 'leap') {
@@ -1477,11 +1548,12 @@ function lantern(): { group: Group; light: Mesh } {
 /** How far behind its group a grandparent's body stands (./grandparents.ts). */
 const RIG_BACK = 1.9;
 /**
- * At the door she walked to (Mormor's at the barn): where her hand goes on it from where she stands, which way she turns
- * meanwhile (a little towards him), when the door opens after she has come (the simulation's `bi:door`, ./chapters/
- * billsta.ts), how long she pushes it in, and when she has let go.
+ * At the door she walked to (Mormor's at the barn): where her hand goes on it from where she stands (on the sliding
+ * door's handle, by the barn's corner beside her: ./barn-loft.ts), which way she turns meanwhile (a little towards him),
+ * when the door opens after she has come (the simulation's `bi:door`, ./chapters/billsta.ts), how long she pushes it
+ * aside, and when she has let go of it to roll on along its rail.
  */
-const AT_DOOR = { ahead: 0.75, up: 2.55, out: 0.4, heading: -0.35, open: 0.55, push: 0.4, let: 1.1 };
+const AT_DOOR = { ahead: 1.15, up: 2.55, out: 0.8, heading: -0.35, open: 0.55, push: 0.4, let: 1.1 };
 
 /**
  * Mormor or Morfar in the picture: no longer a thing he uses up, so they stay when he calls. Where the chapter sends one
@@ -1784,6 +1856,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         // His flight starts from where he stands, lit as he is: it takes over at once.
         return standing(spot, shown, undefined, 'handed');
       }
+      // Where he boards a log (`boards`): his flight begins with the hop from here, so this figure goes at once.
+      if (spot.word === 'boards') return standing(spot, figure, undefined, 'handed');
       return standing(spot, figure, met ? (clock, dt) => {
         figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
@@ -2965,95 +3039,12 @@ function barkRaft(mover: Mover): Group {
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
 const TIPPED = -0.16;
 
-/** The barn door at the top of the planks in Billsta: how wide and tall it is drawn, and where it hangs, behind the path. */
-const BARN_DOOR = { wide: 2.4, tall: 5.4, back: -1.6, thick: 0.18, swing: -1.62 };
-
 /**
- * The loft door of mormor's barn, at the top of the planks up to it (Billsta; Olov, 9 November 2026: "Mormor ska gå fram
- * och öppna ladan"): Falu red boards with a white frame and the white Z of its braces, iron straps on its hinges and a
- * ring to pull it by, in a white door frame with a piece of the barn's red wall going back from it. The simulation lifts
- * the door's block up out of his way when it opens (`DOOR`, ./chapters/billsta.ts); the picture keeps the frame where
- * it stands and swings the door in on its hinges as the block goes up. Two draws: the frame, and the door.
+ * The loft door of mormor's barn, at the top of the planks up to it, and the barn round it (./barn-loft.ts; Olov, 12
+ * November 2026: "hela den delen måste bli bättre designad"). Its front fades while he is inside.
  */
 function barnDoor(mover: Mover): Group {
-  const { wide, tall, back, thick, swing } = BARN_DOOR;
-  const closed = mover.stops[0]!.y;
-  const travel = Math.max(1e-3, mover.stops[mover.stops.length - 1]!.y - closed);
-  const front = back + wide;
-  const RED = ['#8a2f25', '#7c2a21', '#93342a', '#842c23'];
-  const WHITE = '#e6e1d4';
-  const IRON = '#202022';
-  // The frame and the wall: they stay where they stand.
-  const frame: BufferGeometry[] = [];
-  for (const z of [back - 0.12, front + 0.12]) frame.push(box(0.26, tall + 0.36, 0.24, 0, (tall + 0.36) / 2 - 0.05, z, WHITE));
-  frame.push(box(0.28, 0.26, wide + 0.6, 0, tall + 0.2, back + wide / 2, WHITE));
-  frame.push(box(0.34, 0.12, wide + 0.3, 0, 0.03, back + wide / 2, '#9a8a70'));
-  // The wall going back from the door, boards with battens over their joints, and a little of it over the lintel.
-  const wall = { from: back - 0.24, to: -4.4, top: tall + 1.2 };
-  const boards = Math.round((wall.from - wall.to) / 0.55);
-  for (let i = 0; i < boards; i++) {
-    const z = wall.from - (i + 0.5) * ((wall.from - wall.to) / boards);
-    frame.push(box(0.16, wall.top, (wall.from - wall.to) / boards - 0.03, -0.02, wall.top / 2, z, RED[i % RED.length]!));
-    if (i > 0) frame.push(box(0.2, wall.top, 0.09, 0.02, wall.top / 2, z + (wall.from - wall.to) / boards / 2, '#6e251d'));
-  }
-  frame.push(box(0.16, wall.top - tall - 0.33, wide + 0.6, -0.02, (wall.top + tall + 0.33) / 2, back + wide / 2, RED[2]!));
-  // An overhanging eave and the loft's small window join the door to a barn front, not a freestanding panel.
-  frame.push(box(1.05, 0.18, front - wall.to + 0.7, 0, wall.top + 0.1, (front + wall.to) / 2, '#464640'));
-  const windowZ = (wall.to + wall.from) / 2;
-  frame.push(box(0.2, 1.25, 1.35, 0, 3.6, windowZ, WHITE));
-  frame.push(box(0.23, 1.01, 1.11, 0, 3.6, windowZ, '#b8a46b'));
-  frame.push(box(0.25, 1.05, 0.08, 0, 3.6, windowZ, WHITE));
-  frame.push(box(0.25, 0.08, 1.15, 0, 3.6, windowZ, WHITE));
-  const frameMaterial = solid('#ffffff', 0.85, { vertexColors: true });
-  paintedWood(frameMaterial);
-  const frameMesh = new Mesh(mergeGeometries(frame), frameMaterial);
-  frameMesh.name = 'barn-door-frame';
-  frameMesh.castShadow = true;
-  // The door, on its hinges at its back edge: upright boards, a white frame on its face, the white Z of its braces.
-  const leaf: BufferGeometry[] = [];
-  const planks = 5;
-  for (let i = 0; i < planks; i++) {
-    leaf.push(box(thick, tall - 0.04, wide / planks - 0.04, 0, tall / 2, (i + 0.5) * (wide / planks), RED[i % RED.length]!));
-  }
-  for (const side of [-1, 1]) {
-    const x = side * (thick / 2 + 0.03);
-    for (const y of [0.16, tall - 0.16]) leaf.push(box(0.06, 0.24, wide - 0.08, x, y, wide / 2, WHITE));
-    for (const z of [0.12, wide - 0.12]) leaf.push(box(0.06, tall - 0.08, 0.2, x, tall / 2, z, WHITE));
-    leaf.push(box(0.06, 0.2, wide - 0.3, x, tall * 0.52, wide / 2, WHITE));
-    // The diagonals of the Z, in the lower and the upper half.
-    for (const [low, high] of [[0.3, tall * 0.52], [tall * 0.52, tall - 0.3]] as const) {
-      const run = wide - 0.5, rise = high - low;
-      leaf.push(paint(new BoxGeometry(0.06, Math.hypot(run, rise), 0.18).rotateX(-Math.atan2(run, rise) * side).translate(x, (low + high) / 2, wide / 2), WHITE));
-    }
-  }
-  // Iron straps over the hinges, and the ring to pull it by, near its free edge.
-  for (const y of [0.9, tall - 0.9]) leaf.push(box(thick + 0.1, 0.16, wide * 0.42, 0, y, wide * 0.21, IRON));
-  leaf.push(paint(new TorusGeometry(0.16, 0.035, 6, 14).rotateY(Math.PI / 2).translate(-thick / 2 - 0.08, tall * 0.45, wide - 0.32), IRON));
-  const leafMaterial = solid('#ffffff', 0.85, { vertexColors: true });
-  paintedWood(leafMaterial);
-  const leafMesh = new Mesh(mergeGeometries(leaf), leafMaterial);
-  leafMesh.name = 'barn-door-leaf';
-  leafMesh.castShadow = true;
-  const hinge = new Group();
-  hinge.name = 'barn-door-hinge';
-  hinge.position.z = back;
-  hinge.add(leafMesh);
-  const held = new Group();
-  // The old YZ plane showed only its narrow edge from the game's camera. The facade faces the yard;
-  // its right hinge opens away into the loft and Mormor reaches its free edge from the planks.
-  held.rotation.y = -Math.PI / 2;
-  held.add(frameMesh, hinge);
-  const group = new Group();
-  group.add(held);
-  // Each frame: the simulation's block has gone up `lift`; the picture stays where it stood and the door swings in.
-  group.userData.tick = () => {
-    const lift = (group.parent?.position.y ?? closed) - closed;
-    held.position.y = -lift;
-    if (group.parent) { group.parent.rotation.z = 0; group.parent.scale.set(1, 1, 1); }
-    const open = Math.min(1, Math.max(0, lift / travel));
-    hinge.rotation.y = swing * open * open * (3 - 2 * open);
-  };
-  return group;
+  return barnLoft(mover, () => elof.x, () => elof.still);
 }
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
@@ -3191,6 +3182,8 @@ export function installPictures(): void {
   for (const [look, make] of Object.entries(rideLooks())) PACK.rides.set(look, make);
   for (const [look, make] of Object.entries(moverLooks())) PACK.movers.set(look, make);
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
+  // The waves over a jetty where its gusts blow (Flärken; ../../render/jetty-waves.ts).
+  if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

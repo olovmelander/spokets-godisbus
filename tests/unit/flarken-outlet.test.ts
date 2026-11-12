@@ -116,7 +116,8 @@ describe("Flärken's outlet, the å", () => {
       }
     }
     expect(chapter.scenes!.find((scene) => scene.id === 'sjon:stocken')!.on).toBe('sjon:downstream');
-    expect(chapter.beats!.find((beat) => beat.id === 'sjon:log')!.on).toBe('sjon:log-run');
+    // Said once he has hopped from the end post onto his log (Olov, 12 November 2026), not as he leaves the post.
+    expect(chapter.beats!.find((beat) => beat.id === 'sjon:log')!.on).toBe('sjon:on-log');
     expect(chapter.beats!.find((beat) => beat.id === 'sjon:floated')!.on).toBe('sjon:both-downstream');
   });
 
