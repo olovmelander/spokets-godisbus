@@ -382,12 +382,13 @@ const SCENES: SceneDef[] = [
     before: SPAR + 3,
     needs: TRAIL,
     until: 'beat:skEnough',
-    seconds: 3.1,
+    seconds: 3.6,
     hold: true,
+    // The first words once the picture has come (the clock, and the camera with it, wait at each line).
     lines: [
-      { at: 0.4, who: 'elof', line: 'skTrail', id: 'skTrail' },
-      { at: 1.3, who: 'moa', line: 'skHandful', id: 'skHandful' },
-      { at: 2.2, who: 'bertil', line: 'skEnough', id: 'skEnough' },
+      { at: 0.9, who: 'elof', line: 'skTrail', id: 'skTrail' },
+      { at: 1.8, who: 'moa', line: 'skHandful', id: 'skHandful' },
+      { at: 2.7, who: 'bertil', line: 'skEnough', id: 'skEnough' },
     ],
     stage: {
       // Him at the candy, the trail on the floor ahead, and Moa and Bertil behind him where they put on their coats, tall
@@ -396,16 +397,16 @@ const SCENES: SceneDef[] = [
       actors: {
         // Moa steps back a little and points back at the table, where the bowl was; Bertil looks along the trail, and
         // wonders. Pappa lights the trail ahead of him: his beam goes in front of Moa, not through her.
-        moa: [{ at: 0, x: AROUND.moa.x - 0.2, y: 0, z: -1.9, face: 0.3, move: 0.6, act: 'look', aim: AT_TRAIL }, { at: 1.1, act: 'point', aim: { x: HOME_LAYOUT.dining.x, y: 2, z: HOME_LAYOUT.dining.z } }, { at: 1.9, act: 'look', aim: AT_TRAIL }],
-        bertil: [{ at: 0.2, act: 'look', aim: AT_TRAIL }, { at: 2.0, act: 'shrug' }, { at: 2.8, act: 'look', aim: { x: SPAR + 6, y: 0.4, z: 0 } }],
+        moa: [{ at: 0, x: AROUND.moa.x - 0.2, y: 0, z: -1.9, face: 0.3, move: 0.6, act: 'look', aim: AT_TRAIL }, { at: 1.6, act: 'point', aim: { x: HOME_LAYOUT.dining.x, y: 2, z: HOME_LAYOUT.dining.z } }, { at: 2.4, act: 'look', aim: AT_TRAIL }],
+        bertil: [{ at: 0.2, act: 'look', aim: AT_TRAIL }, { at: 2.5, act: 'shrug' }, { at: 3.3, act: 'look', aim: { x: SPAR + 6, y: 0.4, z: 0 } }],
         mamma: [{ at: 0.4, act: 'look', aim: AT_TRAIL }],
         pappa: [{ at: 0.5, act: 'look', aim: AT_TRAIL, beam: { x: SPAR + 2.4, y: 0, z: 0.5 } }],
       },
       elof: [
         { at: 0, face: 0.1, act: 'point', aim: { x: SPAR + 2.6, y: 0.3, z: 0 } },
-        { at: 1.0, face: 0.45, act: 'watch', aim: { x: AROUND.moa.x, y: 3, z: AROUND.moa.z } },
-        { at: 1.9, aim: { x: AROUND.bertil.x, y: 2.6, z: AROUND.bertil.z } },
-        { at: 2.7, face: 0.1, act: 'look', aim: { x: SPAR + 6, y: 0.3, z: 0 } },
+        { at: 1.5, face: 0.45, act: 'watch', aim: { x: AROUND.moa.x, y: 3, z: AROUND.moa.z } },
+        { at: 2.4, aim: { x: AROUND.bertil.x, y: 2.6, z: AROUND.bertil.z } },
+        { at: 3.2, face: 0.1, act: 'look', aim: { x: SPAR + 6, y: 0.3, z: 0 } },
       ],
     },
   },
