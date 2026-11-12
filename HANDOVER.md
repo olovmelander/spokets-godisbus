@@ -1,6 +1,34 @@
 # Handover
 
-## State (12 November 2026, late evening): the final fine-tuning of both adventures
+## State (12 November 2026, night): Olov's answers, and every line recorded with direction
+
+- **Olov's answers to the fine-tuning's questions:** Gården's hedge gets an opening into the forest (a clipped arch
+  with spruces and the path seen through it, `src/render/dressing/hedge-gate.ts`; the objective is "Gå in i skogen."
+  again). Granskogen's high ant ride and the cones are right; the nisse stays and now peeks out beside the nest tree
+  (`PEEK` in `src/render/lift/fauna/plan.ts`), and Myren gets a hidden carving of its own, a bird on the lysklubba
+  clearing. Stormkvällen is not too talky, and Moa and Bertil come out onto the deck with Mamma and Pappa for the
+  promises. Olympia's team benches carry Anundsjö IF's crest, the one on Bertil's cap (`src/content/aventyr2/club-crest.ts`;
+  his exception now covers the cap and the benches: CLAUDE.md, plan §0 row 13). Billsta keeps "Hyllor i berget! Där
+  uppe finns godis." and gets hazel bushes with hazelnuts beside the shelves (`src/content/aventyr2/hazel.ts`).
+- **The voices (Olov: "spelar in alla röster med regi för äventyr 1 och äventyr 2 med de valda rösterna").** Every line
+  of both adventures is recorded in the cast he chose on 12 November: Elof G, Moa K (Saga), Bertil D, Mamma B, Pappa B,
+  Spöket F, Mormor E, Morfar B and Berättaren A, his own voice (`scripts/voices-config.json`). The method is
+  Sköldhästen's: `scripts/record-voices.mjs` sends one short English direction tag before the words (never in them;
+  the line's own words direct it, then its old description, then the role's), Eleven v4 at stability 0.35 with no
+  previous or next text, hears every take back with speech-to-text (at least 85 % of the words, no tag word heard, up
+  to three takes) and writes `scripts/voices-takes.json`, the take record; `scripts/level-voices.py` levels every
+  clip, the narrator's earlier ones too, to −18.7 LUFS. The narrator's lines that already had recordings were not
+  recorded again. A line with a recording is heard without its speaker's wordless syllables (`hasVoice`). The end
+  card says "1 godis i påsen" for one.
+- **The takes:** 401 lines recorded (393 at once, 8 as a first trial); 395 passed the speech-to-text check on their first
+  take or a retake. Six stayed under it after three takes, each because the speech-to-text writes what is said differently,
+  not a fault heard: the owl's "Hu-hu" (written "Hoho", or left out: `ssOwlFly`, `alOwlFly`, `biOwl`, whose clip is long
+  enough to hold it), "Billsta" as "Vilsta" (`scene_billsta`), "Ladudörren" as "Ladedörren" (`biOpen`), and "var" as
+  "vart" (`skWhereElof`). Listen to those six first. All 425 clips are at −18.7 LUFS (median); 16.2 MB of voices in all.
+  Äventyr 2's words join `sv` only when its pack loads, so `shown()` in `src/audio/recorded.ts` reads them from
+  `src/content/aventyr2/sv.ts`: without that the build left every Äventyr 2 recording out of the game.
+- **Validation:** see the PR. Heard by speech-to-text, not by a person: Olov should listen in the game.
+
 
 - **Olov asked** for a playthrough of every chapter of both adventures, fixing what needs fixing in the picture, the
   conversations, the puzzles, the atmosphere, the surroundings and the play, upgrading what can be upgraded and fixing
@@ -6390,6 +6418,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Answers and voices (12 Nov, night) | Olov's five answers; record every line with direction | The same session, two builders and the lead | — / 2 requests | An arch into the forest, the nisse seen and Myren's carving, the family on the deck, the club's crest, hazel bushes; 401 lines recorded and levelled |
 | Final fine-tuning (12 Nov, late evening) | Play every chapter of both adventures through and fix picture, words, puzzles and bugs | One session on Olov's computer with seven parallel builders, Blender for the fence | — / 1 request (+1 answer) | Lines heard in place, hidden things shown (ant lift, plane, benches), hollow tussocks, runners meet the hazards, family out of his path, step stool, straw bales, wooden dugouts, a front door |
 | Äventyr 2 playthrough (12 Nov, night) | Olov's ~30 points from playing Äventyr 2 through | One session on Olov's computer with six parallel builders | — / 1 list | Power cut and lamps at home, the tap moment, fallen spruces, no cars and candle-lit village, Olympia's turf, puddles and goal, waves on the jetty, Älven's stones, beaver and otter, Billsta's barn, Morgonen's thanks and TV; candy pass next |
 | Äventyr 1 playthrough (12 Nov, afternoon) | Olov's ten points from playing Äventyr 1 through | One session on Olov's computer, stacked on #266 | — / 1 list | Finished carvings and beetle, Gården's hedge end, two thanks, the eddy and the lift with a still ghost, a first look for memories, the towed trägubbe in Norrskenet, the shelf before teeth, words for drops |
@@ -6765,26 +6794,25 @@ The older list, still true where it is not struck:
 
 ## Frågor till Olov
 
-Från finjusteringen den 12 november (ingen av frågorna hindrar något; allt är byggt som det står):
+Från finjusteringen den 12 november (Olov svarade på Gården, Granskogen, Stormkvällen, Olympia och Billsta; se
+"State"):
 
-- Gården: målet säger nu "Gå vidare mot skogen." vid häcken. Ska häcken ha en öppning in mot skogen? Moas teckning
-  blåser iväg först när hon berättat om planet (cirka 12 s efter att Elof ropat); den som kliver på direkt ser det inte.
-- Granskogen: myrorna bär Elof i en hög båge och stacken ritas grundare. Bra? Kottarna når nu den som springer. Lagom?
-  Nissen står gömd bakom boträdet, och Myren har ingen gömd trägubbe: flytta nissen, och ge Myren en?
 - Godiskalaset och Morgonen: en trappstege under hyllan i stället för pallen, så att händerna når. Bra? Familjen står
   en bit bakom Elofs väg på kalaset och Moa på andra sidan bordet. Okej?
 - Norrskenet: ska stigen ner från toppen börja lägre, bakom ett stenblock?
-- Stormkvällen: Elof står en stund vid första godisbiten medan Moa och Bertil pratar om spåret. För pratigt? Mamma och
-  Pappa knäböjer ute på altanen när de lovar; ska Moa och Bertil också med ut? Ficklampan ligger släckt tills Elof tar den.
+- Stormkvällen: ficklampan ligger släckt tills Elof tar den. Bra? Springer Elof hela vägen ut hinner Moa och Bertil
+  inte före honom: de kommer ut bakom honom och sätter sig medan han står vid kanten. Går det bra, eller ska de stanna
+  honom en stund vid dörren? Stora godiset på altanen står nu precis utanför dörren. Okej?
 - Stormgården: bilden vid tunnans fot är bredare så att diket syns. Bra?
 - Stormskogen: från kullen syns ingen by, så Elof säger "Nu går vi ner till byn, Klonk!". Ska mörka hus synas där nere?
   Hålan är en vält grans rotvälta: för mörk eller läskig?
 - Byn i stormen: gatan slutar vid en hög häck. Passar det?
-- Olympia: avbytarbåsen är av trä med röda säten. Stämmer formen?
 - Flärken: "En barkflotte! Den håller för mig." i stället för "Nu kan jag hoppa." Bra?
 - Älven: "En utter! Plask, där dök den i sjön!" och "Bredbyn igen! Olympia ligger här nära." Bra? På Lugnt säger tipset
   "Vänta tills stocken kommer och kliv på."; ska vanliga läget också säga så?
-- Billsta: "Hyllor i berget! Där uppe finns godis." Eller riktiga hasselbuskar?
+- Billsta: hasselbuskarna står bredvid hyllorna, två på var sida. Vill du ha en buske mitt bakom hyllorna också?
+- Rösterna: lyssna gärna igenom dem i spelet. En replik som låter fel spelas in igen med
+  `node scripts/record-voices.mjs --record --only <nyckel>` och jämnas sedan ut med `scripts/level-voices.py <nyckel>`.
 - Morgonen: en grön ytterdörr i hallen där kapitlet slutar, och Mormor bakom bordet med termosen och lyktan. Okej?
 
 Från din genomspelning av Äventyr 2 den 12 november (ingen av frågorna hindrar arbetet):
