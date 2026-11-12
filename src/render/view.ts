@@ -1539,7 +1539,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Out in the storm the ground is wet, and where it is looked along it gives back the sky (./ground-detail.ts).
     GROUND_WET.value = wetOutside ? 1 : 0;
     GROUND_SKY.value.copy(hemisphere.color).multiplyScalar(hemisphere.intensity);
-    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', revealPaused: sceneFrame?.waiting, scene: sceneFrame });
+    // The gusts too, for a pack's picture of them (the waves over Flärken's jetty, ./jetty-waves.ts).
+    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', revealPaused: sceneFrame?.waiting, scene: sceneFrame, gusts });
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
@@ -2618,6 +2619,8 @@ function buildWind(chapter: ChapterData) {
     group.add(shelterStandIn(def, stone));
     const material = new MeshBasicMaterial({ color: '#fff6ee', map: wisp, transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending });
     const streaks = new InstancedMesh(new PlaneGeometry(1, 0.32), material, STREAKS);
+    // Named, so that a pack drawing the gust as something else (Flärken's waves, ./jetty-waves.ts) can soften them.
+    streaks.name = 'gust-streaks';
     streaks.instanceMatrix.setUsage(DynamicDrawUsage);
     streaks.frustumCulled = false;
     for (let k = 0; k < STREAKS; k++) streaks.setColorAt(k, shade.setScalar(k % 3 === 0 ? 0.45 : 0.8 + (k % 2) * 0.2));

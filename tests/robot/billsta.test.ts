@@ -234,6 +234,34 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(beat('bi:to-mormor').on).toBe('beat:bi:thanks');
     });
 
+    it('over the ditch Elof turns back to morfar, waves and thanks him, standing, and morfar answers there', () => {
+      // Olov, 12 November 2026: "Elof måste tacka morfar som lägger stegen över diket." The thanks was a passing remark,
+      // let go when he ran on; now it is the story's, told in a short held moment as the family's thanks are.
+      const beat = (id: string) => billsta.beats!.find((b) => b.id === id)!;
+      expect(beat('bi:thanks').aside).toBeUndefined();
+      expect(beat('bi:to-mormor').aside).toBeUndefined();
+      expect(words.lines.biThanksMorfar).toBe('Tack, morfar! Vilken lång stege!');
+      const scene = billsta.scenes!.find((s) => s.id === 'bi:tack-morfar')!;
+      expect(scene.hold).toBe(true);
+      expect(scene.dialogue).toEqual(['bi:thanks', 'bi:to-mormor']);
+      // He turns back along the course and waves to morfar, and the picture takes in the two of them.
+      expect(scene.stage!.elof![0]).toMatchObject({ face: 0.5, act: 'wave' });
+      const shot = scene.stage!.shots![0]!, morfar = spot('bi:morfar');
+      for (const x of [morfar.at.x, scene.at!]) expect(Math.abs(x - shot.x)).toBeLessThan(shot.width! / 2 - 1);
+      // Played, he stands for it just past the ladder: both lines are said before he is at the drive's big candy.
+      const sim = new Sim(billsta, {}, saveAt(CP.road).start);
+      walkTo(sim, morfar.at.x);
+      use(sim);
+      let furthest = 0;
+      for (let i = 0; i < 60 * 30 && !sim.flags.has('beat:bi:to-mormor'); i++) {
+        sim.step({ x: 1, y: 0, hopHeld: false, hop: false, act: false });
+        furthest = Math.max(furthest, sim.curr.x);
+      }
+      expect(sim.flags.has('beat:bi:to-mormor')).toBe(true);
+      expect(furthest).toBeLessThan(billsta.checkpoints![CP.drive]!.x);
+      expect(sim.said.indexOf('bi:to-mormor')).toBe(sim.said.indexOf('bi:thanks') + 1);
+    });
+
     it('is glad and amazed to see him so small, and says only what he does: the ladder, and where mormor is', () => {
       expect(words.lines.biMorfarHere).toBe('Elof! Så liten du har blivit!');
       const morfar = billsta.beats!.filter((b) => b.who === 'morfar');
@@ -341,7 +369,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       for (let i = 1; i < roofGust!.shelters.length; i++) expect(roofGust!.shelters[i]! - roofGust!.shelters[i - 1]!).toBeCloseTo(5.2, 6);
       // Tarred boards all along the long roof.
       expect(billsta.surfaces!.find((s) => s.kind === 'roof' && s.from <= roofGust!.from && s.to >= roofGust!.to)).toBeDefined();
-      // On the roof the lee is the ventilation hoods; on Billaberget it is its boulders.
+      // On the roof the lee is its brick ventilation chimneys; on Billaberget it is its boulders.
       expect(billsta.storm!.shelters).toEqual(['vents', 'rocks']);
     });
 
@@ -649,6 +677,25 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(game.sim.said.filter((id) => SAID.indexOf(id) >= SAID.indexOf('bi:there'))).toEqual(['bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down', 'bi:cheer']);
     });
 
+    it('has mormor up on the brow with her lantern, seen there as she says they will go down to the narrow', () => {
+      // She spoke while the picture was out on the stone, and was only a light on the brow: now she stands there, and
+      // her words come when the picture is back with them.
+      const mormor = billsta.decor!.find((d) => d.look === 'mormor')!;
+      expect(mormor.after).toBe('beat:bi:owl');
+      expect(mormor.at.y).toBeCloseTo(heightAt(billsta, mormor.at.x), 3);
+      expect(mormor.z!).toBeLessThan(-0.5);
+      const down = billsta.beats!.find((b) => b.id === 'bi:down')!;
+      const seen = billsta.scenes!.find((s) => s.id === 'bi:sundet')!;
+      expect(seen.dialogue).not.toContain('bi:down');
+      const up = billsta.later!.find((l) => l.flag === down.on)!;
+      expect(up.after).toBe('scene:bi:sundet');
+      // Her lantern's light is at her lantern, low by her side.
+      const glow = billsta.storm!.glows!.find((g) => g.after === 'beat:bi:owl')!;
+      expect(Math.abs(glow.at.x - mormor.at.x)).toBeLessThan(1.5);
+      expect(glow.at.y - mormor.at.y).toBeGreaterThan(1.2);
+      expect(glow.at.y - mormor.at.y).toBeLessThan(3.5);
+    });
+
     it('lets the little one land before saying both figures are safe on the stone', () => {
       const game = new Game(billsta, {}, saveAt(CP.gusts).start);
       play(game, 60, () => game.sim.flags.has('beat:bi:there'));
@@ -666,9 +713,10 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(billsta.place).toBe('garden');
       // The card, and Moa and Bertil by the car: Moa points at the window and says whose trail it is now, while he
       // stands by the car; then they run ahead of him round the house to its back door. That run and mormor's walk
-      // let him move; the arrival and the distant strait reveal are the two he stands for.
-      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-run', 'bi:ladan', 'bi:sundet']);
-      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['card', 'bi:sundet']);
+      // let him move; the arrival, his thanks to morfar over the ditch (Olov, 12 November 2026: "Elof måste tacka
+      // morfar som lägger stegen över diket") and the distant strait reveal are the three he stands for.
+      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-run', 'bi:tack-morfar', 'bi:ladan', 'bi:sundet']);
+      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['card', 'bi:tack-morfar', 'bi:sundet']);
       const run = billsta.scenes!.find((s) => s.id === 'bi:kids-run')!;
       const house = billsta.storm!.buildings!.find((b) => b.kind === 'villa')!;
       for (const who of ['moa', 'bertil'] as const) {
