@@ -10,6 +10,11 @@ export interface Checkpoint extends Vec {
    * (the old trägubbe's, in Stormkvällen) has no big candy waiting before it is laid.
    */
   after?: string;
+  /**
+   * Picture only: how far towards the camera its big candy stands (src/render/view.ts). Left out, -0.7: a little behind
+   * the path. Further back where someone goes by behind him there (Stormkvällen's veranda and deck).
+   */
+  z?: number;
 }
 
 /** Something upright that Elof climbs: a hose, a stem, a root (plan §4.2). */
