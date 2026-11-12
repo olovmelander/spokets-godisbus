@@ -43,6 +43,8 @@ import { CANDLES_LIT, POWER_CHAPTER } from '../home-power';
 import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { jettyWavesExtra } from '../../render/jetty-waves';
+import { teamBenchesExtra } from './team-benches';
+import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -2141,7 +2143,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     casement: (spot) => casement(spot),
     latch: (spot) => latch(spot),
-    football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
+    // `word: 'bag'`: Olympia's torn ball bag with the small balls in it (./ball-bag.ts).
+    football: (spot) => standing(spot, spot.word === 'bag' ? ballBag() : (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
     whiteWater: (spot) => {
       // The rapids: wet boulders the river breaks over, worn round (./river-stones.ts), behind the lane the raft
       // goes down; and standing waves of white water that heave and never go, breaking white against the stones.
@@ -2770,7 +2773,16 @@ function waterSplash(size: number) {
     return { vx: Math.cos(a) * (0.8 + 0.8 * ((i * 0.37) % 1)) * size, vz: Math.sin(a) * 0.5 * size, vy: (2.4 + 1.8 * ((i * 0.61) % 1)) * size };
   });
   const place = new Object3D();
-  const crown = new Mesh(new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true).translate(0, 0.21 * size, 0), white.clone());
+  // The crown's top is ragged, every other point thrown up and out: an even band read as a white card from a low eye
+  // (Flärken's plopp, finetune pass of 12 November 2026).
+  const band = new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true);
+  const rim = band.getAttribute('position');
+  for (let i = 0; i <= 20; i++) {
+    const spike = i % 2 === 0 ? 1.3 : 0.25;
+    rim.setXYZ(i, rim.getX(i) * (1 + 0.25 * spike), 0.21 * size * spike, rim.getZ(i) * (1 + 0.25 * spike));
+  }
+  band.computeVertexNormals();
+  const crown = new Mesh(band.translate(0, 0.21 * size, 0), white.clone());
   group.add(crown);
   const rings = [0, 0.3, 0.65].map((delay) => {
     const mesh = new Mesh(new RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2), white.clone());
@@ -3184,6 +3196,8 @@ export function installPictures(): void {
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
   // The waves over a jetty where its gusts blow (Flärken; ../../render/jetty-waves.ts).
   if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
+  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts).
+  if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

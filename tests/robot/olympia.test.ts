@@ -514,6 +514,32 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(sim.said.slice(-3)).toEqual(['ol:fly', 'ol:cheer', 'ol:thanks']);
     });
 
+    it('down in the far goal he stands, turned back to Bertil and waving, while Bertil calls it a goal and he thanks him', () => {
+      const scene = olympia.scenes!.find((s) => s.id === 'ol:tack-bertil')!;
+      expect(scene).toMatchObject({ hold: true, needs: 'ol:kick', dialogue: ['ol:cheer', 'ol:thanks'] });
+      const wave = scene.stage!.elof![0]!;
+      expect(wave).toMatchObject({ act: 'wave', face: 0.5 });
+      expect(wave.aim!.x).toBeCloseTo(call.at.x);
+      // A game taken up at the far goal's big candy has had it.
+      expect(scene.before!).toBeLessThan(olympia.checkpoints!.find((c) => c.x > circle.to)!.x);
+      const sim = new Sim(olympia, {}, { checkpoint: checkpoint(117), placed: [ball.id], flags: [`placed:${ball.id}`] });
+      run(sim, 0.2);
+      for (let i = 0; i < 20 / STEP && sim.curr.verb !== 'call'; i++) sim.step({ ...idle, x: 1 });
+      use(sim);
+      run(sim, 1.4);
+      for (let i = 0; i < 4 / STEP && sim.curr.verb !== 'take'; i++) sim.step({ ...idle, x: 0.5 });
+      use(sim);
+      run(sim, kick.time + 0.1);
+      // On his feet in the goal, he does not run on, however the stick is held, until both have spoken.
+      for (let i = 0; i < 2 / STEP && !sim.flags.has('ol:goal-seen'); i++) sim.step({ ...idle, x: 1 });
+      expect(sim.held).toBe(true);
+      expect(sim.said.slice(-2)).toEqual(['ol:cheer', 'ol:thanks']);
+      expect(sim.curr.x).toBeLessThan(scene.before!);
+      run(sim, 1, { x: 1 });
+      expect(sim.flags.has('scene:ol:tack-bertil')).toBe(true);
+      expect(sim.held).toBe(false);
+    });
+
     it('the old trägubbe is seen at the circle, and blown over it ahead of him', () => {
       const oldOne = olympia.decor!.find((d) => d.look === 'tragubbe')!;
       expect(oldOne.until).toBe('beat:ol:old-one');
@@ -675,7 +701,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     expect(seen).toEqual([
       'olympiaArrive', 'olympiaFence', 'olympiaTrail', 'olympiaBalls', 'olympiaTrail', 'olympiaKick', 'olympiaHop',
       'olympiaTrail', 'olympiaBenches', 'olympiaTrail', 'olympiaCallBertil/bertil', 'olympiaBoard/bertil', 'olympiaFly/bertil',
-      'olympiaStadium', 'olympiaNorth',
+      'olympiaStadium', 'olympiaForest', 'olympiaNorth',
     ]);
     // Every purpose and helper the chooser can give has its words.
     for (const x of [0, 12, 30, 66, 76, 84, 100, 118, 130, 160, 176]) {
@@ -716,7 +742,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     expect(olympia.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(olympia.place).toBe('garden');
     expect(olympia.coda).toBe('bertil');
-    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card', 'ol:gamla', 'norrut']);
+    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card', 'ol:gamla', 'ol:tack-bertil', 'norrut']);
     expect(sv.end.kickers.olympia).toBe('Äventyr 2 · Kapitel 4');
   });
 });

@@ -138,6 +138,8 @@ const WAITS_READY = new Set(['boot', 'umbrella', 'raft', 'leaf']);
 /** How far a flying crane's body hangs under his feet (./crane.ts), and how long it takes to fly on once he is down. */
 const CRANE_BELLY = 1.05;
 const CRANE_AWAY = 1.8;
+/** How far under his feet a ridden football's bottom is (the pack's `football` ride: radius 0.8, its top under his soles). */
+const FOOTBALL_TOP = 1.64;
 const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -1367,12 +1369,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // A crane sets him down and flies on, up and away: it shrank into the rock under him and was gone (PR #242's audit).
       const crane = c.ride.look === 'crane';
       const away = crane && c !== carrier && !calmStory && c.landed < CRANE_AWAY ? c.landed / CRANE_AWAY : -1;
-      const propSize = waiting || scored || away >= 0 ? 1 : c === carrier ? football || crane ? Math.min(1, curr.t / 0.05) : size : 0;
+      // (A ridden football lies on the ground at once, in the place of the one he climbs, so it is never grown from nothing.)
+      const propSize = waiting || scored || away >= 0 ? 1 : c === carrier ? football ? 1 : crane ? Math.min(1, curr.t / 0.05) : size : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
       c.prop.position.set(waiting ? c.ride.from.x : scored ? c.ride.to.x + rolling : x, (waiting ? c.ride.from.y : scored ? c.ride.to.y : y) - 0.05, scored ? -rolling : 0);
       // Coming down to the ground its body stays over it, and he steps down off its back; then it flies on from there.
       if (crane && c === carrier) c.prop.position.y = Math.max(c.prop.position.y, heightOfGroundAt(chapter, x) + CRANE_BELLY);
+      // Olympia's free kick (finetune pass, 12 November 2026): the ball lies on the turf as the ride sets off, just behind
+      // him as he hops up onto it, and comes under his feet as he rises. It sank into the turf under him before.
+      if (football && c === carrier) {
+        const ground = heightOfGroundAt(chapter, x);
+        c.prop.position.y = Math.max(c.prop.position.y, ground + FOOTBALL_TOP);
+        c.prop.position.z = -0.6 * (1 - smooth((y - ground) / FOOTBALL_TOP));
+      }
       // It rises away behind him, not through him where he has just stepped down.
       if (away >= 0) c.prop.position.set(c.setDown.x + away * 6 + away * away * 4, c.setDown.y + away * 1.2 + away * away * 7, -1.2 * smooth(Math.min(1, away * 4)) - away * 2);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
