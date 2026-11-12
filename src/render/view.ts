@@ -1437,7 +1437,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Out of her hand and up on the gust, fluttering by her where it is seen, then away back over the lawn to where
         // it lies under the shaving bridge (garden.ts, `garden:paper`).
         const lift = Math.min(1, k / 0.3), glide = Math.max(0, (k - 0.3) / 0.7);
-        blown.group.position.set(165.5 - 1.2 * lift - 23.2 * glide, 1.8 + 1.8 * lift - 5.4 * glide ** 1.5 + Math.sin(clock * 6) * 0.15 * (1 - glide), 0.3 * (1 - k));
+        // From her hand a step behind the path (garden.ts, the `moa` spot's `standsAt`), forward onto it as it goes.
+        blown.group.position.set(165.5 - 1.2 * lift - 23.2 * glide, 1.8 + 1.8 * lift - 5.4 * glide ** 1.5 + Math.sin(clock * 6) * 0.15 * (1 - glide), -0.8 * (1 - k));
         blown.group.rotation.set(Math.sin(clock * 3.1) * 0.7, Math.sin(clock * 2.3) * 0.5, clock * 4);
       }
     }
