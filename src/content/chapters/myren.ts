@@ -274,7 +274,18 @@ export const myren: ChapterData = {
   surfaces: [{ from: 104, to: 136, kind: 'wood' }],
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (./cards.ts).
-  scenes: [timeCard('myren', 1)],
+  scenes: [timeCard('myren', 1), {
+    // Up the braid he turns to Mamma and thanks her first, and then she tells him the bog's rule (Olov, 12 November
+    // 2026). Told standing at the top, as Moa's landing in Gården is: said free, they came nine EL further on behind
+    // her words about the braid. Only the braid leads up past the wall at x 104; the checkpoint on the boardwalk has
+    // seen it. Their ids are the old beats', so a save keeps its receipts.
+    id: 'flata-tack', at: 104.2, before: 106, seconds: 1.6, hold: true,
+    lines: [
+      { at: .2, who: 'elof', line: 'familyBraidThanks', id: 'family:braid-thanks' },
+      { at: .9, who: 'mamma', line: 'spangen', id: 'spangen' },
+    ],
+    stage: { elof: [{ at: 0, face: .5, act: 'wave', aim: { x: 102.2, y: 5.6, z: -1.35 } }] },
+  }],
   goalX: 197,
   ground: [
     { x: -3, y: 12 },
@@ -441,11 +452,11 @@ export const myren: ChapterData = {
   ],
   beats: [
     { id: 'family:mamma', at: 82.6, until: 'mamma', who: 'mamma', line: 'familyMamma', read: true },
-    { id: 'family:bridge-ready', on: 'placed:pine', until: 'braid', within: [80, 99], who: 'mamma', line: 'familyBridgeReady', read: true },
+    // Said where he still stands on the bank or at the log's foot: once he is out on it, it has been followed.
+    { id: 'family:bridge-ready', on: 'placed:pine', until: 'braid', within: [80, 89], who: 'mamma', line: 'familyBridgeReady', read: true },
     { id: 'family:braid', at: 99.8, until: 'braid', needs: 'family:braid-arrived', who: 'mamma', line: 'familyBraid', read: true },
-    { id: 'family:braid-ready', on: 'family:braid-ready', until: 'light', within: [98, 107], who: 'mamma', line: 'familyBraidReady', read: true },
-    // A remark as he comes up onto it: let go if her words about the braid are still being read (docs/dialogue.md).
-    { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen', aside: true },
+    { id: 'family:braid-ready', on: 'family:braid-ready', until: 'light', within: [98, 104], who: 'mamma', line: 'familyBraidReady', read: true },
+    // At the top of the braid he thanks her, and she answers with the bog's rule: the scene `flata-tack`, above.
     { id: 'bog:chick-light', on: 'chick', who: 'elof', line: 'bogChickLight' },
     { id: 'bog:family-home', on: 'home', who: 'elof', line: 'bogFamilyHome' },
     // Said to him where she has laid it: not after him, on the crane's back.
@@ -454,7 +465,7 @@ export const myren: ChapterData = {
   ],
   sets: [{ flag: 'family:pine-released', when: ['braid'] }, { flag: 'family:braid-arrived', when: ['braid'] }],
   later: [{ flag: 'family:pine-released', after: 'placed:pine', seconds: 1.2 },
-    { flag: 'family:braid-arrived', after: 'family:pine-released', seconds: 4.2 }, { flag: 'family:braid-ready', after: 'braid', until: 'light', within: [98, 107], seconds: 1.2, hold: true }],
+    { flag: 'family:braid-arrived', after: 'family:pine-released', seconds: 4.2 }, { flag: 'family:braid-ready', after: 'braid', until: 'light', within: [98, 104], seconds: 1.2, hold: true }],
   cameras: [
     // The upper route needs its next landing and the lower way home in portrait as well as landscape.
     { from: 145.8, to: 163, above: 1.55, zoom: 1.45, lift: 0.6, lead: 0.8 },

@@ -153,7 +153,9 @@ describe('the current purpose follows Elof’s actual story progress', () => {
     expect(context('epilog', ['partied'], checkpoint(epilog, 25)).id).toBe('carveStart');
     expect(context('epilog', ['partied', 'knife'], { x: 32, y: 0 }).id).toBe('carve');
     expect(context('epilog', ['partied', 'knife', 'cut1', 'cut2', 'cut3'], { x: 32, y: 0 }).id).toBe('paintOwn');
-    expect(context('epilog', ['partied', 'knife', 'cut3', 'dots'], checkpoint(epilog, 33)).id).toBe('teeth');
+    // His carving goes up on Pappa's shelf before his teeth (Olov, 12 November 2026).
+    expect(context('epilog', ['partied', 'knife', 'cut3', 'dots'], checkpoint(epilog, 33)).id).toBe('shelf');
+    expect(context('epilog', ['partied', 'knife', 'cut3', 'dots', 'shelf'], checkpoint(epilog, 33)).id).toBe('teeth');
     expect(context('epilog', ['partied', 'knife', 'cut3', 'dots', 'teeth'], { x: 35.5, y: 0 }).id).toBe('bed');
   });
 
@@ -192,7 +194,8 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
     { chapter: myren, x: 169.5, flags: ['mamma', 'braid', 'light', 'chick'], id: 'chick' },
     { chapter: berget, x: 138.4, flags: ['flight'], id: 'mountain' },
     { chapter: norrsken, x: 17.8, flags: ['lower', 'placed:tragubbe'], id: 'eyes' },
-    { chapter: epilog, x: 33, flags: ['partied', 'knife', 'cut3', 'dots'], id: 'teeth' },
+    { chapter: epilog, x: 33, flags: ['partied', 'knife', 'cut3', 'dots'], id: 'shelf' },
+    { chapter: epilog, x: 33, flags: ['partied', 'knife', 'cut3', 'dots', 'shelf'], id: 'teeth' },
   ])('$chapter.id checkpoint $x gives a useful next task', ({ chapter, x, flags, id }) => {
     const reminder = context(chapter.id, [...flags, 'beat:already-said'], checkpoint(chapter, x));
     expect(reminder.id).toBe(id);

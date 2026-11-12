@@ -17,7 +17,7 @@ describe('the sweets given to the three friends', () => {
   });
   it('keeps the chosen colours and banana shape beside moving recipients', () => {
     const { mesh, update } = createSharedSweets();
-    update(new Set(['share:tragubbe', 'gift:tragubbe:skumbanan', 'share:spoket', 'gift:spoket:karamell', 'share:jay', 'gift:jay:lingon']), { x: 50, y: 4 }, { x: 52, y: 4 });
+    update(new Set(['share:tragubbe', 'gift:tragubbe:skumbanan', 'share:spoket', 'gift:spoket:karamell', 'share:jay', 'gift:jay:lingon']), { x: 50, y: 4 }, { position: { x: 52, y: 4 }, rotation: { z: 0 } });
     const colour = new Color();
     mesh.getColorAt(0, colour); expect(colour.getHexString()).toBe('eed382');
     mesh.getColorAt(1, colour); expect(colour.getHexString()).toBe('dfb65f');
@@ -27,6 +27,17 @@ describe('the sweets given to the three friends', () => {
     expect(pose(mesh, 1).at.x).toBeCloseTo(50.26);
     expect(pose(mesh, 1).at.y).toBeCloseTo(4.45);
     expect(pose(mesh, 2).size.x).toBeLessThan(pose(mesh, 1).size.x);
+  });
+  it('gives the dragged trägubbe its candy in its lap on his side, leaning as it leans', () => {
+    const { mesh, update } = createSharedSweets();
+    const gift = new Set(['share:tragubbe', 'gift:tragubbe:gelehallon']);
+    // He stands to its left (he walked back to it): the candy is on that side.
+    update(gift, null, { position: { x: 52, y: 0 }, rotation: { z: 0 } }, 51);
+    expect(pose(mesh, 0).at.x).toBeCloseTo(51.72);
+    // Dragged, it lies tipped back: its lap goes with it, not hanging in the air beside it.
+    update(gift, null, { position: { x: 52, y: 0 }, rotation: { z: -.3 } }, 53);
+    expect(pose(mesh, 0).at.x).toBeCloseTo(52 + .28 * Math.cos(-.3) - .4 * Math.sin(-.3));
+    expect(pose(mesh, 0).at.y).toBeCloseTo(.28 * Math.sin(-.3) + .4 * Math.cos(-.3));
   });
   it('glows warm behind each gift once it is given, and not before', () => {
     const { halos, update } = createSharedSweets();

@@ -208,7 +208,7 @@ describe('spoken-line lifecycle', () => {
   it('lets a paused player open and page through a memory, then finish the same spoken line before its receipt', async () => {
     const { createHud } = await import('../../src/ui/hud');
     const { fakePage } = await import('../robot/listener');
-    const { createMemory } = await import('../../src/ui/memory');
+    const { createMemory, FIRST_LOOK } = await import('../../src/ui/memory');
     const doc = fakePage({ show() {}, hide() {} });
     // Memory's DOM shell without animations: this exercises its real play/page/close ownership, not a substitute lease.
     vi.stubGlobal('HTMLElement', class {});
@@ -233,7 +233,14 @@ describe('spoken-line lifecycle', () => {
     expect(spoken.paused).toBe(true);
     expect(spoken.currentTime).toBe(1.7);
     const next = doc.getElementById('memoryNext')!;
+    // A press as it opens was meant for the game: the first picture stays until it has been seen.
+    const opened = performance.now();
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(opened + FIRST_LOOK / 2);
     next.onclick!.call(next, {} as PointerEvent);
+    expect(player.playingVoice()).toBe('memory_garden_1');
+    clock.mockReturnValue(opened + FIRST_LOOK + 1);
+    next.onclick!.call(next, {} as PointerEvent);
+    clock.mockRestore();
     expect(player.playingVoice()).toBe('memory_garden_2');
     const narration = Voice.made.at(-1)!;
     narration.currentTime = .8;

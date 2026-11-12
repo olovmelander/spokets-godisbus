@@ -21,7 +21,7 @@ import type { Candy, ChapterData, Hook, Ledge } from '../../sim/types';
  *    jump can catch its hanging end for another visit, and the ghost's lower lace still leads to the lee.
  *
  * Not built yet: what lies below the flight (the forest, the brook, the bog, the bell tower, the red house,
- * the four headlamps), memory 4, the ghost shown lifted.
+ * the four headlamps).
  */
 
 /** A row of candy over ground at one height, one every `every` EL. */
@@ -112,6 +112,9 @@ const CAIRN = [
 ];
 // The hanging end is above walking height, so earning this route never catches the main trail's feet.
 // The same lace skill learned at the cliff, now anchored beside the summit cairn.
+/** Where the ghost waits at the cliff's foot for his Lyft: on the ground, just behind the play plane. */
+const LIFT_GHOST = { x: 145.3, z: -0.42 };
+
 const CAIRN_LACE = { x: 147.6, bottom: 32.4, top: 40.9, exit: -1 as const, needs: 'found:chokladpralin', look: 'lace' as const };
 
 export const berget: ChapterData = {
@@ -140,13 +143,21 @@ export const berget: ChapterData = {
     // Lyft: he puts both hands under the ghost and pushes it up the cliff's face; it scrambles over the edge and goes
     // on to wait by the old pine, where its path has it next. Short, so that he is soon free to climb the lace. A game
     // taken up on top of the cliff has seen it.
-    { id: 'berget:lift', on: 'lift', before: 146.5, seconds: 2.4, hold: true, stage: {
-      elof: [{ at: 0, act: 'lift', aim: { x: 145, y: 28, z: 0 } }, { at: 1.3, act: null }],
+    //
+    // It waits on the ground at the cliff's foot, a little behind him, and never rises by itself (Olov, 12 November
+    // 2026). Pressed, it waddles to his hands wherever he stands; then he lifts it, and it springs from them.
+    { id: 'berget:lift', on: 'lift', before: 146.5, seconds: 2.9, hold: true, stage: {
+      elof: [
+        { at: 0, face: 0, act: 'stand' },
+        { at: 0.45, act: 'lift', aimByElof: { x: 0.5, y: 1.15, z: 0 } },
+        { at: 1.75, act: null },
+      ],
       actors: { ghost: [
-        { at: 0, x: 145, y: 26.4, z: 0, move: 0.01 },
-        { at: 0.3, y: 27.8, move: 0.6 },
-        { at: 0.95, x: 146.3, y: 31.4, move: 0.45, act: 'hop' },
-        { at: 1.45, x: 151, move: 0.9 },
+        { at: 0, x: LIFT_GHOST.x, y: 26.4, z: LIFT_GHOST.z, move: 0.01 },
+        { at: 0.05, byElof: 0.5, z: 0, move: 0.4, act: 'waddle' },
+        { at: 0.5, y: 27.5, move: 0.7, act: 'carved' },
+        { at: 1.4, x: 146.3, y: 31.4, move: 0.45, act: 'hop' },
+        { at: 1.9, x: 151, move: 0.9 },
       ] },
     } },
   ],
@@ -202,7 +213,8 @@ export const berget: ChapterData = {
     { id: 'flight', at: { x: 1, y: 0 }, verb: 'take', touch: true, ride: 'flight' },
     // The cobbles from the old shore: each always rings its own note, on every new visit.
     ...[98, 100, 102, 104, 106].map((x, i) => ({ id: `note:${i + 1}`, look: 'cobble' as const, at: { x, y: 26.4 }, verb: 'take' as const, touch: true, note: [67, 69, 71, 74, 76][i]! })),
-    { id: 'lift', at: { x: 143.8, y: 26.4 }, verb: 'take', word: 'lift' },
+    // From the left only: the cliff's foot behind the ghost leaves no room for the ghost before his hands there.
+    { id: 'lift', at: { x: 143.9, y: 26.4 }, verb: 'take', word: 'lift' },
     // Memory 4, at the old pine: the gust, the crack, and the last raspberry jelly.
     { id: 'memory', look: 'memory', at: { x: 153, y: 31.4 }, verb: 'take', touch: true },
   ],
@@ -217,8 +229,9 @@ export const berget: ChapterData = {
     { at: { x: 120.4, y: 26.4 } },
     { at: { x: 130.8, y: 26.4 } },
     { at: { x: 140, y: 26.4 } },
-    // stuck below the cliff, with the bag too heavy: it doesn't run
-    { at: { x: 145, y: 26.4 }, until: 'lift', thought: { picture: 'lonely-figure', until: 'lift' } },
+    // stuck below the cliff, with the bag too heavy: it doesn't run, and it doesn't rise either. It stands on the
+    // ground a little behind the path, so that he walks up to it and past it in front of it.
+    { at: { x: LIFT_GHOST.x, y: 26.4 }, z: LIFT_GHOST.z, until: 'lift', still: true, thought: { picture: 'lonely-figure', until: 'lift' } },
     // up, it waits by the pine
     { at: { x: 151, y: 31.4 } },
     { at: { x: 159, y: 31.4 } },

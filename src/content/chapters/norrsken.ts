@@ -8,14 +8,15 @@ import type { Candy, ChapterData } from '../../sim/types';
  *
  * 1. **The crack** (P16): *Sänk snöret*, and then *Dra*, twice: the ghost climbs down, and together they
  *    pull the first trägubbe out.
- * 2. **New eyes:** *Plocka* a crowberry from the heather, and *Måla ögon* on the old figure.
+ *    Then he drags it behind him on the lace, all the way to the golden geléhallon.
+ * 2. **New eyes:** *Plocka* a crowberry from the heather, and *Måla ögon* on the old figure, where it lies behind him.
  * 3. **The bag comes back:** the ghost holds it out. *Ta påsen*.
  * 4. **Dela godiset** (P17): choose a candy and a friend; the jay gets a lingonberry from his pocket.
  * 5. **The golden geléhallon:** *Smaka*. The northern lights flare. The family runs up the path, asks
  *    how he is, and recognises the first carving; Elof tells them how the ghost helped him rescue it.
  * 6. **Home:** *Gå hem*. The walk down on Pappa's shoulders can't fail.
  *
- * Not built yet: the trägubbe's blink, the ghost setting the figure by the pine with a jelly in its lap, the
+ * Not built yet: the trägubbe's blink, the
  * headlamps, Moa's jacket and Bertil's cap. The reunion, lowered lace, heavy lift/drag and supported
  * shoulder ride with both carvings are authored in norrsken-scenes.ts and the carrying picture code.
  */
@@ -82,11 +83,13 @@ export const norrsken: ChapterData = {
   spots: [
     { id: 'lower', at: { x: 10.9, y: 0 }, verb: 'take', word: 'lowerLace' },
     { id: 'crowberry', look: 'crowberry', at: { x: 15.6, y: 0 }, verb: 'take', word: 'pick', needs: 'placed:tragubbe' },
-    { id: 'eyes', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'crowberry' },
+    // He drags the trägubbe behind him on the lace (the mover's `tow`): its eyes are painted, and its candy given,
+    // where it is, a step behind him, never back at the empty crack (Olov, 12 November 2026).
+    { id: 'eyes', at: { x: FIGURE + 1, y: 0 }, follows: 'tragubbe', verb: 'give', word: 'paintEyes', needs: 'crowberry' },
     // The same torn Saturday bag returns; sharing now becomes Elof's own choice.
     { id: 'bag', look: 'bag', at: { x: GHOST - 0.6, y: 0 }, verb: 'take', word: 'takeBag', needs: 'eyes' },
     // Sharing: he decides himself who gets theirs first.
-    { id: 'share:tragubbe', at: { x: FIGURE + 1, y: 0 }, verb: 'give', word: 'giveTragubbe', needs: 'bag', story: 'share' },
+    { id: 'share:tragubbe', at: { x: FIGURE + 1, y: 0 }, follows: 'tragubbe', verb: 'give', word: 'giveTragubbe', needs: 'bag', story: 'share' },
     { id: 'share:spoket', at: { x: GHOST - 0.6, y: 0 }, verb: 'give', word: 'giveGhost', needs: 'bag', story: 'share' },
     { id: 'share:jay', look: 'jay', at: { x: JAY, y: 0 }, verb: 'give', word: 'giveJay', needs: 'bag', story: 'share' },
     { id: 'taste', look: 'gold', at: { x: 26.6, y: 0 }, verb: 'take', word: 'taste', needs: 'shared' },
@@ -104,7 +107,9 @@ export const norrsken: ChapterData = {
   sets: [{ flag: 'shared', when: ['share:tragubbe', 'share:spoket', 'share:jay'] }],
   movers: [
     // The first trägubbe, deep in the crack: two pulls on the lace, and it stands on the rock.
-    { id: 'tragubbe', look: 'figure', width: 0.3, height: 0.28, verb: 'pull', needs: 'nr:rope-ready', ring: { x: 0, y: 0.5 }, stops: [{ x: FIGURE, y: -2.6 }, { x: FIGURE, y: -1.3 }, { x: FIGURE, y: 0 }] },
+    // Out, he drags it behind him on the lace until he tastes the golden geléhallon, where it stands at his feet.
+    { id: 'tragubbe', look: 'figure', width: 0.3, height: 0.28, verb: 'pull', needs: 'nr:rope-ready', ring: { x: 0, y: 0.5 }, stops: [{ x: FIGURE, y: -2.6 }, { x: FIGURE, y: -1.3 }, { x: FIGURE, y: 0 }],
+      tow: { after: 'scene:uppdragen', until: 'taste' } },
   ],
   rides: [{ id: 'home', look: 'none', ...HOME }],
   night: { after: 'taste' },

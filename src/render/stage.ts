@@ -291,7 +291,12 @@ function shotAt(keys: readonly ShotKey[], t: number): { shot: Required<Omit<Shot
 }
 
 /** What a scene asks of Elof at a moment. */
-function elofAt(keys: readonly ElofKey[], t: number) {
+/** Keys placed by where Elof stands (`byElof`), resolved to the course. */
+function nearElof(keys: readonly ActorKey[], elof: { x: number }): readonly ActorKey[] {
+  return keys.some((key) => key.byElof !== undefined) ? keys.map((key) => key.byElof === undefined ? key : { ...key, x: elof.x + key.byElof }) : keys;
+}
+
+function elofAt(keys: readonly ElofKey[], t: number, elof: { x: number; y: number }) {
   const out = {
     lift: { x: 0, y: 0, z: 0 }, rides: null as Role | null, rideWeight: 0,
     act: null as Act | null, actAt: 0, aim: null as Point | null, face: null as number | null, size: null as number | null,
@@ -301,10 +306,11 @@ function elofAt(keys: readonly ElofKey[], t: number) {
     const next = keys[i + 1];
     const until = next && next.at <= t ? next.at : t;
     const p = smooth((until - key.at) / (key.move ?? 0.6));
-    if (key.lift) {
-      out.lift.x = mix(out.lift.x, key.lift.x, p);
-      out.lift.y = mix(out.lift.y, key.lift.y, p);
-      out.lift.z = mix(out.lift.z, key.lift.z ?? 0, p);
+    const lift = key.to ? { x: key.to.x - elof.x, y: key.to.y - elof.y, z: key.to.z } : key.lift;
+    if (lift) {
+      out.lift.x = mix(out.lift.x, lift.x, p);
+      out.lift.y = mix(out.lift.y, lift.y, p);
+      out.lift.z = mix(out.lift.z, lift.z ?? 0, p);
     }
     if (key.rides) {
       out.rides = key.rides;
@@ -312,6 +318,7 @@ function elofAt(keys: readonly ElofKey[], t: number) {
     } else if (key.rides === null) out.rideWeight = mix(out.rideWeight, 0, p);
     if (key.act !== undefined && key.act !== out.act) { out.act = key.act; out.actAt = key.at; }
     if (key.aim !== undefined) out.aim = key.aim;
+    if (key.aimByElof) out.aim = { x: elof.x + key.aimByElof.x, y: elof.y + key.aimByElof.y, z: key.aimByElof.z ?? 0 };
     if (key.face !== undefined) out.face = key.face;
     if (key.size !== undefined) out.size = out.size === null ? key.size : mix(out.size, key.size, p);
   }
@@ -774,10 +781,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
       const t = frame?.seconds ?? 0;
       const elofKeys = scene?.stage?.elof;
-      const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t) : null;
+      const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t, elof) : null;
       const ghostKeys = scene?.stage?.actors?.ghost;
       const workpiece = ghostKeys && ghostKeys[0]!.at <= t ? fresh() : null;
-      if (workpiece) play(workpiece, ghostKeys!, t);
+      if (workpiece) play(workpiece, nearElof(ghostKeys!, elof), t);
       let carving: { motion: CarvingMotion; at: number; face: number } | null = null;
       contactMark.userData.cut = 0;
       // Who rests where: the scenes told before the one playing now, or all of them told so far.

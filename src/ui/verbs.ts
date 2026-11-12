@@ -13,7 +13,7 @@ export const VERB_ICON: Record<string, IconId> = {
   playConsole: 'console',
   gardenBoard: 'climb', capBoard: 'climb', climbOn: 'climb', boardCrane: 'climb', board: 'climb', rideAnts: 'climb', standOn: 'climb',
   gardenGiveDrawing: 'give', giveTragubbe: 'give', giveGhost: 'give', giveJay: 'give', giveMamma: 'give', givePappa: 'give',
-  giveMoa: 'give', giveBertil: 'give', leaveBerry: 'give',
+  giveMoa: 'give', giveBertil: 'give', leaveBerry: 'give', putOnShelf: 'give',
   takeLight: 'take', takeBag: 'take', takeKnife: 'take', pick: 'take',
   lift: 'push', lowerLace: 'lace',
   paintEyes: 'brush', paintGhost: 'brush', carve: 'knife', brush: 'toothbrush', taste: 'taste', tasteStar: 'taste', goHome: 'house',

@@ -20,7 +20,8 @@ export function createNorrskenRescue() {
   const pieces = Array.from({ length: 18 }, () => { const mesh = new Mesh(geometry, material); group.add(mesh); return mesh; });
   const hand = new Vector3(), target = new Vector3(), tip = new Vector3(), lip = new Vector3(), last = new Vector3(), point = new Vector3(), along = new Vector3(), heldAxis = new Vector3();
   const turn = new Quaternion();
-  let draggedX: number | null = null;
+  let lastX: number | null = null;
+  let haul = 0;
   const releasedAt = new Vector3(), releasedAxis = new Vector3();
   let hadContact = false;
   const rod = (i: number, a: Vector3, b: Vector3) => {
@@ -32,6 +33,8 @@ export function createNorrskenRescue() {
   };
   return {
     group,
+    /** How taut the line is now, from 0 (the trägubbe lies still behind him) to 1 (he drags it along). */
+    get hauling() { return haul; },
     /** Scene time freezes with reading and Pause. A restored taste has no old grip to bring back. */
     weight(flags: ReadonlySet<string>, tasteSeconds?: number, calm = false): number {
       if (!flags.has('lower') || flags.has('home')) return 0;
@@ -56,17 +59,18 @@ export function createNorrskenRescue() {
         return;
       }
       for (const piece of pieces) piece.visible = false;
-      draggedX ??= carving.position.x;
-      const distance = player.position.x - draggedX;
-      const hauling = rescued && flags.has('scene:uppdragen') && Math.abs(distance) > .9;
+      // Where it lies is the simulation's (its mover is towed, Mover.tow): the spots for its eyes and its candy
+      // go with it, and a game taken up again finds it at his heels.
+      const distance = player.position.x - carving.position.x;
+      const moved = lastX === null ? 0 : Math.abs(carving.position.x - lastX) / Math.max(dt, 1e-3);
+      lastX = carving.position.x;
+      // Taut while he walks it along; at rest, a step behind him, it lies still and upright.
+      haul += ((rescued && flags.has('scene:uppdragen') && Math.abs(distance) > .95 && moved > .2 ? 1 : 0) - haul) * (calm ? 1 : -Math.expm1(-9 * dt));
+      const hauling = haul > .5;
       if (rescued) {
-        // He walks back to paint the eyes after picking the berry. The wood stays where he left it
-        // while the line slackens, then follows once he has walked past it and pulled the line taut.
-        const want = hauling ? player.position.x - Math.sign(distance) * .85 : draggedX;
-        draggedX += (want - draggedX) * (calm ? 1 : -Math.expm1(-7 * dt));
-        carving.position.set(draggedX, hauling ? .06 : .015, .12);
+        carving.position.set(carving.position.x, .015 + .045 * haul, .12);
         // The lower corner scrapes the rock. Its weight trails each step, instead of hovering at hand height.
-        carving.rotation.z = hauling ? -Math.sign(distance) * (.3 + (calm ? 0 : .035 * Math.sin(clock * 9))) : 0;
+        carving.rotation.z = -Math.sign(distance) * haul * (.3 + (calm ? 0 : .035 * Math.sin(clock * 9)));
       }
       // Elof's outer group faces +x (the imported model is turned inside it). In the crouch his
       // chest is lower too: a standing-height target would put the feeding hand over his head.

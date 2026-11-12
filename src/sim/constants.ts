@@ -105,6 +105,12 @@ export const DOWN_TIME = 0.9;
 export const GHOST_NEAR = 4;
 /** During the chase even a swing, a short hop or a story wait keeps this much space around the ghost. */
 export const GHOST_CLEARANCE = 3;
+/** Norrsken's trägubbe on the lace (Mover.tow): slack this far, then it follows to this far behind him, this briskly. */
+export const TOW_SLACK = 0.9;
+export const TOW_BEHIND = 0.85;
+export const TOW_PULL = 7;
+/** Further than this from him, it is a game taken up again: it is at his heels at once. */
+export const TOW_LOST = 3;
 /** How fast the ghost hops from one place to the next. Faster than Elof runs: the chase can't be won early. */
 export const GHOST_SPEED = 6;
 /** In a chapter that allows meetings, a near-catch offers Ta! at this distance. */

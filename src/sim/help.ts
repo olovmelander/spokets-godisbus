@@ -97,7 +97,7 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
     r.steps.some((at) => Math.hypot(at.x - p.x, at.y - p.standY) <= 2.5));
   if (route && !has(route.needs)) {
     const missing = chapter.spots?.find((spot) => spot.id === route.needs);
-    if (missing) return { at: missing.at, verb: missing.verb, word: missing.word ?? null };
+    if (missing) return { at: sim.placeOf(missing), verb: missing.verb, word: missing.word ?? null };
   }
   if (route && has(route.needs)) {
     const found = sim.ready(`found:${route.reward}`);
@@ -146,7 +146,8 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   for (const spot of chapter.spots ?? []) {
     // One he only has to touch is skipped, unless the chapter cannot end without it (Stormbyn's cap).
     if (spot.extra || (spot.touch && spot.id !== chapter.goalNeeds) || sim.ready(spot.id) || !has(spot.needs)) continue;
-    things.push({ at: spot.at, verb: spot.verb, word: spot.word ?? null });
+    // A spot on a towed thing (Norrsken's trägubbe) is where he has dragged it.
+    things.push({ at: sim.placeOf(spot), verb: spot.verb, word: spot.word ?? null });
   }
   // Things on rails that are not yet where they belong, and that he moves himself.
   for (const mover of sim.movers) {
@@ -163,10 +164,12 @@ export function hintFor(sim: Sim, chapter: ChapterData): Hint | null {
   // Optional things far behind stay behind. A goal prerequisite remains useful even when it unlocked after
   // a long conversation: the knife at home and the morning cocoa must still be findable on the way back.
   const required = requiredForGoal(chapter);
-  const needed = new Set(chapter.spots?.filter((spot) => required.has(spot.id)).map((spot) => spot.at));
+  const needed = new Set(chapter.spots?.filter((spot) => required.has(spot.id)).map((spot) => sim.placeOf(spot)));
   for (let i = things.length - 1; i >= 0; i--) if (things[i]!.at.x < p.x - HINT_REACH && !needed.has(things[i]!.at)) things.splice(i, 1);
   // What he stands at comes first: where several things may be done in any order, it is the one in reach.
-  const beside = things.filter((thing) => Math.abs(thing.at.x - p.x) <= 1.3).sort((a, b) => Math.abs(a.at.x - p.x) - Math.abs(b.at.x - p.x))[0];
+  // Of those, the one Använd offers now, where two are near (the towed trägubbe a step behind him at the ghost).
+  const near = things.filter((thing) => Math.abs(thing.at.x - p.x) <= 1.3).sort((a, b) => Math.abs(a.at.x - p.x) - Math.abs(b.at.x - p.x));
+  const beside = near.find((thing) => p.verb !== null && thing.verb === p.verb && thing.word === p.word) ?? near[0];
   if (beside) return beside;
   // Otherwise the first along the way. One he walked past is still the next thing.
   things.sort((a, b) => a.at.x - b.at.x);

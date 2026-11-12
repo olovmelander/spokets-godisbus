@@ -63,15 +63,18 @@ export function createSharedSweets() {
       }
       return true;
     },
-    update(flags: ReadonlySet<string>, ghost: Vec | null, figure?: Vec) {
+    update(flags: ReadonlySet<string>, ghost: Vec | null, figure?: { position: Vec; rotation: { z: number } }, elofX?: number) {
       let any = false;
       let given = false;
       for (const [i, friend] of FRIENDS.entries()) {
         const prefix = `gift:${friend}:`, gift = [...flags].find((flag) => flag.startsWith(prefix));
         const kind = gift?.slice(prefix.length) ?? (friend === 'jay' ? 'lingon' : 'gelehallon');
         const shown = flags.has(`share:${friend}`);
-        const x = friend === 'tragubbe' ? (figure?.x ?? 12.4) + .28 : friend === 'spoket' ? (ghost?.x ?? 19.4) + .26 : 23.18;
-        const y = friend === 'tragubbe' ? (figure?.y ?? 0) + .4 : friend === 'spoket' ? (ghost?.y ?? 0) + .45 : 1.1;
+        // The trägubbe holds its candy in its lap on the side where he stands, and leans with it as it is dragged.
+        const side = figure && elofX !== undefined && elofX < figure.position.x ? -1 : 1, tilt = figure?.rotation.z ?? 0;
+        const lapX = side * .28 * Math.cos(tilt) - .4 * Math.sin(tilt), lapY = side * .28 * Math.sin(tilt) + .4 * Math.cos(tilt);
+        const x = friend === 'tragubbe' ? (figure?.position.x ?? 12.4) + lapX : friend === 'spoket' ? (ghost?.x ?? 19.4) + .26 : 23.18;
+        const y = friend === 'tragubbe' ? (figure?.position.y ?? 0) + lapY : friend === 'spoket' ? (ghost?.y ?? 0) + .45 : 1.1;
         const sweets = shaped[i];
         const model = sweets?.[kind];
         if (sweets) for (const name in sweets) sweets[name]!.visible = shown && name === kind;

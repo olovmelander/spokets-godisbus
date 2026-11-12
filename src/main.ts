@@ -23,7 +23,7 @@ import { mapSvg, mapState } from './ui/map';
 import { createMemory, memoryAlbumHtml } from './ui/memory';
 import { createEnding } from './ui/ending';
 import { createExplore } from './ui/explore';
-import { sv } from './content/sv';
+import { DRIP_REACTIONS, sv } from './content/sv';
 import { storyContext, storyHandoff } from './content/story-context';
 import type { Person } from './content/people';
 import { createStoryContext } from './ui/story-context';
@@ -1101,7 +1101,7 @@ async function start(): Promise<void> {
     const rect = button.getBoundingClientRect();
     memories.play(id, () => { input.release(); game.resume(); }, {
       origin: rect.width > 0 && rect.height > 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null,
-      calm: lessMotion(),
+      calm: lessMotion(), chosen: true,
     });
   });
   let remembered = game.sim.flags.has('memory');
@@ -1381,10 +1381,12 @@ async function start(): Promise<void> {
       if (beat?.line === 'safeHere') audio.play({ kind: 'motif', who: 'mamma' });
     }
     // A bumped head is an incidental remark: it never waits for Fortsätt, interrupts a line, or arrives late.
+    // A cone and a drop of water each have their own words, said in turn (Olov, 12 November 2026).
     if (game.sim.knocks > reactedToCone) {
       const count = game.sim.knocks; reactedToCone = count;
-      if (chapter.storm?.drips === 'cone' && !hud.speaking() && !scene && !menuOpen()) {
-        hud.say('elof', CONE_REACTIONS[coneReaction++ % CONE_REACTIONS.length]!, false);
+      if (!hud.speaking() && !scene && !menuOpen()) {
+        const words = chapter.storm?.drips === 'cone' ? CONE_REACTIONS : DRIP_REACTIONS;
+        hud.say('elof', words[coneReaction++ % words.length]!, false);
       }
     }
     // What is said waits while a memory plays: its line comes after it.

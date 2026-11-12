@@ -171,12 +171,22 @@ const KLONK_UP = 1.85;
 const KLONK_DOWN = 6.95;
 
 /**
+ * Where his first carving goes on Pappa's shelf, between Pappa's old trägubbe and Klonk: where it stands on the evening of
+ * the storm (../aventyr2/chapters/stormkvall.ts, LITTLE). The shelf is a grown-up's height, so a stool stands under it.
+ */
+const OWN_ON_SHELF = { x: HOME_LAYOUT.shelf.x - 2.9, y: HOME_LAYOUT.shelf.y + 0.08, z: -8.3 };
+const STOOL = { x: OWN_ON_SHELF.x, z: -7.55, top: 1.21 };
+
+/**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
  * 1. **Elof hands out candy** (P18): he chooses a candy and then Mamma, Pappa, Moa, Bertil or the ghost.
  * 2. **The naming.** The ghost hops across the table: klonk, klonk. "Du ska heta Klonk!"
  * 3. **Elofs första trägubbe** (P19): *Ta kniven*, three outward strokes traced with Pappa, and two painted eyes.
  *    Pappa: "Alltid bort från kroppen." Elof: "Titta, Pappa! Min egen Lillgubbe!"
- * 4. **Teeth:** he walks through the bathroom door and brushes at the basin before the last card.
+ * 4. **The shelf:** he carries his carving to Pappa's shelf, climbs the stool under it and puts it up beside the old
+ *    trägubbe and Klonk (Olov, 12 November 2026: "måste han gå och ställa den på hyllan innan han kan gå och borsta
+ *    tänderna").
+ * 5. **Teeth:** he walks through the bathroom door and brushes at the basin before the last card.
  *
  * And **Hittegods** (O2): what he found under the deck in Kapitel 1 lies on the table beside its owner, and
  * the one who gets candy from him sees it: "Mitt hårspänne!"
@@ -196,8 +206,10 @@ export const epilog: ChapterData = {
   furniture: [
     { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z, cloth: '#f1ead8' },
     ...Object.values(HOME_LAYOUT.dining.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
+    // The stool under Pappa's shelf, for putting his carving up.
+    { look: 'stool', at: { x: STOOL.x, y: 0 }, z: STOOL.z },
   ],
-  epilogue: { window: { x: 9.4, y: 3.43, z: -8.3 } },
+  epilogue: { window: { x: 9.4, y: 3.43, z: -8.3 }, shelf: OWN_ON_SHELF },
   spawn: { x: 1, y: 0.01 },
   scenes: [
     // Where and when, as the evening opens (./cards.ts).
@@ -232,16 +244,34 @@ export const epilog: ChapterData = {
       stage: { shots: [{ at: 0, x: 33, y: 2.4, height: 5.7, width: 7.2, move: .001 }],
         elof: [{ at: 0, face: .22, act: 'offer', aim: { x: 32.9, y: 1.65 } }],
         actors: { pappa: [{ at: 0, x: 35.4, z: -2.2, act: 'kneel', face: .38, aim: { x: 32, y: 2.2 }, move: .001 }] } } },
+    // He carries his carving to Pappa's shelf, climbs the stool and puts it up between the old trägubbe and Klonk, then
+    // steps down and comes back. Only then is it time for his teeth. The carving leaves his hand at `shelf:placed`.
+    { id: 'hyllan', on: 'shelf', until: 'teeth', resumeAt: { x: OWN_ON_SHELF.x, y: 0 }, seconds: 5.6, hold: true,
+      cues: [{ at: 2.5, flag: 'shelf:placed' }],
+      lines: [{ at: 2.8, who: 'elof', line: 'onShelf' }],
+      // Close to the wall: Mamma, at her place from the party a little in front of the shelf, stays out of the picture.
+      stage: { shots: [{ at: 0, x: OWN_ON_SHELF.x - 1.1, y: 4.4, z: -7, height: 6, width: 5.6, move: .8 }],
+        elof: [
+          { at: 0, face: .75, act: 'walk', to: { x: STOOL.x, y: 0, z: STOOL.z + 1.15 }, move: 1.2 },
+          { at: 1.2, act: 'stand', to: { x: STOOL.x, y: STOOL.top, z: STOOL.z }, move: .45 },
+          { at: 1.65, act: 'reach', aim: { x: OWN_ON_SHELF.x, y: OWN_ON_SHELF.y + .25, z: OWN_ON_SHELF.z } },
+          { at: 2.8, act: 'nod', aim: OWN_ON_SHELF },
+          { at: 3.5, face: .25, act: 'stand', to: { x: STOOL.x, y: 0, z: STOOL.z + 1.15 }, move: .45 },
+          { at: 4, act: 'walk', lift: { x: 0, y: 0, z: 0 }, move: 1.3 },
+          { at: 5.3, act: 'stand' },
+        ] } },
     // He opens the real bathroom door, walks in on his own feet, and brushes before the ending is allowed.
     { id: 'bathroom', on: 'teeth', until: 'goal', resumeAt: { x: HOME_BATHROOM.x, y: 0 }, seconds: HOME_BATHROOM.seconds, hold: true,
       lines: [{ at: .1, who: 'elof', line: 'brushNow' }, { at: HOME_BATHROOM.goodnight, who: 'mamma', line: 'goodnight' }],
       cues: [{ at: HOME_BATHROOM.bedtime, flag: 'bedtime' }],
       stage: { shots: [
         // Begin at the hall floor, then follow his whole walk in depth. Focusing on the basin from the
-        // start enlarged the boy still in front of the lens and cut his boots off in landscape.
+        // start enlarged the boy still in front of the lens and cut his boots off in landscape. The camera sets off
+        // a moment after him and arrives after him: going with him step for step, it held him still in the picture
+        // while the room slid by, and he seemed to float in (Olov, 12 November 2026).
         { at: 0, x: HOME_BATHROOM.x, y: 2.55, z: 0, height: 7.4, width: 6.8, move: .001 },
-        { at: HOME_BATHROOM.walkStart, x: HOME_BATHROOM.x, y: 2.1, z: HOME_BATHROOM.feetZ,
-          height: 5.6, width: 5.8, move: HOME_BATHROOM.walkEnd - HOME_BATHROOM.walkStart },
+        { at: HOME_BATHROOM.walkStart + .8, x: HOME_BATHROOM.x, y: 2.1, z: HOME_BATHROOM.feetZ,
+          height: 5.6, width: 5.8, move: HOME_BATHROOM.walkEnd - HOME_BATHROOM.walkStart + .3 },
       ],
         elof: [{ at: 0, act: 'stand', face: .75 }],
         actors: { pappa: [
@@ -279,7 +309,9 @@ export const epilog: ChapterData = {
     { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
     // A deliberate action at the bathroom door begins the walk to the basin and his toothbrush.
-    { id: 'teeth', at: { x: HOME_BATHROOM.x, y: 0 }, verb: 'take', word: 'brush', needs: 'scene:first-carving' },
+    // His carving goes up on Pappa's shelf first, from the stool under it.
+    { id: 'shelf', at: { x: OWN_ON_SHELF.x, y: 0 }, verb: 'give', word: 'putOnShelf', needs: 'scene:first-carving' },
+    { id: 'teeth', at: { x: HOME_BATHROOM.x, y: 0 }, verb: 'take', word: 'brush', needs: 'shelf' },
   ],
   // What he found under the deck came with him: each thing lies by the one it belongs to, until it is given back
   // ("Mitt hårspänne! Tack, lillebror!"); the found coin is returned to Pappa.

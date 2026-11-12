@@ -34,6 +34,12 @@ try {
     mountShell(document.body, 'ghost');
     // In the game the typeface has long arrived when a memory opens; here it must not arrive in the middle of one.
     await Promise.all([document.fonts.load('400 16px Andika'), document.fonts.load('700 16px Andika')]);
+    // A memory's first picture has a first look (FIRST_LOOK): a press as it opens was meant for the game. These checks
+    // page through at once, so the page's clock steps past that look as each opens, unless a check asks for it.
+    const realNow = performance.now.bind(performance);
+    let skew = 0;
+    performance.now = () => realNow() + skew;
+    window.passFirstLook = () => { skew += 1000; };
     window.memory = createMemory(document);
     window.finished = 0;
     window.playMemory = (options = {}) => {
@@ -42,6 +48,7 @@ try {
       window.memory.play(options.chapter ?? 'garden', () => { window.finished++; }, {
         origin: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, ...options,
       });
+      if (!options.firstLook) window.passFirstLook();
     };
   });
   const snapshot = () => page.evaluate(() => {
@@ -86,7 +93,7 @@ try {
   start = await snapshot();
   await sleep(420);
   held = await snapshot();
-  check('interruption freezes a picture fade and all illustrated layers', held.opacity === start.opacity && held.picture === '2 / 3' && JSON.stringify(held.times) === JSON.stringify(start.times));
+  check('interruption freezes a picture fade and all illustrated layers', held.opacity === start.opacity && held.picture === '2 / 3' && JSON.stringify(held.times) === JSON.stringify(start.times), { start, held });
   await page.evaluate(() => window.memory.close());
   let closed = await snapshot();
   check('cancellation is immediate, releases animations and calls done once', !closed.open && closed.finished === 1 && closed.times.length === 0);
@@ -219,6 +226,22 @@ try {
     }
     await page.evaluate(() => window.memory.close());
   }
+  // Olov, 12 November 2026: a memory sometimes began on its second picture. Opened by itself in play, a jump or a step
+  // pressed as it appears is meant for the game: Space on the focused Nästa bild, or →, turns nothing yet.
+  await page.evaluate(() => { window.memory.close(); window.playMemory({ firstLook: true }); });
+  await page.keyboard.press(' ');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Enter');
+  check('a jump, a step or Enter pressed as a memory opens does not turn its first picture', (await snapshot()).picture === '1 / 3');
+  await page.evaluate(() => window.passFirstLook());
+  await page.keyboard.press('ArrowRight');
+  check('after its first look, a step turns the picture as before', (await snapshot()).picture === '2 / 3');
+  await page.evaluate(() => window.memory.close());
+  // Chosen in the album, there is no press meant for the game: Enter turns the picture at once.
+  await page.evaluate(() => window.playMemory({ firstLook: true, chosen: true }));
+  await page.keyboard.press('Enter');
+  check('a memory chosen in the album turns its picture at once', (await snapshot()).picture === '2 / 3');
+  await page.evaluate(() => window.memory.close());
   check('presentation makes no browser errors', errors.length === 0);
   console.log(`${checks} memory-presentation browser checks passed.`);
 } finally {

@@ -20,7 +20,7 @@ describe('Kapitel 3, Myren, in greybox', () => {
       // Mamma's bridge and her braid, the lollipop, the chick brought home, and the crane.
       expect(result.flags).toEqual(expect.arrayContaining(['mamma', 'placed:pine', 'braid', 'light', 'chick', 'home', 'crane', 'goal']));
       expect(result.said).toEqual(['family:mamma', 'family:bridge-ready', 'family:braid', 'family:braid-ready',
-        'spangen', 'bog:chick-light', 'bog:family-home', 'bog:bridge-ready']);
+        'family:braid-thanks', 'spangen', 'bog:chick-light', 'bog:family-home', 'bog:bridge-ready']);
       // It never falls in, and no tussock sinks under it: it keeps hopping.
       expect(result.bubbles).toBe(0);
       expect(result.sinks).toBe(0);

@@ -125,7 +125,9 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       return context(knownFigure ? 'welcome' : 'share', 'mountain', 'heart');
     case 'epilog':
       if (has('teeth')) return context('bed', 'carving', 'house');
-      if (has('dots')) return context('teeth', 'carving', 'house');
+      if (has('shelf')) return context('teeth', 'carving', 'house');
+      // His first carving goes up on Pappa's shelf before he brushes his teeth (Olov, 12 November 2026).
+      if (has('dots')) return context('shelf', 'carving', 'house');
       if (has('cut3')) return context('paintOwn', 'carving', 'brush');
       if (has('knife')) return context('carve', 'carving', 'knife');
       if (has('partied')) return context('carveStart', 'carving', 'knife');
