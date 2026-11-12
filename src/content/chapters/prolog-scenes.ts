@@ -425,7 +425,8 @@ export const PROLOG_SCENES: SceneDef[] = [
         { at: 0, x: 41.6, y: 0.9, height: 4.2, width: 6.5, move: 0.7 },
         { at: 0.8, x: 41.7, y: 2.3, height: 5.0, width: 7.2, move: 1.5 },
         { at: 2.4, x: 41.3, y: 2.4, height: 5.8, width: 8.2, move: 0.8 },
-        { at: 8.2, x: 43.0, y: 1.3, height: 5.4, width: 9.5, move: 0.9 },
+        // The ghost on the planks below him keeps its feet clear of the bars on a wide phone (PR #242's audit).
+        { at: 8.2, x: 43.0, y: 0.8, height: 6.2, width: 9.5, move: 0.9 },
       ],
       actors: {
         pappa: [

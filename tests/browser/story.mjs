@@ -270,7 +270,7 @@ try {
   if (!filter || filter === 'carving') {
     console.log('story: carving safely with Pappa');
     const { page, state, finish } = await open('carving', { hasTouch: true }, '?dev&debug&standin&tier=low&course=epilog', () => {
-      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife', 'beat:partyThanks:mamma', 'beat:partyThanks:pappa', 'beat:partyThanks:moa', 'beat:partyThanks:bertil', 'beat:partyThanks:spoket', 'beat:klonk', 'beat:named', 'beat:away'] }, playMs: 0 }));
+      localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 1, candy: {}, placed: {}, flags: { epilog: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket', 'partied', 'knife', 'knife:pappa', 'beat:partyThanks:mamma', 'beat:partyThanks:pappa', 'beat:partyThanks:moa', 'beat:partyThanks:bertil', 'beat:partyThanks:spoket', 'beat:klonk', 'beat:named', 'beat:away'] }, playMs: 0 }));
     });
     await reach(page, 'carve', 'the wood becomes reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');

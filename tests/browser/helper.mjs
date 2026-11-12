@@ -111,7 +111,7 @@ try {
     console.log(`  draws ${name}: ${visit.drawCalls}/${middle.drawCalls}/${calm.drawCalls}`);
     await page.close();
   }
-  for (const [course, at, flags, ghost] of process.env.HELPER_CASE ? [] : [['garden', '60,0.01', 'ladybird', true], ['granskog', '36,0.01', 'berry', false]]) {
+  for (const [course, at, flags, ghost] of process.env.HELPER_CASE ? [] : [['garden', '60,0.01', 'ladybird', true], ['granskog', '35,0.01', 'berry', false]]) {
     const page = await browser.newPage({ viewport: { width: 844, height: 390 }, hasTouch: true });
     await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=${course}&at=${at}&flags=${flags}`);
     await page.waitForFunction(() => window.__godis?.info().models.includes('boot/big-candy'));
@@ -165,7 +165,7 @@ try {
   if (!process.env.HELPER_CASE) {
     // With keys, the on-screen controls are hidden: what E will do shows as a prompt, and the knock rings it too.
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=granskog&at=36,0.01&flags=berry`);
+    await page.goto(`${origin}/spokets-godisbus/?dev&debug&standin&tier=low&course=granskog&at=35,0.01&flags=berry`);
     await page.waitForFunction(() => window.__godis?.info().models.includes('boot/jay'));
     // A key is a moment, used by the next step: wait until the game is stepping before pressing one.
     await page.waitForFunction(() => window.__godis.state().steps >= 60, null, { timeout: 60000 });

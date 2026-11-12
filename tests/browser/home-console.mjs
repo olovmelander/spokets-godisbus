@@ -176,6 +176,8 @@ try {
 
   if (cases.has('save')) {
   const saved = await open('epilog', {}, async () => {}, true);
+  // Pappa walks over and kneels beside him first (`knife:pappa`, 4.5 s of play), then the carving is offered.
+  await until(saved.state, s => s.word === 'carve', 'Berättelsens täljning erbjuds när pappa är framme', 120000);
   check('Berättelsens täljning behåller den vanliga användknappen', (await saved.state()).word === 'carve' && await saved.page.locator('#homeConsolePlay').isVisible());
   const beforeSave = await saved.page.evaluate(() => localStorage.getItem('godisbus.v1.player.elof'));
   const savedFrozen = await enter(saved, 'choice'); await frames(saved.page, 6); await closeAndCheck(saved, savedFrozen, 'Sparad berättelse');
