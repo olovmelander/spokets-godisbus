@@ -185,6 +185,16 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
       expect(hose.top - heightAt(stormgard, ditch.from - 0.5)).toBeLessThan(FALL_LIMIT);
     });
 
+    it('speaks of the ditch at the barrel\'s foot, where the picture looks on past the barrel to it', () => {
+      // The camera began to look ahead only at 78: at 77 he spoke of a ditch no one could see. Said on the barrel's top,
+      // the tap's held moment waited for the words, and a child who turned it at once had no water for five seconds.
+      const beat = stormgard.beats!.find((one) => one.id === 'sg:ditch')!;
+      expect(beat.at!).toBeLessThan(hose.x);
+      const zone = stormgard.cameras!.find((one) => one.from <= beat.at! && one.to >= beat.at! && one.lead !== undefined)!;
+      expect(zone.lead!).toBeGreaterThan(3);
+      expect(beat.at! + zone.lead!).toBeGreaterThan(hose.x);
+    });
+
     it('before the tap a running jump over the ditch ends in the glitter bubble, back on the near side', () => {
       const sim = new Sim(stormgard, {}, { checkpoint: 2 });
       run(sim, 0.5);

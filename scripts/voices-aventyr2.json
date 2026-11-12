@@ -21,27 +21,6 @@
     "text": "Den jag täljde! Och din allra första."
   },
   {
-    "key": "skTrail",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormkvall",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Godis! Gamla trägubben lämnar spår!"
-  },
-  {
-    "key": "skHandful",
-    "speaker": "moa",
-    "situation": "Äventyr 2, stormkvall",
-    "tag": "[warm big sister, lively]",
-    "text": "Jag såg honom ta en näve ur skålen!"
-  },
-  {
-    "key": "skEnough",
-    "speaker": "bertil",
-    "situation": "Äventyr 2, stormkvall",
-    "tag": "[cheerful older brother, excited]",
-    "text": "Räcker godiset hela vägen?"
-  },
-  {
     "key": "skDollCoat",
     "speaker": "elof",
     "situation": "Äventyr 2, stormkvall",
@@ -215,6 +194,27 @@
     "situation": "Äventyr 2, stormkvall",
     "tag": "[warm big sister, lively]",
     "text": "Och jag tar mitt paraply!"
+  },
+  {
+    "key": "skTrail",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Godis! Gamla trägubben lämnar spår!"
+  },
+  {
+    "key": "skHandful",
+    "speaker": "moa",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[warm big sister, lively]",
+    "text": "Jag såg honom ta en näve ur skålen!"
+  },
+  {
+    "key": "skEnough",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Räcker godiset hela vägen?"
   },
   {
     "key": "skCoatFits",
