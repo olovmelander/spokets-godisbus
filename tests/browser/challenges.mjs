@@ -173,12 +173,14 @@ try {
         check(`${name}: player framed`, start.playerScreen && start.playerScreen.x > 30 && start.playerScreen.x < viewport.width - 30 && start.playerScreen.y > 35 && start.playerScreen.y < viewport.height - 30);
         for (const step of [1, 2, 3]) {
           // Spawning at the prize queues thanks, the memory response and the return clue. Their backlog
-          // legitimately holds controls even before a manual reading stop; ask only after they release it.
+          // legitimately holds controls even before a manual reading stop; ask only after they release it. The thanks is
+          // a held scene at the cliff's top since the fine-tuning (`berget:tack`), several seconds of play, which software
+          // drawing on GitHub runs at a fraction of real time: give it a minute on the clock.
           await until(async () => {
             const current = await state();
             if (current.storyReading) await continueDialogue(page);
             return current;
-          }, s => !s.held && !s.storyReading, `${name}: story releases helper controls`);
+          }, s => !s.held && !s.storyReading, `${name}: story releases helper controls`, 60000);
           await page.keyboard.press('h');
           await until(state, s => s.help.step === step, `${name}: hint ${step}`);
         }

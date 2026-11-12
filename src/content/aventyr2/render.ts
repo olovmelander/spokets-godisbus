@@ -34,7 +34,8 @@ import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { otterLife } from './otter';
 import { RAPID_LANE, RAPID_STONES, riverStones } from './river-stones';
-import { morgonen, WINK } from './chapters/morgonen';
+import { DOOR, morgonen, WINK } from './chapters/morgonen';
+import { frontDoor } from '../../render/front-door';
 import { paintedBlink } from '../../render/epilogue-stage';
 import type { SceneFrame } from '../../sim/scene';
 import { PENDANT } from './chapters/stormkvall';
@@ -43,6 +44,9 @@ import { CANDLES_LIT, POWER_CHAPTER } from '../home-power';
 import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { jettyWavesExtra } from '../../render/jetty-waves';
+import { teamBenchesExtra } from './team-benches';
+import { hazelExtra } from './hazel';
+import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -937,7 +941,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         } else if (carrying && landedAt >= 0) {
           const k = still ? 1 : (clock - landedAt) / 1.8;
           if (k < 1) {
-            ridden.position.set(setDown.x + k * 6 + k * k * 4, setDown.y + k * 1.2 + k * k * 8, setDown.z);
+            // It goes off behind him (Stormens öga, Älven; 12 November 2026): from where it set him down, its spread wings
+            // covered him on the stone as it rose.
+            ridden.position.set(setDown.x + k * 6 + k * k * 4, setDown.y + k * 1.2 + k * k * 8, setDown.z - 1.4 * smooth(k * 5) - 2 * k);
             ridden.rotation.z = 0.3 * smooth(k * 3);
             ridden.scale.setScalar(1);
           }
@@ -2075,25 +2081,18 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       };
     },
     flashlight: (spot) => {
+      // Stormkvällen's flashlight, lying switched off on the table: Pappa can't find it in the dark ("Var är ficklampan?
+      // Jag ser ingenting!"), and Elof lights it as he takes it (../../render/view.ts, `carriedLamp`). It lay there
+      // shining a long beam across the room, before the power cut too. Its red body and pale glass catch the candle.
       const group = new Group();
       const body = new Mesh(new CylinderGeometry(0.09, 0.09, 0.6, 10), solid('#c8372a', 0.5));
       body.rotation.z = Math.PI / 2;
       const head = new Mesh(new CylinderGeometry(0.15, 0.1, 0.18, 12), solid('#2a2a2a', 0.4));
       head.rotation.z = Math.PI / 2;
       head.position.x = 0.38;
-      // Its beam fades away from the lamp, and has no end to see.
-      const long = 7;
-      const cone = new ConeGeometry(1.5, long, 18, 5, true).rotateZ(Math.PI / 2).translate(long / 2 + 0.46, 0, 0);
-      const place = cone.getAttribute('position');
-      const fade = new Float32Array(place.count * 3);
-      // Clamped: at the cone's far ring a float32 rounds a hair past the end, and a negative base to 1.6 is NaN, which the
-      // lens smears into a black blob in the room.
-      for (let i = 0; i < place.count; i++) fade.fill(Math.max(0, 1 - (place.getX(i) - 0.46) / long) ** 1.6, i * 3, i * 3 + 3);
-      cone.setAttribute('color', new Float32BufferAttribute(fade, 3));
-      const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.2, depthWrite: false, side: DoubleSide, blending: AdditiveBlending }));
-      const light = glow('#fff0c0', 1.2, 0.9);
-      light.position.x = 0.48;
-      group.add(body, head, beam, light);
+      const glass = new Mesh(new CircleGeometry(0.13, 14).rotateY(Math.PI / 2), new MeshStandardMaterial({ color: '#dfe6ea', roughness: 0.15, metalness: 0.3 }));
+      glass.position.x = 0.475;
+      group.add(body, head, glass);
       return standing(spot, group);
     },
     'tiny-cap': (spot) => {
@@ -2141,7 +2140,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     casement: (spot) => casement(spot),
     latch: (spot) => latch(spot),
-    football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
+    // `word: 'bag'`: Olympia's torn ball bag with the small balls in it (./ball-bag.ts).
+    football: (spot) => standing(spot, spot.word === 'bag' ? ballBag() : (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
     whiteWater: (spot) => {
       // The rapids: wet boulders the river breaks over, worn round (./river-stones.ts), behind the lane the raft
       // goes down; and standing waves of white water that heave and never go, breaking white against the stones.
@@ -2548,6 +2548,8 @@ function aftermath(): SpotProp {
   // The sofa, the lamp, the plant, the rug and Moa's drawings where they were on the evening of the storm; the blanket
   // pulled half off the sofa now.
   group.add(roomThings({ rug: HOME_LAYOUT.dining.x, blanket: true }));
+  // The front door past the coats, where the morning ends (../../render/front-door.ts).
+  group.add(frontDoor(DOOR));
   // The pool they stand in: flat, and giving back the room's light.
   const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(39.1, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
@@ -2627,8 +2629,9 @@ function breakfast(spot: Spot): SpotProp {
   const group = new Group();
   group.position.set(spot.at.x, spot.at.y, -1.5);
   const parts: BufferGeometry[] = [];
-  // The thermos: a tall green flask with its cup screwed on as a lid, a steel band, and a handle on its side.
-  const THERMOS = { x: -1.55, z: -0.05 };
+  // The thermos: a tall green flask with its cup screwed on as a lid, a steel band, and a handle on its side. At the
+  // table's far end, where mormor stands by it (../chapters/morgonen.ts, MORMOR).
+  const THERMOS = { x: 1.35, z: -0.5 };
   const flask: (readonly [number, number])[] = [[0.001, 0], [0.15, 0], [0.165, 0.04], [0.165, 0.5], [0.14, 0.56], [0.1, 0.6], [0.001, 0.6]];
   parts.push(paint(new LatheGeometry(flask.map(([r, y]) => new Vector2(r, y)), 14).translate(THERMOS.x, 0, THERMOS.z), '#4f7f62'));
   parts.push(paint(new CylinderGeometry(0.168, 0.168, 0.05, 14).translate(THERMOS.x, 0.47, THERMOS.z), '#a9afb3'));
@@ -2648,10 +2651,10 @@ function breakfast(spot: Spot): SpotProp {
   const table = new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }));
   parts.forEach((part) => part.dispose());
   group.add(table);
-  // Mormor's lantern from the night, put out, at the table's back corner.
+  // Mormor's lantern from the night, put out, at the table's far back corner, by her.
   const out = lantern();
   out.light.visible = false;
-  out.group.position.set(-2.05, 0.78, -0.72);
+  out.group.position.set(1.95, 0.78, -0.8);
   group.add(out.group);
   // The steam over each cup: two soft puffs curling up, in one draw.
   const steam = new InstancedMesh(new SphereGeometry(0.06, 8, 6), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.2, depthWrite: false }), CUPS.length * 2);
@@ -2770,7 +2773,16 @@ function waterSplash(size: number) {
     return { vx: Math.cos(a) * (0.8 + 0.8 * ((i * 0.37) % 1)) * size, vz: Math.sin(a) * 0.5 * size, vy: (2.4 + 1.8 * ((i * 0.61) % 1)) * size };
   });
   const place = new Object3D();
-  const crown = new Mesh(new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true).translate(0, 0.21 * size, 0), white.clone());
+  // The crown's top is ragged, every other point thrown up and out: an even band read as a white card from a low eye
+  // (Flärken's plopp, finetune pass of 12 November 2026).
+  const band = new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true);
+  const rim = band.getAttribute('position');
+  for (let i = 0; i <= 20; i++) {
+    const spike = i % 2 === 0 ? 1.3 : 0.25;
+    rim.setXYZ(i, rim.getX(i) * (1 + 0.25 * spike), 0.21 * size * spike, rim.getZ(i) * (1 + 0.25 * spike));
+  }
+  band.computeVertexNormals();
+  const crown = new Mesh(band.translate(0, 0.21 * size, 0), white.clone());
   group.add(crown);
   const rings = [0, 0.3, 0.65].map((delay) => {
     const mesh = new Mesh(new RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2), white.clone());
@@ -3184,6 +3196,10 @@ export function installPictures(): void {
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
   // The waves over a jetty where its gusts blow (Flärken; ../../render/jetty-waves.ts).
   if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
+  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts).
+  if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
+  // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
+  if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

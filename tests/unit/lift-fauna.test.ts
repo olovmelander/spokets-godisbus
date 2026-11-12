@@ -1,5 +1,5 @@
 import {
-  Color, DirectionalLight, Group, HemisphereLight, InstancedMesh, Matrix4, Mesh, PerspectiveCamera, Scene, Vector3, type BufferAttribute,
+  Color, DirectionalLight, Group, HemisphereLight, InstancedMesh, Matrix4, Mesh, PerspectiveCamera, Raycaster, Scene, Vector3, type BufferAttribute,
 } from 'three';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ADVENTURE2, BONUS, COURSES, STORY, loadAdventure2 } from '../../src/content/chapters';
@@ -243,6 +243,59 @@ describe('the near life', () => {
       for (const c of plan.carvings) away([c.at[0], c.at[1] + 0.2, c.at[2]], 2.5, 'carving');
       for (const s of plan.squirrels) expect(s.tree.z).toBeLessThan(-2.5);
       for (const p of plan.props) expect(p[2][2], `${chapter.id} prop`).toBeLessThan(-0.8);
+    }
+  });
+
+  it("has Pappa's hidden carvings in every chapter that hides one, each of its kind where it was found", () => {
+    // [chapter, kind, x, depth]: Myren's is new, and Granskogen's nisse peeks out beside the nest tree (Olov, 12 November
+    // 2026); the others are where they have always been. A rule change that turns the bird into a hare fails here.
+    const CARVINGS: [string, string, number, number][] = [
+      ['garden', 'bird', 197.4, -3.35], ['granskog', 'bird', 29.0, -2.92], ['granskog', 'nisse', 138.0, -2.89], ['myren', 'bird', 144.3, -2.87],
+      ['berget', 'hare', 21.0, -2.91], ['stormskog', 'bird', 117.1, -3.16], ['flarken', 'hare', -8.75, -2.3], ['alven', 'hare', 201.9, -2.98],
+      ['billsta', 'nisse', -21.8, -3.52], ['look-forest', 'bird', 35.9, -2.87],
+    ];
+    for (const chapter of chapters) {
+      const want = CARVINGS.filter(([id]) => id === chapter.id);
+      const plan = built.get(chapter.id)!.plan;
+      expect((plan?.carvings ?? []).map((c) => [c.shape, +c.at[0].toFixed(1), +c.at[2].toFixed(2)]), chapter.id)
+        .toEqual(want.map(([, shape, x, z]) => [shape, +x.toFixed(1), z]));
+    }
+  });
+
+  it("stands Myren's carving on its dry ground, behind the path and by no big candy", () => {
+    const myren = chapters.find((c) => c.id === 'myren')!;
+    const [carving] = built.get('myren')!.plan!.carvings;
+    const [x, y, z] = carving!.at;
+    // Not over the bog's water, nor down in a pit: on the clearing's level moss.
+    for (const w of myren.water ?? []) expect(x < w.from - 1 || x > w.to + 1, `water ${w.from}`).toBe(true);
+    const ground = (at: number) => myren.ground.find((p, i) => at >= p.x && at <= (myren.ground[i + 1]?.x ?? Infinity))!.y;
+    for (const dx of [-0.8, 0, 0.8]) expect(ground(x + dx)).toBe(0);
+    expect(z).toBeLessThan(-2);
+    expect(z).toBeGreaterThan(-3.2);
+    // On its stone, which stands on the moss as the dressing draws it there, well above the water.
+    expect(y).toBeGreaterThan(0.4);
+    const scene = built.get('myren')!.scene;
+    scene.updateMatrixWorld(true);
+    const moss = new Raycaster(new Vector3(x, 5, z), new Vector3(0, -1, 0), 0, 8).intersectObject(scene.children[0]!, true)[0];
+    expect(moss).toBeDefined();
+    expect(moss!.point.y).toBeGreaterThan(-0.3);
+    for (const c of myren.checkpoints ?? []) expect(Math.abs(c.x - x), `big candy at ${c.x}`).toBeGreaterThan(1.8);
+  });
+
+  it("lets Granskogen's nisse peek out beside the nest tree, clear of its stems from the path", () => {
+    const granskog = chapters.find((c) => c.id === 'granskog')!;
+    const nisse = built.get('granskog')!.plan!.carvings.find((c) => c.shape === 'nisse')!;
+    const nest = granskog.ledges!.find((l) => l.look === 'nest')!;
+    expect(Math.abs(nisse.at[0] - nest.x)).toBeLessThan(2.5);
+    // The stems that hold the bark shelves and the nest (src/render/ledges.ts), and his eye in front of the nisse as he
+    // comes along the log: none of them is between.
+    const stems = granskog.ledges!.filter((l) => l.look === 'bark' || l.look === 'nest').map((l) => ({ x: l.x, z: l.look === 'nest' ? -1.12 : -0.86, r: 0.33 }));
+    for (const eye of [nisse.at[0] - 2, nisse.at[0]]) {
+      for (const s of stems) {
+        const k = (11 - nisse.at[2]) / (11 - s.z);
+        const near = eye + (s.x + s.r - eye) * k, far = eye + (s.x - s.r - eye) * k;
+        expect(near < nisse.at[0] - 0.2 || far > nisse.at[0] + 0.2, `stem at ${s.x} from ${eye}`).toBe(true);
+      }
     }
   });
 

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { PerspectiveCamera, Vector3 } from 'three';
 import { Game } from '../../src/app/game';
 import '../../src/content/aventyr2/aventyr2';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
 import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { morgonen } from '../../src/content/aventyr2/chapters/morgonen';
+import { storyContext } from '../../src/content/story-context';
 import { endsInScene } from '../../src/sim/scene';
 import { groundAlong } from '../../src/sim/sim';
 import { listenThrough } from './listener';
@@ -51,6 +53,72 @@ describe('Äventyr 2: Stormkvällen', () => {
     expect(flags.indexOf('star:out')).toBeLessThan(flags.indexOf('star'));
   });
 
+  it('finds the trail with Moa and Bertil, standing, so that the doll\'s line is said at the doll and its scene is short', () => {
+    // The final fine-tuning (12 November 2026): said in passing, Moa's and Bertil's answers about the trail were read
+    // while he ran to the doll, its line came 14 s late (or out on the deck), and the coat's scene stood for their words.
+    const spar = stormkvall.scenes!.find((scene) => scene.id === 'spar')!;
+    expect(spar.hold).toBe(true);
+    expect(spar.lines!.map((line) => [line.who, line.id])).toEqual([['elof', 'skTrail'], ['moa', 'skHandful'], ['bertil', 'skEnough']]);
+    // He stands clear of the first big candy's lollipop, and none of the trail's big candies stands in the coat's picture.
+    const first = stormkvall.checkpoints![0]!.x;
+    expect(spar.at! - first).toBeGreaterThan(0.6);
+    const coat = stormkvall.scenes!.find((scene) => scene.id === 'regnrock')!.stage!.shots![0]!;
+    for (const big of stormkvall.checkpoints!) expect(Math.abs(big.x - coat.x!), `big candy at ${big.x}`).toBeGreaterThan(coat.width! / 2 + 0.6);
+    const result = listenThrough(stormkvall, {}, 60, 900);
+    expect(result.goal).toBe(true);
+    const doll = result.heard.find((one) => one.id === 'skDoll')!;
+    expect(doll.shown).not.toBeNull();
+    expect(doll.shown! - doll.due).toBeLessThan(1);
+    // Nothing but his own words is said while the coat goes on: Moa and Bertil setting off after him (`foljer`) say
+    // nothing.
+    const coatAt = result.scenes.findIndex((one) => one.id === 'regnrock');
+    expect(result.scenes.slice(coatAt - 2, coatAt).map((one) => one.id)).toEqual(['spar', 'foljer']);
+    expect(stormkvall.scenes!.find((scene) => scene.id === 'foljer')!.lines).toBeUndefined();
+  });
+
+  it('has the whole family kneel and crouch along the deck where the promises are said, and he waves back to them', () => {
+    // Olov, 12 November 2026: "Moa och Bertil får gärna hänga med på altanen." Mamma, Moa, Bertil and Pappa, a place each.
+    const lofte = stormkvall.scenes!.find((scene) => scene.id === 'lofte')!;
+    const keys = (who: 'mamma' | 'pappa' | 'moa' | 'bertil') => lofte.stage!.actors![who]!;
+    const placed = (who: 'mamma' | 'pappa' | 'moa' | 'bertil') => keys(who).filter((key) => key.x !== undefined).at(-1)!;
+    for (const [who, beat] of [['mamma', 'skNear'], ['pappa', 'skFollow']] as const) {
+      const at = stormkvall.beats!.find((one) => one.id === beat)!.at!;
+      expect(Math.abs(placed(who).x! - at), who).toBeLessThan(1.5);
+      expect(keys(who).some((key) => key.act === 'kneel'), who).toBe(true);
+      // On the deck, out of the picture while he is at the door sill where they come out.
+      expect(keys(who)[0]!.y).toBe(-0.8);
+      expect(keys(who)[0]!.x! - lofte.from!).toBeGreaterThan(10);
+    }
+    // Moa and Bertil crouch between them, in the first adventure's order, and none of the four on the line he walks.
+    const along = (['mamma', 'moa', 'bertil', 'pappa'] as const).map((who) => placed(who).x!);
+    expect(along).toEqual([...along].sort((a, b) => a - b));
+    for (const who of ['moa', 'bertil'] as const) {
+      expect(keys(who).at(-1)!.act, who).toBe('crouch');
+      expect(placed(who).y, who).toBe(-0.8);
+    }
+    for (const who of ['mamma', 'pappa', 'moa', 'bertil'] as const) expect(placed(who).z!, who).toBeLessThan(-2);
+    // At the deck's edge he turns and waves to where they kneel and crouch.
+    const wave = stormkvall.scenes!.find((scene) => scene.id === 'stormtitel')!.stage!.elof!.find((key) => key.act === 'wave')!;
+    expect(wave.aim!.x).toBeGreaterThan(placed('mamma').x!);
+    expect(wave.aim!.x).toBeLessThan(placed('pappa').x!);
+    // A game taken up at the veranda's or the deck's big candy has them all there at once, and Moa and Bertil no
+    // longer walking after him across the room.
+    const flags = ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans', 'scene:spar'];
+    for (const checkpoint of [2, 3]) {
+      const game = new Game(stormkvall, {}, { checkpoint, flags });
+      expect(game.sim.flags.has('scene:lofte'), `big candy ${checkpoint}`).toBe(true);
+      expect(game.sim.flags.has('scene:foljer'), `big candy ${checkpoint}`).toBe(true);
+      for (let frame = 0; frame < 60 * 2; frame++) game.frame(1 / 60, { x: 0, hopHeld: false }, { hop: false, act: false, helper: false });
+      expect(game.sim.sceneFrame, `big candy ${checkpoint}`).toBeNull();
+    }
+    // Taken up at the table's end, they set off after him again from where the trail was found, and go out with him.
+    const table = new Game(stormkvall, {}, { checkpoint: 1, flags });
+    expect(table.sim.flags.has('scene:foljer')).toBe(false);
+    for (let frame = 0; frame < 60 * 60 && !table.sim.flags.has('scene:lofte'); frame++) table.frame(1 / 60, { x: 1, hopHeld: true }, { hop: frame % 50 === 0, act: false, helper: false });
+    expect(table.sim.flags.has('scene:foljer')).toBe(true);
+    expect(table.sim.flags.has('scene:lofte')).toBe(true);
+  });
+
   it('resumes after the shrinking on the floor, small, and still has its trail', () => {
     const game = new Game(stormkvall, {}, { checkpoint: 1, flags: ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:tillsammans'] });
     expect(game.sim.curr.x).toBe(stormkvall.checkpoints![1]!.x);
@@ -88,6 +156,17 @@ describe('Äventyr 2: Stormens öga', () => {
     const result = playThrough(60, stormoga, {}, 300);
     const ordered = ['lampa:bertil:0', 'lampa:bertil:1', 'soOwlThanks', 'oga:0'];
     expect(result.said.filter(id => ordered.includes(id))).toEqual(ordered);
+  });
+
+  it('says the storm has quietened only once its eye has opened: set down on the stone, it still blows', () => {
+    const owl = stormoga.rides!.find(ride => ride.id === 'owl')!;
+    const landed = storyContext('stormoga', new Set(['owl:call', 'owl:ready', 'owl']), owl.to);
+    expect(landed?.purpose).toBe('Gå fram till trägubbarna.');
+    expect(landed?.recap).not.toMatch(/tystnade/);
+    expect(landed?.family).not.toMatch(/uggla/i);
+    const eye = storyContext('stormoga', new Set(['owl:call', 'owl:ready', 'owl', 'eye']), owl.to);
+    expect(eye?.purpose).toBe('Gå fram till trägubbarna.');
+    expect(eye?.recap).toMatch(/tystnade/);
   });
 
   it('walks up with the cap and gives it back before the golden sweet is offered', () => {
@@ -191,7 +270,10 @@ describe('Äventyr 2: Morgonen efter', () => {
     // Olov, 9 November 2026: "Hyllan med trägubbarna har bytt plats i huset. Den ska stå där den stod i Stormkvällen."
     expect(morgonen.shelf).toEqual(stormkvall.shelf);
     expect(morgonen.house!.windows).toEqual(expect.arrayContaining([...stormkvall.house!.windows]));
-    expect(morgonen.furniture).toEqual(stormkvall.furniture);
+    // And the step stool under the shelf, which the boy steps up on to put the two back: the evening's tiny Elof had none.
+    expect(morgonen.furniture!.filter((piece) => piece.look !== 'steps')).toEqual(stormkvall.furniture);
+    const stool = morgonen.furniture!.find((piece) => piece.look === 'steps')!;
+    expect(Math.abs(stool.at.x - (morgonen.shelf!.x - 3.25))).toBeLessThan(0.5);
     // The new latch is on the window the storm blew open, by the shelf.
     expect(morgonen.decor!.find((thing) => thing.look === 'latch')!.at.x).toBe(stormkvall.house!.opens);
   });
@@ -235,7 +317,52 @@ describe('Äventyr 2: Morgonen efter', () => {
     expect(result.flags).toEqual(expect.arrayContaining(['shelf:old', 'shelf:small', 'latch', 'beat:moName', 'cocoa']));
     const order = ['moOld', 'moSmall', 'moLatched', 'moFluff', 'moName', 'moNice', 'moWelcome', 'moKnew', 'moAnswer', 'moAll'];
     expect(result.said.filter((id) => order.includes(id))).toEqual(order);
-    expect(morgonen.decor).toContainEqual(expect.objectContaining({ look: 'tiny-cap', word: 'home', after: 'shelf:small' }));
+    // Up on the shelf once his hand has put the little one there, from the stool (`hylla:small`).
+    expect(morgonen.decor).toContainEqual(expect.objectContaining({ look: 'tiny-cap', word: 'home', after: 'mo:small-up' }));
+  });
+
+  it('puts each figure up from the stool: it stands on the shelf once his hand is there, and he speaks to it there', () => {
+    for (const [scene, spot, beat] of [['hylla:old', 'shelf:old', 'moOld'], ['hylla:small', 'shelf:small', 'moSmall']] as const) {
+      const def = morgonen.scenes!.find((one) => one.id === scene)!;
+      const up = def.cues![0]!;
+      const reach = def.stage!.elof!.find((key) => key.act === 'reach')!;
+      const onStool = def.stage!.elof!.find((key) => key.to?.y !== undefined && key.to.y > 1)!;
+      expect(onStool.at + (onStool.move ?? 0.6), scene).toBeLessThanOrEqual(reach.at);
+      expect(reach.at, scene).toBeLessThan(up.at);
+      expect(morgonen.beats!.find((one) => one.id === beat)!.needs, scene).toBe(up.flag);
+      // What stands on the shelf from then on.
+      expect(morgonen.decor!.some((thing) => thing.after === up.flag), scene).toBe(true);
+      // A game saved with the figure put up before there was a stool has it on the shelf.
+      const game = new Game(morgonen, {}, { checkpoint: 1, flags: ['scene:frukost', spot, `beat:${beat}`] });
+      game.frame(1 / 60, { x: 0, hopHeld: false }, { hop: false, act: false, helper: false });
+      expect(game.sim.flags.has(up.flag), scene).toBe(true);
+    }
+  });
+
+  it('keeps mormor out of the close picture of the new latch, out of his way to it, and in the breakfast picture', () => {
+    // She stood in front of the window, at the table's front corner: her face filled a third of the latch's picture.
+    const close = morgonen.scenes!.find((one) => one.id === 'haken')!.stage!.shots!.find((shot) => shot.width! < 4)!;
+    const mormor = morgonen.decor!.find((thing) => thing.look === 'mormorHome')!;
+    for (const aspect of [390 / 844, 844 / 390, 780 / 360, 1180 / 820, 1440 / 900, 1280 / 720]) {
+      const camera = new PerspectiveCamera(30, aspect, 0.1, 140);
+      const height = Math.max(close.height!, close.width! / aspect);
+      camera.position.set(close.x!, close.y!, close.z! + height / 2 / Math.tan(Math.PI / 12));
+      camera.lookAt(close.x!, close.y!, close.z!);
+      camera.updateMatrixWorld();
+      // Her head and shoulders: none of it in the picture.
+      for (const dx of [-0.5, 0.5]) for (const y of [3.6, 4.9]) {
+        const at = new Vector3(mormor.at.x + dx, y, mormor.z!).project(camera);
+        expect(Math.abs(at.x) > 1 || Math.abs(at.y) > 1, `${aspect.toFixed(2)}: ${dx}, ${y}`).toBe(true);
+      }
+    }
+    const latch = morgonen.spots!.find((spot) => spot.id === 'latch')!;
+    expect(Math.abs(mormor.at.x - latch.at.x) > 1.5 || mormor.z! < -2.5).toBe(true);
+    // Behind the table, not hidden behind Mamma or Bertil: at least a body's width from each, sideways.
+    const frukost = morgonen.scenes!.find((one) => one.id === 'frukost')!.stage!.actors!;
+    for (const who of ['mamma', 'bertil', 'pappa'] as const) {
+      const at = frukost[who]![0]!;
+      expect(Math.abs(at.x! - mormor.at.x), who).toBeGreaterThan(1.2);
+    }
   });
 
   it('does not end before the cocoa: walking past everything leaves him at the end of the room', () => {

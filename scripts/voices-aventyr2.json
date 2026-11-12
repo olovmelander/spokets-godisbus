@@ -21,27 +21,6 @@
     "text": "Den jag täljde! Och din allra första."
   },
   {
-    "key": "skTrail",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormkvall",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Godis! Gamla trägubben lämnar spår!"
-  },
-  {
-    "key": "skHandful",
-    "speaker": "moa",
-    "situation": "Äventyr 2, stormkvall",
-    "tag": "[warm big sister, lively]",
-    "text": "Jag såg honom ta en näve ur skålen!"
-  },
-  {
-    "key": "skEnough",
-    "speaker": "bertil",
-    "situation": "Äventyr 2, stormkvall",
-    "tag": "[cheerful older brother, excited]",
-    "text": "Räcker godiset hela vägen?"
-  },
-  {
     "key": "skDollCoat",
     "speaker": "elof",
     "situation": "Äventyr 2, stormkvall",
@@ -215,6 +194,27 @@
     "situation": "Äventyr 2, stormkvall",
     "tag": "[warm big sister, lively]",
     "text": "Och jag tar mitt paraply!"
+  },
+  {
+    "key": "skTrail",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Godis! Gamla trägubben lämnar spår!"
+  },
+  {
+    "key": "skHandful",
+    "speaker": "moa",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[warm big sister, lively]",
+    "text": "Jag såg honom ta en näve ur skålen!"
+  },
+  {
+    "key": "skEnough",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Räcker godiset hela vägen?"
   },
   {
     "key": "skCoatFits",
@@ -522,14 +522,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Där vandrar gamla trägubben ner!"
+    "text": "Där går gamla trägubben, ner mot byn!"
   },
   {
     "key": "ssVillage",
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Byn är alldeles mörk. Inte ett ljus."
+    "text": "Nu går vi ner till byn, Klonk!"
   },
   {
     "key": "ssOnward",
@@ -1068,7 +1068,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En barkflotte! Nu kan jag hoppa."
+    "text": "En barkflotte! Den håller för mig."
   },
   {
     "key": "sjOutlet",
@@ -1180,7 +1180,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bredbyn igen! Där borta är Olympia."
+    "text": "Bredbyn igen! Olympia ligger här nära."
   },
   {
     "key": "alRapids",
@@ -1236,7 +1236,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En utter! Den simmar ut mot stenen."
+    "text": "En utter! Plask, där dök den i sjön!"
   },
   {
     "key": "alLake",
@@ -1558,7 +1558,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "En hasselbuske full av nötter!"
+    "text": "Hyllor i berget! Där uppe finns godis."
   },
   {
     "key": "biWind",

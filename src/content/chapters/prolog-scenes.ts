@@ -153,7 +153,9 @@ export const PROLOG_SCENES: SceneDef[] = [
         { at: 0, x: 13.2, y: 3.5, z: -3.5, height: 7.4, width: 14, move: 1.3 },
         // After the spoken invitation the camera follows the unhurried walk to the rear wall.
         { at: 2.1, x: 13.2, y: 3.1, z: -2.5, height: 8.0, width: 14.5, move: 1.5 },
-        { at: 8.6, x: 10.8, y: 3.0, z: -5.5, height: 7.0, width: 10.5, move: 3.7 },
+        // From a little higher and to the left: level with the window, his big head stood in front of the family and
+        // the jay, out of focus, in the middle of the picture on a phone held sideways (12 November 2026).
+        { at: 8.6, x: 10.2, y: 3.0, z: -5.5, height: 7.0, width: 10.5, eye: 2.2, move: 3.7 },
         { at: 13.1, x: atTable(-0.8), y: 2.35, height: 3.1, width: 5.2, move: 1.0 },
         { at: 18.1, x: (EMPTY.x + CARVING.x) / 2, y: 4.1, height: 7.2, width: CARVING.x - EMPTY.x + 3, move: 1.1 },
         { at: 20.1, x: atTable(0.2), y: 2.5, height: 4.2, width: 7.2, move: 1.1 },
@@ -533,8 +535,9 @@ export const PROLOG_SCENES: SceneDef[] = [
       words: [{ at: 7.0, seconds: 4.2, kind: 'title', text: 'title' }],
       shots: [
         { at: 0, x: 52.2, y: -0.1, height: 2.9, width: 5.2, eye: -0.05, move: 0.8 },
-        // Down over the edge with it, to the lawn where it lands.
-        { at: 0.9, x: 55.0, y: -3.9, height: 7.8, width: 13, move: 1.8 },
+        // Down over the edge with it, to the lawn where it lands. Kept to the lawn's side of the deck's corner: at x 55
+        // half the picture was the dark under the boards on a phone held sideways (12 November 2026).
+        { at: 0.9, x: 60.2, y: -5.3, height: 6.2, width: 13, move: 1.8 },
         { at: 2.8, x: 51.2, y: 0.8, height: 5.6, width: 10, move: 1.2 },
         { at: 4.4, x: 56.5, y: 1.2, height: 15, width: 28, move: 2.6 },
       ],

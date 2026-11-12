@@ -9,7 +9,9 @@ import { buildBraid } from './braid';
 import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } from './myren-helper';
 import { createPaddle, type Paddle } from './paddle';
 import { createScarves } from './scarf';
-import { createUmbrellaCarry, handsOn, heldUp, holdAt, holdingOut, UMBRELLA } from './umbrella-hold';
+import { createHoldingOut, createUmbrellaCarry, handsOn, heldUp, holdAt, holdingOut, UMBRELLA } from './umbrella-hold';
+import { swayingBoughs } from './swaying-boughs';
+import { rootHollow } from './root-hollow';
 import { rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
@@ -136,6 +138,8 @@ const WAITS_READY = new Set(['boot', 'umbrella', 'raft', 'leaf']);
 /** How far a flying crane's body hangs under his feet (./crane.ts), and how long it takes to fly on once he is down. */
 const CRANE_BELLY = 1.05;
 const CRANE_AWAY = 1.8;
+/** How far under his feet a ridden football's bottom is (the pack's `football` ride: radius 0.8, its top under his soles). */
+const FOOTBALL_TOP = 1.64;
 const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -357,7 +361,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // and the one at the end.
   const endX = chapter.goalX + 0.6;
   const bigCandies = [
-    ...(chapter.checkpoints ?? []).map((at) => ({ x: at.x, y: at.y, z: -0.7, after: at.after })),
+    // (Or where the chapter stands it, out of the way of someone going by behind him: Checkpoint.z.)
+    ...(chapter.checkpoints ?? []).map((at) => ({ x: at.x, y: at.y, z: at.z ?? -0.7, after: at.after })),
     { x: endX, y: heightOfGroundAt(chapter, endX), z: 0, after: undefined },
   ].map((at) => {
     const place = buildCandy();
@@ -450,6 +455,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const rain = createRain(chapter);
   const cones = buildCones(chapter.rollers?.length ?? 0);
   scene.add(...moverMeshes, rain.group, cones.mesh);
+  // Stormskogen's swaying boughs: spruce boughs on young stems that lean as they swing (./swaying-boughs.ts).
+  const boughs = swayingBoughs(chapter, moverMeshes);
+  if (boughs) scene.add(boughs);
   // Drops thrown up at his feet as he runs and lands on wet ground, out in the storm (./foot-splash.ts).
   const footSplash = createFootSplash();
   const wetOutside = (chapter.storm?.rain ?? 0) > 0 && chapter.place !== 'home';
@@ -789,6 +797,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const family: Relative[] = [];
   if (chapter.id === 'myren') scene.add(mammaSteps());
   if (chapter.id === 'stormskog') scene.add(owlHollow());
+  // Stormskogen's dark hollow under the roots: a felled spruce's root plate behind the pit (./root-hollow.ts).
+  const hollow = rootHollow(chapter);
+  if (hollow) scene.add(hollow);
   /**
    * The rain gear and Bertil's own hair, made in Blender over each of the family's approved models (the private
    * repository's family/wardrobe.py): put on the model when it has come, if the private pack has it.
@@ -997,7 +1008,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const umbrellaCarry = umbrellaRide ? createUmbrellaCarry() : null;
   const umbrellaHand = new Vector3(), umbrellaHeld = new Vector3(), umbrellaAxis = new Vector3();
   const umbrellaLower = new Vector3(), umbrellaUpper = new Vector3();
-  let umbrellaCalled = -1;
+  /** How far down Moa is, holding it out to him at the wall's edge (./umbrella-hold.ts). */
+  const umbrellaOut = createHoldingOut();
   /** Her fist round the umbrella's crook (./fingers.ts). */
   const UMBRELLA_GRIP = { kind: 'power' as const, size: 0.05 };
   const creepTo = new Vector3();
@@ -1336,6 +1348,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const planeStart = waitingPlane ? chapter.rides?.find(ride => ride.id === 'plane')?.from : undefined;
     plane.position.set(planeStart?.x ?? x, (planeStart?.y ?? y) - 0.05, 0);
     plane.rotation.z = waitingPlane ? 0 : heading;
+    // Waiting (garden), it rests on the grass tops a little behind him, nose up and its folded back turned to the
+    // picture: flat on the ground it sank into the lawn under his boots, and only a sliver showed (12 November 2026).
+    if (waitingPlane) { plane.position.y += 0.4; plane.position.z = -0.45; plane.rotation.z = 0.12; }
+    plane.rotation.x = waitingPlane ? 0.5 : 0;
     for (const c of carriers) {
       if (!c.prop) continue;
       if (c === carrier) { c.wasRidden = true; c.landed = 0; }
@@ -1354,12 +1370,20 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // A crane sets him down and flies on, up and away: it shrank into the rock under him and was gone (PR #242's audit).
       const crane = c.ride.look === 'crane';
       const away = crane && c !== carrier && !calmStory && c.landed < CRANE_AWAY ? c.landed / CRANE_AWAY : -1;
-      const propSize = waiting || scored || away >= 0 ? 1 : c === carrier ? football || crane ? Math.min(1, curr.t / 0.05) : size : 0;
+      // (A ridden football lies on the ground at once, in the place of the one he climbs, so it is never grown from nothing.)
+      const propSize = waiting || scored || away >= 0 ? 1 : c === carrier ? football ? 1 : crane ? Math.min(1, curr.t / 0.05) : size : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
       c.prop.position.set(waiting ? c.ride.from.x : scored ? c.ride.to.x + rolling : x, (waiting ? c.ride.from.y : scored ? c.ride.to.y : y) - 0.05, scored ? -rolling : 0);
       // Coming down to the ground its body stays over it, and he steps down off its back; then it flies on from there.
       if (crane && c === carrier) c.prop.position.y = Math.max(c.prop.position.y, heightOfGroundAt(chapter, x) + CRANE_BELLY);
+      // Olympia's free kick (finetune pass, 12 November 2026): the ball lies on the turf as the ride sets off, just behind
+      // him as he hops up onto it, and comes under his feet as he rises. It sank into the turf under him before.
+      if (football && c === carrier) {
+        const ground = heightOfGroundAt(chapter, x);
+        c.prop.position.y = Math.max(c.prop.position.y, ground + FOOTBALL_TOP);
+        c.prop.position.z = -0.6 * (1 - smooth((y - ground) / FOOTBALL_TOP));
+      }
       // It rises away behind him, not through him where he has just stepped down.
       if (away >= 0) c.prop.position.set(c.setDown.x + away * 6 + away * away * 4, c.setDown.y + away * 1.2 + away * away * 7, -1.2 * smooth(Math.min(1, away * 4)) - away * 2);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
@@ -1433,7 +1457,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Out of her hand and up on the gust, fluttering by her where it is seen, then away back over the lawn to where
         // it lies under the shaving bridge (garden.ts, `garden:paper`).
         const lift = Math.min(1, k / 0.3), glide = Math.max(0, (k - 0.3) / 0.7);
-        blown.group.position.set(165.5 - 1.2 * lift - 23.2 * glide, 1.8 + 1.8 * lift - 5.4 * glide ** 1.5 + Math.sin(clock * 6) * 0.15 * (1 - glide), 0.3 * (1 - k));
+        // From her hand a step behind the path (garden.ts, the `moa` spot's `standsAt`), forward onto it as it goes.
+        blown.group.position.set(165.5 - 1.2 * lift - 23.2 * glide, 1.8 + 1.8 * lift - 5.4 * glide ** 1.5 + Math.sin(clock * 6) * 0.15 * (1 - glide), -0.8 * (1 - k));
         blown.group.rotation.set(Math.sin(clock * 3.1) * 0.7, Math.sin(clock * 2.3) * 0.5, clock * 4);
       }
     }
@@ -2117,11 +2142,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // lets go and straightens (Olov, 12 November 2026: it stood there by itself before; ./umbrella-hold.ts).
       const umbrellaUp = one.who === 'moa' && !!umbrellaRide && !!umbrellaBoard && !flags.has(umbrellaBoard.id);
       const umbrellaAsked = umbrellaUp && one.glad !== undefined && flags.has(one.glad);
-      if (!umbrellaAsked) umbrellaCalled = -1;
-      // A game taken up after the call: it is down already.
-      else if (umbrellaCalled < 0) umbrellaCalled = hasFrame ? clock : clock - 9;
-      const down = umbrellaAsked ? (calmStory ? 1 : smooth((clock - umbrellaCalled - 0.35) / 0.95)) : 0;
-      gesture.stoop = calmStory ? down : gesture.stoop + (down - gesture.stoop) * ease(6, dt);
+      // A game taken up after the call has her down from its first frame (./umbrella-hold.ts `createHoldingOut`).
+      const { down, stoop } = one.who === 'moa' ? umbrellaOut.update(umbrellaAsked, clock, dt, !hasFrame, calmStory) : { down: 0, stoop: 0 };
+      gesture.stoop = stoop;
       // Down in a crouch at the edge, to hold it out low to him (./umbrella-hold.ts).
       if (gesture.stoop > 0.001) holdingOut(posed, one.rig.legs, gesture.stoop);
       // Bertil kicks the ball Elof rides ("Upp på bollen! Jag skjuter, du flyger!"): turned to it, a wind-up, the
@@ -2199,6 +2222,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const holdsKlonk = frozenLedge && one.who === 'pappa' && chapter.storm?.frozen && flags.has(chapter.storm.frozen)
         && !(chapter.storm.wakes && flags.has(chapter.storm.wakes)) && x < frozenLedge.x + frozenLedge.width / 2 + 3;
       if (holdsKlonk) lampTo.set(frozenLedge.x, frozenLedge.y, 0);
+      // Woken beside him, Klonk is out of the light: "Nu lyser jag på stigen", at Elof's heels (Klonk stood in its cone).
+      else if (frozenLedge && one.who === 'pappa' && chapter.storm?.wakes && flags.has(chapter.storm.wakes) && x < frozenLedge.x + frozenLedge.width / 2 + 3) lampTo.set(x - 0.8, y + 0.1, 0);
       else lampTo.set(x, y + tall * .4, 0);
       const lampSide = familyLampSide(one.who, !!umbrellaRide), lampWeight = lampCarryWeight(gesture.pull);
       // What is said (./talk.ts): they look at whoever speaks, from where their face was a moment ago, and speak with their
@@ -2745,7 +2770,9 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
     const geometry = colour
       // A hummock: level where he stands, round at its shoulders, and wider and wider down into the water, as a
       // tussock of the bog is. It narrowed towards its foot, and from above (Mamma's shot) read as a bowl (6 November).
-      ? new LatheGeometry([[0, 0], [0.5, 0], [0.8, -0.05], [0.98, -0.18], [1.1, -0.42], [1.22, -0.8], [1.34, -1.3], [1.42, -1.8]].map(([r, y]) => new Vector2(r, y)), 26).scale(t.width / 2, 1, 1.5)
+      // Its outline goes up from its foot to its crown: the other way round, the lathe faced inward, and he saw only
+      // the inside of its far half, a hollow shell with the water through its front (12 November 2026).
+      ? new LatheGeometry([[0, 0], [0.5, 0], [0.8, -0.05], [0.98, -0.18], [1.1, -0.42], [1.22, -0.8], [1.34, -1.3], [1.42, -1.8]].reverse().map(([r, y]) => new Vector2(r, y)), 26).scale(t.width / 2, 1, 1.5)
       : new BoxGeometry(t.width, 1.6, 2.6);
     geometry.translate(0, colour ? 0 : -0.8, -0.6);
     if (colour) {

@@ -6,7 +6,7 @@ import type { Speaker, Verb } from '../sim/types';
 import { faceSvg } from './faces';
 import { verbIcon } from './verbs';
 import { candyRows } from './rolls';
-import { playingVoice, playVoice, stopVoice } from '../audio/voice-player';
+import { hasVoice, playingVoice, playVoice, stopVoice } from '../audio/voice-player';
 
 /**
  * What the page shows over the game while it is played: the candy bag in the corner (plan §4.3), the word
@@ -366,8 +366,8 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
       current = next;
       readFor = 0;
       left = readingTime(text) * reading();
-      // The speaker's wordless sound goes with the bubble.
-      spoke(next.who);
+      // The speaker's wordless sound goes with the bubble, where the line has no recording of its own.
+      if (!hasVoice(next.line)) spoke(next.who);
     },
     end(title, count, onAgain, onNext, closing, hidden, code, onwardWord, kicker) {
       if (ended) return;
@@ -386,6 +386,7 @@ export function createHud(doc: Document, total: number, ghostNamed: () => boolea
         byId('endFound').hidden = false;
       }
       byId('endCount').textContent = String(count);
+      byId('endCandy').textContent = count === 1 ? sv.end.candyOne : sv.end.candy;
       // In tens, each ten a roll, as on the chapter cards (plan §4.3).
       byId('endRows').innerHTML = candyRows(count);
       if (code) {

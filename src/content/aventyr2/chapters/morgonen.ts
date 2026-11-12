@@ -1,5 +1,5 @@
 import type { ChapterData } from '../../../sim/types';
-import type { SceneDef } from '../../../sim/scene';
+import type { Point, SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
 import { row } from '../kit';
 import { DOLL_Z } from '../../../render/elof-coat';
@@ -35,12 +35,17 @@ const LATCH = { x: WINDOW.x, y: 4.5, z: -8.78 };
 /** The table and its two chairs, as on the evening of the storm. It is 5 long and 2.2 deep (x 11.5 to 16.5, z -2.6 to -0.4). */
 const TABLE = HOME_LAYOUT.dining;
 const TABLE_TOP = 1.65;
-/** Where each of the family is at breakfast, clear of the table and its chairs. Mormor and morfar stand by. */
-const MAMMA = { x: 12.2, z: -3.4 };
+/**
+ * Where each of the family is at breakfast, clear of the table and its chairs. Mormor and morfar stand by: mormor behind
+ * the table's far end, by her thermos and lantern, between Bertil and Moa. She stood at its near front corner, in front of
+ * the window: in the close picture of the new latch her face filled a third of it, and he hooked the latch and named Fjun
+ * standing against her. Behind the table's near end she was hidden behind Mamma, and still in the latch's corner.
+ */
+const MAMMA = { x: 12.6, z: -3.45 };
 const BERTIL = { x: 14, z: -3.15 };
 const MOA = { x: TABLE.chairs.end.x - 0.395, z: TABLE.chairs.end.z };
 const PAPPA = { x: 18.4, z: -3 };
-const MORMOR = { x: 10.6, z: -1.3 };
+const MORMOR = { x: 16.2, z: -3.3 };
 const MORFAR = { x: 20.2, z: -1.2 };
 /** Pappa by the window when the latch is to be hooked, beside it, not in front of it. */
 const BY_WINDOW = { x: 7.1, z: -6.6 };
@@ -51,9 +56,11 @@ const COCOA = TABLE.x + 1.6;
 /**
  * Where he turns at the door, out into the morning, and the story ends: in the hall, past the wet raincoats, and past
  * the TV (Olov, 12 November 2026: "Under frukosten så ska man kunna gå förbi TV:n och spela innan äventyr två tar
- * slut"). At 27, before the TV, the end came before he could reach it.
+ * slut"). At 27, before the TV, the end came before he could reach it. The front door itself stands there on the back wall
+ * (../../../render/front-door.ts), just past the raincoats, and the hall's window beyond it: at 42.5 he stood before a bare
+ * wall, where the window at 46 left no room for a door.
  */
-const DOOR = 42.5;
+export const DOOR = 44.4;
 /** When the little one winks one eye on the shelf in the last scene, as at the end of the first adventure. */
 export const WINK = { scene: 'slut', at: 5.45, seconds: 0.55 } as const;
 
@@ -64,6 +71,18 @@ const FACE = {
   pappaWindow: { x: BY_WINDOW.x, y: 4.8, z: BY_WINDOW.z },
 };
 const ON_SHELF = { x: FIRST.x + 0.4, y: FIRST.y + 0.5, z: FIRST.z };
+/** The little one's place on the shelf, beside the old one's. */
+const SECOND = { x: FIRST.x + 0.7, y: FIRST.y, z: FIRST.z + 0.2 };
+/**
+ * The kitchen step stool under the shelf's first places, the one of the first adventure's epilogue (../../chapters/ends.ts,
+ * `STEP_STOOL`; src/render/stage.ts `steps`): the shelf is a grown-up's height, so he steps onto its tread and up onto
+ * its top to put each figure back, and the figure stands there once his hand is at its place (`OLD_UP`, `SMALL_UP`). He
+ * used to stand on the floor, two heads under the shelf, while each appeared over him; and from a plain stool his hands
+ * stopped short of the shelf.
+ */
+const STOOL = { x: FIRST.x + 0.35, z: -7.27, front: -6.2, tread: { y: 1.1, z: -6.99 }, top: { y: 2.2, z: -7.6 } };
+const OLD_UP = 'mo:old-up';
+const SMALL_UP = 'mo:small-up';
 /** His face, a boy's height: where he stands at the start, and at the door. */
 const ELOF_START = { x: 1, y: 2.6, z: 0 };
 const ELOF_DOOR = { x: DOOR, y: 2.6, z: 0 };
@@ -75,6 +94,31 @@ const AT_SHELF = 'mo:at-shelf';
 const CUP = 'mo:cup';
 /** Set a moment after the name is said: when the scene at the shelf is over, and the others answer. */
 const NAMED = 'mo:named';
+
+/**
+ * He puts a figure back on the shelf: to the stool, up onto it, his hand to its place (the figure stands there, `up`), and
+ * what he says to it, said there (the scene's clock waits for it); a nod, and down again to where he was. A boy who put
+ * the second one up at once had run to the window before "Och du bredvid." was said (docs/dialogue.md).
+ */
+const putUp = (id: string, on: string, beat: string, up: string, place: Point): SceneDef => ({
+  id, on, until: `beat:${beat}`, before: 6, seconds: 4.3, hold: true, dialogue: [beat],
+  cues: [{ at: 1.9, flag: up }],
+  stage: {
+    // Close by the wall: the shelf's first places, and him on the step stool under them, its top in the picture.
+    shots: [{ at: 0, x: STOOL.x, y: 4.1, z: -7, height: 6.4, width: 5.6, move: 0.8 }],
+    elof: [
+      { at: 0, face: 0.75, act: 'walk', to: { x: STOOL.x, y: 0, z: STOOL.front }, move: 0.8 },
+      { at: 0.8, act: 'stand', to: { x: STOOL.x, ...STOOL.tread }, move: 0.35 },
+      { at: 1.15, to: { x: STOOL.x, ...STOOL.top }, move: 0.35 },
+      { at: 1.5, act: 'reach', aim: { x: place.x, y: place.y + 0.25, z: place.z } },
+      { at: 2.3, act: 'nod', aim: { x: place.x, y: place.y + 0.5, z: place.z } },
+      { at: 2.7, face: 0.25, act: 'stand', to: { x: STOOL.x, ...STOOL.tread }, move: 0.35 },
+      { at: 3.05, to: { x: STOOL.x, y: 0, z: STOOL.front }, move: 0.35 },
+      { at: 3.4, act: 'walk', lift: { x: 0, y: 0, z: 0 }, move: 0.45 },
+      { at: 3.85, act: 'stand' },
+    ],
+  },
+});
 
 const SCENES: SceneDef[] = [
   {
@@ -175,10 +219,9 @@ const SCENES: SceneDef[] = [
       ],
     },
   },
-  // What he says to each figure as he puts it back, said while he stands at the shelf: a boy who put the second one up
-  // at once had run to the window before "Och du bredvid." was said (docs/dialogue.md).
-  { id: 'hylla:old', on: 'shelf:old', until: 'beat:moOld', before: 6, seconds: 0.4, hold: true, dialogue: ['moOld'] },
-  { id: 'hylla:small', on: 'shelf:small', until: 'beat:moSmall', before: 6, seconds: 0.4, hold: true, dialogue: ['moSmall'] },
+  // 2. Each figure back on the shelf, from the stool, and what he says to it there.
+  putUp('hylla:old', 'shelf:old', 'moOld', OLD_UP, FIRST),
+  putUp('hylla:small', 'shelf:small', 'moSmall', SMALL_UP, SECOND),
   {
     // With both figures back on the shelf, Pappa goes over to the window by it, with his cup, to see to his new latch.
     id: 'fonster',
@@ -294,7 +337,8 @@ const SCENES: SceneDef[] = [
     stage: {
       // The table and all of them round it, Pappa by the window; then down to him and Klonk for the last thanks.
       shots: [
-        { at: 0, x: 13.4, y: 3.9, height: 8, width: 16, move: 1 },
+        // There before his first words: the picture's clock waits at each line, and held it halfway.
+        { at: 0, x: 13.4, y: 3.9, height: 8, width: 16, move: 0.45 },
         // (Before Klonk's line: the scene's clock, and the picture with it, waits while each line is read.)
         { at: 6.1, x: COCOA + 0.8, y: 1.9, height: 4.8, width: 7, move: 1 },
       ],
@@ -386,11 +430,15 @@ export const morgonen: ChapterData = {
   ],
   surfaces: [{ from: -19, to: 62, kind: 'wood' }],
   // The windows of the evening of the storm, and on along the room; the first is the one it blew open, by the shelf.
-  house: { from: -40, to: 76, windows: [...HOME_LAYOUT.windows, 46] },
+  house: { from: -40, to: 76, windows: [...HOME_LAYOUT.windows, 52] },
   furniture: [
     { look: 'table', at: { x: TABLE.x, y: 0 }, z: TABLE.z },
     ...Object.values(TABLE.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
+    // The step stool under the shelf, for putting the two figures back.
+    { look: 'steps', at: { x: STOOL.x, y: 0 }, z: STOOL.z },
   ],
+  // A game saved before the figures went up from the stool had them on the shelf once he had put them there.
+  sets: [{ flag: OLD_UP, when: ['shelf:old', 'scene:hylla:old'] }, { flag: SMALL_UP, when: ['shelf:small', 'scene:hylla:small'] }],
   // Each between two of the trail's sweets, not with one at its foot. The first is halfway between the shelf's two places,
   // so that neither of the buttons offered there is drawn over its sweet, and a game taken up at it starts by the shelf.
   checkpoints: [{ x: 4.2, y: 0 }, { x: 12, y: 0 }, { x: 22, y: 0 }],
@@ -409,9 +457,9 @@ export const morgonen: ChapterData = {
     // Breakfast on the table: mormor's thermos of hot chocolate, a cup for each, buns, her lantern put out.
     { look: 'breakfast', at: { x: TABLE.x, y: TABLE_TOP }, z: TABLE.z },
     // The two back on the shelf, first in the row: placed by his own hands. The little one is glad to be home.
-    { look: 'tragubbe', at: { x: FIRST.x, y: FIRST.y }, z: FIRST.z, after: 'shelf:old' },
-    { look: 'lillgubbe', word: 'home', at: { x: FIRST.x + 0.7, y: FIRST.y }, z: FIRST.z + 0.2, after: 'shelf:small' },
-    { look: 'tiny-cap', word: 'home', at: { x: FIRST.x + 0.7, y: FIRST.y + 0.48 }, z: FIRST.z + 0.2, after: 'shelf:small' },
+    { look: 'tragubbe', at: { x: FIRST.x, y: FIRST.y }, z: FIRST.z, after: OLD_UP },
+    { look: 'lillgubbe', word: 'home', at: { x: SECOND.x, y: SECOND.y }, z: SECOND.z, after: SMALL_UP },
+    { look: 'tiny-cap', word: 'home', at: { x: SECOND.x, y: SECOND.y + 0.48 }, z: SECOND.z, after: SMALL_UP },
     // Mormor, by her thermos at the table, and morfar, who came home with them in the night for the Sunday breakfast.
     { look: 'mormorHome', at: { x: MORMOR.x, y: 0 }, z: MORMOR.z },
     { look: 'morfar', at: { x: MORFAR.x, y: 0 }, z: MORFAR.z },
@@ -426,8 +474,9 @@ export const morgonen: ChapterData = {
     { at: { x: DOOR + 1, y: 0 }, near: 0 },
   ],
   beats: [
-    { id: 'moOld', on: 'shelf:old', who: 'elof', line: 'moOldHome', read: true },
-    { id: 'moSmall', on: 'shelf:small', who: 'elof', line: 'moSmallHome', read: true },
+    // Said once his hand is at the figure's place on the shelf, up on the stool (`hylla:*`).
+    { id: 'moOld', on: 'shelf:old', needs: OLD_UP, who: 'elof', line: 'moOldHome', read: true },
+    { id: 'moSmall', on: 'shelf:small', needs: SMALL_UP, who: 'elof', line: 'moSmallHome', read: true },
     // The latch's word, the wisp of fluff and the name: said at the shelf (`fjun`).
     { id: 'moLatched', on: 'scene:haken', needs: AT_SHELF, who: 'pappa', line: 'moLatchLine', read: true },
     { id: 'moFluff', on: 'beat:moLatched', who: 'elof', line: 'moFluffLine', read: true },

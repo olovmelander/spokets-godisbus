@@ -179,6 +179,7 @@ export const sv = {
       gardenMemory: { purpose: 'Följ spöket mot Moa.', recap: 'Ett minne visade Pappa, mig som liten och en trägubbe.' },
       moa: { purpose: 'Ropa på Moa vid roten.', recap: 'Spöket kröp in under roten, under häcken mot skogen. Moas hand får inte plats.' },
       planeBoard: { purpose: 'Kliv på Moas pappersflygplan.', recap: 'Moas flygplan tar mig över häcken till skogen. Jag bestämmer när vi lyfter.' },
+      // The garden ends at a tall hedge with an arch into the forest (Olov, 12 November 2026: "Ja!").
       gardenEdge: { purpose: 'Gå in i skogen.', recap: 'Moas flygplan bar mig över häcken. Här börjar skogen.' },
       plane: { purpose: 'Flyg på Moas pappersflygplan.', recap: 'Moas flygplan bär mig över häcken till skogskanten. Godisspåret fortsätter där.' },
       gardenPocket: { purpose: 'Jag kan hämta Moas lövteckning.', recap: 'Vinden blåste Moas teckning under spånbron. Slangen går ner dit, och planet väntar.' },
@@ -230,10 +231,10 @@ export const sv = {
       reunion: { purpose: 'Gå hem med familjen under norrskenet.', recap: 'Godiset gjorde mig stor igen. Påsen är tillbaka.' },
       home: { purpose: 'Åk hem på Pappas axlar.', recap: 'Vi tar hem trägubben och spöket till Pappas hylla.' },
       party: { purpose: 'Dela lördagsgodiset med familjen.', recap: 'Vi är hemma igen. Alla får vara med på godiskalaset.' },
-      carveStart: { purpose: 'Ta kniven. Pappa lär dig tälja.', recap: 'Alla har fått godis. Nu vill jag göra en egen trägubbe.' },
+      carveStart: { purpose: 'Ta kniven. Pappa lär mig tälja.', recap: 'Alla har fått godis. Nu vill jag göra en egen trägubbe.' },
       carve: { purpose: 'Tälj min trägubbe med Pappa.', recap: 'Pappa hjälper min hand. Jag täljer alltid bort från kroppen.' },
       paintOwn: { purpose: 'Måla min trägubbes två ögon.', recap: 'Jag har täljt min första figur. Nu får den sina ögon.' },
-      shelf: { purpose: 'Ställ din trägubbe på Pappas hylla.', recap: 'Min egen Lillgubbe är klar. Den ska bo på hyllan med de andra.' },
+      shelf: { purpose: 'Ställ min trägubbe på Pappas hylla.', recap: 'Min egen Lillgubbe är klar. Den ska bo på hyllan med de andra.' },
       teeth: { purpose: 'Gå in i badrummet och borsta tänderna.', recap: 'Min Lillgubbe står på hyllan. Nu är det snart läggdags.' },
       bed: { purpose: 'Borsta klart vid handfatet.', recap: 'Godiskalas och en egen trägubbe. Efter tandborstningen är det godnatt.' },
       village: { purpose: 'Gå till godisbutiken med min vän.', recap: 'Lördagen efter gör vi en ny liten utflykt tillsammans.' },
@@ -559,6 +560,8 @@ export const sv = {
     onward: 'Nästa kapitel',
     again: 'Spela igen',
     candy: 'godisar i påsen',
+    // ...and when there is only one.
+    candyOne: 'godis i påsen',
   },
 
   // A memory has no words. This is what a screen reader says while its pictures are shown.

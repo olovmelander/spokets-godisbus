@@ -126,6 +126,12 @@ const DRIPS = [
 const DRY = 103.3;
 /** Where the benches' purpose holds: from just before the first roof to just past the second. */
 const BENCHES = { from: 92, to: 113 };
+/**
+ * The two team benches the drops pour from, each a little wider than its run of three drips: their clear shells reach
+ * over the path, and the water runs off their lips (../team-benches.ts). They were never drawn, and the drops fell
+ * from the sky while Elof said "Spring förbi bänkarna mellan dropparna".
+ */
+export const TEAM_BENCHES = [DRIPS.slice(0, 3), DRIPS.slice(3)].map((run) => ({ from: round(run[0]!.at.x - 1.2), to: round(run[run.length - 1]!.at.x + 1.2) }));
 
 /** The flooded centre circle, and Bertil's free kick over it into the far goal (Granskog's seesaw, as a ball). */
 const CIRCLE = { from: 125, to: 146, bottom: -5, water: -0.3 };
@@ -138,6 +144,24 @@ const OLD_SEEN = sighting('ol:gamla', 118.4, 121, 'ol:old-one', 'ol:old-seen', O
 const KICK = { from: { x: 123.4, y: 0 }, to: { x: 149.4, y: 1.7 }, rise: 5, time: 3, corridor: 0.4 };
 /** The far goal: a full one, as high as sixteen Elofs, its mouth towards him where the kick comes down. */
 const FAR_GOAL = { x: 147.8, depth: 10, height: 16 };
+/** Where Bertil stands at the circle's edge, with the ball laid ready (`ol:bertil`). */
+const BERTIL_AT = round(KICK.from.x - 0.8);
+/**
+ * Down in the far goal he turns back to Bertil at the circle and waves while Bertil calls it a goal, and thanks him:
+ * told standing, as the family's thanks are (`tack-pappa` in Granskogen, `bi:tack-morfar` at Billsta). Said in passing,
+ * the thanks came at a run some eighteen EL on, by the range's targets, long after the goal. A game taken up at the far
+ * goal's big candy has had it.
+ */
+const GOAL_THANKS: SceneDef = {
+  id: 'ol:tack-bertil', at: 149, needs: 'ol:kick', before: 151.9, seconds: 0.9, hold: true, dialogue: ['ol:cheer', 'ol:thanks'],
+  cues: [{ at: 0.35, flag: 'ol:goal-seen' }],
+  stage: {
+    elof: [
+      { at: 0, face: 0.5, act: 'wave', aim: { x: BERTIL_AT, y: 4, z: -0.6 } },
+      { at: 0.8, act: 'look', aim: { x: BERTIL_AT, y: 3, z: -0.6 } },
+    ],
+  },
+};
 
 /** The biathlon range's five targets, a lane each on the mat. */
 const TARGETS = [158.4, 160, 161.6, 163.2, 164.8];
@@ -222,7 +246,7 @@ export const olympia: ChapterData = {
   place: 'garden',
   spawn: { x: 1, y: ROAD + 0.01 },
   // Where and when, as the chapter opens (src/content/chapters/cards.ts); and the strongest gust at the end, watched.
-  scenes: [timeCard('olympia', 1), OLD_SEEN, GUST_SCENE],
+  scenes: [timeCard('olympia', 1), OLD_SEEN, GOAL_THANKS, GUST_SCENE],
   goalX: 179,
   // Bertil answers from afar in the coda: it was his kick.
   coda: 'bertil',
@@ -289,7 +313,7 @@ export const olympia: ChapterData = {
     // On the crossbar's end, over the goal's mouth: the whole pitch in view.
     { id: 'ol:lookout', at: { x: GOAL.x + 0.8, y: GOAL.bar }, verb: 'take', touch: true, extra: true },
     // At the edge of the centre circle: Bertil comes when he calls, and lays the ball ready for a free kick.
-    { id: 'ol:bertil', look: 'sign', at: { x: KICK.from.x - 0.8, y: 0 }, verb: 'call', word: 'callBertil' },
+    { id: 'ol:bertil', look: 'sign', at: { x: BERTIL_AT, y: 0 }, verb: 'call', word: 'callBertil' },
     { id: 'ol:kick', look: 'football', at: KICK.from, verb: 'take', word: 'olRideBall', needs: 'ol:kick-ready', ride: 'kick' },
     // The biathlon range: a cone thrown at each target turns it white.
     ...TARGETS.map((x, i) => ({ id: `ol:target-${i + 1}`, look: 'target' as const, at: { x, y: 0 }, verb: 'take' as const, word: 'olThrow', extra: true })),
@@ -365,8 +389,9 @@ export const olympia: ChapterData = {
     { look: 'kit', word: 'stubbe-sagad', at: { x: 171, y: trailAt(170.3) }, z: -2.4, turn: 1.2 },
     // A small ball from the torn bag, bobbing in the goalmouth's puddle: the clue.
     { look: 'floatBall', at: { x: PUDDLE.from + 1.2, y: PUDDLE.water }, z: -0.3, until: `placed:${BALL.id}` },
-    // The ball bag at the foot of the fence, torn open by the wind: the balls roll out of it.
-    { look: 'football', at: { x: BALLS.from, y: 0 }, z: -1.2 },
+    // The ball bag at the foot of the fence, torn open by the wind: the balls roll out of it (../ball-bag.ts). It was one
+    // ball as big as the one in the puzzle, which a child could take for the thing to kick.
+    { look: 'football', word: 'bag', at: { x: BALLS.from, y: 0 }, z: -1.2 },
     // The corner flag, snapping in the wind.
     { look: 'flag', at: { x: 90.8, y: 0 }, z: -0.8 },
     // The old trägubbe at the edge of the centre circle, until the flash that shows him blown over it.
@@ -428,10 +453,10 @@ export const olympia: ChapterData = {
     { id: 'ol:old-one', at: 118.4, needs: 'ol:old-seen', who: 'elof', line: 'olOldOne' },
     { id: 'ol:bertil-here', at: 120, until: 'ol:bertil', who: 'bertil', line: 'olBertilHere', read: true },
     { id: 'ol:kick-ready', on: 'ol:kick-ready', until: 'ol:kick', within: [116, 126], who: 'bertil', line: 'olBertilReady', read: true },
-    // In the air, or not at all. In the net Bertil calls it a goal, and Elof thanks him: two lines, read before the
-    // trail's end, where the gust is.
+    // In the air, or not at all. In the net Bertil calls it a goal, and Elof thanks him: two lines, told standing there
+    // (`ol:tack-bertil`).
     { id: 'ol:fly', on: 'ol:kick', within: [120, 150], who: 'elof', line: 'olFly', aside: 12 },
-    { id: 'ol:cheer', at: 149.8, needs: 'ol:kick', who: 'bertil', line: 'olBertilCheer' },
+    { id: 'ol:cheer', at: 149, needs: 'ol:goal-seen', within: [148, 158], who: 'bertil', line: 'olBertilCheer' },
     { id: 'ol:thanks', on: 'beat:ol:cheer', who: 'elof', line: 'olThanks' },
     // 7. the biathlon range: a game of its own, off the story's way
     { id: 'ol:range', at: 156, who: 'elof', line: 'olRange', aside: true },
@@ -456,7 +481,8 @@ export const olympia: ChapterData = {
     { from: 20, to: 62, zoom: 1.4, lead: 0.4 },
     { from: 62, to: 80, zoom: 1.35, lift: 0.4 },
     { from: 80, to: 90, zoom: 1.3, lift: 1 },
-    { from: 92, to: 114, zoom: 1.25, lead: 3.2 },
+    // The benches: wide and lifted enough that the lip of the clear roof the drops pour from is in the picture.
+    { from: 92, to: 114, zoom: 1.45, lift: 0.9, lead: 3.2 },
     // As he comes down, the near upright and the back net frame the scoring ball together.
     { from: 141, to: 154, zoom: 1.3, lift: 0, lead: 2.4 },
     // The centre circle: wide, so that the far goal is in the picture before he flies.
@@ -534,6 +560,8 @@ export const olympia: ChapterData = {
 export const context: Chooser = (has, player) => {
   const at = player.x;
   if (has('beat:ol:gust')) return ['olympiaNorth', 'olympiaFamily', 'water'];
+  // Past the range's last target, up the floodlit trail: "to the ski stadium" was said there, past it.
+  if (at >= TARGETS[TARGETS.length - 1]! + 1.2) return ['olympiaForest', 'olympiaFamily'];
   if (at >= KICK.to.x - 0.5) return ['olympiaStadium', 'olympiaFamily'];
   if (has('ol:kick')) return ['olympiaFly', 'olympiaBertil', 'trail', 'bertil'];
   if (has('ol:bertil')) return ['olympiaBoard', 'olympiaBertil', 'trail', 'bertil'];

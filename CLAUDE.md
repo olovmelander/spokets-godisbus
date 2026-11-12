@@ -55,9 +55,10 @@ so the rules below stay.
     one). They are references for the surroundings: look at them, and never use them as plates or textures.
   - The family's game models, textures and `.blend` files live in the private repository
     `spokets-godisbus-familj` (plan §6.11), so they can always be taken down.
-- **Voices.** Characters make short wordless sounds for now. New TTS voices are recorded when the storytelling and
-  the conversations are finished (Olov, 5 November 2026; plan §0 Q9), and the voice files in `public/audio/` stay as they
-  are until then. The rule about paid AI tools still holds: Olov chooses the service.
+- **Voices.** Both adventures' lines are recorded (Olov, 12 November 2026: "spelar in alla röster med regi") with
+  ElevenLabs, his choice, in the cast he chose that day, with direction: `scripts/record-voices.mjs` records and checks
+  each take, `scripts/level-voices.py` levels them. A line whose words change is recorded again; until then it keeps
+  its speaker's short wordless sound. The rule about paid AI tools still holds: Olov chooses the service.
 - **Consent.** Anything comes out again if a parent asks. What Olov himself asks for is covered. Anything personal
   a session thinks of by itself is asked about first (plan §2.6).
 
@@ -66,7 +67,8 @@ so the rules below stay.
 - **No logotypes or brand marks** on any model, texture or screen: plain shapes instead. There are three exceptions,
   all Olov's decisions:
   - the name Olympia in white letters on the red hall (4 November 2026), in the game's own Playpen Sans;
-  - Anundsjö IF's crest on Bertil's cap (7 November 2026), in the private repository's `family/cap_crest.py`;
+  - Anundsjö IF's crest on Bertil's cap (7 November 2026), in the private repository's `family/cap_crest.py`, and on
+    Olympia's two team benches (12 November 2026), drawn in code in `src/content/aventyr2/club-crest.ts`;
   - the name Flärken on the big sun board (9 November 2026), in the game's own Playpen Sans.
   No other crests, sponsors or lettering. The family's car is their silver hatchback without its badge.
 - **One tester, no dates.** Only Olov tests before Elof plays, and a stage is done when its checkpoint passes.

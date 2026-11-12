@@ -78,9 +78,13 @@ export const garden: ChapterData = {
     { from: 134, to: 154.5, kind: 'shavings' },
     { from: 178, to: 181, kind: 'hedge' },
     // The garden ends at a tall hedge, as Stormgården does (Olov, 12 November 2026): the wall at the end of the ground
-    // is drawn as its leafy end, not as a cliff of earth (src/render/dressing/hedge.ts).
-    { from: 212, to: 214, kind: 'hedge' },
+    // is drawn as its leafy end, not as a cliff of earth (src/render/dressing/hedge.ts). Beside the big candy the hedge
+    // has a round arch, and through it the path goes on into the forest (Olov, 12 November 2026: "Ja!";
+    // src/render/dressing/hedge-gate.ts). For the picture only: he still stops at the goal, and the wall is where it was.
+    { from: 212, to: 214, kind: 'hedge', gate: true },
   ],
+  // For the picture: no birch of the lift's stands in the forest seen through the arch.
+  treeGaps: [{ from: 206.5, to: 218, back: -40 }],
   // The deck goes on overhead, level with where he stood: its joists are where the chain's nails sit.
   roofs: [{ from: 46.6, to: 66.4, y: 5.95 }],
   // Off the trail: behind him at the start, at the end of the swing chain, over the leaf the clothes line ends
@@ -212,14 +216,21 @@ export const garden: ChapterData = {
     ...[89.6, 91, 92.4, 97.9].map((x, i) => ({ id: `note:dew${i + 1}`, look: 'dew' as const, at: { x, y: 1.6 }, verb: 'take' as const, touch: true, note: [74, 77, 81, 86][i]! })),
     // Memory 1, on top of Pappa's shavings: the night he carved his first figure.
     { id: 'memory', look: 'memory', at: { x: 147, y: 3.3 }, verb: 'take', touch: true },
-    { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, verb: 'call', word: 'callMoa' },
+    // She stands a step behind the path: the paper plane she makes lies ready on it at her feet (`rides`, from 166),
+    // and stood on the path she hid it between her legs while she said "Mitt flygplan tar dig över häcken!".
+    { id: 'moa', look: 'sign', at: { x: 166, y: 0 }, standsAt: { x: 166, y: 0, z: -1.1 }, verb: 'call', word: 'callMoa' },
     // Optional local return. Its stable flags add no candy, lost-property or main-route requirement.
     { id: 'garden:paper', look: 'keepsake', at: { x: 141.1, y: -2 }, verb: 'take', touch: true, needs: 'garden:pocket-open', extra: true },
     { id: 'garden:shared-paper', look: 'keepsake', at: { x: 164.1, y: 0 }, verb: 'give', word: 'gardenGiveDrawing', needs: 'garden:paper', extra: true },
     // Old saves that already called Moa can board directly. Calling never starts an involuntary ride.
     { id: 'plane:board', look: 'sign', at: { x: 167.2, y: 0 }, verb: 'take', word: 'gardenBoard', needs: 'moa', ride: 'plane' },
   ],
-  sets: [{ flag: 'garden:pocket-open', when: ['placed:bridge', 'moa'] }],
+  sets: [
+    { flag: 'garden:pocket-open', when: ['placed:bridge', 'moa'] },
+    // The gust that takes Moa's drawing no longer comes once he has boarded, or has the drawing already (either sets it).
+    { flag: 'garden:gust-past', when: ['plane:board'] },
+    { flag: 'garden:gust-past', when: ['garden:paper'] },
+  ],
   decor: [
     { look: 'keepsake', at: { x: 167.2, y: 1.7 }, after: 'garden:shared-paper' },
     // The hole between the birch's roots, which the ghost creeps into: to the picture, the way it went.
@@ -396,13 +407,18 @@ export const garden: ChapterData = {
     // The chapter opens on its time card, without words: the family's promises were said on the deck.
     { id: 'garden:home', at: 91.5, within: [91.5, 104], who: 'elof', line: 'gardenHome', read: true },
     { id: 'garden:kota', at: 119.5, within: [119.5, 128], who: 'elof', line: 'gardenKota', read: true },
-    { id: 'stomp', at: 155.6, who: 'elof', line: 'stomp' },
+    // Said from the slope of the shavings, where the ghost is seen juggling on the root ahead: said at the root, it was
+    // still being read when Moa should speak, and a child who called her at once heard nothing of hers (12 November).
+    { id: 'stomp', at: 151.5, who: 'elof', line: 'stomp' },
     // Moa saw him made small on the deck: here she sees why it is good to be small.
-    { id: 'moa1', at: 161.5, until: 'moa', who: 'moa', line: 'rootFingers', read: true },
+    // What she saw is said whenever he calls her: before the call, or straight after it until the plane is ready.
+    { id: 'moa1', at: 161.5, until: 'family:plane-ready', who: 'moa', line: 'rootFingers', read: true },
     { id: 'moa2', at: 162.4, until: 'moa', who: 'moa', line: 'rootHedge', read: true },
-    { id: 'family:moa', at: 163.3, until: 'moa', who: 'moa', line: 'familyMoa', read: true },
-    { id: 'family:plane', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'familyMoaPlan', read: true },
-    { id: 'garden:ready', on: 'family:plane-ready', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenReady', read: true },
+    // Her answer when he calls, as she folds the plane; her plan follows it, and then the gust takes her drawing
+    // (`garden:drawing-blown`), so that "Oj!" is said while it flies. Then the choice: board now, or fetch it first.
+    { id: 'family:moa', on: 'moa', until: 'plane:board', within: [159, 171], who: 'moa', line: 'familyMoa', read: true },
+    { id: 'family:plane', on: 'beat:family:moa', until: 'plane:board', within: [159, 171], who: 'moa', line: 'familyMoaPlan', read: true },
+    { id: 'garden:ready', on: 'beat:garden:pocket', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenReady', read: true },
     // A gust takes Moa's leaf drawing out of her hand and back under the shaving bridge: the picture shows it go.
     { id: 'garden:pocket', on: 'garden:drawing-blown', until: 'plane:board', within: [159, 171], who: 'moa', line: 'gardenPocket' },
     { id: 'garden:found', on: 'garden:paper', who: 'elof', line: 'gardenFound' },
@@ -410,7 +426,8 @@ export const garden: ChapterData = {
   ],
   later: [
     { flag: 'family:plane-ready', after: 'moa', until: 'plane:board', within: [159, 171], seconds: 1.2, hold: true },
-    { flag: 'garden:drawing-blown', after: 'family:plane-ready', until: 'plane:board', within: [159, 171], seconds: 2.5 },
+    // Once her plan is told: 2.5 s after the plane was ready, it blew during her words, and "Oj!" came after it had landed.
+    { flag: 'garden:drawing-blown', after: 'beat:family:plane', until: 'garden:gust-past', within: [159, 171], seconds: 0.6 },
   ],
   cameras: [
     // Up on the window sills the picture is wider and looks down a little: the deck he can drop to stays in it.
@@ -423,7 +440,10 @@ export const garden: ChapterData = {
     // On the leaves and along the clothes line: the rings overhead, the next one ahead and the lawn below.
     { from: 104.2, to: 127, above: 1.5, zoom: 1.5, lift: -1.2, lead: 3.2 },
     { from: 108, to: 128, zoom: 1.25, lead: 3.2 },
-    { from: 130, to: 152, zoom: 1.2 },
+    // At the foot of the shavings' wall the picture is lifted and a little wider: the curl he pulls down stands on the
+    // top, and from the lawn it was cut off at the picture's top while "Dra" was offered.
+    { from: 130, to: 134.4, zoom: 1.35, lift: 1.3 },
+    { from: 134.4, to: 152, zoom: 1.2 },
     { from: 164, to: 208, zoom: 1.5, lift: 0.5 },
     // On the plate of bark, on the swing and on the bough: the string overhead with the curl and its ring,
     // the bough with the hearts, and the root below. Standing on the root, and hopping there, the picture is

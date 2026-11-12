@@ -112,8 +112,11 @@ const CAIRN = [
 ];
 // The hanging end is above walking height, so earning this route never catches the main trail's feet.
 // The same lace skill learned at the cliff, now anchored beside the summit cairn.
-/** Where the ghost waits at the cliff's foot for his Lyft: on the ground, just behind the play plane. */
-const LIFT_GHOST = { x: 145.3, z: -0.42 };
+/**
+ * Where the ghost waits at the cliff's foot for his Lyft: on the ground, behind the play plane. A child who walks on past it
+ * to the cliff passes in front of it; at 0.42 EL back he brushed through it (HANDOVER, known bugs).
+ */
+const LIFT_GHOST = { x: 145.3, z: -0.85 };
 
 const CAIRN_LACE = { x: 147.6, bottom: 32.4, top: 40.9, exit: -1 as const, needs: 'found:chokladpralin', look: 'lace' as const };
 
@@ -160,6 +163,13 @@ export const berget: ChapterData = {
         { at: 1.9, x: 151, move: 0.9 },
       ] },
     } },
+    // Up the lace, he turns to the ghost waiting by the pine and thanks it, standing, as he thanks Pappa and Mamma in the
+    // chapters before. Said in passing, it was still being read when he touched the memory six EL on: the memory and
+    // "Spöket vill hämta hem min trägubbe!" waited behind it while he ran past the pine (HANDOVER, known bugs). The
+    // receipt keeps the old beat's id. The ghost takes off once he is within 4 EL of it, so the scene begins short of that.
+    { id: 'berget:tack', at: 146.5, needs: 'lift', before: 148.5, seconds: 1.4, hold: true,
+      lines: [{ at: 0.2, who: 'elof', line: 'mountainThanks', id: 'mountain:thanks' }],
+      stage: { elof: [{ at: 0, face: 0.05, act: 'wave', aim: { x: 151, y: 32.2, z: 0 } }] } },
   ],
   goalX: 157,
   ground: [
@@ -224,7 +234,8 @@ export const berget: ChapterData = {
     { at: { x: 76.5, y: 24 } },
     { at: { x: 87, y: 25.2 } },
     { at: { x: 93, y: 26.4 } },
-    { at: { x: 109.6, y: 26.4 } },
+    // In the first boulder's lee, clear of the guide rope's post at 109.25 (it stood cut through by it, at 109.6).
+    { at: { x: 110.6, y: 26.4 } },
     // from boulder to boulder
     { at: { x: 120.4, y: 26.4 } },
     { at: { x: 130.8, y: 26.4 } },
@@ -239,8 +250,8 @@ export const berget: ChapterData = {
   ],
   // He understands when he has seen it.
   beats: [
-    // He thanks the ghost after climbing its lace onto the ledge, not while still below it.
-    { id: 'mountain:thanks', at: 146.8, needs: 'lift', who: 'elof', line: 'mountainThanks' },
+    // He thanks the ghost after climbing its lace onto the ledge (the scene `berget:tack`, above). What the memory showed
+    // him is said as it closes: the memory waits for quiet (src/main.ts), and the thanks is over by then.
     { id: 'fetch', on: 'memory', who: 'elof', line: 'fetch' },
     { id: 'cairn-loop', on: 'found:chokladpralin', who: 'elof', line: 'mountainLoop' },
   ],
@@ -251,19 +262,26 @@ export const berget: ChapterData = {
     // their own: the open granite's picture is wide enough for the rings and the ground.
     { from: 89, to: 108, above: 27.6, zoom: 1.4, lift: -0.5 },
     { from: -3, to: 70, zoom: 1.7, lift: 0.5 },
-    { from: 108, to: 138, zoom: 1.35 },
-    { from: 140, to: 150, zoom: 1.3, lift: 0.5 },
+    // To the big candy before the cliff: there was a gap of two EL at the usual picture, which zoomed in and out again.
+    { from: 108, to: 139, zoom: 1.35 },
+    // On top of the cliff, and on the lace's upper half.
+    { from: 145.5, to: 150, above: 30, zoom: 1.3, lift: 0.5 },
+    // At the cliff's foot the picture looked two EL ahead into the cliff, half of it a blurred wall of rock, and the top
+    // the ghost has to be lifted onto was above it: now it is wider and higher, with the ghost, the cliff and its top, and
+    // it looks no further ahead than where he stands.
+    { from: 139, to: 150, zoom: 1.6, lift: 1.6, lead: 0 },
     { from: 150, to: 164, zoom: 1.4, lift: 0.3 },
   ],
   candy: [
     // 1. the flight
     ...inFlight(),
-    // 2. the shoulder and its slabs
-    ...row(74, 82, 24),
+    // 2. the shoulder and its slabs. Three sweets lay at a big candy's foot, on its stick (x 74, 95 and 149.5): each is
+    // moved a little along the trail, and keeps its place in the list, which a save counts by.
+    ...[73.4, 76, 78, 80, 82].map((x) => ({ x, y: 24.45 })),
     { x: 83.4, y: 25.3 },
     ...row(85, 89, 25.2),
     // 3. past the cobbles
-    ...row(91, 109, 26.4),
+    ...row(91, 109, 26.4).map((c) => (c.x === 95 ? { ...c, x: 95.6 } : c)),
     // 4. across the open granite
     ...row(111.5, 135.5, 26.4),
     // 5. to the cliff, and up the lace
@@ -271,7 +289,7 @@ export const berget: ChapterData = {
     { x: 145.7, y: 28 },
     { x: 145.7, y: 29.8 },
     // 6. to the old pine
-    ...row(147.5, 155.5, 31.4),
+    ...row(147.5, 155.5, 31.4).map((c) => (c.x === 149.5 ? { ...c, x: 150.1 } : c)),
   ],
   // Hearts and lollipops, off the trail: add new ones at the end.
   side: [

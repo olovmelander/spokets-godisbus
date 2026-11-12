@@ -46,7 +46,7 @@ del"). The first adventure (prologue, Gården, Granskogen, Myren, Berget, the fi
   plain wood when a grown-up looks (the Toy Story rule), which Stormskogen turns into a puzzle.
 - The family helps as kind giants, one at each big crossing, each with something of their own.
 - No surnames, no address, no house number, no school, no logotypes except Olov’s three decisions in plan §0,
-  row 13: Olympia on the red hall, Anundsjö IF’s crest on Bertil’s cap, and Flärken on the big sun board.
+  row 13: Olympia on the red hall, Anundsjö IF’s crest on Bertil’s cap and in Olympia’s team benches, and Flärken on the big sun board.
   Real places nearby may be named; Äventyr 2 names Olympia, Flärken and Billsta.
 - Nothing frightening chases Elof. The storm is wild, loud and beautiful, never a monster. The family is out in
   it with him, in raincoats, with lamps.

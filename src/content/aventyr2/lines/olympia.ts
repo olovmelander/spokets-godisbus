@@ -59,6 +59,7 @@ export const words: ChapterWords = {
     olympiaBoard: { purpose: 'Hoppa upp på bollen.', recap: 'Bertil har lagt bollen till rätta. Han skjuter, och jag flyger.' },
     olympiaFly: { purpose: 'Flyg över mittcirkeln på bollen.', recap: 'Bertil sköt en frispark, och jag åker med bollen.' },
     olympiaStadium: { purpose: 'Följ godisspåret till skidstadion.', recap: 'Mål! Bertils frispark bar mig över mittcirkeln.' },
+    olympiaForest: { purpose: 'Följ godisspåret upp i skogen.', recap: 'Bertils frispark bar mig i mål. Nu går spåret upp i skogen.' },
     olympiaNorth: { purpose: 'Följ elljusspåret. Sedan åker vi bil till Flärken!', recap: 'Den starkaste stormbyn tog lillgubben norrut. Gamla trägubben följer efter, och vi åker bil.' },
   },
   helpers: {

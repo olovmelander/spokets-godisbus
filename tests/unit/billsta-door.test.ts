@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import '../../src/content/aventyr2/aventyr2';
 import { LOFT_BARN, barnLoft, insideBarn } from '../../src/content/aventyr2/barn-loft';
 import { billsta } from '../../src/content/aventyr2/chapters/billsta';
-import { heightAt } from '../../src/render/dressing/kit';
+import { heightAt, landscape } from '../../src/render/dressing/kit';
 import { PACK } from '../../src/render/extensions';
 
 beforeAll(() => {
@@ -78,6 +78,29 @@ describe('Billsta’s barn and its loft door', () => {
     const inside = door.getObjectByName('barn-loft') as Mesh;
     expect(inside).toBeDefined();
     expect(new Box3().setFromObject(inside).min.z).toBeLessThan(-2.8);
+  });
+
+  it('draws its bales itself: the picture’s floor runs on under them, and they stand round what holds them up', () => {
+    // As steps of the ground each had a front of its own reaching out under it: a grey wedge (12 November 2026).
+    const bales = billsta.landmarks!.filter((mark) => mark.look === 'bale');
+    expect(bales.length).toBe(3);
+    const land = landscape(billsta);
+    for (const mark of bales) {
+      for (let i = 0; i <= 10; i++) {
+        const x = mark.from + 0.01 + ((mark.to - mark.from - 0.02) * i) / 10;
+        expect(heightAt(land, x), `at ${x.toFixed(2)}`).toBeCloseTo(mark.base, 5);
+      }
+      // The simulation keeps its steps there.
+      expect(heightAt(billsta, (mark.from + mark.to) / 2)).toBeGreaterThan(mark.base + 0.9);
+    }
+    // The roof outside the gable is where it was, to the simulation and to the picture.
+    expect(heightAt(land, LOFT_BARN.right + 0.2)).toBeCloseTo(7.2, 5);
+    const { door } = make();
+    const hay = new Box3().setFromObject(door.getObjectByName('barn-hay')!);
+    // Back against the loft's wall and out past the path, round the support each landmark stands on the floor.
+    expect(hay.min.z).toBeLessThanOrEqual(-3.0 + 1e-6);
+    expect(hay.max.z).toBeGreaterThan(1.4);
+    for (const mark of bales) expect(hay.max.y).toBeGreaterThan(heightAt(billsta, (mark.from + mark.to) / 2));
   });
 
   it('takes the barn’s front away while he is inside, and gives it back when he is out', () => {

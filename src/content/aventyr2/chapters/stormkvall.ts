@@ -23,7 +23,8 @@ import { CANDLES_LIT, POWER_FLICKER, POWER_GOES, POWER_OUT } from '../../home-po
  *    the bag. It is nowhere to be seen before (`Spot.after`). *Smaka på stjärnan*: POFF.
  * 6. **Vi letar tillsammans:** Moa misses Elof; Bertil finds him tiny on the floor. Once they have
  *    reacted and promised to help, the family pull on raincoats and take their lamps. A candy lies on the floor, then
- *    another: the old trägubbe's trail. Tiny, he crosses the giant room, the door sill and the veranda. The trail
+ *    another: the old trägubbe's trail, found with Moa and Bertil beside him (`spar`). Tiny, he crosses the giant room,
+ *    the door sill and the veranda. The trail
  *    is laid only now, its big candies too (`Checkpoint.after`): nothing lies on the floor before the gust.
  *    None of their raincoats fits him now; at the foot of the toy shelf a doll sits in a small yellow one. *Ta
  *    regnrocken*: he puts it on, one arm and the other, and it fits (Olov, 9 November 2026; ../../../render/elof-coat.ts).
@@ -65,6 +66,49 @@ const AROUND = {
 };
 /** What the trail's big candies wait for: the old trägubbe lays it, and it is found once he is small. */
 const TRAIL = 'scene:tillsammans';
+/** Where he passes Mamma and Pappa on the deck, and each says a promise (`skNear`, `skFollow`). */
+const PROMISE = { mamma: 44.0, pappa: 48.0 };
+/**
+ * The whole family out on the deck as he passes, as in the first adventure's prologue: Mamma, Moa, Bertil and Pappa
+ * along it, kneeling and crouching where he goes by, a place each, and all four in the picture as the promises are said
+ * (Olov, 12 November 2026: "Moa och Bertil får gärna hänga med på altanen"). Mamma and Pappa kneel far enough back for
+ * Moa and Bertil to come by in front of them (`KIDS`); Moa and Bertil crouch between them, clear of each other, of their
+ * knees and of the line he walks. The deck's big candy stands before Mamma, not among them.
+ */
+const DECK = {
+  mamma: { x: 42.8, z: -3.3, face: 0.3 },
+  moa: { x: 45.0, z: -2.8, face: 0.28 },
+  bertil: { x: 46.8, z: -2.3, face: 0.3 },
+  pappa: { x: 49.4, z: -3.0, face: 0.34 },
+};
+/**
+ * Where he is when the family go out onto the deck (`lofte`): at the door sill, past the toy shelf, with the room's places
+ * and the deck's both out of the picture.
+ */
+const LEAVE = 29.6;
+/**
+ * Moa and Bertil go with him. Once the trail is found they walk after him across the room, this far behind him (as the
+ * family follow him in the first adventure's prologue) and far enough apart not to swing into each other, in front of
+ * the table, the doll, the toy shelf and the big candies (`z`), so that they go by none of them (`foljer`). As he comes
+ * onto the veranda (`lofte`) they step in behind the line he walks, to where they walk after him then (or, left behind as
+ * he ran, past the toy shelf), into a lane of their own (`lane`), and go on in it out of the door to their places on the
+ * deck: in it they pass him, the door's posts, the ghost, the big candies and the kneeling Mamma by, whether he runs,
+ * walks or stands still.
+ */
+const KIDS = {
+  moa: { behind: 5.6, z: 1.25, lane: -0.97 },
+  bertil: { behind: 2.6, z: 0.95, lane: -1.0 },
+};
+/** Where the big candies on the veranda and the deck stand (`Checkpoint.z`): behind the lane, not in it. */
+const CANDY_BEHIND_LANE = -2.2;
+/** The trail's first big candy, where the old one landed under the window. */
+const TRAIL_FOUND = 10.6;
+/**
+ * Where he stops to find it (`spar`): a step past the big candy, so that its lollipop does not stand in front of him in
+ * the picture; and his face there, small on the floor, for the family to look at.
+ */
+const SPAR = TRAIL_FOUND + 0.8;
+const AT_TRAIL = { x: SPAR + 0.2, y: 0.6, z: 0 };
 /**
  * The toy shelf in front of the sofa, and the doll sitting at its foot in its small yellow raincoat: on his way across
  * the room, after the table, where nobody stands in any scene. Its back leans on the shelf's front.
@@ -74,8 +118,11 @@ const DOLL = { x: 20.45 };
 
 // Where each of the family is as the evening opens, clear of each other, the table and its chairs. The table is 5 long
 // and 2.2 deep (x 11.5 to 16.5, z -2.6 to -0.4), with a chair behind it and one at its right end (`furniture`).
-/** Mamma behind the table, and the candle she lights, near its back edge where she reaches it. */
-const MAMMA = { x: 12.4, z: -3.3 };
+/**
+ * Mamma behind the table, and the candle she lights, near its back edge where she reaches it. A step along from Pappa: at
+ * 12.4 she stood half behind him in the opening picture as she lit it and said so.
+ */
+const MAMMA = { x: 12.9, z: -3.4 };
 const CANDLE = { x: 13, y: 1.65, z: -2.1 };
 /** When the candle catches in the dark, a moment after the lamps went out: her hand is at its wick. */
 const CANDLE_CATCHES = 4.2;
@@ -170,7 +217,8 @@ const SCENES: SceneDef[] = [
     ],
     stage: {
       shots: [
-        { at: 0, x: 6.4, y: 4.6, height: 5.6, width: 8.4, move: 0.6 },
+        // The shelf and the two on it, and him under it as he says goodnight: his head and shoulders, not his crown.
+        { at: 0, x: 6.4, y: 4.1, height: 6.2, width: 8.4, move: 0.6 },
         { at: 1.4, x: 8.0, y: 5.6, height: 4.4, width: 7, move: 0.4 },
         { at: 4.2, x: 7.2, y: 3.6, height: 7, width: 11, move: 1.2 },
       ],
@@ -360,6 +408,67 @@ const SCENES: SceneDef[] = [
     },
   },
   {
+    // The trail's first candy, where the old one landed under the window: he finds it there, with Moa and Bertil
+    // dressed beside him, and they say what it is, told standing. Said in passing, their answers were still being read
+    // when he reached the doll, so its line about the raincoat was said 14 s late (or, if he ran past it, out on the
+    // deck), and the coat's little scene stood still for ten seconds while they talked of candy out of the picture.
+    // The three lines keep the receipts they had as beats.
+    id: 'spar',
+    at: SPAR,
+    before: SPAR + 3,
+    needs: TRAIL,
+    until: 'beat:skEnough',
+    seconds: 3.6,
+    hold: true,
+    // The first words once the picture has come (the clock, and the camera with it, wait at each line).
+    lines: [
+      { at: 0.9, who: 'elof', line: 'skTrail', id: 'skTrail' },
+      { at: 1.8, who: 'moa', line: 'skHandful', id: 'skHandful' },
+      { at: 2.7, who: 'bertil', line: 'skEnough', id: 'skEnough' },
+    ],
+    stage: {
+      // Him at the candy, the trail on the floor ahead, and Moa and Bertil behind him where they put on their coats, tall
+      // enough for their faces as they speak.
+      shots: [{ at: 0, x: TRAIL_FOUND - 1, y: 2.2, height: 7.2, width: 10, eye: -1.4, move: 0.8 }],
+      actors: {
+        // Moa steps back a little and points back at the table, where the bowl was; Bertil looks along the trail, and
+        // wonders. Pappa lights the trail ahead of him: his beam goes in front of Moa, not through her.
+        moa: [{ at: 0, x: AROUND.moa.x - 0.2, y: 0, z: -1.9, face: 0.3, move: 0.6, act: 'look', aim: AT_TRAIL }, { at: 1.6, act: 'point', aim: { x: HOME_LAYOUT.dining.x, y: 2, z: HOME_LAYOUT.dining.z } }, { at: 2.4, act: 'look', aim: AT_TRAIL }],
+        bertil: [{ at: 0.2, act: 'look', aim: AT_TRAIL }, { at: 2.5, act: 'shrug' }, { at: 3.3, act: 'look', aim: { x: SPAR + 6, y: 0.4, z: 0 } }],
+        mamma: [{ at: 0.4, act: 'look', aim: AT_TRAIL }],
+        pappa: [{ at: 0.5, act: 'look', aim: AT_TRAIL, beam: { x: SPAR + 2.4, y: 0, z: 0.5 } }],
+      },
+      elof: [
+        { at: 0, face: 0.1, act: 'point', aim: { x: SPAR + 2.6, y: 0.3, z: 0 } },
+        { at: 1.5, face: 0.45, act: 'watch', aim: { x: AROUND.moa.x, y: 3, z: AROUND.moa.z } },
+        { at: 2.4, aim: { x: AROUND.bertil.x, y: 2.6, z: AROUND.bertil.z } },
+        { at: 3.2, face: 0.1, act: 'look', aim: { x: SPAR + 6, y: 0.3, z: 0 } },
+      ],
+    },
+  },
+  {
+    // Moa and Bertil go with him (`KIDS`): from where they stood as the trail was found, a step out in front of the
+    // table, and then after him across the room. Not held, and short: he goes on at once. Listed before the coat's
+    // scene, so that they are followers while it plays (the stage rests each actor on the scenes listed before the one
+    // playing), and stop and watch from where they are.
+    id: 'foljer',
+    on: 'scene:spar',
+    until: 'scene:lofte',
+    seconds: 1.6,
+    stage: {
+      actors: {
+        moa: [
+          { at: 0, x: SPAR - KIDS.moa.behind, y: 0, z: KIDS.moa.z, move: 1.3, act: 'walk' },
+          { at: 1.4, face: 0.05, act: 'stand', follow: KIDS.moa.behind },
+        ],
+        bertil: [
+          { at: 0.1, x: SPAR - KIDS.bertil.behind, y: 0, z: KIDS.bertil.z, move: 1.1, act: 'walk' },
+          { at: 1.3, face: 0.05, act: 'stand', follow: KIDS.bertil.behind },
+        ],
+      },
+    },
+  },
+  {
     // 6. A raincoat that fits him: the doll's. He takes it off the doll, swings it up onto his back and puts his arms into
     // its sleeves, the left and then the right, pulls its front together, and holds out his arms: it fits (the coat and his
     // arms as it goes on, ../../../render/elof-coat.ts). He turns from the doll to us as it goes on.
@@ -378,6 +487,48 @@ const SCENES: SceneDef[] = [
     },
   },
   {
+    // The family out on the deck in their raincoats, kneeling and crouching where he passes, as the family does in the
+    // first adventure's prologue: Mamma's and Pappa's promises ("Vi är nära dig hela tiden.", "Följ godisspåret,
+    // Elof.") are said as he passes each, with Moa and Bertil between them (`DECK`). Mamma and Pappa come out while he is
+    // on the veranda, where the deck is not yet in the picture, and the room's places long out of it. Moa and Bertil, who
+    // have walked after him across the room, step in behind the line he walks wherever they are (the room's furniture is
+    // behind them by then) and go out in their lane to their places; walked or stood, he has them there before he comes
+    // to Mamma, and run, they come up behind him along the deck. A game taken up at a big candy past the veranda has them
+    // all there at once (`before`: a scene staged where he starts beyond has been seen; `from`, not `at`, since a scene
+    // with `on` is due as soon as its flag is set).
+    id: 'lofte',
+    on: TRAIL,
+    from: LEAVE,
+    before: 33.5,
+    seconds: 6.9,
+    stage: {
+      actors: {
+        mamma: [
+          { at: 0, x: DECK.mamma.x, y: -0.8, z: DECK.mamma.z, face: DECK.mamma.face, move: 0.01, act: 'stand' },
+          { at: 0.6, act: 'kneel', aim: { x: DECK.mamma.x, y: -0.3, z: 0 } },
+        ],
+        pappa: [
+          { at: 0, x: DECK.pappa.x, y: -0.8, z: DECK.pappa.z, face: DECK.pappa.face, move: 0.01, act: 'stand' },
+          { at: 0.7, act: 'kneel', aim: { x: DECK.pappa.x, y: -0.3, z: 0 } },
+        ],
+        // Into the lane, behind him; along it out onto the deck; and back into their places. Moa a little after Bertil, so
+        // that they keep apart in the lane as he slows to his place.
+        moa: [
+          { at: 0, x: LEAVE - KIDS.moa.behind, y: 0, z: KIDS.moa.lane, move: 1.5, act: 'walk', follow: null },
+          { at: 1.5, x: DECK.moa.x - 0.5, y: -0.8, z: KIDS.moa.lane, move: 4.4 },
+          { at: 5.9, x: DECK.moa.x, y: -0.8, z: DECK.moa.z, face: DECK.moa.face, move: 0.8 },
+          { at: 6.7, act: 'crouch', aim: { x: DECK.moa.x, y: -0.3, z: 0 } },
+        ],
+        bertil: [
+          { at: 0, x: LEAVE - KIDS.bertil.behind, y: 0, z: KIDS.bertil.lane, move: 1.2, act: 'walk', follow: null },
+          { at: 1.2, x: DECK.bertil.x - 0.5, y: -0.8, z: KIDS.bertil.lane, move: 4.4 },
+          { at: 5.6, x: DECK.bertil.x, y: -0.8, z: DECK.bertil.z, face: DECK.bertil.face, move: 0.7 },
+          { at: 6.3, act: 'crouch', aim: { x: DECK.bertil.x, y: -0.3, z: 0 } },
+        ],
+      },
+    },
+  },
+  {
     // 7. At the deck's edge the storm-dark garden opens below, and the adventure's name stands over it.
     id: 'stormtitel',
     at: 51.4,
@@ -391,9 +542,18 @@ const SCENES: SceneDef[] = [
       words: [{ at: 6.0, seconds: 4.4, kind: 'title', text: 'a2title' }],
       shots: [
         { at: 0, x: 52.2, y: 0.1, height: 3.2, width: 5.6, eye: -0.05, move: 0.8 },
-        { at: 2.2, x: 51.2, y: 0.8, height: 5.6, width: 10, move: 1.2 },
+        // As he turns and waves, the whole family along the deck with him, not Pappa alone (`DECK`).
+        { at: 2.2, x: 47.6, y: 1.4, height: 6.6, width: 14.2, move: 1.2 },
         { at: 3.8, x: 57, y: 0.6, height: 15, width: 28, move: 2.6 },
       ],
+      // And they answer him, as in the first adventure's title: Mamma waves (on her left there is room for her arm, beside
+      // Moa and Bertil there is not), Pappa nods, and Moa and Bertil look up at him from where they crouch.
+      actors: {
+        mamma: [{ at: 2.6, act: 'wave' }],
+        moa: [{ at: 2.4, act: 'look', aim: { x: 51.4, y: 0.4, z: 0 } }],
+        bertil: [{ at: 2.5, act: 'look', aim: { x: 51.4, y: 0.4, z: 0 } }],
+        pappa: [{ at: 2.8, act: 'nod' }],
+      },
       elof: [
         { at: 0, act: 'watch', aim: { x: 58, y: -6, z: 0 }, face: 0 },
         { at: 2.2, face: 0.44, act: 'wave', aim: { x: 46, y: 2, z: -2 } },
@@ -469,8 +629,14 @@ export const stormkvall: ChapterData = {
   house: { from: -40, to: 38, windows: HOME_LAYOUT.windows, opens: WINDOW.x },
   outdoors: 38,
   // The trail's big candies: the first where the old trägubbe landed, under the window. Each of the others stands in
-  // the gap between two of the trail's sweets, not with one at its foot.
-  checkpoints: [{ x: 10.6, y: 0, after: TRAIL }, { x: 18.55, y: 0, after: TRAIL }, { x: 35.4, y: 0, after: TRAIL }, { x: 45, y: -0.8, after: TRAIL }],
+  // the gap between two of the trail's sweets, not with one at its foot. The second stands at the table's end, a gap
+  // before the doll: by the doll (18.55) its lollipop stood in the picture of the raincoat going on, in front of him.
+  // The veranda's and the deck's stand further back than a big candy's usual 0.7, behind the lane Moa and Bertil go out
+  // in (`KIDS`), and the deck's out of the door, before Mamma: at 45 it stood where Moa crouches by her (`DECK`).
+  checkpoints: [
+    { x: TRAIL_FOUND, y: 0, after: TRAIL }, { x: 16.65, y: 0, after: TRAIL },
+    { x: 35.4, y: 0, z: CANDY_BEHIND_LANE, after: TRAIL }, { x: 41, y: -0.8, z: CANDY_BEHIND_LANE, after: TRAIL },
+  ],
   spots: [
     // Pappa feels for the flashlight in the dark: Elof takes it from the table and gives it to him.
     { id: 'lamp:take', at: { x: 15, y: 0 }, verb: 'take', word: 'skTakeLamp', needs: 'scene:kvall' },
@@ -501,19 +667,16 @@ export const stormkvall: ChapterData = {
     { id: 'skLampThanks', on: 'lamp:give', who: 'pappa', line: 'skLampThanks', read: true },
     { id: 'skShelf', on: 'beat:skLampThanks', until: 'goodnight', who: 'pappa', line: 'skShelf', read: true },
     { id: 'skMyCarving', on: 'beat:skShelf', until: 'goodnight', who: 'elof', line: 'skMyCarving', read: true },
-    // The first candy on the floor, where the old one leapt: a trail.
-    { id: 'skTrail', at: 10.6, needs: 'scene:tillsammans', who: 'elof', line: 'skTrail', read: true },
-    // A handful is not for ever: this is what runs out at the end of Älven.
-    { id: 'skHandful', on: 'beat:skTrail', who: 'moa', line: 'skHandful', read: true },
-    { id: 'skEnough', on: 'beat:skHandful', who: 'bertil', line: 'skEnough', read: true },
+    // The first candy on the floor, where the old one leapt, and what Moa and Bertil say of it, are the scene `spar`.
+    // (A handful is not for ever: this is what runs out at the end of Älven.)
     // The doll at the toy shelf, as he comes to it: its raincoat might fit him.
     { id: 'skDoll', at: DOLL.x - 2.2, needs: 'scene:tillsammans', until: TAKE, who: 'elof', line: 'skDollCoat', read: true },
     // Passing remarks (docs/dialogue.md): the one about the rain gives way to the family's promises on the deck.
     { id: 'skSill', at: 27.6, needs: 'scene:tillsammans', who: 'spoket', line: 'skKlonkHop', aside: true },
     { id: 'skRain', at: 39.4, needs: 'scene:tillsammans', who: 'elof', line: 'skRainLine', aside: true },
-    // On the deck, the family's promises, as he passes them.
-    { id: 'skNear', at: 44, needs: 'scene:tillsammans', who: 'mamma', line: 'nearYou', read: true },
-    { id: 'skFollow', at: 48, needs: 'scene:tillsammans', who: 'pappa', line: 'followTrail', read: true },
+    // On the deck, Mamma's and Pappa's promises, as he passes each of them kneeling there (`lofte`).
+    { id: 'skNear', at: PROMISE.mamma, needs: 'scene:tillsammans', who: 'mamma', line: 'nearYou', read: true },
+    { id: 'skFollow', at: PROMISE.pappa, needs: 'scene:tillsammans', who: 'pappa', line: 'followTrail', read: true },
   ],
   // Indoors the picture is wide while he is big; tiny, it comes down to him.
   cameras: [{ from: -3, to: 10, zoom: 1.5, lift: 0.3 }, { from: 10, to: 38, zoom: 1.2, lift: 0.4 }, { from: 38, to: 60, zoom: 1.5, lift: 1.2 }],

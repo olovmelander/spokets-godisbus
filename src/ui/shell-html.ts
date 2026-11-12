@@ -300,7 +300,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
            <p class="map-title" aria-hidden="true">${sv.map.title}</p>
            <div class="map" id="endMap"></div>
            <div class="rows" id="endRows"></div>
-           <p class="count"><b id="endCount"></b> ${sv.end.candy}</p>
+           <p class="count"><b id="endCount"></b> <span id="endCandy">${sv.end.candy}</span></p>
            <p class="found" id="endFound" hidden><span>${sv.stickers}</span><span class="stickers" id="endStickers"></span></p>
            <button class="wide" id="endPhotos" type="button" hidden>${CAMERA}<span>${sv.photos.again}</span></button>
            <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>

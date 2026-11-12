@@ -55,6 +55,6 @@ export const words: ChapterWords = {
   },
   moments: {
     kvall: 'Stormkvällen', fonstret: 'Fönstret slår upp', klonkstar: 'Klonks stjärna', krymper: 'Stjärnans magi',
-    upptackt: 'Där är Elof!', tillsammans: 'Vi letar tillsammans', regnrock: 'Dockans regnrock', stormtitel: 'Äventyret börjar',
+    upptackt: 'Där är Elof!', tillsammans: 'Vi letar tillsammans', spar: 'Godisspåret', regnrock: 'Dockans regnrock', stormtitel: 'Äventyret börjar',
   },
 };

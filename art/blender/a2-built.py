@@ -136,41 +136,63 @@ if wanted('picknick'):
 
 
 # --- the high fence at Olympia --------------------------------------------------------------------------------
-# Seen from its end, across the path: planks on posts, dark green, with a flat top rail he walks over, 0.8 wide and 5.2 up.
-# Far behind him the posts go on up, with the ball-stop net between them. Its origin is its near side's foot on the path.
+# Seen from its end, across the path: a board fence, 0.8 wide and 5.2 up, with a flat cap board he walks over. Its end is
+# read as a fence's: a square post between the edges of the planks on either side, each plank its own board with a gap of
+# light beside it, painted a weathered green, the cap pale. Far behind him the posts go on up, with the ball-stop net
+# between them. Its origin is its near side's foot on the path. (It was a dark green block: the 12 November fine-tuning.)
 
 if wanted('staket'):
     part = new_part()
-    GREEN = tone('#3e5a46')
-    GREEN_DARK = tone('#2a3f33')
-    CAP = tone('#8a9288')
-    NET = tone('#d8dcd8')
-    POST = tone('#6e7a78')
-    timber(part, (-0.04, -1.3, 5.04), (0.84, 9.0, 5.2), CAP, 1.0)
-    timber(part, (0.08, -1.2, 0.0), (0.72, 9.0, 5.04), GREEN_DARK, 2.0)
-    # The planks up both sides, each its own, and three rails showing at the end.
-    for side, x in ((-1.0, 0.07), (1.0, 0.73)):
-        y = -1.22
+    GREEN = tone('#5a8566')
+    POST_WOOD = tone('#6d8a70')
+    INSIDE = tone('#24342b')
+    END_GRAIN = tone('#b9ab8c')
+    CAP = tone('#c0c6b8')
+    NET = tone('#dfe3df')
+    POST = tone('#8a9496')
+    # The cap board, its edges a little over the planks, and a shadowed lip under its front.
+    timber(part, (-0.05, -1.32, 5.04), (0.85, 9.0, 5.2), CAP, 1.0)
+    timber(part, (-0.04, -1.31, 4.96), (0.84, -1.24, 5.04), lit(CAP, 0.6), 1.5)
+    # The posts, every 2.1 back, the near one at the end; two rails between them, out of sight inside but for the gaps.
+    y = -1.2
+    k = 0
+    while y < 9.0:
+        timber(part, (0.14, y, 0.0), (0.66, y + 0.5, 5.04), lit(POST_WOOD, 0.92 + 0.16 * rnd(k, 4.0)), 3.0 + k)
+        y += 2.1
+        k += 1
+    for z in (1.0, 4.1):
+        timber(part, (0.14, -0.7, z), (0.66, 9.0, z + 0.3), lit(POST_WOOD, 0.8), z)
+    # Dark inside between the two faces, so that light shows only through the gaps.
+    timber(part, (0.13, -0.7, 0.02), (0.67, 9.0, 4.96), INSIDE, 6.0)
+    # The end post's face: a grain of darker lines up it, and the nail heads of the planks either side.
+    for g in range(4):
+        x = 0.2 + g * 0.13 + 0.03 * rnd(g, 7.0)
+        strip(part, [Vector((x, -1.201, 0.15)), Vector((x + 0.01, -1.201, 4.9))], 0.008, lit(POST_WOOD, 0.72), Vector((0.0, -1.0, 0.0)))
+    # The planks up both sides, each its own board 0.08 thick, with a gap between: their pale sawn ends frame the post.
+    for side, (x0, x1) in ((-1.0, (0.05, 0.13)), (1.0, (0.67, 0.75))):
+        y = -1.24
         n = 0
         while y < 9.0:
-            wide = 0.5 + 0.1 * rnd(n, 1.0)
-            shade = lit(GREEN, 0.84 + 0.3 * rnd(n, 2.0))
-            top = 5.03 - 0.02 * rnd(n, 3.0)
-            pts = [Vector((x, y, 0.02)), Vector((x, y + wide - 0.03, 0.02)), Vector((x, y + wide - 0.03, top)), Vector((x, y, top))]
-            part['flat'][face(part, [put(part, p, shade) for p in pts])] = shade
-            y += wide
+            wide = 0.42 + 0.08 * rnd(n, 1.0 + side)
+            shade = lit(GREEN, 0.86 + 0.28 * rnd(n, 2.0 + side))
+            top = 5.03 - 0.03 * rnd(n, 3.0 + side)
+            timber(part, (x0, y, 0.03), (x1, y + wide, top), shade, n + 10.0 * side)
+            if n == 0:
+                # The near board's sawn end, seen from the path: pale wood under the paint.
+                pts = [Vector((x0, y - 0.002, 0.03)), Vector((x1, y - 0.002, 0.03)), Vector((x1, y - 0.002, top)), Vector((x0, y - 0.002, top))]
+                part['flat'][face(part, [put(part, p, END_GRAIN) for p in pts])] = END_GRAIN
+            y += wide + 0.05
             n += 1
-    for z in (0.7, 2.5, 4.4):
-        timber(part, (0.02, -1.26, z), (0.78, -1.2, z + 0.26), GREEN, z)
-    for y in (-1.22, 3.0, 7.2):
-        tube(part, [Vector((0.4, y + 0.1, 5.2)), Vector((0.4, y + 0.1, 15.0 if y > 0.0 else 5.5))], [0.08, 0.07], [POST, POST], 8)
-    # The ball-stop net over it, from the second post back: only its thread, row on row.
+    # The ball-stop net's posts, galvanised, from the second one back, and its net of cord between them.
+    for y in (3.0, 7.2):
+        tube(part, [Vector((0.4, y + 0.1, 5.2)), Vector((0.4, y + 0.1, 15.0))], [0.1, 0.09], [POST, POST], 8)
+    tube(part, [Vector((0.4, 3.1, 14.9)), Vector((0.4, 7.3, 14.9))], [0.04, 0.04], [POST, POST], 6)
     for k in range(14):
-        z = 5.6 + k * 0.72
-        strip(part, [Vector((0.4, 3.1, z)), Vector((0.4, 7.3, z))], 0.012, NET, Vector((-1.0, 0.0, 0.0)))
+        z = 5.6 + k * 0.66
+        strip(part, [Vector((0.4, 3.1, z)), Vector((0.4, 7.3, z))], 0.022, NET, Vector((-1.0, 0.0, 0.0)))
     for k in range(9):
         y = 3.1 + k * 0.52
-        strip(part, [Vector((0.4, y, 5.3)), Vector((0.4, y, 14.8))], 0.012, NET, Vector((-1.0, 0.0, 0.0)))
+        strip(part, [Vector((0.4, y, 5.3)), Vector((0.4, y, 14.8))], 0.022, NET, Vector((-1.0, 0.0, 0.0)))
     finish(part, 'staket', sharp=30.0, strength=0.4, reach=0.5, floor=0.0, leaf=True)
 
 

@@ -1,12 +1,14 @@
 {
   "model_id": "eleven_v4",
   "voices": {
-    "elof": "dJzZcvlDgItQyHtAWC1J",
-    "moa": "1Iztu4UHnTb9SUjJcpS1",
-    "bertil": "ISDDl0xPNLMD73L5PQj4",
-    "mamma": "kPdGSxhZAqy4bmPAf9iJ",
-    "pappa": "wVebHqxy2EFBILywVrdC",
+    "elof": "pKEH83CenvGnvS9JlN8f",
+    "moa": "tPrL2xYfkQnwJhHMMdRM",
+    "bertil": "JsPUTLdHju8qRnxHL4lo",
+    "mamma": "4Ct5uMEndw4cJ7q0Jx0l",
+    "pappa": "7UMEOkIJdI4hjmR2SWNq",
     "storyteller": "oVRBQOcE5xQoswjGIb1u",
-    "spoket": "N2lVS1w4EtoT3dr4eOWO"
+    "spoket": "1ZTWuhdVSCOr9OfdV5pO",
+    "mormor": "TI58dCdnaz4gmYn5EbvK",
+    "morfar": "nEJYXtiAMFuP7hh9yoi4"
   }
 }

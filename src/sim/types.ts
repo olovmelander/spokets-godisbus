@@ -10,6 +10,11 @@ export interface Checkpoint extends Vec {
    * (the old trägubbe's, in Stormkvällen) has no big candy waiting before it is laid.
    */
   after?: string;
+  /**
+   * Picture only: how far towards the camera its big candy stands (src/render/view.ts). Left out, -0.7: a little behind
+   * the path. Further back where someone goes by behind him there (Stormkvällen's veranda and deck).
+   */
+  z?: number;
 }
 
 /** Something upright that Elof climbs: a hose, a stem, a root (plan §4.2). */
@@ -476,8 +481,11 @@ export type SurfaceKind = 'roof' | 'wood' | 'earth' | 'stone' | 'shavings' | 'he
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
  * outline, and `base` is the height of the ground at its foot.
  */
-/** Things on the floor that he walks on, each a model of its own: the land goes on under them. */
-export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry' | 'edging';
+/**
+ * Things on the floor that he walks on, each a model of its own: the land goes on under them. A `bale` is Billsta's
+ * hay in its loft, drawn by the barn itself (src/content/aventyr2/barn-loft.ts): its floor runs on under it.
+ */
+export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry' | 'edging' | 'bale';
 
 export interface Landmark {
   look: 'cone' | 'log' | 'anthill' | 'stone' | LandmarkThing;
@@ -576,8 +584,11 @@ export interface ChapterData {
   bouncers?: Bouncer[];
   /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */
   challenges?: Challenge[];
-  /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
-  surfaces?: { from: number; to: number; kind: SurfaceKind }[];
+  /**
+   * For the picture: stretches of ground that are something else than the place's own: a deck, a boulder.
+   * `gate`: a tall end hedge with an arch where the path goes on into the forest (render/dressing/hedge-gate.ts).
+   */
+  surfaces?: { from: number; to: number; kind: SurfaceKind; gate?: true }[];
   /** For the picture: clear the near trunks where people come down from a road or stand in a clearing. */
   treeGaps?: { from: number; to: number; back: number }[];
   /**
@@ -735,7 +746,8 @@ export interface ChapterData {
    * For the picture only: things that stand about in a room, behind the play plane: a table, a chair. Where
    * an actor of a scene sits or stands at them is the scene's business.
    */
-  furniture?: { look: 'table' | 'chair' | 'stool'; at: Vec; z: number; face?: number; cloth?: string }[];
+  // 'steps': a kitchen step stool, built in code (src/render/stage.ts, STEPS_TOP).
+  furniture?: { look: 'table' | 'chair' | 'stool' | 'steps'; at: Vec; z: number; face?: number; cloth?: string }[];
   /**
    * For the picture only: from this x the chapter is out of doors: the house's wall gives way to the
    * garden's far scenery. Indoors before it.

@@ -100,10 +100,11 @@ describe("Flärken's outlet, the å", () => {
       const scene = chapter.scenes!.find((s) => s.id === sceneId)!;
       const flyby = chapter.storm!.flybys!.find((f) => f.on === trigger)!;
       expect(scene.hold).toBe(true);
-      expect(scene.stage!.shots!.every((shot) => shot.z === flyby.z)).toBe(true);
+      const begins = scene.cues!.find((cue) => cue.flag === trigger)!.at;
+      // Every shot while it floats is down on the stream with it.
+      expect(scene.stage!.shots!.filter((shot) => shot.at < begins + flyby.seconds).every((shot) => shot.z === flyby.z)).toBe(true);
       expect(afloat(flyby)).toBe(true);
       expect(flyby.seconds).toBeGreaterThanOrEqual(5);
-      const begins = scene.cues!.find((cue) => cue.flag === trigger)!.at;
       expect(begins).toBeGreaterThanOrEqual(scene.stage!.shots![0]!.move!);
       const finishes = scene.cues!.find((cue) => cue.flag === after)!.at;
       expect(finishes - begins).toBeGreaterThan(flyby.seconds);
@@ -116,6 +117,17 @@ describe("Flärken's outlet, the å", () => {
       }
     }
     expect(chapter.scenes!.find((scene) => scene.id === 'sjon:stocken')!.on).toBe('sjon:downstream');
+    // Once both have gone down the å, the picture is back on Elof and Klonk at the jetty's end before "Trä flyter!" and
+    // the talk after it (finetune pass, 12 November 2026): it was said over the empty river.
+    const stocken = chapter.scenes!.find((scene) => scene.id === 'sjon:stocken')!;
+    const back = stocken.stage!.shots![stocken.stage!.shots!.length - 1]!;
+    const said = stocken.cues!.find((cue) => cue.flag === 'sjon:both-downstream')!.at;
+    expect(back.z ?? 0).toBe(0);
+    expect(back.at + back.move!).toBeLessThanOrEqual(said);
+    const outlet = chapter.scenes!.find((scene) => scene.id === 'sjon:strommen')!;
+    const klonk = chapter.ghost![chapter.ghost!.length - 1]!.at.x;
+    expect(back.x - back.width! / 2).toBeLessThan(outlet.at! - 0.5);
+    expect(back.x + back.width! / 2).toBeGreaterThan(klonk + 0.5);
     // Said once he has hopped from the end post onto his log (Olov, 12 November 2026), not as he leaves the post.
     expect(chapter.beats!.find((beat) => beat.id === 'sjon:log')!.on).toBe('sjon:on-log');
     expect(chapter.beats!.find((beat) => beat.id === 'sjon:floated')!.on).toBe('sjon:both-downstream');

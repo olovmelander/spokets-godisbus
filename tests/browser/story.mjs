@@ -303,7 +303,7 @@ try {
     // His carving goes up on Pappa's shelf, back along the room, before his teeth (Olov, 12 November 2026).
     await reach(page, 'putOnShelf', 'the shelf is reachable', { key: 'ArrowLeft', timeout: 90000 });
     await page.keyboard.press('e');
-    await untilScene(state, (s) => s.flags.includes('scene:hyllan'), 'he puts his carving up on the shelf from the stool');
+    await untilScene(state, (s) => s.flags.includes('scene:hyllan'), 'he puts his carving up on the shelf from the step stool');
     check('his carving stands on the shelf before his teeth', (await state()).flags.includes('shelf:placed') && !(await state()).flags.includes('teeth'));
     await reach(page, 'brush', 'bathroom door is reachable', { timeout: 90000 });
     await page.keyboard.press('e');

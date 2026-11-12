@@ -94,9 +94,11 @@ describe('Pappas two counterweights on the actual forest ground', () => {
     expect(granskog.candy).toHaveLength(103);
     // Hash the ordered authored arrays, including coordinates and candy appearance flags. This digest
     // came from evaluating granskog.ts at 26956e6, so moving/reordering an entry cannot silently migrate saves.
+    // Renewed on 12 November 2026: the ant lift's way rises higher (it went behind the anthill), and its three
+    // candies follow it. They moved; none was added, removed or reordered.
     const layout = JSON.stringify({ checkpoints: granskog.checkpoints, candy: granskog.candy });
     expect(createHash('sha256').update(layout).digest('hex'))
-      .toBe('d6bffb10165b32984d206eb54a01ed3ed09380b7091c3962475b78d29c4fb5d9');
+      .toBe('4224fa65245899d2fc3a75f89a45beba34487036500b4919f608bf7402d721ef');
   });
 
   it('the small cone gives a safe trial, then a real return for the heavy cone crosses the ravine', () => {

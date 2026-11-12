@@ -62,6 +62,11 @@ export function setVoiceSettings(enabled: boolean, volume: number): void {
 }
 
 /** Plays a voice line by its key, e.g. 'stolenBag', 'scene_morning', etc. */
+/** Whether a line has its own recording that says its words: then it is heard, not its speaker's wordless sound. */
+export function hasVoice(key: string): boolean {
+  return recordedVoices.has(key);
+}
+
 export function playVoice(key: string): void {
   if (!soundEnabled || currentVolume <= 0 || typeof Audio === 'undefined') return;
 
