@@ -51,6 +51,44 @@ describe('Äventyr 2: Stormkvällen', () => {
     expect(flags.indexOf('star:out')).toBeLessThan(flags.indexOf('star'));
   });
 
+  it('finds the trail with Moa and Bertil, standing, so that the doll\'s line is said at the doll and its scene is short', () => {
+    // The final fine-tuning (12 November 2026): said in passing, Moa's and Bertil's answers about the trail were read
+    // while he ran to the doll, its line came 14 s late (or out on the deck), and the coat's scene stood for their words.
+    const spar = stormkvall.scenes!.find((scene) => scene.id === 'spar')!;
+    expect(spar.hold).toBe(true);
+    expect(spar.lines!.map((line) => [line.who, line.id])).toEqual([['elof', 'skTrail'], ['moa', 'skHandful'], ['bertil', 'skEnough']]);
+    // He stands clear of the first big candy's lollipop, and none of the trail's big candies stands in the coat's picture.
+    const first = stormkvall.checkpoints![0]!.x;
+    expect(spar.at! - first).toBeGreaterThan(0.6);
+    const coat = stormkvall.scenes!.find((scene) => scene.id === 'regnrock')!.stage!.shots![0]!;
+    for (const big of stormkvall.checkpoints!) expect(Math.abs(big.x - coat.x!), `big candy at ${big.x}`).toBeGreaterThan(coat.width! / 2 + 0.6);
+    const result = listenThrough(stormkvall, {}, 60, 900);
+    expect(result.goal).toBe(true);
+    const doll = result.heard.find((one) => one.id === 'skDoll')!;
+    expect(doll.shown).not.toBeNull();
+    expect(doll.shown! - doll.due).toBeLessThan(1);
+    // Nothing but his own words is said while the coat goes on.
+    const coatAt = result.scenes.findIndex((one) => one.id === 'regnrock');
+    expect(result.scenes[coatAt - 1]!.id).toBe('spar');
+  });
+
+  it('has Mamma and Pappa kneel on the deck where they make their promises, and he waves back to them', () => {
+    const lofte = stormkvall.scenes!.find((scene) => scene.id === 'lofte')!;
+    const kneels = (who: 'mamma' | 'pappa') => lofte.stage!.actors![who]!;
+    for (const [who, beat] of [['mamma', 'skNear'], ['pappa', 'skFollow']] as const) {
+      const at = stormkvall.beats!.find((one) => one.id === beat)!.at!;
+      expect(Math.abs(kneels(who)[0]!.x! - at), who).toBeLessThan(1.5);
+      expect(kneels(who).some((key) => key.act === 'kneel'), who).toBe(true);
+      // On the deck, out of the picture while he is on the veranda where they come out.
+      expect(kneels(who)[0]!.y).toBe(-0.8);
+      expect(kneels(who)[0]!.x! - lofte.at!).toBeGreaterThan(10);
+    }
+    // At the deck's edge he turns and waves to where they kneel.
+    const wave = stormkvall.scenes!.find((scene) => scene.id === 'stormtitel')!.stage!.elof!.find((key) => key.act === 'wave')!;
+    expect(wave.aim!.x).toBeGreaterThan(kneels('mamma')[0]!.x!);
+    expect(wave.aim!.x).toBeLessThan(kneels('pappa')[0]!.x!);
+  });
+
   it('resumes after the shrinking on the floor, small, and still has its trail', () => {
     const game = new Game(stormkvall, {}, { checkpoint: 1, flags: ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:tillsammans'] });
     expect(game.sim.curr.x).toBe(stormkvall.checkpoints![1]!.x);
