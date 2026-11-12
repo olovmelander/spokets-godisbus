@@ -34,7 +34,8 @@ import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { otterLife } from './otter';
 import { RAPID_LANE, RAPID_STONES, riverStones } from './river-stones';
-import { morgonen, WINK } from './chapters/morgonen';
+import { DOOR, morgonen, WINK } from './chapters/morgonen';
+import { frontDoor } from '../../render/front-door';
 import { paintedBlink } from '../../render/epilogue-stage';
 import type { SceneFrame } from '../../sim/scene';
 import { PENDANT } from './chapters/stormkvall';
@@ -2548,6 +2549,8 @@ function aftermath(): SpotProp {
   // The sofa, the lamp, the plant, the rug and Moa's drawings where they were on the evening of the storm; the blanket
   // pulled half off the sofa now.
   group.add(roomThings({ rug: HOME_LAYOUT.dining.x, blanket: true }));
+  // The front door past the coats, where the morning ends (../../render/front-door.ts).
+  group.add(frontDoor(DOOR));
   // The pool they stand in: flat, and giving back the room's light.
   const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(39.1, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
@@ -2627,8 +2630,9 @@ function breakfast(spot: Spot): SpotProp {
   const group = new Group();
   group.position.set(spot.at.x, spot.at.y, -1.5);
   const parts: BufferGeometry[] = [];
-  // The thermos: a tall green flask with its cup screwed on as a lid, a steel band, and a handle on its side.
-  const THERMOS = { x: -1.55, z: -0.05 };
+  // The thermos: a tall green flask with its cup screwed on as a lid, a steel band, and a handle on its side. At the
+  // table's far end, where mormor stands by it (../chapters/morgonen.ts, MORMOR).
+  const THERMOS = { x: 1.35, z: -0.5 };
   const flask: (readonly [number, number])[] = [[0.001, 0], [0.15, 0], [0.165, 0.04], [0.165, 0.5], [0.14, 0.56], [0.1, 0.6], [0.001, 0.6]];
   parts.push(paint(new LatheGeometry(flask.map(([r, y]) => new Vector2(r, y)), 14).translate(THERMOS.x, 0, THERMOS.z), '#4f7f62'));
   parts.push(paint(new CylinderGeometry(0.168, 0.168, 0.05, 14).translate(THERMOS.x, 0.47, THERMOS.z), '#a9afb3'));
@@ -2648,10 +2652,10 @@ function breakfast(spot: Spot): SpotProp {
   const table = new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.45 }));
   parts.forEach((part) => part.dispose());
   group.add(table);
-  // Mormor's lantern from the night, put out, at the table's back corner.
+  // Mormor's lantern from the night, put out, at the table's far back corner, by her.
   const out = lantern();
   out.light.visible = false;
-  out.group.position.set(-2.05, 0.78, -0.72);
+  out.group.position.set(1.95, 0.78, -0.8);
   group.add(out.group);
   // The steam over each cup: two soft puffs curling up, in one draw.
   const steam = new InstancedMesh(new SphereGeometry(0.06, 8, 6), new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.2, depthWrite: false }), CUPS.length * 2);
