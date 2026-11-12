@@ -476,8 +476,11 @@ export type SurfaceKind = 'roof' | 'wood' | 'earth' | 'stone' | 'shavings' | 'he
  * A thing that a block of the ground is, for the picture only: the block runs from `from` to `to` along the
  * outline, and `base` is the height of the ground at its foot.
  */
-/** Things on the floor that he walks on, each a model of its own: the land goes on under them. */
-export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry' | 'edging';
+/**
+ * Things on the floor that he walks on, each a model of its own: the land goes on under them. A `bale` is Billsta's
+ * hay in its loft, drawn by the barn itself (src/content/aventyr2/barn-loft.ts): its floor runs on under it.
+ */
+export type LandmarkThing = 'barrel' | 'can' | 'playhouse' | 'slide' | 'picnic' | 'fence' | 'stairs' | 'woodpile' | 'skerry' | 'edging' | 'bale';
 
 export interface Landmark {
   look: 'cone' | 'log' | 'anthill' | 'stone' | LandmarkThing;

@@ -572,7 +572,8 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(crack.to - crack.from).toBeLessThan(RUNNING_JUMP_REACH - 0.6);
       expect(heightAt(billsta, crack.from + 0.5)).toBeLessThan(heightAt(billsta, crack.from - 0.5) - 4);
       // Each boulder is a stone of the field, for the picture.
-      expect(billsta.landmarks!.filter((l) => l.base >= slopeGust!.y).map((l) => l.look)).toEqual(['stone', 'stone', 'stone']);
+      // (The barn's bales stand on its loft's floor, as high: they are no part of the hill.)
+      expect(billsta.landmarks!.filter((l) => l.base >= slopeGust!.y && l.look !== 'bale').map((l) => l.look)).toEqual(['stone', 'stone', 'stone']);
       // Level and whole from the first boulder of its lee to the last, and a dash between two is half the calm.
       for (let x = slopeGust!.from; x <= slopeGust!.to; x += 0.2) expect(heightAt(billsta, x), `at ${x}`).toBeCloseTo(slopeGust!.y, 6);
       for (let i = 1; i < slopeGust!.shelters.length; i++) expect(slopeGust!.shelters[i]! - slopeGust!.shelters[i - 1]!).toBeCloseTo(5.2, 6);
