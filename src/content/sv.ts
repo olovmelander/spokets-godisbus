@@ -137,6 +137,7 @@ export const sv = {
     takeKnife: 'Ta kniven',
     carve: 'Tälj',
     brush: 'Borsta tänderna',
+    putOnShelf: 'Ställ på hyllan',
     give: 'Ge',
     pick: 'Plocka',
     leaveBerry: 'Lämna ett lingon',
@@ -232,7 +233,8 @@ export const sv = {
       carveStart: { purpose: 'Ta kniven. Pappa lär dig tälja.', recap: 'Alla har fått godis. Nu vill jag göra en egen trägubbe.' },
       carve: { purpose: 'Tälj min trägubbe med Pappa.', recap: 'Pappa hjälper min hand. Jag täljer alltid bort från kroppen.' },
       paintOwn: { purpose: 'Måla min trägubbes två ögon.', recap: 'Jag har täljt min första figur. Nu får den sina ögon.' },
-      teeth: { purpose: 'Gå in i badrummet och borsta tänderna.', recap: 'Min egen Lillgubbe är klar. Nu är det snart läggdags.' },
+      shelf: { purpose: 'Ställ din trägubbe på Pappas hylla.', recap: 'Min egen Lillgubbe är klar. Den ska bo på hyllan med de andra.' },
+      teeth: { purpose: 'Gå in i badrummet och borsta tänderna.', recap: 'Min Lillgubbe står på hyllan. Nu är det snart läggdags.' },
       bed: { purpose: 'Borsta klart vid handfatet.', recap: 'Godiskalas och en egen trägubbe. Efter tandborstningen är det godnatt.' },
       village: { purpose: 'Gå till godisbutiken med min vän.', recap: 'Lördagen efter gör vi en ny liten utflykt tillsammans.' },
       shop: { purpose: 'Gå in i butiken och hitta påsen.', recap: 'Vi har kommit fram. Där inne väntar godis att dela.' },
@@ -376,15 +378,25 @@ export const sv = {
     familyPappa: 'Här är för långt att hoppa, Elof.',
     familySeesaw: 'Jag håller brädan. Rulla hit en kotte.',
     familySeesawReady: 'Bra! Ställ dig på änden som är nere.',
+    // Landed across the ravine, he turns and thanks Pappa at the seesaw (Olov, 12 November 2026).
+    forestThanksPappa: 'Tack så mycket, Pappa!',
     familyBertil: 'Min keps blir din båt, lillebror.',
     familyCapReady: 'Kliv i när du vill. Jag hejar på dig.',
     familyMamma: 'Jag lägger en stock över vattnet.',
     familyBridgeReady: 'Så! Följ stocken över. Jag är nära.',
     familyBraid: 'Min fläta blir en stege upp till mig.',
     familyBraidReady: 'Ta tag i flätan och klättra upp.',
+    // Up on the boardwalk he thanks her first; "På myren går vi på spången." answers it (Olov, 12 November 2026).
+    familyBraidThanks: 'Tack, Mamma! Vilken stark fläta!',
     gardenPocket: 'Oj! Min teckning blåste in under bron!',
     gardenFound: 'En lövteckning! Den är Moas.',
     gardenThanks: 'Du hittade den! Vi hjälps åt, lillebror.',
+    // A drop that knocks him over, in turn, as the cones do in Stormskogen (DRIP_REACTIONS, below).
+    dripOuch: 'Aj!',
+    dripCold: 'Brr! Vad kallt!',
+    dripWet: 'Usch, jag blev blöt!',
+    dripSplash: 'Plask! Rakt i huvudet.',
+    dripAgain: 'Aj då! En droppe till.',
     givesAway: 'Spöket ger bort mitt godis!?',
     vittraBerry: 'Ett lingon till er också.',
     forestVittraClue: 'En liten bild från vittrorna.',
@@ -437,6 +449,7 @@ export const sv = {
     away: 'Alltid bort från kroppen.',
     carved: 'Titta, Pappa! Min egen Lillgubbe!',
     carvingProud: 'Den har du gjort själv. Vad fin den blev!',
+    onShelf: 'Där! Nu bor du på hyllan med oss.',
     brushNow: 'Nu ska jag borsta tänderna.',
     goodnight: 'Godnatt, Elof!',
   },
@@ -764,3 +777,9 @@ export const sv = {
   // After a lost picture the button loads the page again: everything is saved.
   reloadGame: 'Ladda om spelet',
 } as const;
+
+/**
+ * What Elof says when a drop of water knocks him over, in turn: in every chapter with drips, in both adventures, as
+ * the cones in Stormskogen have their own (CONE_REACTIONS). An incidental remark: said only when nothing else is.
+ */
+export const DRIP_REACTIONS = ['dripOuch', 'dripCold', 'dripWet', 'dripSplash', 'dripAgain'] as const;

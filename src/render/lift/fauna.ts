@@ -727,7 +727,8 @@ function beings(plan: Plan, add: Add): Kind {
 
 function carvings(plan: Plan, add: Add): Kind {
   if (!plan.carvings.length) return null;
-  const wood = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true });
+  // Oiled by hands that held them: a little sheen on the facets.
+  const wood = new MeshStandardMaterial({ vertexColors: true, roughness: 0.78, flatShading: true });
   const shapes = [...new Set(plan.carvings.map((c) => c.shape))];
   const crowds = new Map(shapes.map((shape) => [shape, add(CARVINGS[shape]('#d6bf98'), plan.carvings.filter((c) => c.shape === shape).length, wood, `carving:${shape}`)]));
   const all = plan.carvings.map((c, n) => ({ ...c, crowd: crowds.get(c.shape)!, i: plan.carvings.slice(0, n).filter((o) => o.shape === c.shape).length, tip: -1, armed: true }));

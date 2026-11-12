@@ -16,8 +16,8 @@ function run(sim: Sim, seconds: number, input: Partial<StepInput> = {}): void {
 
 /** Where the walk home begins: beyond it he is carried. */
 const HOME = norrsken.rides![0]!.from.x;
-/** Everything up to the bag: the sharing can begin. */
-const WITH_THE_BAG = { flags: ['lower', 'crowberry', 'eyes', 'bag'], placed: ['tragubbe'] };
+/** Everything up to the bag: the sharing can begin. The trägubbe was pulled out (`uppdragen`), and he drags it behind him. */
+const WITH_THE_BAG = { flags: ['lower', 'scene:uppdragen', 'crowberry', 'eyes', 'bag'], placed: ['tragubbe'] };
 
 describe('Final, Norrsken, in greybox', () => {
   for (const fps of [30, 60, 144]) {
@@ -84,10 +84,10 @@ describe('Final, Norrsken, in greybox', () => {
     expect(jay.finishStory({ kind: 'share', friend: 'jay', sweet: 'lingon' })).toBe(true);
     expect(jay.flags.has('share:jay')).toBe(true);
     expect(jay.flags.has('shared')).toBe(false);
-    // With one friend still waiting, Smaka is not offered.
+    // With one friend still waiting, Smaka is not offered: the trägubbe he has dragged here is, at his heels.
     const early = at(26.6, ['share:jay', 'share:spoket']);
     run(early, 0.2);
-    expect(early.curr.verb).toBeNull();
+    expect(early.curr.word).toBe('giveTragubbe');
     // With all three given, it is.
     const ready = at(26.6, ['share:jay', 'share:spoket', 'share:tragubbe']);
     run(ready, 0.2);
@@ -126,6 +126,37 @@ describe('Final, Norrsken, in greybox', () => {
     run(back, 2.5, { x: -1 });
     expect(back.curr.x).toBeLessThan(11.5);
     expect(back.bubbles).toBe(0);
+  });
+
+  it('drags the trägubbe behind him, and paints its eyes and gives its candy where it is (Olov, 12 November 2026)', () => {
+    const sim = new Sim({ ...norrsken, spawn: { x: 13, y: 0.01 } }, {}, { placed: ['tragubbe'], flags: ['lower', 'scene:uppdragen', 'crowberry'] });
+    const figure = sim.movers.find((mover) => mover.def.id === 'tragubbe')!;
+    run(sim, 2, { x: 1 });
+    // A step behind him, not back at the crack, and nothing he bumps into.
+    expect(sim.curr.x).toBeGreaterThan(17);
+    expect(sim.curr.x - figure.x).toBeGreaterThan(0.84);
+    expect(sim.curr.x - figure.x).toBeLessThan(1.6);
+    expect(figure.y).toBe(0);
+    // Standing, it comes to rest a step behind him: Måla ögon is offered there, and the helper points there too.
+    run(sim, 1);
+    expect(sim.curr.x - figure.x).toBeCloseTo(0.85, 1);
+    expect(sim.curr.word).toBe('paintEyes');
+    const eyes = norrsken.spots!.find((spot) => spot.id === 'eyes')!;
+    expect(sim.placeOf(eyes).x).toBeCloseTo(figure.x);
+    expect(eyes.at.x).toBeCloseTo(13.4);
+    // Turned back the other way, it is dragged that way too, without a bump as he walks past it.
+    run(sim, 1.5, { x: -1 });
+    expect(figure.x - sim.curr.x).toBeGreaterThan(0.84);
+    expect(sim.bubbles).toBe(0);
+    // A game taken up again at the checkpoint by the ghost finds it at his heels, not slid there from the crack.
+    const later = new Sim({ ...norrsken }, {}, { placed: ['tragubbe'], flags: ['lower', 'scene:uppdragen', 'crowberry', 'eyes'], checkpoint: 1 });
+    later.step(idle);
+    const there = later.movers.find((mover) => mover.def.id === 'tragubbe')!;
+    expect(Math.abs(later.curr.x - there.x)).toBeLessThan(1);
+    // Tasted, the lace is let go: the simulation drags it no more, and the reunion's picture sets it at his feet.
+    const tasted = new Sim({ ...norrsken, spawn: { x: 26.6, y: 0.01 } }, {}, { placed: ['tragubbe'], flags: ['lower', 'scene:uppdragen', 'taste'] });
+    run(tasted, 0.5, { x: 1 });
+    expect(tasted.movers.find((mover) => mover.def.id === 'tragubbe')!.x).toBeCloseTo(12.4);
   });
 
   it('has a candy trail that is never lost on the summit', () => {

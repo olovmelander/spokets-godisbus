@@ -171,7 +171,7 @@ describe('the family bathroom and first carving', () => {
     } finally { vi.unstubAllGlobals(); }
   });
 
-  it('shows the actual completed carving immediately, with its feet on the private hand socket', () => {
+  it('shows the actual completed carving immediately, with its feet on the private hand socket, until it is on the shelf', () => {
     const stage = createEpilogueStage(epilog.epilogue);
     const figure = stage.group.getObjectByName('epilogue-lillgubbe')!;
     const palm = new Vector3(32.3, 2.1, .8), hold = vi.fn();
@@ -182,7 +182,15 @@ describe('the family bathroom and first carving', () => {
     const feet = figure.getWorldPosition(new Vector3());
     expect(feet.distanceTo(palm)).toBeCloseTo(.02);
     expect(hold).toHaveBeenCalledWith(1, { kind: 'flat', size: 0 });
-    stage.update(new Set(['dots', 'scene:first-carving']), null, false);
-    expect(figure.getWorldPosition(new Vector3()).toArray()).toEqual(Object.values(epilog.epilogue!.window));
+    // He carries it on after the carving's scene, to Pappa's shelf, and puts it up there himself before his teeth.
+    stage.update(new Set(['dots', 'scene:first-carving', 'shelf']), null, false);
+    stage.updateElof({ hand: (_side, out) => out, socket: (_side, _grip, out) => out.copy(palm), hold });
+    expect(figure.getWorldPosition(new Vector3()).distanceTo(palm)).toBeCloseTo(.02);
+    stage.update(new Set(['dots', 'scene:first-carving', 'shelf', 'shelf:placed']), null, false);
+    const shelf = epilog.epilogue!.shelf!;
+    const placed = figure.getWorldPosition(new Vector3());
+    expect([placed.x, placed.y, placed.z].map((v) => Math.round(v * 1000) / 1000)).toEqual([shelf.x, shelf.y, shelf.z].map((v) => Math.round(v * 1000) / 1000));
+    // Where it stands on the evening of the storm: between Pappa's old trägubbe and Klonk.
+    expect(shelf.x).toBeCloseTo(epilog.shelf!.x - 2.9);
   });
 });

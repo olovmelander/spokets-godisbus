@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { STORY, BONUS } from '../../src/content/chapters';
-import { sv } from '../../src/content/sv';
+import { DRIP_REACTIONS, sv } from '../../src/content/sv';
 import { sceneBeats } from '../../src/sim/scene';
 import { heard } from '../../src/audio/recorded';
 import type { Speaker } from '../../src/sim/types';
@@ -58,6 +58,8 @@ function expected(): VoiceLine[] {
     if (closing) add(`end_${chapter.id}`, 'storyteller', closing, `Äventyr 1, ${chapter.id} closing card`);
   }
   add('end_window', 'storyteller', sv.end.window, 'Final moonlight description');
+  // Said in turn when a drop of water knocks him over, in Gården and Byn too (src/main.ts), not by a beat.
+  for (const key of DRIP_REACTIONS) add(key, 'elof', sv.lines[key], 'Äventyr 1, a drop of water knocks him over');
   return [...out.values()];
 }
 const words = (lines: VoiceLine[]) => lines.map(({ key, speaker, text }) => [key, speaker, text]).sort((a,b) => a[0]!.localeCompare(b[0]!));

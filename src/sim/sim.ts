@@ -7,7 +7,7 @@ import {
 } from './constants';
 import { ASIDE_NEAR, ASIDE_REACH, ASIDE_ROOM, CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH, REPLY_PATIENCE } from './constants';
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
-import { GHOST_CATCH, GHOST_CLEARANCE, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
+import { GHOST_CATCH, GHOST_CLEARANCE, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH, TOW_BEHIND, TOW_LOST, TOW_PULL, TOW_SLACK } from './constants';
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
@@ -391,7 +391,8 @@ export class Sim {
     // A remark whose moment had come before this game was taken up belonged to that moment: it is not said now, as
     // he stands at a big candy somewhere else. One that answers a line (Klonk's "Klonk!") goes with its line.
     for (const beat of chapter.beats ?? []) if (beat.aside && beat.on !== undefined && this.flags.has(beat.on)) this.letGo.add(beat.id);
-    this.spots = chapter.spots ?? [];
+    // A spot that follows a towed thing gets its own place to move; the chapter's stays as it was written.
+    this.spots = (chapter.spots ?? []).map((spot) => spot.follows ? { ...spot, at: { ...spot.at } } : spot);
     this.berries = (chapter.bouncers ?? []).map((b) => ({ ...b, squash: 0 }));
     this.perches = chapter.ghost ?? [];
     // The ghost starts at its first place that is still ahead of him.
@@ -951,9 +952,15 @@ export class Sim {
         // A trapped ghost still belongs to the rescue/lift puzzle. It rises out of reach at that
         // same stop instead of jumping past the unsolved story beat, and settles when he backs away.
         const dx = Math.abs(ghost.x - p.x);
-        const desired = dx < GHOST_NEAR && !perch.still ? Math.max(perch.at.y, p.y + Math.sqrt(GHOST_NEAR ** 2 - dx ** 2)) : perch.at.y;
-        ghost.y += Math.sign(desired - ghost.y) * Math.min(Math.abs(desired - ghost.y), GHOST_SPEED * STEP);
-        if (!safe(ghost.x, ghost.y)) ghost.y = p.y + Math.sqrt(Math.max(0, GHOST_CLEARANCE ** 2 - dx ** 2));
+        // On a mover it stands on that one's top, and goes up with it as it is pulled.
+        const seat = perch.on !== undefined ? this.movers.find((mover) => mover.def.id === perch.on) : undefined;
+        const rest = seat ? seat.y + seat.def.height : perch.at.y;
+        const desired = dx < GHOST_NEAR && !perch.still ? Math.max(rest, p.y + Math.sqrt(GHOST_NEAR ** 2 - dx ** 2)) : rest;
+        if (seat && ghost.t >= 1) ghost.y = desired;
+        else ghost.y += Math.sign(desired - ghost.y) * Math.min(Math.abs(desired - ghost.y), GHOST_SPEED * STEP);
+        // A still one is on something, waiting for his help (the leaf in the eddy, the foot of Berget's cliff): it
+        // stays there however near he comes. Where he can walk up to it, its perch stands it behind the play plane.
+        if (!perch.still && !safe(ghost.x, ghost.y)) ghost.y = p.y + Math.sqrt(Math.max(0, GHOST_CLEARANCE ** 2 - dx ** 2));
         return;
       }
       // Once helped, the raised waiting pose must not make the ghost think Elof is still far away.
@@ -987,13 +994,15 @@ export class Sim {
   private spotInReach(): Spot | null {
     const p = this.curr;
     if (!p.grounded) return null;
-    return (
-      this.spots.find(
-        (spot) =>
-          !spot.touch && !this.ready(spot.id) && (spot.needs === undefined || this.ready(spot.needs)) &&
-          Math.abs(spot.at.x - p.x) <= SPOT_REACH && Math.abs(spot.at.y - p.y) < 1,
-      ) ?? null
-    );
+    // The nearest, where two are in reach (the towed trägubbe a step behind him, beside the ghost or the jay he
+    // stands at); at the same place, the first written.
+    let best: Spot | null = null, bestBy = Infinity;
+    for (const spot of this.spots) {
+      if (spot.touch || this.ready(spot.id) || (spot.needs !== undefined && !this.ready(spot.needs))) continue;
+      const by = Math.abs(spot.at.x - p.x);
+      if (by <= SPOT_REACH && Math.abs(spot.at.y - p.y) < 1 && by < bestBy - 1e-9) { best = spot; bestBy = by; }
+    }
+    return best;
   }
 
   /**
@@ -1034,9 +1043,36 @@ export class Sim {
     return this.movers.filter((m) => !m.def.extra && !m.def.cycle && m.stop === m.def.stops.length - 1 && m.t >= 1).map((m) => m.def.id);
   }
 
+  /** Where a spot is now: one that follows a towed thing is where that thing has been dragged to. */
+  placeOf(spot: Spot): Vec {
+    return this.spots.find((own) => own.id === spot.id)?.at ?? spot.at;
+  }
+
+  /** Whether this mover is being dragged behind him now (`Mover.tow`). */
+  towing(mover: MoverState): boolean {
+    const tow = mover.def.tow;
+    return !!tow && mover.stop === mover.def.stops.length - 1 && mover.t >= 1 && this.ready(tow.after) && !this.ready(tow.until);
+  }
+
   /** One step for the things on rails: they slide to their stops, and the unfinished ones go home when he leaves. */
   private moveMovers(): void {
     for (const [i, mover] of this.movers.entries()) {
+      if (mover.def.tow) {
+        const towed = this.towing(mover);
+        // Dragged on the lace it is nothing to stand on or bump into: it scrapes along the rock a step behind him.
+        this.moverBodies[i]!.setActive(!towed);
+        if (towed) {
+          const p = this.curr;
+          const behind = p.x - mover.x;
+          // Slack until he has walked a step past it, then it follows with its weight, as the picture draws it.
+          // Far off, a game taken up again (at a checkpoint): it is at his heels at once, not slid there.
+          if (Math.abs(behind) > TOW_LOST) mover.x = p.x - Math.sign(behind) * TOW_BEHIND;
+          if (Math.abs(behind) > TOW_SLACK) mover.x += (p.x - Math.sign(behind) * TOW_BEHIND - mover.x) * (1 - Math.exp(-TOW_PULL * STEP));
+          this.moverBodies[i]!.setTransform(new Vec2(mover.x, mover.y), 0);
+          for (const spot of this.spots) if (spot.follows === mover.def.id) spot.at = { x: mover.x, y: mover.y };
+          continue;
+        }
+      }
       const cycle = mover.def.cycle;
       if (cycle) {
         const a = mover.def.stops[0]!;

@@ -222,10 +222,10 @@ describe('Epilog, Godiskalaset, in greybox', () => {
       const steps = did(result.flags).filter((flag) => !flag.startsWith('scene:') && !flag.startsWith('party:klonk-'));
       expect(result.flags).toContain('scene:klonk-table');
       expect(steps.slice(0, 5).sort()).toEqual(['party:bertil', 'party:mamma', 'party:moa', 'party:pappa', 'party:spoket']);
-      expect(steps.slice(5)).toEqual(['partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'teeth', 'bedtime', 'goal']);
+      expect(steps.slice(5)).toEqual(['partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'shelf', 'shelf:placed', 'teeth', 'bedtime', 'goal']);
       // The ghost's feet, its name, Pappa's rule, and Elof's pride.
       expect(result.said.filter(id => id.startsWith('partyThanks:')).sort()).toEqual(['partyThanks:bertil', 'partyThanks:mamma', 'partyThanks:moa', 'partyThanks:pappa', 'partyThanks:spoket']);
-      expect(result.said.slice(-7)).toEqual(['klonk', 'named', 'away', 'first-carving:0', 'first-carving:1', 'bathroom:0', 'bathroom:1']);
+      expect(result.said.slice(-8)).toEqual(['klonk', 'named', 'away', 'first-carving:0', 'first-carving:1', 'hyllan:0', 'bathroom:0', 'bathroom:1']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });

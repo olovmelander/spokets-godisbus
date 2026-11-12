@@ -73,7 +73,13 @@ export function createEpilogueStage(layout: ChapterData['epilogue']) {
     group,
     update(flags: ReadonlySet<string>, seconds: number | null | undefined, calm: boolean) {
       figure.visible = flags.has('dots');
-      held = figure.visible && !flags.has('scene:first-carving') && !flags.has('teeth') && seconds == null;
+      // He carries it in his hand to Pappa's shelf and puts it up there himself, before his teeth (Olov, 12 November
+      // 2026); the last picture finds it there, between the old trägubbe and Klonk. Without a shelf: the window sill.
+      const onShelf = !!layout.shelf && flags.has('shelf:placed');
+      const rest = onShelf ? layout.shelf! : layout.window;
+      group.position.set(rest.x, rest.y, rest.z);
+      sill.visible = moon.visible = !onShelf;
+      held = figure.visible && seconds == null && (layout.shelf ? !onShelf : !flags.has('scene:first-carving') && !flags.has('teeth'));
       if (!held) figure.position.set(0, 0, 0);
       const time = seconds ?? -1;
       const blink = time >= 1.2 && time < 1.52 ? Math.sin((time - 1.2) / 0.32 * Math.PI) : 0;

@@ -66,7 +66,8 @@ export function hedge(chapter: ChapterData): Group | null {
     const low: Volume = { from: plant.from - .12, to: plant.to + .12, bottom: plant.base - .25,
       top: plant.low, front: plant.terminal ? .36 : 1.1, back: -8.8 };
     if (!plant.terminal) return [low];
-    return [low,
+    // Gården's end stands straight on the lawn: no walkable lip in front of it, only the tall hedge.
+    return [...plant.low - plant.base > .3 ? [low] : [],
       // The rising figure stays in front of this tall row until it is above its crown. The low lip remains
       // readable and walkable in front; no tall leaves stand between the camera and the flight.
       { from: plant.from + .15, to: plant.to + 1.2, bottom: plant.base - .2, top: plant.top,

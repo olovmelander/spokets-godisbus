@@ -92,6 +92,11 @@ export interface Mover {
   id: string;
   width: number;
   height: number;
+  /**
+   * Once in place and `after` is set, he drags it behind him on the lace wherever he goes, until `until`: Norrsken's
+   * trägubbe, pulled out of the crack. It keeps a step behind him, lies on the rock, and is nothing to stand on.
+   */
+  tow?: { after: string; until: string };
   /** Where the middle of its bottom is at each stop, from home to where it belongs. */
   stops: Vec[];
   /** Knuffa: he pushes it from beside it. Dra: the lace pulls it by its red ring. */
@@ -135,6 +140,11 @@ export interface Candy extends Vec {
 export interface Spot {
   id: string;
   at: Vec;
+  /**
+   * It is wherever this mover is now: the towed trägubbe's eyes are painted, and its candy given, where he has dragged
+   * it to, not back at the crack it came out of. `at` is where it is before the mover is towed.
+   */
+  follows?: string;
   /** For the picture: whoever of the family is shown here sits, in a boat, say. */
   seated?: boolean;
   /** For the picture: whoever of the family is shown here stands on a paddle board and paddles. */
@@ -319,6 +329,11 @@ export interface Roller {
 export interface GhostPerch {
   /** It stays where it stands while it waits, near as he comes, and does not rise out of reach: it is on something. */
   still?: boolean;
+  /**
+   * The mover it sits on while it waits (the leaf in Granskogen's eddy): it stands on that one's top, and rises with
+   * it as he pulls, until its `until` lets it hop on.
+   */
+  on?: string;
   at: Vec;
   /** Takeoff distance, default 4 EL. Only close meetings may use a smaller value. */
   near?: number;
@@ -571,7 +586,11 @@ export interface ChapterData {
    */
   size?: { scale: number; after?: string; until?: string };
   /** The final carving's windowsill, and the camera's post-credit shot. */
-  epilogue?: { window: { x: number; y: number; z: number } };
+  /**
+   * The evening's last picture: his first carving on the window sill. With `shelf`, where it stands once he has put it up on
+   * Pappa's shelf (the flag `shelf:placed`), and where the last picture finds it then.
+   */
+  epilogue?: { window: { x: number; y: number; z: number }; shelf?: { x: number; y: number; z: number } };
   /** For the picture: Pappa's shelf of figures on the wall, with the first place in the row empty or filled. */
   shelf?: { x: number; y: number; filled?: boolean };
   /**
@@ -657,7 +676,8 @@ export interface ChapterData {
    * Water: its surface, between two places. He never touches it: the glitter bubble catches him just above
    * it (plan §3.4, Myren). What crosses it is ground, a tussock, a ride or a thing on a rail.
    */
-  water?: { from: number; to: number; y: number }[];
+  /** `eddy`, for the picture only: the water turns round in a whirl there (Granskogen's virvel, ../render/eddy.ts). */
+  water?: { from: number; to: number; y: number; eddy?: boolean }[];
   /** The soft tussocks. */
   tussocks?: Tussock[];
   /** Where gusts sweep across. */

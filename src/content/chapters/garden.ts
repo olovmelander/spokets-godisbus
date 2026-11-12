@@ -77,6 +77,9 @@ export const garden: ChapterData = {
     { from: 101, to: 105, kind: 'stone' },
     { from: 134, to: 154.5, kind: 'shavings' },
     { from: 178, to: 181, kind: 'hedge' },
+    // The garden ends at a tall hedge, as Stormgården does (Olov, 12 November 2026): the wall at the end of the ground
+    // is drawn as its leafy end, not as a cliff of earth (src/render/dressing/hedge.ts).
+    { from: 212, to: 214, kind: 'hedge' },
   ],
   // The deck goes on overhead, level with where he stood: its joists are where the chain's nails sit.
   roofs: [{ from: 46.6, to: 66.4, y: 5.95 }],

@@ -20,7 +20,7 @@ describe('physical support for rescued carvings', () => {
     }
   });
 
-  it('lowers a visible line without lifting the toy, then drags it with lag and keeps it on the rock', () => {
+  it('lowers a visible line without lifting the toy, then draws it dragged on the rock where the simulation tows it', () => {
     const rescue = createNorrskenRescue(), rig = createRehearsalRig('pappa');
     const player = new Group(), toy = new Group(); player.add(rig.group);
     player.position.set(10.9, 0, 0); toy.position.set(12.4, -2.6, 0);
@@ -36,23 +36,23 @@ describe('physical support for rescued carvings', () => {
     expect(bottom[0]).toBeGreaterThan(bottom[1]!);
     expect(bottom[1]).toBeGreaterThan(bottom[2]!);
     expect(bottom[2]).toBeCloseTo(-2.22);
-    flags.add('placed:tragubbe'); flags.add('scene:uppdragen'); toy.position.y = 0;
+    flags.add('placed:tragubbe'); flags.add('scene:uppdragen'); toy.position.set(12.4, 0, 0);
     rescue.update(rig, player, toy, flags, 1, false, 1, .05, false);
+    // Where it lies is the simulation's (Mover.tow): the line draws it on the rock, and never moves it along itself.
     player.position.x = 16;
-    rescue.update(rig, player, toy, flags, 1, false, 1.05, .05, false);
-    expect(toy.position.x).toBeGreaterThan(12.4);
-    expect(toy.position.x).toBeLessThan(15.15);
-    expect(toy.position.y).toBeCloseTo(.06);
+    for (let i = 0; i < 12; i++) { toy.position.x += .2; rescue.update(rig, player, toy, flags, 1, false, 1 + i * .05, .05, false); }
+    expect(toy.position.x).toBeCloseTo(14.8);
+    // Dragged, its lower corner scrapes the rock, leaning back from him.
+    expect(toy.position.y).toBeCloseTo(.06, 2);
     expect(toy.rotation.z).toBeLessThan(-.25);
-    // Returning to paint its eyes, the wooden body does not teleport through him to the other side.
-    const before = toy.position.x;
-    player.position.x = before + .3;
-    rescue.update(rig, player, toy, flags, 1, false, 1.1, .05, false);
-    expect(toy.position.x).toBe(before);
-    player.position.x = before - 1.4;
-    rescue.update(rig, player, toy, flags, 1, false, 1.15, .05, false);
-    expect(toy.position.x).toBeLessThan(before);
-    expect(toy.position.x).toBeGreaterThan(player.position.x);
+    expect(rescue.hauling).toBeGreaterThan(.9);
+    // At rest a step behind him, it stands upright on the rock again: its eyes are painted and its candy given there.
+    for (let i = 0; i < 12; i++) rescue.update(rig, player, toy, flags, 1, false, 2 + i * .05, .05, false);
+    expect(toy.rotation.z).toBeCloseTo(0, 2);
+    expect(toy.position.y).toBeCloseTo(.015, 2);
+    // Dragged the other way, it leans the other way.
+    player.position.x = 10;
+    for (let i = 0; i < 12; i++) { toy.position.x -= .2; rescue.update(rig, player, toy, flags, 1, false, 3 + i * .05, .05, false); }
     expect(toy.rotation.z).toBeGreaterThan(.25);
     flags.add('taste');
     rescue.update(rig, player, toy, flags, 1, false, 2, .05, false);

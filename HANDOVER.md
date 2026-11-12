@@ -1,5 +1,67 @@
 # Handover
 
+## State (12 November 2026, afternoon): Olov's playthrough list for Äventyr 1
+
+- **Olov asked**, after playing Äventyr 1 through, for ten fixes in the order played: unfinished-looking animals;
+  Gården's end a hedge as in Stormgården; Elof's thanks to Pappa after the seesaw and to Mamma after the braid; the
+  eddy rescue in Granskogen; the ghost rising by itself at Berget's cliff; picture memories that began on picture 2;
+  the candy-giving in Norrskenet now that the trägubbe is dragged on the red line; his first carving put on the shelf
+  before his teeth, and not floating into the bathroom; and "Aj" and other words when a drop of water knocks him
+  over. The last two belong to Godiskalaset and to every chapter with drips, Äventyr 2's included. This work is
+  stacked on PR #266 (`samtal-i-takt`, `58dc94f`), on Olov's computer. The session behind #266 carries on in its own
+  worktree; the two agreed which files each touches (see below).
+- **Animals.** The pale "bird" on a stone was one of Pappa's hidden carvings: six-by-four facets, no eyes, no foot.
+  The three carvings are now finished figures in unpainted wood, each on a plinth: carved wings or ears, a darker grain
+  where a cut goes across, two burnt dots for eyes (the nisse keeps no face and no beard, so it is never the story's
+  trägubbe), and a little sheen. The dor beetle had legs and feelers too thin to be seen on a phone and no eyes: they
+  are thicker now, with eyes, jaws, grooves on its wing cases and a violet rim (`src/render/lift/fauna/shapes.ts`,
+  `src/render/lift/beetles.ts`).
+- **Gården's end.** The tall wall at x 214 was the lawn's own cut earth, not a hedge. A hedge surface over its last two
+  EL (`garden.ts`) gives it Stormgården's tall leafy end, and the ground behind is drawn at its foot. Collision is
+  unchanged. `hedge.ts` leaves out the walkable lip where a hedge stands straight on the lawn.
+- **Thanks.** "Tack så mycket, Pappa!" as he lands across the ravine, turning and waving back (scene `tack-pappa`,
+  as Moa's landing in Gården). At the top of the braid "Tack, Mamma! Vilken stark fläta!", and then her "På myren går
+  vi på spången.", told standing (`flata-tack`; their receipts keep the old ids). Said free, the thanks came nine EL
+  past the braid behind her words about it. Two of Mamma's hints are let go once followed (`within`).
+- **The eddy and the cliff.** In the first adventure a waiting ghost rose out of reach whenever he came within 4 EL,
+  and the picture kept it 3 EL off: so it hovered over the eddy and rose up the cliff by itself. A `still` perch now
+  stays where it is however near he comes (the simulation and the picture both). In the eddy the ghost sits on its
+  leaf (`on: 'rescue'`) and rises with it as he pulls; the ring is tied to the leaf's far end. The water turns: a foam
+  spiral, needles going round and the leaf boat afloat, turning (`src/render/eddy.ts`). The leaf lies awash, under the
+  water's reach, so a jump down to it is a fall into the water and the glitter bubble takes him back to the stone. At
+  the cliff the ghost waits on the ground just behind the play plane; pressed, it waddles to his hands wherever he
+  stands (`byElof`), he lifts it, and it springs up.
+- **Memories from picture 1.** A memory opens by itself with Nästa bild focused; a jump (Space), a step (→), Enter or
+  the pad's A pressed as it appears turned the first picture. For `FIRST_LOOK` (0.9 s) Nästa bild does nothing.
+- **Norrskenet.** The simulation now drags the trägubbe behind him (`Mover.tow`) from the rescue to the golden candy,
+  so its spots go with it (`Spot.follows`): Måla ögon and Ge trägubben are offered where it lies, a step behind him,
+  not back at the crack. The invisible bump at the crack is gone, a game taken up again finds it at his heels, the
+  nearest of two spots in reach is offered (and the helper agrees), the line leans him into the load wherever he drags
+  it, its candy sits in its lap on his side and leans with it, and at the taste it is set upright at his feet without a
+  jump.
+- **Godiskalaset.** After the carving's scene he carries it to Pappa's shelf, climbs a stool under it and puts it up
+  between the old trägubbe and Klonk, where it stands on the evening of the storm ("Där! Nu bor du på hyllan med oss.",
+  scene `hyllan`); Mamma steps aside to watch. Only then is Borsta tänderna offered (`shelf`). Klonk joins them on the
+  shelf then, not while he is still at the table. The last picture finds the carving on the shelf. Into the bathroom,
+  his steps count the way he faces (from the right they read as a skid, and he glided in on still legs), his shadow
+  lies on the tiles, and the camera sets off after him, so he is seen to walk away into the room.
+- **Shared work.** The session behind #266 reviews Äventyr 1's lines and the old one's visibility in Äventyr 2 in
+  its own worktree. Agreed: this branch has Granskogen, Myren, Gården, Norrskenet, `sv.ts`, Berget's ghost perches
+  and lift scene, and in `ends.ts` only the epilogue's shelf, carving and bathroom parts; #266 keeps Berget's beats,
+  Byn, Godiskalaset's thanks (`partyThanks`, `klonk-table`) and Äventyr 2's chapters. Merge #266 first; this PR is
+  based on it.
+- **Drops.** A drop that knocks him over gets one of five words in turn ("Aj!", "Brr! Vad kallt!", "Usch, jag blev
+  blöt!", "Plask! Rakt i huvudet.", "Aj då! En droppe till."), in every chapter with water drips; cones keep theirs.
+- **Validation.** The starting revision passes all 2,725 tests. This work passes `npm run typecheck`, all 2,732 tests
+  in 284 files (the timeline tool's 18 skipped), the build with its size gates (660.0 KB of gzipped JavaScript, 5,578.4
+  KB at boot) and the privacy check. On the production build seven browser suites pass: epilogue, endings, garden-home,
+  finale-stage, forest-puzzles, mountain-loop and smoke (epilogue again on the final build); memory-presentation passes
+  its 54 checks, two of them new. The eddy, the cliff, the hedge, the carvings and beetle,
+  the drag in Norrskenet, the shelf and the bathroom walk were looked at in the running game with the stand-in figures
+  at 1280×720 and the eddy also at 844×390; those pictures are not committed. Not played by a person, and not on the
+  family's devices. No private asset, recording, release boundary or rule changes; the voice catalog
+  (`scripts/generate-voices.mjs`) lists the eight new lines as metadata only. No work needs Blender.
+
 ## State (12 November 2026): every line at its moment
 
 - **Olov asked:** go through every conversation, so that each fits what happens and is said in the right way at
@@ -5526,6 +5588,14 @@ record identify the exact published revision.
 
 ## Next
 
+**Olov's Äventyr 1 playthrough (12 November, afternoon).** A ghost on a `still` perch waits for his help and never
+rises by itself, in the simulation or the picture; keep the chase's 3 EL everywhere else (`tests/robot/ghost-distance.test.ts`
+measures both). A towed mover (`Mover.tow`) is the simulation's: spots that `follow` it, the helper and the picture read
+its place from there, never from a copy in the renderer. A memory's `FIRST_LOOK` must stay, however its controls
+change. Godiskalaset's carving goes on the shelf at Stormkvällen's place for it, and the last picture finds it there.
+For Olov to judge on the family devices: the eddy, the lift, the shelf scene and the walk into the bathroom with the
+family's own models (only the stand-ins were looked at). No local Blender work is needed.
+
 **Lines at their moment (12 November).** Follow [docs/dialogue.md](docs/dialogue.md) for every new or moved line:
 it is the story's, or a passing remark (`aside`), and nothing but its own answer waits for a remark. Place lines
 with the timeline open (`tests/robot/dialogue-timeline.test.ts`), and keep the three limits of
@@ -6105,6 +6175,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 1 playthrough (12 Nov, afternoon) | Olov's ten points from playing Äventyr 1 through | One session on Olov's computer, stacked on #266 | — / 1 list | Finished carvings and beetle, Gården's hedge end, two thanks, the eddy and the lift with a still ghost, a first look for memories, the towed trägubbe in Norrskenet, the shelf before teeth, words for drops |
 | Lines at their moment (12 Nov) | Go through every conversation: fit, place and timing | One session on Olov's computer | — / 1 request | Queue rules in the simulation; 69 passing remarks; six moments told standing; twelve lines rewritten, merged or removed; a robot guard for late lines in every chapter |
 | Bertil's slippers (11 Nov, late evening) | Add a slipper wish before the Thailand trip | One text-only cloud continuation | — / 1 request | Existing dialogue receipt and reading hold retained; future recording metadata aligned. |
 | Family at the opening window (11 Nov, evening) | Let the family walk over to the arriving jay in the redesigned home | One cloud continuation with staging and independent native review | — / 1 request | Separate furniture-clear routes, visible shared attention and a continuous return to the chase; original story receipts retained. |
@@ -6164,6 +6235,11 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Äventyr 1 playthrough (12 November, afternoon):** the bathroom walk's stride comes from the walk's depth and is
+  not measured against the floor; it strides now, but whether the feet slide on the tiles was judged from stills only.
+  Elof's hands reach for the shelf from the stool a little short of it: the shelf is a grown-up's height. A child who
+  walks straight into the waiting ghost at Berget's cliff passes in front of it, close; it is meant to let him come.
 
 - **Lines at their moment (12 November):** measured with a robot that never stops and presses every button the
   moment it is offered, which is harder than any child. A child who calls a helper in the first second still has
@@ -6401,6 +6477,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 12 November list from playing Äventyr 1 through (ten points) is handled in this continuation.
 - The 11 November request for Bertil's slipper wish before Thailand is handled in this continuation.
 - The 11 November evening request for the family to walk to the opening's lavskrika is handled in this
   continuation, including the return to the chase.
@@ -6438,6 +6515,21 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från din genomspelning av Äventyr 1 den 12 november (ingen av frågorna hindrar arbetet):
+
+- Elofs nya repliker: "Tack så mycket, Pappa!", "Tack, Mamma! Vilken stark fläta!" och "Där! Nu bor du på hyllan
+  med oss.", och när en vattendroppe slår omkull honom, i tur och ordning: "Aj!", "Brr! Vad kallt!", "Usch, jag blev
+  blöt!", "Plask! Rakt i huvudet." och "Aj då! En droppe till." Säg till om några ord ska bytas.
+- Pappas gömda trägubbar i naturen (fågeln, haren och nissen) har nu inbrända ögon, ristade vingar och öron och en
+  sockel. Nissen har fortfarande inget ansikte och inget skägg, så att den aldrig liknar den gamla trägubben. Ska de
+  hellre bytas mot riktiga djur?
+- I Godiskalaset kliver Elof upp på en pall under hyllan för att nå upp. Den sista bilden visar nu hans trägubbe på
+  hyllan, mellan den gamla trägubben och Klonk, i stället för på fönsterbrädan. Är det rätt?
+- Gården slutar nu i en hög häck, som Stormgården. Målet säger "Gå in i skogen": ska häcken ha en öppning in mot
+  skogen där?
+- Den som hoppar ner i virveln fångas av glitterbubblan och hamnar på stenen igen. Lövet med spöket flyter i virveln
+  tills Elof drar upp det.
 
 Från genomgången av replikerna den 12 november (ingen av frågorna hindrar arbetet):
 

@@ -113,6 +113,11 @@ export interface ActorKey {
   y?: number;
   z?: number;
   /**
+   * Picture only, in place of `x`: this far along from where Elof stands, wherever he began the scene. Berget's lift
+   * brings the ghost to his hands, however near or far from it he pressed Lyft.
+   */
+  byElof?: number;
+  /**
    * Which way they face, in turns about the vertical: 0 along the course (to the right), 0.25 towards the
    * camera, 0.5 back along the course, 0.75 away from the camera. Left out: as they faced.
    */
@@ -204,6 +209,11 @@ export interface ElofKey {
   /** Where he is drawn, apart from where he stands: on a hand, say. {0,0} sets him down again. */
   lift?: Point;
   /**
+   * In place of `lift`: a place in the room he is drawn going to, wherever he stood when the scene began (the stool
+   * under Pappa's shelf in Godiskalaset). `lift` {0,0} brings him back to where he stands.
+   */
+  to?: Point;
+  /**
    * He stands on this one's right hand, and goes where the hand goes: Pappa's palm, wherever the run left him.
    * Null: he steps back down to where he stands.
    */
@@ -213,6 +223,8 @@ export interface ElofKey {
   /** What he does. Null: as in play. Left out: as before. */
   act?: Act | null;
   aim?: Point;
+  /** In place of `aim`: a point this far from his feet, wherever he stands (what an actor's `byElof` brings him). */
+  aimByElof?: Point;
   /** Which way he faces: as an actor's `face`. Left out: as in play. */
   face?: number;
   /** How big he is drawn, from this moment, while the scene plays: 3 is a boy among small things. */

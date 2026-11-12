@@ -59,6 +59,11 @@ function along(ride: { from: { x: number; y: number }; to: { x: number; y: numbe
 }
 
 const ANT_LIFT = { from: { x: 58.6, y: 4 }, to: { x: 61.6, y: 10 }, rise: 0.4, time: 3, corridor: 0.2 };
+/**
+ * The bottom of the leaf in the eddy, before it is pulled up: its top lies 0.04 over the water at -9.1, under the
+ * water's reach (WATER_REACH), so he cannot stand on it there.
+ */
+const EDDY_LEAF = -9.36;
 const LAUNCH = { from: { x: 113.2, y: -8 }, to: { x: 128.4, y: -8 }, rise: 5, time: 1.8, corridor: 0.4 };
 const TRIAL = { from: { x: 113.2, y: -8 }, to: { x: 116.5, y: -8 }, rise: 1.3, time: 1.5, corridor: 0.15 };
 const CAP = { from: { x: 154.6, y: -8 }, to: { x: 177.4, y: -8 }, rise: 0.15, time: 8, corridor: 0.3 };
@@ -89,7 +94,13 @@ export const granskog: ChapterData = {
   }],
   spawn: { x: 1, y: 0.01 },
   // Where and when, as the chapter opens (./cards.ts).
-  scenes: [timeCard('granskog', 1)],
+  scenes: [timeCard('granskog', 1), {
+    // Down across the ravine, he turns and waves back to Pappa at the seesaw, as he thanks Moa in Gården
+    // (Olov, 12 November 2026). Played where the flight sets him down; a game taken up beyond it has seen it.
+    id: 'tack-pappa', on: 'launch', from: LAUNCH.to.x - 1, before: LAUNCH.to.x + 4.5, seconds: 1.4, hold: true,
+    lines: [{ at: .2, who: 'elof', line: 'forestThanksPappa' }],
+    stage: { elof: [{ at: 0, face: .5, act: 'wave', aim: { x: 117.4, y: -6.6, z: -0.6 } }] },
+  }],
   goalX: 204,
   // For the picture only (content/life.ts): far in among the trunks, where the trail is calm after a big candy. A moose
   // cow walks by with her calf at her heels (one visit in two); a roe deer stops and looks this way; in one visit of
@@ -276,8 +287,11 @@ export const granskog: ChapterData = {
     { id: 'twig', look: 'twig', width: 2.4, height: 0.5, verb: 'pull', ring: { x: -1, y: 0.7 }, stops: [{ x: 57.2, y: 4 }, { x: 53.4, y: 3.75 }] },
     // The big cone: pushed to Pappa's hand at the seesaw, once he has been called.
     { id: 'cone', look: 'cone', width: 1.1, height: 1.5, verb: 'push', needs: 'seesaw', stops: [{ x: 103.4, y: slope(103.4) }, { x: 106.2, y: -8 }, { x: 110, y: -8 }, { x: 112.2, y: -8 }, { x: 114.6, y: -8 }] },
-    // The ghost in the eddy, on a leaf: the lace pulls it up to the stone, and the leaf is the way across.
-    { id: 'rescue', look: 'leaf', width: 2.9, height: 0.3, verb: 'pull', ring: { x: 0, y: 0.9 }, stops: [{ x: 186.8, y: -9.3 }, { x: 186.8, y: -7.8 }] },
+    // The ghost in the eddy, on a leaf: the lace pulls it up to the stone, and the leaf is the way across. Down in
+    // the eddy the leaf lies awash, its top just under the water's reach: a jump down to it is a fall into the
+    // water, and the glitter bubble takes him back to the stone (Olov, 12 November 2026). The ring is tied to its
+    // stalk at the far end, clear of the ghost sitting in its middle: he throws the lace to it from the stone.
+    { id: 'rescue', look: 'leaf', width: 2.9, height: 0.3, verb: 'pull', ring: { x: 1.05, y: 0.5 }, stops: [{ x: 186.8, y: EDDY_LEAF }, { x: 186.8, y: -7.8 }] },
     // A clearly smaller cone. He approaches its right side and pushes it left, onto Pappa's high end.
     { id: 'cone-small', look: 'cone', width: 0.55, height: 0.7, verb: 'push', needs: 'seesaw', optional: true, stops: [{ x: 116, y: -8 }, { x: 114.6, y: -8 }] },
     // The cone on the bough. What bowls him over on the slope below is his tool up here: pushed out to the
@@ -300,7 +314,8 @@ export const granskog: ChapterData = {
   })),
   water: [
     { from: 156, to: 176, y: -8.3 },
-    { from: 185.4, to: 188.2, y: -9.1 },
+    // The eddy: its water turns round, for the picture (../../render/eddy.ts).
+    { from: 185.4, to: 188.2, y: -9.1, eddy: true },
   ],
   jumps: [
     { at: { x: 19.8, y: 0 }, dir: 1, land: { x: 20.8, y: 1.2 } },
@@ -339,9 +354,10 @@ export const granskog: ChapterData = {
     { at: { x: 141, y: -8 } },
     { at: { x: 147.6, y: -8 } },
     { at: { x: 153, y: -8 }, near: 3 },
-    // over the pool on a leaf, and into the eddy, where it stays until he pulls it out
+    // over the pool on a leaf, and into the eddy, where it sits on its leaf until he pulls it out: it neither flies
+    // off nor rises out of reach, and it comes up with the leaf (Olov, 12 November 2026)
     { at: { x: 180.5, y: -8 } },
-    { at: { x: 186.8, y: -9 }, until: 'placed:rescue' },
+    { at: { x: 186.8, y: EDDY_LEAF + 0.3 }, until: 'placed:rescue', still: true, on: 'rescue' },
     // It waits to show the way, still several Elof lengths ahead.
     { at: { x: 197, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },
     { at: { x: 205.5, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },

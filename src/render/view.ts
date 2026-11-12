@@ -1,6 +1,7 @@
 import { capArms, capHands, capHandoff } from './cap-handoff';
 import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from './lamp-hold';
 import { stormSweet } from './storm-sweet';
+import { createEddy } from './eddy';
 import { lessMotion } from '../platform/motion';
 import { owlHollow } from './owl-trap';
 import { buildBraid } from './braid';
@@ -465,6 +466,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // It is drawn in the scene's own pass, after what stands in it and the far layers, and before what
   // drifts over it (the bog's mist sheets, the shafts of light, the dust): its render order says where.
   scene.add(water.group);
+  // Granskogen's eddy turns, and the leaf the ghost waits on floats in it (./eddy.ts).
+  const eddy = createEddy(chapter);
+  if (eddy) scene.add(eddy.group);
+  let eddyLift = 0;
   // A puddle in the street has birch leaves on it, from the yard across it (./afloat.ts).
   const afloat = createAfloat(place && dressing && waterKind(place.id).bed > 0 ? chapter.water ?? [] : []);
   scene.add(afloat.group);
@@ -1230,6 +1235,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     rain.update(drips, dt);
     epilogueStage.update(flags, ending, lessMotion());
     moverMotion.update(movers, dt, lessMotion());
+    eddyLift = eddy?.update(movers, moverMeshes, clock, lessMotion()) ?? 0;
     if (chapter.id === 'norrsken') {
       const eyes = scene.getObjectByName('first-carving-eyes');
       if (eyes) eyes.visible = flags.has('eyes');
@@ -1516,7 +1522,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const onFamily = Math.max(shotWeight, nearbyFamily && !chapter.epilogue ? 1 : 0);
     sharpDeep += (DOF_DEEP + DOF_DEEPER * onFamily - sharpDeep) * (calmStory ? 1 : ease(3, dt));
     if (chapter.epilogue && ending !== null && ending !== undefined) {
-      const window = chapter.epilogue.window;
+      // The last picture: his carving where he put it, on Pappa's shelf, or on the window sill.
+      const window = chapter.epilogue.shelf && flags.has('shelf:placed') ? chapter.epilogue.shelf : chapter.epilogue.window;
       const shotHeight = Math.max(2.6, 2.8 / camera.aspect);
       camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
       camera.lookAt(window.x, window.y + 0.65, window.z);
@@ -1598,7 +1605,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Norrsken's continuous rescue line already owns both grips and the loop around the carving.
     const pullIndex = rescue ? -1 : movers.findIndex((m, i) => m.t !== undefined && m.t < 1 && (m.stop ?? 0) > 0 && chapter.movers?.[i]?.verb === 'pull' && !chapter.movers[i]!.on);
     const pullMover = pullIndex >= 0 ? movers[pullIndex]! : null;
-    const playerPose = playerMotion.update(moving, x + (bathroom?.travel ?? 0), dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
+    // Into the bathroom his steps are counted the way he faces: come from the right, the walk in read as a skid
+    // backwards, and he glided in on still legs (Olov, 12 November 2026: "ser ut som att elof svävar in").
+    const playerPose = playerMotion.update(moving, x + (bathroom ? bathroom.travel * curr.facing : 0), dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
 
     // What is said (./talk.ts): he looks at whoever speaks to him, from where his face was a moment ago, and speaks with his
     // mouth, his head and a free hand. It is drawn on a copy of his pose: his own motion never keeps it.
@@ -1618,9 +1627,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     elofTalker.update(talk, elofThere ? lookAt(elof.group, faceAt, elofThere, heard, true) : null, lifeDt, calmStory, elofHands);
     elofTalker.pose(Object.assign(spokenPose, playerPose));
     const rescueGrip = rescue?.weight(flags, sceneFrame?.id === 'aterfunna' ? sceneFrame.seconds : undefined, calmStory) ?? 0;
-    if (rescue && flags.has('placed:tragubbe') && rescueGrip > 0 && x > 14) {
-      // Lean into the load with the carrying shoulder behind him, instead of jogging empty-handed.
-      rescueCarryPose(spokenPose, rescueGrip);
+    if (rescue && flags.has('scene:uppdragen') && rescueGrip > 0) {
+      // Lean into the load with the carrying shoulder behind him, instead of jogging empty-handed: wherever he drags
+      // it, the eyes' and the candy's places too, and less while it lies still behind him.
+      rescueCarryPose(spokenPose, rescueGrip * (.4 + .6 * rescue.hauling));
     }
     if (rescue && sceneFrame?.id === 'uppdragen') spokenPose.lean -= .16;
     playerBody.pose(spokenPose);
@@ -1840,7 +1850,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (pappasLampBeam) pappasLampBeam.visible = tier !== 'low';
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
 
-    playerGroundY = curr.groundY;
+    // On the bathroom's tiles his shadow lies on them, not under them.
+    playerGroundY = curr.groundY + (bathroom ? bathroom.position.y - y : 0);
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {
@@ -1924,7 +1935,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       // Elof is interpolated between simulation steps. Keep that intermediate picture outside the
       // same chase clearance, without advancing the ghost past a puzzle's waiting perch.
-      if (!chapter.ghostMeet) {
+      // A scene that places it (Berget's lift, in his hands) is not pushed off, nor is one that waits still on
+      // something for his help, as in the simulation (the leaf in the eddy, the foot of the cliff).
+      const waitsStill = !hopping && perch?.still === true && perch.until !== undefined && !flags.has(perch.until);
+      // On the leaf afloat in the eddy, it rides as high as the leaf is drawn.
+      if (waitsStill && perch?.on !== undefined && !staged) ghostPlace.position.y += eddyLift;
+      if (!chapter.ghostMeet && !staged && !waitsStill) {
         const dx = ghostPlace.position.x - x, dy = ghostPlace.position.y - y;
         if (Math.hypot(dx, dy) < GHOST_CLEARANCE) {
           ghostPlace.position.y = y + (dy < 0 ? -1 : 1) * Math.sqrt(GHOST_CLEARANCE ** 2 - dx ** 2);
@@ -1971,9 +1987,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const tear = stolenBag.getObjectByName('saturday-bag-tear');
     if (tear) tear.visible = chapter.prologue ? flags.has('bag:torn') : true;
     prologueStage.update(flags);
-    // His first figure has its place again, with Klonk beside it once Elof finishes painting.
-    if (chapter.epilogue && chapter.shelf && flags.has('dots')) {
-      ghostPlace.position.set(chapter.shelf.x - 2.4, chapter.shelf.y + 0.08, -8.5);
+    // His first figure has its place again, with Klonk beside it, once Elof has put his own carving up between them:
+    // where the three stand on the evening of the storm (../content/aventyr2/chapters/stormkvall.ts, KLONK_SHELF).
+    if (chapter.epilogue && chapter.shelf && flags.has(chapter.epilogue.shelf ? 'shelf:placed' : 'dots')) {
+      ghostPlace.position.set(chapter.shelf.x - (chapter.epilogue.shelf ? 2.1 : 2.4), chapter.shelf.y + 0.08, chapter.epilogue.shelf ? -8.4 : -8.5);
       ghostPlace.scale.setScalar(1);
       ghost.rotation.set(0, ghostFaces - Math.PI / 2, 0);
       ghostMotion.update({ dt, clock, hop: null, calm: calmStory, awake: true, staged: true });
@@ -2300,7 +2317,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         sceneFrame?.id === 'uppdragen' ? smooth(clamp((sceneFrame.seconds - .5) / .65, 0, 1)) * (1 - smooth(clamp((sceneFrame.seconds - 1.9) / .6, 0, 1))) : 0,
         sceneFrame?.id === 'snoret', rescueGrip);
       if (carving && flags.has('taste') && !homeJourney) {
-        carving.position.set(26.05, 0, .2); carving.rotation.z = 0;
+        // It was dragged up behind him: as he tastes it is set upright at his feet, from where it lay, not by a jump.
+        const settle = sceneFrame?.id === 'aterfunna' && !calmStory ? smooth(clamp(sceneFrame.seconds / .7, 0, 1)) : 1;
+        carving.position.set(lerp(carving.position.x, 26.05, settle), 0, lerp(.12, .2, settle)); carving.rotation.z = 0;
         ghostPlace.position.set(27.8, 0, .1); ghostPlace.visible = true;
       }
       if (homeJourney && flags.has('home')) {
@@ -2357,7 +2376,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           carving.quaternion.setFromUnitVectors(carryUp, carryAxis);
         }
       }
-      sharedSweets?.update(flags, ghostPlace.position, carving?.position);
+      sharedSweets?.update(flags, ghostPlace.position, carving ?? undefined, x);
     }
     characterShadows.update(look.x, centreY, viewHeight * look.zoom * Math.max(1, camera.aspect) * .65, clock, calmStory ? 0 : gale * windAt(look.x));
     // Gate 6 (plan §6.12): no shader is compiled during play. The first frames, and the first after a model

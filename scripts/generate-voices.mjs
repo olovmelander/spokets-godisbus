@@ -111,6 +111,14 @@ export const VOICE_LINES = [
   { key: 'nrLonely', speaker: 'elof', situation: 'Remembering the old carving waiting alone in the crack', tag: '[quiet, tender little boy, gentle sadness]', text: 'Han var alldeles ensam.' },
   { key: 'nrBothHome', speaker: 'elof', situation: 'Deciding that both wooden friends will come home', tag: '[caring, determined little boy, warm certainty]', text: 'Båda ska få följa med hem.' },
   { key: 'brushNow', speaker: 'elof', situation: 'Going to brush his teeth after the candy party', tag: '[contented little boy, calm bedtime voice]', text: 'Nu ska jag borsta tänderna.' },
+  { key: 'forestThanksPappa', speaker: 'elof', situation: 'Äventyr 1, granskog', tag: '[curious, kind little boy]', text: 'Tack så mycket, Pappa!' },
+  { key: 'familyBraidThanks', speaker: 'elof', situation: 'Äventyr 1, myren', tag: '[curious, kind little boy]', text: 'Tack, Mamma! Vilken stark fläta!' },
+  { key: 'onShelf', speaker: 'elof', situation: 'Äventyr 1, epilog', tag: '[curious, kind little boy]', text: 'Där! Nu bor du på hyllan med oss.' },
+  { key: 'dripOuch', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Aj!' },
+  { key: 'dripCold', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Brr! Vad kallt!' },
+  { key: 'dripWet', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Usch, jag blev blöt!' },
+  { key: 'dripSplash', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Plask! Rakt i huvudet.' },
+  { key: 'dripAgain', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Aj då! En droppe till.' },
 
   // MOA
   { key: 'clipBack', speaker: 'moa', situation: 'Getting lost hair clip back', tag: '[delighted, hugging brother]', text: 'Mitt hårspänne! Tack, lillebror!' },

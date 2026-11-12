@@ -42,6 +42,12 @@ export interface MemoryPresentation {
 /** Dissolves and scene motion are presentation only; no timer advances the story. */
 export const DISSOLVE_TIME = 600;
 export const MEMORY_RETURN_TIME = 240;
+/**
+ * A memory opens by itself, in the middle of play, with Nästa bild focused. A jump (Space), a step (→), Enter or the
+ * pad's A pressed as it appears was meant for the game, and must not turn the first picture before it is seen: for
+ * this long after opening, Nästa bild does nothing (Olov, 12 November 2026: "börjar redan på den andra bilden").
+ */
+export const FIRST_LOOK = 900;
 
 export function createMemory(doc: Document): Memory {
   const back = doc.getElementById('memory') as HTMLElement;
@@ -275,8 +281,12 @@ export function createMemory(doc: Document): Memory {
         if (!calm) animate(drawing, [{ opacity: .25 }, { opacity: 1 }], at === 0 ? 320 : DISSOLVE_TIME);
         bringToLife(drawing);
       };
-      advance = () => show(at + 1);
-      nextButton.onclick = advance;
+      const openedAt = performance.now();
+      advance = () => {
+        if (performance.now() - openedAt < FIRST_LOOK) return;
+        show(at + 1);
+      };
+      nextButton.onclick = () => advance?.();
       previousButton.onclick = () => show(at - 1);
       show(0);
       present('opening', () => { back.dataset.phase = 'pictures'; });

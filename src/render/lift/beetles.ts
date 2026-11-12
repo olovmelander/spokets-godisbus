@@ -39,14 +39,26 @@ function painted(geometry: BufferGeometry, hex: string): BufferGeometry {
   return shape;
 }
 
-/** A dor beetle, 0.3 EL long along +x, standing on the origin: wing cases, the shield behind its head, its head. */
+/**
+ * A dor beetle, 0.3 EL long along +x, standing on the origin: wing cases with their grooves and the violet sheen at
+ * their rims, the shield behind its head, its head with two eyes and its jaws. Olov found it an unfinished blob as it
+ * was (12 November 2026): it had no eyes, and its legs and feelers were too thin to be seen.
+ */
 function beetleShape(): BufferGeometry {
+  const grooves = [-0.05, -0.025, 0.025, 0.05].map((z) =>
+    painted(new CylinderGeometry(0.0035, 0.0035, 0.2, 4).rotateZ(Math.PI / 2).translate(-0.05, 0.158 - Math.abs(z) * 0.55, z), '#3b4590'));
   return mergeGeometries([
     painted(new SphereGeometry(1, 16, 10).scale(0.16, 0.08, 0.105).translate(-0.045, 0.085, 0), '#1c2142'),
-    // The seam between the wing cases.
+    // The rim of the wing cases, catching a violet sheen, as a dor beetle's does.
+    painted(new SphereGeometry(1, 16, 6).scale(0.165, 0.035, 0.11).translate(-0.045, 0.06, 0), '#3e2f6e'),
+    // The seam between the wing cases, and the grooves along them.
     painted(new CylinderGeometry(0.005, 0.005, 0.2, 4).rotateZ(Math.PI / 2).translate(-0.045, 0.16, 0), '#090a16'),
+    ...grooves,
     painted(new SphereGeometry(1, 12, 8).scale(0.06, 0.06, 0.092).translate(0.115, 0.08, 0), '#252b56'),
     painted(new SphereGeometry(1, 10, 6).scale(0.04, 0.034, 0.052).translate(0.18, 0.066, 0), '#13162c'),
+    // Its eyes, glossy at the sides of its head, and its two jaws.
+    ...[-1, 1].map((side) => painted(new SphereGeometry(1, 8, 6).scale(0.014, 0.014, 0.014).translate(0.198, 0.074, side * 0.04), '#5a5f8c')),
+    ...[-1, 1].map((side) => painted(new CylinderGeometry(0.004, 0.009, 0.035, 4).rotateZ(-Math.PI / 2).rotateY(side * 0.35).translate(0.222, 0.056, side * 0.016), '#090a16')),
   ]);
 }
 
@@ -87,8 +99,9 @@ export function createBeetles({ chapter, scene }: ExtraContext): ViewExtra | nul
   const count = beetles.length;
   // A sheen on the wing cases: smooth, a little metal.
   const bodies = new InstancedMesh(beetleShape(), new MeshStandardMaterial({ vertexColors: true, roughness: 0.22, metalness: 0.25 }), count);
-  const legs = new InstancedMesh(new CylinderGeometry(0.014, 0.009, 1, 4).translate(0, -0.5, 0), new MeshStandardMaterial({ color: '#0d0f1c', roughness: 0.5 }), count * 6);
-  const feelers = new InstancedMesh(new CylinderGeometry(0.004, 0.006, 1, 4).translate(0, 0.5, 0), new MeshStandardMaterial({ color: '#0d0f1c', roughness: 0.5 }), count * 2);
+  // Legs and feelers thick enough to be seen on a phone: before, they vanished, and it read as a blob.
+  const legs = new InstancedMesh(new CylinderGeometry(0.024, 0.012, 1, 5).translate(0, -0.5, 0), new MeshStandardMaterial({ color: '#141729', roughness: 0.45 }), count * 6);
+  const feelers = new InstancedMesh(new CylinderGeometry(0.008, 0.011, 1, 4).translate(0, 0.5, 0), new MeshStandardMaterial({ color: '#141729', roughness: 0.45 }), count * 2);
   for (const mesh of [bodies, legs, feelers]) {
     mesh.instanceMatrix.setUsage(DynamicDrawUsage);
     mesh.frustumCulled = false;
@@ -148,7 +161,7 @@ export function createBeetles({ chapter, scene }: ExtraContext): ViewExtra | nul
           // Splayed forward, out and back, so that each is seen from the side; lifted as it swings forward.
           part.position.set(0.07 - pair * 0.06, 0.07, side * 0.05);
           part.rotation.set(side * (0.75 + Math.max(0, Math.sin(phase)) * 0.25), (1 - pair) * 0.9 * side + Math.cos(phase) * 0.35 * Math.min(1, b.speed / 0.05), 0, 'YXZ');
-          part.scale.set(1, 0.16, 1);
+          part.scale.set(1, 0.17, 1);
           part.updateMatrix();
           legs.setMatrixAt(i * 6 + k, placed.multiplyMatrices(at.matrix, part.matrix));
         }
@@ -156,7 +169,7 @@ export function createBeetles({ chapter, scene }: ExtraContext): ViewExtra | nul
           const side = k ? 1 : -1;
           part.position.set(0.21, 0.075, side * 0.025);
           part.rotation.set(side * 0.5 + Math.sin(clock * 7 + b.seed + k) * 0.12, 0, -1.1 + Math.sin(clock * 5.3 + b.seed * 2 + k) * 0.15, 'XYZ');
-          part.scale.set(1, 0.1, 1);
+          part.scale.set(1, 0.13, 1);
           part.updateMatrix();
           feelers.setMatrixAt(i * 2 + k, placed.multiplyMatrices(at.matrix, part.matrix));
         }

@@ -366,29 +366,56 @@ export function being(lichen: boolean): BufferGeometry {
   ]);
 }
 
-/** The carvings: pale unpainted wood, all knife facets. None has eyes, and none is either of the story's two figures. */
+/**
+ * The carvings: pale unpainted wood, all knife facets, each finished and standing on its own little plinth. Its marks
+ * are the knife's and the burning iron's, never paint: grooves for the wings and the ears, a darker grain where a cut
+ * goes across it, two burnt dots for eyes. Olov found them unfinished as they were, blobs without a face or a foot
+ * (12 November 2026). None is either of the story's two figures: the nisse keeps no face and no beard.
+ */
+const GRAIN = '#b99a6c';
+const LIGHT = '#e6d4b0';
+const BURNT = '#3b2618';
+const PLINTH = '#a4865c';
+
 export const CARVINGS = {
   bird: (wood: string): BufferGeometry => plain([
-    ['f', wood, [0, 0.12, 0], [0.13, 0.085, 0.08]],
-    ['f', wood, [0.11, 0.2, 0], 0.06],
-    ['c', wood, [0.18, 0.2, 0], [0.018, 0.06, 0.018], [0, 0, -Math.PI / 2]],
-    ['f', wood, [-0.14, 0.15, 0], [0.08, 0.02, 0.045], [0, 0, 0.35]],
-    ['r', wood, [0, 0.02, 0], [0.09, 0.04, 0.07]],
+    ['e', wood, [0, 0.13, 0], [0.13, 0.09, 0.085]],
+    ['e', LIGHT, [0.06, 0.12, 0], [0.08, 0.072, 0.07]],
+    ['e', wood, [0.12, 0.215, 0], [0.064, 0.06, 0.056]],
+    ['c', GRAIN, [0.19, 0.21, 0], [0.017, 0.055, 0.017], [0, 0, -Math.PI / 2]],
+    ...both((s): Part => ['e', BURNT, [0.152, 0.228, s * 0.045], 0.011]),
+    // Its folded wings, cut in from the back, and the tail fanned behind.
+    ...both((s): Part => ['f', GRAIN, [-0.02, 0.155, s * 0.074], [0.105, 0.052, 0.02], [0, s * 0.12, 0.28]]),
+    ['f', GRAIN, [-0.165, 0.165, 0], [0.09, 0.018, 0.052], [0, 0, 0.45]],
+    ...both((s): Part => ['r', GRAIN, [0.02, 0.05, s * 0.03], [0.009, 0.05, 0.009]]),
+    ['r', PLINTH, [0, 0.02, 0], [0.1, 0.04, 0.08]],
   ]),
   hare: (wood: string): BufferGeometry => plain([
-    ['f', wood, [-0.02, 0.13, 0], [0.12, 0.11, 0.085]],
-    ['f', wood, [0.1, 0.23, 0], [0.07, 0.065, 0.06]],
+    ['e', wood, [-0.02, 0.13, 0], [0.12, 0.105, 0.085]],
+    ...both((s): Part => ['e', GRAIN, [-0.07, 0.1, s * 0.062], [0.065, 0.062, 0.03]]),
+    ['e', wood, [0.1, 0.23, 0], [0.068, 0.062, 0.058]],
+    ['e', LIGHT, [0.155, 0.215, 0], [0.032, 0.028, 0.032]],
+    ['e', '#5e4a36', [0.186, 0.222, 0], 0.009],
+    ...both((s): Part => ['e', BURNT, [0.135, 0.246, s * 0.048], 0.01]),
     ...both((s): Part => ['f', wood, [0.07, 0.36, s * 0.025], [0.022, 0.095, 0.016], [s * 0.15, 0, 0.2]]),
-    ['f', wood, [-0.13, 0.12, 0], 0.03],
-    ['r', wood, [0, 0.02, 0], [0.11, 0.04, 0.08]],
+    ...both((s): Part => ['f', GRAIN, [0.074, 0.355, s * 0.031], [0.011, 0.07, 0.007], [s * 0.15, 0, 0.2]]),
+    ['e', LIGHT, [-0.135, 0.13, 0], 0.032],
+    ...both((s): Part => ['e', wood, [0.07, 0.035, s * 0.036], [0.032, 0.025, 0.02]]),
+    ['r', PLINTH, [0, 0.02, 0], [0.11, 0.04, 0.08]],
   ]),
   // A small round figure whose long cap droops forward: no face, no beard, no paint.
   nisse: (wood: string): BufferGeometry => plain([
-    ['f', wood, [0, 0.1, 0], [0.085, 0.1, 0.085]],
-    ['f', wood, [0, 0.22, 0], 0.06],
-    ['c', wood, [0, 0.3, 0], [0.065, 0.12, 0.065]],
-    ['c', wood, [0.05, 0.37, 0], [0.03, 0.08, 0.03], [0, 0, -1.1]],
-    ['f', wood, [0.06, 0.21, 0], 0.016],
+    ['e', wood, [0, 0.11, 0], [0.085, 0.1, 0.085]],
+    // A belt cut round it, and its arms folded down its sides.
+    ['r', GRAIN, [0, 0.1, 0], [0.09, 0.016, 0.09]],
+    ...both((s): Part => ['e', wood, [0.01, 0.12, s * 0.085], [0.03, 0.07, 0.026], [s * 0.15, 0, 0]]),
+    ...both((s): Part => ['e', GRAIN, [0.025, 0.02, s * 0.04], [0.04, 0.022, 0.03]]),
+    ['e', wood, [0, 0.235, 0], 0.062],
+    ['e', LIGHT, [0.062, 0.228, 0], 0.017],
+    ['r', GRAIN, [0, 0.282, 0], [0.072, 0.02, 0.072]],
+    ['c', wood, [0, 0.33, 0], [0.065, 0.11, 0.065]],
+    ['c', wood, [0.05, 0.39, 0], [0.03, 0.08, 0.03], [0, 0, -1.1]],
+    ['r', PLINTH, [0, 0.005, 0], [0.09, 0.03, 0.09]],
   ]),
 };
 export type Carving = keyof typeof CARVINGS;
