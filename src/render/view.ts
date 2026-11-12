@@ -1336,6 +1336,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const planeStart = waitingPlane ? chapter.rides?.find(ride => ride.id === 'plane')?.from : undefined;
     plane.position.set(planeStart?.x ?? x, (planeStart?.y ?? y) - 0.05, 0);
     plane.rotation.z = waitingPlane ? 0 : heading;
+    // Waiting (garden), it rests on the grass tops a little behind him, nose up and its folded back turned to the
+    // picture: flat on the ground it sank into the lawn under his boots, and only a sliver showed (12 November 2026).
+    if (waitingPlane) { plane.position.y += 0.4; plane.position.z = -0.45; plane.rotation.z = 0.12; }
+    plane.rotation.x = waitingPlane ? 0.5 : 0;
     for (const c of carriers) {
       if (!c.prop) continue;
       if (c === carrier) { c.wasRidden = true; c.landed = 0; }
