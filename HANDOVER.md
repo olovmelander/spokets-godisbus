@@ -34,7 +34,8 @@
   the cliff the ghost waits on the ground just behind the play plane; pressed, it waddles to his hands wherever he
   stands (`byElof`), he lifts it, and it springs up.
 - **Memories from picture 1.** A memory opens by itself with Nästa bild focused; a jump (Space), a step (→), Enter or
-  the pad's A pressed as it appears turned the first picture. For `FIRST_LOOK` (0.9 s) Nästa bild does nothing.
+  the pad's A pressed as it appears turned the first picture. For `FIRST_LOOK` (0.9 s) Nästa bild does nothing. A
+  memory chosen in the album has no first look (`chosen`): nothing meant for the game is pressed there.
 - **Norrskenet.** The simulation now drags the trägubbe behind him (`Mover.tow`) from the rescue to the golden candy,
   so its spots go with it (`Spot.follows`): Måla ögon and Ge trägubben are offered where it lies, a step behind him,
   not back at the crack. The invisible bump at the crack is gone, a game taken up again finds it at his heels, the

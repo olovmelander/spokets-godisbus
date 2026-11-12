@@ -70,14 +70,14 @@ async function untilScene(read, accepts, name) {
  * with room to release the key and stop. Holding Shift for the whole trip instead made long walks time out on
  * software-rendered CI: the fixed loop caps simulation steps per frame, so wall time is not walking time.
  */
-async function reach(page, word, name) {
-  await page.keyboard.down('ArrowRight');
+async function reach(page, word, name, { key = 'ArrowRight', timeout = 40000 } = {}) {
+  await page.keyboard.down(key);
   try {
-    await page.waitForFunction((want) => window.__godis.state().word === want, word, { polling: 'raf', timeout: 40000 });
+    await page.waitForFunction((want) => window.__godis.state().word === want, word, { polling: 'raf', timeout });
   } catch {
     assert.fail(`${name}: timed out; last value ${JSON.stringify(await page.evaluate(() => window.__godis.state()))}`);
   } finally {
-    await page.keyboard.up('ArrowRight');
+    await page.keyboard.up(key);
   }
   await frames(page);
   assert.equal(await page.evaluate(() => window.__godis.state().word), word, `${name}: still offered after stopping`);
@@ -300,7 +300,12 @@ try {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('three cuts and both eyes are saved', ['cut1', 'cut2', 'cut3', 'dots'].every((flag) => saved.flags.epilog.includes(flag)));
     await until(state, (s) => s.flags.includes('scene:first-carving'), 'Pappa admires the completed Lillgubben', 30000);
-    await reach(page, 'brush', 'bathroom door is reachable');
+    // His carving goes up on Pappa's shelf, back along the room, before his teeth (Olov, 12 November 2026).
+    await reach(page, 'putOnShelf', 'the shelf is reachable', { key: 'ArrowLeft', timeout: 90000 });
+    await page.keyboard.press('e');
+    await untilScene(state, (s) => s.flags.includes('scene:hyllan'), 'he puts his carving up on the shelf from the stool');
+    check('his carving stands on the shelf before his teeth', (await state()).flags.includes('shelf:placed') && !(await state()).flags.includes('teeth'));
+    await reach(page, 'brush', 'bathroom door is reachable', { timeout: 90000 });
     await page.keyboard.press('e');
     // Walking in, brushing and walking out take 11.6 authored seconds even when software frames are slow.
     await untilScene(state, (s) => s.flags.includes('goal'), 'the epilogue reaches bedtime after brushing');

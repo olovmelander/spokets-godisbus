@@ -37,6 +37,8 @@ export interface MemoryPresentation {
   /** The visible ghost, memory shaving or album thumbnail, in CSS client coordinates. */
   origin?: { x: number; y: number } | null;
   calm?: boolean;
+  /** Chosen in the album, by a tap or a key on it: no press meant for the game can turn its first picture. */
+  chosen?: boolean;
 }
 
 /** Dissolves and scene motion are presentation only; no timer advances the story. */
@@ -283,7 +285,7 @@ export function createMemory(doc: Document): Memory {
       };
       const openedAt = performance.now();
       advance = () => {
-        if (performance.now() - openedAt < FIRST_LOOK) return;
+        if (!options.chosen && performance.now() - openedAt < FIRST_LOOK) return;
         show(at + 1);
       };
       nextButton.onclick = () => advance?.();

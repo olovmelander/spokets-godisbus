@@ -237,6 +237,11 @@ try {
   await page.keyboard.press('ArrowRight');
   check('after its first look, a step turns the picture as before', (await snapshot()).picture === '2 / 3');
   await page.evaluate(() => window.memory.close());
+  // Chosen in the album, there is no press meant for the game: Enter turns the picture at once.
+  await page.evaluate(() => window.playMemory({ firstLook: true, chosen: true }));
+  await page.keyboard.press('Enter');
+  check('a memory chosen in the album turns its picture at once', (await snapshot()).picture === '2 / 3');
+  await page.evaluate(() => window.memory.close());
   check('presentation makes no browser errors', errors.length === 0);
   console.log(`${checks} memory-presentation browser checks passed.`);
 } finally {

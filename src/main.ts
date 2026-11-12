@@ -1101,7 +1101,7 @@ async function start(): Promise<void> {
     const rect = button.getBoundingClientRect();
     memories.play(id, () => { input.release(); game.resume(); }, {
       origin: rect.width > 0 && rect.height > 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null,
-      calm: lessMotion(),
+      calm: lessMotion(), chosen: true,
     });
   });
   let remembered = game.sim.flags.has('memory');
