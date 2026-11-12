@@ -579,8 +579,11 @@ export interface ChapterData {
   bouncers?: Bouncer[];
   /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */
   challenges?: Challenge[];
-  /** For the picture: stretches of ground that are something else than the place's own: a deck, a boulder. */
-  surfaces?: { from: number; to: number; kind: SurfaceKind }[];
+  /**
+   * For the picture: stretches of ground that are something else than the place's own: a deck, a boulder.
+   * `gate`: a tall end hedge with an arch where the path goes on into the forest (render/dressing/hedge-gate.ts).
+   */
+  surfaces?: { from: number; to: number; kind: SurfaceKind; gate?: true }[];
   /** For the picture: clear the near trunks where people come down from a road or stand in a clearing. */
   treeGaps?: { from: number; to: number; back: number }[];
   /**

@@ -78,9 +78,13 @@ export const garden: ChapterData = {
     { from: 134, to: 154.5, kind: 'shavings' },
     { from: 178, to: 181, kind: 'hedge' },
     // The garden ends at a tall hedge, as Stormgården does (Olov, 12 November 2026): the wall at the end of the ground
-    // is drawn as its leafy end, not as a cliff of earth (src/render/dressing/hedge.ts).
-    { from: 212, to: 214, kind: 'hedge' },
+    // is drawn as its leafy end, not as a cliff of earth (src/render/dressing/hedge.ts). Beside the big candy the hedge
+    // has a round arch, and through it the path goes on into the forest (Olov, 12 November 2026: "Ja!";
+    // src/render/dressing/hedge-gate.ts). For the picture only: he still stops at the goal, and the wall is where it was.
+    { from: 212, to: 214, kind: 'hedge', gate: true },
   ],
+  // For the picture: no birch of the lift's stands in the forest seen through the arch.
+  treeGaps: [{ from: 206.5, to: 218, back: -40 }],
   // The deck goes on overhead, level with where he stood: its joists are where the chain's nails sit.
   roofs: [{ from: 46.6, to: 66.4, y: 5.95 }],
   // Off the trail: behind him at the start, at the end of the swing chain, over the leaf the clothes line ends

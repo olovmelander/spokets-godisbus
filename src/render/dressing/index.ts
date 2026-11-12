@@ -19,6 +19,7 @@ import { rockLife } from './rocky';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
 import { houseDoor } from './house-door';
 import { hedge, hedgeGround } from './hedge';
+import { hedgeGate } from './hedge-gate';
 import { lawn } from './lawn';
 import { spang } from './spang';
 import { backdrop, stars } from './sky';
@@ -198,6 +199,9 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   const standing = scatter(landChapter, from, to, look.id, own);
   const bushes = hedge(chapter);
   if (bushes) standing.add(bushes);
+  // Gården's hedge has an arch into the forest: what is seen through it, and the path trodden into it (./hedge-gate.ts).
+  const gate = hedgeGate(chapter, landChapter.ground, standing);
+  if (gate) standing.add(gate);
   const outdoor = outdoorModels(chapter);
   standing.add(outdoor);
   const landmarks = forestLandmarks(chapter);

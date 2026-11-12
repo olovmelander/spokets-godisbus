@@ -67,6 +67,18 @@ const DUSK: { kind: Soarer; count: number }[] = [{ kind: 'bat', count: 3 }];
 const GROUNDED = new Set<Species>(['thrush', 'sparrow', 'wagtail', 'magpie', 'jackdaw']);
 /** Where the carvings are, a quiet secret in a few chapters of both adventures: how many. */
 const CARVED: Record<string, number> = { garden: 1, granskog: 2, myren: 1, berget: 1, stormskog: 1, alven: 1, billsta: 1, flarken: 1, 'look-forest': 1 };
+/**
+ * Where a carving the plan finds a place for is to stand instead, because what the chapter has there would hide it:
+ * `found` is the place the plan finds (within an EL and a half), `x` and `z` where its stone stands. Granskogen's nisse
+ * was found right behind the nest tree, where its stems, the bracket fungi, a young spruce of the forest kit and the
+ * ghost's stop at x 141 hid it from every picture (Olov, 12 November 2026: "Nissen får va kvar"). It peeks out from the
+ * tree's left side, between the log's end and the trunk, as he comes along the log: the stems' own depth and the candy's
+ * gap allow it there. Its kind is the plan's, and no draw of the plan's sequence changes, so every other carving keeps
+ * its kind and place (tests/unit/lift-fauna.test.ts).
+ */
+const PEEK: Partial<Record<string, readonly { found: number; x: number; z: number }[]>> = {
+  granskog: [{ found: 139.5, x: 138.2, z: -2.7 }],
+};
 /** What shelters in the storm, by place. */
 const SHELTER: Partial<Record<PlaceId, Species>> = { forest: 'tit', garden: 'blue', bog: 'sparrow' };
 
@@ -330,7 +342,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
    * Spots behind the path, far from candy and the story's things, with a stone or a stump in front: of the places
    * tried, those that stand in the widest gaps of the trail, so that none looks to be by a candy.
    */
-  const hideouts = (n: number, taken: number[]): Peek[] => {
+  const hideouts = (n: number, taken: number[], carved = false): Peek[] => {
     const tried: { x: number; z: number; gap: number }[] = [];
     for (let k = 0; k < 90; k++) {
       const x = from + 8 + next() * (to - from - 16);
@@ -340,9 +352,28 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
       tried.push({ x, z, gap: gap(x, y) });
     }
     tried.sort((a, b) => b.gap - a.gap);
+    const apart = (x: number, out: readonly Peek[]) => taken.concat(out.map((o) => o.at[0])).every((t) => Math.abs(t - x) >= 10);
+    // Where the trail's candy lies all along the dry ground (Myren: a sweet every two EL, one over every hop), no spot
+    // tried is clear of it, or the only ones are by those taken. A carving then looks every half EL for the widest gap
+    // of the trail, a little further back on the same dry ground, not beside a big lollipop, and of those the one
+    // furthest from the story's things. It is only asked when the tries came to too few, so a chapter that has its
+    // carvings keeps them where they are (Olov, 12 November 2026: Myren had none).
+    if (carved && tried.filter((t) => apart(t.x, [])).length < n) {
+      const z = place === 'bog' ? -2.7 : -3.4;
+      const room = (x: number) => Math.min(9, ...busy.map(([a, b]) => Math.max(a - x, x - b)));
+      const found: { x: number; z: number; gap: number; room: number }[] = [];
+      for (let x = Math.ceil(from + 8); x <= to - 8; x += 0.5) {
+        if (!soil(x) || !clear(x, ground(x) + 0.4, z, 2.8) || (source.checkpoints ?? []).some((c) => Math.abs(c.y - ground(x)) < 1.5 && Math.abs(c.x - x) < 2)) continue;
+        found.push({ x, z, gap: gap(x, ground(x)), room: room(x) });
+      }
+      tried.push(...found.sort((a, b) => b.gap - a.gap || b.room - a.room));
+    }
     const out: Peek[] = [];
-    for (const { x, z } of tried) {
-      if (out.length >= n || taken.concat(out.map((o) => o.at[0])).some((t) => Math.abs(t - x) < 10)) continue;
+    for (const { x: found, z: back } of tried) {
+      if (out.length >= n || !apart(found, out)) continue;
+      // A carving that the plan puts where a chapter's own things hide it peeks out beside them instead (`PEEK`).
+      const peek = carved ? PEEK[source.id]?.find((p) => Math.abs(p.found - found) < 1.5) : undefined;
+      const x = peek?.x ?? found, z = peek?.z ?? back;
       const y = ground(x);
       // As high as the moss and the ferns round it, or a little higher, so that what peeks over it is seen.
       const size = 1.25 + next() * 0.3;
@@ -356,7 +387,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     return out;
   };
   const beings = hideouts(cast.beings ?? 0, []);
-  const carvings = hideouts(CARVED[source.id] ?? 0, beings.map((b) => b.at[0])).map((h): Carved => ({
+  const carvings = hideouts(CARVED[source.id] ?? 0, beings.map((b) => b.at[0]), true).map((h): Carved => ({
     // Left on the top of its stone, a little back, as if someone had put it there.
     at: [h.at[0] + h.side * h.wide * 0.25, h.top - 0.05, h.at[2] - h.deep * 0.3], yaw: -Math.PI / 2 + h.side * 0.5,
     shape: (['bird', 'hare', 'nisse'] as const)[Math.floor(next() * 3)]!,
