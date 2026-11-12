@@ -74,13 +74,21 @@ function gableEnd(x: number, colour: string): BufferGeometry {
   return paint(new ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false }).rotateY(-Math.PI / 2).translate(x + thick / 2, 0, 0), colour);
 }
 
-/** A hay bale, its top where he stands: straw, with two twines round it. */
+/**
+ * A hay bale, its top where he stands: pressed straw in flakes, each a little out of line with the next and its own
+ * shade, with two twines round it. As one box it read as a cardboard carton.
+ */
 function bale(parts: BufferGeometry[], from: number, to: number, low: number, high: number): void {
-  const z0 = -1.75, z1 = 1.43;
-  parts.push(box(to - from + 0.04, high - low, z1 - z0, (from + to) / 2, (low + high) / 2 + 0.01, (z0 + z1) / 2, STRAW[Math.round(from) % STRAW.length]!));
-  // Loose straw sticking out along its top edges, and the twines.
-  for (const k of [0.3, 0.7]) parts.push(box(0.05, high - low + 0.03, z1 - z0 + 0.03, from + (to - from) * k, (low + high) / 2 + 0.01, (z0 + z1) / 2, '#7a6038'));
-  parts.push(box(to - from + 0.1, 0.06, 0.12, (from + to) / 2, high - 0.02, z1 + 0.01, STRAW[2]!));
+  const z0 = -1.75, z1 = 1.43, flakes = Math.max(3, Math.round((to - from) / 0.42));
+  const wide = (to - from + 0.04) / flakes;
+  for (let i = 0; i < flakes; i++) {
+    const wobble = ((i * 37 + Math.round(from * 10)) % 7) / 7 - 0.5;
+    const top = i === 0 || i === flakes - 1 ? high - 0.03 : high + 0.01;
+    parts.push(box(wide - 0.015, top - low, z1 - z0 - 0.06 + wobble * 0.05, from - 0.02 + (i + 0.5) * wide, (low + top) / 2, (z0 + z1) / 2 + wobble * 0.04,
+      STRAW[(i + Math.round(from)) % STRAW.length]!));
+  }
+  // The twines, round it near each end.
+  for (const k of [0.27, 0.73]) parts.push(box(0.05, high - low + 0.03, z1 - z0 + 0.03, from + (to - from) * k, (low + high) / 2 + 0.01, (z0 + z1) / 2, '#6f5634'));
 }
 
 /** The barn's front: stone foot, boards and battens, white corners and frame, the eaves, the roof over them. */
