@@ -533,7 +533,8 @@ export const context: Chooser = (has, at) => {
   if (has('owl')) return ['ssOwlRide', 'ssOwl', 'sparkle'];
   if (has('placed:owl-twig')) return at.x >= 104.6 ? ['ssOwlBoard', 'ssOwl', 'sparkle'] : ['ssWindthrow', 'ssOwl'];
   if (at.x >= 62) return ['ssOwl', 'ssLamps', 'heart'];
-  if (at.x >= 38) return ['ssBoughs', 'ssLamps'];
+  // Past the last cone (32.2) the cones' purpose is done: from the flash on, the way leads to the ravine.
+  if (at.x >= 34) return ['ssBoughs', 'ssLamps'];
   if (at.x >= 14) return ['ssCones', 'ssLamps'];
   return ['ssForest', 'ssLamps'];
 };
