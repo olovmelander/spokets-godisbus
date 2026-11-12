@@ -227,6 +227,11 @@ const END_POST = { x: 189.4, y: DECK };
  */
 const LOG_RUN = 0.7;
 const ON_LOG = round(LOG_RUN + 0.9);
+/**
+ * After the old one's float the picture comes back to him from the empty river: when it sets off, how long it takes,
+ * and when "Trä flyter! Ån bär dem båda." is said, once it is there.
+ */
+const BACK = { at: round(LOG_RUN + OUTLET_RUN + 0.2), move: 1.4, said: round(LOG_RUN + OUTLET_RUN + 1.7) };
 
 /**
  * The bark (the puzzle): a thick piece, lying on the low planks, and each push moves it on along them. The third
@@ -303,7 +308,8 @@ export const flarken: ChapterData = {
       id: 'sjon:utkik', at: LOOKOUT_AT, before: TOWER.to, seconds: 3.4, hold: true, quiet: true, dialogue: ['sjon:lookout'],
       cues: [{ at: 1.25, flag: 'sjon:seen' }],
       stage: {
-        shots: [{ at: 0.1, x: SEEN.x, y: 0.4, z: SEEN.z, height: 4.8, width: 4.4, eye: 4.5, move: 1.1 }],
+        // A little to the left of him: centred on him, the big lollipop at the jetty's end filled a corner, out of focus.
+        shots: [{ at: 0.1, x: SEEN.x - 0.7, y: 0.4, z: SEEN.z, height: 4.8, width: 4.4, eye: 4.5, move: 1.1 }],
         elof: [{ at: 0.2, act: 'point', aim: SEEN }, { at: 3.1, act: null }],
       },
     },
@@ -324,19 +330,25 @@ export const flarken: ChapterData = {
     // one. One figure of him all the way (Olov, 12 November 2026: "syns han på två ställen samtidigt"): the one on the
     // post goes as his flight begins with the hop (`word: 'boards'`, ../render.ts), and the line is said once he is on
     // the log (`ON_LOG`), not as he leaves the post: the line holds the picture while it is read.
+    // Once both are gone down the å, the picture comes back to Elof and Klonk on the jetty's end before what is said
+    // next: "Trä flyter!", Mamma's answer, his own words and Klonk's cheer were said over the empty river for fifteen
+    // seconds. (The scene's clock waits while its lines are read, so the way back comes before the cue that says them.)
     {
-      id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: OUTLET_RUN + 1.1, hold: true, dialogue: ['sjon:log'],
-      cues: [{ at: LOG_RUN, flag: 'sjon:log-run' }, { at: ON_LOG, flag: 'sjon:on-log' }, { at: OUTLET_RUN + 1, flag: 'sjon:both-downstream' }],
+      id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: BACK.said + 0.2, hold: true, dialogue: ['sjon:log'],
+      cues: [{ at: LOG_RUN, flag: 'sjon:log-run' }, { at: ON_LOG, flag: 'sjon:on-log' }, { at: BACK.said, flag: 'sjon:both-downstream' }],
       stage: {
         shots: [
           { at: 0, x: 189.6, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 0.65 },
           { at: LOG_RUN, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: OUTLET_RUN },
+          { at: BACK.at, x: 187.4, y: 2, height: 6.4, width: 9.4, move: BACK.move },
         ],
-        // He watches the old one on the post, points as he lands on the log, and follows him down the å.
+        // He watches the old one on the post, points as he lands on the log, and follows him down the å; then he turns
+        // back to Mamma at the break, who answers from her board.
         elof: [
           { at: 0.2, act: 'look', aim: { x: END_POST.x, y: 1.2, z: -0.6 } },
           { at: ON_LOG - 0.1, act: 'point', aim: { x: END_POST.x + 0.6, y: 0.2, z: -4 } },
           { at: ON_LOG + 1.4, act: 'look', aim: { x: 195, y: 0.5 } },
+          { at: BACK.said + 0.1, act: 'look', aim: { x: (BREAK.from + BREAK.to) / 2, y: 2.5, z: -1.1 } },
         ],
       },
     },
@@ -693,7 +705,9 @@ export const flarken: ChapterData = {
     { from: 88, to: 113, zoom: 1.3 },
     // From post to post the next post is in the picture.
     { from: 116, to: 136, zoom: 1.35 },
-    { from: 136, to: 152, zoom: 1.3, lift: 0.3 },
+    // At the break: wide and high enough that Mamma's face is in the picture as she holds her board along the gap (her
+    // head was above the picture's top, on a phone and a computer alike).
+    { from: 136, to: 152, zoom: 1.45, lift: 1.1 },
     // The tower: the platform, the jetty below it, and the lake beyond.
     { from: 152, to: 161, zoom: 1.5, lift: 1.2 },
     { from: 161, to: END.from, zoom: 1.3 },

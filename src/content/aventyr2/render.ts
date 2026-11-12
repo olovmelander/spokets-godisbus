@@ -2773,7 +2773,16 @@ function waterSplash(size: number) {
     return { vx: Math.cos(a) * (0.8 + 0.8 * ((i * 0.37) % 1)) * size, vz: Math.sin(a) * 0.5 * size, vy: (2.4 + 1.8 * ((i * 0.61) % 1)) * size };
   });
   const place = new Object3D();
-  const crown = new Mesh(new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true).translate(0, 0.21 * size, 0), white.clone());
+  // The crown's top is ragged, every other point thrown up and out: an even band read as a white card from a low eye
+  // (Flärken's plopp, finetune pass of 12 November 2026).
+  const band = new CylinderGeometry(0.46 * size, 0.6 * size, 0.42 * size, 20, 1, true);
+  const rim = band.getAttribute('position');
+  for (let i = 0; i <= 20; i++) {
+    const spike = i % 2 === 0 ? 1.3 : 0.25;
+    rim.setXYZ(i, rim.getX(i) * (1 + 0.25 * spike), 0.21 * size * spike, rim.getZ(i) * (1 + 0.25 * spike));
+  }
+  band.computeVertexNormals();
+  const crown = new Mesh(band.translate(0, 0.21 * size, 0), white.clone());
   group.add(crown);
   const rings = [0, 0.3, 0.65].map((delay) => {
     const mesh = new Mesh(new RingGeometry(0.9, 1, 40).rotateX(-Math.PI / 2), white.clone());
