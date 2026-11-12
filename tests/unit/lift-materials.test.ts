@@ -189,7 +189,9 @@ describe('the visual upgrade: wood, moss and the wet', () => {
 
     it('knows the lit windows of a street and of a building, and only of a building that is lit', () => {
       const byn = ADVENTURE2.find((c) => c.id === 'stormbyn')!;
-      expect(lampsOf(byn, new Scene()).length).toBeGreaterThan(0);
+      // In the storm the power is out: its street's windows are lit by the candles in them alone, each from its moment.
+      expect(lampsOf(byn, new Scene())).toEqual(byn.storm!.glows!.map((glow) => ({ x: glow.at.x, z: glow.z, on: glow.after ?? '' })));
+      expect(lampsOf(byn, new Scene()).some((lamp) => lamp.on === '')).toBe(true);
       const scene = new Scene();
       const lit = building({ kind: 'villa', x: 40, z: -30, lit: 'home' });
       const dark = building({ kind: 'villa', x: 90, z: -30 });

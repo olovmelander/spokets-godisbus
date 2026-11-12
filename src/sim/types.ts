@@ -857,8 +857,11 @@ export interface Storm {
     /** An outlet's near bank begins this far along it, past the end of a jetty that runs out into its mouth. */
     opens?: number;
   }[];
-  /** Warm windows of lit candles and lanterns, which glow through the rain. */
-  glows?: { at: Vec; z?: number; size?: number; after?: string }[];
+  /**
+   * Warm windows of lit candles and lanterns, which glow through the rain. `candle`: the candle itself is drawn too, this
+   * many EL of wax standing on the sill under its flame at `at` (src/render/window-candle.ts).
+   */
+  glows?: { at: Vec; z?: number; size?: number; after?: string; candle?: number }[];
   /** A lamp shining on him from somewhere (Moa from a window), while he is between `within`'s two x. */
   beams?: { at: Vec; z: number; within: [number, number] }[];
 }

@@ -14,7 +14,8 @@ import { timeCard } from './cards';
  * 6. **The shop's step:** a matchbox on its edge, with a red ring. Pulled down, it is the way up. At the top
  *    the door stands ajar, and it smells of candy.
  * 7. **Inside the shop:** a warm wooden floor under shelves of enormous candy jars. His friend leads him
- *    past the doormat to a paper bag and the final candy. Passing shoes and cars stay behind his path.
+ *    past the doormat to a paper bag and the final candy. A grown-up's passing legs stay behind his path. No car
+ *    drives by: beside the legs, drawn at his scale, it made them a giant's (Olov, 12 November 2026).
  *
  * Nothing here is a real shop, and no house has a number: a shop is told by the wares in its window, and
  * nothing on the street is a letter (plan §0, §2.6).

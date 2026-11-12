@@ -8,6 +8,7 @@ import { buildBraid } from './braid';
 import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } from './myren-helper';
 import { createPaddle, type Paddle } from './paddle';
 import { createScarves } from './scarf';
+import { createUmbrellaCarry, handsOn, heldUp, holdAt, holdingOut, UMBRELLA } from './umbrella-hold';
 import { rainGearFor } from './rain-gear';
 import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
@@ -980,17 +981,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const ROOT_HOLE = { x: 163.4, y: 0 };
   const rootReach = new Vector3();
   /**
-   * Moa's umbrella in Byn i stormen (the ride that floats him over the crossing): she holds it until she has set it down
-   * for him at the wall's edge (below), where it waits as the ride's own picture. When she was called, on the clock.
+   * Moa's umbrella in Byn i stormen (the ride that floats him over the crossing): she holds it by its crook until he takes
+   * it from her at the wall's edge, and then it carries him hanging from its crook (./umbrella-hold.ts). When she was
+   * called, on the clock.
    */
   const umbrellaRide = chapter.id === 'stormbyn' ? carriers.find((c) => c.ride.look === 'umbrella' && c.prop) : undefined;
   const umbrellaBoard = umbrellaRide ? chapter.spots?.find((spot) => spot.ride === umbrellaRide.ride.id) : undefined;
-  const umbrellaHand = new Vector3(), umbrellaHeld = new Vector3();
+  const umbrellaCarry = umbrellaRide ? createUmbrellaCarry() : null;
+  const umbrellaHand = new Vector3(), umbrellaHeld = new Vector3(), umbrellaAxis = new Vector3();
+  const umbrellaLower = new Vector3(), umbrellaUpper = new Vector3();
   let umbrellaCalled = -1;
-  /** Where on the umbrella her hand holds it, over its foot (./props.ts `rideProp`): the shaft, a little over its hook. */
-  const UMBRELLA_HANDLE = 1.25;
-  /** Her fist round the umbrella's thin shaft (./fingers.ts). */
-  const UMBRELLA_GRIP = { kind: 'power' as const, size: 0.035 };
+  /** Her fist round the umbrella's crook (./fingers.ts). */
+  const UMBRELLA_GRIP = { kind: 'power' as const, size: 0.05 };
   const creepTo = new Vector3();
   /**
    * Moa's leaf drawing, blown out of her hand and back under the shaving bridge as the plane is ready (garden.ts,
@@ -1363,6 +1365,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         if (tip) tip.rotation.x = -(lag - beat) * 0.9 - 0.08;
       }
     }
+    // Moa's umbrella carries him hanging from its crook by both hands, come there from her hand (./umbrella-hold.ts).
+    const umbrellaHung = !!umbrellaCarry && !!carrier && carrier === umbrellaRide;
+    if (umbrellaHung) umbrellaCarry!.carry(umbrellaRide!.prop!, x, y, tall, Math.min(1, (1 - curr.t) / 0.05), clock, dt, calmStory);
     for (const [i, thing] of things.entries()) {
       if (thing.prop) thing.prop.group.rotation.z -= thing.reactionTurn;
       // The light counterweight tips the same board only during its safe bounce, then resets for another try.
@@ -1600,8 +1605,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const breeze = gale * windAt(x);
     // His model's own legs (Rig.legs), where it has come: its feet hold the ground as he walks.
     const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
-    // Hang by his hands from the scarf; walk on his own feet on the way home.
-    const moving = bathroom ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : onScarf ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
+    // Hang by his hands from the scarf, and from Moa's umbrella; walk on his own feet on the way home.
+    const moving = bathroom ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : onScarf || umbrellaHung ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
     // Norrsken's continuous rescue line already owns both grips and the loop around the carving.
     const pullIndex = rescue ? -1 : movers.findIndex((m, i) => m.t !== undefined && m.t < 1 && (m.stop ?? 0) > 0 && chapter.movers?.[i]?.verb === 'pull' && !chapter.movers[i]!.on);
     const pullMover = pullIndex >= 0 ? movers[pullIndex]! : null;
@@ -1731,6 +1736,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       playerBody.hold?.(0, grip);
       playerBody.hold?.(1, grip);
       if (playerBody.socket) playerBody.socket(0, grip, scarfBottom); else playerBody.hand(0, scarfBottom);
+    }
+    if (umbrellaHung && umbrellaRide?.prop) {
+      // Both hands up round Moa's umbrella: the one on its crook, the other just over it on the shaft (./umbrella-hold.ts).
+      handsOn(umbrellaRide.prop, umbrellaLower, umbrellaUpper);
+      playerBody.reach(0, umbrellaLower);
+      playerBody.reach(1, umbrellaUpper);
+      const grip = { kind: 'power' as const, size: .03 * tall };
+      playerBody.hold?.(0, grip);
+      playerBody.hold?.(1, grip);
     }
     // In the mist he holds the lysklubba up before him, as a lantern (./view.ts buildMist).
     lanternHeld = !!chapter.mist && flags.has(chapter.mist.after) && !curr.hook && !!playerBody;
@@ -2082,21 +2096,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       // Moa holds her umbrella in Byn i stormen (Olov, 9 November 2026: "Moa ska hålla i ett paraply redan innan Elof
       // ropar på henne och får det."): open over her head in the rain while she waits on the wall; called, she steps to
-      // its edge, bends and sets it down open there for him (`down`, 0 to 1), lets go as it is ready, and straightens.
-      const umbrellaUp = one.who === 'moa' && !!umbrellaRide && !!umbrellaBoard
-        && !flags.has(umbrellaBoard.needs ?? umbrellaBoard.id) && !flags.has(umbrellaBoard.id);
+      // its edge, bends and holds it out low there for him (`down`, 0 to 1), until he takes it from her hand; then she
+      // lets go and straightens (Olov, 12 November 2026: it stood there by itself before; ./umbrella-hold.ts).
+      const umbrellaUp = one.who === 'moa' && !!umbrellaRide && !!umbrellaBoard && !flags.has(umbrellaBoard.id);
       const umbrellaAsked = umbrellaUp && one.glad !== undefined && flags.has(one.glad);
       if (!umbrellaAsked) umbrellaCalled = -1;
       // A game taken up after the call: it is down already.
       else if (umbrellaCalled < 0) umbrellaCalled = hasFrame ? clock : clock - 9;
       const down = umbrellaAsked ? (calmStory ? 1 : smooth((clock - umbrellaCalled - 0.35) / 0.95)) : 0;
       gesture.stoop = calmStory ? down : gesture.stoop + (down - gesture.stoop) * ease(6, dt);
-      if (gesture.stoop > 0.001) {
-        const w = gesture.stoop, mixTo = (from: number, to: number) => from * (1 - w) + to * w;
-        posed.lean = mixTo(posed.lean, 0.62);
-        posed.legL = mixTo(posed.legL, 0.55); posed.kneeL = mixTo(posed.kneeL, 0.95);
-        posed.legR = mixTo(posed.legR, 0.4); posed.kneeR = mixTo(posed.kneeR, 0.8);
-      }
+      // Down in a crouch at the edge, to hold it out low to him (./umbrella-hold.ts).
+      if (gesture.stoop > 0.001) holdingOut(posed, one.rig.legs, gesture.stoop);
       // Bertil kicks the ball Elof rides ("Upp på bollen! Jag skjuter, du flyger!"): turned to it, a wind-up, the
       // swing through, arms out, and back to standing.
       if (one.who === 'bertil' && kickSince >= 0 && kickSince < 0.9) {
@@ -2269,20 +2279,18 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         }
       }
       if (umbrellaUp && shown && umbrellaRide?.prop) {
-        // Her umbrella by its handle in her left hand, its shaft upright: over her head, or on its way down to where it
-        // waits for him at the wall's edge (the ride's start), until it is there and the ride's own picture has it.
-        const u = one.rig.height / 5.2, start = umbrellaRide.ride.from;
+        // Her umbrella by its crook in her left fist (./umbrella-hold.ts): before her chest, its canopy clear over her head
+        // and leaning into the wind; called, held out low at the wall's edge, at the ride's start where his raised hands
+        // will take it, and less leaning. The fist goes where it reaches; the umbrella goes with the fist.
+        const start = umbrellaRide.ride.from;
         one.rig.group.updateWorldMatrix(true, false);
-        umbrellaHand.set(0.34 * u, 4.15 * u, 0.42 * u);
-        one.rig.group.localToWorld(umbrellaHand);
-        umbrellaHand.lerp(umbrellaHeld.set(start.x, start.y + UMBRELLA_HANDLE, 0), down);
-        one.rig.reach(0, umbrellaHand, 1);
-        if (one.rig.grasp && one.rig.socket) {
-          one.rig.grasp(0, UMBRELLA_GRIP, one.rig.socket(0, UMBRELLA_GRIP, umbrellaHeld), upright, umbrellaHeld, 1);
-        } else one.rig.hand(0, umbrellaHeld);
-        umbrellaRide.prop.position.set(umbrellaHeld.x, umbrellaHeld.y - UMBRELLA_HANDLE, umbrellaHeld.z);
-        umbrellaRide.prop.rotation.set(0, 0, 0);
-        umbrellaRide.prop.scale.setScalar(1);
+        one.rig.group.localToWorld(umbrellaHand.copy(UMBRELLA.held).multiplyScalar(one.rig.height));
+        umbrellaHand.lerp(umbrellaHeld.set(start.x, start.y + UMBRELLA.hang, 0), down);
+        heldUp(clock, Math.min(1, Math.abs(gale * windAt(one.at))), calmStory, umbrellaAxis, 1 - 0.6 * down);
+        if (one.rig.grasp) one.rig.grasp(0, UMBRELLA_GRIP, umbrellaHand, umbrellaAxis, umbrellaHeld, 1);
+        else { one.rig.reach(0, umbrellaHand, 1); one.rig.hand(0, umbrellaHeld); }
+        holdAt(umbrellaRide.prop, umbrellaHeld, umbrellaAxis);
+        umbrellaCarry?.held(umbrellaRide.prop);
         drawnWhile(umbrellaRide.prop, true);
       }
       one.rig.breeze?.(gale * windAt(carrying ? x : one.at), dt, calmStory);

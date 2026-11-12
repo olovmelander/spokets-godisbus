@@ -2,7 +2,7 @@ import { Color, NoColorSpace, Vector4, type Material, type Mesh, type MeshStanda
 import type { ChapterData } from '../../../sim/types';
 import { drawn, sequence } from '../../dressing/kit';
 import type { ExtraContext, ExtraFrame, ViewExtra } from '../../extensions';
-import { STREET_DEPTH } from '../../village';
+import { powerOut, STREET_DEPTH } from '../../village';
 
 /**
  * Puddles (docs/visual-upgrade.md): in the rain the hard ground gives back the sky, in pools it lies in and in a thin
@@ -67,12 +67,20 @@ function pools(): Texture {
   return texture;
 }
 
-/** A chapter's lit windows: its street's, which are lit all night, and those its buildings say they have. */
+/**
+ * A chapter's lit windows: its street's, which are lit all night, and those its buildings say they have. Where the storm
+ * has cut the power (Byn i stormen) no street window is lit: only those where someone has lit a candle (`storm.glows`),
+ * each from its own moment.
+ */
 export function lampsOf(chapter: ChapterData, scene: Object3D): Lamp[] {
   const lamps: Lamp[] = [];
-  for (const part of chapter.street ?? []) {
-    if (part.kind !== 'house') continue;
-    for (const window of part.windows ?? []) lamps.push({ x: (window.from + window.to) / 2, z: STREET_DEPTH[part.depth], on: '' });
+  if (chapter.street && powerOut(chapter)) {
+    for (const glow of chapter.storm?.glows ?? []) lamps.push({ x: glow.at.x, z: glow.z ?? -6, on: glow.after ?? '' });
+  } else {
+    for (const part of chapter.street ?? []) {
+      if (part.kind !== 'house') continue;
+      for (const window of part.windows ?? []) lamps.push({ x: (window.from + window.to) / 2, z: STREET_DEPTH[part.depth], on: '' });
+    }
   }
   scene.traverse((object) => { lamps.push(...((object.userData.lamps as Lamp[] | undefined) ?? [])); });
   return lamps;

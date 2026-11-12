@@ -36,7 +36,7 @@ let checks = 0;
 const check = (name, ok) => { assert.ok(ok, name); checks++; console.log(`  ok   ${name}`); };
 try {
   for (const [width, height] of [[844, 390], [390, 844]]) for (const tier of ['low', 'high']) {
-    for (const [place, x, y] of [['shoes', 6, 2.01], ['car', 65, 0.01], ['door', 122, 3.31], ['shop', 136, 3.31], ['bag', 156, 3.31]]) {
+    for (const [place, x, y] of [['shoes', 6, 2.01], ['crossing', 65, 0.01], ['door', 122, 3.31], ['shop', 136, 3.31], ['bag', 156, 3.31]]) {
       const name = `${width}x${height}-${tier}-${place}`;
       if (process.env.VILLAGE_CASE && !name.includes(process.env.VILLAGE_CASE)) continue;
       const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
@@ -59,8 +59,8 @@ try {
         await view.ready;
         for (let i = 0; i < 4; i++) draw();
         const scene = f.renderedScene();
-        const shoes = scene.getObjectByName('passing-shoes'), car = scene.getObjectByName('passing-car');
-        const snapshot = () => ({ ...view.info(), shoes: shoes.position.toArray(), car: car.position.toArray(),
+        const shoes = scene.getObjectByName('passing-shoes');
+        const snapshot = () => ({ ...view.info(), shoes: shoes.position.toArray(), car: !!scene.getObjectByName('passing-car'),
           feet: shoes.children.filter((c) => c.isGroup).map((c) => c.position.toArray()), state: JSON.stringify(game.sim.curr) });
         window.probe = { f, game, view, draw, scene, snapshot };
         return { ...snapshot(), interior: scene.getObjectByName('candy-shop-interior').children.length };
@@ -68,9 +68,9 @@ try {
       await picture(page, join(shots, `${name}.png`));
       check(`${name}: scene and assets render within budget (${early.models.length} models, ${early.drawCalls} calls)`, early.models.length >= 4 && early.interior > 10 && early.drawCalls > 20 && withinDraws(early.drawCalls, early.tier));
       const moved = await page.evaluate(() => { const p = window.probe; for (let i = 0; i < 6; i++) p.draw(0.5); return p.snapshot(); });
-      check(`${name}: street life moves safely behind the play plane without shaders or simulation changes`, moved.shoes[0] > early.shoes[0] && moved.car[0] > early.car[0] && moved.shoes[2] < -10 && moved.car[2] < -10 && moved.programs === early.programs && moved.state === early.state && withinDraws(moved.drawCalls, moved.tier));
+      check(`${name}: street life moves safely behind the play plane without shaders or simulation changes`, moved.shoes[0] > early.shoes[0] && !early.car && moved.shoes[2] < -10 && moved.programs === early.programs && moved.state === early.state && withinDraws(moved.drawCalls, moved.tier));
       const paused = await page.evaluate(() => { const p = window.probe; p.draw(0); return p.snapshot(); });
-      check(`${name}: pause freezes street life`, JSON.stringify(paused.shoes) === JSON.stringify(moved.shoes) && JSON.stringify(paused.car) === JSON.stringify(moved.car) && JSON.stringify(paused.feet) === JSON.stringify(moved.feet));
+      check(`${name}: pause freezes street life`, JSON.stringify(paused.shoes) === JSON.stringify(moved.shoes) && JSON.stringify(paused.feet) === JSON.stringify(moved.feet));
       if (place === 'door') {
         const walk = await page.evaluate(() => {
           const p = window.probe, programs = p.view.info().programs; let stable = true, maxCalls = 0;

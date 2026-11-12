@@ -648,14 +648,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ett ljus hos skomakaren. Tack!"
+    "text": "Skomakaren tände ett ljus. Tack!"
   },
   {
     "key": "sbCandleThree",
     "speaker": "elof",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bageriet lyser. Nu ser jag trappan!"
+    "text": "Bagaren tände ett ljus. Där är trappan!"
   },
   {
     "key": "sbRiver",
@@ -690,7 +690,7 @@
     "speaker": "moa",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[warm big sister, lively]",
-    "text": "Där kom mitt minsta maskrosfrö!"
+    "text": "Där landade mitt lilla maskrosfrö!"
   },
   {
     "key": "sbCap",
