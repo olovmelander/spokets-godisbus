@@ -80,7 +80,7 @@ const LADDER: Ledge = { x: (DITCH.from + DITCH.to) / 2, y: 0, width: DITCH.to - 
 const DRIVE = { from: DITCH.to, to: 29 };
 /** Where he thanks morfar, a step past the ladder's far end, and the big candy on the drive beyond, which a game is taken up at. */
 const THANKS_AT = 19.8;
-const DRIVE_CANDY = 22;
+const DRIVE_CANDY = 22.65;
 
 /** The woodshed's stack of firewood, three rows of logs high: up it a row at a time, and a soft drop off its end. */
 const STACK = [38, 39.6, 41.2].map((x, i) => ({ x, y: round(1.2 * (i + 1)) }));
@@ -453,16 +453,19 @@ export const billsta: ChapterData = {
     { look: 'stone', from: B2.from, to: B2.to, base: SLOPE },
     { look: 'stone', from: B3.from, to: B3.to, base: SLOPE },
   ],
+  // Each in the gap between two of the trail's sweets, never with one at its foot.
   checkpoints: [
     { x: 7, y: 0 },
     { x: DRIVE_CANDY, y: 0 },
-    { x: 35.4, y: 0 },
+    { x: 35.95, y: 0 },
     { x: 57.4, y: LOFT },
-    { x: 70.6, y: ROOF.y },
-    { x: 108, y: 0 },
-    { x: 123.6, y: 0 },
+    { x: 70.7, y: ROOF.y },
+    { x: 108.2, y: 0 },
+    // On the bank where the brook's stones end, before the frog and the branches.
+    { x: 122.7, y: 0 },
     { x: 142.4, y: TOP.y },
-    { x: 161.8, y: SLOPE },
+    // Past where he lands off the big boulder, not under the sweets of the drop off it.
+    { x: 163.3, y: SLOPE },
   ],
   // The storm over the barn's roof and over the open slope: Berget's rhythm, a gust every four seconds for a little
   // under one and a half. A dash from one lee to the next (1.5 s) leaves a good second of the calm between to spare.
@@ -754,14 +757,15 @@ export const billsta: ChapterData = {
     hopCandy({ x: HATCH.from, y: LOFT }, { x: HATCH.to, y: LOFT }, 1.15),
     { x: 66, y: round(LOFT + 0.45) },
     ...hopUp(HAY[0]!.x, HAY[0]!.y),
-    ...hopUp(HAY[1]!.x, HAY[1]!.y),
+    // the one up on the roof a little back from its big candy, not at its foot
+    ...hopUp(HAY[1]!.x, HAY[1]!.y).map((c, i) => (i === 1 ? { ...c, x: round(c.x - 0.4, 1) } : c)),
     // along the roof, from lee to lee, down to its eaves, and off them to the ground behind the house
     ...row(72.4, 98.4, ROOF.y),
     ...slopeRow(100.4, 104.4, ROOF.to, ROOF.y, EAVES.from, EAVES.y),
     { x: 106, y: round(EAVES.y + 0.45) },
     offEdge(EAVES.to, EAVES.y, 0.5),
     offEdge(EAVES.to, EAVES.y, 1.1),
-    { x: 108.6, y: 0.45 },
+    { x: 108.9, y: 0.45 },
     // 5. over the brook on its stones
     ...across(BROOK_WAY),
     // along the bank to the seesaw's low end, along the fling over the deep brook, and on the bank beyond
@@ -798,12 +802,14 @@ export const billsta: ChapterData = {
     hopCandy({ x: round(SHELVES[1]!.x + 0.8), y: SHELVES[1]!.y }, { x: round(SHELVES[2]!.x - 0.8), y: SHELVES[2]!.y }, 0.9),
     over(SHELVES[2]!, -0.3),
     over(SHELVES[2]!, 0.4),
-    // The loft's beams: two on the first, one in the arc of the jump across, two on the second.
+    // The loft's beams: two on the first, one in the arc of the jump across, and two where he steps off the second
+    // one's end and drops beyond the hatch. The second beam is the kolaknapp's and the peg's (../../collections.ts):
+    // they lay in the loft's doorway, on the trail, with its big candy and two of its sweets.
     over(BEAMS[0]!, -0.4),
     over(BEAMS[0]!, 0.4),
     hopCandy({ x: round(BEAMS[0]!.x + 0.8), y: BEAMS[0]!.y }, { x: round(BEAMS[1]!.x - 0.8), y: BEAMS[1]!.y }, 0.9),
-    over(BEAMS[1]!, -0.4),
-    over(BEAMS[1]!, 0.4),
+    { x: 65.55, y: 7.25 },
+    { x: 65.6, y: 6.55 },
   ],
 };
 

@@ -1,7 +1,7 @@
 import type { ChapterData } from '../../../sim/types';
 import type { SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
-import { alongAll, row, timeCard, walkedAll } from '../kit';
+import { alongAll, timeCard, walkedAll } from '../kit';
 
 /**
  * Äventyr 2, Finalen: Stormens öga (docs/aventyr-2.md). Units: EL. In the narrow at Billsta, at midnight, where
@@ -472,7 +472,8 @@ export const stormoga: ChapterData = {
   landmarks: [{ look: 'skerry', from: 38, to: 58, base: -6 }],
   surfaces: [{ from: -3, to: 12, kind: 'wood' }, { from: 38, to: 58, kind: 'wetRock' }],
   scenes: SCENES,
-  checkpoints: [{ x: 4, y: 0 }, { x: 41, y: 0.6 }, { x: 50.4, y: 0.6 }],
+  // Each in a gap of the trail's: the first before Mamma, not in front of her, the last between two sweets on the stone.
+  checkpoints: [{ x: 3.1, y: 0 }, { x: 41, y: 0.6 }, { x: 51.6, y: 0.6 }],
   spots: [
     // He comes onto the jetty, among them, in the dark.
     { id: 'so:jetty', at: { x: 3.2, y: 0 }, verb: 'take', touch: true },
@@ -545,10 +546,12 @@ export const stormoga: ChapterData = {
     { from: 58, to: 100, zoom: 1.5, lift: 0.6 },
   ],
   candy: [
-    ...row(2.4, 8.4, 0),
+    // Down the jetty between the family's lamps, not in front of them.
+    ...[2.4, 5.6, 7.25, 8.7].map((x) => ({ x, y: 0.45 })),
     ...alongAll(OWL, [0.12, 0.24, 0.36, 0.48, 0.6, 0.72, 0.84, 0.94]),
     // Nothing sweet stands between him and the two of them, nor where Klonk waits.
-    ...[41.4, 43.4, 45.4, 48.2, 50.6, 52.6].map((x) => ({ x, y: 1.05 })),
+    // The first a little past the big candy where the owl sets him down, not at its foot.
+    ...[41.9, 43.4, 45.4, 48.2, 50.6, 52.6].map((x) => ({ x, y: 1.05 })),
     // Along the way home, over his feet: on the stone, over the shallows, on the shore.
     ...walkedAll(HOME, [0.12, 0.22, 0.32, 0.42, 0.52, 0.62, 0.72, 0.82]),
   ],
