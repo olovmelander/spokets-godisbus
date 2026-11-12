@@ -74,11 +74,13 @@ const ON_SHELF = { x: FIRST.x + 0.4, y: FIRST.y + 0.5, z: FIRST.z };
 /** The little one's place on the shelf, beside the old one's. */
 const SECOND = { x: FIRST.x + 0.7, y: FIRST.y, z: FIRST.z + 0.2 };
 /**
- * The stool under the shelf's first places, as in the first adventure's epilogue (../../chapters/ends.ts): the shelf is a
- * grown-up's height, so he steps up on it to put each figure back, and the figure stands there once his hand is at its
- * place (`OLD_UP`, `SMALL_UP`). He used to stand on the floor, two heads under the shelf, while each appeared over him.
+ * The kitchen step stool under the shelf's first places, the one of the first adventure's epilogue (../../chapters/ends.ts,
+ * `STEP_STOOL`; src/render/stage.ts `steps`): the shelf is a grown-up's height, so he steps onto its tread and up onto
+ * its top to put each figure back, and the figure stands there once his hand is at its place (`OLD_UP`, `SMALL_UP`). He
+ * used to stand on the floor, two heads under the shelf, while each appeared over him; and from a plain stool his hands
+ * stopped short of the shelf.
  */
-const STOOL = { x: FIRST.x + 0.35, z: -7.55, top: 1.21 };
+const STOOL = { x: FIRST.x + 0.35, z: -7.27, front: -6.2, tread: { y: 1.1, z: -6.99 }, top: { y: 2.2, z: -7.6 } };
 const OLD_UP = 'mo:old-up';
 const SMALL_UP = 'mo:small-up';
 /** His face, a boy's height: where he stands at the start, and at the door. */
@@ -99,19 +101,21 @@ const NAMED = 'mo:named';
  * the second one up at once had run to the window before "Och du bredvid." was said (docs/dialogue.md).
  */
 const putUp = (id: string, on: string, beat: string, up: string, place: Point): SceneDef => ({
-  id, on, until: `beat:${beat}`, before: 6, seconds: 3.4, hold: true, dialogue: [beat],
-  cues: [{ at: 1.55, flag: up }],
+  id, on, until: `beat:${beat}`, before: 6, seconds: 4.3, hold: true, dialogue: [beat],
+  cues: [{ at: 1.9, flag: up }],
   stage: {
-    // Close by the wall: the shelf's first places, and him on the stool under them, its seat in the picture.
-    shots: [{ at: 0, x: STOOL.x, y: 3.7, z: -7, height: 6.4, width: 5.6, move: 0.8 }],
+    // Close by the wall: the shelf's first places, and him on the step stool under them, its top in the picture.
+    shots: [{ at: 0, x: STOOL.x, y: 4.1, z: -7, height: 6.4, width: 5.6, move: 0.8 }],
     elof: [
-      { at: 0, face: 0.75, act: 'walk', to: { x: STOOL.x, y: 0, z: STOOL.z + 1.15 }, move: 0.8 },
-      { at: 0.8, act: 'stand', to: { x: STOOL.x, y: STOOL.top, z: STOOL.z }, move: 0.45 },
-      { at: 1.25, act: 'reach', aim: { x: place.x, y: place.y + 0.25, z: place.z } },
-      { at: 1.9, act: 'nod', aim: { x: place.x, y: place.y + 0.5, z: place.z } },
-      { at: 2.3, face: 0.25, act: 'stand', to: { x: STOOL.x, y: 0, z: STOOL.z + 1.15 }, move: 0.45 },
-      { at: 2.75, act: 'walk', lift: { x: 0, y: 0, z: 0 }, move: 0.45 },
-      { at: 3.2, act: 'stand' },
+      { at: 0, face: 0.75, act: 'walk', to: { x: STOOL.x, y: 0, z: STOOL.front }, move: 0.8 },
+      { at: 0.8, act: 'stand', to: { x: STOOL.x, ...STOOL.tread }, move: 0.35 },
+      { at: 1.15, to: { x: STOOL.x, ...STOOL.top }, move: 0.35 },
+      { at: 1.5, act: 'reach', aim: { x: place.x, y: place.y + 0.25, z: place.z } },
+      { at: 2.3, act: 'nod', aim: { x: place.x, y: place.y + 0.5, z: place.z } },
+      { at: 2.7, face: 0.25, act: 'stand', to: { x: STOOL.x, ...STOOL.tread }, move: 0.35 },
+      { at: 3.05, to: { x: STOOL.x, y: 0, z: STOOL.front }, move: 0.35 },
+      { at: 3.4, act: 'walk', lift: { x: 0, y: 0, z: 0 }, move: 0.45 },
+      { at: 3.85, act: 'stand' },
     ],
   },
 });
@@ -430,8 +434,8 @@ export const morgonen: ChapterData = {
   furniture: [
     { look: 'table', at: { x: TABLE.x, y: 0 }, z: TABLE.z },
     ...Object.values(TABLE.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
-    // The stool under the shelf, for putting the two figures back.
-    { look: 'stool', at: { x: STOOL.x, y: 0 }, z: STOOL.z },
+    // The step stool under the shelf, for putting the two figures back.
+    { look: 'steps', at: { x: STOOL.x, y: 0 }, z: STOOL.z },
   ],
   // A game saved before the figures went up from the stool had them on the shelf once he had put them there.
   sets: [{ flag: OLD_UP, when: ['shelf:old', 'scene:hylla:old'] }, { flag: SMALL_UP, when: ['shelf:small', 'scene:hylla:small'] }],

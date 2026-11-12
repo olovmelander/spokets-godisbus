@@ -235,9 +235,9 @@ describe('Äventyr 2: Morgonen efter', () => {
     // Olov, 9 November 2026: "Hyllan med trägubbarna har bytt plats i huset. Den ska stå där den stod i Stormkvällen."
     expect(morgonen.shelf).toEqual(stormkvall.shelf);
     expect(morgonen.house!.windows).toEqual(expect.arrayContaining([...stormkvall.house!.windows]));
-    // And the stool under the shelf, which the boy steps up on to put the two back: the evening's tiny Elof had none.
-    expect(morgonen.furniture!.filter((piece) => piece.look !== 'stool')).toEqual(stormkvall.furniture);
-    const stool = morgonen.furniture!.find((piece) => piece.look === 'stool')!;
+    // And the step stool under the shelf, which the boy steps up on to put the two back: the evening's tiny Elof had none.
+    expect(morgonen.furniture!.filter((piece) => piece.look !== 'steps')).toEqual(stormkvall.furniture);
+    const stool = morgonen.furniture!.find((piece) => piece.look === 'steps')!;
     expect(Math.abs(stool.at.x - (morgonen.shelf!.x - 3.25))).toBeLessThan(0.5);
     // The new latch is on the window the storm blew open, by the shelf.
     expect(morgonen.decor!.find((thing) => thing.look === 'latch')!.at.x).toBe(stormkvall.house!.opens);
