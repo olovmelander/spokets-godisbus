@@ -555,12 +555,14 @@ export const stormoga: ChapterData = {
 };
 
 /** What "Just nu" says here. */
-export const context: Chooser = (has) => {
+export const context: Chooser = (has, at) => {
   if (has('scene:stor')) return ['soGoHome', 'soFamilyShore', 'house'];
   if (has('taste')) return ['soGrow', 'soFamilyShore', 'sparkle'];
   if (has('gift')) return ['soTaste', 'soFriends', 'sparkle'];
   if (has('scene:motet')) return ['soGift', 'soFriends', 'sparkle'];
   if (has('eye')) return ['soMeet', 'soFriends', 'heart'];
+  // Set down on the stone, the flight is over: he goes on to the figures (it still said to fly there; PR #242).
+  if (has('owl') && at.x >= OWL.to.x - 0.5) return ['soMeet', 'soFriends', 'heart'];
   if (has('owl:ready') && !has('owl')) return ['soBoard', 'soFamilyLamps', 'sparkle'];
   if (has('owl:call')) return ['soRide', 'soFamilyLamps', 'water'];
   if (has('scene:lampa:bertil')) return ['soReach', 'soFamilyLamps', 'water'];

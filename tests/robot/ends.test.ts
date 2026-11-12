@@ -219,7 +219,7 @@ describe('Epilog, Godiskalaset, in greybox', () => {
       const result = playThrough(fps, epilog, {}, 200);
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // The story's steps; the time card it opens on, and the ghost's hop across the table, are no steps of it.
-      const steps = did(result.flags).filter((flag) => !flag.startsWith('scene:') && !flag.startsWith('party:klonk-'));
+      const steps = did(result.flags).filter((flag) => !flag.startsWith('scene:') && !flag.startsWith('party:klonk-') && flag !== 'knife:pappa');
       expect(result.flags).toContain('scene:klonk-table');
       expect(steps.slice(0, 5).sort()).toEqual(['party:bertil', 'party:mamma', 'party:moa', 'party:pappa', 'party:spoket']);
       expect(steps.slice(5)).toEqual(['partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'shelf', 'shelf:placed', 'teeth', 'bedtime', 'goal']);
@@ -268,7 +268,7 @@ describe('Epilog, Godiskalaset, in greybox', () => {
   });
 
   it('takes three strokes, and then the eyes', () => {
-    const sim = new Sim({ ...epilog, spawn: { x: 32, y: 0.01 } }, {}, { flags: ['knife'] });
+    const sim = new Sim({ ...epilog, spawn: { x: 32, y: 0.01 } }, {}, { flags: ['knife', 'knife:pappa'] });
     const words: (string | null)[] = [];
     run(sim, 0.1);
     words.push(sim.curr.word);

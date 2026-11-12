@@ -248,7 +248,8 @@ export const granskog: ChapterData = {
   ],
   spots: [
     { id: 'berry', look: 'berry', at: { x: 33, y: 0 }, verb: 'take', word: 'pick' },
-    { id: 'jay', look: 'jay', at: { x: 38, y: 0 }, verb: 'give', needs: 'berry' },
+    // A step off the trail's candy (one lay at 38, on the jay: PR #242's audit).
+    { id: 'jay', look: 'jay', at: { x: 37, y: 0 }, verb: 'give', needs: 'berry' },
     { id: 'antlift', look: 'ants', at: { x: 58.6, y: 4 }, verb: 'take', word: 'rideAnts', needs: 'placed:twig', ride: 'antlift' },
     // O3 is separate from the ghost's vittra story beat. This berry is for the neighbours, not the jay.
     { id: 'vittra:berry', look: 'berry', at: { x: 61, y: 10 }, verb: 'take', word: 'pick', needs: 'beat:vittra', extra: true },
@@ -349,7 +350,8 @@ export const granskog: ChapterData = {
     { at: { x: 92, y: slope(92) } },
     { at: { x: 100, y: slope(100) } },
     { at: { x: 107, y: -8 } },
-    { at: { x: 116.6, y: -8 } },
+    // Beside Pappa at the seesaw, clear of his kneeling body (at 116.6 it stood inside him) and of the small cone.
+    { at: { x: 115.3, y: -8 } },
     // Across the ravine; the log makes it spill sweets while hopping away.
     { at: { x: 127.6, y: -8 } },
     { at: { x: 134.5, y: -7.2 }, catch: 'log' },

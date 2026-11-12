@@ -41,7 +41,7 @@ describe('what the helper shows', () => {
     const before = at(granskog, 36, 0.01);
     expect(hintFor(before, granskog)).toMatchObject({ at: { x: 33, y: 0 }, word: 'pick' });
     const after = at(granskog, 36, 0.01, { flags: ['berry'] });
-    expect(hintFor(after, granskog)).toMatchObject({ at: { x: 38, y: 0 }, verb: 'give' });
+    expect(hintFor(after, granskog)).toMatchObject({ at: { x: 37, y: 0 }, verb: 'give' });
   });
 
   it('is a thing on a rail by its red ring, and a hook until he has swung past it', () => {

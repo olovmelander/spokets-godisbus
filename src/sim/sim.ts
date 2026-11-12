@@ -964,6 +964,8 @@ export class Sim {
         if (!perch.still && !safe(ghost.x, ghost.y)) ghost.y = p.y + Math.sqrt(Math.max(0, GHOST_CLEARANCE ** 2 - dx ** 2));
         return;
       }
+      // At the chapter's last place it stays with him to the end (`stays`).
+      if (perch.stays && ghost.t >= 1) return;
       // Once helped, the raised waiting pose must not make the ghost think Elof is still far away.
       const away = perch.until ? Math.hypot(p.x - perch.at.x, p.y - perch.at.y)
         : Math.hypot(p.x - ghost.x, p.y - ghost.y);
