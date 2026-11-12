@@ -320,6 +320,11 @@ export interface Roller {
   needs?: string;
   /** A local story beat can end the hazard before a return path becomes a puzzle hub. */
   until?: string;
+  /**
+   * Cones that come from behind him and must reach him, however fast he runs: each sets off no farther than this
+   * behind where he is then (out of the picture), and from the rail's start while he is nearer it. The rhythm stays.
+   */
+  behind?: number;
 }
 
 /**

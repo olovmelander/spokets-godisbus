@@ -34,7 +34,12 @@
   modelled the same way in the yard kit (Olov: "Vi kan göra båda stora målen på samma sätt på Olympia?"):
   `box_goal('fotbollsmal', 7.0, 6.0, opening=-4.5)` and `goal('fotbollsmal-stort', ..., opening=-4.2)` in
   `art/blender/a2-yard.py`, baked on Olov's computer; the code-built box in `buildings.ts` is drawn only until the
-  model is in, or if it cannot be loaded. The stump and branch lie on the ground; spruces that stood half
+  model is in, or if it cannot be loaded. The balls in the wind reach a child who runs on at full speed (Olov: "om man
+  springer full fart frammåt så hinner inte bollarna komma"): "Vinden rullar bollar efter oss! Hoppa!" waited for
+  the line before it and then for its own reading, so the balls set off when he was at x 52 and none reached him
+  before 61. Rollers now set off when their line is said, not when it is read (`Sim.roll`), and Olympia's set off
+  no farther than 12 EL behind him (`Roller.behind`; the widest picture shows about 7 EL behind him), so a runner
+  meets four, from x 43 to 59. `tests/robot/olympia.test.ts` plays it with the page's reading times. The stump and branch lie on the ground; spruces that stood half
   over an edge are dropped by a rule in `src/render/dressing/forest.ts` (seven trunks in Granskogen, Stormskogen,
   Billsta and Olympia, all far behind the path). The pitch ends behind the far goal.
 - **Flärken.** The jetty's gusts are drawn as waves: a swell, spray up the posts, white water over the planks, dry
@@ -5699,7 +5704,8 @@ record identify the exact published revision.
 (laid out "fint och strukturerat och inte för plottrigt"), in its own PR. Both of Olympia's goals are torn open where
 he walks out of them (`box_goal` and `goal` with `opening` in `art/blender/a2-yard.py`, baked on Olov's computer;
 `tests/unit/olympia-goals.test.ts` reads the baked kit and checks the openings, the net beside them and the training
-goal's level top). Keep the power cut's single owner (`src/content/home-power.ts`) for lamp, TV, console and candle; keep
+goal's level top). Keep rollers starting when their line is said, not read, and `Roller.behind` for hazards that come from behind a
+runner. Keep the power cut's single owner (`src/content/home-power.ts`) for lamp, TV, console and candle; keep
 `lamp-hold.ts`'s forearm-along-the-beam hold for every family lamp; keep a handed-over sighting hidden at once.
 
 **Olov's Äventyr 1 playthrough (12 November, afternoon).** A ghost on a `still` perch waits for his help and never
