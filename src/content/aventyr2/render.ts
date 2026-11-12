@@ -12,6 +12,7 @@ import { roomThings } from '../../render/home-room';
 import { HOME_LAYOUT } from '../home-layout';
 import { littleCarving } from '../../render/little-carving';
 import { glowTexture } from '../../render/glow';
+import { windowCandle } from '../../render/window-candle';
 import { wingbeat } from '../../render/wingbeat';
 import { kitLife } from '../../render/kit-life';
 import { drawnWhile } from '../../render/idle';
@@ -606,7 +607,10 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     const light = glow('#ffc66e', def.size ?? 1.2, 0.85);
     light.position.set(def.at.x, def.at.y, def.z ?? -6);
     group.add(light);
-    return { def, light, phase: i * 1.7 };
+    // Byn i stormen: the candle itself in the dark window, where the power is out (../../render/window-candle.ts).
+    const candle = def.candle ? windowCandle(def.candle) : null;
+    if (candle) { candle.group.position.copy(light.position); group.add(candle.group); }
+    return { def, light, candle, phase: i * 1.7 };
   });
 
   // A lamp shining on him from somewhere: Moa's from the window ("Jag lyser för dig från fönstret!").
@@ -732,13 +736,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if (kind !== 'stones') for (const x of gust.shelters) group.add(kind === 'pots' ? flowerPot(x, gust.y) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
   }
 
-  // The car that goes by behind the street, in the rain.
-  const passing = scene.getObjectByName('passing-car');
-  if (passing) {
-    passing.userData.model = 'bil-gra';
-    passing.userData.fit = 3.8;
-    passing.userData.lift = -0.45;
-  }
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
   for (const [look, model] of [['barrel', 'tunna'], ['can', 'kanna'], ['playhouse', 'lekstuga'], ['slide', 'rutschkana'], ['picnic', 'picknick'], ['fence', 'staket'], ['stairs', 'trappa'], ['woodpile', 'vedstapel'], ['skerry', 'holme'], ['edging', 'rabatt']] as const) {
     for (const holder of scene.getObjectsByProperty('name', `landmark:${look}`)) {
@@ -1090,6 +1087,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const lit = g.def.after === undefined || flags.has(g.def.after);
         g.light.visible = lit;
         (g.light.material as MeshBasicMaterial).opacity = still ? 0.8 : 0.72 + 0.12 * Math.sin(clock * 9 + g.phase) * Math.sin(clock * 3.1 + g.phase);
+        if (g.candle) { g.candle.group.visible = lit; g.candle.update(clock + g.phase, still); }
       }
       if (coneDrops) for (const splash of splashes) splash.visible = false;
       if (frozenLedge && storm?.frozen) {
@@ -2082,7 +2080,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return { group, update: (_used, clock) => heave(clock) };
     },
     blind: (spot) => {
-      // A shop's roller blind, down for the night. Someone wakes, and it goes up on the lit window. Its width is its word.
+      // A shop's roller blind, down for the night. Someone wakes, and it goes up on a candle lit in the window (the power
+      // is out). Its width is its word.
       const wide = Number(spot.word ?? 7);
       const tall = 9.7;
       const root = new Group();

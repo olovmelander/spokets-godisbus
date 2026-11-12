@@ -1,6 +1,6 @@
 import {
-  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, ExtrudeGeometry, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
-  MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, Shape as Outline, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CanvasTexture, CircleGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, Matrix3, Mesh,
+  MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import { CLOSE_DETAIL } from './ground-detail';
 import { PAINTED_WOOD } from './painted-wood';
@@ -11,7 +11,6 @@ import { drainsOf } from './dressing/ground';
 import { glowTexture } from './glow';
 import { paperBag, SATURDAY_BAG_TALL } from './saturday-bag';
 import { rigWalker, STRIDE, type Walker } from './passerby';
-import { carGlass } from './car-glass';
 import { BRED_BYN_CHIMNEYS, BRED_BYN_SMOKE_Z } from '../content/bredbyn';
 
 /**
@@ -96,6 +95,14 @@ const SIDE = { near: 17, far: 8 };
 const DOORS: Record<StreetGoods, string> = { candy: '#7a5632', bread: '#6b8494', boots: '#5d4a36', yarn: '#6a4a3a' };
 /** How much of its colour a corner gives off where the kit says it glows: the lamps in a shop window. */
 const GLOW = 2.2;
+/**
+ * In the storm the power is out in the whole village (Olov, 12 November 2026: "hur kan det lysa i byn om strömmen
+ * gått"): no lamp burns in a shop window or behind a door's glass. What the kit lights there keeps this much of its
+ * colour, and gives off nothing; the only light in a window is a candle someone has lit (`storm.glows`).
+ */
+export const UNLIT = 0.3;
+/** Whether the street's electric lamps are out: in the storm's night, everywhere in the village. */
+export const powerOut = (chapter: Pick<ChapterData, 'storm'>): boolean => chapter.storm !== undefined;
 /**
  * An awning on a near wall (docs/art-bible.md §2.3: Byn's striped awnings), measured from its house's foot.
  * Its cloth comes out of a box high on the wall and slopes down to a bar over the line he walks on. Under the
@@ -293,6 +300,8 @@ interface Placing {
   up?: number;
   tone?: number;
   shade?: Shade;
+  /** Its lamps out (`UNLIT`): what of its colour is left where the kit says it glows, which then gives off nothing. */
+  dark?: number;
 }
 const PLAIN = new Color('#ffffff');
 
@@ -436,7 +445,7 @@ function cover(shape: Shape | undefined, at: number): Board | null {
 /** Sets a part of the kit on a wall, `at` along it, in the house's colours. A part the kit lacks is left out. */
 function put(build: Build, shape: Shape | undefined, wall: Wall, at: number, paint: Paint, placing: Placing = {}): void {
   if (!shape) return;
-  const { wide = 1, tall = 1, mirror = false, up = 0, tone = 1, shade } = placing;
+  const { wide = 1, tall = 1, mirror = false, up = 0, tone = 1, shade, dark } = placing;
   const stretch = mirror ? -wide : wide;
   const first = build.position.length / 3;
   for (let i = 0; i < shape.whose.length; i++) {
@@ -453,9 +462,10 @@ function put(build: Build, shape: Shape | undefined, wall: Wall, at: number, pai
     build.normal.push((wall.along[0] * nx + wall.out[0] * nz) / long, ny / long, (wall.along[1] * nx + wall.out[1] * nz) / long);
     const whose = shape.whose[i]!;
     const tint = whose > 0.75 ? paint.door : whose > 0.25 ? paint.wall : PLAIN;
-    const k = (tint === paint.wall ? tone : 1) * shaded;
+    const lampless = dark !== undefined && shape.glow[i]! > 0.01;
+    const k = (tint === paint.wall ? tone : 1) * shaded * (lampless ? dark : 1);
     build.colour.push(shape.colour[i * 3]! * tint.r * k, shape.colour[i * 3 + 1]! * tint.g * k, shape.colour[i * 3 + 2]! * tint.b * k);
-    build.glow.push(shape.glow[i]!, 0);
+    build.glow.push(lampless ? 0 : shape.glow[i]!, 0);
   }
   // Mirrored, a face is seen from its other side: its corners are taken the other way round.
   for (let i = 0; i < shape.index.length; i += 3) {
@@ -689,11 +699,13 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
   if (end.left !== 'none') put(build, kit.get('knut'), front, from, paint);
   if (end.right !== 'none') put(build, kit.get('knut'), front, to, paint, { mirror: true });
 
-  for (const w of part.windows ?? []) put(build, kit.get(`fonster-${goods}`), front, (w.from + w.to) / 2, paint, { wide: (w.to - w.from) / WINDOW_WIDE[goods] });
-  if (part.door) put(build, kit.get('dorr'), front, (part.door.from + part.door.to) / 2, paint, { wide: (part.door.to - part.door.from) / DOOR_WIDE });
+  // In the storm no lamp burns behind a window or a door's glass.
+  const dark = powerOut(chapter) ? UNLIT : undefined;
+  for (const w of part.windows ?? []) put(build, kit.get(`fonster-${goods}`), front, (w.from + w.to) / 2, paint, { wide: (w.to - w.from) / WINDOW_WIDE[goods], dark });
+  if (part.door) put(build, kit.get('dorr'), front, (part.door.from + part.door.to) / 2, paint, { wide: (part.door.to - part.door.from) / DOOR_WIDE, dark });
   for (const x of part.pipes ?? []) put(build, kit.get('ror'), front, x, paint);
   if (part.sign !== undefined) put(build, kit.get(`skylt-${goods}`), front, part.sign, paint);
-  if (part.cellar !== undefined) put(build, kit.get('kallarfonster'), front, part.cellar, paint);
+  if (part.cellar !== undefined) put(build, kit.get('kallarfonster'), front, part.cellar, paint, { dark });
   // Its awnings, and the shade they give the wall under them. Only a near wall has any: over the path.
   if (part.depth === 'near' && part.awnings?.length) {
     shadeUnder(build, first, part.awnings, foot, z);
@@ -1362,7 +1374,7 @@ function shopInterior(chapter: ChapterData): Group {
   wall.position.set((door + to) / 2, floor + 14, SHOP_ROOM.wall);
   group.add(wall);
   // The door is open behind his path. Its jamb, warm sill and doormat mark the threshold without a wall
-  // across the play plane. The interior wall hides cars beyond it; they never enter the room.
+  // across the play plane. The interior wall hides the road beyond it; who walks there never enters the room.
   block(door, floor + 10, -2.1, 0.5, 20, 0.6, cream);
   block(door + 3, floor + 19.7, -2.1, 6.5, 0.6, 0.6, cream);
   const openDoor = block(door - 1.1, floor + 6, -5, 2.6, 12, 0.25);
@@ -1421,18 +1433,19 @@ export function shopBag(chapter: ChapterData, floor: number): Group {
 }
 
 /**
- * Anonymous street life, well behind Elof: shoes passing on the pavement and a slow, unmarked car. Both go
- * behind the near houses, whose shop windows are rooms 3.5 EL deep, and through the passages in their side
- * walls (PASSAGE): they are seen on the crossing.
- * These are only scenery: their shadows and steady motion announce them, and they have no collision,
- * timer or damage rule. Everything is allocated at startup and the view's paused clock freezes them.
+ * Anonymous street life, well behind Elof: a grown-up's legs passing on the road behind the near houses, whose shop
+ * windows are rooms 3.5 EL deep, and through the passages in their side walls (PASSAGE): they are seen on the crossing.
+ * No car drives by any more (Olov, 12 November 2026: "De stora benen i byn ser verkligen ut som en jätte när man
+ * jämför med Bilen som kör förbi!"). The legs are a grown-up's as Elof sees them, taller than the shop windows; the car
+ * behind them was far smaller than that scale, and made them a giant's. It is gone from Byn and Byn i stormen alike.
+ * This is only scenery: its shadow and steady motion announce it, and it has no collision, timer or damage rule.
+ * Everything is allocated at startup and the view's paused clock freezes it.
  */
 export function villageLife(chapter: ChapterData): { group: Group; update(clock: number): void } {
   const group = new Group();
   group.name = 'village-life';
   const shoes = new Group();
-  const car = new Group();
-  shoes.name = 'passing-shoes'; car.name = 'passing-car';
+  shoes.name = 'passing-shoes';
   const cloth = new MeshStandardMaterial({ color: '#687989', roughness: 1 });
   const leather = new MeshStandardMaterial({ color: '#705142', roughness: 0.85 });
   const rubber = new MeshStandardMaterial({ color: '#343535', roughness: 1 });
@@ -1446,88 +1459,24 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
     shape(leg, cloth, -0.55, 10, 0, 1.3, 18, 1.2);
     shoes.add(leg); return leg;
   });
-  // Cream, not red: red is the candy's and the hook's, and the hook hangs where the car passes.
-  const paint = new MeshStandardMaterial({ color: '#d8cdb0', roughness: 0.65 });
-  const window = new MeshStandardMaterial({ name: 'car-window', color: '#263e50', roughness: .2 });
-  // A round old car, seen from the side and pushed out to its width.
-  const side = new Outline();
-  side.moveTo(-9, 1.7);
-  side.quadraticCurveTo(-9.4, 3.6, -8.6, 4.8);
-  side.quadraticCurveTo(-7, 5.3, -5.8, 5.4);
-  side.quadraticCurveTo(-4.6, 7.6, -1.4, 7.6);
-  side.quadraticCurveTo(1.8, 7.6, 3.4, 5.2);
-  side.quadraticCurveTo(7, 5, 8.6, 4.2);
-  side.quadraticCurveTo(9.2, 3, 9, 1.7);
-  side.closePath();
-  car.add(new Mesh(new ExtrudeGeometry(side, { depth: 3.6, bevelSize: 0.2, bevelThickness: 0.2, bevelSegments: 2, curveSegments: 8 }).translate(0, 0, -1.8), paint));
-  shape(car, window, -1.3, 6.1, 2.02, 5.6, 1.7, 0.06);
-  shape(car, window, 1.6, 5.9, 2.02, 2, 1.2, 0.06);
-  const wheel = new InstancedMesh(new TorusGeometry(1.8, 0.42, 8, 24), rubber, 4);
-  const hubs = new InstancedMesh(new CircleGeometry(1.2, 16), new MeshBasicMaterial({ color: '#c4c2b9', side: DoubleSide }), 4);
-  const place = new Object3D();
-  for (let i = 0; i < 4; i++) {
-    place.position.set(i % 2 === 0 ? -6 : 6, 1.9, i < 2 ? 2.1 : -2.1); place.updateMatrix(); wheel.setMatrixAt(i, place.matrix);
-    place.position.z += i < 2 ? 0.1 : -0.1; place.updateMatrix(); hubs.setMatrixAt(i, place.matrix);
-  }
-  wheel.computeBoundingSphere(); hubs.computeBoundingSphere(); car.add(wheel, hubs);
-  // A pale lamp on each end, with no flashing or sudden movement.
-  shape(car, new MeshStandardMaterial({ color: '#f6dda1', emissive: '#77603a', emissiveIntensity: 0.3 }), 8.85, 3.3, 1.6, 0.25, 0.8, 0.5);
-  shape(car, new MeshStandardMaterial({ color: '#ad5347' }), -8.85, 3.3, 1.6, 0.25, 0.6, 0.5);
-  const shadowMaterial = new MeshBasicMaterial({ color: '#242b31', transparent: true, opacity: 0.18, depthWrite: false });
-  const shade = (parent: Group, width: number, depth: number) => {
-    const mesh = new Mesh(new CircleGeometry(1, 24), shadowMaterial);
-    mesh.rotation.x = -Math.PI / 2; mesh.scale.set(width, depth, 1); mesh.position.y = 0.025; parent.add(mesh);
-  };
-  shade(car, 10, 2.8); shade(shoes, 3.5, 1.6);
-  group.add(car, shoes);
-  // The shadows stay when the models made in Blender take the stand-ins' place (./shared-models.ts).
-  for (const holder of [car, shoes]) holder.children[holder.children.length - 1]!.userData.keep = 0;
+  const shadow = new Mesh(new CircleGeometry(1, 24), new MeshBasicMaterial({ color: '#242b31', transparent: true, opacity: 0.18, depthWrite: false }));
+  shadow.rotation.x = -Math.PI / 2; shadow.scale.set(3.5, 1.6, 1); shadow.position.y = 0.025;
+  // The shadow stays when the model made in Blender takes the stand-in's place (./shared-models.ts).
+  shadow.userData.keep = 0;
+  shoes.add(shadow);
+  group.add(shoes);
   // A grown-up's legs in a long coat, from Blender (art/blender/a2-street.py), walked by ./passerby.ts: until they have
   // come, the plain shoes stand in.
   shoes.userData.model = 'fotgangare';
-  // Shared with the storm street: Byn does not enter the storm renderer, so the modeled car belongs here.
-  car.userData.model = 'bil-gra';
-  car.userData.fit = 3.8;
-  car.userData.lift = -0.45;
-  car.userData.carWet = (chapter.storm?.rain ?? 0) > 0;
-  car.userData.disposeFallback = true;
-  carGlass(car, car.userData.carWet as boolean, 1 / 3.8);
   let walker: Walker | null = null;
   shoes.userData.onModelInstalled = (copy: Object3D) => { walker = rigWalker(copy); };
-  // The car's wheels turn as it rolls, where its model has them on pivots of their own (art/blender/a2-props.py), and
-  // in the rain they throw up spray from the wet road behind them.
-  const wheels: Object3D[] = [];
-  /** Where the near wheels meet the road, in the car's own frame, once its model has come: rear, then front. */
-  const tyres: Wheel[] = [];
-  /** Where its near headlamp and tail lamp are, in the car's frame, where its model marks them: lit in the storm. */
-  const lamps: { head: Vector3 | null; tail: Vector3 | null } = { head: null, tail: null };
-  let fit = 1;
-  car.userData.onModelInstalled = (copy: Object3D) => {
-    copy.traverse((object) => { if (/-hjul-(fram|bak)$/.test(object.name) && typeof object.userData.radius === 'number') wheels.push(object); });
-    fit = copy.scale.x;
-    car.updateWorldMatrix(true, true);
-    for (const wheel of [...wheels].sort((a, b) => a.position.x - b.position.x)) {
-      const at = car.worldToLocal(wheel.getWorldPosition(new Vector3()));
-      tyres.push({ x: at.x, y: at.y, radius: (wheel.userData.radius as number) * fit, out: ((wheel.userData.track as number | undefined) ?? 0.85) * fit });
-    }
-    copy.traverse((object) => {
-      if (/-lykta-fram$/.test(object.name)) lamps.head = car.worldToLocal(object.getWorldPosition(new Vector3()));
-      if (/-lykta-bak$/.test(object.name)) lamps.tail = car.worldToLocal(object.getWorldPosition(new Vector3()));
-    });
-    const shadow = car.children.find((child) => child.userData.keep === 0);
-    if (shadow) shadow.position.y = copy.position.y + 0.025;
-  };
-  const spray = (chapter.storm?.rain ?? 0) > 0 ? wheelSpray() : null;
-  if (spray) car.add(spray.mesh);
   const lo = chapter.ground[0]!.x - 36;
   const hi = (chapter.shop?.to ?? chapter.goalX) + 40;
   const span = hi - lo;
   return {
     group,
     update(clock) {
-      // The loop resets beyond the playable view. Inside the shop its wall hides both lanes.
-      const driven = clock * CAR_SPEED + 104;
-      car.position.set(lo + (driven % span), 0.45, -13.4);
+      // The loop resets beyond the playable view. Inside the shop its wall hides the road.
       const walked = clock * STRIDE.speed + 45;
       // The road behind the crossing is at zero. The old fixed two-EL lift left both soles in the air.
       shoes.position.set(lo + (walked % span), 0, -12.2);
@@ -1540,81 +1489,9 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
           leg.rotation.z = -Math.sin(stride) * 0.08;
         }
       }
-      // Rolling: as far round as it has gone along, in the model's own metres. Forward is clockwise, seen from here.
-      for (const wheel of wheels) wheel.rotation.z = -(driven / fit) / (wheel.userData.radius as number);
-      spray?.update(clock, tyres.length === 2 ? tyres : STAND_IN_TYRES, lamps);
     },
   };
 }
-
-/** How fast the car goes by, in EL a second: slowly, as in a village street. */
-const CAR_SPEED = 4;
-/** A near wheel of the car going by, in its frame: its middle, its radius and how far out its tyre's face is. */
-interface Wheel { x: number; y: number; radius: number; out: number }
-/** The stand-in car's near wheels, until the model has come. */
-const STAND_IN_TYRES: readonly Wheel[] = [{ x: -6, y: 1.9, radius: 2.2, out: 2.3 }, { x: 6, y: 1.9, radius: 2.2, out: 2.3 }];
-
-/**
- * Spray from the wet road, thrown up behind the near wheels of the car going by: soft puffs and drops that fly back and
- * up off the tyre, spread and fade. One draw for all of it, every puff's place a function of the clock alone, so that
- * a paused clock holds it still. Until the car's model has come it rises behind the stand-in's wheels.
- */
-function wheelSpray(): { mesh: InstancedMesh; update(clock: number, tyres: readonly Wheel[], lamps: { head: Vector3 | null; tail: Vector3 | null }): void } {
-  const PER_WHEEL = 22;
-  const LIFE = 0.62;
-  const mesh = new InstancedMesh(new PlaneGeometry(1, 1), new MeshBasicMaterial({
-    color: '#ffffff', map: glowTexture(32), transparent: true, depthWrite: false, blending: AdditiveBlending,
-  }), PER_WHEEL * 2 + LAMPS);
-  mesh.name = 'wheel-spray';
-  mesh.frustumCulled = false;
-  const place = new Object3D();
-  const tint = new Color();
-  // Its colours exist from the start, so that the first frames' warm-up draws it as it will be drawn.
-  for (let i = 0; i < PER_WHEEL * 2 + LAMPS; i++) mesh.setColorAt(i, tint.setRGB(0, 0, 0));
-  const seed = (i: number, k: number) => { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return s - Math.floor(s); };
-  return {
-    mesh,
-    update(clock, tyres, lamps) {
-      for (let w = 0; w < 2; w++) {
-        // From where the tyre meets the road, behind its middle, on the near side.
-        const { x: cx, y: cy, radius, out } = tyres[w]!;
-        const centre = { x: cx, y: cy };
-        for (let i = 0; i < PER_WHEEL; i++) {
-          const n = w * PER_WHEEL + i;
-          const age = (((clock + seed(n, 1) * LIFE) % LIFE) + LIFE) % LIFE;
-          const k = age / LIFE;
-          // Thrown back off the tread and up, falling again: a drop is small and bright, a puff grows and thins.
-          const drop = i % 3 === 0;
-          const back = (1.6 + 2.2 * seed(n, 2)) * (drop ? 1.3 : 0.8);
-          const up = (1.2 + 2.0 * seed(n, 3)) * (drop ? 1.1 : 0.55);
-          const x = centre.x - radius * 0.55 - back * age;
-          const y = centre.y - radius * 0.9 + up * age - (drop ? 7 : 2) * age * age;
-          place.position.set(x, Math.max(centre.y - radius + 0.05, y), out + 0.3 * (seed(n, 4) - 0.2) + 0.6 * k);
-          const size = drop ? 0.18 + 0.1 * seed(n, 5) : (0.5 + 1.1 * k) * radius * 0.55;
-          place.scale.set(size * (drop ? 0.8 : 1.4), size, 1);
-          place.updateMatrix();
-          mesh.setMatrixAt(n, place.matrix);
-          // In, quickly, and out slowly: drops brighter than the mist.
-          const light = Math.min(1, k * 8) * (1 - k) ** 1.2 * (drop ? 1.1 : 0.5);
-          mesh.setColorAt(n, tint.setRGB(light * 0.82, light * 0.9, light));
-        }
-      }
-      // Its lamps lit in the storm, steady: a warm glow at the headlamp, a smaller dim red one at the tail.
-      for (const [i, at, size, colour] of [[0, lamps.head, 2.2, [0.95, 0.85, 0.6]], [1, lamps.tail, 1.1, [0.5, 0.08, 0.05]]] as const) {
-        const n = PER_WHEEL * 2 + i;
-        if (at) place.position.copy(at).setZ(at.z + 0.2);
-        place.scale.setScalar(at ? size : 0);
-        place.updateMatrix();
-        mesh.setMatrixAt(n, place.matrix);
-        mesh.setColorAt(n, tint.setRGB(colour[0], colour[1], colour[2]));
-      }
-      mesh.instanceMatrix.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-    },
-  };
-}
-/** The car's lamps, lit, after its spray's drops and puffs. */
-const LAMPS = 2;
 
 /**
  * A bicycle leaning by the wall, at the chapter's first hook: its wheel is a great ring over him, and the

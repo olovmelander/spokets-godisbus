@@ -159,10 +159,12 @@ cup of cocoa in Morgonen efter.
 1. **The flapping awning** bounces him like a trampoline.
 2. **Rännstensforsen:** the gutter is a rushing river; a birch leaf rides it.
 3. **Gallret:** the drain grate's bars over the deep dark.
-   All along the street the blinds are down. He pulls a shop's bell cord, someone wakes, and a blind goes up on a lit
-   window: three times, the same thing he does for his own family at the end of the night.
+   The storm has cut the power in the whole village: no street lamp burns and no lamp in any window, only a candle
+   here and there. All along the street the blinds are down. He pulls a shop's bell cord, someone wakes, raises the
+   blind and lights a candle in the window: three times, the same thing he does for his own family at the end of the
+   night.
 4. **Moas paraply:** "Ropa på Moa". She waits on the high wall with her umbrella open over her head; called, she
-   sets it down at the edge for him, and he floats down under it over the flooded crossing.
+   holds it out to him at the edge, he takes its crook, and he floats down under it over the flooded crossing.
 5. **The swinging sign:** a moving platform.
 6. **Fjun's cap:** the little one's carved cap lies in the gutter. He stops, picks it up and holds it up to look at it
    before he says what it is (Olov, 9 November 2026: finding it went far too fast).

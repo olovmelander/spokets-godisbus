@@ -24,8 +24,8 @@ if (privateModels) assert.ok(manifest.packs.private?.files['elof.glb'], 'Build a
 const cases = [
   { name:'hedge', items:[1], chapter:'stormgard', at:[177,0], scene:'haecken', time:2.4, flags:[], watch:['little-trägubbe'], visual:'Follow the lit little carving up and over the hedge; keep it recognizable on a portrait phone.' },
   { name:'forest-bridge', items:[2], chapter:'stormskog', at:[131,0], scene:'ss:ljuset', time:2, flags:['ss:beam','ss:frozen'], watch:['chase-ghost'], visual:'Lamp is already on Elof; bridge and words must describe what Pappa can see.' },
-  { name:'street', items:[3,4], chapter:'stormbyn', at:[26,0], time:2.2, watch:['passing-car','passerby'], visual:'Rounded walking legs with bent knees and planted feet; car wheels turn with translation and spray.' },
-  { name:'umbrella', items:[5], chapter:'stormbyn', at:[99.6,5], time:1, watch:['role:moa','paraply'], visual:'Moa holds the umbrella before Elof calls her.' },
+  { name:'street', items:[3,4], chapter:'stormbyn', at:[26,0], time:2.2, watch:['passerby'], visual:'Rounded walking legs with bent knees and planted feet; no car drives by (Olov, 12 November 2026).' },
+  { name:'umbrella', items:[5], chapter:'stormbyn', at:[99.6,5], time:1, watch:['role:moa','paraply'], visual:'Moa holds the umbrella by its crook, its canopy over her head, before Elof calls her.' },
   { name:'cap', items:[6], chapter:'stormbyn', at:[138.8,0], scene:'mossan', time:1.6, flags:['cap','sb:cap-picked'], watch:['elof'], visual:'Elof stops, picks up the cap, and holds it visibly before his reading lines.' },
   { name:'olympia-up', items:[7], chapter:'olympia', at:[5,0], watch:['landmark:stairs'], visual:'Path rises towards the hall; ascending stone steps match his soles.' },
   { name:'puddle', items:[8], chapter:'olympia', at:[74,0], watch:['mover:ol-ball'], visual:'Puddle is an irregular shallow wet hollow, with contact where the ball lands.' },

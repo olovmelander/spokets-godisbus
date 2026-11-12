@@ -5,9 +5,9 @@ import { alongAll, round, row, slopeRow, timeCard } from '../kit';
 
 /**
  * Kapitel 3: Byn i stormen (docs/aventyr-2.md). The same village street as Byn, at ten o'clock on the storm's
- * night, further along: the power is out, every window is dark but for a few candles, and the rain runs down
- * the gutter towards the lake. Elof follows the old trägubbe's trail through it. Units: EL. The places, from
- * the left:
+ * night, further along: the storm has cut the power in the whole village, as at home. No street lamp burns and no
+ * lamp in any window: the only light behind the glass is a candle someone has lit. The rain runs down the gutter
+ * towards the lake. Elof follows the old trägubbe's trail through it. Units: EL. The places, from the left:
  *
  * 1. **The forest path** comes down onto the pavement, under the yarn shop's **flapping awning**. A loose
  *    flap of it lies on the pavement, a trampoline: it bounces him up to the tall stands under the awning,
@@ -15,8 +15,9 @@ import { alongAll, round, row, slopeRow, timeCard } from '../kit';
  * 2. **Rännstensforsen:** down the kerb, the gutter is a rushing river. A birch leaf from the yard across the
  *    street lies at its shore: "Kliv på", and the current carries him the whole long way down it.
  * 3. **Gallret:** the drain's grate, five narrow bars over the deep dark, a hop from each to the next.
- * 4. **Moas paraply:** stone steps up a high wall. From its top he sees the crossing flooded. "Ropa på Moa":
- *    she holds her umbrella out to him, and he floats down under it to the far side.
+ * 4. **Moas paraply:** stone steps up a high wall, where Moa waits under her umbrella. From its top he sees the
+ *    crossing flooded. "Ropa på Moa": she holds her umbrella out to him at the wall's edge, and he floats down
+ *    under it, hanging from its crook, to the far side.
  * 5. **The swinging sign:** the shoemaker's sign swings in the wind over the pavement. From the bench under
  *    it he can ride it up to the hearts over it and on to a stand. A toy too.
  * 6. **The little one's cap:** Elof keeps it for him. The candy trail leads on towards Olympia.
@@ -36,6 +37,11 @@ const PAVEMENT = 2;
 const WALL = 5;
 /** The road up towards Olympia, three steps over the street, from the bakery's corner. */
 const UP = 3;
+/**
+ * Where a candle's flame is over its house's foot: on the shop window's sill (2.6 over the foot), in its brass holder,
+ * a candle of one EL (src/render/window-candle.ts).
+ */
+const CANDLE_FLAME = 4;
 
 /** A place to stand, from one side to the other, at one height. */
 interface Stone {
@@ -139,7 +145,8 @@ export const stormbyn: ChapterData = {
   ],
   // What stands behind him, written by hand (docs/art-bible.md §2.3), all of it dark: the power is out. A near
   // wall is 7 EL behind the path, a far one across the street 20 EL off. No upright part of a near wall stands
-  // behind a big candy. A candle burns in each near window (`storm.glows`).
+  // behind a big candy. A candle burns in a window across the street, and one is lit in each near window when he
+  // rings its bell (`storm.glows`).
   street: [
     // The forest's edge: a fence, a birch and a hedge, the path coming down past them.
     { from: -22, to: 9, depth: 'far', kind: 'yard', foot: 1 },
@@ -174,12 +181,15 @@ export const stormbyn: ChapterData = {
   lampPosts: [44.4, 114.4],
   storm: { bouncers: 'awning', rain: 0.85,
     lightning: 9,
-    // The whole village is dark. A candle is lit in each near window when he pulls the shop's bell cord: someone is awake,
-    // and has heard. The same thing he does for his own family on the jetty, at the end of the night.
+    // The storm has cut the power in the whole village: no street lamp, and no lamp in any window (src/render/village.ts
+    // `powerOut`). The only light behind the glass is a candle. One already burns in a window across the street; and when
+    // he pulls a shop's bell cord, someone wakes, raises the blind and sets a lit candle on the sill for him. The same thing
+    // he does for his own family on the jetty, at the end of the night.
     glows: [
-      { at: { x: 20.5, y: PAVEMENT + 3.4 }, z: -6, size: 5, after: 'sb:bell-yarn' },
-      { at: { x: 128.3, y: 3.4 }, z: -6, size: 5, after: 'sb:bell-shoes' },
-      { at: { x: 147.4, y: 3.4 }, z: -6, size: 5, after: 'sb:bell-bread' },
+      { at: { x: 72.5, y: 1 + CANDLE_FLAME }, z: -20.9, size: 3, candle: 1 },
+      { at: { x: 20.5, y: PAVEMENT + CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-yarn' },
+      { at: { x: 128.3, y: CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-shoes' },
+      { at: { x: 147.4, y: CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-bread' },
     ],
   },
   coda: 'moa',
@@ -301,8 +311,8 @@ export const stormbyn: ChapterData = {
     { id: 'sb:bell-bread', look: 'bellCord', at: { x: 153.2, y: 0 }, verb: 'call', word: 'sbRing', extra: true },
     // The birch leaf at the river's shore: he steps on, and the current carries him.
     { id: 'leaf', at: LEAF.from, verb: 'take', word: 'board', ride: 'leaf' },
-    // On the wall: Moa waits there with her umbrella open over her head (src/render/view.ts). He calls her, and she steps
-    // to the edge and sets it down open for him there; then he takes hold of it at the edge.
+    // On the wall: Moa waits there with her umbrella open over her head (src/render/umbrella-hold.ts). He calls her, and she
+    // steps to the edge, bends and holds it out low for him there; he takes hold of its crook, and she lets go.
     { id: 'umbrella:ready', look: 'sign', at: { x: 99.6, y: WALL }, goesTo: { x: 101.3, y: WALL, z: -0.9 }, verb: 'call', word: 'callMoa' },
     { id: 'umbrella', at: { x: 102.6, y: WALL }, verb: 'take', word: 'sbUmbrella', needs: 'family:umbrella-ready', ride: 'umbrella' },
     // The little one's carved cap, in the gutter: he finds it by coming close.

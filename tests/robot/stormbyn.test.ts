@@ -437,17 +437,31 @@ describe('Kapitel 3, Byn i stormen', () => {
     for (const [id, copy] of Object.entries(words.purposes!)) expect(copy.purpose.length, id).toBeLessThanOrEqual(42);
   });
 
-  it('is a stormy night: rain, lightning, and a candle in front of each near window', () => {
+  it('is a stormy night with the power out: rain, lightning, and only candles in the dark windows', () => {
     expect(stormbyn.storm?.rain).toBeGreaterThan(0.5);
     expect(stormbyn.storm?.lightning).toBeGreaterThan(0);
+    // The storm has cut the power in the whole village (Olov, 12 November 2026: "hur kan det lysa i byn om strömmen
+    // gått"): what light there is behind the glass is a candle someone has lit, standing on the sill of a window, just
+    // behind its house's wall. Before, a big glow hung in front of each near window, and every window was lit by lamps.
     const glows = stormbyn.storm!.glows!;
-    expect(glows.length).toBeGreaterThanOrEqual(2);
+    expect(glows.length).toBeGreaterThanOrEqual(3);
     for (const glow of glows) {
-      expect(glow.z!).toBeLessThan(0);
-      expect(glow.z!).toBeGreaterThan(STREET_DEPTH.near);
+      expect(glow.candle, `the candle at ${glow.at.x}`).toBeGreaterThan(0);
       const part = stormbyn.street!.find((one) => glow.at.x >= one.from && glow.at.x < one.to)!;
-      expect(part.depth, `the candle at ${glow.at.x}`).toBe('near');
-      expect(part.windows!.some((w) => glow.at.x > w.from && glow.at.x < w.to), `the candle at ${glow.at.x}`).toBe(true);
+      expect(part.kind).toBe('house');
+      expect(part.windows!.some((w) => glow.at.x > w.from + 1 && glow.at.x < w.to - 1), `the candle at ${glow.at.x}`).toBe(true);
+      const wall = STREET_DEPTH[part.depth];
+      expect(glow.z!).toBeLessThan(wall);
+      expect(glow.z!).toBeGreaterThan(wall - 1.5);
+      // On the window's sill, 2.6 over its house's foot: the flame a candle's height over it.
+      const foot = part.depth === 'near' ? groundAt(stormbyn, glow.at.x) : (part.foot ?? 0);
+      expect(glow.at.y - foot - 2.6, `the candle at ${glow.at.x}`).toBeGreaterThan(glow.candle!);
+      expect(glow.at.y - foot - 2.6, `the candle at ${glow.at.x}`).toBeLessThan(glow.candle! + 0.6);
+    }
+    // One burns across the street from the start; each near window's is lit when he rings its shop's bell.
+    expect(glows.some((glow) => glow.after === undefined)).toBe(true);
+    for (const glow of glows.filter((one) => stormbyn.street!.find((part) => one.at.x >= part.from && one.at.x < part.to)!.depth === 'near')) {
+      expect(stormbyn.spots!.find((spot) => spot.id === glow.after)?.look, `the candle at ${glow.at.x}`).toBe('bellCord');
     }
   });
 });
