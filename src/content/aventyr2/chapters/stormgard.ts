@@ -402,7 +402,7 @@ export const stormgard: ChapterData = {
     { at: { x: 62.2, y: 0 } },
     { at: { x: 68, y: 0 } },
     { at: { x: 74.6, y: 0 } },
-    // on the barrel's top, beside the tap: the way is up there, and it answers him there
+    // on the barrel's top, beside the tap: the way is up there
     { at: { x: 81.8, y: BARREL.top } },
     // over the ditch, where Elof can't follow until the lid is up
     { at: { x: 91.4, y: 0 } },
@@ -434,9 +434,11 @@ export const stormgard: ChapterData = {
     { id: 'sg:gusts', at: 40.8, who: 'elof', line: 'sgPots' },
     { id: 'sg:pot-klonk', at: 45.2, who: 'spoket', line: 'sgKlonk', aside: true },
     { id: 'sg:pot', on: 'beat:sg:pot-klonk', who: 'elof', line: 'sgFlowerpot', aside: true },
-    // 4. Regntunnan: said on the barrel's top, where the ditch first comes into the picture (from the lawn at its foot
-    // the barrel hides it: he spoke of a ditch no one could see). Klonk beside him on the top answers.
-    { id: 'sg:ditch', at: BARREL.from + 0.2, who: 'elof', line: 'sgDitch' },
+    // 4. Regntunnan: said at the barrel's foot, where the picture now looks ahead past the barrel and the can to the
+    // ditch (the camera's zone below begins at 76: it began at 78, and he spoke of a ditch no one could see). Said on the
+    // barrel's top instead, a child who turned the tap at once saw the wheel turn and no water for five seconds while it
+    // was read (`kranen` takes the floor only once the words are done). Klonk on the barrel answers, and shows the way up.
+    { id: 'sg:ditch', at: 77, who: 'elof', line: 'sgDitch' },
     { id: 'sg:barrel', on: 'beat:sg:ditch', who: 'spoket', line: 'sgKlonkKlonk', aside: true },
     { id: 'sg:lid', on: 'placed:lid', who: 'elof', line: 'sgLid' },
     // 5. Bertil and his boot. He is proud of it as it sets off, and the ride is the time to read it; the thanks on the
@@ -463,8 +465,8 @@ export const stormgard: ChapterData = {
     { from: 134.8, to: 145, above: 3.1, zoom: 1.45, lift: -0.6 },
     // On the barrel's top: lower and wider, over the ditch and the lid afloat down in it.
     { from: 79.6, to: 83.2, above: 3.2, zoom: 1.65, lift: -2, lead: 3.4 },
-    // Up the hose and on the barrel: the ditch and where the lid will float.
-    { from: 78, to: 92, zoom: 1.5, lift: 0.8, lead: 3.2 },
+    // At the barrel's foot, up the hose and on the barrel: the ditch beyond them, and where the lid will float.
+    { from: 76, to: 92, zoom: 1.5, lift: 0.8, lead: 3.2 },
     { from: -3, to: 24, zoom: 1.4, lift: 0.35 },
     { from: 24, to: 36, zoom: 1.4, lift: 0.4 },
     { from: 42, to: 72, zoom: 1.35 },
