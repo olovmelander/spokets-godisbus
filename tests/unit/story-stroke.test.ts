@@ -62,7 +62,7 @@ describe('carving away from the body', () => {
     expect(validCarveStroke([{ x: NaN, y: 0 }, outward.at(-1)!])).toBe(false);
   });
   it('an inward stroke cannot start or award progress; a retry finishes the same carving', () => {
-    const sim = new Sim({ ...epilog, spawn: { x: 32, y: .01 } }, {}, { flags: ['knife'] });
+    const sim = new Sim({ ...epilog, spawn: { x: 32, y: .01 } }, {}, { flags: ['knife', 'knife:pappa'] });
     settle(sim); sim.step({ ...idle, act: true });
     expect(sim.story).toEqual({ kind: 'carve', spot: 'cut1' });
     expect(sim.finishStory({ kind: 'carve', stroke: guidedCarve().reverse() })).toBe(false);

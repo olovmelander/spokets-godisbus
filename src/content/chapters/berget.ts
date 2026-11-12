@@ -234,7 +234,8 @@ export const berget: ChapterData = {
     { at: { x: LIFT_GHOST.x, y: 26.4 }, z: LIFT_GHOST.z, until: 'lift', still: true, thought: { picture: 'lonely-figure', until: 'lift' } },
     // up, it waits by the pine
     { at: { x: 151, y: 31.4 } },
-    { at: { x: 159, y: 31.4 } },
+    // and stays with him to the end, by the pine, a little behind the path (it vanished at x 155; PR #242's audit)
+    { at: { x: 159, y: 31.4 }, z: -0.45, stays: true },
   ],
   // He understands when he has seen it.
   beats: [
