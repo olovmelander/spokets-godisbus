@@ -1,11 +1,12 @@
 import {
-  Color, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, Vector3,
+  Color, DoubleSide, Float32BufferAttribute, Group, InstancedMesh, Mesh, MeshStandardMaterial, Object3D, Vector3, type BufferGeometry,
 } from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { ChapterData } from '../../sim/types';
 import { Cards, leafAtlas, leafy } from '../lift/flora/light';
 import { sway } from '../wind';
+import { archShape, gateOf, type Gate } from './hedge-gate';
 import { heightAt, noise, sequence } from './kit';
 
 interface Hedge {
@@ -15,16 +16,18 @@ interface Hedge {
   low: number;
   top: number;
   terminal: boolean;
+  /** Its tall end has an arch where the path goes on into the forest (./hedge-gate.ts), in place of the tall row behind. */
+  gate: boolean;
 }
 
 /** The planted hedge and its clipped, walkable edge are already described by the collision outline. */
 function hedges(chapter: ChapterData): Hedge[] {
-  return (chapter.surfaces ?? []).filter(surface => surface.kind === 'hedge').map(({ from, to }) => {
+  return (chapter.surfaces ?? []).filter(surface => surface.kind === 'hedge').map(({ from, to, gate }) => {
     const outline = chapter.ground.filter(point => point.x >= from && point.x <= to);
     const base = Math.min(heightAt(chapter, from - .01), ...outline.map(point => point.y));
     const low = heightAt(chapter, (from + to) / 2);
     const top = Math.max(low, ...outline.map(point => point.y));
-    return { from, to, base, low, top, terminal: chapter.ground.at(-1)!.x === to && top > low + 1 };
+    return { from, to, base, low, top, terminal: chapter.ground.at(-1)!.x === to && top > low + 1, gate: !!gate };
   });
 }
 
@@ -70,8 +73,9 @@ export function hedge(chapter: ChapterData): Group | null {
     return [...plant.low - plant.base > .3 ? [low] : [],
       // The rising figure stays in front of this tall row until it is above its crown. The low lip remains
       // readable and walkable in front; no tall leaves stand between the camera and the flight.
-      { from: plant.from + .15, to: plant.to + 1.2, bottom: plant.base - .2, top: plant.top,
-        front: -8.25, back: -13.5 },
+      // Where the hedge has its arch into the forest, the arch's own hedge stands nearer instead (below).
+      ...plant.gate ? [] : [{ from: plant.from + .15, to: plant.to + 1.2, bottom: plant.base - .2, top: plant.top,
+        front: -8.25, back: -13.5 }],
       // Wrap the tall end and continue the hedge out of frame, instead of exposing the old square soil wall.
       { from: plant.to + .05, to: plant.to + 12, bottom: plant.base - .25, top: plant.top,
         front: .36, back: -10 },
@@ -81,36 +85,15 @@ export function hedge(chapter: ChapterData): Group | null {
   const group = new Group();
   group.name = 'garden-hedge';
   const cores = [];
-  const leaves: { at: Vector3; normal: Vector3; size: number; turn: number; tint: Color; top: number }[] = [];
+  const leaves: Leaf[] = [];
   const next = sequence(873);
-  const tint = new Color();
 
   for (const volume of volumes) {
     const wide = volume.to - volume.from, high = volume.top - volume.bottom, deep = volume.front - volume.back;
     const centre = new Vector3((volume.from + volume.to) / 2, (volume.bottom + volume.top) / 2, (volume.back + volume.front) / 2);
     const half = new Vector3(wide / 2, high / 2, deep / 2);
     const radius = Math.min(.55, wide * .22, high * .25);
-    const geometry = new RoundedBoxGeometry(wide, high, deep, 4, radius);
-    const positions = geometry.getAttribute('position');
-    const normals = geometry.getAttribute('normal');
-    const colours = new Float32Array(positions.count * 3);
-    for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i) + centre.x, y = positions.getY(i) + centre.y, z = positions.getZ(i) + centre.z;
-      // Small uneven growth softens a clipped shape; it does not turn the hedge into a row of round balls.
-      const out = (noise(x * 2.1 + y * .7, z * 1.6 - y * .4) - .5) * .14;
-      positions.setXYZ(i, x + normals.getX(i) * out, Math.min(volume.top, y + normals.getY(i) * out), z + normals.getZ(i) * out);
-      const shade = Math.min(2.99, .55 + (y - volume.bottom) / high * 1.25 + noise(x * 1.4, y * 1.2 + z) * .8 + Math.max(0, normals.getY(i)) * .45);
-      const tone = Math.floor(shade);
-      tint.copy(GREEN[tone]!).lerp(GREEN[tone + 1]!, shade - tone);
-      colours.set([tint.r, tint.g, tint.b], i * 3);
-    }
-    geometry.setAttribute('color', new Float32BufferAttribute(colours, 3));
-    geometry.deleteAttribute('normal');
-    geometry.deleteAttribute('uv');
-    const smooth = mergeVertices(geometry);
-    smooth.computeVertexNormals();
-    cores.push(smooth);
-    geometry.dispose();
+    cores.push(grow(new RoundedBoxGeometry(wide, high, deep, 4, radius), centre, volume.bottom, volume.top));
 
     /** A spray on one rounded face. The front, sides and crown are dense; the unseen back needs no overdraw. */
     const face = (axis: 0 | 1 | 2, side: -1 | 1, u: 0 | 1 | 2, v: 0 | 1 | 2) => {
@@ -145,6 +128,15 @@ export function hedge(chapter: ChapterData): Group | null {
     face(0, -1, 2, 1);
     face(0, 1, 2, 1);
     face(1, 1, 0, 2);
+  }
+
+  // Gården's tall end has its arch into the forest (./hedge-gate.ts): a clipped wall with a round-topped opening, its
+  // leaves sown over all of it that the camera sees, and the inside of the arch in the hedge's own shade.
+  const gate = gateOf(chapter);
+  if (gate) {
+    const shape = archShape(gate);
+    sow(shape, gate, next, leaves);
+    cores.push(grow(shape, new Vector3(), gate.bottom, gate.top, (x, y, z) => (inArch(gate, x, y, z) ? .7 : 0)));
   }
 
   const coreShape = mergeGeometries(cores);
@@ -189,6 +181,83 @@ export function hedge(chapter: ChapterData): Group | null {
   foliage.boundingSphere!.radius += .08;
   group.add(core, foliage);
   return group;
+}
+
+/**
+ * A hedge's solid core: coloured darker low down and brighter on its crown, grown a little unevenly along its normals,
+ * and smooth. `at` is where its own shape stands; `dim` shades a part of it. The shape is used up.
+ */
+function grow(geometry: BufferGeometry, at: Vector3, bottom: number, top: number, dim?: (x: number, y: number, z: number) => number): BufferGeometry {
+  const high = top - bottom;
+  const tint = new Color();
+  const positions = geometry.getAttribute('position');
+  const normals = geometry.getAttribute('normal');
+  const colours = new Float32Array(positions.count * 3);
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i) + at.x, y = positions.getY(i) + at.y, z = positions.getZ(i) + at.z;
+    // Small uneven growth softens a clipped shape; it does not turn the hedge into a row of round balls.
+    const out = (noise(x * 2.1 + y * .7, z * 1.6 - y * .4) - .5) * .14;
+    positions.setXYZ(i, x + normals.getX(i) * out, Math.min(top, y + normals.getY(i) * out), z + normals.getZ(i) * out);
+    const shade = Math.max(0, Math.min(2.99, .55 + (y - bottom) / high * 1.25 + noise(x * 1.4, y * 1.2 + z) * .8 + Math.max(0, normals.getY(i)) * .45 - (dim?.(x, y, z) ?? 0)));
+    const tone = Math.floor(shade);
+    tint.copy(GREEN[tone]!).lerp(GREEN[tone + 1]!, shade - tone);
+    colours.set([tint.r, tint.g, tint.b], i * 3);
+  }
+  geometry.setAttribute('color', new Float32BufferAttribute(colours, 3));
+  geometry.deleteAttribute('normal');
+  geometry.deleteAttribute('uv');
+  const smooth = mergeVertices(geometry);
+  smooth.computeVertexNormals();
+  geometry.dispose();
+  return smooth;
+}
+
+/** Inside the arch's opening, under its round top and back from its face: in the hedge's shade. */
+function inArch(gate: Gate, x: number, y: number, z: number): boolean {
+  const { open } = gate;
+  return x > open.from - .15 && x < open.to + .15 && y < open.spring + open.radius + .2 && z < gate.front - .12 && z > gate.back + .12;
+}
+
+type Leaf = { at: Vector3; normal: Vector3; size: number; turn: number; tint: Color; top: number };
+
+/**
+ * Leaf sprays over the arch's hedge, as thick as on the boxes' faces (one every 0.48 EL square on a side, every 0.36 on
+ * the crown): on every face the camera can see, and smaller inside the arch, so that its opening stays clear. None on
+ * its back, under the ground, or in the hedge's tall end, which its right side runs into.
+ */
+function sow(shape: BufferGeometry, gate: Gate, next: () => number, leaves: Leaf[]): void {
+  const position = shape.getAttribute('position');
+  const index = shape.index;
+  const corner = (k: number) => new Vector3().fromBufferAttribute(position, index ? index.getX(k) : k);
+  const end = gate.to - .6;
+  for (let k = 0; k + 2 < (index ? index.count : position.count); k += 3) {
+    const a = corner(k), ab = corner(k + 1).sub(a), ac = corner(k + 2).sub(a);
+    const normal = new Vector3().crossVectors(ab, ac);
+    const area = normal.length() / 2;
+    if (area < 1e-5) continue;
+    normal.normalize();
+    const middle = a.clone().addScaledVector(ab, 1 / 3).addScaledVector(ac, 1 / 3);
+    if (normal.z < -.5 || (normal.y < -.5 && middle.y < gate.base + .5) || middle.x > end + .05) continue;
+    const crown = normal.y > .7;
+    for (let more = area / (crown ? .36 : .48) ** 2; more > 0; more--) {
+      if (more < 1 && next() > more) break;
+      let u = next(), v = next();
+      if (u + v > 1) { u = 1 - u; v = 1 - v; }
+      const point = a.clone().addScaledVector(ab, u).addScaledVector(ac, v).addScaledVector(normal, .055);
+      const facing = normal.clone();
+      if (crown) {
+        point.y -= .02 + next() * .06;
+        facing.x += (next() - .5) * .16;
+        facing.z += .08 + next() * .18;
+        facing.normalize();
+      }
+      const inside = inArch(gate, point.x, point.y, point.z);
+      const shade = Math.max(0, Math.min(2.99, .8 + (point.y - gate.bottom) / (gate.top - gate.bottom) * 1.1 + next() * .8 + Math.max(0, facing.y) * .3 - (inside ? .75 : 0)));
+      const tone = Math.floor(shade);
+      leaves.push({ at: point, normal: facing, size: (inside ? .5 : .75) + next() * .3, turn: (next() - .5) * Math.PI * 2,
+        tint: GREEN[tone]!.clone().lerp(GREEN[tone + 1]!, shade - tone), top: gate.top + .12 });
+    }
+  }
 }
 
 function plantWalksHere(x: number, plants: readonly Hedge[]): boolean {
