@@ -42,8 +42,9 @@ describe('spoken-line lifecycle', () => {
   it('leaves unrecorded dialogue silent and stops the previous recorded line', () => {
     player.playVoice('tiny');
     expect(player.playingVoice()).toBe('tiny');
-    player.playVoice('skPower');
-    player.playVoice('scene_stormkvall');
+    // Keys with no recording (since 12 November 2026 every line of both adventures has one).
+    player.playVoice('noSuchLine');
+    player.playVoice('scene_nowhere');
     expect(Voice.made).toHaveLength(1);
     expect(Voice.made[0]!.pause).toHaveBeenCalledOnce();
     expect(player.playingVoice()).toBeNull();

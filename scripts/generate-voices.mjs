@@ -2,7 +2,7 @@
 // Reads ELEVENLABS_API_KEY from .env and generates Swedish voice lines with situational audio tags.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const ENV_PATH = join(ROOT, '.env');
@@ -374,4 +374,5 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+// Run as a script; imported (scripts/record-voices.mjs), it only gives its lines.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch(console.error);
