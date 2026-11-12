@@ -26,8 +26,8 @@ import { alongAll, elderWalk, hopCandy, jump, round, row, slopeRow, timeCard } f
  *    near bank: a seesaw (the puzzle, and Klonk's own help). "Ropa på Klonk": Klonk jumps onto the high end, and it
  *    hardly stirs: he weighs nothing. The way is the lever: he goes round the stone and pushes it back towards his
  *    own end, so that Klonk has the long arm, and Elof is flung over the brook, up onto the bank. Then Billaberget's
- *    boulders, a crack, and rock shelves jutting from its granite face with October's hazelnuts on them (side
- *    candy); and the open slope in the gusts, the boulders the lee.
+ *    boulders, a crack, and rock shelves jutting from its granite face with side candy on them, hazel bushes beside
+ *    them with October's nuts (`HAZEL`); and the open slope in the gusts, the boulders the lee.
  * 6. **Krönet:** up on Billaberget's brow, a flash: far below in the narrow, on a stone, the old trägubbe holds the
  *    little one. The owl hoots far off, and mormor, come up the path with her lantern, will take him down to the
  *    narrow's shore, where the final begins.
@@ -240,6 +240,28 @@ const SHELVES: Ledge[] = [
   { x: 154.3, y: 6.3, width: 1.6, look: 'shelf' },
   { x: 157.1, y: 7, width: 1.6, look: 'shelf' },
 ];
+
+/**
+ * The hazel at the shelves (Olov, 12 November 2026: "gör det som rekommenderad men gärna hasselbuskar också och nån
+ * hasselnöt"): bushes of many stems at the cliff's foot, two beside the first shelf and two beside the third, standing
+ * behind the boulders and the path, with October's nuts hanging in them in their husks (`nuts`: how many clusters); and
+ * two nuts that have fallen, lying near the front of the first shelf and of the third, aside from their sweets. Each
+ * bush's `y` is the ground at its foot (the boulders' foot), `tall` and `wide` its crown's. Picture only (../hazel.ts):
+ * the simulation has none of it, and no nut is candy.
+ */
+export const HAZEL = {
+  bushes: [
+    { x: 145.3, y: TOP.y, z: -3, tall: 6, wide: 2.4, nuts: 2 },
+    // On the first boulder's back, short of the crack: the crack's floor is far down, and the bush would stand in it.
+    { x: 147, y: TOP.y, z: -2.3, tall: 5.6, wide: 2.1, nuts: 2 },
+    { x: 161.6, y: SLOPE, z: -2.4, tall: 5.6, wide: 2.2, nuts: 3 },
+    { x: 164.2, y: SLOPE, z: -3.4, tall: 6.2, wide: 2.4, nuts: 2 },
+  ],
+  fallen: [
+    { x: round(SHELVES[0]!.x - 0.85), y: SHELVES[0]!.y, z: -0.62 },
+    { x: round(SHELVES[2]!.x + 0.85), y: SHELVES[2]!.y, z: -0.62 },
+  ],
+};
 
 /**
  * The narrow far below the brow, behind the forest, for the picture: from the brow, a dark band of water at the
@@ -813,8 +835,8 @@ export const billsta: ChapterData = {
   // Side candy: hearts and lollipops by turns, the first of each way a heart (its tell). None is taken by walking
   // under it, or by a hop along the trail. New ones are added at the end.
   side: [
-    // Billaberget's shelves, where the hazel grows: its nuts, two on the first shelf, one in the arc of each jump
-    // up, one on the second and two on the third.
+    // Billaberget's shelves, where the hazel grows beside them (`HAZEL`): two on the first shelf, one in the arc of each
+    // jump up, one on the second and two on the third.
     over(SHELVES[0]!, -0.4),
     over(SHELVES[0]!, 0.4),
     hopCandy({ x: round(SHELVES[0]!.x + 0.8), y: SHELVES[0]!.y }, { x: round(SHELVES[1]!.x - 0.8), y: SHELVES[1]!.y }, 0.9),

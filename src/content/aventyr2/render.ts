@@ -45,6 +45,7 @@ import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { jettyWavesExtra } from '../../render/jetty-waves';
 import { teamBenchesExtra } from './team-benches';
+import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
@@ -3197,6 +3198,8 @@ export function installPictures(): void {
   if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
   // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts).
   if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
+  // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
+  if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

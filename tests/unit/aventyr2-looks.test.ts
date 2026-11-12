@@ -34,9 +34,10 @@ describe('Äventyr 2: the pictures', () => {
   });
 
   it('adds the storm to the picture only where a chapter has one', () => {
-    // The storm, the waves over a jetty where its gusts blow (src/render/jetty-waves.ts: Flärken's), and Olympia's team
-    // benches (src/content/aventyr2/team-benches.ts), which draw nothing elsewhere.
-    expect(PACK.extras.length).toBe(3);
+    // The storm, the waves over a jetty where its gusts blow (src/render/jetty-waves.ts: Flärken's), Olympia's team
+    // benches (src/content/aventyr2/team-benches.ts) and Billsta's hazel (src/content/aventyr2/hazel.ts), which draw
+    // nothing elsewhere.
+    expect(PACK.extras.length).toBe(4);
     expect(AVENTYR2.filter((chapter) => chapter.storm).map((chapter) => chapter.id)).toEqual(['stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga']);
     // Klonk's frozen bridge is a ledge the storm knows.
     const skog = AVENTYR2.find((chapter) => chapter.id === 'stormskog')!;
