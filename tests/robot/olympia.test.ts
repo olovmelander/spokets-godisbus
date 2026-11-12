@@ -249,7 +249,16 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(over.length).toBe(2);
       for (const j of over) expect(j.needs).toBe(ball.id);
       // The small goal stands beyond it, its mouth towards him.
-      expect(olympia.storm!.buildings!.some((b) => b.kind === 'goal' && b.x >= puddle.to && b.x - puddle.to < 3)).toBe(true);
+      const small = olympia.storm!.buildings!.find((b) => b.kind === 'goal' && b.x >= puddle.to && b.x - puddle.to < 3)!;
+      expect(small).toBeDefined();
+      // He walks into it and through it, between its two sides 12 apart, not beside its near side (Olov, 12 November
+      // 2026: "Så vi ska gå inne i målet inte bredvid"): the path runs well inside it, its near side in front.
+      expect(small.z + 6).toBeGreaterThan(0.8);
+      expect(small.z - 6).toBeLessThan(-0.8);
+      // Where he says so, he is in its mouth.
+      const said = olympia.beats!.find((b) => b.id === 'ol:in-goal')!;
+      expect(said.at).toBeGreaterThan(small.x);
+      expect(said.at).toBeLessThan(small.x + small.width!);
     });
 
     /** Up onto the table, behind the ball: from under it, with a jump straight up. */
@@ -334,10 +343,12 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       for (let x = crossbar.x - crossbar.width / 2; x <= crossbar.x + crossbar.width / 2; x += 0.1) {
         expect(crossbar.y - heightAt(olympia, x)).toBeGreaterThan(JUMP_APEX + LEDGE_REACH + LEDGE_GIVE);
       }
-      // It is the small goal's top.
+      // It is the small goal's top: a box goal, level from its crossbar back, as high as the bar.
       const goal = olympia.storm!.buildings!.find((b) => b.kind === 'goal')!;
       expect(goal.x).toBeCloseTo(crossbar.x - crossbar.width / 2, 5);
       expect(goal.width).toBeCloseTo(crossbar.width, 5);
+      expect(goal.level).toBe(true);
+      expect(goal.height).toBe(crossbar.y);
     });
 
     it('a held jump takes hold of the net; up it, along the bar to the lookout with every heart, and a slide down again', () => {
@@ -489,6 +500,20 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
   });
 
   describe('Elljusspåret', () => {
+    // Olov, 12 November 2026: "Stubben och pinnen när skogen börjar i slutet efter fotbollsplanen står i luften".
+    it('the stump and the branch where the forest begins lie on the ground: the branch along its whole length', () => {
+      const lying = olympia.decor!.filter((d) => d.look === 'kit' && (d.word === 'gren-a' || d.word === 'stubbe-sagad'));
+      expect(lying.length).toBe(2);
+      for (const d of lying) {
+        // At most a little sunk into the slope, never over it.
+        expect(d.at.y).toBeLessThanOrEqual(heightAt(olympia, d.at.x) + 1e-6);
+        expect(heightAt(olympia, d.at.x) - d.at.y).toBeLessThan(0.25);
+      }
+      // The branch is four Elofs long: the ground is level under all of it.
+      const branch = lying.find((d) => d.word === 'gren-a')!;
+      for (let x = branch.at.x - 2.2; x <= branch.at.x + 2.2; x += 0.1) expect(heightAt(olympia, x), `the ground at ${x.toFixed(1)}`).toBe(branch.at.y);
+    });
+
     it('in a flash the strongest gust takes the little one north, and the old trägubbe follows: Elof stops and watches it', () => {
       const gust = olympia.beats!.find((b) => b.id === 'ol:gust')!;
       const moment = olympia.scenes!.find((scene) => scene.id === 'norrut')!;

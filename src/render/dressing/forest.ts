@@ -225,6 +225,9 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
     const turn = [next() * 6.28, (next() - 0.5) * 0.04, 0.8 + next() * 0.4];
     // Keep an authored approach open, including the trunk's width. Grass and the distant forest remain.
     if (chapter.treeGaps?.some((gap) => x + radius * 1.5 > gap.from && x - radius * 1.5 < gap.to && z > gap.back)) continue;
+    // Its whole foot on the ground: at the top of a wall one stood half over the edge, in the air (Olov, 12 November 2026,
+    // Olympia: "Trädet uppe på kanten ... står halva på kanten och halva utanför").
+    if ([-radius, radius].some((side) => heightAt(chapter, x + side) < heightAt(chapter, x) - 0.3)) continue;
     // None where a door's own spruce stands.
     if (doors.some((door) => Math.abs(door.at.x - x) < 3.2 && z > -9)) continue;
     place.rotation.set(0, turn[0]!, turn[1]!);
