@@ -542,9 +542,18 @@ const SCENES: SceneDef[] = [
       words: [{ at: 6.0, seconds: 4.4, kind: 'title', text: 'a2title' }],
       shots: [
         { at: 0, x: 52.2, y: 0.1, height: 3.2, width: 5.6, eye: -0.05, move: 0.8 },
-        { at: 2.2, x: 51.2, y: 0.8, height: 5.6, width: 10, move: 1.2 },
+        // As he turns and waves, the whole family along the deck with him, not Pappa alone (`DECK`).
+        { at: 2.2, x: 47.6, y: 1.4, height: 6.6, width: 14.2, move: 1.2 },
         { at: 3.8, x: 57, y: 0.6, height: 15, width: 28, move: 2.6 },
       ],
+      // And they answer him, as in the first adventure's title: Mamma waves (on her left there is room for her arm, beside
+      // Moa and Bertil there is not), Pappa nods, and Moa and Bertil look up at him from where they crouch.
+      actors: {
+        mamma: [{ at: 2.6, act: 'wave' }],
+        moa: [{ at: 2.4, act: 'look', aim: { x: 51.4, y: 0.4, z: 0 } }],
+        bertil: [{ at: 2.5, act: 'look', aim: { x: 51.4, y: 0.4, z: 0 } }],
+        pappa: [{ at: 2.8, act: 'nod' }],
+      },
       elof: [
         { at: 0, act: 'watch', aim: { x: 58, y: -6, z: 0 }, face: 0 },
         { at: 2.2, face: 0.44, act: 'wave', aim: { x: 46, y: 2, z: -2 } },
