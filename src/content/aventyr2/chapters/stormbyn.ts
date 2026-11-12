@@ -245,7 +245,7 @@ export const stormbyn: ChapterData = {
     { x: 64.4, y: 0 },
     { x: 86.6, y: 0 },
     { x: 97.8, y: WALL },
-    { x: 121.4, y: 0 },
+    { x: 121.2, y: 0 },
     { x: 137, y: 0 },
     // The dry pier between the awnings.
     { x: 152.6, y: 0 },
@@ -275,13 +275,15 @@ export const stormbyn: ChapterData = {
   ],
   // Hearts over the stands and the swinging sign; the first of each way is its tell.
   side: [
-    // The flap and the stands: one over the flap, then over each stand and each hop between them.
+    // The flap and the stands: one over the flap, then over the first stand, over each hop between them, and two
+    // over the wide middle stand. The last stand is the citronstjärna's and the reflector's (../../collections.ts),
+    // with no heart crowding them.
     { x: 19, y: 4.8 },
     { x: 21.2, y: 5.25 },
     { x: 22.9, y: 5.85 },
-    { x: 24.6, y: 5.25 },
+    { x: 24.1, y: 5.25 },
     { x: 26.3, y: 5.85 },
-    { x: 28, y: 5.25 },
+    { x: 25.1, y: 5.25 },
     // The bench, three over the sign's swing, and the stand beyond it.
     { x: 126.2, y: 1.55 },
     { x: 129.2, y: 3.5 },
@@ -388,19 +390,22 @@ export const stormbyn: ChapterData = {
     ...slopeRow(4.6, 8.6, 4, 3, 9, PAVEMENT),
     ...row(10.6, 32.6, PAVEMENT),
     { x: 34.6, y: 1.5 },
-    { x: 35.8, y: 0.45 },
+    // a step before the big candy at the leaf, not at its foot
+    { x: 35.1, y: 0.45 },
     // 2. down the gutter river on the leaf
     ...alongAll(LEAF, [0.1, 0.18, 0.26, 0.33, 0.4, 0.46, 0.52, 0.58, 0.65, 0.72, 0.8, 0.9]),
     { x: 65, y: 0.45 },
     // 3. over the grate
     ...over(WAY),
     ...row(85.2, 91.2, 0),
-    // 4. up the steps, along the wall, and down under the umbrella
-    ...[1, 2, 3, 4].map((i) => ({ x: round(STEPS_FROM + (i - 0.5) * STEP_TREAD), y: round(i * STEP_RISE + 0.45) })),
-    ...row(WALL_FROM + 0.8, 101.6, WALL, 1.6),
+    // 4. up the steps, along the wall, and down under the umbrella. On the wall, one on each side of its big candy and
+    // two between Moa's two places: two of them lay on top of each other at its foot.
+    ...[1, 2, 3].map((i) => ({ x: round(STEPS_FROM + (i - 0.5) * STEP_TREAD), y: round(i * STEP_RISE + 0.45) })),
+    ...[0.2, 1.8, 3.5, 5.1].map((dx) => ({ x: round(WALL_FROM + dx), y: WALL + 0.45 })),
     ...alongAll(UMBRELLA, [0.12, 0.24, 0.36, 0.48, 0.6, 0.72, 0.84, 0.94]),
-    // 5. past the swinging sign, and 6. to the cap
-    ...row(121.6, 141.6, 0),
+    // 5. past the swinging sign, and 6. to the cap: the first a step past the big candy where he lands, not at its foot
+    { x: 122.2, y: 0.45 },
+    ...row(123.6, 141.6, 0),
     // 7. under the awnings, between the drops, and up the steps to the road up the hill
     { x: 143.6, y: 0.45 },
     { x: 144.8, y: 0.45 },

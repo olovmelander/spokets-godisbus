@@ -459,17 +459,18 @@ export const flarken: ChapterData = {
   // The waves over the jetty: every four seconds one washes over for a little more than one, and the posts are
   // the lee, as the boulders are on Berget. The planks between the first post and the last are level and whole.
   gusts: [{ from: POSTS[0]!, to: POSTS[POSTS.length - 1]!, y: DECK, every: 4, length: 1.4, first: 0.5, shelters: POSTS }],
+  // Each in the gap between two of the trail's sweets, never with one at its foot.
   checkpoints: [
-    { x: 4, y: 0 },
+    { x: 4.6, y: 0 },
     { x: 25.4, y: 0 },
-    { x: 43.8, y: 0 },
-    { x: 60.4, y: 0 },
+    { x: 43.4, y: 0 },
+    { x: 59.4, y: 0 },
     { x: 75, y: 0 },
-    { x: 100.1, y: 0 },
+    { x: 99.2, y: 0 },
     { x: 115.8, y: DECK },
     { x: 136.4, y: DECK },
-    { x: 151.8, y: DECK },
-    { x: 179.2, y: 0 },
+    { x: 152.2, y: DECK },
+    { x: 178.5, y: 0 },
   ],
   hooks: SWINGS,
   climbs: [
@@ -782,13 +783,14 @@ export const flarken: ChapterData = {
     // The picnic table's top: two, a held jump from either bench.
     { x: 38.5, y: round(TABLE.y + 0.55) },
     { x: 39.9, y: round(TABLE.y + 0.55) },
-    // The net's bounce: one high over it, then three along the first roof and two along the second.
+    // The net's bounce: one high over it, then three along the first roof and two along the second, one at each end
+    // of it: its middle is the apelsinklyfta's and the shell's (../../collections.ts).
     { x: 45.4, y: 3.6 },
     ...[46.6, 48.7, 50.8].map((x) => ({ x, y: round(ROOFS[0]!.y + 0.55) })),
-    ...[54.6, 57.4].map((x) => ({ x, y: round(ROOFS[1]!.y + 0.55) })),
-    // The banging door: one over the hut's bench, one over the door's swing.
+    ...[54.2, 58.4].map((x) => ({ x, y: round(ROOFS[1]!.y + 0.55) })),
+    // The banging door: one over the hut's bench, one over the door's swing, under the roof's edge and not in it.
     above(HUT_BENCH),
-    { x: 55.9, y: 2.75 },
+    { x: 55.9, y: 2.35 },
     // The stone shelves: two over the first (one at its near end), one over the second, one in the arc of the
     // jump across, two over the third.
     { x: 67.5, y: round(SHELVES[0]!.y + 0.55) },
@@ -797,13 +799,14 @@ export const flarken: ChapterData = {
     hopCandy({ x: 70.2, y: 2.75 }, { x: 71.1, y: 2.75 }, 0.9),
     { x: 71.6, y: round(SHELVES[2]!.y + 0.55) },
     { x: 72.5, y: round(SHELVES[2]!.y + 0.55) },
-    // The bent reed: its tell low on the stem, within a jump of the stone; two more up it; three on the leaf.
+    // The bent reed: its tell low on the stem, within a jump of the stone; two more up it; three along the leaf, as
+    // evenly spaced as those up the stem.
     { x: BENT_REED.x, y: 4.45 },
-    { x: BENT_REED.x, y: 5 },
+    { x: BENT_REED.x, y: 5.1 },
     { x: BENT_REED.x, y: 5.75 },
-    { x: 81.9, y: round(REED_LEAF.y + 0.55) },
-    { x: 82.5, y: round(REED_LEAF.y + 0.55) },
-    { x: 83.1, y: round(REED_LEAF.y + 0.55) },
+    { x: 81.75, y: round(REED_LEAF.y + 0.55) },
+    { x: 82.45, y: round(REED_LEAF.y + 0.55) },
+    { x: 83.15, y: round(REED_LEAF.y + 0.55) },
   ],
 };
 

@@ -53,7 +53,7 @@ describe('Äventyr 2: Stormkvällen', () => {
 
   it('resumes after the shrinking on the floor, small, and still has its trail', () => {
     const game = new Game(stormkvall, {}, { checkpoint: 1, flags: ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:tillsammans'] });
-    expect(game.sim.curr.x).toBe(18);
+    expect(game.sim.curr.x).toBe(stormkvall.checkpoints![1]!.x);
     for (let frame = 0; frame < 60 * 120 && !game.sim.flags.has('goal'); frame++) {
       game.frame(1 / 60, { x: 1, hopHeld: true }, { hop: frame % 50 === 0, act: false, helper: false });
     }

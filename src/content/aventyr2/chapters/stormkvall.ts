@@ -468,8 +468,9 @@ export const stormkvall: ChapterData = {
   // The window by the shelf is the one the storm blows open: the wall has a real opening there.
   house: { from: -40, to: 38, windows: HOME_LAYOUT.windows, opens: WINDOW.x },
   outdoors: 38,
-  // The trail's big candies: the first where the old trägubbe landed, under the window.
-  checkpoints: [{ x: 10.6, y: 0, after: TRAIL }, { x: 18, y: 0, after: TRAIL }, { x: 36, y: 0, after: TRAIL }, { x: 45.5, y: -0.8, after: TRAIL }],
+  // The trail's big candies: the first where the old trägubbe landed, under the window. Each of the others stands in
+  // the gap between two of the trail's sweets, not with one at its foot.
+  checkpoints: [{ x: 10.6, y: 0, after: TRAIL }, { x: 18.55, y: 0, after: TRAIL }, { x: 35.4, y: 0, after: TRAIL }, { x: 45, y: -0.8, after: TRAIL }],
   spots: [
     // Pappa feels for the flashlight in the dark: Elof takes it from the table and gives it to him.
     { id: 'lamp:take', at: { x: 15, y: 0 }, verb: 'take', word: 'skTakeLamp', needs: 'scene:kvall' },

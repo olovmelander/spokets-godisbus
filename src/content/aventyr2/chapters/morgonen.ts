@@ -391,7 +391,8 @@ export const morgonen: ChapterData = {
     { look: 'table', at: { x: TABLE.x, y: 0 }, z: TABLE.z },
     ...Object.values(TABLE.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
   ],
-  checkpoints: [{ x: 3, y: 0 }, { x: 12, y: 0 }, { x: 21, y: 0 }],
+  // Each between two of the trail's sweets, not with one at its foot.
+  checkpoints: [{ x: 4, y: 0 }, { x: 12, y: 0 }, { x: 22, y: 0 }],
   spots: [
     { id: 'shelf:old', at: { x: FIRST.x + 0.2, y: 0 }, verb: 'give', word: 'moPutOld', needs: 'scene:frukost' },
     { id: 'shelf:small', at: { x: FIRST.x + 1.4, y: 0 }, verb: 'give', word: 'moPutSmall', needs: 'shelf:old' },

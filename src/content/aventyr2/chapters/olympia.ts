@@ -261,16 +261,17 @@ export const olympia: ChapterData = {
     { from: 166, to: 174, kind: 'earth' },
     { from: 174, to: 196, kind: 'moss' },
   ],
+  // Each in the gap between two of the trail's sweets: under one, a sweet hid its head.
   checkpoints: [
     // At the top of the steps, on the ground's own level.
-    { x: 9.4, y: 0 },
-    // Where the balls begin to roll, and in the middle of their stretch, under a candy of the trail.
-    { x: 22.6, y: 0 },
-    { x: 40.6, y: 0 },
+    { x: 9.75, y: 0 },
+    // Where the balls begin to roll, and in the middle of their stretch.
+    { x: 21.6, y: 0 },
+    { x: 39.6, y: 0 },
     { x: 64, y: 0 },
-    { x: 89.4, y: 0 },
-    // The dry place between the benches.
-    { x: DRY, y: 0 },
+    { x: 88.8, y: 0 },
+    // The dry place between the benches, beside its sweet.
+    { x: round(DRY - 0.9, 1), y: 0 },
     { x: 117, y: 0 },
     // In the far goal, where the kick comes down.
     { x: 152.4, y: 0 },
@@ -497,24 +498,30 @@ export const olympia: ChapterData = {
     ...row(113.6, 121.6, 0),
     // 6. in the arc of Bertil's free kick
     ...alongAll(KICK, [0.08, 0.17, 0.26, 0.35, 0.44, 0.53, 0.62, 0.71, 0.8, 0.89]),
-    // 7. out of the far goal and along the range; 8. up the trail
-    ...row(151, 169, 0),
+    // 7. out of the far goal and along the range, one between each two targets, so that the heart a target lets out
+    // lies halfway between two of them, and past the place where the last three hearts come; 8. up the trail
+    ...row(151, 157, 0),
+    ...TARGETS.slice(1).map((x) => ({ x: round(x - 0.8, 1), y: 0.45 })),
+    { x: 166, y: 0.45 },
+    { x: 169.2, y: 0.45 },
     ...slopeRow(171, 177, TRAIL.from, 0, TRAIL.to, TRAIL.y),
   ],
   // Side candy: hearts and lollipops by turns, in the order of this list, so the first of each way is a heart.
   side: [
     // The net and the crossbar: the tell low on the net, a held jump from the turf; three up the net; six along
-    // the bar, out of reach of any jump from the turf under it.
+    // the bar, out of reach of any jump from the turf under it. Its end over the goal's mouth is the fotbollspralin's
+    // and the whistle's (../../collections.ts): the hearts stop short of them.
     { x: NET.x, y: 1.6 },
     { x: NET.x, y: 2.7 },
     { x: NET.x, y: 3.8 },
     { x: NET.x, y: 4.9 },
-    ...[86.2, 85.1, 84, 82.9, 81.8, 80.7].map((x) => ({ x, y: round(GOAL.bar + 0.55) })),
-    // The range: a heart from each target as it turns white, and three more when all five are.
+    ...[86.5, 85.6, 84.7, 83.8, 82.9, 82].map((x) => ({ x, y: round(GOAL.bar + 0.55) })),
+    // The range: a heart from each target as it turns white, and three more when all five are, past the range
+    // between two of the trail's sweets.
     ...TARGETS.map((x, i) => ({ x, y: 0.55, after: `ol:target-${i + 1}` })),
-    { x: 166.4, y: 0.55, after: 'ol:all-white' },
-    { x: 167.2, y: 0.95, after: 'ol:all-white' },
-    { x: 168, y: 0.55, after: 'ol:all-white' },
+    { x: 166.8, y: 0.55, after: 'ol:all-white' },
+    { x: 167.6, y: 0.95, after: 'ol:all-white' },
+    { x: 168.4, y: 0.55, after: 'ol:all-white' },
   ],
 };
 

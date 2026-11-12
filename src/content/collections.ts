@@ -1,19 +1,32 @@
 import type { ChapterData } from '../sim/types';
 
-/** Stable IDs: adding a find never renumbers the ordinary or side candy in an existing save. */
+/**
+ * Stable IDs: adding a find never renumbers the ordinary or side candy in an existing save. Äventyr 2's each have a place
+ * of their own at a side way's end (Olov, 12 November 2026: "placerade fint och strukturerat och inte för plottrigt"),
+ * with no heart, trail sweet or big candy crowding them: they lay among the side ways' hearts, on the trail at a big
+ * candy, or on a sweet of it. A find is kept by its flag, so moving one changes no save.
+ */
 export const COLLECTION_PLACES: Record<string, { kind?: string; find: string; x: number; y: number; after?: string }> = {
   granskog: { find:'redbutton', x:150.4, y:-5.6 },
   myren: { find:'ribbon', x:123.1, y:6.2 },
   berget: { find:'bell', x:104, y:28.4 },
   byn: { find:'pencil', x:135, y:5.8 },
-  stormgard: { kind:'lingonhjarta', find:'paperboat', x:141.3, y:5.9 },
-  stormskog: { kind:'blabarspastill', find:'spool', x:100.2, y:2.9 },
-  stormbyn: { kind:'citronstjarna', find:'reflector', x:24.2, y:4.7 },
-  olympia: { kind:'fotbollspralin', find:'whistle', x:83.1, y:6 },
-  flarken: { kind:'apelsinklyfta', find:'shell', x:82, y:5.5 },
-  alven: { kind:'mintfisk', find:'float', x:132.2, y:0, after:'al:lift' },
-  billsta: { kind:'kolaknapp', find:'peg', x:57, y:4.8, after:'bi:door' },
-  stormoga: { kind:'norrskensruta', find:'lanternstar', x:51.8, y:.6, after:'scene:motet' },
+  // On the top leaf by the playhouse, where the trampoline's way ends.
+  stormgard: { kind:'lingonhjarta', find:'paperboat', x:142.3, y:5.9 },
+  // On the branch over the leaning spruce.
+  stormskog: { kind:'blabarspastill', find:'spool', x:100.85, y:2.9 },
+  // On the last of the yarn shop's stands, where the awning flap's way ends.
+  stormbyn: { kind:'citronstjarna', find:'reflector', x:27.6, y:4.7 },
+  // At the end of the crossbar, over the goal's mouth.
+  olympia: { kind:'fotbollspralin', find:'whistle', x:80.4, y:6 },
+  // On the second changing room's roof, past the net's bounce.
+  flarken: { kind:'apelsinklyfta', find:'shell', x:56.9, y:2.9 },
+  // On the otter's stone, out past the rolling logs.
+  alven: { kind:'mintfisk', find:'float', x:147.3, y:0.5, after:'al:lift' },
+  // On the loft's high beam, over the hatch.
+  billsta: { kind:'kolaknapp', find:'peg', x:64.25, y:7.4, after:'bi:door' },
+  // At the back of the stone, behind where the owl sets him down.
+  stormoga: { kind:'norrskensruta', find:'lanternstar', x:38.9, y:.6, after:'scene:motet' },
 };
 
 /** Applied when either adventure's chapter pack loads; safe to call twice. */
