@@ -10,7 +10,7 @@ import { alongAll, flightAt, round, row, slopeRow, timeCard } from '../kit';
  *
  * 1. **Trappan och staketet:** up the stone steps from the road to the ground on its hill, along the gravel path,
  *    and over the high fence by the ball-stop net: up its near side, and a slide down the far side. From the top a
- *    flash shows the whole pitch, and the little one tumbling across it.
+ *    flash shows the little one tumbling out over the pitch, past him at the height of the fence's top.
  * 2. **Bollarna i blåsten** (the exciting sequence): the wind rolls balls across the small pitch from behind him.
  *    He jumps each one; one that reaches his legs bowls him into the glitter bubble, as the cones on Granskogen's
  *    slope do. The trail floats a little higher here, so that he takes it running or jumping.
@@ -305,8 +305,10 @@ export const olympia: ChapterData = {
     // What rolls in the wind is balls, not cones.
     rollers: 'football',
     flybys: [
-      // From the fence's top: the little one, tumbling over the whole pitch.
-      { on: 'beat:ol:top', from: { x: 22, y: 12 }, to: { x: 64, y: 8 }, seconds: 2.8, who: 'lillgubbe' },
+      // From the fence's top: the little one, tumbling out over the pitch. It comes past him at the height of his
+      // eyes up there, and sinks as it goes, so that it is in the picture from the top and from the grass below,
+      // under the line that points at it, on a phone held sideways too.
+      { on: 'beat:ol:top', from: { x: 13.4, y: 8.2 }, to: { x: 41, y: 4.4 }, rise: 0.8, seconds: 3.2, who: 'lillgubbe', lit: [1.3] },
       // At the centre circle: the old one, blown over the water ahead of him.
       { on: 'beat:ol:old-one', from: { x: 124.4, y: 0.6 }, to: { x: 152, y: 7 }, seconds: 2.4, who: 'tragubbe' },
       // At the trail: the strongest gust takes the little one north over the treetops, and the old one follows, while
@@ -382,39 +384,40 @@ export const olympia: ChapterData = {
     { at: { x: 182, y: TRAIL.y }, thought: { picture: 'small-figure', after: 'beat:ol:gust' } },
   ],
   beats: [
-    // 1. up the steps: at the top the dark pitch, and the dark floodlights; the fence
+    // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
+    // 1. up the steps: at the top the dark pitch, and the dark floodlights; the fence. From its top the flash shows
+    // the little one, in one line: the balls' own words have to follow it before the balls do.
     { id: 'ol:arrive', at: 7.6, who: 'elof', line: 'olArrive' },
-    { id: 'ol:klonk', at: 9.8, who: 'spoket', line: 'olKlonk' },
-    { id: 'ol:lights', at: 12.2, who: 'elof', line: 'olLights' },
+    { id: 'ol:klonk', on: 'beat:ol:arrive', who: 'spoket', line: 'olKlonk', aside: true },
+    { id: 'ol:lights', at: 12.2, who: 'elof', line: 'olLights', aside: true },
     { id: 'ol:top', at: 16.2, who: 'elof', line: 'olTop' },
-    { id: 'ol:little', on: 'beat:ol:top', who: 'elof', line: 'olLittle' },
-    // 2. the balls in the wind: the first beat sets them rolling
-    { id: 'ol:wind', at: 21.2, who: 'elof', line: 'olWind', read: true },
-    { id: 'ol:jump', at: 26.4, who: 'elof', line: 'olJump' },
-    { id: 'ol:klonk-balls', at: 34, who: 'spoket', line: 'olKlonkKlonk' },
+    // 2. the balls in the wind: this line sets them rolling, and says what to do about them; the last one stops them
+    { id: 'ol:wind', at: 23, who: 'elof', line: 'olWind', read: true },
+    { id: 'ol:klonk-balls', at: 34, who: 'spoket', line: 'olKlonkKlonk', aside: true },
     { id: 'ol:phew', at: 61, who: 'elof', line: 'olPhew' },
     // 3. Bollen i målet
     { id: 'ol:puddle', at: 73.6, who: 'elof', line: 'olPuddle' },
     { id: 'ol:idea', on: 'ol:think', until: `placed:${BALL.id}`, who: 'elof', line: 'olIdea', read: true },
     { id: 'ol:idea-more', on: 'ol:think-more', until: `placed:${BALL.id}`, who: 'elof', line: 'olIdeaMore', read: true },
     { id: 'ol:splash', on: `placed:${BALL.id}`, who: 'elof', line: 'olSplash' },
-    { id: 'ol:klonk-ball', on: `placed:${BALL.id}`, who: 'spoket', line: 'olKlonkKlonk' },
-    { id: 'ol:in-goal', at: 81, who: 'elof', line: 'olInGoal' },
+    { id: 'ol:klonk-ball', on: 'beat:ol:splash', who: 'spoket', line: 'olKlonkKlonk', aside: true },
+    { id: 'ol:in-goal', at: 81, who: 'elof', line: 'olInGoal', aside: true },
     // 4. up on the crossbar (the side way)
-    { id: 'ol:lookout', on: 'ol:lookout', who: 'elof', line: 'olLookout' },
+    { id: 'ol:lookout', on: 'ol:lookout', who: 'elof', line: 'olLookout', aside: true },
     // 5. the corner flag and the benches
-    { id: 'ol:crowd', at: 113.4, who: 'elof', line: 'olCrowd' },
+    { id: 'ol:crowd', at: 113.4, who: 'elof', line: 'olCrowd', aside: true },
     // 6. Bertil's free kick
     { id: 'ol:old-one', at: 118.4, who: 'elof', line: 'olOldOne' },
     { id: 'ol:bertil-here', at: 120, until: 'ol:bertil', who: 'bertil', line: 'olBertilHere', read: true },
     { id: 'ol:kick-ready', on: 'ol:kick-ready', until: 'ol:kick', within: [116, 126], who: 'bertil', line: 'olBertilReady', read: true },
-    { id: 'ol:fly', on: 'ol:kick', within: [120, 150], who: 'elof', line: 'olFly' },
-    { id: 'ol:goal', at: 149.8, needs: 'ol:kick', who: 'elof', line: 'olGoal' },
-    { id: 'ol:cheer', on: 'beat:ol:goal', who: 'bertil', line: 'olBertilCheer' },
+    // In the air, or not at all. In the net Bertil calls it a goal, and Elof thanks him: two lines, read before the
+    // trail's end, where the gust is.
+    { id: 'ol:fly', on: 'ol:kick', within: [120, 150], who: 'elof', line: 'olFly', aside: 12 },
+    { id: 'ol:cheer', at: 149.8, needs: 'ol:kick', who: 'bertil', line: 'olBertilCheer' },
     { id: 'ol:thanks', on: 'beat:ol:cheer', who: 'elof', line: 'olThanks' },
-    // 7. the biathlon range
-    { id: 'ol:range', at: 156, who: 'elof', line: 'olRange' },
-    { id: 'ol:all-white', on: 'ol:all-white', who: 'elof', line: 'olAllWhite' },
+    // 7. the biathlon range: a game of its own, off the story's way
+    { id: 'ol:range', at: 156, who: 'elof', line: 'olRange', aside: true },
+    { id: 'ol:all-white', on: 'ol:all-white', who: 'elof', line: 'olAllWhite', aside: true },
     // 8. the trail, and the strongest gust: said as the flash comes, while he stands and watches the little one go
     // (`norrut`), so that the words are under the flight and not in front of it; and as the old one leaps after him.
     // Then Bertil says where the wind is taking them, and how they will follow.

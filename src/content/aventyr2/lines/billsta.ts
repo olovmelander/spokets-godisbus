@@ -8,7 +8,6 @@ import type { ChapterWords } from './words';
 export const words: ChapterWords = {
   lines: {
     // 1. the road, by the car
-    biArrive: 'Framme i Billsta, hos mormor och morfar!',
     biKlonk: 'Klonk!',
     biWindow: 'Titta! Det lyser hos mormor och morfar.',
     biKlonkKlonk: 'Klonk, klonk!',

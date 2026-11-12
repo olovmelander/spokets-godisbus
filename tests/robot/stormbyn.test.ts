@@ -221,8 +221,13 @@ describe('Kapitel 3, Byn i stormen', () => {
     expect(seen.at - picked.at).toBeGreaterThanOrEqual(0.8);
     expect(moment.seconds - seen.at).toBeGreaterThanOrEqual(1.5);
     const lines = stormbyn.beats!.filter((beat) => beat.on === seen.flag);
-    expect(lines.map((beat) => sv.lines[beat.line as keyof typeof sv.lines])).toEqual(['Lillgubbens mössa! Jag tar med den.', 'Godisspåret går mot fotbollsplanen!', 'Klonk, klonk!']);
+    expect(lines.map((beat) => sv.lines[beat.line as keyof typeof sv.lines])).toEqual(['Lillgubbens mössa! Jag tar med den.', 'Godisspåret går mot fotbollsplanen!']);
     expect(lines[1]!.read).toBe(true);
+    // Klonk answers the find itself, between the two: an answer follows what it answers (docs/dialogue.md).
+    const answer = stormbyn.beats!.find((beat) => beat.id === 'sbKlonkCap')!;
+    expect(answer.on).toBe(`beat:${lines[0]!.id}`);
+    expect(sv.lines[answer.line as keyof typeof sv.lines]).toBe('Klonk, klonk!');
+    expect(answer.aside).toBeUndefined();
     // Played: coming to it stops him for the whole moment, a step from where it lay, and the words come after his hand
     // has it.
     const sim = new Sim(stormbyn, {}, { checkpoint: 6, flags: ['leaf', 'umbrella:ready', 'family:umbrella-ready', 'umbrella'] });

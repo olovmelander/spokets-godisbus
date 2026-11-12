@@ -152,10 +152,10 @@ try {
 
     // Start beyond the authored fence: this regression targets the former read:true
     // remark, while traversal of the separate climbing puzzle has its own chapter suite.
-    const windRoute = await open(width, height, 'olympia', '21.6,.01',
-      ['scene:card', ...['ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top', 'ol:little'].map(id => `beat:${id}`)]);
+    const windRoute = await open(width, height, 'olympia', '23.4,.01',
+      ['scene:card', ...['ol:arrive', 'ol:klonk', 'ol:lights', 'ol:top'].map(id => `beat:${id}`)]);
     const windPage = windRoute.page, windControls = touch ? await touchControls(windPage) : null;
-    await until(windPage, async () => (await text(windPage)) === 'Vinden rullar bollar efter oss!', 'the complete legacy read:true world line', 5);
+    await until(windPage, async () => (await text(windPage)) === 'Vinden rullar bollar efter oss! Hoppa!', 'the complete legacy read:true world line', 5);
     const wind = await state(windPage);
     if (windControls) await windControls.right(); else await windPage.keyboard.down('ArrowRight');
     await advance(windPage, .4);
@@ -163,7 +163,7 @@ try {
     const walkingWind = await state(windPage);
     check(`${label}: a formerly mandatory world line now permits movement without Continue`, walkingWind.x > wind.x + .25
       && !walkingWind.held && !walkingWind.storyReading && await windPage.locator('#sceneReading').isHidden()
-      && await text(windPage) === 'Vinden rullar bollar efter oss!');
+      && await text(windPage) === 'Vinden rullar bollar efter oss! Hoppa!');
     await until(windPage, s => s.said.includes('ol:wind') && !s.pendingDialogue.includes('ol:wind'), 'wind remark completes automatically', 15);
     await windControls?.close(); assert.deepEqual(windRoute.errors, []); await windPage.close();
 
@@ -187,7 +187,7 @@ try {
   // range. Board the authored owl normally and keep Right held through landing
   // until the owned line actually finishes; never replace the scene or camera.
   const beforeOwl = ['arrive', 'klonk-floats', 'klonk', 'flash', 'raft-seen', 'current', 'old-one', 'logs-wait',
-    'leaf-seen', 'bredbyn', 'rapids', 'pappa-here', 'scarf-down', 'take-hold', 'up', 'over', 'thanks', 'follow',
+    'leaf-seen', 'bredbyn', 'rapids', 'pappa-here', 'take-hold', 'up', 'thanks', 'follow',
     'lodge', 'otter', 'lake', 'owl-seen', 'owl-here'];
   const owl = await open(390, 844, 'alven', '132.6,.01', ['scene:card', 'scene:bron', 'al:pappa', 'al:scarf',
     'al:lift', 'al:owl-call', 'al:owl-ready', ...beforeOwl.map(id => `beat:al:${id}`)]);

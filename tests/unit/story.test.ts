@@ -71,6 +71,10 @@ describe('choosing candy at the family party', () => {
     }
     expect(sim.flags.has('partied')).toBe(true);
     expect(sim.flags.has('party-gift:moa:skumbanan')).toBe(true);
-    expect(sim.said).toContain('named');
+    // The name comes as the ghost has hopped across the table and looks at him, not under the last thanks.
+    expect(sim.said).not.toContain('named');
+    const hop = epilog.scenes!.find((scene) => scene.id === 'klonk-table')!;
+    for (let i = 0; i < hop.seconds * 120; i++) sim.step(idle);
+    expect(sim.said.slice(-2)).toEqual(['klonk', 'named']);
   });
 });

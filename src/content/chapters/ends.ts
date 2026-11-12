@@ -152,6 +152,10 @@ const GUESTS = [
 const TABLE_HOP = { left: HOME_LAYOUT.dining.x - 2, middle: HOME_LAYOUT.dining.x,
   right: HOME_LAYOUT.dining.x + 2, top: 1.68, z: HOME_LAYOUT.dining.z };
 
+/** In the naming's scene: when the ghost stands on the table's end, and when it has come down and tilts its head. */
+const KLONK_UP = 1.85;
+const KLONK_DOWN = 6.95;
+
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
  * 1. **Elof hands out candy** (P18): he chooses a candy and then Mamma, Pappa, Moa, Bertil or the ghost.
@@ -186,7 +190,13 @@ export const epilog: ChapterData = {
     timeCard('epilog', 1),
     // The naming: given its candy, the ghost hops up onto the party table and across it, klonk, klonk, and down again
     // to where it waits for the carving. He is free all the while.
-    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 7.2, stage: { actors: { ghost: [
+    //
+    // It waits until the family's thanks are said (`quiet`): a child who hands the sweets out quickly had the hop
+    // over the table under their thanks, and its two lines long after it. They come at the scene's own moments now
+    // (`cues`): the klonk as it stands up on the table, and the name as it has come down and looks at him.
+    { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 7.2, quiet: true,
+      cues: [{ at: KLONK_UP, flag: 'party:klonk-up' }, { at: KLONK_DOWN, flag: 'party:klonk-down' }],
+      stage: { actors: { ghost: [
       { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
       // Up over the front edge, clear of the chair at the end; both landings happen above the tabletop.
       { at: .05, x: TABLE_HOP.right + .8, y: TABLE_HOP.top + .42, z: 1.65, move: 1.15 },
@@ -265,6 +275,10 @@ export const epilog: ChapterData = {
   ],
   sets: [
     { flag: 'partied', when: ['party:mamma', 'party:pappa', 'party:moa', 'party:bertil', 'party:spoket'] },
+    // A game saved after the hop, before its words were read (they were once said with `partied`), still names it:
+    // the knife waits for the name.
+    { flag: 'party:klonk-up', when: ['scene:klonk-table'] },
+    { flag: 'party:klonk-down', when: ['scene:klonk-table'] },
     // Pappa tells him why the musical beach stones lie so high up, if he found them.
     { flag: 'cobbles:explained', when: ['party:pappa', 'heard:cobbles'] },
     // A thing is given back when its owner has had candy and the thing was found.
@@ -290,8 +304,9 @@ export const epilog: ChapterData = {
     { id: 'coinBack', on: 'back:coin', who: 'pappa', line: 'coinBack' },
     { id: 'clipBack', on: 'back:clip', who: 'moa', line: 'clipBack' },
     { id: 'marbleBack', on: 'back:marble', who: 'bertil', line: 'marbleBack' },
-    { id: 'klonk', on: 'partied', who: 'spoket', line: 'klonk' },
-    { id: 'named', on: 'partied', who: 'elof', line: 'named' },
+    // Said in the naming's scene (`klonk-table`), at its two moments.
+    { id: 'klonk', on: 'party:klonk-up', who: 'spoket', line: 'klonk' },
+    { id: 'named', on: 'party:klonk-down', who: 'elof', line: 'named' },
     { id: 'away', on: 'knife', who: 'pappa', line: 'away' },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],

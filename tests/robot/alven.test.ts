@@ -26,8 +26,8 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
-  'al:arrive', 'al:klonk-floats', 'al:klonk', 'al:flash', 'al:raft-seen', 'al:current', 'al:old-one', 'al:logs-wait',
-  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:scarf-down', 'al:take-hold', 'al:up', 'al:over', 'al:thanks', 'al:follow', 'al:lodge', 'al:otter',
+  'al:arrive', 'al:klonk-floats', 'al:klonk', 'al:raft-seen', 'al:flash', 'al:current', 'al:logs-wait', 'al:old-one',
+  'al:bredbyn', 'al:rapids', 'al:pappa-here', 'al:take-hold', 'al:up', 'al:thanks', 'al:follow', 'al:lodge', 'al:otter',
   'al:lake', 'al:owl-seen', 'al:owl-here', 'al:owl-fly', 'al:see-little', 'al:owl-thanks',
   'al:moalven', 'al:old-ahead',
   'al:last', 'al:gone', 'al:afraid', 'al:klonk-near', 'al:moa-never', 'al:bertil-pocket', 'al:moa-trail',
@@ -120,7 +120,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
     expect(alven.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(alven.coda).toBe('pappa');
     expect(alven.storm).toMatchObject({ rain: 1, lightning: 7.5 });
-    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'bron', 'al:little', 'al:kids']);
+    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'bron', 'al:little', 'al:kids', 'al:slut']);
     expect(sv.scene.alven).toBe('Älven · halv tolv');
   });
 
@@ -350,12 +350,19 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
     it('has Pappa answer warmly: he calls from the bridge, lowers his scarf, holds it, and follows', () => {
       const his = alven.beats!.filter((b) => b.who === 'pappa').map((b) => b.line);
       // ... and at the end, by the car, he tells where the river goes.
-      expect(his).toEqual(['alPappaHere', 'alScarfDown', 'alTakeHold', 'alOver', 'alFollow', 'alBillsta']);
-      expect(lines.alTakeHold).toBe('Ta tag i halsduken, Elof!');
+      expect(his).toEqual(['alPappaHere', 'alTakeHold', 'alFollow', 'alBillsta']);
+      // One line for the scarf: what comes down, and what to do with it.
+      expect(lines.alTakeHold).toBe('Här kommer min halsduk. Ta tag i den!');
       for (const line of his) expect(lines[line]).toBeTruthy();
-      // His three lines before the lift are read before Elof goes on.
-      for (const beat of alven.beats!.filter((b) => b.who === 'pappa').slice(0, 3)) expect(beat.read).toBe(true);
-          expect(alven.beats!.find(beat => beat.id === 'al:owl-fly')!.read).toBe(true);
+      // His two lines before the lift are kept for a game taken up there.
+      const before = alven.beats!.filter((b) => b.who === 'pappa').slice(0, 2);
+      for (const beat of before) expect(beat.read).toBe(true);
+      // He answers what Elof says of the rapids; and the scarf's words come once the picture has shown it coming
+      // down, with Elof free to take hold while they are read.
+      expect(before[0]!.on).toBe('beat:al:rapids');
+      expect(before[1]!.on).toBe('scene:bron');
+      // And he answers Elof's thanks on the far bank.
+      expect(alven.beats!.find((b) => b.id === 'al:follow')!.on).toBe('beat:al:thanks');
     });
 
     it('lifts him again when taken up before the rapids, and not when taken up after them', () => {
@@ -536,10 +543,14 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
         const beat = alven.beats!.find((b) => `beat:${b.id}` === f.on || b.on === f.on)!;
         const scene = alven.scenes!.find(scene => scene.cues?.some(cue => cue.flag === f.on));
         expect(beat.who).toBe('elof');
-        expect(f.from.x).toBeGreaterThan(beat.at ?? scene!.at!);
+        // Seen from where he says it: a place, a scene's place, or the raft he has just stepped onto.
+        expect(f.from.x).toBeGreaterThan(beat.at ?? scene?.at ?? alven.rides!.find((r) => r.id === beat.on)!.from.x);
         if (scene) {
           expect(beat.read).toBe(true);
-          expect(alven.beats!.find(beat => beat.id === 'al:owl-fly')!.read).toBe(true);
+          // What he says of the flight itself is a remark of its first moments: the owl's back belongs to this sight.
+          const flying = alven.beats!.find(beat => beat.id === 'al:owl-fly')!;
+          expect(flying.aside).toBeTruthy();
+          expect(flying.within![1]).toBeLessThan(scene.at!);
           expect(scene.stage!.shots![0]!.move).toBeLessThan(scene.cues![0]!.at);
           expect(f.lit).toBeDefined();
         }

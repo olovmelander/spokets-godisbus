@@ -7,8 +7,8 @@ import type { ChapterWords } from './words';
 export const words: ChapterWords = {
   lines: {
     // 1. the veranda, in the rain
-    sgMoaLight: 'Jag lyser för dig från fönstret!',
-    sgGutter: 'Takrännan svämmar över! Se på skuggorna.',
+    sgMoaLight: 'Jag lyser, lillebror! Se på skuggorna.',
+    sgGutter: 'Takrännan svämmar över!',
     // 2. the pumpkin lantern on the steps
     sgPumpkin: 'Spåret fortsätter ut i trädgården!',
     sgKlonk: 'Klonk!',

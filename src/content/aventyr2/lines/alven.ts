@@ -24,10 +24,8 @@ export const words: ChapterWords = {
     alBredbyn: 'Bredbyn igen! Där borta är Olympia.',
     alRapids: 'Forsen är alldeles för vild!',
     alPappaHere: 'Elof! Jag står här uppe på bron!',
-    alScarfDown: 'Jag sänker ner min halsduk.',
-    alTakeHold: 'Ta tag i halsduken, Elof!',
+    alTakeHold: 'Här kommer min halsduk. Ta tag i den!',
     alUp: 'Nu åker halsdukshissen!',
-    alOver: 'Där! Nu är du förbi forsen.',
     alThanks: 'Tack, Pappa! Världens mjukaste hiss.',
     alFollow: 'Vi kör efter dig längs ån.',
     // 4. the beaver's stumps and lodge, and an otter
@@ -83,4 +81,5 @@ export const words: ChapterWords = {
     alvenPappa: 'Pappa står på bron i Bredbyn med sin lampa.',
     alvenOwl: 'Ugglan från skogen hjälper mig igen.',
   },
+  moments: { 'al:slut': 'Spåret tar slut' },
 };

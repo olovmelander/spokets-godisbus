@@ -19,6 +19,12 @@ export interface Heard {
   line: string;
   text: string;
   read: boolean;
+  /** A passing remark (`Beat.aside`), and whether it answers a line (`on: 'beat:…'`). */
+  aside: boolean;
+  answers: boolean;
+  /** Where he was when its moment came, and when it showed. */
+  dueX: number;
+  shownX: number;
   /** Seconds on the page's clock: when its moment came, when the simulation said it, when it showed, and when it went. */
   due: number;
   said: number;
@@ -48,6 +54,10 @@ export interface Listened {
   ending: number;
   /** Each time he stood and listened: where, from when, and for how long. */
   stops: { x: number; at: number; seconds: number }[];
+  /** The passing remarks let go unsaid: their moment went by while someone else was speaking. */
+  passed: string[];
+  /** Each scene that played, in order, and where he was as it began. */
+  scenes: { id: string; x: number }[];
 }
 
 /** A page of plain objects: just what the bubbles touch. `seen` hears every line that is shown and every hide. */
@@ -104,6 +114,7 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
       // A line that goes on from the one before is added under it: the one before has had its time.
       for (const one of showing) one.gone ??= clock;
       next.shown = clock;
+      next.shownX = game.sim.curr.x;
       showing = [next];
     },
     hide() {
@@ -119,13 +130,16 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
   let endFor = 0;
   let listened = 0;
   const stops: Listened['stops'] = [];
+  const scenes: Listened['scenes'] = [];
   let frozen = 0;
   // The coda before the page (src/main.ts), where a scene is not the chapter's end and it is not the epilogue.
   const wait = !endsInScene(chapter) && !chapter.epilogue ? 4.6 : 1.4;
-  const due = new Map<string, number>();
+  const due = new Map<string, { at: number; x: number }>();
+  // How long nothing has been said or waited: the last page waits a moment for a line that goes on (src/main.ts).
+  let quietFor = 0;
   for (let frame = 0; frame < fps * limit; frame++) {
     clock += dt;
-    for (const id of game.sim.waits.keys()) if (!due.has(id)) due.set(id, clock);
+    for (const id of game.sim.waits.keys()) if (!due.has(id)) due.set(id, { at: clock, x: game.sim.curr.x });
     if (hud.reading()) {
       game.resume();
       frozen += dt;
@@ -142,6 +156,7 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
       }
     }
     const scene = game.sim.sceneFrame;
+    if (scene && scene.id !== sceneHeard) scenes.push({ id: scene.id, x: game.sim.curr.x });
     if (scene && scene.id !== sceneHeard && chapter.scenes?.find((def) => def.id === scene.id)?.hold) hud.hush();
     sceneHeard = scene?.id ?? null;
     for (; told < game.sim.said.length; told++) {
@@ -149,15 +164,18 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
       const beat = beats.get(id);
       if (!beat || !lines[beat.line]) continue;
       const read = game.sim.held && game.sim.sceneFrame !== null;
-      heard.push({ id, line: beat.line, text: lines[beat.line]!, read, due: due.get(id) ?? clock, said: clock, shown: null, gone: null, needs: readingTime(lines[beat.line]!) });
+      const moment = due.get(id) ?? { at: clock, x: game.sim.curr.x };
+      heard.push({ id, line: beat.line, text: lines[beat.line]!, read, aside: !!beat.aside, answers: beat.on?.startsWith('beat:') === true,
+        dueX: moment.x, shownX: game.sim.curr.x, due: moment.at, said: clock, shown: null, gone: null, needs: readingTime(lines[beat.line]!) });
       hud.say(beat.who, beat.line, read, id);
     }
     hud.tick(dt);
     if (game.sim.flags.has('goal')) {
       endFor += dt;
     }
-    // The end card, as the page brings it.
-    if (endFor > wait && !hud.reading() && !hud.speaking() && !game.sim.unsaid) break;
+    // The end card, as the page brings it: after a moment's quiet, so never in the middle of a conversation.
+    quietFor = hud.reading() || hud.speaking() || game.sim.unsaid ? 0 : quietFor + dt;
+    if (endFor > wait && quietFor > 0.4) break;
   }
   for (const one of showing) one.gone ??= clock;
   const shown = heard.filter((one) => one.shown !== null);
@@ -169,5 +187,7 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
     lag: Math.max(0, ...shown.map((one) => one.shown! - one.said)),
     late: Math.max(0, ...shown.map((one) => one.shown! - one.due)),
     listened, frozen, ending: endFor, stops,
+    passed: [...due.keys()].filter((id) => !heard.some((one) => one.id === id)),
+    scenes,
   };
 }

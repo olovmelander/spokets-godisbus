@@ -5,7 +5,7 @@ import {
   RUN_AFTER, RUN_DEFLECTION, RUN_SPEED, SAFE_AFTER, SAFE_REACH, SLIDE_REACH, SLIDE_TIME, STEEP_SLIDE_SPEED, STEP,
   STEP_HEIGHT, STOP_WITHIN, WALK_DEFLECTION, WALK_SPEED,
 } from './constants';
-import { CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH } from './constants';
+import { ASIDE_NEAR, ASIDE_REACH, ASIDE_ROOM, CHECKPOINT_REACH, EASY_JUMP_REACH, EASY_JUMP_STEER, MOVE_TIME, MOVER_RESET, PUSH_REACH, REPLY_PATIENCE } from './constants';
 import { DOWN_TIME, DROP_FALL, DROP_FROM, DROP_RADIUS, DROP_WARNING } from './constants';
 import { GHOST_CATCH, GHOST_CLEARANCE, GHOST_NEAR, GHOST_SLIP, GHOST_SPEED, RIDE_CORRIDOR, RIDE_STEER, SPOT_REACH } from './constants';
 import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REACH } from './constants';
@@ -210,6 +210,14 @@ export class Sim {
   private watching = false;
   /** The beats whose moment has come while someone was still speaking, and the step each came at: they wait their turn. */
   private readonly waiting = new Map<string, number>();
+  /** Where he was when the moment of each waiting line came: a passing remark is let go once he has left it behind. */
+  private readonly came = new Map<string, number>();
+  /** The passing remarks let go unsaid: their moment went by while someone else was speaking. */
+  private readonly letGo = new Set<string>();
+  /** How many of the waiting lines are the story's own. Only these keep a staged moment waiting for quiet. */
+  private storyWaiting = 0;
+  /** How fast he went along the course over the last step, in EL a second: on his feet, on a hose or carried. */
+  private pace = 0;
   /** Emitted lines a listening page has not finished yet. These are not saved as completed receipts. */
   private readonly pending = new Set<string>();
   /** Story conditions use completed words; the public flags still expose their first visible moment. */
@@ -380,6 +388,9 @@ export class Sim {
     // Passing remarks before a checkpoint stay past. A reading receipt must come from the save:
     // the candy magnet may have collected the next checkpoint before the player read this line.
     for (const beat of chapter.beats ?? []) if ((!beat.read || !saved) && beat.at !== undefined && beat.at < spawn.x - 0.5) this.flags.add(`beat:${beat.id}`);
+    // A remark whose moment had come before this game was taken up belonged to that moment: it is not said now, as
+    // he stands at a big candy somewhere else. One that answers a line (Klonk's "Klonk!") goes with its line.
+    for (const beat of chapter.beats ?? []) if (beat.aside && beat.on !== undefined && this.flags.has(beat.on)) this.letGo.add(beat.id);
     this.spots = chapter.spots ?? [];
     this.berries = (chapter.bouncers ?? []).map((b) => ({ ...b, squash: 0 }));
     this.perches = chapter.ghost ?? [];
@@ -484,11 +495,16 @@ export class Sim {
     for (const id of this.pending) this.flags.delete(`beat:${id}`);
     this.pending.clear();
     this.waiting.clear();
+    this.came.clear();
+    this.storyWaiting = 0;
   }
 
-  /** Whether lines whose moment has come still wait their turn: the page's last card waits for them too. */
+  /**
+   * Whether any of the story's lines whose moment has come still wait their turn: the page's last card waits for them
+   * too. A passing remark that waits is not counted: it is said if its moment is still there, and never holds the page.
+   */
   get unsaid(): boolean {
-    return this.waiting.size > 0;
+    return this.storyWaiting > 0;
   }
 
   /** The lines that wait their turn, and the step at which the moment of each came. */
@@ -508,6 +524,7 @@ export class Sim {
 
   step(input: StepInput): void {
     if (this.story) return;
+    this.pace = (this.curr.x - this.prev.x) / STEP;
     this.prev = this.curr;
     this.ringNotes();
     this.returnGifts();
@@ -515,7 +532,8 @@ export class Sim {
     const listening = input.talking !== undefined;
     const speaking = input.talking === true || this.pending.size > 0;
     const told = this.said.length;
-    const talking = speaking || this.waiting.size > 0;
+    // A staged moment waits for the story's lines, never for a passing remark: that is let go as it begins.
+    const talking = speaking || this.storyWaiting > 0;
     this.prologue?.tick(this.curr, this.ghost, this.flags, talking, this.conditions);
     this.scene?.tick(this.curr, this.flags, this.said, talking, listening, this.conditions, this.waiting);
     // A scene can emit before actions and physics this step. Register its words before any causal check.
@@ -732,8 +750,14 @@ export class Sim {
 
   /**
    * Lines retain their visible emission flags, but causal conditions wait for the page's acknowledgement.
-   * The oldest still-relevant line is spoken next. Queued words never stop walking or jumping; authored
-   * physical holds remain explicit. With no listening page, robot playthroughs complete lines immediately.
+   * Queued words never stop walking or jumping; authored physical holds remain explicit. With no listening page,
+   * robot playthroughs say and complete every line as its moment comes.
+   *
+   * Whose turn it is when it is quiet (docs/dialogue.md): first a line that goes on from one just read, so that an
+   * answer follows what it answers; then the story's other lines, the one that has waited longest first; then the
+   * passing remarks. A remark is let go, unsaid, once he has left its moment behind, when a staged moment has the
+   * floor, or when it answers a line and cannot come straight after it: nothing is said late. And a remark is not
+   * begun just before one of the story's lines (`storySoon`): that line would have had to wait for it.
    */
   private tell(talking = false, listening = false): void {
     for (const set of this.chapter.sets ?? []) if (set.when.every((flag) => this.ready(flag))) this.flags.add(set.flag);
@@ -751,7 +775,7 @@ export class Sim {
       if (beat.needs !== undefined && !this.ready(beat.needs)) return false;
       if (beat.until !== undefined && this.ready(beat.until)) return false;
       if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) return false;
-      if (this.flags.has(`beat:${beat.id}`)) return false;
+      if (this.flags.has(`beat:${beat.id}`) || this.letGo.has(beat.id)) return false;
       const owner = listening ? this.dialogue.get(beat.id) : undefined;
       if (owner) {
         // Saved cue flags describe what happened, not where the camera is now. Rejoin the actual reveal
@@ -774,24 +798,68 @@ export class Sim {
       return;
     }
     // A beat no longer due (he went back, or the story went past it) stops waiting: it was never shown.
+    const forget = (beat: Beat) => {
+      this.waiting.delete(beat.id);
+      this.came.delete(beat.id);
+    };
+    // A staged moment has the floor, or waits for it: he stands and watches, and nothing is remarked in passing.
+    const staged = this.held;
     let next: Beat | null = null;
+    let turn = Infinity;
     let since = Infinity;
+    this.storyWaiting = 0;
     for (const beat of this.chapter.beats ?? []) {
       if (!due(beat)) {
-        this.waiting.delete(beat.id);
+        forget(beat);
         continue;
       }
-      const from = this.waiting.get(beat.id) ?? this.steps;
-      this.waiting.set(beat.id, from);
-      if (from < since) {
+      let from = this.waiting.get(beat.id);
+      if (from === undefined) {
+        from = this.steps;
+        this.waiting.set(beat.id, from);
+        this.came.set(beat.id, this.curr.x);
+      }
+      const answers = beat.on?.startsWith('beat:') === true;
+      if (beat.aside) {
+        const reach = beat.aside === true ? ASIDE_REACH : beat.aside;
+        const left = Math.abs(this.curr.x - this.came.get(beat.id)!) > reach;
+        if (staged || left || (answers && (this.steps - from) * STEP > REPLY_PATIENCE)) {
+          this.letGo.add(beat.id);
+          forget(beat);
+          continue;
+        }
+      } else this.storyWaiting++;
+      const rank = (beat.aside ? 2 : 0) + (answers ? 0 : 1);
+      if (rank < turn || (rank === turn && from < since)) {
         next = beat;
+        turn = rank;
         since = from;
       }
     }
-    if (next && !talking) {
-      this.waiting.delete(next.id);
+    if (next && !talking && !(next.aside && this.storySoon())) {
+      if (!next.aside) this.storyWaiting--;
+      forget(next);
       say(next);
     }
+  }
+
+  /**
+   * Whether one of the story's own lines lies just ahead of him: one said at a place that he reaches within
+   * `ASIDE_ROOM` seconds as he goes now. A passing remark begun here would still be up when he got there, and the
+   * story would wait for it; so the remark waits instead, and is let go if its own moment passes. A scene he stops
+   * for is not counted: it takes the floor when the words before it are finished, as it always has.
+   */
+  private storySoon(): boolean {
+    const x = this.curr.x;
+    // As far as he gets in that time as he goes now: carried by a raft or an owl too, where his own legs are still.
+    const to = x + Math.max(ASIDE_NEAR, this.pace * ASIDE_ROOM);
+    for (const beat of this.chapter.beats ?? []) {
+      if (beat.aside || beat.at === undefined || beat.at <= x || beat.at > to || this.flags.has(`beat:${beat.id}`)) continue;
+      if (beat.needs !== undefined && !this.ready(beat.needs)) continue;
+      if (beat.until !== undefined && this.ready(beat.until)) continue;
+      return true;
+    }
+    return false;
   }
 
   /**

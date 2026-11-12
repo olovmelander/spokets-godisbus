@@ -9,7 +9,7 @@ export const CONE_REACTIONS = ['ssConeOuch', 'ssConeHey', 'ssConeBonk', 'ssConeD
 export const words: ChapterWords = {
   lines: {
     // 1. the forest's edge
-    ssDark: 'Hu, vad mörkt det är i skogen!',
+    ssDark: 'Hu, vad mörkt det är!',
     ssKlonk: 'Klonk!',
     ssFlash: 'Blixten! Där blåste lillgubben förbi!',
     // 2. the cone rain
@@ -29,7 +29,7 @@ export const words: ChapterWords = {
     // 6. Pappa's flashlight. Something tiny moves in Pappa's light: is it him? Called, he knows, and sees him at the
     // edge. To him Klonk is a toy that fell over: only Elof knows that a grown-up's look makes Klonk stiff, and he
     // only thinks it.
-    ssTooWide: 'För brett att hoppa. Hur kommer vi över?',
+    ssTooWide: 'För brett! Hur kommer vi över?',
     ssPappaHere: 'Något rör sig i ljuset. Är det du, Elof?',
     ssBeam: 'Där är du ju! Akta dig för kanten!',
     ssFell: 'Oj! Klonk föll rakt över klyftan.',
@@ -71,7 +71,7 @@ export const words: ChapterWords = {
     ssLichen: { purpose: 'Klättra upp längs laven.', recap: 'Lavskrikan fick ett lingon. Den visade mig vägen upp längs laven.' },
     ssDown: { purpose: 'Följ spåret ner mot byn.', recap: 'Gamla trägubben skyndar mot byn. Där är alla fönster mörka.' },
   },
-  moments: { 'ss:ljuset': 'Pappas ficklampa', 'ss:vaknar': 'Klonk vaknar' },
+  moments: { 'ss:ljuset': 'Pappas ficklampa', 'ss:minnet': 'Gamla trägubbens minne', 'ss:vaknar': 'Klonk vaknar' },
   helpers: {
     ssLamps: 'Familjen letar med sina lampor. Klonk är med mig.',
     ssOwl: 'Ugglan är fri. Den hjälper mig över vindfällen.',

@@ -59,5 +59,5 @@ export const words: ChapterWords = {
     soFriends: 'Klonk och ugglan är här. Familjens lampor lyser från bryggan.',
     soFamilyShore: 'Familjen, mormor och morfar väntar på stranden.',
   },
-  moments: { oga: 'Stormens öga', rockav: 'Av med regnrocken', motet: 'Där är ni!', stor: 'Guldgodiset' },
+  moments: { oga: 'Stormens öga', rockav: 'Av med regnrocken', motet: 'Där är ni!', gavan: 'Gamla trägubbens gåva', stor: 'Guldgodiset' },
 };

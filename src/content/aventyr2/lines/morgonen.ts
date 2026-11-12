@@ -40,5 +40,5 @@ export const words: ChapterWords = {
     moFamily: 'Hela familjen äter frukost, och mormor och morfar är med.',
     moPappa: 'Pappa har lagat fönstret.',
   },
-  moments: { frukost: 'Morgonen efter' },
+  moments: { frukost: 'Morgonen efter', fjun: 'Ett namn', kakao: 'Varm choklad' },
 };

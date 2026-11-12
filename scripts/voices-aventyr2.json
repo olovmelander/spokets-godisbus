@@ -249,14 +249,14 @@
     "speaker": "moa",
     "situation": "Äventyr 2, stormgard",
     "tag": "[warm big sister, lively]",
-    "text": "Jag lyser för dig från fönstret!"
+    "text": "Jag lyser, lillebror! Se på skuggorna."
   },
   {
     "key": "sgGutter",
     "speaker": "elof",
     "situation": "Äventyr 2, stormgard",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Takrännan svämmar över! Se på skuggorna."
+    "text": "Takrännan svämmar över!"
   },
   {
     "key": "sgPumpkin",
@@ -389,7 +389,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Hu, vad mörkt det är i skogen!"
+    "text": "Hu, vad mörkt det är!"
   },
   {
     "key": "ssKlonk",
@@ -399,18 +399,18 @@
     "text": "Klonk!"
   },
   {
-    "key": "ssFlash",
-    "speaker": "elof",
-    "situation": "Äventyr 2, stormskog",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Blixten! Där blåste lillgubben förbi!"
-  },
-  {
     "key": "ssCones",
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Kottar faller! Titta på skuggorna."
+  },
+  {
+    "key": "ssFlash",
+    "speaker": "elof",
+    "situation": "Äventyr 2, stormskog",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Blixten! Där blåste lillgubben förbi!"
   },
   {
     "key": "ssOwlStuck",
@@ -452,7 +452,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormskog",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "För brett att hoppa. Hur kommer vi över?"
+    "text": "För brett! Hur kommer vi över?"
   },
   {
     "key": "ssPappaHere",
@@ -753,28 +753,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Blixten! Nu ser jag hela planen!"
-  },
-  {
-    "key": "olLittle",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Lillgubben! Där flyger han!"
+    "text": "Blixten! Där flyger lillgubben!"
   },
   {
     "key": "olWind",
     "speaker": "elof",
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Vinden rullar bollar efter oss!"
-  },
-  {
-    "key": "olJump",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "De kommer bakifrån. Hoppa över!"
+    "text": "Vinden rullar bollar efter oss! Hoppa!"
   },
   {
     "key": "olKlonkKlonk",
@@ -866,13 +852,6 @@
     "situation": "Äventyr 2, olympia",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Jag flyger med bollen!"
-  },
-  {
-    "key": "olGoal",
-    "speaker": "elof",
-    "situation": "Äventyr 2, olympia",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Mål! Rakt in i nätet!"
   },
   {
     "key": "olBertilCheer",
@@ -980,18 +959,11 @@
     "text": "Lillgubben! Han blåser ut över sjön!"
   },
   {
-    "key": "sjJetty",
-    "speaker": "elof",
-    "situation": "Äventyr 2, flarken",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bryggan! Vågorna sköljer över den."
-  },
-  {
     "key": "sjPosts",
     "speaker": "elof",
     "situation": "Äventyr 2, flarken",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Jag gömmer mig bakom stolparna."
+    "text": "Vågor! Jag gömmer mig bakom stolparna."
   },
   {
     "key": "sjOldOne",
@@ -1169,13 +1141,6 @@
     "text": "Klonk!"
   },
   {
-    "key": "alFlash",
-    "speaker": "elof",
-    "situation": "Äventyr 2, alven",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Blixten! Lillgubben guppar på ån!"
-  },
-  {
     "key": "alRaftSeen",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
@@ -1183,18 +1148,18 @@
     "text": "En liten flotte! Den kan bära mig."
   },
   {
+    "key": "alFlash",
+    "speaker": "elof",
+    "situation": "Äventyr 2, alven",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Blixten! Lillgubben guppar på ån!"
+  },
+  {
     "key": "alCurrent",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Strömmen tar oss! Håll i dig, Klonk!"
-  },
-  {
-    "key": "alOldOne",
-    "speaker": "elof",
-    "situation": "Äventyr 2, alven",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Där! Gamla trägubben på en stock!"
   },
   {
     "key": "alLogsWait",
@@ -1209,6 +1174,13 @@
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Ett björklöv, som i rännstenen!"
+  },
+  {
+    "key": "alOldOne",
+    "speaker": "elof",
+    "situation": "Äventyr 2, alven",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Där! Gamla trägubben på en stock!"
   },
   {
     "key": "alBredbyn",
@@ -1232,18 +1204,11 @@
     "text": "Elof! Jag står här uppe på bron!"
   },
   {
-    "key": "alScarfDown",
-    "speaker": "pappa",
-    "situation": "Äventyr 2, alven",
-    "tag": "[warm, steady father]",
-    "text": "Jag sänker ner min halsduk."
-  },
-  {
     "key": "alTakeHold",
     "speaker": "pappa",
     "situation": "Äventyr 2, alven",
     "tag": "[warm, steady father]",
-    "text": "Ta tag i halsduken, Elof!"
+    "text": "Här kommer min halsduk. Ta tag i den!"
   },
   {
     "key": "alUp",
@@ -1251,13 +1216,6 @@
     "situation": "Äventyr 2, alven",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Nu åker halsdukshissen!"
-  },
-  {
-    "key": "alOver",
-    "speaker": "pappa",
-    "situation": "Äventyr 2, alven",
-    "tag": "[warm, steady father]",
-    "text": "Där! Nu är du förbi forsen."
   },
   {
     "key": "alThanks",
@@ -1428,39 +1386,11 @@
     "text": "Älven. halv tolv"
   },
   {
-    "key": "biArrive",
-    "speaker": "elof",
+    "key": "biMorfarHere",
+    "speaker": "morfar",
     "situation": "Äventyr 2, billsta",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Framme i Billsta, hos mormor och morfar!"
-  },
-  {
-    "key": "biKlonk",
-    "speaker": "spoket",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[playful wooden voice, wordless]",
-    "text": "Klonk!"
-  },
-  {
-    "key": "biWindow",
-    "speaker": "moa",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[warm big sister, lively]",
-    "text": "Titta! Det lyser hos mormor och morfar."
-  },
-  {
-    "key": "biKlonkKlonk",
-    "speaker": "spoket",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[playful wooden voice, wordless]",
-    "text": "Klonk, klonk!"
-  },
-  {
-    "key": "biNewTrail",
-    "speaker": "moa",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[warm big sister, lively]",
-    "text": "Följ vårt godis! Vi springer före."
+    "tag": "[warm, cheerful grandfather]",
+    "text": "Elof! Så liten du har blivit!"
   },
   {
     "key": "biDitch",
@@ -1468,13 +1398,6 @@
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Diket är fullt av vatten. För brett!"
-  },
-  {
-    "key": "biMorfarHere",
-    "speaker": "morfar",
-    "situation": "Äventyr 2, billsta",
-    "tag": "[warm, cheerful grandfather]",
-    "text": "Elof! Så liten du har blivit!"
   },
   {
     "key": "biLadderLay",
@@ -1568,6 +1491,13 @@
     "text": "Upp på taket! Här blåser det hårt."
   },
   {
+    "key": "biKlonk",
+    "speaker": "spoket",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[playful wooden voice, wordless]",
+    "text": "Klonk!"
+  },
+  {
     "key": "biSeesaw",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
@@ -1624,6 +1554,13 @@
     "text": "Tack, Klonk! Du är min bästa vän."
   },
   {
+    "key": "biKlonkKlonk",
+    "speaker": "spoket",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[playful wooden voice, wordless]",
+    "text": "Klonk, klonk!"
+  },
+  {
     "key": "biHazel",
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
@@ -1678,6 +1615,20 @@
     "situation": "Äventyr 2, billsta",
     "tag": "[playful wooden voice, wordless]",
     "text": "Klonk! Klonk! Klonk!"
+  },
+  {
+    "key": "biWindow",
+    "speaker": "moa",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[warm big sister, lively]",
+    "text": "Titta! Det lyser hos mormor och morfar."
+  },
+  {
+    "key": "biNewTrail",
+    "speaker": "moa",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[warm big sister, lively]",
+    "text": "Följ vårt godis! Vi springer före."
   },
   {
     "key": "scene_billsta",

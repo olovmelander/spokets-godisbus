@@ -73,6 +73,8 @@ const params = new URLSearchParams(location.search);
 /** How long the coda plays before the last page, and when one of the family answers in it, in seconds. */
 const CODA = 4.6;
 const CODA_ANSWER = 1.6;
+/** The last page turns in only after it has been quiet this long: longer than a bubble lingers for a line that goes on. */
+const END_QUIET = 0.4;
 /** Who answers from afar as each chapter ends; null is all four together. */
 const CODA_FAMILY: Record<string, Person | null> = { garden: 'moa', granskog: 'bertil', myren: 'mamma', berget: 'pappa', norrsken: null, byn: 'mamma' };
 /** Every chapter of the story, the extra one and Äventyr 2's, once its pack is in. */
@@ -990,7 +992,11 @@ async function start(): Promise<void> {
     location.replace(`${location.pathname}${courseQuery(params, chapter.id)}`);
   }
   let endFor = 0;
-  /** At the end: how long since a line was last shown, and how many had been. Only a line that never ends is let go. */
+  /**
+   * How long nothing has been said or waited to be said. A line that goes on from the one just read is said a step
+   * after it: the last page waits a moment for it, so that it never turns in the middle of a conversation.
+   */
+  let quietFor = 0;
   // The coda before the last page (docs/narrative-audit/threads.md §5.4): the tune closes, and one of the family
   // answers from afar. Not where a scene is the chapter's end, nor in the epilogue, which has its own.
   const coda = !endsInScene(chapter) && !chapter.epilogue;
@@ -1406,7 +1412,8 @@ async function start(): Promise<void> {
       audio.play({ kind: 'motif', who: codaWho });
     }
     const wait = coda ? CODA : 1.4;
-    if (endFor > wait && !hud.reading() && !hud.speaking() && !game.sim.unsaid && !benchOn && !ended) {
+    quietFor = hud.reading() || hud.speaking() || game.sim.unsaid ? 0 : quietFor + (menuOpen() ? 0 : dt);
+    if (endFor > wait && quietFor > END_QUIET && !benchOn && !ended) {
       ended = true;
       paused = true;
       if (!coda) audio.menu(true);

@@ -59,6 +59,12 @@ const ON_SHELF = { x: FIRST.x + 0.4, y: FIRST.y + 0.5, z: FIRST.z };
 const ELOF_START = { x: 1, y: 2.6, z: 0 };
 const ELOF_DOOR = { x: DOOR, y: 2.6, z: 0 };
 
+/** Set when the picture has the shelf and the two on it, for the name; and when the family has looked up at his cup. */
+const AT_SHELF = 'mo:at-shelf';
+const CUP = 'mo:cup';
+/** Set a moment after the name is said: when the scene at the shelf is over, and the others answer. */
+const NAMED = 'mo:named';
+
 const SCENES: SceneDef[] = [
   {
     // 1. Breakfast, the morning after: good morning to him, the boot that is still a lake, a sleepy owl, the shelf that
@@ -194,7 +200,26 @@ const SCENES: SceneDef[] = [
     },
   },
   {
-    // 4. The name: they turn to the shelf, Moa is up off her chair for it, and Pappa nods to the little one.
+    // 4. The name is given at the window, by the shelf where the little one stands: Pappa's word on the new latch, what
+    // Elof sees in it, and the name. He stands and looks up at the two of them while it is said: a boy free to run had
+    // named his carving from the far end of the room. The first word waits until the picture has the shelf in it
+    // (`AT_SHELF`), and the scene's clock waits for the words.
+    id: 'fjun',
+    on: 'scene:haken',
+    until: 'beat:moName',
+    seconds: 1.4,
+    hold: true,
+    dialogue: ['moLatched', 'moFluff', 'moName'],
+    cues: [{ at: 0.9, flag: AT_SHELF }],
+    stage: {
+      // The two on the shelf, Pappa by the window and Elof under them.
+      shots: [{ at: 0, x: 6.9, y: 3.9, height: 7.2, width: 10.4, move: 0.8 }],
+      actors: { pappa: [{ at: 0, act: 'look', aim: ON_SHELF }] },
+      elof: [{ at: 0, face: 0.6, act: 'watch', aim: ON_SHELF }],
+    },
+  },
+  {
+    // The others' answer to it: they turn to the shelf, Moa is up off her chair for it, and Pappa nods to the little one.
     // Short, so that it is over before the cup of cocoa: one scene plays at a time.
     id: 'namnet',
     on: 'beat:moName',
@@ -209,11 +234,15 @@ const SCENES: SceneDef[] = [
     },
   },
   {
-    // 5. His cup of cocoa from the table: they look to him as Mamma says it, and sip their own. Short, so that it is over
-    // before he is at the door, where the end waits for it.
+    // 5. His cup of cocoa from the table: they look to him as Mamma says it, and sip their own. He stands by the table
+    // with his cup while Moa thanks him for her lamp and he answers: free to run on, he was at the room's far wall when
+    // the story's last scene began at the door. Mamma's line waits until they have looked up (`CUP`).
     id: 'kakao',
     on: 'cocoa',
     seconds: 2.6,
+    hold: true,
+    dialogue: ['moCup', 'moKnew', 'moAnswer'],
+    cues: [{ at: 0.4, flag: CUP }],
     stage: {
       actors: {
         mamma: [{ at: 0.2, act: 'look', aim: { x: COCOA, y: 2.6, z: 0 } }, { at: 1.4, act: 'sip' }],
@@ -226,9 +255,13 @@ const SCENES: SceneDef[] = [
   {
     // The end of the story. At the door out into the morning he turns to them all: they wave to him, the picture goes over
     // to the two of them on the shelf, home together, and back to him. The goal waits for this (`a2slut`).
+    //
+    // It is due at the door once the cocoa's words are said, and waits there for his last line ("Alla är hemma. Det är
+    // bäst av allt.", said on the way to the door) to be read: he stands at the door for it (`quiet`). Waiting for
+    // that line itself, he had run on down the room while it was read, and turned to them from outside the picture.
     id: 'slut',
     at: DOOR,
-    needs: 'beat:moAll',
+    needs: 'beat:moAnswer',
     seconds: 10.4,
     hold: true,
     quiet: true,
@@ -285,6 +318,7 @@ export const morgonen: ChapterData = {
     ...Object.values(TABLE.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
   ],
   checkpoints: [{ x: 3, y: 0 }, { x: 12, y: 0 }, { x: 21, y: 0 }],
+  later: [{ flag: NAMED, after: 'beat:moName', seconds: 0.7 }],
   spots: [
     { id: 'shelf:old', at: { x: FIRST.x + 0.2, y: 0 }, verb: 'give', word: 'moPutOld', needs: 'scene:frukost' },
     { id: 'shelf:small', at: { x: FIRST.x + 1.4, y: 0 }, verb: 'give', word: 'moPutSmall', needs: 'shelf:old' },
@@ -319,13 +353,16 @@ export const morgonen: ChapterData = {
   beats: [
     { id: 'moOld', on: 'shelf:old', who: 'elof', line: 'moOldHome', read: true },
     { id: 'moSmall', on: 'shelf:small', who: 'elof', line: 'moSmallHome', read: true },
-    { id: 'moLatched', on: 'scene:haken', who: 'pappa', line: 'moLatchLine', read: true },
+    // The latch's word, the wisp of fluff and the name: said at the shelf (`fjun`).
+    { id: 'moLatched', on: 'scene:haken', needs: AT_SHELF, who: 'pappa', line: 'moLatchLine', read: true },
     { id: 'moFluff', on: 'beat:moLatched', who: 'elof', line: 'moFluffLine', read: true },
     { id: 'moName', on: 'beat:moFluff', who: 'elof', line: 'moNameLine', read: true },
-    { id: 'moKlonk', on: 'beat:moName', who: 'spoket', line: 'moKlonkLine' },
-    { id: 'moNice', on: 'beat:moName', who: 'moa', line: 'moNiceLine', read: true },
+    // What the others say to it comes a moment after, as they turn to the shelf (`namnet`), and he is free again.
+    { id: 'moKlonk', on: NAMED, who: 'spoket', line: 'moKlonkLine' },
+    { id: 'moNice', on: NAMED, who: 'moa', line: 'moNiceLine', read: true },
     { id: 'moWelcome', on: 'beat:moNice', who: 'pappa', line: 'moWelcomeLine', read: true },
-    { id: 'moCup', on: 'cocoa', who: 'mamma', line: 'moCupLine', read: true },
+    // The cup, and what Moa and he say over it: said at the table (`kakao`).
+    { id: 'moCup', on: 'cocoa', needs: CUP, who: 'mamma', line: 'moCupLine', read: true },
     // What she said on the jetty, in the dark, when her lamp lit by itself.
     { id: 'moKnew', on: 'beat:moCup', who: 'moa', line: 'moKnewLine', read: true },
     { id: 'moAnswer', on: 'beat:moKnew', who: 'elof', line: 'moAnswerLine', read: true },

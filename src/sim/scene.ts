@@ -306,6 +306,8 @@ export class SceneDirector {
   tick(player: PlayerState, flags: Set<string>, said: string[], talking = false, listening = false,
     conditions: Pick<ReadonlySet<string>, 'has'> = flags, waiting?: Pick<ReadonlySet<string>, 'has'>): void {
     if (!this.playing) this.begin(player, flags, talking, conditions);
+    // A scene he is free in still plays, and the next one due is one he stands for: he waits for it where he is.
+    else if (!this.playing.def.hold) this.listening = this.standsNext(player, conditions);
     this.dialogueWaiting = false;
     const playing = this.playing;
     if (!playing) return;
@@ -355,6 +357,24 @@ export class SceneDirector {
     this.playing = null;
     this.listening = false;
     this.dialogueWaiting = false;
+  }
+
+  /**
+   * Whether the next scene due, once the one playing is over, is one he stands and watches. It is staged where he
+   * started it (the latch he has just hooked, the cup he has just taken): free until the scene before it had played
+   * out, he was somewhere else in the room when it began. Read as `begin` reads the list, and changing nothing.
+   */
+  private standsNext(player: PlayerState, conditions: Pick<ReadonlySet<string>, 'has'>): boolean {
+    for (const scene of this.scenes) {
+      if (scene === this.playing?.def || scene.by || !sceneWaits(scene, conditions)) continue;
+      if (scene.needs !== undefined && !conditions.has(scene.needs)) continue;
+      const due = scene.on !== undefined ? conditions.has(scene.on) : scene.at === undefined || player.x >= scene.at;
+      if (!due) continue;
+      if (scene.from !== undefined && player.x < scene.from) return false;
+      if (scene.before !== undefined && player.x > scene.before) continue;
+      return scene.hold === true && player.mode === 'free' && player.grounded;
+    }
+    return false;
   }
 
   private begin(player: PlayerState, flags: Set<string>, talking: boolean, conditions: Pick<ReadonlySet<string>, 'has'>): void {

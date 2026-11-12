@@ -28,7 +28,7 @@ vi.setConfig({ testTimeout: 90000 });
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
   'sjon:arrive', 'sjon:dry-klonk', 'sjon:door', 'sjon:mats', 'sjon:wood', 'sjon:flash',
-  'sjon:jetty', 'sjon:posts', 'sjon:old-one',
+  'sjon:posts', 'sjon:old-one',
   'sjon:broken', 'sjon:family:mamma', 'sjon:boat-ready', 'sjon:steady', 'sjon:thanks',
   'sjon:near', 'sjon:tower', 'sjon:lookout',
   'sjon:gap', 'sjon:stone-idea', 'sjon:plop', 'sjon:plop-klonk', 'sjon:bark-idea', 'sjon:raft', 'sjon:klonk-raft',

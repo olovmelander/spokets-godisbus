@@ -10,7 +10,8 @@ import { alongAll, hopCandy, round, row, slopeRow, timeCard } from '../kit';
  * towards Billsta (docs/aventyr-2-reference-study.md §4). It is a fairy-tale river: no dam and no power station.
  * The places, from the left:
  *
- * 1. **Strömmen:** from the outlet's bank a little raft carries him down the current to a gravel bank. Beyond it the
+ * 1. **Strömmen:** from the outlet's bank a little raft carries him down the current to a gravel bank, and from the
+ *    raft a flash shows the little one bobbing on the same water. Beyond it the
  *    water turns round in eddies with three logs in them, each a hop from the next only for a moment: he waits, and
  *    goes. Anyone who has fallen in, or plays on Lugnt, is offered a birch leaf as in the village's gutter, which
  *    carries him over. Klonk floats beside him: he is wood.
@@ -22,9 +23,11 @@ import { alongAll, hopCandy, round, row, slopeRow, timeCard } from '../kit';
  *    climb. Over its top, quietly, and down its far side; an otter swims out towards a stone in the lake.
  * 5. **Sjön:** the widest water of all. The owl from Stormskogen has followed: "Ropa på ugglan", and it flies him
  *    over. Two logs roll in the shallows out to the otter's stone, a way of its own with sweets, never needed.
- * 6. **Moälven:** the river widens. Flashes show the two figures floating further ahead each time. At the end the
- *    family's car stops on the road by the river: the water runs all the way to Billsta, three mil off, where mormor
- *    and morfar live, and they will drive there.
+ * 6. **Moälven:** the river widens. From the owl's back the little one is seen far down it, and from the bank the old
+ *    one floats past on the near water and on ahead. At the end the
+ *    trail runs out, and he stands on the bank with Moa and Bertil while the night's lowest point and its turning
+ *    are said (`al:slut`): the family's car is on the road by the river, the water runs all the way to Billsta,
+ *    three mil off, where mormor and morfar live, and they will drive there.
  *
  * To the simulation the river is pits, with the water drawn in them: a fall into it is the glitter bubble.
  */
@@ -172,6 +175,14 @@ const KIDS = {
   /** Where Elof stands as the trail runs out, for them to look at. */
   elof: { x: 181.6, y: ON.y + 0.9, z: 0 },
 };
+/** Where the old one is seen on his log: on the bank after the eddies, the stones and their logs ahead. */
+const OLD_SEEN = 50.4;
+/** Where the old one is seen once more, floating on ahead, a little before the trail's end. */
+const OLD_AHEAD = 171.6;
+/** Where the last of the handful lies, and the trail ends. */
+const TRAIL_END = 181;
+/** What is said there, in order: the loss, and the family lifting him out of it. One conversation, told standing. */
+const ENDING = ['al:last', 'al:gone', 'al:afraid', 'al:klonk-near', 'al:moa-never', 'al:bertil-pocket', 'al:moa-trail', 'al:billsta', 'al:car', 'al:window', 'al:klonk-end'];
 /** The time card, which Moa and Bertil stand in by the car. */
 const CARD = timeCard('alven', 1);
 
@@ -223,8 +234,9 @@ export const alven: ChapterData = {
     },
     // The owl keeps flying and answering the stick while Elof points out the little one. Only this distant
     // figure and its camera wait for the line; the wider shot includes the owl all the way to its landing.
+    // Its clock waits for the line, so it is over soon after the words: before he comes to the children on the bank.
     {
-      id: 'al:little', at: 152, needs: 'al:owl', before: 169, seconds: 5.8, dialogue: ['al:see-little'],
+      id: 'al:little', at: 152, needs: 'al:owl', before: 169, seconds: 1.4, dialogue: ['al:see-little'],
       cues: [{ at: 0.8, flag: 'al:little-seen' }],
       stage: { shots: [{ at: 0, x: 160.5, y: 2.8, height: 7.5, width: 20, move: 0.6 }] },
     },
@@ -244,6 +256,21 @@ export const alven: ChapterData = {
         { at: 1.35, ...KIDS.bank.bertil, move: 1.25, act: 'look', aim: KIDS.elof },
       ],
     } } },
+    // The trail's end. He stands with Moa and Bertil on the bank while the night's lowest point and its turning are
+    // said, the car on the road behind them: one conversation, which a boy running on to the end of the bank would
+    // have left behind him. Its clock waits for the words, so its last second is the breath after them.
+    {
+      id: 'al:slut', at: TRAIL_END, seconds: 2, hold: true, dialogue: ENDING,
+      // The first word waits until the picture has all three of them in it.
+      cues: [{ at: 1, flag: 'al:end-shown' }],
+      stage: {
+        shots: [{ at: 0, x: 184.6, y: 3.4, height: 12.8, width: 18, move: 0.9 }],
+        actors: {
+          moa: [{ at: 0, act: 'look', aim: KIDS.elof }],
+          bertil: [{ at: 0, act: 'look', aim: KIDS.elof }],
+        },
+      },
+    },
   ],
   goalX: 186,
   // The road and the children's whole approach stay in view; close spruces otherwise hide Moa as she sets off.
@@ -374,15 +401,18 @@ export const alven: ChapterData = {
     // Pappa's scarf, red wool: lowered from his hands over the railing, and held down to Elof's all the way over the rapids.
     ropes: [{ ride: 'al:lift', held: 'al:pappa', from: { x: SCARF.at, y: SCARF.hands }, z: SCARF.out, colour: SCARF.wool, lamp: SCARF.lamp }],
     flybys: [
-      // From the outlet's bank: the little one, bobbing away down the current.
-      { on: 'beat:al:flash', from: { x: 22, y: 0 }, to: { x: 46, y: 0.2 }, seconds: 2.8, who: 'lillgubbe' },
-      // From the gravel bank: the old one on his log, following.
-      { on: 'beat:al:old-one', from: { x: 40, y: 0.3 }, to: { x: 66, y: 0.6 }, seconds: 3.2, who: 'tragubbe' },
+      // From the raft: the little one, bobbing on the same water a little ahead of it, and slowly away from it down
+      // the current. Seen as he is, for as long as the line that points at him is new, and on the near water: the
+      // boulders of the far bank hide what floats behind the raft's own lane.
+      { on: 'beat:al:flash', from: { x: round(RAFT.from.x + 5, 1), y: 0 }, to: { x: round(RAFT.from.x + 24.6, 1), y: 0.2 }, z: 1.4, seconds: 5, who: 'lillgubbe', lit: [1.8] },
+      // From the bank after the eddies: the old one on his log, among the logs between the stones.
+      { on: 'beat:al:old-one', from: { x: round(OLD_SEEN + 7.6, 1), y: 0.3 }, to: { x: round(OLD_SEEN + 33.6, 1), y: 0.6 }, seconds: 3.2, who: 'tragubbe' },
       // From the owl's back, high over the lake: the little one, far down the river.
       { on: 'al:little-seen', from: { x: 161, y: 0.4 }, to: { x: 167, y: 0.4 }, z: -2.8,
         seconds: 5, who: 'lillgubbe', size: 1.8, lit: [0, 2.4] },
-      // On Moälven: the old one, further on still.
-      { on: 'beat:al:old-ahead', from: { x: 186, y: 0.4 }, to: { x: 212, y: 0.4 }, seconds: 3.2, who: 'tragubbe' },
+      // On Moälven: the old one once more, carried past on the wide water in front of the bank and on ahead. Behind
+      // the bank are the fallen spruce, the road and the car, which hid him; the river itself is in front here.
+      { on: 'beat:al:old-ahead', from: { x: round(OLD_AHEAD + 1, 1), y: -0.1 }, to: { x: round(OLD_AHEAD + 15, 1), y: -0.1 }, z: 2.6, toZ: 3, size: 1.5, seconds: 5, who: 'tragubbe', lit: [2] },
     ],
     glows: [
       // Pappa's lamp up on the bridge, set down on the edge of its deck once he is called, to hold his scarf.
@@ -473,44 +503,48 @@ export const alven: ChapterData = {
     { at: { x: 188, y: ON.y } },
   ],
   beats: [
-    // 0. the outlet
+    // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
+    // 0. the outlet: where the water goes, and the little raft. What he says to Klonk is said standing there.
     { id: 'al:arrive', at: 2.4, who: 'elof', line: 'alArrive' },
-    { id: 'al:klonk-floats', at: 5.4, who: 'elof', line: 'alKlonkFloats' },
-    { id: 'al:klonk', on: 'beat:al:klonk-floats', who: 'spoket', line: 'alKlonk' },
-    { id: 'al:flash', at: 8.6, who: 'elof', line: 'alFlash' },
-    // 1. the current
+    { id: 'al:klonk-floats', at: 5.4, who: 'elof', line: 'alKlonkFloats', aside: true },
+    { id: 'al:klonk', on: 'beat:al:klonk-floats', who: 'spoket', line: 'alKlonk', aside: true },
+    // 1. the current. The flash comes on the raft, where there is time to look: the little one bobs on the same water,
+    // just ahead of him. It is a sight of the ride, and gives way to the logs' words if he boards with a line still up.
     { id: 'al:raft-seen', at: 11, until: 'al:raft', who: 'elof', line: 'alRaftSeen', read: true },
-    { id: 'al:current', on: 'al:raft', within: [12, 31], who: 'elof', line: 'alCurrent' },
-    { id: 'al:old-one', at: 31.6, who: 'elof', line: 'alOldOne' },
-    { id: 'al:logs-wait', at: 34.6, who: 'elof', line: 'alLogsWait', read: true },
+    { id: 'al:flash', on: 'al:raft', within: [12, 31], who: 'elof', line: 'alFlash', aside: 3 },
+    { id: 'al:current', on: 'al:raft', within: [12, 31], who: 'elof', line: 'alCurrent', aside: true },
+    // On the gravel bank the logs' own words come first, as he lands: they are what he has to do next.
+    { id: 'al:logs-wait', at: 31.2, who: 'elof', line: 'alLogsWait', read: true },
     { id: 'al:leaf-seen', on: FELL_IN, within: [GRAVEL.from, BANK.from], until: 'al:leaf', who: 'elof', line: 'alLeafSeen', read: true },
-    // 2. the stones and the logs
-    // 3. Bredbyn, the rapids, and Pappa on the bridge
-    { id: 'al:bredbyn', at: 82.6, who: 'elof', line: 'alBredbyn' },
-    { id: 'al:rapids', at: 85, until: 'al:lift', who: 'elof', line: 'alRapids' },
-    { id: 'al:pappa-here', at: 87, until: 'al:pappa', who: 'pappa', line: 'alPappaHere', read: true },
-    { id: 'al:scarf-down', on: 'al:pappa', until: 'al:lift', within: [84, 95], who: 'pappa', line: 'alScarfDown', read: true },
-    { id: 'al:take-hold', on: 'al:scarf', until: 'al:lift', within: [84, 95], who: 'pappa', line: 'alTakeHold', read: true },
-    { id: 'al:up', on: 'al:lift', within: [90, 109], who: 'elof', line: 'alUp' },
-    { id: 'al:over', at: 109.2, needs: 'al:lift', who: 'pappa', line: 'alOver' },
-    { id: 'al:thanks', at: 110.8, needs: 'al:lift', who: 'elof', line: 'alThanks' },
-    { id: 'al:follow', at: 112.6, needs: 'al:lift', who: 'pappa', line: 'alFollow' },
+    // 2. the stones and the logs: from the bank after the eddies, the old one on his log among them
+    { id: 'al:old-one', at: OLD_SEEN, who: 'elof', line: 'alOldOne' },
+    // 3. Bredbyn, the rapids, and Pappa on the bridge. He sees the rapids as he steps onto the bank, and Pappa
+    // answers; called, Pappa is shown lowering his scarf (`bron`), and then says what to do with it, which Elof is
+    // free to do at once.
+    { id: 'al:bredbyn', at: 74.6, who: 'elof', line: 'alBredbyn', aside: true },
+    { id: 'al:rapids', at: 82.6, until: 'al:pappa', who: 'elof', line: 'alRapids' },
+    { id: 'al:pappa-here', on: 'beat:al:rapids', until: 'al:pappa', who: 'pappa', line: 'alPappaHere', read: true },
+    { id: 'al:take-hold', on: 'scene:bron', until: 'al:lift', within: [84, 95], who: 'pappa', line: 'alTakeHold', read: true },
+    { id: 'al:up', on: 'al:lift', within: [90, 109], who: 'elof', line: 'alUp', aside: 12 },
+    { id: 'al:thanks', at: 109.6, needs: 'al:lift', who: 'elof', line: 'alThanks' },
+    { id: 'al:follow', on: 'beat:al:thanks', who: 'pappa', line: 'alFollow' },
     // 4. the beaver's place
-    { id: 'al:lodge', at: 120.8, who: 'elof', line: 'alLodge' },
-    { id: 'al:otter', at: 126.4, who: 'elof', line: 'alOtter' },
-    // 5. the lake, and the owl
-    { id: 'al:lake', at: 130.2, who: 'elof', line: 'alLake' },
-    { id: 'al:owl-seen', at: 132.2, until: 'al:owl-call', who: 'elof', line: 'alOwlSeen', read: true },
+    { id: 'al:lodge', at: 120.8, who: 'elof', line: 'alLodge', aside: true },
+    { id: 'al:otter', at: 126.4, who: 'elof', line: 'alOtter', aside: true },
+    // 5. the lake, and the owl: who it is comes first; on its back the words are the little one's (`al:little`)
+    { id: 'al:lake', at: 127.6, who: 'elof', line: 'alLake', aside: true },
+    { id: 'al:owl-seen', at: 131.4, until: 'al:owl-call', who: 'elof', line: 'alOwlSeen', read: true },
     { id: 'al:owl-here', on: 'al:owl-ready', until: 'al:owl', within: [128, 139], who: 'elof', line: 'alOwlHere', read: true },
-    { id: 'al:owl-fly', on: 'al:owl', within: [134, 167], who: 'elof', line: 'alOwlFly', read: true },
+    { id: 'al:owl-fly', on: 'al:owl', within: [134, 150], who: 'elof', line: 'alOwlFly', aside: 12 },
     { id: 'al:see-little', on: 'al:little-seen', who: 'elof', line: 'alSeeLittle', read: true },
-    { id: 'al:owl-thanks', at: 167, needs: 'al:owl', who: 'elof', line: 'alOwlThanks' },
+    { id: 'al:owl-thanks', at: 167, needs: 'al:owl', who: 'elof', line: 'alOwlThanks', aside: 4 },
     // 6. Moälven; the family's car, and the drive to Billsta
-    { id: 'al:moalven', at: 169.6, who: 'elof', line: 'alMoalven' },
-    { id: 'al:old-ahead', at: 178.4, who: 'elof', line: 'alOldAhead' },
+    { id: 'al:moalven', at: 168.6, who: 'elof', line: 'alMoalven', aside: 4 },
+    { id: 'al:old-ahead', at: OLD_AHEAD, who: 'elof', line: 'alOldAhead', aside: true },
     // The handful from the bowl is gone: the trail ends here, and with it he has lost them. The night's lowest point,
-    // and the family lifts him out of it. From here to Billsta the trail is Moa's and Bertil's.
-    { id: 'al:last', at: 181, who: 'elof', line: 'alLast', read: true },
+    // and the family lifts him out of it. From here to Billsta the trail is Moa's and Bertil's. He stands with them
+    // while it is said (`al:slut`).
+    { id: 'al:last', at: TRAIL_END, needs: 'al:end-shown', who: 'elof', line: 'alLast', read: true },
     { id: 'al:gone', on: 'beat:al:last', who: 'elof', line: 'alGone', read: true },
     { id: 'al:afraid', on: 'beat:al:gone', who: 'elof', line: 'alAfraid', read: true },
     { id: 'al:klonk-near', on: 'beat:al:afraid', who: 'spoket', line: 'alKlonkNear', read: true },

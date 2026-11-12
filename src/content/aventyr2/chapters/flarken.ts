@@ -19,7 +19,7 @@ import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
  * 4. **Strandstenarna:** wet stones in the shallows, a hop of water between each, and a stone too high to jump
  *    onto with a reed at its foot to climb. Stone shelves over the first stones and a bent reed on the high one
  *    are side ways. Then **gungflyet:** floating reed mats that sink while he stands still, a firm stone between
- *    them. On the far side a flash shows the little one blown out over the lake.
+ *    them. On that stone a flash shows the little one blown out over the lake, low over the reeds.
  * 5. **Bryggan:** the jetty, where the waves wash over the planks in gusts; behind each post is a lee. The old
  *    trägubbe stands far out on the planks and leaps away into the dark.
  * 6. **Mammas SUP:** the jetty has broken off. "Ropa på Mamma": she paddles up standing on the family's stand-up
@@ -118,6 +118,8 @@ const STONES: Stone[] = [
   { from: 66.4, to: 69, y: 0.9 },
   { from: 70.4, to: 73, y: 0.5 },
 ];
+/** Where the flash shows the little one blown out over the lake: on the firm stone in the gungfly, open water all round. */
+const FLASH_AT = 101.6;
 /** The high stone with the reed at its foot: more than two jumps high. Steps of stone lead down its far side. */
 const HIGH = { from: 77, to: 83.5, y: 2.9 };
 const STEP = { from: 83.5, to: 85.7, y: 1.5 };
@@ -482,7 +484,7 @@ export const flarken: ChapterData = {
     lightning: 7,
     flybys: [
       // On the far side of the reed mats: the little one, blown out over the lake.
-      { on: 'beat:sjon:flash', from: { x: 102, y: 9 }, to: { x: 140, y: 12 }, seconds: 2.6, who: 'lillgubbe' },
+      { on: 'beat:sjon:flash', from: { x: round(FLASH_AT - 4, 1), y: 1.5 }, to: { x: round(FLASH_AT + 21, 1), y: 2.3 }, rise: 0.5, seconds: 3, who: 'lillgubbe', lit: [1.3] },
       // The old one, far out on the planks, leaps on into the dark when he comes.
       { on: 'beat:sjon:old-one', from: { x: OLD_ONE.x, y: 1.4 }, to: { x: 170, y: 6 }, seconds: 2.2, who: 'tragubbe' },
       // At the end: the outlet takes the little one, and the old one leaps after him onto a log.
@@ -597,40 +599,44 @@ export const flarken: ChapterData = {
     { at: { x: 189.8, y: DECK } },
   ],
   beats: [
+    // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
     // 1. the parking and the playground
     { id: 'sjon:arrive', at: 2.5, who: 'elof', line: 'sjArrive' },
     // 2. the picnic table and the net
-    { id: 'sjon:dry-klonk', at: 38.8, who: 'spoket', line: 'sjKlonkRaft' },
+    { id: 'sjon:dry-klonk', at: 38.8, who: 'spoket', line: 'sjKlonkRaft', aside: true },
     // 3. the changing rooms
-    { id: 'sjon:door', at: 50.2, who: 'elof', line: 'sjDoor' },
-    // 4. the stones, the reeds and the mats
-    { id: 'sjon:mats', at: 87.6, who: 'elof', line: 'sjMats' },
-    { id: 'sjon:wood', at: 98.6, who: 'elof', line: 'sjKlonkWood' },
-    { id: 'sjon:flash', at: 110.8, who: 'elof', line: 'sjFlash' },
-    // 5. the jetty in the waves
-    { id: 'sjon:jetty', at: 113.6, who: 'elof', line: 'sjJetty' },
-    { id: 'sjon:posts', at: 116.8, who: 'elof', line: 'sjPosts', read: true },
+    { id: 'sjon:door', at: 50.2, who: 'elof', line: 'sjDoor', aside: true },
+    // 4. the stones, the reeds and the mats. The mats' words come from the step above them, the flash on the firm
+    // stone in their middle, and the waves' at the first post, in its lee: three lines that ran into each other on
+    // the far side of the mats, each with room to be read now.
+    { id: 'sjon:mats', at: 84.2, who: 'elof', line: 'sjMats' },
+    { id: 'sjon:wood', at: 98.6, who: 'elof', line: 'sjKlonkWood', aside: true },
+    { id: 'sjon:flash', at: FLASH_AT, who: 'elof', line: 'sjFlash' },
+    // 5. the jetty in the waves: what they are and what to do about them in one line
+    { id: 'sjon:posts', at: 117.8, who: 'elof', line: 'sjPosts', read: true },
     { id: 'sjon:old-one', at: 126.2, who: 'elof', line: 'sjOldOne' },
-    // 6. Mamma's boat
-    { id: 'sjon:broken', at: 138, who: 'elof', line: 'sjBroken' },
-    { id: 'sjon:family:mamma', at: 139.4, until: 'sjon:mamma', who: 'mamma', line: 'sjMamma', read: true },
-    { id: 'sjon:boat-ready', on: 'sjon:boat', within: [136, 152], who: 'mamma', line: 'sjBoatReady', read: true },
-    { id: 'sjon:steady', at: 146.6, needs: 'sjon:boat', who: 'mamma', line: 'sjSteady' },
-    { id: 'sjon:thanks', at: 150.6, who: 'elof', line: 'sjThanks' },
-    { id: 'sjon:near', at: 151.4, who: 'mamma', line: 'sjNear' },
+    // 6. Mamma's board: he sees the break, and she answers
+    { id: 'sjon:broken', at: 138, until: 'sjon:mamma', who: 'elof', line: 'sjBroken' },
+    { id: 'sjon:family:mamma', on: 'beat:sjon:broken', until: 'sjon:mamma', who: 'mamma', line: 'sjMamma', read: true },
+    // What she says of the board is said before he is on it, and while he is on it: not after he has crossed.
+    { id: 'sjon:boat-ready', on: 'sjon:boat', within: [136, BREAK.from + 1], who: 'mamma', line: 'sjBoatReady', read: true },
+    { id: 'sjon:steady', at: 146.6, needs: 'sjon:boat', within: [BREAK.from, BREAK.to], who: 'mamma', line: 'sjSteady', aside: true },
+    { id: 'sjon:thanks', at: 150.6, who: 'elof', line: 'sjThanks', aside: true },
+    { id: 'sjon:near', on: 'beat:sjon:thanks', who: 'mamma', line: 'sjNear', aside: true },
     // 7. the diving tower
-    { id: 'sjon:tower', at: 152.6, who: 'elof', line: 'sjTower' },
+    { id: 'sjon:tower', at: 152.6, who: 'elof', line: 'sjTower', aside: true },
     // Said once the lookout's picture has gone out to the little one (`sjon:utkik`), and read with it there.
     { id: 'sjon:lookout', at: LOOKOUT_AT, needs: 'sjon:seen', who: 'elof', line: 'sjLookout', read: true },
     // 8. the bark raft
-    { id: 'sjon:gap', at: 165.4, who: 'elof', line: 'sjGap' },
-    { id: 'sjon:stone-idea', at: 165.9, until: `placed:${STONE.id}`, who: 'elof', line: 'sjStoneIdea', read: true },
+    // Seen as he lands from the tower, and his first idea follows the question.
+    { id: 'sjon:gap', at: 161.4, until: `placed:${STONE.id}`, who: 'elof', line: 'sjGap' },
+    { id: 'sjon:stone-idea', on: 'beat:sjon:gap', until: `placed:${STONE.id}`, who: 'elof', line: 'sjStoneIdea', read: true },
     // Said when he has seen it go under, not when he has pushed it.
     { id: 'sjon:plop', on: SUNK, who: 'elof', line: 'sjPlop', read: true },
     { id: 'sjon:plop-klonk', on: 'beat:sjon:plop', who: 'spoket', line: 'sjPlopKlonk' },
     { id: 'sjon:bark-idea', at: 167.6, needs: `placed:${STONE.id}`, until: `placed:${BARK.id}`, who: 'elof', line: 'sjBarkIdea', read: true },
     { id: 'sjon:raft', on: `placed:${BARK.id}`, who: 'elof', line: 'sjRaft' },
-    { id: 'sjon:klonk-raft', on: `placed:${BARK.id}`, who: 'spoket', line: 'sjKlonkRaft' },
+    { id: 'sjon:klonk-raft', on: 'beat:sjon:raft', who: 'spoket', line: 'sjKlonkRaft', aside: true },
     // 9. the jetty's end: the outlet takes them both, and the family will follow the river by car
     { id: 'sjon:outlet', on: 'sjon:current', who: 'elof', line: 'sjOutlet', read: true },
     { id: 'sjon:log', on: 'sjon:log-run', who: 'elof', line: 'sjLog' },

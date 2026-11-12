@@ -8,6 +8,7 @@ import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { JUMP_APEX, LEDGE_REACH, MOVE_TIME, RUNNING_JUMP_REACH, STEP } from '../../src/sim/constants';
+import { sceneBeats } from '../../src/sim/scene';
 import { Sim } from '../../src/sim/sim';
 import type { Ledge, SimStart } from '../../src/sim/types';
 import { jump, leap, run, runPast, sideTaken, use, walkTo } from '../sim/drive';
@@ -25,8 +26,8 @@ vi.setConfig({ testTimeout: 90000 });
 
 /** Everything said on the way, in order, when the robot plays it from the start. */
 const SAID = [
-  'bi:arrive', 'bi:klonk', 'bi:window', 'bi:window-klonk',
-  'bi:new-trail', 'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
+  'bi:window', 'bi:new-trail',
+  'bi:morfar-here', 'bi:ditch', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
   'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open', 'bi:lookout', 'bi:way', 'bi:onward',
   'bi:loft', 'bi:roof', 'bi:roof-klonk', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad', 'bi:hazel', 'bi:wind',
   'bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down', 'bi:cheer',
@@ -161,11 +162,13 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(car.z).toBeGreaterThan(villa.z);
       const barn = buildings.find((b) => b.kind === 'barn')!;
       expect(barn.x).toBeGreaterThan(villa.x);
-      // The first words: three mil by car, and the lit window.
-      expect(lines.biArrive).toBe('Framme i Billsta, hos mormor och morfar!');
-      const window = billsta.beats!.find((b) => b.id === 'bi:window')!;
-      expect(window.at!).toBeLessThan(spot('bi:morfar').at.x);
-      expect(lines[window.line]).toMatch(/lyser/);
+      // The first words are the arrival's, said by the car while he stands there: the lit window, and whose trail
+      // it is from here. On the run, the fourteen EL to morfar were too short for them (docs/dialogue.md).
+      const arrival = billsta.scenes!.find((scene) => scene.id === 'card')!;
+      expect(arrival.hold).toBe(true);
+      expect(arrival.lines!.map((line) => [line.who, line.id])).toEqual([['moa', 'bi:window'], ['moa', 'bi:new-trail']]);
+      expect(lines[arrival.lines![0]!.line]).toMatch(/lyser/);
+      expect(lines[arrival.lines![1]!.line]).toBe('Följ vårt godis! Vi springer före.');
     });
 
     it('is by the road near the forest, not by the water: no lake beside the house', () => {
@@ -222,7 +225,13 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(sim.ghost!.perch).toBeGreaterThan(edge);
       expect(runPast(sim, 21)).toBe(true);
       expect(sim.bubbles).toBe(0);
-      expect(sim.said).toEqual(['bi:new-trail', 'bi:ditch', 'bi:morfar-here', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks']);
+      // Morfar's greeting, and what Elof answers, were said on the way to the big candy this game is taken up at.
+      expect(sim.said).toEqual(['bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor']);
+      // Each of morfar's lines belongs to its moment: the ladder's while he lays it, and his answer to the thanks.
+      const beat = (id: string) => billsta.beats!.find((b) => b.id === id)!;
+      expect(beat('bi:ladder-lay').until).toBe('bi:ladder');
+      expect(beat('bi:ditch').on).toBe('beat:bi:morfar-here');
+      expect(beat('bi:to-mormor').on).toBe('beat:bi:thanks');
     });
 
     it('is glad and amazed to see him so small, and says only what he does: the ladder, and where mormor is', () => {
@@ -655,10 +664,11 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(billsta.storm!.calm).toBeUndefined();
       expect(billsta.coda).toBe('all');
       expect(billsta.place).toBe('garden');
-      // The card, and Moa and Bertil by the car: Moa points at the window, and they run ahead of him round the house
-      // to its back door. Those views let him move; only the distant strait reveal holds its safe brow.
-      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-window', 'bi:kids-run', 'bi:ladan', 'bi:sundet']);
-      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['bi:sundet']);
+      // The card, and Moa and Bertil by the car: Moa points at the window and says whose trail it is now, while he
+      // stands by the car; then they run ahead of him round the house to its back door. That run and mormor's walk
+      // let him move; the arrival and the distant strait reveal are the two he stands for.
+      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-run', 'bi:ladan', 'bi:sundet']);
+      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['card', 'bi:sundet']);
       const run = billsta.scenes!.find((s) => s.id === 'bi:kids-run')!;
       const house = billsta.storm!.buildings!.find((b) => b.kind === 'villa')!;
       for (const who of ['moa', 'bertil'] as const) {
@@ -732,7 +742,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       // Capitals only at a sentence's start, or for Elof, Klonk, Mamma and the places the study names.
       for (const word of text.match(/(?<![.!?…] |^)\b[A-ZÅÄÖ][a-zåäö]+/g) ?? []) expect(['Elof', 'Klonk', 'Mamma', 'Pappa', 'Billsta', 'Billaberget']).toContain(word);
     }
-    const said = new Set(billsta.beats!.map((b) => b.line));
+    const said = new Set([...billsta.beats!, ...sceneBeats(billsta.scenes)].map((b) => b.line));
     expect(own.map(([key]) => key).filter((key) => !said.has(key))).toEqual([]);
     for (const id of Object.keys(words.purposes!)) expect(id).toMatch(/^billsta[A-Z]/);
     for (const id of Object.keys(words.helpers!)) expect(id).toMatch(/^billsta[A-Z]/);

@@ -1,5 +1,49 @@
 # Handover
 
+## State (12 November 2026): every line at its moment
+
+- **Olov asked:** go through every conversation, so that each fits what happens and is said in the right way at
+  the right place; and mend the comments that come late now that a line is always let finish. This work starts
+  from PR #265's published merge `b7ff040`, on Olov's computer.
+- **Cause:** a line takes five to six seconds to read, which is nineteen EL at a run. Äventyr 2's worlds had a line
+  every three to five EL, written when essential lines still stopped him; since 10 November they queue. Measured
+  with the robot and the game's own bubbles: in Älven "Sjön! Den är alldeles för bred." was said 65 EL past the
+  lake, he stood 25 s at Pappa's bridge while five old lines were read, and the chapter's last conversation was cut
+  by its end card. Klonk's *klonk* came up to 30 s after what it answered. "Kottar faller! Titta på skuggorna." was
+  never said. Olympia's balls, which roll when their line is said, began 33 EL late.
+- **Rules** ([docs/dialogue.md](docs/dialogue.md)): nothing is cut, as before. An answer follows the line it
+  answers. The story's lines come before passing remarks. A passing remark (`aside` on the beat) is said at its
+  moment or not at all: it is let go six EL on, or when a staged moment takes the floor, and it is not begun just
+  before a story line. Remarks never hold a scene or the last page. A game taken up later does not say old remarks.
+- **Two faults found on the way:** the last page could turn between two lines of a conversation (it waits for a
+  moment's quiet now), and a held scene begun while another scene still played started wherever he had run to (he
+  stands where he began it now: the latch in Morgonen, the children on Älven's bank).
+- **Told standing:** six moments are held scenes with their lines, as they were reading stops before 10 November:
+  the old one's memory at Stormskogen's hollow, the trail's end in Älven, the arrival in Billsta, the gift in
+  Stormens öga, and the name and the cocoa in Morgonen. Godiskalaset's naming waits for the family's thanks.
+- **Words:** seven lines rewritten or merged, five removed, ten moved, and 69 marked as passing remarks.
+  [docs/dialogue-audit.md](docs/dialogue-audit.md) lists each, in Swedish, with why. Äventyr 1's words are
+  untouched, and no recording has new words; `scripts/voices-aventyr2.json` follows the lines.
+- **Seen:** five figures that a line points at were not in the picture on a phone. The three flashes of the
+  little one ("Blixten! Där flyger lillgubben!": Stormskogen, Olympia's fence, Flärken) flew above it: he flies
+  lower now, in his own glow, past the place where the line is said. On Älven the little one by the raft and the
+  old one at Moälven floated behind the banks: they float on the near water now
+  (`tests/unit/flash-in-picture.test.ts`).
+- **Measure:** in Äventyr 2's seven worlds the story's lines now come within 2.4 s of their moment for a robot
+  that never stops (before: up to 32 s), and no remark is said out of reach. The robot hears fewer remarks than a
+  child who looks about; that is the trade.
+- **Validation:** the starting revision passes all 2,703 tests. This work passes `npm run typecheck`, all 2,725
+  tests in 283 files (the timeline tool's 18 are skipped unless asked for), the build with its size gates (657.0 KB
+  of gzipped JavaScript, 5,575.4 KB at boot) and the privacy check (1,077 tracked files). On the production build
+  23 browser suites pass: dialogue-reading, talk-life, aventyr2, family-story, epilogue, endings, finale-stage,
+  walk-and-talk, story, story-context, family-help, opening-story, prologue, ghost-thoughts, forest-puzzles,
+  myren-loop, mountain-loop, helper, smoke, village, journey, shared-home and garden-home; the first four, endings,
+  walk-and-talk and smoke again on the final build. The staged moments and the five figures were looked at in the
+  running game at 844×390 and 390×844 with the stand-in figures (`tests/browser/review/dialogue-moments.mjs`);
+  those pictures are not committed. Not played by a person, and not on the family's devices: browser viewports do
+  not establish physical-device performance. No private asset, recording, release boundary or rule changes. No
+  work needs Blender.
+
 ## State (11 November 2026, late evening): Bertil's next adventure in slippers
 
 - **Olov asked:** give Bertil a short wish for an adventure in slippers before he mentions Thailand near the
@@ -5482,6 +5526,14 @@ record identify the exact published revision.
 
 ## Next
 
+**Lines at their moment (12 November).** Follow [docs/dialogue.md](docs/dialogue.md) for every new or moved line:
+it is the story's, or a passing remark (`aside`), and nothing but its own answer waits for a remark. Place lines
+with the timeline open (`tests/robot/dialogue-timeline.test.ts`), and keep the three limits of
+`tests/robot/dialogue.test.ts`; an exception is named there, with its reason. A moment told standing gets a cue for
+when its picture has arrived, and no free line chained onto its last one. For Olov to judge on the family devices:
+the six moments where Elof stands and listens, and the five figures moved into the picture (see "Frågor till
+Olov"). No local Blender work is needed.
+
 **Bertil's slippers (11 November, late evening).** Keep `soBertilSlippers` before the coming Thailand trip in
 `soBertil`, with separate short reading cards and matching future-recording metadata. Preserve both complete
 lines' reading time before Mormor and keep the original scene receipts stable.
@@ -5943,6 +5995,9 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Lines at their moment (Olov, 12 November 2026):** every conversation fits what happens and is said at its
+  place. Nothing is cut, and nothing comes late: passing remarks give way to the story's lines, and are said at
+  their moment or not at all (`docs/dialogue.md`).
 - **Bertil's farewell joke (Olov, 11 November 2026):** before mentioning Thailand, he hopes the next adventure
   will be in slippers.
 - **Opening's bird (Olov, 11 November 2026):** the family walks over to watch the lavskrika at the window,
@@ -6050,6 +6105,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Lines at their moment (12 Nov) | Go through every conversation: fit, place and timing | One session on Olov's computer | — / 1 request | Queue rules in the simulation; 69 passing remarks; six moments told standing; twelve lines rewritten, merged or removed; a robot guard for late lines in every chapter |
 | Bertil's slippers (11 Nov, late evening) | Add a slipper wish before the Thailand trip | One text-only cloud continuation | — / 1 request | Existing dialogue receipt and reading hold retained; future recording metadata aligned. |
 | Family at the opening window (11 Nov, evening) | Let the family walk over to the arriving jay in the redesigned home | One cloud continuation with staging and independent native review | — / 1 request | Separate furniture-clear routes, visible shared attention and a continuous return to the chase; original story receipts retained. |
 | Responsive interface (11 Nov) | Improve mobile/desktop UX, HUD and dialogue composition | One cloud continuation with parallel dialogue, HUD, menus, native review and regression worktrees | — / 1 request | Unified speech card, retained readable text/targets, quieter HUD, navigable collections and responsive menus; actual-scene and safe-area checks. |
@@ -6108,6 +6164,15 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Lines at their moment (12 November):** measured with a robot that never stops and presses every button the
+  moment it is offered, which is harder than any child. A child who calls a helper in the first second still has
+  the helper's greeting read to its end before the answer (one line, about five seconds). The family's promises
+  along the deck (prologue, Stormkvällen) and Godiskalaset's thanks are said in turn while he stands, as they are
+  meant. A child who runs hears fewer passing remarks than one who looks about. The old one's own moments were not
+  changed: he stands in sight and leaps away as a dark shape in one flash when Elof calls out (Stormgården's
+  playhouse, Olympia's centre circle, Flärken's planks), and is a glimpse on his log in Älven. On a phone that
+  glimpse is short; whether he should be lit as the little one is now is Olov's to say.
 
 - **Bertil's slippers (11 November, late evening):** the joke uses its own short card so neither line exceeds
   the adventure's reading-length limit; existing saved dialogue receipts remain stable.
@@ -6373,6 +6438,19 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från genomgången av replikerna den 12 november (ingen av frågorna hindrar arbetet):
+
+- Sex stunder berättas nu medan Elof står stilla och lyssnar: hålan i Stormskogen, spårets slut i Älven, ankomsten i
+  Billsta, guldgodiset i Stormens öga, och namnet Fjun och kakaon i Morgonen efter. Före den 10 november stannade han
+  också där. Vill du hellre att han ska kunna gå under någon av dem?
+- Tolv repliker skrevs om, slogs ihop eller togs bort (sist i `docs/dialogue-audit.md`). Säg till om någon ska
+  tillbaka som den var.
+- Ett barn som springer hör färre småkommentarer än ett som stannar och tittar. Är det rätt avvägning, eller ska
+  någon kommentar alltid sägas?
+- Lillgubben syns nu tydligt, i sitt eget sken, i de fyra blixtar där Elof pekar ut honom, och gamla trägubben
+  när han flyter förbi vid Moälven. På fyra andra ställen är gamla trägubben fortfarande en mörk skymt (lekstugan,
+  Olympias mittcirkel, Flärkens brygga, stocken i Älven). Ska han synas tydligt där också?
 
 The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore, shared home, requested TV console, responsive interface, opening's window visit and Bertil's slipper wish add no blocking question. The existing questions below remain separate.
 

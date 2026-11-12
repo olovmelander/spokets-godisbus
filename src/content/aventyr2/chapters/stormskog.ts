@@ -6,10 +6,11 @@ import { alongAll, jump, round, row, slopeRow, timeCard } from '../kit';
  * Äventyr 2, Kapitel 2: Stormskogen (docs/aventyr-2.md). Units: EL. The spruce forest at night, in the storm.
  * The old trägubbe's sweets lead in under the trees, and Klonk hops ahead all the way. The places, from the left:
  *
- * 1. **Skogsbrynet:** a root across the path. A flash of lightning shows the little one blown past overhead.
+ * 1. **Skogsbrynet:** a root across the path, and the dark.
  * 2. **Kottregnet** (the exciting sequence): cones shaken loose from the swaying spruces fall in two groups,
  *    with a big candy between them. Each cone's shadow grows on the ground before it lands: read the way
- *    through from the ground, as under the birch in Äventyr 1.
+ *    through from the ground, as under the birch in Äventyr 1. Past them, a flash of lightning shows the little
+ *    one blown past, low enough to be in the picture on a phone held sideways.
  * 3. **Gungande grenar:** the trail goes down into a ravine and up its far side in two steps. Over it the
  *    wind sways three boughs to and fro, a moving way across for whoever climbs the trunk on the near rim:
  *    when two boughs swing close, hop over. Never needed, and a miss is a soft landing in the ravine.
@@ -24,8 +25,9 @@ import { alongAll, jump, round, row, slopeRow, timeCard } from '../kit';
  *    and Klonk wakes beside Elof. Two held scenes, `ss:ljuset` and `ss:vaknar`: each line is read before the
  *    acting goes on.
  * 7. **Gamla trägubbens minne:** past a fallen trunk, a dark hollow under the roots. There Klonk shows the
- *    old one's thought, the crack on the mountain where it lay: "Den var ensam i mörkret i flera år."
- *    "Därför väntar den inte."
+ *    old one's thought, the crack on the mountain where it lay: "Gamla trägubben låg ensam i flera år."
+ *    "Därför skyndar han. Lillgubben är ensam!" He stands at the hollow while it is said, the picture on the
+ *    thought (`ss:minnet`): the answer to the night's question is not said on the run.
  * 8. **Lavskrikan:** the jay from Äventyr 1 shelters from the rain. A lingonberry for it, and it shows the
  *    beard lichen down a high root, the way up.
  * 9. **Backen:** from the root a gentle slope runs down towards the village, where every window is dark.
@@ -43,6 +45,13 @@ const hill = (x: number) => round(4 - (x - 184) * 0.25, 4);
 const GAP = { from: 134, to: 138, woke: 139.4, klonk: 141.5 };
 /** Pappa with his lamp, behind the call sign: where Elof and the camera look up to his face. */
 const PAPPA_FACE = { x: 131, y: 4.8, z: -0.9 };
+
+/** Where the flash shows the little one: past the cone rain, on the open ground before the ravine. */
+const FLASH_AT = 35.2;
+/** The dark hollow under the roots, where Klonk shows the old one's thought. */
+const HOLLOW = { x: 155.5, y: -1.2 };
+/** Set when the picture has closed in on the hollow and its thought: the words about it wait for that. */
+const SHOWN = 'ss:memory-shown';
 
 /** The owl's flight over the widest gap of the windthrow: from its near edge to well past its far one. */
 const OWL = { from: { x: 109.6, y: 0 }, to: { x: 123, y: 0 }, rise: 4, time: 3 };
@@ -75,6 +84,23 @@ export const stormskog: ChapterData = {
       stage: { shots: [{ at: 0, x: 185.5, y: 4.6, height: 7.5, width: 11.5, move: .6 },
         { at: 2.2, x: 189.5, y: 3.6, height: 7.5, width: 12, move: 1.1 }],
         elof: [{ at: 0, act: 'look', aim: { x: 186, y: 4.2, z: -.6 } }] },
+    },
+    // The old one's memory (docs/aventyr-2.md, the question that pulls the night on, answered). At the hollow he
+    // stands and looks: Klonk's picture of the crack on the mountain, and what it means, are read there with the
+    // picture in view, not on the run a long way past it. The scene is only this: a closer look, and the three lines.
+    // The first comes once the picture has closed in on the hollow (`SHOWN`); the scene's clock waits for the words,
+    // so its last half second is the breath after them, before he sets off again.
+    // A game taken up beyond the hollow without those words (`sets`, below) is told them here too, looking back
+    // at the hollow; one that has read them never sees it again.
+    {
+      id: 'ss:minnet', on: 'ss:hollow', until: 'beat:ss:why', seconds: 1.4, hold: true, dialogue: ['ss:hollow', 'ss:alone', 'ss:why'],
+      cues: [{ at: 0.9, flag: SHOWN }],
+      stage: {
+        // The picture hangs over the hollow: it sits in the middle of the frame, clear of the words above it on a
+        // phone held sideways, with him and Klonk under it.
+        shots: [{ at: 0, x: HOLLOW.x + 0.4, y: 1.7, height: 7.6, width: 10, move: 0.8 }],
+        elof: [{ at: 0, act: 'look', aim: { x: HOLLOW.x, y: HOLLOW.y + 1.1, z: 0 } }],
+      },
     },
     // Called, Pappa finds him at the edge with his lamp. Its light falls on Klonk, who is wood at once and lies across
     // the gap; to Pappa a toy has fallen over, and Elof, thinking, sees why. The picture takes in Pappa's face.
@@ -120,7 +146,7 @@ export const stormskog: ChapterData = {
     lightning: 10,
     flybys: [
       // At the forest's edge: the little one, tumbling over the treetops ahead.
-      { on: 'beat:ss:flash', from: { x: 4, y: 9 }, to: { x: 26, y: 7 }, seconds: 2.6, who: 'lillgubbe' },
+      { on: 'beat:ss:flash', from: { x: round(FLASH_AT - 6, 1), y: 2.3 }, to: { x: round(FLASH_AT + 17, 1), y: 3.3 }, rise: 0.7, seconds: 3, who: 'lillgubbe', lit: [1.3] },
       // From the high root: the old one, far down the hill, hurrying on towards the village.
       { on: 'ss:old-appears', from: { x: 186, y: hill(186) }, to: { x: 194, y: hill(194) }, seconds: 4, who: 'tragubbe', walk: true, z: -.6, size: 1.7, lit: [] },
     ],
@@ -249,7 +275,7 @@ export const stormskog: ChapterData = {
   ],
   spots: [
     // The dark hollow under the roots: coming close is enough. Klonk shows the old one's thought there.
-    { id: 'ss:hollow', at: { x: 155.5, y: -1.2 }, verb: 'take', touch: true },
+    { id: 'ss:hollow', at: HOLLOW, verb: 'take', touch: true },
     // The owl, once free, waits at the widest gap: Använd and it carries him over.
     { id: 'owl', at: OWL.from, verb: 'take', word: 'ssFlyOwl', needs: 'placed:owl-twig', ride: 'owl' },
     // Pappa's flashlight: calling him is the whole puzzle. His beam finds Klonk at the edge.
@@ -324,38 +350,43 @@ export const stormskog: ChapterData = {
     { at: { x: 209, y: 0 } },
   ],
   beats: [
-    // 1. the forest's edge
-    { id: 'ss:dark', at: 2.4, who: 'elof', line: 'ssDark' },
-    { id: 'ss:klonk', at: 4, who: 'spoket', line: 'ssKlonk' },
-    { id: 'ss:flash', at: 8.5, who: 'elof', line: 'ssFlash' },
+    // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
+    // 1. the forest's edge: a few words, so that the cones' own are said before the first cone falls
+    { id: 'ss:dark', at: 1.4, who: 'elof', line: 'ssDark' },
+    { id: 'ss:klonk', on: 'beat:ss:dark', who: 'spoket', line: 'ssKlonk', aside: true },
     // 2. the cone rain
     { id: 'ss:cones', at: 14.6, within: [14.6, 34], who: 'elof', line: 'ssCones', read: true },
+    // Past the cones, where there is room to look up: the flash, and the little one blown over the ravine ahead.
+    { id: 'ss:flash', at: FLASH_AT, who: 'elof', line: 'ssFlash' },
     // 3. the boughs
     // 4. the owl
     { id: 'ss:owl', at: 64.5, until: 'placed:owl-twig', who: 'elof', line: 'ssOwlStuck', read: true },
     { id: 'ss:owl-free', on: 'placed:owl-twig', who: 'elof', line: 'ssOwlFree' },
-    // 5. the windthrow, and the flight
-    { id: 'ss:windthrow', at: 81, who: 'elof', line: 'ssWindthrow' },
+    // 5. the windthrow, and the flight: what he says on the owl's back is said there or not at all
+    { id: 'ss:windthrow', at: 81, who: 'elof', line: 'ssWindthrow', aside: true },
     { id: 'ss:owl-waits', at: 107.5, until: 'owl', needs: 'placed:owl-twig', who: 'elof', line: 'ssOwlWaits', read: true },
-    { id: 'ss:owl-fly', on: 'owl', who: 'elof', line: 'ssOwlFly' },
-    // 6. Pappa's flashlight: the gap is too wide to jump; Pappa, searching, sees something tiny in his light and
-    // asks if it is him. The rest is in its two scenes, and on the bridge a whisper to the friend he walks on.
-    { id: 'ss:wide', at: 127.4, until: 'ss:beam', who: 'elof', line: 'ssTooWide' },
+    { id: 'ss:owl-fly', on: 'owl', within: [OWL.from.x, OWL.to.x], who: 'elof', line: 'ssOwlFly', aside: 12 },
+    // 6. Pappa's flashlight: the gap is too wide to jump, seen as he lands from the owl; Pappa, searching, sees
+    // something tiny in his light and asks if it is him. The rest is in its two scenes, and a whisper to the friend
+    // he is about to walk on, said as he steps out so that it is read by the far side.
+    { id: 'ss:wide', at: 124.6, until: 'ss:beam', who: 'elof', line: 'ssTooWide', aside: true },
     { id: 'ss:pappa', at: 129.8, until: 'ss:beam', who: 'pappa', line: 'ssPappaHere', read: true },
-    { id: 'ss:tiptoe', at: 135.2, needs: 'ss:frozen', who: 'elof', line: 'ssTiptoe' },
-    // 7. the old one's memory: the heart of the chapter, read slowly
-    { id: 'ss:hollow-seen', at: 151, who: 'elof', line: 'ssHollowSeen' },
-    { id: 'ss:hollow', at: 159, on: 'ss:hollow', who: 'spoket', line: 'ssHollowKlonk' },
-    { id: 'ss:alone', on: 'ss:hollow', who: 'elof', line: 'ssAlone', read: true },
-    { id: 'ss:why', on: 'ss:hollow', who: 'elof', line: 'ssWhy', read: true },
-    { id: 'ss:both', at: 161.5, needs: 'ss:hollow', who: 'elof', line: 'ssBoth' },
+    { id: 'ss:tiptoe', at: 131.6, needs: 'ss:frozen', who: 'elof', line: 'ssTiptoe' },
+    // 7. the old one's memory: the heart of the chapter, read slowly. He asks from the fallen trunk; Klonk's answer
+    // and what the picture means are told at the hollow, with it in the picture (`ss:minnet`); and the resolve is
+    // said as he climbs out of it and sets off again.
+    { id: 'ss:hollow-seen', at: 149.2, who: 'elof', line: 'ssHollowSeen' },
+    { id: 'ss:hollow', at: 159, on: 'ss:hollow', needs: SHOWN, who: 'spoket', line: 'ssHollowKlonk' },
+    { id: 'ss:alone', on: 'ss:hollow', needs: SHOWN, who: 'elof', line: 'ssAlone', read: true },
+    { id: 'ss:why', on: 'ss:hollow', needs: SHOWN, who: 'elof', line: 'ssWhy', read: true },
+    { id: 'ss:both', at: 157.2, needs: 'beat:ss:why', who: 'elof', line: 'ssBoth' },
     // 8. the jay
-    { id: 'ss:jay', at: 165, until: 'jay', who: 'elof', line: 'ssJaySeen' },
+    { id: 'ss:jay', at: 165, until: 'jay', who: 'elof', line: 'ssJaySeen', aside: true },
     { id: 'ss:jay-glad', on: 'jay', who: 'elof', line: 'ssJayGlad' },
     // 9. the hill down to the dark village
     { id: 'ss:see-old', on: 'ss:old-appears', who: 'elof', line: 'ssSeeOld', read: true },
-    { id: 'ss:village', at: 190, who: 'elof', line: 'ssVillage' },
-    { id: 'ss:onward', at: 199, who: 'spoket', line: 'ssOnward' },
+    { id: 'ss:village', at: 190, who: 'elof', line: 'ssVillage', aside: true },
+    { id: 'ss:onward', on: 'beat:ss:village', who: 'spoket', line: 'ssOnward', aside: true },
   ],
   cameras: [
     // On the optional layers the picture is wider and looks down a little, at the ground he will come down on.

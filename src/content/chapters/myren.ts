@@ -444,10 +444,12 @@ export const myren: ChapterData = {
     { id: 'family:bridge-ready', on: 'placed:pine', until: 'braid', within: [80, 99], who: 'mamma', line: 'familyBridgeReady', read: true },
     { id: 'family:braid', at: 99.8, until: 'braid', needs: 'family:braid-arrived', who: 'mamma', line: 'familyBraid', read: true },
     { id: 'family:braid-ready', on: 'family:braid-ready', until: 'light', within: [98, 107], who: 'mamma', line: 'familyBraidReady', read: true },
-    { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen' },
+    // A remark as he comes up onto it: let go if her words about the braid are still being read (docs/dialogue.md).
+    { id: 'spangen', at: 105.4, who: 'mamma', line: 'spangen', aside: true },
     { id: 'bog:chick-light', on: 'chick', who: 'elof', line: 'bogChickLight' },
     { id: 'bog:family-home', on: 'home', who: 'elof', line: 'bogFamilyHome' },
-    { id: 'bog:bridge-ready', on: 'placed:bog-boardwalk', who: 'mamma', line: 'bogBridgeReady' },
+    // Said to him where she has laid it: not after him, on the crane's back.
+    { id: 'bog:bridge-ready', on: 'placed:bog-boardwalk', who: 'mamma', line: 'bogBridgeReady', aside: 8 },
     { id: 'bog:light-return', on: 'bog:lantern-return', who: 'elof', line: 'bogLightReturn' },
   ],
   sets: [{ flag: 'family:pine-released', when: ['braid'] }, { flag: 'family:braid-arrived', when: ['braid'] }],

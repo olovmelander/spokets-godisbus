@@ -191,6 +191,10 @@ export type Speaker = 'mamma' | 'pappa' | 'moa' | 'bertil' | 'elof' | 'spoket'
  * when the flag `on` is set, and only once. While someone is still speaking it waits its turn, and its flag
  * (`beat:<id>`) comes when it is said for the picture. Story conditions wait for its completion receipt
  * (src/sim/sim.ts, `acknowledge`); movement stays available except during explicitly staged moments.
+ *
+ * Whose turn it is (docs/dialogue.md): a line that goes on from the one just read (`on: 'beat:…'`) comes first, so
+ * that an answer follows what it answers; then the story's lines, the one that has waited longest first; and last
+ * the passing remarks (`aside`), which are said at their moment or not at all.
  */
 export interface Beat {
   id: string;
@@ -204,6 +208,14 @@ export interface Beat {
   within?: readonly [number, number];
   /** An essential explanation retains its receipt across checkpoints; presentation need not hold movement. */
   read?: boolean;
+  /**
+   * A passing remark: about something he sees as he goes by, and never needed to follow the story. It is said only at
+   * its moment. If someone is still speaking then it waits, and is let go once he is `ASIDE_REACH` EL (or this many)
+   * from where its moment came, when a staged moment takes the floor, or, where it answers a line, when it cannot come
+   * straight after that line: so it is never said late, about something that has left the picture. Nothing may
+   * wait for a remark's flag except a remark that answers it.
+   */
+  aside?: boolean | number;
   who: Speaker;
   /** A key of `sv.lines`. */
   line: string;
