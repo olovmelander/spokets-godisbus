@@ -31,8 +31,8 @@ import { alongAll, flightAt, hopCandy, jump, round, row, sighting, slopeRow, tim
  * What the canon asks for that the simulation does not have is simplified, never faked:
  * - The playhouse's way up for the trail is its front steps in the ground's outline, each a held jump or a
  *   pull-up, because the robot and Lugnt climb those; the planks (ledges) up its wall are the side way.
- * - There is no hidden candy yet: each needs a new kind in src/content/kinds.ts. Where one would be, on the
- *   plank over the roof, lie hearts.
+ * - The album's lingonhjärta and the paper boat lie on the leaf over the roof, at the trampoline way's end
+ *   (src/content/collections.ts); the way's hearts lead up to them.
  */
 
 /** The veranda deck, as high over the lawn as Gården's. */
@@ -337,16 +337,17 @@ export const stormgard: ChapterData = {
     { from: FLOOD.from, to: FLOOD.to, y: WATER },
     { from: RUT.from, to: RUT.to, y: WATER },
   ],
+  // Each in the gap between two of the trail's sweets, never with one at its foot.
   checkpoints: [
     // the pumpkin lantern's: the first big candy the old trägubbe has left
     { x: 28.4, y: STEPS[2]!.y },
-    { x: 42.4, y: 0 },
+    { x: 41.6, y: 0 },
     { x: 72.4, y: 0 },
     { x: 92.4, y: 0 },
-    { x: 129.6, y: 0 },
-    { x: 152.6, y: 0 },
+    { x: 129.2, y: 0 },
+    { x: 152, y: 0 },
     { x: 170, y: ROOT.y },
-    { x: 181, y: 0 },
+    { x: 180.7, y: 0 },
   ],
   drips: DRIPS,
   gusts: [{ from: POTS[0]!, to: POTS[POTS.length - 1]!, y: 0, every: 4, length: 1.4, first: 0.5, shelters: POTS }],
@@ -484,8 +485,9 @@ export const stormgard: ChapterData = {
     { x: 18.1, y: 6.45 },
     { x: 20.2, y: 6.45 },
     { x: 22.4, y: 6.45 },
-    // 2. down the steps: where a runner's middle is off each edge, and on each step
-    ...STEPS.flatMap((s) => [offEdge(s.x, s.y, 0.5), { x: round(s.x + 1.6, 1), y: round(s.y - 1.2 + 0.45) }]).map((c) => c.x > 29.1 && c.x < 32.1 ? { ...c, y: LANTERN.y + 2.35 } : c.x === 32.8 ? { ...c, y: 2.8 } : c),
+    // 2. down the steps: where a runner's middle is off each edge, and on each step (the one on the lantern's step a
+    // little back, clear of its big candy)
+    ...STEPS.flatMap((s) => [offEdge(s.x, s.y, 0.5), { x: round(s.x + 1.6, 1), y: round(s.y - 1.2 + 0.45) }]).map((c) => c.x > 29.1 && c.x < 32.1 ? { ...c, y: LANTERN.y + 2.35 } : c.x === 32.8 ? { ...c, y: 2.8 } : c.x === 28 ? { ...c, x: 27.6 } : c),
     // over the flower bed's edging
     { x: 36.8, y: 1.4 },
     { x: 38, y: 1.25 },
@@ -509,13 +511,15 @@ export const stormgard: ChapterData = {
     ...row(99.6, 103.6, 0),
     // 5. over the flooded lawn in Bertil's boot
     ...alongAll(BOOT, [0.15, 0.25, 0.33, 0.4, 0.47, 0.53, 0.6, 0.67, 0.75, 0.85]),
-    ...row(128.2, 136.2, 0),
+    // (the one at the trampoline over its mat, where he walks across it: at the lawn's height it lay inside its rim)
+    ...row(128.2, 136.2, 0).map((c) => (Math.abs(c.x - TRAMPOLINE.x) < 0.5 ? { ...c, y: round(TRAMPOLINE.y + 0.5) } : c)),
     // 6. up the playhouse's steps, over its roof, and off its far eaves
     ...FRONT.slice(0, 3).map((s) => ({ x: round(s.x + 0.7, 1), y: round(s.y + 0.45) })),
     ...[143, 144.3, 145.6, 146.8, 148].map((x) => ({ x, y: round(roof(x) + 0.45) })),
-    offEdge(PLAYHOUSE.to, PLAYHOUSE.eaves, 0.5),
-    offEdge(PLAYHOUSE.to, PLAYHOUSE.eaves, 1),
-    { x: 151, y: 0.5 },
+    // down the fall off the far eaves, evenly
+    offEdge(PLAYHOUSE.to, PLAYHOUSE.eaves, 0.3),
+    offEdge(PLAYHOUSE.to, PLAYHOUSE.eaves, 1.1),
+    offEdge(PLAYHOUSE.to, PLAYHOUSE.eaves, 1.9),
     ...row(153, 159, 0),
     // the rut's puddle, and the birch root
     hopCandy({ x: RUT.from, y: 0 }, { x: RUT.to, y: 0 }),
@@ -523,7 +527,10 @@ export const stormgard: ChapterData = {
     ...slopeRow(167, 167, ROOT.from, 0, ROOT.top, ROOT.y),
     ...row(169, 171, ROOT.y),
     ...slopeRow(173, 173, ROOT.end, ROOT.y, ROOT.to, 0),
-    ...row(175, 183, 0),
+    // (the one after the big candy before the hedge a little on, clear of it)
+    ...row(175, 179, 0),
+    { x: 181.6, y: 0.45 },
+    { x: 183, y: 0.45 },
     // 7. onto the hedge
     { x: 184.2, y: 1.6 },
     ...row(185.4, 187.4, HEDGE.y),
@@ -540,12 +547,19 @@ export const stormgard: ChapterData = {
     over(SILLS[3]!),
     // The trampoline: the heart its bounce carries him through, higher than any jump from the lawn...
     { x: 134.4, y: 3.7 },
-    // ...one over each plank up the playhouse's wall...
-    over(PLANKS[0]!),
+    // ...one on each leaf up the playhouse's wall, where he lands on it...
+    { x: 136, y: 3.85 },
     over(PLANKS[1]!),
     over(PLANKS[2]!),
-    // ...and the prize, five over the plank above the roof: out of reach of a jump from the roof below.
-    ...[-0.8, -0.4, 0, 0.4, 0.8].map((dx) => ({ x: round(LOOKOUT.x + dx), y: round(LOOKOUT.y + 0.75) })),
+    // ...and one line of them all the way up, where he goes (Olov, 12 November 2026: "placerade fint och strukturerat
+    // och inte för plottrigt"): at the top of the bounce, on the first leaf where he jumps from it, at the top of the
+    // jumps between the leaves, and where he lands on the top one. They were five in a bunch on the top leaf, around
+    // the lingonhjärta and the paper boat (../../collections.ts), which have that leaf to themselves now.
+    { x: 135.3, y: 4.4 },
+    { x: 136.9, y: 3.85 },
+    { x: 137.45, y: 4.9 },
+    { x: 139.4, y: 5.8 },
+    { x: 141.3, y: 6.5 },
   ],
 };
 

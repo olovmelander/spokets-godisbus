@@ -239,20 +239,21 @@ export const stormskog: ChapterData = {
     { look: 'log', from: 84, to: 88, base: 0 },
     { look: 'log', from: 145.5, to: 149.5, base: 0 },
   ],
+  // Each in the gap between two of the trail's sweets, never with one at its foot.
   checkpoints: [
     { x: 15, y: 0 },
     // between the two groups of falling cones
     { x: 25.2, y: 0 },
-    { x: 37, y: 0 },
+    { x: 36.5, y: 0 },
     { x: 61, y: 0 },
-    { x: 80, y: 0 },
+    { x: 80.5, y: 0 },
     { x: 106.2, y: 0 },
     { x: 124.2, y: 0 },
     // after Klonk has woken and been thanked, before the fallen trunk
     { x: 143.6, y: 0 },
     { x: 163, y: 0 },
     { x: 181, y: 4 },
-    { x: 196, y: hill(196) },
+    { x: 195.4, y: hill(195.4) },
   ],
   // The cones: two groups of three, the same rhythm as the dew under the birch in Äventyr 1 (garden.ts).
   drips: [
@@ -302,7 +303,8 @@ export const stormskog: ChapterData = {
     { id: 'ss:beam', look: 'sign', at: { x: 131, y: 0 }, verb: 'call', word: 'callPappa' },
     // The jay from Äventyr 1, as in Granskogen: a lingonberry first, then the gift.
     { id: 'berry', look: 'berry', at: { x: 167.5, y: 0 }, verb: 'take', word: 'pick' },
-    { id: 'jay', look: 'jay', at: { x: 172.5, y: 0 }, verb: 'give', word: 'giveJay', needs: 'berry' },
+    // Between two of the trail's sweets, not standing in one.
+    { id: 'jay', look: 'jay', at: { x: 173.2, y: 0 }, verb: 'give', word: 'giveJay', needs: 'berry' },
   ],
   decor: [
     // The owl in its hole, behind the twig, until it is free...
@@ -438,8 +440,11 @@ export const stormskog: ChapterData = {
     ...[16.6, 19.1, 21.3, 23.5, 26.6, 29.1, 31.2, 33.4].map((x) => ({ x, y: 0.45 })),
     // 3. to the ravine, down its bank, along its floor and up its far side
     ...row(35.5, 37.5, 0),
+    // along the pole, clear of the heart over the bark plate at its end, and down off it
     { x: 40.2, y: 1.25 },
-    ...row(41.5, 45.5, 0).map(c => c.x < 44.4 ? { ...c, y: 1.25 } : c),
+    { x: 41.5, y: 1.25 },
+    { x: 42.8, y: 1.25 },
+    { x: 44.9, y: 0.45 },
     ...slopeRow(46.8, 48.8, 46, 0, 49, -2),
     ...row(50.6, 54.6, -2),
     ...hopUp(56.2, -1),
@@ -493,8 +498,9 @@ export const stormskog: ChapterData = {
   // Side candy: hearts and lollipops on the optional layers. The first of each way is a heart, its tell.
   // New ones are added at the end.
   side: [
-    // The boughs: up the bark and the branch, one over each bough's middle, and two on the far branch.
-    { x: 43.4, y: 1.45 },
+    // The boughs: up the bark and the branch, one over each bough's middle, and two on the far branch. The first
+    // is over the bark plate's far half, clear of the trail's sweets along the pole.
+    { x: 43.8, y: 1.45 },
     { x: 44.8, y: 2.3 },
     { x: 45.7, y: 2.3 },
     { x: 48.2, y: 2.3 },
@@ -502,10 +508,11 @@ export const stormskog: ChapterData = {
     { x: 54.2, y: 2.3 },
     { x: 56.4, y: 2.35 },
     { x: 57.6, y: 2.35 },
-    // The branch over the leaning spruce.
-    { x: 99.9, y: 3.45 },
-    { x: 100.7, y: 3.45 },
-    { x: 101.5, y: 3.45 },
+    // The branch over the leaning spruce: at the top of the hop up to it, where he lands on it, and where he steps off
+    // its end. Its middle is the blåbärspastill's and the spool's (../../collections.ts), with nothing crowding them.
+    { x: 99.1, y: 3.8 },
+    { x: 99.85, y: 3.45 },
+    { x: 102.3, y: 2.6 },
     // The two boughs off the high root.
     { x: 185.9, y: 5.35 },
     { x: 186.7, y: 5.35 },

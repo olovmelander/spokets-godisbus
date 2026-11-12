@@ -367,12 +367,13 @@ export const alven: ChapterData = {
   ],
   // The big stones in the stream, for the picture: boulders worn by the water.
   landmarks: [S1, S2, BIG, OTTER, CREEK].map((s) => ({ look: 'stone' as const, from: s.from, to: s.to, base: DEEP })),
+  // Each in the gap between two of the trail's sweets, never with one at its foot.
   checkpoints: [
     { x: 4, y: 0 },
-    { x: 33.2, y: GRAVEL.y },
+    { x: 34.4, y: GRAVEL.y },
     // Past where he stands to see the old one on his log, so that the sight is before it, as it was.
     { x: 52.4, y: BANK.y },
-    { x: 70.4, y: BIG.y },
+    { x: 69.4, y: BIG.y },
     { x: 86.2, y: BREDBYN.y },
     { x: 110.6, y: FAR_BANK.y },
     { x: 132.6, y: SHORE.y },
@@ -462,8 +463,8 @@ export const alven: ChapterData = {
   // Far across the lake a moose may come down to the water.
   life: [{ kind: 'moose', from: 128, to: 137 }],
   decor: [
-    // A frog on the bank, by the reeds.
-    { look: 'kit', word: 'groda', at: { x: 111.6, y: 0 }, z: -1.3, turn: 0.5, scale: 0.8 },
+    // A frog on the bank, by the reeds: between two of the trail's sweets, where one does not hide it.
+    { look: 'kit', word: 'groda', at: { x: 112.6, y: 0 }, z: -1.3, turn: 0.5, scale: 0.8 },
     // The beaver itself, on the bank by its stumps, gnawing a stick: it looks at Elof, thumps its tail and goes into its
     // lodge at its foot; it comes out at the very top of the lodge as he comes up onto the roof, and swims out over the
     // lake once he is down by it (../beaver.ts).
@@ -490,8 +491,9 @@ export const alven: ChapterData = {
     { look: 'whiteWater', at: { x: 22, y: CURRENT } },
     // The otter on its stone.
     { look: 'otter', at: { x: (OTTER.from + OTTER.to) / 2, y: OTTER.y }, z: 0.1 },
-    // Reeds along the banks, and in the shallows by them.
-    ...[3.6, 10.8, 49.9, 82.6, 131.8].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
+    // Reeds along the banks, and in the shallows by them. On the lake's shore at the foot of the lodge, beside the trail's
+    // first sweet there, not behind it.
+    ...[3.6, 10.8, 49.9, 82.6, 131.2].map((x) => ({ look: 'reed' as const, at: { x, y: 0 } })),
     // Behind the beaver, so its paws, stick and broad tail are seen as he comes off the bridge.
     { look: 'reed', at: { x: 113, y: 0 }, z: -6 },
     ...[165.4, 177.4, 190.4].map((x) => ({ look: 'reed' as const, at: { x, y: ON.y } })),
@@ -625,10 +627,11 @@ export const alven: ChapterData = {
     { x: 120.6, y: round(LODGE.y + 0.45) },
     { x: 122.4, y: round(LODGE.y + 0.45) },
     ...slopeRow(124.4, 130.4, LODGE.to, LODGE.y, SLOPE_END, SHORE.y),
-    // 5. the lake's shore, to the owl, and over the lake on its back
-    { x: 132.4, y: 0.45 },
-    { x: 134, y: 0.45 },
-    { x: 135.4, y: 0.45 },
+    // 5. the lake's shore, to the owl, and over the lake on its back: one before the big candy, and two past the owl
+    // where it sits, none in front of it.
+    { x: 131.8, y: 0.45 },
+    { x: 134.8, y: 0.45 },
+    { x: 135.8, y: 0.45 },
     ...alongAll(OWL, [0.08, 0.18, 0.28, 0.38, 0.48, 0.58, 0.68, 0.78, 0.88, 0.96]),
     // 6. along Moälven, over the stream, and on towards Billsta
     ...row(167.4, 171.4, MOALVEN.y),

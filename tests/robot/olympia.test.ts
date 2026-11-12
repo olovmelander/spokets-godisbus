@@ -217,7 +217,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     });
 
     it('one that reaches him standing still bowls him into the glitter bubble, back to the last big candy', () => {
-      const middle = checkpoint(40.6);
+      const middle = checkpoint(39.6);
       const sim = new Sim(olympia, {}, { checkpoint: middle, flags: ['beat:ol:wind'] });
       run(sim, 0.5);
       expect(sim.bowled).toBe(0);
@@ -422,7 +422,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     });
 
     it('a held jump takes hold of the net; up it, along the bar to the lookout with every heart, and a slide down again', () => {
-      const sim = new Sim(olympia, {}, { checkpoint: checkpoint(89.4), placed: [ball.id], flags: [`placed:${ball.id}`] });
+      const sim = new Sim(olympia, {}, { checkpoint: checkpoint(88.8), placed: [ball.id], flags: [`placed:${ball.id}`] });
       run(sim, 0.2);
       expect(walkTo(sim, net.x)).toBe(true);
       // Walking under it, the tell is out of reach.

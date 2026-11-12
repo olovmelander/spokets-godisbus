@@ -1,5 +1,20 @@
 # Handover
 
+## State (12 November 2026, late night): candy laid out in Äventyr 2
+
+- **Olov asked** that all candy, finds and specials in the adventure lie "fint och strukturerat och inte för plottrigt".
+  A builder measured every chapter with a script (pairs closer than 0.8 EL, trail sweets at a big candy's foot, things
+  crowding the album sweet or lost thing, candy inside ledges) and looked at each place in the running game.
+- **Only moved, nothing added or removed, no array reordered:** saves keep every index. Side candy moved only within
+  its own side way. Each album sweet and lost thing now sits alone at the end of a side way (Stormgården's top sunflower
+  leaf, Stormskogen's branch, the yarn shop's last stand, Olympia's crossbar end, Flärken's second hut roof, the otter's
+  stone, Billsta's loft beam, the back of Stormens öga's stone). No trail sweet stands at a big candy's foot any more
+  (39 did); close pairs went from 46 to 10, all evenly spaced side lines. Big candies moved at most 1.5 EL, only where
+  a game taken up says the same lines.
+- **Guard:** `tests/unit/aventyr2-candy-layout.test.ts` (no two pickups within 0.6 EL, no sweet at a big candy's foot,
+  the album sweet and lost thing clear). Typecheck, all 2,835 tests, the build and the privacy check pass; the playhouse
+  roof's sweets were looked at on the family's own model on Olov's computer (picture not kept).
+
 ## State (12 November 2026, night): Olov's playthrough list for Äventyr 2
 
 - **Olov asked**, after playing Äventyr 2 through, for about thirty fixes chapter by chapter, then a pass over how
