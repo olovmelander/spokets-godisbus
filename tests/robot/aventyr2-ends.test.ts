@@ -82,12 +82,17 @@ describe('Äventyr 2: Stormkvällen', () => {
       expect(kneels(who).some((key) => key.act === 'kneel'), who).toBe(true);
       // On the deck, out of the picture while he is on the veranda where they come out.
       expect(kneels(who)[0]!.y).toBe(-0.8);
-      expect(kneels(who)[0]!.x! - lofte.at!).toBeGreaterThan(10);
+      expect(kneels(who)[0]!.x! - lofte.from!).toBeGreaterThan(10);
     }
     // At the deck's edge he turns and waves to where they kneel.
     const wave = stormkvall.scenes!.find((scene) => scene.id === 'stormtitel')!.stage!.elof!.find((key) => key.act === 'wave')!;
     expect(wave.aim!.x).toBeGreaterThan(kneels('mamma')[0]!.x!);
     expect(wave.aim!.x).toBeLessThan(kneels('pappa')[0]!.x!);
+    // A game taken up at the deck's big candy has them there too.
+    const flags = ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans'];
+    const game = new Game(stormkvall, {}, { checkpoint: 3, flags });
+    for (let frame = 0; frame < 60 * 2; frame++) game.frame(1 / 60, { x: 0, hopHeld: false }, { hop: false, act: false, helper: false });
+    expect(game.sim.flags.has('scene:lofte')).toBe(true);
   });
 
   it('resumes after the shrinking on the floor, small, and still has its trail', () => {

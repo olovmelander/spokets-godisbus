@@ -436,10 +436,12 @@ const SCENES: SceneDef[] = [
     // Mamma and Pappa out on the deck in their raincoats, kneeling where he passes, as the family does in the first
     // adventure's prologue: their promises ("Vi är nära dig hela tiden.", "Följ godisspåret, Elof.") were said from an
     // empty deck, and he turned to wave back at no one at its edge. They come out while he is on the veranda, where the
-    // deck is not yet in the picture; Moa and Bertil stay in, to light him from the window and fetch the boots.
+    // deck is not yet in the picture; Moa and Bertil stay in, to light him from the window and fetch the boots. A game
+    // taken up at a big candy past the veranda has them there at once (`from`, not `at`: a scene at a place he starts
+    // beyond counts as seen, and they would not be on the deck at all).
     id: 'lofte',
-    at: 31.2,
-    needs: TRAIL,
+    on: TRAIL,
+    from: 31.2,
     seconds: 1,
     stage: {
       actors: {
