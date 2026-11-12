@@ -361,7 +361,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // and the one at the end.
   const endX = chapter.goalX + 0.6;
   const bigCandies = [
-    ...(chapter.checkpoints ?? []).map((at) => ({ x: at.x, y: at.y, z: -0.7, after: at.after })),
+    // (Or where the chapter stands it, out of the way of someone going by behind him: Checkpoint.z.)
+    ...(chapter.checkpoints ?? []).map((at) => ({ x: at.x, y: at.y, z: at.z ?? -0.7, after: at.after })),
     { x: endX, y: heightOfGroundAt(chapter, endX), z: 0, after: undefined },
   ].map((at) => {
     const place = buildCandy();

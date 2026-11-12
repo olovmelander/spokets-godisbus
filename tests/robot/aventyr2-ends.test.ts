@@ -69,31 +69,54 @@ describe('Äventyr 2: Stormkvällen', () => {
     const doll = result.heard.find((one) => one.id === 'skDoll')!;
     expect(doll.shown).not.toBeNull();
     expect(doll.shown! - doll.due).toBeLessThan(1);
-    // Nothing but his own words is said while the coat goes on.
+    // Nothing but his own words is said while the coat goes on: Moa and Bertil setting off after him (`foljer`) say
+    // nothing.
     const coatAt = result.scenes.findIndex((one) => one.id === 'regnrock');
-    expect(result.scenes[coatAt - 1]!.id).toBe('spar');
+    expect(result.scenes.slice(coatAt - 2, coatAt).map((one) => one.id)).toEqual(['spar', 'foljer']);
+    expect(stormkvall.scenes!.find((scene) => scene.id === 'foljer')!.lines).toBeUndefined();
   });
 
-  it('has Mamma and Pappa kneel on the deck where they make their promises, and he waves back to them', () => {
+  it('has the whole family kneel and crouch along the deck where the promises are said, and he waves back to them', () => {
+    // Olov, 12 November 2026: "Moa och Bertil får gärna hänga med på altanen." Mamma, Moa, Bertil and Pappa, a place each.
     const lofte = stormkvall.scenes!.find((scene) => scene.id === 'lofte')!;
-    const kneels = (who: 'mamma' | 'pappa') => lofte.stage!.actors![who]!;
+    const keys = (who: 'mamma' | 'pappa' | 'moa' | 'bertil') => lofte.stage!.actors![who]!;
+    const placed = (who: 'mamma' | 'pappa' | 'moa' | 'bertil') => keys(who).filter((key) => key.x !== undefined).at(-1)!;
     for (const [who, beat] of [['mamma', 'skNear'], ['pappa', 'skFollow']] as const) {
       const at = stormkvall.beats!.find((one) => one.id === beat)!.at!;
-      expect(Math.abs(kneels(who)[0]!.x! - at), who).toBeLessThan(1.5);
-      expect(kneels(who).some((key) => key.act === 'kneel'), who).toBe(true);
-      // On the deck, out of the picture while he is on the veranda where they come out.
-      expect(kneels(who)[0]!.y).toBe(-0.8);
-      expect(kneels(who)[0]!.x! - lofte.from!).toBeGreaterThan(10);
+      expect(Math.abs(placed(who).x! - at), who).toBeLessThan(1.5);
+      expect(keys(who).some((key) => key.act === 'kneel'), who).toBe(true);
+      // On the deck, out of the picture while he is at the door sill where they come out.
+      expect(keys(who)[0]!.y).toBe(-0.8);
+      expect(keys(who)[0]!.x! - lofte.from!).toBeGreaterThan(10);
     }
-    // At the deck's edge he turns and waves to where they kneel.
+    // Moa and Bertil crouch between them, in the first adventure's order, and none of the four on the line he walks.
+    const along = (['mamma', 'moa', 'bertil', 'pappa'] as const).map((who) => placed(who).x!);
+    expect(along).toEqual([...along].sort((a, b) => a - b));
+    for (const who of ['moa', 'bertil'] as const) {
+      expect(keys(who).at(-1)!.act, who).toBe('crouch');
+      expect(placed(who).y, who).toBe(-0.8);
+    }
+    for (const who of ['mamma', 'pappa', 'moa', 'bertil'] as const) expect(placed(who).z!, who).toBeLessThan(-2);
+    // At the deck's edge he turns and waves to where they kneel and crouch.
     const wave = stormkvall.scenes!.find((scene) => scene.id === 'stormtitel')!.stage!.elof!.find((key) => key.act === 'wave')!;
-    expect(wave.aim!.x).toBeGreaterThan(kneels('mamma')[0]!.x!);
-    expect(wave.aim!.x).toBeLessThan(kneels('pappa')[0]!.x!);
-    // A game taken up at the deck's big candy has them there too.
-    const flags = ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans'];
-    const game = new Game(stormkvall, {}, { checkpoint: 3, flags });
-    for (let frame = 0; frame < 60 * 2; frame++) game.frame(1 / 60, { x: 0, hopHeld: false }, { hop: false, act: false, helper: false });
-    expect(game.sim.flags.has('scene:lofte')).toBe(true);
+    expect(wave.aim!.x).toBeGreaterThan(placed('mamma').x!);
+    expect(wave.aim!.x).toBeLessThan(placed('pappa').x!);
+    // A game taken up at the veranda's or the deck's big candy has them all there at once, and Moa and Bertil no
+    // longer walking after him across the room.
+    const flags = ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans', 'scene:spar'];
+    for (const checkpoint of [2, 3]) {
+      const game = new Game(stormkvall, {}, { checkpoint, flags });
+      expect(game.sim.flags.has('scene:lofte'), `big candy ${checkpoint}`).toBe(true);
+      expect(game.sim.flags.has('scene:foljer'), `big candy ${checkpoint}`).toBe(true);
+      for (let frame = 0; frame < 60 * 2; frame++) game.frame(1 / 60, { x: 0, hopHeld: false }, { hop: false, act: false, helper: false });
+      expect(game.sim.sceneFrame, `big candy ${checkpoint}`).toBeNull();
+    }
+    // Taken up at the table's end, they set off after him again from where the trail was found, and go out with him.
+    const table = new Game(stormkvall, {}, { checkpoint: 1, flags });
+    expect(table.sim.flags.has('scene:foljer')).toBe(false);
+    for (let frame = 0; frame < 60 * 60 && !table.sim.flags.has('scene:lofte'); frame++) table.frame(1 / 60, { x: 1, hopHeld: true }, { hop: frame % 50 === 0, act: false, helper: false });
+    expect(table.sim.flags.has('scene:foljer')).toBe(true);
+    expect(table.sim.flags.has('scene:lofte')).toBe(true);
   });
 
   it('resumes after the shrinking on the floor, small, and still has its trail', () => {
