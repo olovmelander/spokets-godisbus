@@ -1,5 +1,22 @@
 # Handover
 
+## State (12 November 2026, evening): the rest of #242
+
+- **Olov asked** whether anything in the unmerged PR #242 ("What is said is what is seen", 8 November) should still go
+  into main. Two read-only audits compared each of its fixes with main at `ca5cab6`: most had been done again another
+  way since (the home redesign, #252, #256, #264, #266, #267), and porting the branch would have undone newer work.
+- **Still broken, fixed here:** the ghost stays with Elof to the goal on Berget and in Byn (`GhostPerch.stays`, behind
+  the path); in Granskogen it stands beside Pappa at the seesaw instead of inside him, and the jay moves to x 37, off the
+  candy at 38; the prologue's pointing shot keeps the ghost's feet clear of the bars; in Norrskenet the camera no longer
+  sinks into the crack he stands over, and the ride home says "Åk hem på Pappas axlar."; in Godiskalaset "Klonk, klonk!"
+  and the naming are framed, and Pappa's word about the knife and the first cut wait for him to arrive (`knife:pappa`,
+  4.5 s); on Berget the crane keeps its body over the rock as it lands and flies off behind him; in Stormens öga the
+  objective moves on once the owl has set him down, and the helper text no longer names the owl.
+- **Handed to the Äventyr 2 builders working on Olov's new list:** Flärken's doubled old one, Mormor missing at
+  Billsta's brow, Mamma and Pappa crossing in Stormkvällen's `upptackt`, and Stormbyn's umbrella recap.
+- **Validation:** typecheck, all 2,743 tests, the build (660.3 KB of gzipped JavaScript) and the privacy check pass. The
+  crane's landing was looked at in the running game with the stand-in figures. #242 is closed. No work needs Blender.
+
 ## State (12 November 2026, late afternoon): Olov's playthrough list for Äventyr 1
 
 - **Olov asked**, after playing Äventyr 1 through, for ten fixes in the order played: unfinished-looking animals;
