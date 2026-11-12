@@ -438,6 +438,14 @@ export function createAudio(): Audio {
             puff('lowpass', 420, 950, 2.8, 0.11, 0, 0.6);
             puff('bandpass', 760, 1500, 2.3, 0.055, 0.18, 0.5);
             break;
+          case 'pour':
+            // The rain barrel's tap (Stormgården, `kranen`): a squeak as it turns, the gush into the ditch, and a
+            // gurgle that sinks as the ditch fills and the barrel runs dry.
+            tone('triangle', 900, 1250, 0.12, 0.035);
+            puff('bandpass', 1400, 900, 3.4, 0.09, 0.15, 0.7);
+            puff('lowpass', 700, 260, 3.6, 0.07, 0.4);
+            for (const [i, at] of [0.9, 1.5, 2.2, 2.9].entries()) tone('sine', 420 - i * 50, 260 - i * 30, 0.12, 0.03, at);
+            break;
         }
         break;
       case 'step':

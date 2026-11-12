@@ -7,6 +7,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { COURSES } from '../../src/content/chapters';
 import { stormskog } from '../../src/content/aventyr2/chapters/stormskog';
 import { alven } from '../../src/content/aventyr2/chapters/alven';
+import { olympia } from '../../src/content/aventyr2/chapters/olympia';
 import { STONE } from '../../src/render/bark-detail';
 import { FLOOR_SHAPES, restock, stretch } from '../../src/render/dressing/forest';
 import { shoreAt } from '../../src/render/dressing/ground';
@@ -388,6 +389,24 @@ describe('the forest\'s floor with the kit', () => {
       expect(places(now.getObjectByName('forest-trunks') as InstancedMesh).filter(inGap)).toEqual([]);
     }
     expect(before).toBeGreaterThan(0);
+  });
+
+  // Olov, 12 November 2026, at Olympia's end: "Trädet uppe på kanten i slutet står halva på kanten och halva utanför."
+  it('stands every spruce with its whole foot on the ground, none half over the top of a wall', () => {
+    const ground = landscape(olympia);
+    let trunks = 0;
+    for (let from = ground.ground[0]!.x - 12; from < ground.ground.at(-1)!.x + 12; from += 18) {
+      if (!ground.surfaces?.some((s) => s.kind === 'moss' && s.from < from + 18 && s.to > from)) continue;
+      const mesh = stretch(ground, from, from + 18, Math.round(from * 7 + 97)).getObjectByName('forest-trunks') as InstancedMesh;
+      const matrix = new Matrix4();
+      for (let i = 0; i < mesh.count; i++) {
+        mesh.getMatrixAt(i, matrix);
+        const [x, radius] = [matrix.elements[12]!, Math.hypot(matrix.elements[0]!, matrix.elements[1]!, matrix.elements[2]!)];
+        trunks++;
+        for (const side of [-radius, radius]) expect(heightAt(ground, x + side), `the spruce at ${x.toFixed(2)}`).toBeGreaterThanOrEqual(heightAt(ground, x) - 0.3);
+      }
+    }
+    expect(trunks).toBeGreaterThan(0);
   });
 
   // The kit's cushions were a third lighter than the balls they stand for. Since the moss pass of 8 November 2026

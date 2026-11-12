@@ -81,7 +81,7 @@ export interface SceneDef {
 
 /** Who acts in a scene. Elof is the player: in a held scene he acts too. */
 export type Actor = 'pappa' | 'mamma' | 'moa' | 'bertil' | 'ghost' | 'elof';
-export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath' | 'wind';
+export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath' | 'wind' | 'pour';
 
 /**
  * What an actor does from a moment on. Each is a movement made in code on the body's joints (src/render/acting.ts),
@@ -128,6 +128,11 @@ export interface ActorKey {
   act?: Act;
   /** What the act is aimed at: what they look at, point to, reach for or offer to. */
   aim?: Point;
+  /**
+   * Picture only: where a torch in their hand shines, when not where they look (Pappa's beam out through the window
+   * while he reaches up to pull it to). A later key with an `aim` and no `beam` has the beam follow the aim again.
+   */
+  beam?: Point;
   /**
    * Picture only, after the scene: the actor walks along behind Elof, this far behind him, and stops where
    * he stops. Null: they stay where the scene left them. Left out: as before.

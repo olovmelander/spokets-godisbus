@@ -648,14 +648,14 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ett ljus hos skomakaren. Tack!"
+    "text": "Skomakaren tände ett ljus. Tack!"
   },
   {
     "key": "sbCandleThree",
     "speaker": "elof",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Bageriet lyser. Nu ser jag trappan!"
+    "text": "Bagaren tände ett ljus. Där är trappan!"
   },
   {
     "key": "sbRiver",
@@ -690,7 +690,7 @@
     "speaker": "moa",
     "situation": "Äventyr 2, stormbyn",
     "tag": "[warm big sister, lively]",
-    "text": "Där kom mitt minsta maskrosfrö!"
+    "text": "Där landade mitt lilla maskrosfrö!"
   },
   {
     "key": "sbCap",
@@ -1169,13 +1169,6 @@
     "text": "Stockar i virveln! Jag väntar in dem."
   },
   {
-    "key": "alLeafSeen",
-    "speaker": "elof",
-    "situation": "Äventyr 2, alven",
-    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ett björklöv, som i rännstenen!"
-  },
-  {
     "key": "alOldOne",
     "speaker": "elof",
     "situation": "Äventyr 2, alven",
@@ -1418,7 +1411,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, billsta",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Tack, morfar!"
+    "text": "Tack, morfar! Vilken lång stege!"
   },
   {
     "key": "biToMormor",
@@ -1993,6 +1986,55 @@
     "situation": "Äventyr 2, morgonen",
     "tag": "[warm, cheerful grandfather]",
     "text": "Elof! Så stor du har blivit!"
+  },
+  {
+    "key": "moThanksAll",
+    "speaker": "elof",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Tack för all hjälp i natt, allihop!"
+  },
+  {
+    "key": "moThanksBertil",
+    "speaker": "elof",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Bertil, din stövel blev min båt!"
+  },
+  {
+    "key": "moThanksPappa",
+    "speaker": "elof",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Pappa, du lyste och lyfte mig!"
+  },
+  {
+    "key": "moThanksMoa",
+    "speaker": "elof",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Moa, ditt paraply bar mig över."
+  },
+  {
+    "key": "moThanksMamma",
+    "speaker": "elof",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Mamma, du höll brädan stilla åt mig."
+  },
+  {
+    "key": "moThanksGrand",
+    "speaker": "elof",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Och mormors lykta och morfars stege!"
+  },
+  {
+    "key": "moThanksKlonk",
+    "speaker": "elof",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Och Klonk, du gav mig din sista stjärna."
   },
   {
     "key": "scene_morgonen",

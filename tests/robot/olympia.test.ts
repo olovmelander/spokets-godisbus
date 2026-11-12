@@ -13,7 +13,9 @@ import {
 } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { SimStart } from '../../src/sim/types';
+import { createHud } from '../../src/ui/hud';
 import { idle, jump, leap, run, sideTaken, use, walkTo } from '../sim/drive';
+import { fakePage } from './listener';
 import { decide, heightAt, playThrough } from './robot';
 
 /**
@@ -206,8 +208,8 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       }
       // A big candy in the middle of the stretch: a ball that bowls him over takes him back no further.
       expect(olympia.checkpoints!.some((c) => c.x > rollers[0]!.from.x + 5 && c.x < rollers[0]!.to.x - 5)).toBe(true);
-      // They set off from the bag at the fence's foot once he is well past it, the first a second after the beat
-      // that shows them: never at his feet.
+      // They set off from the bag at the fence's foot once he is well past it, the first a second after the line
+      // that shows them is said: never at his feet.
       const wind = olympia.beats!.find((b) => b.id === 'ol:wind')!;
       expect(wind.at! - rollers[0]!.from.x).toBeGreaterThan(3);
       expect(Math.min(...rollers.map((r) => r.first))).toBeGreaterThanOrEqual(1);
@@ -229,6 +231,74 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(sim.flags.has('beat:ol:phew')).toBe(false);
       expect(sim.bubbles).toBe(0);
     });
+
+    it('each sets off from the bag while he is near it, and otherwise out of the picture, behind him', () => {
+      // The widest picture, a phone held sideways, shows about seven EL behind him.
+      for (const r of rollers) expect(r.behind).toBeGreaterThanOrEqual(10);
+      // The big candy where they begin, near the bag, and the one in the middle of their stretch, far from it.
+      const { from: bag, to: end, behind } = rollers[0]!;
+      const near = olympia.checkpoints!.findIndex((c) => c.x > bag.x && c.x < bag.x + behind!);
+      const far = olympia.checkpoints!.findIndex((c) => c.x > bag.x + behind! + 2 && c.x < end.x - 5);
+      expect(near).toBeGreaterThanOrEqual(0);
+      expect(far).toBeGreaterThanOrEqual(0);
+      for (const [i, from] of [[near, bag.x], [far, olympia.checkpoints![far]!.x - behind!]] as const) {
+        const x = olympia.checkpoints![i]!.x;
+        const sim = new Sim(olympia, {}, { checkpoint: i, flags: ['beat:ol:wind'] });
+        let first: number | null = null;
+        for (let i = 0; i < 3 / STEP && first === null; i++) {
+          sim.step(idle);
+          if (sim.rollers[0]!.on) first = sim.rollers[0]!.x;
+        }
+        expect(first, `the first ball, with him at ${x}`).toBeCloseTo(from, 0);
+      }
+    });
+
+    /**
+     * Plays from the steps as the robot does, the page showing and reading each line, and notes where he is as each
+     * ball comes up to him: he runs on at full speed all the way, and jumps each one.
+     */
+    function meetings(): number[] {
+      const game = new Game(olympia, {});
+      const hud = createHud(fakePage({ show() {}, hide() {} }), olympia.candy.length, () => true, () => 1, () => {}, () => {}, (id) => game.sim.acknowledge(id));
+      const beats = new Map(olympia.beats!.map((beat) => [beat.id, beat]));
+      const lines: Record<string, string> = sv.lines;
+      const met: number[] = [];
+      const behind = rollers.map(() => false);
+      let told = 0;
+      let wasAhead = false;
+      let wasOffered = false;
+      for (let frame = 0; frame < 60 * 90 && game.sim.curr.x < rollers[0]!.to.x; frame++) {
+        if (hud.reading()) game.resume();
+        else {
+          const d = decide(game, olympia);
+          game.frame(1 / 60, { x: d.x, y: d.y, hopHeld: true, talking: hud.speaking() }, { hop: d.ahead && !wasAhead, act: d.offered && !wasOffered, helper: false });
+          wasAhead = d.ahead;
+          wasOffered = d.offered;
+        }
+        for (; told < game.sim.said.length; told++) {
+          const beat = beats.get(game.sim.said[told]!);
+          if (beat && lines[beat.line]) hud.say(beat.who, beat.line, false, beat.id);
+        }
+        hud.tick(1 / 60);
+        const x = game.sim.curr.x;
+        for (const [i, ball] of game.sim.rollers.entries()) {
+          if (behind[i] && ball.on && ball.x >= x) met.push(x);
+          behind[i] = ball.on && ball.x < x;
+        }
+      }
+      expect(game.sim.bowled).toBe(0);
+      return met;
+    }
+
+    it('come up to a child who runs on without stopping, all along the stretch, though the lines take their time to read', () => {
+      // Olov, 12 November 2026: "om man springer full fart frammåt så hinner inte bollarna komma innan den delen av
+      // olympia är slut". The line that shows them waits for the one before it, and the balls no longer wait for it
+      // to be read; and each comes from no farther behind him than he can be caught from.
+      const met = meetings();
+      expect(met.length, `he met balls at ${met.map((x) => x.toFixed(1)).join(', ')}`).toBeGreaterThanOrEqual(4);
+      expect(met[0]!).toBeLessThan(45);
+      for (let i = 1; i < met.length; i++) expect(met[i]! - met[i - 1]!).toBeLessThan(7);
+    });
   });
 
   describe('Bollen i målet', () => {
@@ -249,7 +319,16 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       expect(over.length).toBe(2);
       for (const j of over) expect(j.needs).toBe(ball.id);
       // The small goal stands beyond it, its mouth towards him.
-      expect(olympia.storm!.buildings!.some((b) => b.kind === 'goal' && b.x >= puddle.to && b.x - puddle.to < 3)).toBe(true);
+      const small = olympia.storm!.buildings!.find((b) => b.kind === 'goal' && b.x >= puddle.to && b.x - puddle.to < 3)!;
+      expect(small).toBeDefined();
+      // He walks into it and through it, between its two sides 12 apart, not beside its near side (Olov, 12 November
+      // 2026: "Så vi ska gå inne i målet inte bredvid"): the path runs well inside it, its near side in front.
+      expect(small.z + 6).toBeGreaterThan(0.8);
+      expect(small.z - 6).toBeLessThan(-0.8);
+      // Where he says so, he is in its mouth.
+      const said = olympia.beats!.find((b) => b.id === 'ol:in-goal')!;
+      expect(said.at).toBeGreaterThan(small.x);
+      expect(said.at).toBeLessThan(small.x + small.width!);
     });
 
     /** Up onto the table, behind the ball: from under it, with a jump straight up. */
@@ -334,10 +413,12 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       for (let x = crossbar.x - crossbar.width / 2; x <= crossbar.x + crossbar.width / 2; x += 0.1) {
         expect(crossbar.y - heightAt(olympia, x)).toBeGreaterThan(JUMP_APEX + LEDGE_REACH + LEDGE_GIVE);
       }
-      // It is the small goal's top.
+      // It is the small goal's top: a box goal, level from its crossbar back, as high as the bar.
       const goal = olympia.storm!.buildings!.find((b) => b.kind === 'goal')!;
       expect(goal.x).toBeCloseTo(crossbar.x - crossbar.width / 2, 5);
       expect(goal.width).toBeCloseTo(crossbar.width, 5);
+      expect(goal.level).toBe(true);
+      expect(goal.height).toBe(crossbar.y);
     });
 
     it('a held jump takes hold of the net; up it, along the bar to the lookout with every heart, and a slide down again', () => {
@@ -489,6 +570,20 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
   });
 
   describe('Elljusspåret', () => {
+    // Olov, 12 November 2026: "Stubben och pinnen när skogen börjar i slutet efter fotbollsplanen står i luften".
+    it('the stump and the branch where the forest begins lie on the ground: the branch along its whole length', () => {
+      const lying = olympia.decor!.filter((d) => d.look === 'kit' && (d.word === 'gren-a' || d.word === 'stubbe-sagad'));
+      expect(lying.length).toBe(2);
+      for (const d of lying) {
+        // At most a little sunk into the slope, never over it.
+        expect(d.at.y).toBeLessThanOrEqual(heightAt(olympia, d.at.x) + 1e-6);
+        expect(heightAt(olympia, d.at.x) - d.at.y).toBeLessThan(0.25);
+      }
+      // The branch is four Elofs long: the ground is level under all of it.
+      const branch = lying.find((d) => d.word === 'gren-a')!;
+      for (let x = branch.at.x - 2.2; x <= branch.at.x + 2.2; x += 0.1) expect(heightAt(olympia, x), `the ground at ${x.toFixed(1)}`).toBe(branch.at.y);
+    });
+
     it('in a flash the strongest gust takes the little one north, and the old trägubbe follows: Elof stops and watches it', () => {
       const gust = olympia.beats!.find((b) => b.id === 'ol:gust')!;
       const moment = olympia.scenes!.find((scene) => scene.id === 'norrut')!;

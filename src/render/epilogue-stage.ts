@@ -4,8 +4,11 @@ import { drawnWhile } from './idle';
 import { littleCarving } from './little-carving';
 import type { Rig } from './rig';
 
-/** The carved model's dark painted eyes are part of one mesh. Animate only this copy's eye corners. */
-function paintedBlink(model: Group): (blink: number) => void {
+/**
+ * The carved model's dark painted eyes are part of one mesh. Animate only this copy's eye corners: both, or one alone
+ * (`only`: 0 the one at lower x, 1 the other) for a wink.
+ */
+export function paintedBlink(model: Group, only?: 0 | 1): (blink: number) => void {
   const patches: { position: BufferAttribute; dots: { index: number; y: number; centre: number }[] }[] = [];
   model.traverse((object) => {
     const mesh = object as Mesh;
@@ -28,7 +31,7 @@ function paintedBlink(model: Group): (blink: number) => void {
     if (sides.some((side) => side.length < 3)) return;
     // Loaded kit geometry is shared by the shelf and both adventures; only the window's copy may blink.
     mesh.geometry = mesh.geometry.clone();
-    const dots = sides.flatMap((side) => {
+    const dots = (only === undefined ? sides : [sides[only]!]).flatMap((side) => {
       const centre = (Math.min(...side.map((dot) => dot.y)) + Math.max(...side.map((dot) => dot.y))) / 2;
       return side.map((dot) => ({ ...dot, centre }));
     });

@@ -5,6 +5,7 @@ import type { SceneFrame } from '../sim/scene';
 import type { Rig } from './rig';
 import { HOME_BATHROOM, HOME_LAYOUT } from '../content/home-layout';
 import { createHomeConsoleModel } from './home-console-model';
+import { electricLight } from '../content/home-power';
 
 /** The same doorway in the hall, behind the walking path, in every home chapter. */
 export const BATHROOM = HOME_BATHROOM;
@@ -21,7 +22,10 @@ const box = (w: number, h: number, d: number, x: number, y: number, z: number, h
   colour(new BoxGeometry(w, h, d).translate(x, y, z), hex);
 const joined = (parts: BufferGeometry[]) => new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: .72 }));
 
-/** An original paper-cut programme: a rabbit and a little bird make a cloud float across their meadow. */
+/**
+ * An original paper-cut programme: a rabbit and a little bird make a cloud float across their meadow. The screen is dark
+ * once the power has gone on the evening of the storm (../content/home-power.ts), and blinks with the lamps as it goes.
+ */
 function programme(canvas: HTMLCanvasElement, seconds: number, on: boolean): void {
   const c = canvas.getContext('2d'); if (!c) return;
   c.fillStyle = on ? '#8fc6d2' : '#18232b'; c.fillRect(0, 0, 320, 180);
@@ -132,7 +136,7 @@ export function createHomeRoutine(chapter: ChapterData) {
       brush.visible = active && phase >= b.brushStart && phase < b.brushEnd;
       const now = Math.floor(seconds * 8);
       if (canvas && screenMap && now !== televisionFrame) {
-        televisionFrame = now; programme(canvas, seconds, chapter.id !== 'stormkvall' || !flags.has('candles')); screenMap.needsUpdate = true;
+        televisionFrame = now; programme(canvas, seconds, electricLight(chapter.id, flags, frame) > 0.5); screenMap.needsUpdate = true;
       }
     },
     body(from: { x: number; y: number }) {

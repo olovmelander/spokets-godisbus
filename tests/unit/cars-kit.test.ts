@@ -4,9 +4,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { building, FAMILY_CAR } from '../../src/content/aventyr2/buildings';
 import { byn } from '../../src/content/chapters/byn';
+import { stormbyn } from '../../src/content/aventyr2/chapters/stormbyn';
 import { villageLife } from '../../src/render/village';
-import { installSharedModels } from '../../src/render/shared-models';
-import type { Assets } from '../../src/render/assets';
 
 /** The props kit as Blender baked it (art/blender/a2-props.py, art/baked/aventyr2/props.glb). */
 async function kit(): Promise<Object3D> {
@@ -20,23 +19,21 @@ const luminance = (mesh: Mesh, index: number) => {
 };
 
 describe('the cars made in Blender', () => {
-  it('installs Byn’s modeled car without a storm and rolls its actual tyres by the distance driven', async () => {
-    const model = await kit(), life = villageLife(byn);
-    const assets = { manifest: async () => ({ packs: { aventyr2: { files: { 'props.glb': {} } } } }), model: async () => model } as unknown as Assets;
-    await installSharedModels(assets, life.group);
-    const car = life.group.getObjectByName('passing-car')!;
-    const wheel = car.getObjectByName('bil-gra-hjul-fram')!;
-    expect(wheel).toBeDefined();
-    life.update(1);
-    const x = car.position.x, angle = wheel.rotation.z;
-    life.update(2);
-    const travelled = car.position.x - x;
-    const rolled = (angle - wheel.rotation.z) * wheel.userData.radius * car.userData.fit;
-    expect(travelled).toBeGreaterThan(0);
-    expect(rolled).toBeCloseTo(travelled, 8);
-    const held = wheel.rotation.z;
-    life.update(2);
-    expect(wheel.rotation.z).toBe(held);
+  it('drive no more through the village streets: only a grown-up’s legs go by, in Byn and in Byn i stormen', () => {
+    // Olov, 12 November 2026: "De stora benen i byn ser verkligen ut som en jätte när man jämför med Bilen som kör
+    // förbi! Vi kan ta bort bilarna". Before, Byn's grey estate car drove behind the street, the same in the storm.
+    for (const chapter of [byn, stormbyn]) {
+      const life = villageLife(chapter);
+      expect(life.group.getObjectByName('passing-car'), chapter.id).toBeUndefined();
+      const models: unknown[] = [];
+      life.group.traverse((object) => { if (object.userData.model) models.push(object.userData.model); });
+      expect(models, chapter.id).toEqual(['fotgangare']);
+      life.update(1);
+      const shoes = life.group.getObjectByName('passing-shoes')!;
+      const at = shoes.position.x;
+      life.update(2);
+      expect(shoes.position.x, chapter.id).toBeGreaterThan(at);
+    }
   });
 
   it('hang their wheels on a pivot at each axle, round, on the ground, with how far they roll in a turn', async () => {

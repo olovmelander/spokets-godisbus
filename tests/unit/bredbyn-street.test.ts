@@ -20,9 +20,8 @@ describe('the Köpmangatan-inspired distant street', () => {
     const life = villageLife(chapter);
     life.update(6);
     expect(life.group.getObjectByName('passing-shoes')!.position.y).toBe(0);
-    const car = life.group.getObjectByName('passing-car')!;
-    expect(car.userData.model).toBe('bil-gra');
-    expect(car.position.y + car.userData.lift).toBe(0);
+    // No car drives by any more (Olov, 12 November 2026): beside the legs it made them a giant's.
+    expect(life.group.getObjectByName('passing-car')).toBeUndefined();
   });
 
   it('uses bounded opaque lit geometry, without photograph textures or extra draw calls', () => {

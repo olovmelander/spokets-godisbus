@@ -34,7 +34,8 @@ describe('Äventyr 2: the pictures', () => {
   });
 
   it('adds the storm to the picture only where a chapter has one', () => {
-    expect(PACK.extras.length).toBe(1);
+    // The storm, and the waves over a jetty where its gusts blow (src/render/jetty-waves.ts: Flärken's).
+    expect(PACK.extras.length).toBe(2);
     expect(AVENTYR2.filter((chapter) => chapter.storm).map((chapter) => chapter.id)).toEqual(['stormkvall', 'stormgard', 'stormskog', 'stormbyn', 'olympia', 'flarken', 'alven', 'billsta', 'stormoga']);
     // Klonk's frozen bridge is a ledge the storm knows.
     const skog = AVENTYR2.find((chapter) => chapter.id === 'stormskog')!;

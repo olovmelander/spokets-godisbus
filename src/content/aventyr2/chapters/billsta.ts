@@ -18,8 +18,8 @@ import { alongAll, elderWalk, hopCandy, jump, round, row, slopeRow, timeCard } f
  *    stack of firewood, and a plain mailbox by the road (no name, no number). **Mormor** waits by the woodshed.
  *    "Ropa på mormor": she lights her lantern, walks up the planks to the barn's door and opens it for him.
  * 4. **Ladan:** up the planks to the barn's door, through the dark hay loft by mormor's lantern, over a bale and the
- *    hatch in its floor, and out onto the long roof against the barn, where the gusts blow and the ventilation
- *    hoods are the lee. Two beams over the loft are a second way. The roof's far end slopes down to its low eaves,
+ *    hatch in its floor, and out onto the long roof against the barn, where the gusts blow and its row of old brick
+ *    ventilation chimneys is the lee. Two beams over the loft are a second way. The roof's far end slopes down to its low eaves,
  *    and a soft drop takes him to the ground behind the house.
  * 5. **Skogen och Billaberget:** a forest brook behind the house, crossed on three stones. Further on the brook runs
  *    deep and wide below the hill's steep bank, and a dry spruce the storm has blown down lies over a stone on the
@@ -78,6 +78,9 @@ const LADDER: Ledge = { x: (DITCH.from + DITCH.to) / 2, y: 0, width: DITCH.to - 
 
 /** The gravel drive up from the road to the yard. */
 const DRIVE = { from: DITCH.to, to: 29 };
+/** Where he thanks morfar, a step past the ladder's far end, and the big candy on the drive beyond, which a game is taken up at. */
+const THANKS_AT = 19.8;
+const DRIVE_CANDY = 22;
 
 /** The woodshed's stack of firewood, three rows of logs high: up it a row at a time, and a soft drop off its end. */
 const STACK = [38, 39.6, 41.2].map((x, i) => ({ x, y: round(1.2 * (i + 1)) }));
@@ -92,8 +95,8 @@ const ramp = (x: number) => round((LOFT * (x - PLANKS.from)) / (PLANKS.to - PLAN
 
 /**
  * The barn's door at the top of the planks, blown shut: as high as two of him, and nothing climbs it. Mormor walks up
- * and opens it (`on`): to the simulation its block slides up, over his head; in the picture the door swings in on its
- * hinges, in its frame (./render.ts, 'barn-door').
+ * and opens it (`on`): to the simulation its block slides up, over his head; in the picture it is the big sliding door
+ * in the barn's front, which she pushes aside along its rail (../barn-loft.ts, 'barn-door').
  */
 const DOOR: Mover = {
   id: 'bi-door', look: 'barn-door', width: 0.4, height: 2.6, verb: 'pull', on: 'bi:door',
@@ -110,6 +113,8 @@ const HAY = [67.6, 69.2].map((x, i) => ({ x, y: round(LOFT + 1.2 * (i + 1)) }));
  */
 const ROOF = { from: HAY[1]!.x, to: 99.6, y: HAY[1]!.y };
 const ROOF_LEE = [72, 77.2, 82.4, 87.6, 92.8, 98];
+/** The loft's ground, for its picture (../barn-loft.ts): the planks up to it, its floor, the bale, the hatch, the hay. */
+export const LOFT_GROUND = { planks: PLANKS, floor: LOFT, bale: BALE, hatch: HATCH, hay: HAY, roof: { from: HAY[1]!.x, y: HAY[1]!.y } } as const;
 const EAVES = { from: 105.6, to: 106.4, y: 2.4 };
 const eaves = (x: number) => round(ROOF.y - ((ROOF.y - EAVES.y) * (x - ROOF.to)) / (EAVES.from - ROOF.to), 4);
 
@@ -133,9 +138,14 @@ const MORMOR = { x: 47.4, y: 0 };
  * to show all of it, him at the planks' foot, her going up them and the door at their top (`MORMOR_SEEN`).
  */
 const MORMOR_WAITS = { x: 47.9, y: 0, z: -0.9 };
-const MORMOR_AT_DOOR = { x: 54.7, y: ramp(54.7), z: -0.9 };
+/**
+ * At the top of the planks she stands by the barn's corner, on the planks' near side: the door is in the barn's front,
+ * which faces the yard (../barn-loft.ts), and she takes its handle and pushes it aside along its rail. He goes in behind
+ * her.
+ */
+const MORMOR_AT_DOOR = { x: 54.6, y: ramp(54.6), z: 1.0 };
 const MORMOR_WALK = elderWalk(MORMOR_WAITS.x, MORMOR_AT_DOOR.x, (x) => (x < PLANKS.from ? 0 : ramp(x)));
-const MORMOR_SEEN = { x: 51.7, y: 5, height: 11.6, width: 12.5, seconds: round(MORMOR_WALK + 2.2, 1) };
+const MORMOR_SEEN = { x: 52.4, y: 5.4, height: 12.4, width: 13.6, seconds: round(MORMOR_WALK + 2.2, 1) };
 
 // --- 5. the forest behind the house, and Billaberget ---------------------------------------------------------------
 
@@ -207,6 +217,8 @@ const LEE = [163.9, 169.1, 174.3, 179.5, 184.7];
 const RISE = { from: 186.9, to: 191.3 };
 const BROW = { from: RISE.to, to: 210, y: 6.4 };
 const rise = (x: number) => round(SLOPE + ((BROW.y - SLOPE) * (x - RISE.from)) / (RISE.to - RISE.from), 4);
+/** Where mormor stands when she has come up the path behind him, on the last of the rise, behind the path and Klonk. */
+const MORMOR_UP = { x: 190.4, z: -1.5 };
 
 /**
  * Up Billaberget's cliff, a second way (docs/level-design.md): three shelves of rock where the hazel grows, each a
@@ -321,6 +333,19 @@ export const billsta: ChapterData = {
         { at: inAt('bertil') + 0.2, away: true },
       ],
     } } },
+    // Over the ditch he turns back to morfar, waves and thanks him for the ladder, and morfar sends him on to mormor
+    // (Olov, 12 November 2026: "Elof måste tacka morfar som lägger stegen över diket"). Told standing on the far side,
+    // as the family's thanks are in the first adventure (`tack-pappa`, `flata-tack`): said in passing, the thanks was a
+    // remark, let go when he ran on. A game taken up at the drive's big candy has had it.
+    // The picture takes in the two of them, morfar by his ladder and Elof turned back to him, before the words.
+    {
+      id: 'bi:tack-morfar', at: THANKS_AT, needs: 'bi:ladder', before: DRIVE_CANDY - 0.2, until: 'beat:bi:to-mormor', seconds: 0.9, hold: true,
+      dialogue: ['bi:thanks', 'bi:to-mormor'], cues: [{ at: 0.55, flag: 'bi:thanks-seen' }],
+      stage: {
+        shots: [{ at: 0, x: round((MORFAR.x + THANKS_AT) / 2 + 0.3), y: 2.9, height: 7.6, width: 12.4, move: 0.6 }],
+        elof: [{ at: 0, face: 0.5, act: 'wave', aim: { x: MORFAR.x + 0.4, y: 4.2, z: -0.8 } }, { at: 0.8, act: 'look', aim: { x: MORFAR.x + 0.4, y: 4.4, z: -0.8 } }],
+      },
+    },
     // Called, mormor walks up the planks and opens the barn's door while he watches: all of it in the picture, until
     // the door is open and she has let go of it.
     {
@@ -330,9 +355,11 @@ export const billsta: ChapterData = {
     // "Där nere! På en sten i sundet!": the camera goes out to the stone far below, looking down onto it a little, and
     // stays there while he says what he sees, the little one lands, and the old one holds him. This short
     // view holds Elof on the safe brow; its dialogue finishes automatically, with the figures still in sight.
+    // Mormor's words come after it, back on the brow, where she has come up the path with her lantern and is seen saying
+    // them (`MORMOR_UP`): said in it, they were said with the picture out on the stone.
     {
       id: 'bi:sundet', at: 193.2, seconds: SEEN.seconds, hold: true,
-      dialogue: ['bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down'],
+      dialogue: ['bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl'],
       // Frame the stone before making the first line available, even when earlier speech is still queued.
       cues: [{ at: 0.01, flag: 'bi:strait-seen' }],
       stage: { shots: [{ at: 0, x: SEEN.x, y: SEEN.y, z: SEEN.z, height: SEEN.height, width: SEEN.width, eye: 1, move: 0.001 }] },
@@ -401,8 +428,13 @@ export const billsta: ChapterData = {
     // The road, and the gravel drive up to the yard.
     { from: -3, to: DITCH.from, kind: 'asphalt' },
     { from: DRIVE.from, to: DRIVE.to, kind: 'earth' },
-    // The planks, the loft's floor and the roof, all boards: the ground's 'iron' is a drain's grate, not a roof.
-    { from: PLANKS.from, to: ROOF.from, kind: 'wood' },
+    // The planks, the loft's floor and the roof, all boards: the ground's 'iron' is a drain's grate, not a roof. The bale
+    // and the hay he climbs to the roof are straw (their bales are drawn over them: ../barn-loft.ts); as boards, each
+    // was a wooden box whose floor ran out towards the camera.
+    { from: PLANKS.from, to: BALE.from, kind: 'wood' },
+    { from: BALE.from, to: BALE.to, kind: 'shavings' },
+    { from: BALE.to, to: HAY[0]!.x, kind: 'wood' },
+    { from: HAY[0]!.x, to: ROOF.from, kind: 'shavings' },
     { from: ROOF.from, to: EAVES.to, kind: 'roof' },
     // The forest floor behind the house, the stones in the brook, and Billaberget's boulders.
     { from: EDGE.from, to: EDGE.to, kind: 'moss' },
@@ -423,7 +455,7 @@ export const billsta: ChapterData = {
   ],
   checkpoints: [
     { x: 7, y: 0 },
-    { x: 22, y: 0 },
+    { x: DRIVE_CANDY, y: 0 },
     { x: 35.4, y: 0 },
     { x: 57.4, y: LOFT },
     { x: 70.6, y: ROOF.y },
@@ -468,6 +500,8 @@ export const billsta: ChapterData = {
     { flag: 'bi:think-more', after: 'bi:klonk-on', seconds: 22, until: PIVOT_PLACED },
     // The little one, tossed onto the stone by a wave, where the old one catches him.
     { flag: 'bi:landed', after: 'beat:bi:there', seconds: 1.6 },
+    // Back on the brow from the stone, mormor is there with her lantern, and speaks.
+    { flag: 'bi:mormor-up', after: 'scene:bi:sundet', seconds: 0.5 },
   ],
   // Lätta hopp: every edge the trail jumps from.
   jumps: [
@@ -488,7 +522,7 @@ export const billsta: ChapterData = {
   storm: {
     rain: 1,
     lightning: 5.5,
-    // On the barn's roof the lee is the ventilation hoods along the ridge; on Billaberget it is its boulders.
+    // On the barn's roof the lee is its brick ventilation chimneys (../barn-chimney.ts); on Billaberget its boulders.
     shelters: ['vents', 'rocks'],
     // The narrow, far below the brow beyond the forest, where the two figures are.
     lakes: [NARROW],
@@ -547,8 +581,8 @@ export const billsta: ChapterData = {
       // Mormor's lantern, held up at the barn's door once she has opened it: its light falls into the dark loft.
       { at: { x: 56.8, y: LOFT + 0.6 }, z: -0.9, size: 1.3, after: `placed:${DOOR.id}` },
       { at: { x: 63, y: LOFT + 2.2 }, z: -2.4, size: 2.4, after: `placed:${DOOR.id}` },
-      // Mormor, come up the path behind him with her lantern, as the owl hoots.
-      { at: { x: 189.6, y: 6.6 }, z: -1.6, size: 1.2, after: 'beat:bi:owl' },
+      // Mormor, come up the path behind him with her lantern, as the owl hoots: its light, where she holds it low.
+      { at: { x: MORMOR_UP.x + 0.9, y: round(rise(MORMOR_UP.x) + 2.1) }, z: MORMOR_UP.z + 0.4, size: 1.2, after: 'beat:bi:owl' },
       // A light on the water behind the two on their stone, from the moment the flash shows them: they stand out against it.
       { at: { x: STONE_OUT.x + 0.4, y: round(NARROW.y + 1.1) }, z: STONE_OUT.z - 1.2, size: 6.5, after: 'beat:bi:there' },
     ],
@@ -568,6 +602,9 @@ export const billsta: ChapterData = {
     { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -2.6, turn: 2.9 },
     // The hazel shelves on Billaberget's face.
     ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
+    // Mormor, come up the path behind him with her lantern as the owl hoots, and there when the picture comes back from
+    // the stone: she says they will go down to the narrow.
+    { look: 'mormor', at: { x: MORMOR_UP.x, y: rise(MORMOR_UP.x) }, z: MORMOR_UP.z, after: 'beat:bi:owl' },
     // Far out in the narrow, on a stone: the old one, and the little one once the wave has tossed him there. Found, both
     // are warm in the dark (as on the stone in the storm's eye), and the old one rocks a little as he holds the little one.
     { look: 'tragubbe', word: 'lifted', at: { x: STONE_OUT.x, y: STONE_OUT.y }, z: STONE_OUT.z, scale: FAR_SIZE, after: 'beat:bi:there' },
@@ -619,15 +656,16 @@ export const billsta: ChapterData = {
     // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
     // 1. the road: Moa's two lines are the arrival's, said by the car (`card`, above)
     // 2. Morfar at the ditch. He sees Elof coming and greets him, and Elof answers with what stops him; called, he
-    // says what he does. The thanks is said on the far side of the ladder or not at all, and morfar answers it.
+    // says what he does. Over the ladder Elof thanks him, standing, and morfar answers.
     { id: 'bi:morfar-here', at: 6, until: 'bi:morfar', who: 'morfar', line: 'biMorfarHere', read: true },
     { id: 'bi:ditch', on: 'beat:bi:morfar-here', until: 'bi:morfar', who: 'elof', line: 'biDitch', aside: true },
     // What each of them is about to do is said while they do it: once the ladder lies there, or the door is open,
     // the words for it are let go, and the next ones come in their place.
     { id: 'bi:ladder-lay', on: 'bi:morfar', until: 'bi:ladder', within: [6, 20], who: 'morfar', line: 'biLadderLay', read: true },
     { id: 'bi:ladder', on: 'bi:ladder', within: [6, 20], who: 'morfar', line: 'biLadderOn', aside: true },
-    { id: 'bi:thanks', at: 19.8, needs: 'bi:ladder', who: 'elof', line: 'biThanksMorfar', aside: true },
-    { id: 'bi:to-mormor', on: 'beat:bi:thanks', who: 'morfar', line: 'biToMormor', aside: true },
+    // The thanks and morfar's answer are the story's now, told standing (`bi:tack-morfar`, above).
+    { id: 'bi:thanks', at: THANKS_AT, needs: 'bi:thanks-seen', within: [DITCH.from, DRIVE_CANDY], who: 'elof', line: 'biThanksMorfar' },
+    { id: 'bi:to-mormor', on: 'beat:bi:thanks', who: 'morfar', line: 'biToMormor' },
     // 3. the yard, and Mormor by the woodshed
     { id: 'bi:yard', at: 26.4, who: 'elof', line: 'biYard', aside: true },
     { id: 'bi:mormor-here', at: 45, until: 'bi:mormor', who: 'mormor', line: 'biMormorHere', read: true },
@@ -663,7 +701,7 @@ export const billsta: ChapterData = {
     // The old one reached him: what he hurried for all night (Stormskogen's hollow).
     { id: 'bi:not-alone', on: 'beat:bi:holds', who: 'elof', line: 'biNotAlone' },
     { id: 'bi:owl', on: 'beat:bi:not-alone', who: 'elof', line: 'biOwl' },
-    { id: 'bi:down', on: 'beat:bi:owl', who: 'mormor', line: 'biToNarrow' },
+    { id: 'bi:down', on: 'bi:mormor-up', who: 'mormor', line: 'biToNarrow' },
     { id: 'bi:cheer', on: 'beat:bi:down', who: 'spoket', line: 'biKlonkCheer' },
   ],
   cameras: [

@@ -52,6 +52,8 @@ export interface ExtraFrame {
   mode?: Mode;
   /** How dark the place is now, 0 by day to 1 at its darkest (the night falling in Norrsken, the dusk). */
   darkness?: number;
+  /** What each of the chapter's gusts is doing, in its order (the simulation's): blowing (0 to 1), or about to. */
+  gusts?: readonly { blow: number; warn: number }[];
 }
 
 export interface ViewExtra {

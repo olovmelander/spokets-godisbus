@@ -1,6 +1,6 @@
-import type { Candy, ChapterData } from '../../../sim/types';
+import type { Candy, ChapterData, Flyby } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { alongAll, jump, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, flightAt, jump, round, row, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 2: Stormskogen (docs/aventyr-2.md). Units: EL. The spruce forest at night, in the storm.
@@ -53,6 +53,20 @@ const HOLLOW = { x: 155.5, y: -1.2 };
 /** Set when the picture has closed in on the hollow and its thought: the words about it wait for that. */
 const SHOWN = 'ss:memory-shown';
 
+/**
+ * From the high root, the old one far down the hill (Olov, 12 November 2026: "Det kan se bättre ut när trägubben i slutet
+ * av kapitlet syns"). A flash shows him where the hill opens below the boughs off the root, clear of them and of what
+ * hangs on them, a little in front of the path so that its sweets do not cover him: pale wood in his own glow, and big
+ * enough to be read across the picture. Elof stops and points; the old one stands while the line is read, the lightning
+ * flashes again as he sets off, and he hurries on down towards the village, the picture going with him. He was a grey
+ * figure walking under the boughs, behind their sweets, who vanished halfway down the open hill. Now the moment ends
+ * while he is still on his way, and the picture goes back to Elof: he walks on out of it, down the hill.
+ */
+const OLD_DOWNHILL: Flyby = {
+  on: 'ss:old-appears', from: { x: 190.8, y: hill(190.8) }, to: { x: 200, y: hill(200) }, seconds: 5.6, who: 'tragubbe', walk: true,
+  z: 0.35, size: 1.8, lit: [0.15],
+};
+
 /** The owl's flight over the widest gap of the windthrow: from its near edge to well past its far one. */
 const OWL = { from: { x: 109.6, y: 0 }, to: { x: 123, y: 0 }, rise: 4, time: 3 };
 
@@ -78,12 +92,18 @@ export const stormskog: ChapterData = {
   scenes: [
     // Where and when, as the chapter opens (src/content/chapters/cards.ts).
     timeCard('stormskog', 1),
+    // From the high root, the old one far down the hill (`OLD_DOWNHILL`): Elof and the old one in one picture, and then
+    // the picture goes down the hill with him. The line waits for the flash's picture; the moment ends as he walks on.
     {
       id: 'ss:old-downhill', at: 182, seconds: 4.8, hold: true, dialogue: ['ss:see-old'],
       cues: [{ at: .8, flag: 'ss:old-appears' }], lines: [],
-      stage: { shots: [{ at: 0, x: 185.5, y: 4.6, height: 7.5, width: 11.5, move: .6 },
-        { at: 2.2, x: 189.5, y: 3.6, height: 7.5, width: 12, move: 1.1 }],
-        elof: [{ at: 0, act: 'look', aim: { x: 186, y: 4.2, z: -.6 } }] },
+      stage: { shots: [{ at: 0, x: 186.8, y: 3.7, height: 7.2, width: 13, move: .6 },
+        { at: 1, x: 193.4, y: 2.5, height: 7.2, width: 12.5, move: 3 }],
+        elof: [
+          { at: 0, act: 'look', aim: { x: OLD_DOWNHILL.from.x, y: OLD_DOWNHILL.from.y + 1, z: OLD_DOWNHILL.z } },
+          { at: .8, act: 'point', aim: { x: OLD_DOWNHILL.from.x, y: OLD_DOWNHILL.from.y + 1, z: OLD_DOWNHILL.z } },
+          { at: 1.4, act: 'look', aim: { ...flightAt(OLD_DOWNHILL, 0.6), y: flightAt(OLD_DOWNHILL, 0.6).y + 1 } },
+        ] },
     },
     // The old one's memory (docs/aventyr-2.md, the question that pulls the night on, answered). At the hollow he
     // stands and looks: Klonk's picture of the crack on the mountain, and what it means, are read there with the
@@ -147,8 +167,8 @@ export const stormskog: ChapterData = {
     flybys: [
       // At the forest's edge: the little one, tumbling over the treetops ahead.
       { on: 'beat:ss:flash', from: { x: round(FLASH_AT - 6, 1), y: 2.3 }, to: { x: round(FLASH_AT + 17, 1), y: 3.3 }, rise: 0.7, seconds: 3, who: 'lillgubbe', lit: [1.3] },
-      // From the high root: the old one, far down the hill, hurrying on towards the village.
-      { on: 'ss:old-appears', from: { x: 186, y: hill(186) }, to: { x: 194, y: hill(194) }, seconds: 4, who: 'tragubbe', walk: true, z: -.6, size: 1.7, lit: [] },
+      // From the high root: the old one, far down the hill, hurrying on towards the village (`OLD_DOWNHILL`).
+      OLD_DOWNHILL,
     ],
   },
   ground: [

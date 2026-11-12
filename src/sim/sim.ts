@@ -14,6 +14,7 @@ import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
 import { LEDGE_CORNER, LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
 import { hintFor } from './help';
 import { rideY } from './ride-path';
+import { levelUnder } from './water-level';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
@@ -102,6 +103,9 @@ export interface RollerState {
   radius: number;
   /** The step at which it was set rolling, or -1 while it waits for its flag. */
   since: number;
+  /** Which of its runs this is, and how far along its rail (0 to 1) this run set off: see `Roller.behind`. */
+  run: number;
+  start: number;
 }
 
 /** A soft tussock: where its top is now, and how far it has sunk, from 0 to 1. */
@@ -372,7 +376,7 @@ export class Sim {
     });
 
     this.drips = (chapter.drips ?? []).map((drip) => ({ x: drip.at.x, y: drip.at.y, shadow: 0, height: -1 }));
-    this.rollers = (chapter.rollers ?? []).map((r) => ({ x: r.from.x, y: r.from.y, on: false, radius: r.radius, since: r.needs === undefined ? 0 : -1 }));
+    this.rollers = (chapter.rollers ?? []).map((r) => ({ x: r.from.x, y: r.from.y, on: false, radius: r.radius, since: r.needs === undefined ? 0 : -1, run: -1, start: 0 }));
     this.gusts = (chapter.gusts ?? []).map(() => ({ blow: 0, warn: 0, until: 0 }));
     this.tussocks = (chapter.tussocks ?? []).map((t) => ({ x: t.x, y: t.y, width: t.width, sunk: 0 }));
     this.tussockBodies = this.tussocks.map((t) => {
@@ -594,13 +598,22 @@ export class Sim {
       const state = this.rollers[i]!;
       state.on = false;
       if (def.until !== undefined && this.ready(def.until)) continue;
-      // Cones that wait for a nudge keep time from the nudge, and none is on its way before its turn.
-      if (state.since < 0 && this.ready(def.needs!)) state.since = this.steps;
+      // Cones that wait for a nudge keep time from the nudge, and none is on its way before its turn. Where a line
+      // sets them off, they set off as it is said: the words that warn of them come with them, not after they are
+      // read, or a child running on has left the stretch before the first one comes (Olov, 12 November 2026).
+      if (state.since < 0 && this.flags.has(def.needs!)) state.since = this.steps;
       if (state.since < 0) continue;
       const every = Math.max(1, Math.round(def.every / STEP));
       const since = this.steps - state.since - Math.round(def.first / STEP);
       if (def.needs !== undefined && since < 0) continue;
-      const gone = ((((since % every) + every) % every) * STEP * def.speed) / Math.hypot(def.to.x - def.from.x, def.to.y - def.from.y);
+      const run = Math.floor(since / every);
+      if (run !== state.run) {
+        state.run = run;
+        const along = def.behind === undefined ? 0 : (this.curr.x - def.behind - def.from.x) / (def.to.x - def.from.x);
+        state.start = Math.min(1, Math.max(0, along));
+      }
+      const length = Math.hypot(def.to.x - def.from.x, def.to.y - def.from.y);
+      const gone = state.start + ((((since % every) + every) % every) * STEP * def.speed) / length;
       state.on = gone <= 1;
       if (!state.on) continue;
       state.x = mix(def.from.x, def.to.x, gone);
@@ -745,8 +758,14 @@ export class Sim {
   private wade(): void {
     if (this.state.kind !== 'free') return;
     const p = this.curr;
-    const wet = (this.chapter.water ?? []).some((w) => p.x >= w.from && p.x <= w.to && p.y < w.y + WATER_REACH);
+    const wet = (this.chapter.water ?? []).some((w) => p.x >= w.from && p.x <= w.to && p.y < this.waterLevel(w) + WATER_REACH);
     if (wet) this.startBubble();
+  }
+
+  /** How high a stretch of water stands now: one that a floating thing rises on is low until it is filled (`floats`). */
+  waterLevel(w: NonNullable<ChapterData['water']>[number]): number {
+    const mover = w.floats === undefined ? undefined : this.movers.find((m) => m.def.id === w.floats);
+    return mover ? levelUnder(w, mover.def, mover.y) : w.y;
   }
 
   /**

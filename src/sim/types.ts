@@ -320,6 +320,11 @@ export interface Roller {
   needs?: string;
   /** A local story beat can end the hazard before a return path becomes a puzzle hub. */
   until?: string;
+  /**
+   * Cones that come from behind him and must reach him, however fast he runs: each sets off no farther than this
+   * behind where he is then (out of the picture), and from the rail's start while he is nearer it. The rhythm stays.
+   */
+  behind?: number;
 }
 
 /**
@@ -682,7 +687,12 @@ export interface ChapterData {
    * it (plan §3.4, Myren). What crosses it is ground, a tussock, a ride or a thing on a rail.
    */
   /** `eddy`, for the picture only: the water turns round in a whirl there (Granskogen's virvel, ../render/eddy.ts). */
-  water?: { from: number; to: number; y: number; eddy?: boolean }[];
+  /**
+   * `floats`: the id of a thing on a rail that floats on this water and is lifted as it fills (Stormgården's lid). The
+   * water stands under it as ./water-level.ts has it: low, with the thing awash, until the water comes, and at `y` once
+   * the thing is in place.
+   */
+  water?: { from: number; to: number; y: number; eddy?: boolean; floats?: string }[];
   /** The soft tussocks. */
   tussocks?: Tussock[];
   /** Where gusts sweep across. */
@@ -861,9 +871,14 @@ export interface Storm {
     turn?: number;
     /** An outlet's near bank begins this far along it, past the end of a jetty that runs out into its mouth. */
     opens?: number;
+    /** A goal whose top is level from its crossbar back, a box he can walk along the top of (Olympia's small goal). */
+    level?: boolean;
   }[];
-  /** Warm windows of lit candles and lanterns, which glow through the rain. */
-  glows?: { at: Vec; z?: number; size?: number; after?: string }[];
+  /**
+   * Warm windows of lit candles and lanterns, which glow through the rain. `candle`: the candle itself is drawn too, this
+   * many EL of wax standing on the sill under its flame at `at` (src/render/window-candle.ts).
+   */
+  glows?: { at: Vec; z?: number; size?: number; after?: string; candle?: number }[];
   /** A lamp shining on him from somewhere (Moa from a window), while he is between `within`'s two x. */
   beams?: { at: Vec; z: number; within: [number, number] }[];
 }

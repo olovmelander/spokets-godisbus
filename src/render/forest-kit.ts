@@ -3,6 +3,7 @@ import {
   type Box3, type Material, type Object3D,
 } from 'three';
 import { STONE, barkDetail, barky } from './bark-detail';
+import { fallenSpruce } from './fallen-spruce';
 import type { ChapterData, Landmark, LandmarkThing } from '../sim/types';
 import { restock } from './dressing/forest';
 import { heightAt, isThing } from './dressing/kit';
@@ -291,6 +292,15 @@ export function forestLandmarks(chapter: ChapterData): Group {
   for (const mark of chapter.landmarks ?? []) {
     const width = mark.to - mark.from;
     const high = heightAt(chapter, (mark.from + mark.to) / 2) - mark.base;
+    // In the storm a log across the path is a young spruce it has felled, made in code (./fallen-spruce.ts), not the kit's.
+    if (mark.look === 'log' && chapter.storm) {
+      const felled = new Group();
+      felled.name = `landmark:${mark.look}`;
+      felled.position.set(mark.from, mark.base, 0);
+      felled.add(fallenSpruce(width, high, mark.from));
+      group.add(felled);
+      continue;
+    }
     // A thing on the floor is no part of the forest's kit: the chapter's own pack puts it in.
     const holder = isThing(mark.look) ? new Group() : forestSocket(new Group(), { shape: LANDMARKS[mark.look], ...(mark.look === 'log' ? { size: [width / 5, high / .8, 1] as const } : {}) });
     holder.name = `landmark:${mark.look}`;

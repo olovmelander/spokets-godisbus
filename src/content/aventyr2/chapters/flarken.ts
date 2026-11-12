@@ -221,6 +221,12 @@ const OUTLET = { from: END.to, to: END.to + 36 };
 const MOUTH = END.to - 7;
 /** Where the old trägubbe waits on the end post, until he leaps after the little one. */
 const END_POST = { x: 189.4, y: DECK };
+/**
+ * In the scene at the end: when he leaves the post, and when he has landed on his log, the hop between them (0.85 s,
+ * `BOARDING` in ../render.ts) with a little to spare.
+ */
+const LOG_RUN = 0.7;
+const ON_LOG = round(LOG_RUN + 0.9);
 
 /**
  * The bark (the puzzle): a thick piece, lying on the low planks, and each push moves it on along them. The third
@@ -314,15 +320,24 @@ export const flarken: ChapterData = {
         elof: [{ at: 0.2, act: 'point', aim: { x: 190, y: 0.5 } }],
       },
     },
+    // The old one on the end post hops down onto a log that waits in the water, and floats off on it after the little
+    // one. One figure of him all the way (Olov, 12 November 2026: "syns han på två ställen samtidigt"): the one on the
+    // post goes as his flight begins with the hop (`word: 'boards'`, ../render.ts), and the line is said once he is on
+    // the log (`ON_LOG`), not as he leaves the post: the line holds the picture while it is read.
     {
       id: 'sjon:stocken', on: 'sjon:downstream', before: 188, until: 'beat:sjon:floated', seconds: OUTLET_RUN + 1.1, hold: true, dialogue: ['sjon:log'],
-      cues: [{ at: 0.7, flag: 'sjon:log-run' }, { at: OUTLET_RUN + 1, flag: 'sjon:both-downstream' }],
+      cues: [{ at: LOG_RUN, flag: 'sjon:log-run' }, { at: ON_LOG, flag: 'sjon:on-log' }, { at: OUTLET_RUN + 1, flag: 'sjon:both-downstream' }],
       stage: {
         shots: [
           { at: 0, x: 189.6, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: 0.65 },
-          { at: 0.7, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: OUTLET_RUN },
+          { at: LOG_RUN, x: 201.5, y: 0.8, z: -4, height: 6.6, width: 7.4, eye: 10, move: OUTLET_RUN },
         ],
-        elof: [{ at: 0.2, act: 'look', aim: { x: 195, y: 0.5 } }],
+        // He watches the old one on the post, points as he lands on the log, and follows him down the å.
+        elof: [
+          { at: 0.2, act: 'look', aim: { x: END_POST.x, y: 1.2, z: -0.6 } },
+          { at: ON_LOG - 0.1, act: 'point', aim: { x: END_POST.x + 0.6, y: 0.2, z: -4 } },
+          { at: ON_LOG + 1.4, act: 'look', aim: { x: 195, y: 0.5 } },
+        ],
       },
     },
     // The stone rolls along the planks, tips over their end and goes under: he watches it go, and the picture goes with
@@ -563,8 +578,9 @@ export const flarken: ChapterData = {
     { look: 'kit', word: 'bryggbrott', at: { x: LOW.to, y: LOW.y }, z: 0 },
     // The old trägubbe, far out on the planks after the last post: gone when he comes, in a leap.
     { look: 'tragubbe', at: OLD_ONE, until: 'beat:sjon:old-one', word: 'lit' },
-    // And on the jetty's end post, until he leaps after the little one.
-    { look: 'tragubbe', at: END_POST, until: 'sjon:log-run' },
+    // And on the jetty's end post, until he hops down onto his log after the little one: his flight begins with the hop,
+    // and this figure of him goes at once (`boards`, ../render.ts).
+    { look: 'tragubbe', at: END_POST, until: 'sjon:log-run', word: 'boards' },
     // The outlet: where the lake spills into the å it breaks white over the stones in its bed, and reeds stand along
     // the far bank, leaving the carried carvings and their log in view across the near bank.
     { look: 'whiteWater', at: { x: OUTLET.from + 5, y: WATER }, z: -7.2 },
@@ -649,7 +665,7 @@ export const flarken: ChapterData = {
     { id: 'sjon:klonk-raft', on: 'beat:sjon:raft', who: 'spoket', line: 'sjKlonkRaft', aside: true },
     // 9. the jetty's end: the outlet takes them both, and the family will follow the river by car
     { id: 'sjon:outlet', on: 'sjon:current', who: 'elof', line: 'sjOutlet', read: true },
-    { id: 'sjon:log', on: 'sjon:log-run', who: 'elof', line: 'sjLog' },
+    { id: 'sjon:log', on: 'sjon:on-log', who: 'elof', line: 'sjLog' },
     { id: 'sjon:floated', on: 'sjon:both-downstream', who: 'elof', line: 'sjFloated' },
     { id: 'sjon:car', on: 'beat:sjon:floated', who: 'mamma', line: 'sjCar' },
     { id: 'sjon:follow', on: 'beat:sjon:car', who: 'elof', line: 'sjFollow', read: true },

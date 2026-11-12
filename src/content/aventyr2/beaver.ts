@@ -1,13 +1,17 @@
 import { AdditiveBlending, Color, Group, InstancedMesh, type Mesh, MeshBasicMaterial, type MeshStandardMaterial, Object3D, PlaneGeometry } from 'three';
 import type { ChapterData, Spot } from '../../sim/types';
 import { glowTexture } from '../../render/glow';
+import type { BuildingDef } from './buildings';
 
 /**
  * The beaver at its lodge in Älven (art/blender/a2-creatures.py, `baver`), and its life. It sits on the far bank by
  * its gnawed stumps with a birch stick in its paws, gnawing. As Elof comes along the bank it stops, and looks at him;
- * it thumps its tail on the ground, turns, and goes off behind its lodge. When he is up on the lodge's roof it comes
- * swimming home over the lake, low in the water with a wake behind it, slaps the water with its tail by the shore, and
- * dives in under its lodge. If he goes back along the bank, it is sitting there again.
+ * it thumps its tail on the ground, turns, and goes off into its lodge at the foot of it. When he comes up onto the
+ * lodge's roof it comes out once more at the very top of the lodge, through the lodge from below (Olov, 12 November
+ * 2026: "Bävern kan synas en gång till högst uppe på hyddan, så den går där nerifrån, genom hyddan och kommer ut på
+ * toppen"): it climbs out of the sticks, sits up, looks at him and thumps the roof with its tail. When he is down by
+ * the lake it goes back in, out of its lodge under the water, and swims out over the lake, low in the water with a
+ * wake behind it, slaps the water with its tail and dives. If he goes back along the bank, it is sitting there again.
  *
  * Its head turns on its neck (the kit's `kit-head`), its tail lifts and slaps on its hinge (`baver-svans`), and its stick
  * turns in its paws (`baver-pinne`). It is all the picture's business: nothing here touches the simulation.
@@ -22,23 +26,44 @@ const LOOK = 2.2;
 const SLAP = 0.55;
 const TURN = 0.7;
 const WADDLE = 2.8;
-/** Where it goes behind the lodge, from where it sat, and how far past it he must be for it to swim home. */
+/** Where it goes into its lodge, from where it sat. */
 const BEHIND = { x: 4.8, z: -4.6 };
+/**
+ * The top of the lodge's mud, in the lodge model's own space at the size it is made (art/blender/a2-buildings.py,
+ * `baverhydda`, 18 across): where its crest is highest, a little behind its middle. The lodge's roof where Elof walks
+ * begins `ROOF` to the left of its middle, and he is past it, down by the lake, `PAST` to the right.
+ */
+const SUMMIT = { x: -0.25, y: 7.85, z: -1.2 };
+const LODGE_SIZE = 18;
+const ROOF = -2.6;
+const PAST = 9;
+/** How long it takes to climb out on top, the least it stays there, and how long it takes to go back in. */
+const RISE = 0.9;
+const STAYS = 1.6;
+const DUCK = 0.6;
+/** How long it is out of sight between going in at the top and coming up in the lake: through its lodge and out under the water. */
+const THROUGH = 1.2;
+/** When on the roof it thumps its tail, after it has sat up. */
+const THUMP = 1.1;
+/** Without a lodge: how far past where it sat he must be for it to swim. */
 const HOME = 9;
-/** Its swim over the lake to the shore by the lodge: from where, to where, and how long. */
+/** Its swim out over the lake from the shore by its lodge: how long, how long it takes to come up, and the dive. */
 const SWIM = 7;
+const SURFACE = 0.6;
 const DIVE = 1.4;
 
 const smooth = (t: number) => { const k = Math.min(1, Math.max(0, t)); return k * k * (3 - 2 * k); };
 
-type Phase = 'gnaw' | 'look' | 'slap' | 'go' | 'gone' | 'swim' | 'under';
+type Phase = 'gnaw' | 'look' | 'slap' | 'go' | 'gone' | 'rise' | 'top' | 'duck' | 'swim' | 'under';
 
-export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () => NonNullable<ChapterData['water']>, elof: Watcher): { group: Group; update(used: boolean, clock: number, dt: number): void } {
+export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () => NonNullable<ChapterData['water']>, elof: Watcher, lodgeOf: () => BuildingDef | undefined = () => undefined): { group: Group; update(used: boolean, clock: number, dt: number): void } {
   const home = { x: spot.at.x, y: spot.at.y };
-  // The lake it swims home over: the first open water past where it sits, known once the chapter's picture is built.
+  // The lake it swims out over: the first open water past where it sits, known once the chapter's picture is built.
   let lake: NonNullable<ChapterData['water']>[number] | undefined;
   let swimFrom: { x: number; z: number } | null = null;
   let swimTo: { x: number; z: number } | null = null;
+  // The lodge's top, in the chapter's own x, y and z, and where on the path he is on its roof and past it.
+  let lodge: { top: { x: number; y: number; z: number }; roof: number; past: number } | null = null;
   const effects = splashes();
   group.add(effects.mesh);
   // The night's light comes from behind it, and its fur is as dark as the sticks of its lodge: a little warm light of
@@ -64,9 +89,16 @@ export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () 
     update(_used, clock, dt) {
       if (!lake) {
         lake = water().filter((w) => w.from > home.x).sort((a, b) => a.from - b.from)[0];
-        if (lake) { swimFrom = { x: lake.from + 4.8, z: -9.5 }; swimTo = { x: lake.from + 0.9, z: -5.2 }; }
+        // From the shore by its lodge, where its way out under the water comes up, out over the open lake.
+        if (lake) { swimFrom = { x: lake.from + 0.9, z: -5.2 }; swimTo = { x: lake.from + 4.8, z: -9.5 }; }
+      }
+      if (!lodge) {
+        const def = lodgeOf();
+        const fit = (def?.width ?? LODGE_SIZE) / LODGE_SIZE;
+        if (def) lodge = { top: { x: def.x + SUMMIT.x * fit, y: (def.y ?? 0) + SUMMIT.y * fit, z: def.z + SUMMIT.z * fit }, roof: def.x + ROOF * fit, past: def.x + PAST * fit };
       }
       // The outer group stands where the chapter puts it, at its z: everything here moves `model` within it.
+      const x0 = group.position.x;
       const z0 = group.position.z;
       since += dt;
       const head = model.getObjectByName('kit-head');
@@ -79,22 +111,35 @@ export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () 
       else if (phase === 'look' && (since > LOOK || near > home.x - 2.6)) next('slap');
       else if (phase === 'slap' && since > SLAP + 0.35) next('go');
       else if (phase === 'go' && since > TURN + WADDLE) next('gone');
-      else if (phase === 'gone' && swimFrom && near > home.x + HOME) next('swim');
+      else if (phase === 'gone' && lodge && near >= lodge.roof) next('rise');
+      else if (phase === 'gone' && !lodge && swimFrom && near > home.x + HOME) next('swim');
+      else if (phase === 'rise' && since > RISE) next('top');
+      else if (phase === 'top' && since > STAYS && lodge && near > lodge.past) next('duck');
+      else if (phase === 'duck' && since > DUCK + THROUGH && swimFrom) next('swim');
       else if (phase === 'swim' && since > SWIM) next('under');
       // Back along the bank, far enough that it would not be seen coming back: it is sitting there again.
-      if ((phase === 'gone' || phase === 'under' || phase === 'swim') && near < home.x - NOTICE - 6) next('gnaw');
+      if (phase !== 'gnaw' && phase !== 'look' && phase !== 'slap' && phase !== 'go' && near < home.x - NOTICE - 6) next('gnaw');
       if (phase === 'look' && near < home.x - NOTICE - 2) next('gnaw');
-      model.visible = phase !== 'gone' && !(phase === 'under' && since > DIVE);
+      model.visible = phase !== 'gone' && !(phase === 'duck' && since > DUCK) && !(phase === 'under' && since > DIVE);
       model.position.set(0, 0, 0);
+      model.scale.set(1, 1, 1);
       model.rotation.set(0, facing, 0);
       if (head) head.rotation.set(0, 0, 0);
       if (tail) tail.rotation.set(0, 0, 0);
       if (stick) { stick.rotation.set(0, 0, 0); stick.position.x = 0; }
       effects.clear();
+      /** Where the lodge's top is from the group, and the way that faces him there. */
+      const onTop = lodge ? { x: lodge.top.x - x0, y: lodge.top.y - home.y, z: lodge.top.z - z0 } : null;
+      const towardHim = lodge ? Math.atan2(near - lodge.top.x, -lodge.top.z) : 0;
       if (elof.still) {
-        // With less motion it sits and gnaws without moving; it still goes as he comes, and is still home when he is past.
-        model.visible = phase === 'gnaw' || phase === 'look';
+        // With less motion it sits and gnaws without moving; it still goes as he comes, and is on its lodge's top
+        // while he is on the roof, sitting still there.
+        model.visible = phase === 'gnaw' || phase === 'look' || ((phase === 'rise' || phase === 'top') && !!onTop);
         model.rotation.y = SITS;
+        if ((phase === 'rise' || phase === 'top') && onTop) {
+          model.position.set(onTop.x, onTop.y, onTop.z);
+          model.rotation.y = towardHim;
+        }
         effects.done();
         return;
       }
@@ -133,7 +178,7 @@ export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () 
         // Where its tail's flat end meets the ground, behind it as it sits turned.
         if (since > 0.48) effects.burst(-1.6 * Math.sin(facing), 0.05, -1.6 * Math.cos(facing), since - 0.48, false);
       } else if (phase === 'go') {
-        // It turns, drops forward onto all fours and waddles off, rocking, behind its lodge.
+        // It turns, drops forward onto all fours and waddles off, rocking, into its lodge.
         const way = Math.atan2(BEHIND.x, BEHIND.z);
         const turned = smooth(since / TURN);
         facing = SITS + (way - SITS) * turned;
@@ -143,33 +188,59 @@ export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () 
         model.rotation.set(0.55 * turned, facing, 0.1 * rock, 'YXZ');
         if (tail) tail.rotation.x = -0.55 * turned + 0.08 * rock;
         if (stick) stick.rotation.x = 0.4;
+      } else if ((phase === 'rise' || phase === 'top' || phase === 'duck') && onTop) {
+        // On the very top of its lodge, facing out over the roof towards him: it climbs up out of the sticks, nose
+        // first, and sits up; it looks at him, sniffs, and thumps the roof once with its tail; and goes back in.
+        facing = towardHim;
+        const up = phase === 'rise' ? smooth(since / RISE) : phase === 'top' ? 1 : 1 - smooth(since / DUCK);
+        const sunk = 1.15 * (1 - up);
+        const tilt = 0.75 * (1 - up);
+        model.position.set(onTop.x, onTop.y - sunk, onTop.z);
+        model.rotation.set(tilt, facing, 0, 'YXZ');
+        if (phase === 'top') model.scale.set(1, 1 + 0.012 * Math.sin(clock * 2.4), 1);
+        if (head) {
+          // Its head comes up and round to him as it sits up, and sniffs the air at him.
+          const k = phase === 'top' ? 1 : up;
+          head.rotation.x = -0.2 * k + (phase === 'top' ? 0.05 * Math.sin(clock * 9) * (Math.sin(clock * 0.7) > 0.3 ? 1 : 0) : 0);
+          head.rotation.y = 0.1 * Math.sin(clock * 0.6) * k;
+        }
+        if (phase === 'top' && since > THUMP) {
+          const t = since - THUMP;
+          const lift = t < 0.3 ? smooth(t / 0.3) : t < 0.4 ? 1 : t < 0.48 ? 1 - (t - 0.4) / 0.08 : 0;
+          if (tail) tail.rotation.x = 1.05 * lift;
+          // Bits of dry mud off the sticks where it lands.
+          if (t > 0.48) effects.burst(onTop.x - 1.6 * Math.sin(facing), onTop.y + 0.05, onTop.z - 1.6 * Math.cos(facing), t - 0.48, false);
+        }
+        if (stick) stick.rotation.x = 0.4;
       } else if ((phase === 'swim' || phase === 'under') && swimFrom && swimTo && lake) {
-        // Home over the lake: low in the water, its head up, its tail trailing and sculling, a wake opening behind it.
+        // Out over the lake: low in the water, its head up, its tail trailing and sculling, a wake opening behind it.
         const k = phase === 'swim' ? since / SWIM : 1;
         const ease = smooth(k * 1.08 - 0.04);
         const x = swimFrom.x + (swimTo.x - swimFrom.x) * ease;
         const z = swimFrom.z + (swimTo.z - swimFrom.z) * ease;
-        const water = lake.y - home.y;
+        const surface = lake.y - home.y;
         facing = Math.atan2(swimTo.x - swimFrom.x, swimTo.z - swimFrom.z);
-        let sink = 0;
+        // It comes up from its way out under the water, a ring spreading where it does.
+        let sink = phase === 'swim' ? 1.2 * (1 - smooth(since / SURFACE)) : 0;
         let tilt = 1.25;
         let tailUp = 0;
+        if (phase === 'swim' && since < SURFACE + 0.9) effects.burst(x - x0, surface, z - z0, since * 0.6, true, false);
         if (phase === 'under') {
-          // By the shore: the tail up and down on the water, a slap and a splash, and it dives in under its lodge.
+          // Out on the lake: the tail up and down on the water, a slap and a splash, and it dives.
           const t = since;
           tailUp = t < 0.25 ? smooth(t / 0.25) : t < 0.33 ? 1 - (t - 0.25) / 0.08 : 0;
           if (t > 0.33) {
             const down = smooth((t - 0.45) / 0.8);
             tilt = 1.25 + 0.7 * down;
             sink = 1.6 * down;
-            effects.burst(x - group.position.x - 0.9 * Math.sin(facing), water, z - z0 - 0.9 * Math.cos(facing), t - 0.33, true);
+            effects.burst(x - x0 - 0.9 * Math.sin(facing), surface, z - z0 - 0.9 * Math.cos(facing), t - 0.33, true);
           }
         }
-        model.position.set(x - group.position.x, water - 0.62 - sink + 0.03 * Math.sin(clock * 2.2), z - z0);
+        model.position.set(x - x0, surface - 0.62 - sink + 0.03 * Math.sin(clock * 2.2), z - z0);
         model.rotation.set(tilt, facing, 0.04 * Math.sin(clock * 1.7), 'YXZ');
         if (head) { head.rotation.x = -0.95; head.rotation.y = 0.12 * Math.sin(clock * 0.8); }
         if (tail) { tail.rotation.x = -1.2 + 1.4 * tailUp; tail.rotation.y = 0.32 * Math.sin(clock * 5.5); }
-        if (phase === 'swim') effects.wake(group.position.x, z0, water, swimFrom, swimTo, since, SWIM);
+        if (phase === 'swim' && since > SURFACE) effects.wake(x0, z0, surface, swimFrom, swimTo, since, SWIM);
       }
       effects.done();
     },
@@ -204,10 +275,13 @@ function splashes() {
   return {
     mesh,
     clear() { used = 0; },
-    /** A tail's slap, `age` seconds ago, at (x, y, z) in the group: drops thrown up and out, and on water a ring. */
-    burst(x: number, y: number, z: number, age: number, water: boolean) {
+    /**
+     * A tail's slap, `age` seconds ago, at (x, y, z) in the group: drops thrown up and out, and on water a ring. Without
+     * `drops`, only the ring: where it comes up quietly.
+     */
+    burst(x: number, y: number, z: number, age: number, water: boolean, drops = true) {
       if (age > 1.1) return;
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; drops && i < 16; i++) {
         const a = (i / 16) * Math.PI * 2 + seed(i, 1);
         const out = (0.8 + 1.4 * seed(i, 2)) * (water ? 1.2 : 0.7);
         const up = (2.2 + 2.4 * seed(i, 3)) * (water ? 1 : 0.55);
