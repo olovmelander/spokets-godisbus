@@ -129,7 +129,8 @@ const SCENES: SceneDef[] = [
       { at: 6.2, who: 'mormor', line: 'soMormorSecret' },
     ],
     stage: {
-      shots: [{ at: 0, x: 6.4, y: 3, height: 7.4, width: 13, move: 0.3 }],
+      // Mormor at the jetty's head too, all of her, as she speaks last: the picture had her half out of its edge.
+      shots: [{ at: 0, x: 5.9, y: 3, height: 7.4, width: 14.6, move: 0.3 }],
       actors: {
         pappa: [
           { at: 0.3, act: 'point', aim: { x: LAMP.pappa, y: 0.1, z: -0.5 } },
