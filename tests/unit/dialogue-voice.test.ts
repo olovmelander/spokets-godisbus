@@ -5,6 +5,7 @@ import { sv } from '../../src/content/sv';
 
 const voice = vi.hoisted(() => ({ key: null as string | null }));
 vi.mock('../../src/audio/voice-player', () => ({
+  hasVoice: () => false,
   playingVoice: () => voice.key,
   playVoice: (key: string) => { voice.key = key; },
   stopVoice: () => { voice.key = null; },

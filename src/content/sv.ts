@@ -560,6 +560,8 @@ export const sv = {
     onward: 'Nästa kapitel',
     again: 'Spela igen',
     candy: 'godisar i påsen',
+    // ...and when there is only one.
+    candyOne: 'godis i påsen',
   },
 
   // A memory has no words. This is what a screen reader says while its pictures are shown.
