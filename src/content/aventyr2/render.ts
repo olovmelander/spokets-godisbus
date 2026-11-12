@@ -26,6 +26,7 @@ import { stepLength } from '../../render/acting';
 import { paintedWood } from '../../render/painted-wood';
 import { footballGeometry, footballMaterial } from '../../render/football';
 import { box, building, paint, PANE, rock } from './buildings';
+import { pitchFibres } from './pitch';
 import { createGrandparent, type Going, type Grandparent } from './grandparents';
 import { afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
@@ -668,6 +669,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const buildings = (storm?.buildings ?? []).map((def) => {
     const made = building(def);
     group.add(made.group);
+    // A pitch's turf has its fibres standing up near the camera, in stretches drawn only in the picture (./pitch.ts).
+    if (def.kind === 'pitch') group.add(pitchFibres(def));
     return made;
   });
 

@@ -98,15 +98,18 @@ const BALL: Mover = {
 const BALL_WAY: Stone[] = [BANK, AFLOAT, FAR];
 
 /**
- * The small goal beyond the puddle: its mouth towards him at `x`, its net going back `depth`, the top of its side
- * frame at `bar`. He walks in at its mouth along its near side, under the bar.
+ * The small goal beyond the puddle: its mouth towards him at `x`, its net going back `depth`, its top level at `bar`,
+ * a box. He walks in at its mouth, inside it between its near and far sides and under its crossbar, and out under
+ * its back net where the storm has torn it (Olov, 12 November 2026: "Elof säger 'Mål, fast det var jag som gick in'.
+ * Så vi ska gå inne i målet inte bredvid."). He walked beside its near side, which stood on the path.
  */
-const GOAL = { x: 80, depth: 7, height: 8, bar: 6 };
+const GOAL = { x: 80, depth: 7, bar: 6, z: -4.5 };
 /**
  * Nätet och ribban, a side way: the back of the net is climbed from a held jump (its foot is out of reach of his
- * feet as he walks past), and its top steps onto the goal's top bar, a walkway back to the crossbar.
+ * feet as he walks past), and its top steps onto the bar along the goal's top, back to the crossbar. The net is the
+ * goal's own, drawn with it (as a ladder is): no hose hangs there.
  */
-const NET: Climb = { x: round(GOAL.x + GOAL.depth + 0.25), bottom: 0.9, top: GOAL.bar, exit: -1, look: 'hose' };
+const NET: Climb = { x: round(GOAL.x + GOAL.depth + 0.25), bottom: 0.9, top: GOAL.bar, exit: -1, look: 'ladder' };
 const CROSSBAR: Ledge = { x: GOAL.x + GOAL.depth / 2, y: GOAL.bar, width: GOAL.depth, look: 'trestle' };
 
 /** The two team benches' clear roofs pour: a run of three drops under each, with a dry place between them. */
@@ -252,9 +255,9 @@ export const olympia: ChapterData = {
     { from: STEPS[2]!.from, to: FENCE.from, kind: 'earth' },
     // (Not 'iron': that is a street drain's grate, and the picture would dig a well round it.)
     { from: FENCE.from, to: FENCE.to, kind: 'asphalt' },
-    { from: FENCE.to, to: 152, kind: 'turf' },
-    { from: 152, to: 157, kind: 'earth' },
-    { from: 157, to: 166, kind: 'paving' },
+    // The turf as far as the pitch goes, just behind the far goal; then the range's mat.
+    { from: FENCE.to, to: 158, kind: 'turf' },
+    { from: 158, to: 166, kind: 'paving' },
     { from: 166, to: 174, kind: 'earth' },
     { from: 174, to: 196, kind: 'moss' },
   ],
@@ -325,16 +328,19 @@ export const olympia: ChapterData = {
     // kick ends in, the dark floodlight masts, the stand behind the benches, the club's house, and birches where
     // the trail goes into the forest.
     buildings: [
-      // The pitch, flat from the near touchline back to the stand: the path runs along its edge. Its turf is cut away
-      // over the goalmouth's puddle, back into the goal's mouth, and over the near half of the flooded centre circle.
-      { kind: 'pitch', x: 84.4, z: -0.6, width: 135.2, height: 22, y: 0.01, marks: { halfway: 51.1, box: { x: 8, long: 18 }, front: 7,
+      // The pitch, from the stand forward past the path, and in front of it down the ground's slope (./pitch.ts): the
+      // path runs over it. Its turf is cut away over the goalmouth's puddle, back into the goal's mouth, and over the
+      // near half of the flooded centre circle. It ends just behind the far goal, before the range's mat: its last
+      // stripe ran on 9 EL past its end, under the first two targets.
+      { kind: 'pitch', x: 87.4, z: -0.6, width: 141.2, height: 22, y: 0.01, marks: { halfway: 48.1, box: { x: 5, long: 18 }, front: 7,
         wet: [{ from: PUDDLE.from, to: PUDDLE.to, back: -7 }, { from: CIRCLE.from, to: CIRCLE.to, back: -9 }] } },
       // The little store beside the ground, under its striped awning, closed in the storm.
       { kind: 'store', x: 4, z: -40, width: 22 },
       { kind: 'floodlight', x: 30, z: -36, height: 90 },
       // The red hall under its arch, across the pitch (art/blender/olympia.py).
       { kind: 'clubhouse', x: 50, z: -66, width: 36, height: 18, model: 'olympia-hall' },
-      { kind: 'goal', x: GOAL.x, z: -6.4, width: GOAL.depth, height: GOAL.height },
+      // Its near side in front of the path, so that he is seen inside it through its net.
+      { kind: 'goal', x: GOAL.x, z: GOAL.z, width: GOAL.depth, height: GOAL.bar, level: true },
       { kind: 'trestleTable', x: KIT.x, z: 0, width: KIT.width, height: KIT.y },
       { kind: 'floodlight', x: 92, z: -30, height: 90 },
       // The long timber stand on the far side, the forest straight behind it.
@@ -348,9 +354,12 @@ export const olympia: ChapterData = {
     ],
   },
   decor: [
-    // Where the trail goes into the forest.
-    { look: 'kit', word: 'gren-a', at: { x: 176.5, y: 2.4 }, z: -1.5, turn: 0.3 },
-    { look: 'kit', word: 'stubbe-sagad', at: { x: 171, y: 1 }, z: -2.4, turn: 1.2 },
+    // Where the trail goes into the forest, on the ground (Olov, 12 November 2026: "Stubben och pinnen ... står i
+    // luften"): they stood up to a length over it. The branch is as long as four Elofs, so it lies past the trail's
+    // top, where the ground is level; the stump stands on the slope's foot, its lower side on the ground and its
+    // upper side in it.
+    { look: 'kit', word: 'gren-a', at: { x: 180, y: TRAIL.y }, z: -1.5, turn: 0.3 },
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 171, y: trailAt(170.3) }, z: -2.4, turn: 1.2 },
     // A small ball from the torn bag, bobbing in the goalmouth's puddle: the clue.
     { look: 'floatBall', at: { x: PUDDLE.from + 1.2, y: PUDDLE.water }, z: -0.3, until: `placed:${BALL.id}` },
     // The ball bag at the foot of the fence, torn open by the wind: the balls roll out of it.
@@ -435,8 +444,9 @@ export const olympia: ChapterData = {
     { id: 'ol:klonk-end', on: 'beat:ol:car', who: 'spoket', line: 'olKlonkKlonk' },
   ],
   cameras: [
-    // Up on the crossbar: wider and lower, the bar, the hearts and the goal's mouth in view.
-    { from: GOAL.x - 0.5, to: NET.x + 0.5, above: 3, zoom: 1.4, lift: -0.4 },
+    // Up on the goal's top: wider, the bar, the hearts and the goal's mouth in view, and a little over the top, so that
+    // its net lies under him as a roof (lower, it hung under the bar in a slant).
+    { from: GOAL.x - 0.5, to: NET.x + 0.5, above: 3, zoom: 1.4, lift: 0.6 },
     // Over the fence: the whole climb, and the pitch beyond it from the top.
     { from: 12, to: 20, zoom: 1.5, lift: 0.6 },
     // While the balls roll the picture looks less far ahead, so that the ones coming from behind are seen.

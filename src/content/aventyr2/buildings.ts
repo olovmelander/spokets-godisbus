@@ -1,6 +1,6 @@
 import {
   BoxGeometry, BufferGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, ExtrudeGeometry, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial,
-  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3, type Object3D,
+  IcosahedronGeometry, MeshStandardMaterial, PlaneGeometry, Quaternion, Shape, ShapeGeometry, SphereGeometry, TorusGeometry, Vector3, type Object3D,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Storm } from '../../sim/types';
@@ -8,6 +8,7 @@ import { paintedWood } from '../../render/painted-wood';
 import { groundDetail } from '../../render/ground-detail';
 import { PLANK, STONE, barkDetail, barky, notBark } from '../../render/bark-detail';
 import { outletShape } from './outlet';
+import { pitch } from './pitch';
 import { carGlass } from '../../render/car-glass';
 
 /**
@@ -110,6 +111,7 @@ function barn(def: BuildingDef) {
 function goal(def: BuildingDef) {
   // A small goal for training, its mouth towards where he comes from: white posts, a crossbar going away into the
   // picture, and the net's frame behind. The net itself is drawn as fine lines of white.
+  if (def.level) return boxGoal(def);
   const depth = def.width ?? 7;
   const h = def.height ?? 8;
   const span = 12;
@@ -134,189 +136,64 @@ function goal(def: BuildingDef) {
   return { parts, panes: [] };
 }
 
+/** A round rod from one point to another, as a goal's frame is made of. */
+function rod(a: Vector3, b: Vector3, r: number, colour: string, sides = 8): BufferGeometry {
+  const along = b.clone().sub(a);
+  const geometry = new CylinderGeometry(r, r, along.length(), sides).applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), along.clone().normalize()));
+  return paint(geometry.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2), colour);
+}
+
 /**
- * The pitch, from its near touchline back towards the stand: mown stripes across it and its white lines, flat on the
- * ground in one shape. `width` is along the path. The lines stand a little over the stripes, and the goals are the
- * chapter's own. `marks`, from the pitch's middle: where the halfway line and its circle lie, a goal's box, and how
- * far it runs on towards the camera past the path, so that he runs on the pitch and not along its edge.
- *
- * `marks.wet`, in the chapter's own x and z: the flooded places. The pitch lies over the ground's pits, so over each
- * the turf and its lines are cut away, and the water in the pit shows (Olov, 8 November 2026: Olympia's puddle could
- * not be seen). A hole is the pit's whole width where he walks, from where a pool's water is cut towards the camera
- * (../../render/water.ts) back past the path, and rounds off behind that to `back` at its middle, wandering in and out
- * a little as rain water's edge does. Round it the turf is soaked dark, and from its edge the turf slopes down under
- * the water as a puddle's shore does (Olov, 9 November 2026: "Pölen där man sparkar ner bollen ska bli snyggare."):
- * it was a wall of dark earth cut straight down, a hole dug in the pitch.
+ * Olympia's training goal, a box goal (`level`): as high at the back as at its mouth, its top a net of squares in a
+ * frame of white tubes whose tops are at its height, with the bar he walks along its middle (./render.ts, `bars:
+ * 'goal'`). Its near side stands in front of the path, and he walks in at its mouth, inside it between its two sides,
+ * and out under its back net, which the storm has torn loose where he goes through (Olov, 12 November 2026: "vi ska gå
+ * inne i målet inte bredvid"). Its cords are fine, as the models' are (art/blender/a2-yard.py): those nets slope down
+ * from the crossbar, and the top of this one is walked on.
  */
-function pitch(def: BuildingDef) {
-  const w = def.width ?? 130;
-  const deep = def.height ?? 70;
-  const halfway = def.marks?.halfway ?? 0;
-  const box6 = def.marks?.box ?? null;
-  const front = def.marks?.front ?? 0;
-  const wets = (def.marks?.wet ?? []).map((wet) => ({ x0: wet.from - def.x, x1: wet.to - def.x, near: WET_NEAR - def.z, path: WET_PATH - def.z, back: wet.back - def.z }));
-  // Each hole's whole box, for the turf; and in narrow slices, each as deep as the hole goes in it, for the lines.
-  const boxes = wets.map((wet) => ({ x0: wet.x0, x1: wet.x1, z0: wet.back, z1: wet.near }));
-  const slices = wets.flatMap((wet) => {
-    const count = Math.ceil((wet.x1 - wet.x0) / 0.2);
-    return Array.from({ length: count }, (_, i) => {
-      const [x0, x1] = [wet.x0 + ((wet.x1 - wet.x0) * i) / count, wet.x0 + ((wet.x1 - wet.x0) * (i + 1)) / count];
-      return { x0, x1, z0: Math.min(wetEdge(wet, x0), wetEdge(wet, x1)), z1: wet.near };
-    });
-  });
-  const flat = (wide: number, long: number, x: number, z: number, y: number, colour: string) => box(wide, 0.04, long, x, y, z, colour);
-  /** A flat rectangle (`x0` to `x1`, `z0` to `z1`), with what lies over the holes (`cut`) cut out of it. */
-  const dry = (x0: number, x1: number, z0: number, z1: number, y: number, colour: string, cut = slices) => {
-    for (const piece of cut.reduce((left, hole) => left.flatMap((r) => outside(r, hole)), [{ x0, x1, z0, z1 }])) {
-      parts.push(flat(piece.x1 - piece.x0, piece.z1 - piece.z0, (piece.x0 + piece.x1) / 2, (piece.z0 + piece.z1) / 2, y, colour));
-    }
-  };
+function boxGoal(def: BuildingDef) {
+  const depth = def.width ?? 7;
+  const h = def.height ?? 6;
+  const span = 12;
+  const at = (x: number, y: number, z: number) => new Vector3(x, y, z);
+  const [white, frame, cord] = ['#f2f2ee', '#dcdcd8', '#e2e2de'];
   const parts: BufferGeometry[] = [];
-  const stripe = 9;
-  for (let i = 0; i * stripe < w; i++) {
-    const [x0, x1, colour] = [-w / 2 + i * stripe, -w / 2 + (i + 1) * stripe, i % 2 ? '#2a6630' : '#3f8c3e'];
-    dry(x0, x1, -deep, front, 0.02, colour, boxes);
-    // Behind each hole, the turf comes forward again to its rounded edge.
-    for (const wet of wets) {
-      const [a, b] = [Math.max(x0, wet.x0), Math.min(x1, wet.x1)];
-      if (b > a) parts.push(turfTo(wet, a, b, 0.04, colour));
-    }
+  const top = h - 0.12;
+  for (const z of [-span / 2, span / 2]) {
+    parts.push(post(0.35, h - 0.35, 0, 0, z, white));
+    // The frame on each side: back along the top, down the back, and forward along the ground to the post.
+    parts.push(rod(at(0, top, z), at(depth, top, z), 0.12, frame), rod(at(depth, top, z), at(depth, 0.08, z), 0.12, frame));
+    parts.push(rod(at(depth, 0.08, z), at(0, 0.08, z), 0.1, frame));
   }
-  const line = '#dfe8e0';
-  const y = 0.06;
-  dry(-w / 2, w / 2, front - 1.4, front - 1, y, line);
-  dry(-w / 2, w / 2, -deep + 1.8, -deep + 2.2, y, line);
-  dry(halfway - 0.2, halfway + 0.2, -deep + 1.2, -1.8, y, line);
-  // The centre circle: lying on the turf behind the flooded part of it.
-  const middle = -deep * 0.42;
-  const radius = 11;
-  const sides = 48;
-  for (let i = 0; i < sides; i++) {
-    const a = (i / sides) * Math.PI * 2;
-    const [cx, cz] = [halfway + Math.cos(a) * radius, middle + Math.sin(a) * radius];
-    if (wets.some((wet) => cx > wet.x0 - 0.3 && cx < wet.x1 + 0.3 && cz < wet.near
-      && cz > wetEdge(wet, Math.min(wet.x1, Math.max(wet.x0, cx))) - 0.8)) continue;
-    const seg = flat(0.4, (Math.PI * 2 * radius) / sides + 0.1, 0, 0, y, line);
-    seg.rotateY(-a);
-    seg.translate(cx, 0, cz);
-    parts.push(seg);
+  parts.push(rod(at(0, h - 0.35, -span / 2 - 0.35), at(0, h - 0.35, span / 2 + 0.35), 0.35, white, 12));
+  parts.push(rod(at(depth, top, -span / 2), at(depth, top, span / 2), 0.12, frame), rod(at(depth, 0.08, -span / 2), at(depth, 0.08, span / 2), 0.1, frame));
+  const line = (a: Vector3, b: Vector3) => rod(a, b, 0.035, cord, 4);
+  // The sides: both net from the ground to the top, in squares. He is seen through the near one, inside.
+  for (const z of [-span / 2, span / 2]) {
+    for (let k = 1; k < 8; k++) parts.push(line(at((depth * k) / 8, 0, z), at((depth * k) / 8, top, z)));
+    for (let k = 1; k < 7; k++) parts.push(line(at(0, (top * k) / 7, z), at(depth, (top * k) / 7, z)));
   }
-  if (box6) {
-    dry(box6.x - box6.long, box6.x, -deep * 0.2 - 0.2, -deep * 0.2 + 0.2, y, line);
-    dry(box6.x - box6.long, box6.x, -deep * 0.62 - 0.2, -deep * 0.62 + 0.2, y, line);
-    dry(box6.x - box6.long - 0.2, box6.x - box6.long + 0.2, -deep * 0.62, -deep * 0.2, y, line);
+  // The top: squares from the crossbar back, with a cord's sag between the bars.
+  for (let k = 1; k < 8; k++) parts.push(line(at((depth * k) / 8, h - 0.05, -span / 2), at((depth * k) / 8, h - 0.05, span / 2)));
+  for (let k = 1; k < 13; k++) parts.push(line(at(0, h - 0.05, -span / 2 + k * span / 13), at(depth, h - 0.05, -span / 2 + k * span / 13)));
+  // The back: in squares, torn loose where the path goes through, from a ragged edge a little over his head; its loose
+  // ends hang from that edge, blown out a little.
+  const path = -def.z;
+  const torn = Math.abs(path) < span / 2 - 1;
+  const tear = (z: number) => 1.45 + 0.18 * Math.sin(z * 7.1 + 1.3);
+  const wide = (y: number) => 1.05 + 0.15 * Math.sin(y * 9.3 + path);
+  for (let k = 1; k < 13; k++) {
+    const z = -span / 2 + (k * span) / 13;
+    const from = torn && Math.abs(z - path) < 1.05 ? tear(z) : 0;
+    parts.push(line(at(depth, from, z), at(depth, top, z)));
+    if (from > 0) parts.push(line(at(depth, from, z), at(depth + 0.15, from - 0.4, z + 0.08 * Math.sign(z - path || 1))));
   }
-  // Each hole's shore: the turf soaked dark round it, and sloping down under the water, round its sides and its rounded
-  // back. Its near edge needs none: the water's own cut face is there, and the turf in front hides it.
-  const turfAt = (x: number) => (Math.floor((x + w / 2) / stripe) % 2 ? '#2a6630' : '#3f8c3e');
-  for (const wet of wets) parts.push(shoreOf(wet, turfAt));
+  for (let k = 1; k < 7; k++) {
+    const y = (top * k) / 7;
+    if (!torn || y >= tear(path)) parts.push(line(at(depth, y, -span / 2), at(depth, y, span / 2)));
+    else parts.push(line(at(depth, y, -span / 2), at(depth, y, path - wide(y))), line(at(depth, y, path + wide(y)), at(depth, y, span / 2)));
+  }
   return { parts, panes: [] };
-}
-
-/** How far a hole's shore slopes in from the turf's cut, and down: past the water and into its murk. */
-const SHORE_IN = 0.75;
-const SHORE_DOWN = 1.2;
-/** How far out round a hole the turf is soaked dark. */
-const SOAKED = 0.55;
-/** The shore's turf, wet at the water's edge and darker under it, and the soaked turf round the hole at its edge. */
-const SHORE = { lip: new Color('#24502a'), under: new Color('#16301a'), soaked: new Color('#1e4424') };
-/** Where a hole in the pitch begins towards the camera: where a pool's water is cut (../../render/water.ts, POOL). */
-const WET_NEAR = 0.65;
-/** How far behind the path a hole is its pit's whole width before it rounds off. */
-const WET_PATH = -1.2;
-/** A hole in the pitch, in the pitch's own x and z. */
-interface Wet { x0: number; x1: number; near: number; path: number; back: number }
-
-/**
- * Where a hole's back edge is at `x`: at the path at its two ends, rounding back to `back` at its middle, and wandering
- * in and out a little on the way, as rain water's edge does.
- */
-function wetEdge(wet: Wet, x: number): number {
-  const t = ((x - wet.x0) / (wet.x1 - wet.x0)) * 2 - 1;
-  const wander = 1 + 0.1 * Math.sin(t * 5.3 + wet.x0) + 0.05 * Math.sin(t * 11.7 + 2 * wet.x0);
-  return wet.path + (wet.back - wet.path) * Math.sqrt(Math.max(0, 1 - t * t)) * wander;
-}
-
-/** Points along a hole's back edge from `a` to `b`, about every 0.15 EL. */
-function edgeAlong(wet: Wet, a: number, b: number): [number, number][] {
-  const count = Math.max(1, Math.ceil((b - a) / 0.15));
-  return Array.from({ length: count + 1 }, (_, i) => {
-    const x = a + ((b - a) * i) / count;
-    return [x, wetEdge(wet, x)];
-  });
-}
-
-/** A flat mesh in one colour from its triangles' corners, each triangle given as it is to face. */
-function flatMesh(corners: number[], normals: number[], colour: string): BufferGeometry {
-  const made = new BufferGeometry();
-  made.setAttribute('position', new Float32BufferAttribute(corners, 3));
-  made.setAttribute('normal', new Float32BufferAttribute(normals, 3));
-  return paint(made, colour);
-}
-
-/** The turf behind a hole, from its box's back forward to the hole's rounded edge, between `a` and `b`. */
-function turfTo(wet: Wet, a: number, b: number, y: number, colour: string): BufferGeometry {
-  const corners: number[] = [], normals: number[] = [];
-  const edge = edgeAlong(wet, a, b);
-  for (let i = 0; i < edge.length - 1; i++) {
-    const [[x0, z0], [x1, z1]] = [edge[i]!, edge[i + 1]!];
-    // Wound to face up.
-    corners.push(x0, y, wet.back, x0, y, z0, x1, y, wet.back, x1, y, wet.back, x0, y, z0, x1, y, z1);
-    for (let k = 0; k < 6; k++) normals.push(0, 1, 0);
-  }
-  return flatMesh(corners, normals, colour);
-}
-
-/**
- * A hole's shore: down its two sides from the front and round its back. Along the outline, the turf soaked dark out to
- * `SOAKED`, fading into the turf's own colour (`turfAt`); and from the outline, the turf sloping in under the water.
- */
-function shoreOf(wet: Wet, turfAt: (x: number) => string): BufferGeometry {
-  const outline: [number, number][] = [[wet.x0, wet.near], ...edgeAlong(wet, wet.x0, wet.x1), [wet.x1, wet.near]];
-  // Each point's way into the hole, between its two sides: the hole is to the left of the way the outline goes.
-  const inward = outline.map((_, i) => {
-    const [a, b] = [outline[Math.max(0, i - 1)]!, outline[Math.min(outline.length - 1, i + 1)]!];
-    const long = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
-    return [-(b[1] - a[1]) / long, (b[0] - a[0]) / long] as const;
-  });
-  const corners: number[] = [], colours: number[] = [];
-  const [top, bottom, wet2] = [0.04, 0.04 - SHORE_DOWN, 0.05];
-  const quad = (a: number[], b: number[], c: number[], d: number[], ca: Color, cb: Color, cc: Color, cd: Color) => {
-    // a and b along the outline, c and d beyond each: wound to face up.
-    corners.push(...a, ...c, ...b, ...b, ...c, ...d);
-    for (const colour of [ca, cc, cb, cb, cc, cd]) colours.push(colour.r, colour.g, colour.b);
-  };
-  for (let i = 0; i < outline.length - 1; i++) {
-    const [[x0, z0], [x1, z1]] = [outline[i]!, outline[i + 1]!];
-    if (Math.hypot(x1 - x0, z1 - z0) < 1e-6) continue;
-    const [[n0x, n0z], [n1x, n1z]] = [inward[i]!, inward[i + 1]!];
-    // Down into the water.
-    quad([x0, top, z0], [x1, top, z1], [x0 + n0x * SHORE_IN, bottom, z0 + n0z * SHORE_IN], [x1 + n1x * SHORE_IN, bottom, z1 + n1z * SHORE_IN],
-      SHORE.lip, SHORE.lip, SHORE.under, SHORE.under);
-    // Out over the turf, soaked at the edge and drying into it. Only behind the hole's front: in front of it the turf is
-    // the path's, and the water's own cut is there.
-    const [o0, o1] = [[x0 - n0x * SOAKED, wet2, z0 - n0z * SOAKED], [x1 - n1x * SOAKED, wet2, z1 - n1z * SOAKED]];
-    if (Math.max(o0[2]!, o1[2]!) > wet.near) continue;
-    const [t0, t1] = [new Color(turfAt(o0[0]!)), new Color(turfAt(o1[0]!))];
-    quad([x1, wet2, z1], [x0, wet2, z0], o1, o0, SHORE.soaked, SHORE.soaked, t1, t0);
-  }
-  const made = new BufferGeometry();
-  made.setAttribute('position', new Float32BufferAttribute(corners, 3));
-  made.setAttribute('color', new Float32BufferAttribute(colours, 3));
-  made.computeVertexNormals();
-  return made;
-}
-
-/** What is left of a rectangle outside another: up to four rectangles. */
-function outside(r: { x0: number; x1: number; z0: number; z1: number }, hole: { x0: number; x1: number; z0: number; z1: number }) {
-  if (hole.x1 <= r.x0 || hole.x0 >= r.x1 || hole.z1 <= r.z0 || hole.z0 >= r.z1) return [r];
-  const out: { x0: number; x1: number; z0: number; z1: number }[] = [];
-  if (hole.x0 > r.x0) out.push({ ...r, x1: hole.x0 });
-  if (hole.x1 < r.x1) out.push({ ...r, x0: hole.x1 });
-  const [x0, x1] = [Math.max(r.x0, hole.x0), Math.min(r.x1, hole.x1)];
-  if (hole.z0 > r.z0) out.push({ x0, x1, z0: r.z0, z1: hole.z0 });
-  if (hole.z1 < r.z1) out.push({ x0, x1, z0: hole.z1, z1: r.z1 });
-  return out;
 }
 
 function floodlight(def: BuildingDef) {
@@ -1091,8 +968,9 @@ export function building(def: BuildingDef): Building {
     group.userData.disposeFallback = true;
     carGlass(group, true, 1 / (group.userData.fit as number));
   }
-  // Olympia's goals: the training goal, and the big one at the far end.
-  if (def.kind === 'goal') {
+  // Olympia's goals: the training goal, and the big one at the far end. A box goal is the one built here: the models'
+  // nets slope down from the crossbar, and he walks along the top of this one.
+  if (def.kind === 'goal' && !def.level) {
     const big = (def.height ?? 8) > 12;
     group.userData.model = big ? 'fotbollsmal-stort' : 'fotbollsmal';
     group.userData.fit = (def.height ?? 8) / (big ? 16 : 8);

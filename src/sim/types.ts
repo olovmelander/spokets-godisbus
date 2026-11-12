@@ -856,6 +856,8 @@ export interface Storm {
     turn?: number;
     /** An outlet's near bank begins this far along it, past the end of a jetty that runs out into its mouth. */
     opens?: number;
+    /** A goal whose top is level from its crossbar back, a box he can walk along the top of (Olympia's small goal). */
+    level?: boolean;
   }[];
   /** Warm windows of lit candles and lanterns, which glow through the rain. */
   glows?: { at: Vec; z?: number; size?: number; after?: string }[];
