@@ -89,11 +89,12 @@ type Frame = Omit<ShotKey, 'at' | 'move'>;
  * or a tablet, where the two would be too small together. The figure stands lit in the dark
  * while the line is read; then it leaps or floats away in its flight, lit, and the picture goes a little way with it
  * (`follow`). The beat `needs` the cue `seen`, and the flight is `on` the beat: the scene's own reveal, which
- * waits while the line is read (./render.ts). It is not begun from beyond `before`.
+ * waits while the line is read (./render.ts). It is not begun from beyond `before`, nor in a game saved after the
+ * line was read.
  */
 export function sighting(id: string, at: number, before: number, beat: string, seen: string, flight: Flyby, frame: Frame, follow: Frame): SceneDef {
   return {
-    id, at, before, seconds: round(0.8 + flight.seconds, 1), hold: true, dialogue: [beat],
+    id, at, before, until: `beat:${beat}`, seconds: round(0.8 + flight.seconds, 1), hold: true, dialogue: [beat],
     cues: [{ at: 0.6, flag: seen }],
     stage: {
       shots: [{ at: 0, ...frame, move: 0.8 }, { at: 0.8, ...follow, move: round(0.9 * flight.seconds, 1) }],

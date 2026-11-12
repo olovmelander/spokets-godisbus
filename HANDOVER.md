@@ -31,8 +31,10 @@
   passes its size gates (657.1 KB of gzipped JavaScript; boot 3,662.6 KB without the private models) and the privacy
   check. On that build eleven browser suites pass: aventyr2, walk-and-talk, talk-life, dialogue-reading, epilogue,
   endings, story, family-story, finale-stage, story-context and smoke. `story` now expects each party thanks told
-  standing, with Continue offered and never needed. Test-merged with `aventyr1-genomspelning` (85d7dd4): only this
-  file conflicts. The four sightings, the shelf and the name were looked at in the running game at
+  standing, with Continue offered and never needed. CI's `album` found a game loaded mid-party standing again for
+  thanks already read: every new moment now has `until` on its last line, so a game saved after it has had it (a
+  test in `tests/unit/story.test.ts`); album passes locally. Test-merged with `aventyr1-genomspelning` (85d7dd4 and
+  06b8145): only this file conflicts, and all 2,740 tests pass on the merge. The four sightings, the shelf and the name were looked at in the running game at
   844×390, 390×844, 1180×820 and 1440×900 with stand-in figures; those pictures are not committed. Not played by a
   person, and not on the family's devices. No private asset, recording, release boundary or rule changes. No work
   needs Blender.

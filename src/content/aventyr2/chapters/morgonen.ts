@@ -166,8 +166,8 @@ const SCENES: SceneDef[] = [
   },
   // What he says to each figure as he puts it back, said while he stands at the shelf: a boy who put the second one up
   // at once had run to the window before "Och du bredvid." was said (docs/dialogue.md).
-  { id: 'hylla:old', on: 'shelf:old', before: 6, seconds: 0.4, hold: true, dialogue: ['moOld'] },
-  { id: 'hylla:small', on: 'shelf:small', before: 6, seconds: 0.4, hold: true, dialogue: ['moSmall'] },
+  { id: 'hylla:old', on: 'shelf:old', until: 'beat:moOld', before: 6, seconds: 0.4, hold: true, dialogue: ['moOld'] },
+  { id: 'hylla:small', on: 'shelf:small', until: 'beat:moSmall', before: 6, seconds: 0.4, hold: true, dialogue: ['moSmall'] },
   {
     // With both figures back on the shelf, Pappa goes over to the window by it, with his cup, to see to his new latch.
     id: 'fonster',

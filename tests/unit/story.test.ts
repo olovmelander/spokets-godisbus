@@ -80,4 +80,14 @@ describe('choosing candy at the family party', () => {
     for (let i = 0; i < hop.seconds * 120; i++) sim.step(idle);
     expect(sim.said.slice(-2)).toEqual(['klonk', 'named']);
   });
+
+  it('does not hold him again, in a game saved after the thanks were read, for the moments they were said in', () => {
+    const given = ['mamma', 'pappa', 'moa', 'bertil'];
+    const sim = new Sim({ ...epilog, spawn: { x: 22.4, y: .01 } }, {}, { flags: given.flatMap((who) => [`party:${who}`, `beat:partyThanks:${who}`]) });
+    for (let i = 0; i < 30; i++) sim.step(idle);
+    expect(sim.held).toBe(false);
+    for (const who of given) expect(sim.flags.has(`scene:tack:${who}`)).toBe(true);
+    sim.step({ ...idle, act: true });
+    expect(sim.story?.kind).toBe('party');
+  });
 });

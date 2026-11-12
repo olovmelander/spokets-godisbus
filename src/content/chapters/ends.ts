@@ -154,10 +154,11 @@ const GUESTS = [
  * while what goes with it is said: the thing of theirs he found under the deck (Hittegods), and for Pappa the round
  * stones. Handed out quickly, the thanks used to come one after another long after their gifts, up to eighteen
  * seconds late, while he was further along the table. The sweet is given from any of the party's places, to whom he
- * chooses; a game taken up at the next big candy (x 25) has had its party, and stands for none of it.
+ * chooses; a game taken up at the next big candy (x 25) has had its party, and stands for none of it. One saved
+ * after a thanks was read has had that moment (`until`).
  */
 const THANKS: SceneDef[] = [...GUESTS.map((g) => g.id), 'spoket'].map((id) => ({
-  id: `tack:${id}`, on: `party:${id}`, before: 24.8, seconds: 0.4, hold: true,
+  id: `tack:${id}`, on: `party:${id}`, until: `beat:partyThanks:${id}`, before: 24.8, seconds: 0.4, hold: true,
   dialogue: [`partyThanks:${id}`, ...({ pappa: ['coinBack', 'cobbles1', 'cobbles2', 'cobbles3'], moa: ['clipBack'], bertil: ['marbleBack'] } as Record<string, string[]>)[id] ?? []],
 }));
 
