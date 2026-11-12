@@ -2750,7 +2750,9 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
     const geometry = colour
       // A hummock: level where he stands, round at its shoulders, and wider and wider down into the water, as a
       // tussock of the bog is. It narrowed towards its foot, and from above (Mamma's shot) read as a bowl (6 November).
-      ? new LatheGeometry([[0, 0], [0.5, 0], [0.8, -0.05], [0.98, -0.18], [1.1, -0.42], [1.22, -0.8], [1.34, -1.3], [1.42, -1.8]].map(([r, y]) => new Vector2(r, y)), 26).scale(t.width / 2, 1, 1.5)
+      // Its outline goes up from its foot to its crown: the other way round, the lathe faced inward, and he saw only
+      // the inside of its far half, a hollow shell with the water through its front (12 November 2026).
+      ? new LatheGeometry([[0, 0], [0.5, 0], [0.8, -0.05], [0.98, -0.18], [1.1, -0.42], [1.22, -0.8], [1.34, -1.3], [1.42, -1.8]].reverse().map(([r, y]) => new Vector2(r, y)), 26).scale(t.width / 2, 1, 1.5)
       : new BoxGeometry(t.width, 1.6, 2.6);
     geometry.translate(0, colour ? 0 : -0.8, -0.6);
     if (colour) {

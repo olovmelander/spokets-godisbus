@@ -327,8 +327,10 @@ export const myren: ChapterData = {
   ledges: [BERRY_LEAF, ...LEAVES, ...STEPS, LANDING, PERCH],
   // The rings between the dead pines. They are off the way on: the boardwalk under them is the trail.
   hooks: RINGS,
-  // What the rings hang from: a rope from the top of one dead pine to the top of the other.
-  lines: [{ from: { x: STEPS[1]!.x, y: 10.3 }, to: { x: LANDING.x, y: 10.3 }, sag: 0.35, posts: true }],
+  // What the rings hang from: a rope from one dead pine to the other. The pines are the stems that hold their branches
+  // (../../render/ledges.ts), which reach out of the picture: the line's own posts stood a second, darker trunk in front
+  // of each, and the one at the landing crossed Elof where he stands.
+  lines: [{ from: { x: STEPS[1]!.x, y: 10.3 }, to: { x: LANDING.x, y: 10.3 }, sag: 0.35 }],
   // Side candy, off the trail. None is taken by walking under it, or by a hop along the trail. It is drawn as
   // a heart and a lollipop by turns, in the order of this list, so the first of each way is a heart: its tell.
   side: [
@@ -394,8 +396,9 @@ export const myren: ChapterData = {
     { id: 'bog:return-bridge', look: 'sign', at: { x: 169.2, y: 0 }, verb: 'call', word: 'callMamma', needs: 'home', extra: true },
     // The return is its own discovery, not another candy or an album reward to complete.
     { id: 'bog:lantern-return', at: { x: 142, y: 0 }, verb: 'take', touch: true, needs: 'placed:bog-boardwalk', extra: true },
-    // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way.
-    { id: 'memory', look: 'memory', at: { x: 170.6, y: 0 }, verb: 'take', touch: true },
+    // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way. Between two of the trail's
+    // sweets: at 170.6 one stood in its glow, a step from the big candy and Mamma's sign.
+    { id: 'memory', look: 'memory', at: { x: 171.5, y: 0 }, verb: 'take', touch: true },
     { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'boardCrane', needs: 'home', ride: 'crane' },
     // The toss: what glints under the first soft tussock after the island. He comes within its reach only
     // by sinking towards it, standing, and that throws him.

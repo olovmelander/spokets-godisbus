@@ -282,6 +282,13 @@ function climb(kit: ForestKit, look: string, long: number): BufferGeometry | und
   return together(Array.from({ length: lengths }, (_, i) => ({ shape: root, matrix: placing([0, -i * each * 2, 0], [0, i * 2.4, 0], [1, each, 1]) })));
 }
 
+/**
+ * How deep the anthill's dome is drawn, as a share of the kit's. The kit's bulges six and a half EL out in front of the
+ * path, more than half the way to the camera: from the ant road and from the foot of its root it was a dark, blurred
+ * wall over half the picture, and the ants carried him up out of sight behind it.
+ */
+const ANTHILL_DEPTH = 0.6;
+
 /** The name of the kit's shape for each of the chapter's landmarks. */
 export const LANDMARKS: Record<Exclude<Landmark['look'], LandmarkThing>, string> = { cone: 'jattekotte', log: 'stock', anthill: 'myrstack', stone: 'virvelsten' };
 
@@ -302,7 +309,7 @@ export function forestLandmarks(chapter: ChapterData): Group {
       continue;
     }
     // A thing on the floor is no part of the forest's kit: the chapter's own pack puts it in.
-    const holder = isThing(mark.look) ? new Group() : forestSocket(new Group(), { shape: LANDMARKS[mark.look], ...(mark.look === 'log' ? { size: [width / 5, high / .8, 1] as const } : {}) });
+    const holder = isThing(mark.look) ? new Group() : forestSocket(new Group(), { shape: LANDMARKS[mark.look], ...(mark.look === 'log' ? { size: [width / 5, high / .8, 1] as const } : mark.look === 'anthill' ? { size: [1, 1, ANTHILL_DEPTH] as const } : {}) });
     holder.name = `landmark:${mark.look}`;
     holder.position.set(mark.from, mark.base, 0);
     // A narrow solid support for the whole playable top; the anthill also holds the door's spruce behind it.
