@@ -74,3 +74,39 @@ describe('the flash a line points at', () => {
     });
   }
 });
+
+/**
+ * Olov, 12 November 2026: "Han ska synas tydligt överallt" (the old one). Where Elof sees him and calls out, he stops,
+ * the picture takes in the old one, who stands lit while the line is read, and then leaps or floats away lit, the
+ * picture going a little way with him (src/content/aventyr2/kit.ts, `sighting`).
+ */
+const OLD_SEEN = [['stormgard', 'sg:playhouse'], ['olympia', 'ol:old-one'], ['flarken', 'sjon:old-one'], ['alven', 'al:old-one']] as const;
+
+describe('the old one, where Elof calls out to him', () => {
+  for (const [id, said] of OLD_SEEN) {
+    it(`${id}: he stands for it, and the old one is lit where he stands and as he goes`, () => {
+      const chapter = AVENTYR2.find((one) => one.id === id)!;
+      const beat = chapter.beats!.find((one) => one.id === said)!;
+      const moment = chapter.scenes!.find((scene) => scene.dialogue?.includes(said))!;
+      expect(moment.hold).toBe(true);
+      // The line waits for the picture: it needs the moment's cue.
+      expect(moment.cues!.map((cue) => cue.flag)).toContain(beat.needs);
+      const shots = moment.stage!.shots!;
+      expect(shots.length).toBe(2);
+      const flight = chapter.storm!.flybys!.find((one) => one.on === `beat:${said}`)!;
+      expect(flight.who).toBe('tragubbe');
+      expect(flight.lit?.length).toBeGreaterThan(0);
+      expect(flight.seconds).toBeGreaterThanOrEqual(3);
+      // He is in the first picture on a phone held upright too: `width` is the least it shows across.
+      expect(Math.abs(flight.from.x - shots[0]!.x)).toBeLessThan(shots[0]!.width! / 2);
+      // And the picture goes with him, the moment lasting as long as his flight.
+      expect(shots[1]!.x).toBeGreaterThan(shots[0]!.x);
+      expect(moment.seconds).toBeGreaterThanOrEqual(flight.seconds);
+      // Where he stood before, he stands lit, and his flight takes over from there.
+      for (const stood of chapter.decor!.filter((one) => one.look === 'tragubbe' && one.until === `beat:${said}`)) {
+        expect(stood.word).toBe('lit');
+        expect(Math.abs(stood.at.x - flight.from.x)).toBeLessThan(0.5);
+      }
+    });
+  }
+});

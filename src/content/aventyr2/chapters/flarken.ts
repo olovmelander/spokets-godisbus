@@ -1,6 +1,6 @@
-import type { Candy, ChapterData, Hook, Jump, Ledge, Mover, Tussock, Vec } from '../../../sim/types';
+import type { Candy, ChapterData, Flyby, Hook, Jump, Ledge, Mover, Tussock, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
+import { hopCandy, jump, round, row, sighting, slopeRow, timeCard } from '../kit';
 
 /**
  * Kapitel 5: Flärken (docs/aventyr-2.md, docs/aventyr-2-reference-study.md §2): Flärkenbadet, the villages' bathing
@@ -166,6 +166,14 @@ const JETTY = { from: 113, to: 144 };
 const POSTS = [118.6, 123.8, 129, 134.2];
 /** Where the old trägubbe stands far out on the planks, until he leaps away. */
 const OLD_ONE = { x: 138.7, y: DECK };
+/** He leaps away from the planks as Elof calls out to him, out over the break, lit. */
+const OLD_LEAP: Flyby = { on: 'beat:sjon:old-one', from: { x: OLD_ONE.x, y: 1.4 }, to: { x: 156, y: 3.4 }, rise: 1.4, seconds: 4, who: 'tragubbe', lit: [1.2, 2.8] };
+/**
+ * Elof calls out from the lee of the third post, where no wave reaches him while he stands: he, the posts ahead and
+ * the old one far out on the planks in one picture.
+ */
+const OLD_SEEN = sighting('sjon:gamla', 128.4, 129.6, 'sjon:old-one', 'sjon:old-seen', OLD_LEAP,
+  { x: 136, y: 2.4, height: 7.6, width: 9 }, { x: 148, y: 2.8, height: 7.8, width: 10 });
 /** Where it has broken off: Mamma's boat lies along the gap, and its gunwale is level with the planks. */
 const BREAK = { from: 144, to: 150 };
 const GUNWALE: Ledge = { x: (BREAK.from + BREAK.to) / 2, y: DECK, width: BREAK.to - BREAK.from + 0.2, look: 'shelf', needs: 'sjon:boat' };
@@ -281,6 +289,8 @@ export const flarken: ChapterData = {
       // Establish the modeled family car with both wheels clear, before following the tiny boy to the shore.
       shots: [{ at: 0, x: 2, y: 3.2, height: 12, width: 30, move: 0.001 }],
     } },
+    // On the jetty, from a post's lee: the old one far out on the planks, seen and called to (../kit.ts, `sighting`).
+    OLD_SEEN,
     // At the top of the diving tower he points out over the lake, and the picture goes with him: a flash, and the
     // little one is there on its stone (`sightings`). The picture stays on him until the whole line has finished (`sjon:lookout`).
     {
@@ -486,7 +496,7 @@ export const flarken: ChapterData = {
       // On the far side of the reed mats: the little one, blown out over the lake.
       { on: 'beat:sjon:flash', from: { x: round(FLASH_AT - 4, 1), y: 1.5 }, to: { x: round(FLASH_AT + 21, 1), y: 2.3 }, rise: 0.5, seconds: 3, who: 'lillgubbe', lit: [1.3] },
       // The old one, far out on the planks, leaps on into the dark when he comes.
-      { on: 'beat:sjon:old-one', from: { x: OLD_ONE.x, y: 1.4 }, to: { x: 170, y: 6 }, seconds: 2.2, who: 'tragubbe' },
+      OLD_LEAP,
       // At the end: the outlet takes the little one, and the old one leaps after him onto a log.
       { on: 'sjon:current', from: { x: SEEN.x, y: 0.2 }, to: { x: 206, y: -0.15 }, z: -4, seconds: OUTLET_RUN, size: 1.8, who: 'lillgubbe', lit: [] },
       { on: 'sjon:log-run', from: { x: END_POST.x, y: 0.25 }, to: { x: 206, y: 0.25 }, z: -4, seconds: OUTLET_RUN, size: 1.3, who: 'tragubbe', lit: [] },
@@ -552,7 +562,7 @@ export const flarken: ChapterData = {
     // each (art/blender/flarken.py, `bryggbrott`). Nothing of it is over the gap where he could think to stand.
     { look: 'kit', word: 'bryggbrott', at: { x: LOW.to, y: LOW.y }, z: 0 },
     // The old trägubbe, far out on the planks after the last post: gone when he comes, in a leap.
-    { look: 'tragubbe', at: OLD_ONE, until: 'beat:sjon:old-one' },
+    { look: 'tragubbe', at: OLD_ONE, until: 'beat:sjon:old-one', word: 'lit' },
     // And on the jetty's end post, until he leaps after the little one.
     { look: 'tragubbe', at: END_POST, until: 'sjon:log-run' },
     // The outlet: where the lake spills into the å it breaks white over the stones in its bed, and reeds stand along
@@ -614,7 +624,7 @@ export const flarken: ChapterData = {
     { id: 'sjon:flash', at: FLASH_AT, who: 'elof', line: 'sjFlash' },
     // 5. the jetty in the waves: what they are and what to do about them in one line
     { id: 'sjon:posts', at: 117.8, who: 'elof', line: 'sjPosts', read: true },
-    { id: 'sjon:old-one', at: 126.2, who: 'elof', line: 'sjOldOne' },
+    { id: 'sjon:old-one', at: 128.4, needs: 'sjon:old-seen', who: 'elof', line: 'sjOldOne' },
     // 6. Mamma's board: he sees the break, and she answers
     { id: 'sjon:broken', at: 138, until: 'sjon:mamma', who: 'elof', line: 'sjBroken' },
     { id: 'sjon:family:mamma', on: 'beat:sjon:broken', until: 'sjon:mamma', who: 'mamma', line: 'sjMamma', read: true },

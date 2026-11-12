@@ -4,7 +4,7 @@
 //   $env:SHOTS_OUT = "<a folder outside the repository>"; node tests/browser/review/dialogue-moments.mjs
 //
 // From the build in dist (`npm run build` first), or from a running `npx vite` with SHOTS_ORIGIN=http://localhost:5173.
-// SHOTS_ONLY=stormskog-minnet,alven-slut takes only those. The stand-in figures are drawn unless SHOTS_STANDIN=0:
+// SHOTS_ONLY=stormskog-minnet,alven-slut takes only those; SHOTS_SIZES=1440x900,844x390 other sizes. The stand-in figures are drawn unless SHOTS_STANDIN=0:
 // pictures of the family's own models stay on the computer that made them, and are never committed.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
@@ -44,11 +44,11 @@ const cases = [
   { name: 'stormskog-minnet', course: 'stormskog', at: '144,0.01', flags: ['placed:owl-twig', 'owl', 'ss:beam', 'ss:frozen', 'ss:woke', 'scene:ss:ljuset', 'scene:ss:vaknar'],
     lines: ['En mörk håla', 'Klonk …', 'låg ensam', 'Därför skyndar', 'hitta dem båda'] },
   { name: 'flarken-blixten', course: 'flarken', at: '98.2,0.01', flags: [], lines: ['blåser ut över sjön'], burst: 9 },
-  { name: 'stormgard-lekstugan', course: 'stormgard', at: '129.8,0.01', flags: [], lines: ['Uppe på lekstugan'], burst: 9 },
-  { name: 'olympia-gamla', course: 'olympia', at: '116,0.01', flags: ['scene:card', 'beat:ol:arrive'], lines: ['seglar över vattnet'], burst: 9 },
-  { name: 'flarken-gamla', course: 'flarken', at: '123,0.61', flags: [], lines: ['Spring, gamla'], burst: 9 },
+  { name: 'stormgard-lekstugan', course: 'stormgard', at: '129.8,0.01', flags: [], lines: ['Uppe på lekstugan'], burst: 30 },
+  { name: 'olympia-gamla', course: 'olympia', at: '116,0.01', flags: ['scene:card', 'beat:ol:arrive'], lines: ['seglar över vattnet'], burst: 30 },
+  { name: 'flarken-gamla', course: 'flarken', at: '121.2,0.61', flags: ['sjon:arrive'], lines: ['Spring, gamla'], burst: 30 },
   { name: 'alven-flotten', course: 'alven', at: '9,0.01', flags: [], lines: ['guppar på ån'], burst: 9, act: true },
-  { name: 'alven-gamla', course: 'alven', at: '49.8,0.01', flags: ['al:raft'], lines: ['på en stock'], burst: 9 },
+  { name: 'alven-gamla', course: 'alven', at: '49.8,0.01', flags: ['al:raft'], lines: ['på en stock'], burst: 30 },
   { name: 'alven-fore', course: 'alven', at: '170.8,0.41', stand: true, flags: ['al:raft', 'al:pappa', 'al:scarf', 'al:lift', 'al:owl-call', 'al:owl-ready', 'al:owl', 'al:little-seen', 'scene:al:little', 'scene:bron', 'beat:al:see-little'],
     lines: ['flyter före oss'], burst: 9 },
   { name: 'alven-forsen', course: 'alven', at: '78,0.61', flags: ['al:raft'], lines: ['alldeles för vild', 'uppe på bron', 'halsduk'], act: true },
@@ -58,10 +58,12 @@ const cases = [
   { name: 'stormoga-gavan', course: 'stormoga', at: '44.6,0.61', flags: ['so:jetty', 'so:mamma', 'so:pappa', 'so:moa', 'so:bertil', 'scene:bryggan', 'scene:lampa:mamma', 'scene:lampa:pappa', 'scene:lampa:moa', 'scene:lampa:bertil', 'owl:call', 'owl:ready', 'owl', 'eye', 'scene:oga', 'scene:rockav', 'scene:motet', 'so:cap-returned', 'gift:out', 'beat:soFar'],
     lines: ['guldpapper', 'Förut delade jag', 'stor igen'], act: true },
   { name: 'morgonen-fjun', course: 'morgonen', at: '9,0.01', flags: ['scene:frukost', 'shelf:old', 'shelf:small', 'scene:fonster', 'beat:moOld', 'beat:moSmall'],
-    lines: ['En ny hake', 'heta Fjun'], act: true },
+    lines: ['En ny hake', 'heta Fjun', 'Vilket fint namn', 'Välkommen hem', 'Klonk, klonk'], act: true },
+  { name: 'morgonen-hylla', course: 'morgonen', at: '1,0.01', flags: ['scene:frukost'], lines: ['Först i raden', 'Och du bredvid'], act: true },
 ];
 
-for (const [width, height] of [[844, 390], [390, 844]]) {
+const sizes = process.env.SHOTS_SIZES?.split(',').map((size) => size.split('x').map(Number)) ?? [[844, 390], [390, 844]];
+for (const [width, height] of sizes) {
   for (const one of cases) {
     if (only && !only.includes(one.name)) continue;
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: true, serviceWorkers: 'block' });

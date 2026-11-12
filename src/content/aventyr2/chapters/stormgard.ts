@@ -2,7 +2,7 @@ import { GRAVITY, RUN_SPEED } from '../../../sim/constants';
 import type { SceneDef } from '../../../sim/scene';
 import type { Candy, ChapterData, Flyby, Ledge, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { alongAll, flightAt, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, flightAt, hopCandy, jump, round, row, sighting, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 1: Stormgården (docs/aventyr-2.md). Units: EL. The home garden at night, in the autumn
@@ -118,6 +118,15 @@ const flown = (k: number) => flightAt(FLIGHT, k);
  * way and up the hedge, so that he stays in the picture under Elof's words and goes from it over the hedge's top,
  * small, into the dark. Wide enough at the start to have Elof in it too, on a phone held upright as well.
  */
+/** The old one on the playhouse's ridge: he stands lit while Elof calls out, and leaps away towards the hedge. */
+const OLD_LEAP: Flyby = {
+  on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 160, y: 8.4 }, rise: 1.2, seconds: 3,
+  who: 'tragubbe', lit: [1],
+};
+/** Seen from the trampoline's edge, before the climb: Elof, the playhouse and the old one on its roof in one picture. */
+const OLD_SEEN = sighting('sg:lekstugan', 131.6, 135, 'sg:playhouse', 'sg:old-seen', OLD_LEAP,
+  { x: 142, y: 4.2, height: 9.6, width: 11 }, { x: 153.6, y: 6.2, height: 9.6, width: 10 });
+
 const HEDGE_SCENE: SceneDef = {
   id: 'haecken', at: 177, before: 180.5, seconds: 6.8, hold: true, dialogue: ['sg:flash'],
   // Finish the previous line, frame the hedge, then show and name the flight together.
@@ -185,7 +194,7 @@ export const stormgard: ChapterData = {
     lightning: 10,
     flybys: [
       // A flash: the old trägubbe on the playhouse roof leaps away towards the hedge.
-      { on: 'beat:sg:playhouse', from: { x: PLAYHOUSE.ridge.x, y: PLAYHOUSE.ridge.y + 0.6 }, to: { x: 172, y: 8 }, seconds: 2.5, who: 'tragubbe' },
+      OLD_LEAP,
       // And at the hedge: the little one, tumbling over it towards the forest, while Elof watches (`haecken`).
       FLIGHT,
     ],
@@ -230,11 +239,11 @@ export const stormgard: ChapterData = {
     // The pumpkin lantern, a little behind the step's big candy.
     { look: 'pumpkin', at: { x: LANTERN.x, y: LANTERN.y }, z: LANTERN.z },
     // The old trägubbe, seen ahead on the playhouse roof until the flash that shows it leaping away.
-    { look: 'tragubbe', at: PLAYHOUSE.ridge, until: 'beat:sg:playhouse', z: -0.4 },
+    { look: 'tragubbe', at: PLAYHOUSE.ridge, until: 'beat:sg:playhouse', z: -0.4, word: 'lit' },
   ],
   spawn: { x: 1, y: DECK + 0.01 },
   // Where and when, as the chapter opens (../kit.ts); and the little one over the hedge, watched.
-  scenes: [timeCard('stormgard', 1), HEDGE_SCENE],
+  scenes: [timeCard('stormgard', 1), OLD_SEEN, HEDGE_SCENE],
   goalX: 189,
   ground: [
     { x: -3, y: 16 },
@@ -395,7 +404,7 @@ export const stormgard: ChapterData = {
     { id: 'sg:heja', on: 'sg:boot', within: [104, 120], who: 'bertil', line: 'sgBertilHeja', aside: 12 },
     { id: 'sg:thanks', at: 128.4, who: 'elof', line: 'sgThanks', aside: true },
     // 6. the playhouse: the old one seen, and its thought. The question follows the picture's words directly.
-    { id: 'sg:playhouse', at: 131.6, who: 'elof', line: 'sgPlayhouse' },
+    { id: 'sg:playhouse', at: 131.6, needs: 'sg:old-seen', who: 'elof', line: 'sgPlayhouse' },
     { id: 'sg:lonely', on: 'sg:thought', who: 'elof', line: 'sgLonely', read: true },
     { id: 'sg:why', on: 'beat:sg:lonely', who: 'elof', line: 'sgWhy', read: true },
     { id: 'sg:lookout', on: 'sg:lookout', who: 'elof', line: 'sgLookout', aside: true },

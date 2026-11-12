@@ -1,6 +1,6 @@
 # Handover
 
-## State (12 November 2026, afternoon): Olov's playthrough list for Äventyr 1
+## State (12 November 2026, late afternoon): Olov's playthrough list for Äventyr 1
 
 - **Olov asked**, after playing Äventyr 1 through, for ten fixes in the order played: unfinished-looking animals;
   Gården's end a hedge as in Stormgården; Elof's thanks to Pappa after the seesaw and to Mamma after the braid; the
@@ -64,6 +64,49 @@
   at 1280×720 and the eddy also at 844×390; those pictures are not committed. Not played by a person, and not on the
   family's devices. No private asset, recording, release boundary or rule changes; the voice catalog
   (`scripts/generate-voices.mjs`) lists the eight new lines as metadata only. No work needs Blender.
+- **With #266.** Merged with `samtal-i-takt` at `c8f4e56` (only this file conflicted; both State sections kept): 2,743
+  tests, the build (660.1 KB of gzipped JavaScript) and the privacy check pass, and so do the story suite (40 checks,
+  the family's held thanks and the shelf), album and epilogue. CI's story and album suites had failed on the first
+  push: the carving test now puts the carving on the shelf, and a memory chosen in the album has no first look.
+
+## State (12 November 2026, afternoon): Olov's answers, and both adventures
+
+- **Olov answered** this morning's four questions: Elof stands still in the six moments; none of the twelve
+  changed lines comes back; a running child hearing fewer passing remarks is right; and the old one *"ska synas
+  tydligt överallt"*. He also asked whether the review covered both adventures. The rules and the robot guard did;
+  the words had only been gone through in Äventyr 2. This continuation, on the same branch and PR (#266), does
+  Äventyr 1 too and lights the old one.
+- **Shared with another session:** a second session works in the same folder on Olov's Äventyr 1 playthrough list
+  (branch `aventyr1-genomspelning`, from this branch). The two agreed on files: Granskogen, Myren, the garden,
+  Norrsken and `sv.ts` are that session's, and it mends Granskogen's and Myren's late helper lines with its own
+  changes there. This work was done in a separate worktree, and neither touched the other's files.
+- **The old one, where Elof calls out to him:** four held moments (`sighting` in `src/content/aventyr2/kit.ts`):
+  Stormgården's playhouse roof, Olympia's flooded centre circle, Flärken's planks (now called from a post's lee),
+  Älven's log. The picture takes in the old one, who stands lit from within in a soft glow while the line is read,
+  then leaps or floats away lit while the picture goes a little way with him. A phone held sideways shows Elof
+  too; a phone held upright and a tablet show the old one close. His standing figure hands over to his flight
+  (no second figure leaping beside it).
+- **Lines where they belong, Äventyr 1 and the morning:** each party guest thanks Elof while he stands with them,
+  with the found thing and Pappa's stones in the same moment (`tack:*`; before, up to 18 s late). In Morgonen efter
+  his two lines to the figures are said at the shelf (`hylla:*`), and Moa, Pappa and Klonk answer the name while
+  he stands under it (`namnet`, held). Byn's "Godiset är större än jag!" is said among the jars.
+- **One rule in the simulation:** a finished scene no longer owns its words, so a game saved before they were the
+  scene's says an unsaid one freely (Morgonen's cocoa waits for Pappa's welcome).
+- **Measure:** Godiskalaset's latest story line went from 18.6 s to 0, Byn's from 1.9 s to 0.1, Morgonen's from
+  5.0 s to 0. Äventyr 2's worlds stay within 2.4 s. Granskogen (4.4 s), Myren (2.8 s) and Berget (4.0 s, said
+  before the last page) remain on this branch; the first two are mended on `aventyr1-genomspelning`.
+- **Validation:** `npm run typecheck` and all 2,733 tests pass in the worktree; the timeline tool's 18 are skipped
+  unless asked for, and two private-model checks skip there because `art/private` is not in a worktree. The build
+  passes its size gates (657.1 KB of gzipped JavaScript; boot 3,662.6 KB without the private models) and the privacy
+  check. On that build eleven browser suites pass: aventyr2, walk-and-talk, talk-life, dialogue-reading, epilogue,
+  endings, story, family-story, finale-stage, story-context and smoke. `story` now expects each party thanks told
+  standing, with Continue offered and never needed. CI's `album` found a game loaded mid-party standing again for
+  thanks already read: every new moment now has `until` on its last line, so a game saved after it has had it (a
+  test in `tests/unit/story.test.ts`); album passes locally. Test-merged with `aventyr1-genomspelning` (85d7dd4 and
+  06b8145): only this file conflicts, and all 2,740 tests pass on the merge. The four sightings, the shelf and the name were looked at in the running game at
+  844×390, 390×844, 1180×820 and 1440×900 with stand-in figures; those pictures are not committed. Not played by a
+  person, and not on the family's devices. No private asset, recording, release boundary or rule changes. No work
+  needs Blender.
 
 ## State (12 November 2026): every line at its moment
 
@@ -5603,9 +5646,10 @@ family's own models (only the stand-ins were looked at). No local Blender work i
 it is the story's, or a passing remark (`aside`), and nothing but its own answer waits for a remark. Place lines
 with the timeline open (`tests/robot/dialogue-timeline.test.ts`), and keep the three limits of
 `tests/robot/dialogue.test.ts`; an exception is named there, with its reason. A moment told standing gets a cue for
-when its picture has arrived, and no free line chained onto its last one. For Olov to judge on the family devices:
-the six moments where Elof stands and listens, and the five figures moved into the picture (see "Frågor till
-Olov"). No local Blender work is needed.
+when its picture has arrived, and no free line chained onto its last one. A line said to someone where they stand is
+said while he stands there; where Elof calls out to the old one, use `sighting`. For Olov to judge on the family
+devices: the standing moments, and the old one and the little one in the picture where Elof points them out. Merge
+#266 before `aventyr1-genomspelning`, which starts from it. No local Blender work is needed.
 
 **Bertil's slippers (11 November, late evening).** Keep `soBertilSlippers` before the coming Thailand trip in
 `soBertil`, with separate short reading cards and matching future-recording metadata. Preserve both complete
@@ -6070,7 +6114,10 @@ The older list, still true where it is not struck:
 
 - **Lines at their moment (Olov, 12 November 2026):** every conversation fits what happens and is said at its
   place. Nothing is cut, and nothing comes late: passing remarks give way to the story's lines, and are said at
-  their moment or not at all (`docs/dialogue.md`).
+  their moment or not at all (`docs/dialogue.md`). In both adventures.
+- **Olov's answers on the review (12 November 2026):** Elof stands still in the moments told standing; the
+  rewritten, merged and removed lines stay as they are; a running child hearing fewer passing remarks is the right
+  balance; and the old one is to be seen clearly everywhere he appears.
 - **Bertil's farewell joke (Olov, 11 November 2026):** before mentioning Thailand, he hopes the next adventure
   will be in slippers.
 - **Opening's bird (Olov, 11 November 2026):** the family walks over to watch the lavskrika at the window,
@@ -6179,7 +6226,7 @@ The older list, still true where it is not struck:
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
 | Äventyr 1 playthrough (12 Nov, afternoon) | Olov's ten points from playing Äventyr 1 through | One session on Olov's computer, stacked on #266 | — / 1 list | Finished carvings and beetle, Gården's hedge end, two thanks, the eddy and the lift with a still ghost, a first look for memories, the towed trägubbe in Norrskenet, the shelf before teeth, words for drops |
-| Lines at their moment (12 Nov) | Go through every conversation: fit, place and timing | One session on Olov's computer | — / 1 request | Queue rules in the simulation; 69 passing remarks; six moments told standing; twelve lines rewritten, merged or removed; a robot guard for late lines in every chapter |
+| Lines at their moment (12 Nov) | Go through every conversation: fit, place and timing | One session on Olov's computer, continued after his answers | — / 2 requests | Queue rules in the simulation; 69 passing remarks; six moments told standing, then the old one's four sightings, the party's thanks and the shelf; twelve lines rewritten, merged or removed; a robot guard for late lines in every chapter |
 | Bertil's slippers (11 Nov, late evening) | Add a slipper wish before the Thailand trip | One text-only cloud continuation | — / 1 request | Existing dialogue receipt and reading hold retained; future recording metadata aligned. |
 | Family at the opening window (11 Nov, evening) | Let the family walk over to the arriving jay in the redesigned home | One cloud continuation with staging and independent native review | — / 1 request | Separate furniture-clear routes, visible shared attention and a continuous return to the chase; original story receipts retained. |
 | Responsive interface (11 Nov) | Improve mobile/desktop UX, HUD and dialogue composition | One cloud continuation with parallel dialogue, HUD, menus, native review and regression worktrees | — / 1 request | Unified speech card, retained readable text/targets, quieter HUD, navigable collections and responsive menus; actual-scene and safe-area checks. |
@@ -6247,11 +6294,12 @@ The older list, still true where it is not struck:
 - **Lines at their moment (12 November):** measured with a robot that never stops and presses every button the
   moment it is offered, which is harder than any child. A child who calls a helper in the first second still has
   the helper's greeting read to its end before the answer (one line, about five seconds). The family's promises
-  along the deck (prologue, Stormkvällen) and Godiskalaset's thanks are said in turn while he stands, as they are
-  meant. A child who runs hears fewer passing remarks than one who looks about. The old one's own moments were not
-  changed: he stands in sight and leaps away as a dark shape in one flash when Elof calls out (Stormgården's
-  playhouse, Olympia's centre circle, Flärken's planks), and is a glimpse on his log in Älven. On a phone that
-  glimpse is short; whether he should be lit as the little one is now is Olov's to say.
+  along the deck (prologue, Stormkvällen) are said in turn while he stands, as they are meant. A child who runs
+  hears fewer passing remarks than one who looks about (Olov: the right balance). On Berget "Spöket vill hämta hem
+  min trägubbe!" waits for "Tack för hjälpen! Nu är jag uppe." and comes about 4 s after the memory, before the last
+  page. In the garden a child who calls Moa the moment she is in reach does not hear "Spöket kröp ner under roten!":
+  it is what she says before she is called. Granskogen's and Myren's late helper lines are mended on
+  `aventyr1-genomspelning`, not here.
 
 - **Bertil's slippers (11 November, late evening):** the joke uses its own short card so neither line exceeds
   the adventure's reading-length limit; existing saved dialogue receipts remain stable.
@@ -6534,18 +6582,7 @@ Från din genomspelning av Äventyr 1 den 12 november (ingen av frågorna hindra
 - Den som hoppar ner i virveln fångas av glitterbubblan och hamnar på stenen igen. Lövet med spöket flyter i virveln
   tills Elof drar upp det.
 
-Från genomgången av replikerna den 12 november (ingen av frågorna hindrar arbetet):
-
-- Sex stunder berättas nu medan Elof står stilla och lyssnar: hålan i Stormskogen, spårets slut i Älven, ankomsten i
-  Billsta, guldgodiset i Stormens öga, och namnet Fjun och kakaon i Morgonen efter. Före den 10 november stannade han
-  också där. Vill du hellre att han ska kunna gå under någon av dem?
-- Tolv repliker skrevs om, slogs ihop eller togs bort (sist i `docs/dialogue-audit.md`). Säg till om någon ska
-  tillbaka som den var.
-- Ett barn som springer hör färre småkommentarer än ett som stannar och tittar. Är det rätt avvägning, eller ska
-  någon kommentar alltid sägas?
-- Lillgubben syns nu tydligt, i sitt eget sken, i de fyra blixtar där Elof pekar ut honom, och gamla trägubben
-  när han flyter förbi vid Moälven. På fyra andra ställen är gamla trägubben fortfarande en mörk skymt (lekstugan,
-  Olympias mittcirkel, Flärkens brygga, stocken i Älven). Ska han synas tydligt där också?
+Genomgången av replikerna den 12 november har inga öppna frågor. Olovs fyra svar står under "Decisions in effect".
 
 The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-flow work and the 11 November Explore, hedge, Flärken shore, shared home, requested TV console, responsive interface, opening's window visit and Bertil's slipper wish add no blocking question. The existing questions below remain separate.
 

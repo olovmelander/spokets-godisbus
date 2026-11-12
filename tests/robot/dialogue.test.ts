@@ -35,8 +35,6 @@ const STANDS = 7;
 const IN_TURN: Record<string, { lines: readonly string[]; stands: number }> = {
   prolog: { lines: ['mapForYou', 'heja', 'followTrail'], stands: 18 },
   stormkvall: { lines: ['skFollow'], stands: 8.5 },
-  // The party's thanks: the robot hands all five their sweet in five seconds, and each still thanks him, in turn.
-  epilog: { lines: ['partyThanks:pappa', 'partyThanks:moa', 'partyThanks:bertil', 'partyThanks:spoket'], stands: STANDS },
 };
 
 describe('every line is let finish, and none comes late', () => {

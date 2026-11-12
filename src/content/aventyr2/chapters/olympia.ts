@@ -1,7 +1,7 @@
 import type { SceneDef } from '../../../sim/scene';
 import type { Candy, ChapterData, Climb, Flyby, Jump, Ledge, Mover, Roller, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { alongAll, flightAt, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, flightAt, round, row, sighting, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 4: Olympia (docs/aventyr-2.md), Bredbyn's football ground at night in the storm. Units: EL. The
@@ -124,6 +124,11 @@ const BENCHES = { from: 92, to: 113 };
 
 /** The flooded centre circle, and Bertil's free kick over it into the far goal (Granskog's seesaw, as a ball). */
 const CIRCLE = { from: 125, to: 146, bottom: -5, water: -0.3 };
+/** The old one at the flooded centre circle: he stands lit at its edge while Elof calls out, and sails over it. */
+const OLD_SAILS: Flyby = { on: 'beat:ol:old-one', from: { x: 124.8, y: 0.6 }, to: { x: 147, y: 3 }, rise: 1, seconds: 4.2, who: 'tragubbe', lit: [1.2, 3] };
+/** From the benches: Elof, Bertil with his ball, and the water with the old one at its edge in one picture. */
+const OLD_SEEN = sighting('ol:gamla', 118.4, 121, 'ol:old-one', 'ol:old-seen', OLD_SAILS,
+  { x: 122.6, y: 2.6, height: 7.6, width: 9 }, { x: 139.6, y: 2.8, height: 7.8, width: 10 });
 // He arrives on top of the ball, then steps down as it rolls farther into the net: never through the turf.
 const KICK = { from: { x: 123.4, y: 0 }, to: { x: 149.4, y: 1.7 }, rise: 5, time: 3, corridor: 0.4 };
 /** The far goal: a full one, as high as sixteen Elofs, its mouth towards him where the kick comes down. */
@@ -212,7 +217,7 @@ export const olympia: ChapterData = {
   place: 'garden',
   spawn: { x: 1, y: ROAD + 0.01 },
   // Where and when, as the chapter opens (src/content/chapters/cards.ts); and the strongest gust at the end, watched.
-  scenes: [timeCard('olympia', 1), GUST_SCENE],
+  scenes: [timeCard('olympia', 1), OLD_SEEN, GUST_SCENE],
   goalX: 179,
   // Bertil answers from afar in the coda: it was his kick.
   coda: 'bertil',
@@ -310,7 +315,7 @@ export const olympia: ChapterData = {
       // under the line that points at it, on a phone held sideways too.
       { on: 'beat:ol:top', from: { x: 13.4, y: 8.2 }, to: { x: 41, y: 4.4 }, rise: 0.8, seconds: 3.2, who: 'lillgubbe', lit: [1.3] },
       // At the centre circle: the old one, blown over the water ahead of him.
-      { on: 'beat:ol:old-one', from: { x: 124.4, y: 0.6 }, to: { x: 152, y: 7 }, seconds: 2.4, who: 'tragubbe' },
+      OLD_SAILS,
       // At the trail: the strongest gust takes the little one north over the treetops, and the old one follows, while
       // Elof stands and watches (`norrut`).
       NORTH,
@@ -353,7 +358,8 @@ export const olympia: ChapterData = {
     // The corner flag, snapping in the wind.
     { look: 'flag', at: { x: 90.8, y: 0 }, z: -0.8 },
     // The old trägubbe at the edge of the centre circle, until the flash that shows him blown over it.
-    { look: 'tragubbe', at: { x: 124.4, y: 0 }, z: -1, until: 'beat:ol:old-one' },
+    // Clear of Bertil's ball, where it lies before the kick.
+    { look: 'tragubbe', at: { x: 124.8, y: 0 }, z: -1, until: 'beat:ol:old-one', word: 'lit' },
   ],
   // Klonk, ahead of him all the way, on firm ground: on the fence's top, along the pitch ahead of the balls, over
   // the puddle and the circle, and at the trail it thinks of the little one, once the flash has shown it.
@@ -407,7 +413,7 @@ export const olympia: ChapterData = {
     // 5. the corner flag and the benches
     { id: 'ol:crowd', at: 113.4, who: 'elof', line: 'olCrowd', aside: true },
     // 6. Bertil's free kick
-    { id: 'ol:old-one', at: 118.4, who: 'elof', line: 'olOldOne' },
+    { id: 'ol:old-one', at: 118.4, needs: 'ol:old-seen', who: 'elof', line: 'olOldOne' },
     { id: 'ol:bertil-here', at: 120, until: 'ol:bertil', who: 'bertil', line: 'olBertilHere', read: true },
     { id: 'ol:kick-ready', on: 'ol:kick-ready', until: 'ol:kick', within: [116, 126], who: 'bertil', line: 'olBertilReady', read: true },
     // In the air, or not at all. In the net Bertil calls it a goal, and Elof thanks him: two lines, read before the

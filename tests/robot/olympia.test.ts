@@ -621,7 +621,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     expect(olympia.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(olympia.place).toBe('garden');
     expect(olympia.coda).toBe('bertil');
-    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card', 'norrut']);
+    expect(olympia.scenes!.map((scene) => scene.id)).toEqual(['card', 'ol:gamla', 'norrut']);
     expect(sv.end.kickers.olympia).toBe('Äventyr 2 · Kapitel 4');
   });
 });

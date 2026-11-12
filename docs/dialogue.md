@@ -44,6 +44,8 @@ said at their moment or not at all.
    stands there until it begins.
 9. **The last page waits for a moment's quiet** (`END_QUIET` in `src/main.ts`): a line that goes on from the one
    just read is said a step later, and the page must not turn between them.
+10. **A scene's own words belong to it while it plays.** Once it is over, one still unsaid (in a game saved before
+   the words were the scene's) is said freely, so that nothing waiting for it is stranded.
 
 Nobody listening (the robot, and tests with no page) hears every line the moment it is due, remarks too.
 
@@ -69,6 +71,13 @@ Nobody listening (the robot, and tests with no page) hears every line the moment
   step is said before the camera has moved.
 - **Do not chain a free line onto a scene's last line.** It becomes due in the scene's last half second and is held
   with it. Say it at a place he walks to (`at:`), or on a `later` flag a moment after.
+- **A line said to someone where they stand is said while he stands there.** What he says as he puts each figure
+  back on the shelf, and each one's thanks at the party, are short held moments (`hylla:*`, `tack:*`): handed out
+  at a run, they came one after another long after the thing they were about.
+- **Where Elof sees the old one and calls out, he stops and sees him** (Olov, 12 November 2026: "Han ska synas
+  tydligt överallt"). `sighting` in `src/content/aventyr2/kit.ts` makes the moment: the picture takes in the old
+  one, with Elof too on a phone held sideways; he stands lit (`word: 'lit'` on his decor) while the line is read,
+  and then leaps or floats away, lit, with the picture going a little way with him.
 - **A flash has to be in the picture.** On a phone held sideways the picture is about six EL high and the bubble
   covers its top: a figure blown past is seen between one and a half and two and a half EL over his feet, and a
   little higher where a camera zone widens the picture (three EL at Olympia's fence). A line that points at the
@@ -79,8 +88,9 @@ Nobody listening (the robot, and tests with no page) hears every line the moment
 ## Checking
 
 - `tests/sim/asides.test.ts` and `tests/sim/staged.test.ts`: the rules.
-- `tests/unit/flash-in-picture.test.ts`: the three flashes a line points at fly low, lit, past where it is said,
-  and Älven's two figures float on the near water by the line's place.
+- `tests/unit/flash-in-picture.test.ts`: the three flashes a line points at fly low, lit, past where it is said;
+  Älven's two figures float on the near water by the line's place; and the old one's four sightings are moments he
+  stands for, the old one lit in their picture.
   The pictures themselves are looked at with `tests/browser/review/dialogue-moments.mjs`.
 - `tests/robot/dialogue.test.ts`: every chapter, played by the robot with the game's own bubbles listening. The robot
   runs flat out and presses every button the moment it is offered, which is the hardest case. It fails when a remark
@@ -105,15 +115,16 @@ Nobody listening (the robot, and tests with no page) hears every line the moment
 
 | Chapter | Change |
 | --- | --- |
-| All of Äventyr 2 | Scenery lines, jokes and Klonk's *klonk* are passing remarks. Klonk's answers follow the line they answer. |
-| Stormgården | Moa's first line carries the drops' hint (her lamp throws their shadows). The trail line is said from the top of the steps. The question follows the picture's words directly. |
+| All of Äventyr 2 | Scenery lines, jokes and Klonk's *klonk* are passing remarks. Klonk's answers follow the line they answer. The old one is seen, lit, where Elof calls out to him (`sighting`, four places). |
+| Stormgården | Moa's first line carries the drops' hint (her lamp throws their shadows). The trail line is said from the top of the steps. The old one stands lit on the playhouse roof while Elof calls out (`sg:lekstugan`). The question follows the picture's words directly. |
 | Stormskogen | The cones' hint comes before the first cone; the flash moved past the cone rain and into the picture. The old one's memory is told at the hollow, standing (`ss:minnet`). |
 | Byn i stormen | Klonk answers the cap between Elof's two lines. |
-| Olympia | One line for the flash from the fence, with the little one flying past at the height of the fence's top and not far overhead; one line for the balls. Bertil's cheer and Elof's thanks in the net. |
-| Flärken | One line for the waves, at the first post. The flash on the firm stone in the gungfly, in the picture. Mamma answers "Bryggan är trasig!". |
-| Älven | The flash on the raft, with the little one bobbing on the near water just ahead of it; at Moälven the old one floats past in front of the bank (both were hidden behind the banks before). Pappa answers the rapids; his scarf's line comes after the picture of it. The trail's end is told standing with Moa and Bertil (`al:slut`); before, its end card could cut it. |
+| Olympia | One line for the flash from the fence, with the little one flying past at the height of the fence's top and not far overhead; one line for the balls. The old one sails over the flooded circle in the picture (`ol:gamla`). Bertil's cheer and Elof's thanks in the net. |
+| Flärken | One line for the waves, at the first post. The flash on the firm stone in the gungfly, in the picture. Elof calls to the old one from a post's lee (`sjon:gamla`). Mamma answers "Bryggan är trasig!". |
+| Älven | The flash on the raft, with the little one bobbing on the near water just ahead of it; the old one on his log, seen from the bank (`al:gamla`); at Moälven the old one floats past in front of the bank (both were hidden behind the banks before). Pappa answers the rapids; his scarf's line comes after the picture of it. The trail's end is told standing with Moa and Bertil (`al:slut`); before, its end card could cut it. |
 | Billsta | Moa's two lines are the arrival, said by the car (`card`, held). Morfar greets him, and Elof answers with the ditch. The seesaw's lines are let go once their step is done. |
 | Stormens öga | The gift's four lines are told standing by the two of them (`gavan`). |
-| Morgonen efter | The name is given at the shelf (`fjun`) and the cocoa's words at the table (`kakao`); the last scene waits for him at the door. |
-| Godiskalaset | The ghost's hop over the table waits for the family's thanks, and its two lines come at its two moments. |
-| Myren | Two of Mamma's lines are remarks. |
+| Morgonen efter | What he says to each figure is said at the shelf (`hylla:*`). The name is given there (`fjun`), and the others answer it while he stands under the shelf (`namnet`), Klonk last. The cocoa's words at the table (`kakao`); the last scene waits for him at the door. |
+| Godiskalaset | Each one he gives a sweet to thanks him while he stands there, with what he found of theirs and Pappa's stones (`tack:*`). The ghost's hop over the table comes after, and its two lines at its two moments. |
+| Byn | "Godiset är större än jag!" is said among the jars, once "Framme!" has been read. |
+| Myren | Two of Mamma's lines are remarks. Granskogen and Myren's helpers are mended on the branch `aventyr1-genomspelning`, with Olov's own list for them. |

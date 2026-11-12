@@ -834,7 +834,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
     expect(flarken.checkpoints!.length).toBeGreaterThanOrEqual(8);
     expect(flarken.checkpoints!.length).toBeLessThanOrEqual(10);
     // The card, the lookout from the diving tower, and the stone going under.
-    expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card', 'sjon:utkik', 'sjon:strommen', 'sjon:stocken', 'sjon:plopp']);
+    expect(flarken.scenes!.map((scene) => scene.id)).toEqual(['card', 'sjon:gamla', 'sjon:utkik', 'sjon:strommen', 'sjon:stocken', 'sjon:plopp']);
     for (const kind of ['tower', 'hut', 'swings', 'picnic', 'birch'] as const) {
       expect(buildings.some((d) => d.kind === kind), kind).toBe(true);
     }

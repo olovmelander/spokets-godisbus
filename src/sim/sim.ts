@@ -778,7 +778,8 @@ export class Sim {
       if (beat.within && (this.curr.x < beat.within[0] || this.curr.x > beat.within[1])) return false;
       if (this.flags.has(`beat:${beat.id}`) || this.letGo.has(beat.id)) return false;
       const owner = listening ? this.dialogue.get(beat.id) : undefined;
-      if (owner) {
+      // A finished scene no longer owns its words: a game saved after it, with one of them unsaid, says it freely.
+      if (owner && !this.flags.has(owner.scene.by?.done ?? `scene:${owner.scene.id}`)) {
         // Saved cue flags describe what happened, not where the camera is now. Rejoin the actual reveal
         // before narrating it, and let its framing reach the same cue even when that flag was restored.
         const frame = this.scene?.frame;

@@ -318,22 +318,27 @@ try {
     const { page, state, finish } = await open('party', { hasTouch: true, viewport: { width: 390, height: 844 } }, '?dev&debug&standin&tier=low&course=epilog', () => {
       localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', updated: 1, settings: { style: 'aventyr' }, chapter: 'epilog', checkpoint: 0, candy: {}, placed: {}, flags: { berget: ['note:1'] }, playMs: 0 }));
     });
-    const readLine = async (id, words, ordinary = false) => {
+    const readLine = async (id, words, ordinary = false, standing = false) => {
       await page.waitForFunction(({ id, words }) => window.__godis.state().said.includes(id) &&
         !document.getElementById('bubble').hidden && document.getElementById('bubbleLine').textContent === words,
       { id, words }, { timeout: 60000 });
       if (ordinary) check(`${id}: the complete line appears without mandatory Continue`,
         !(await state()).storyReading && await page.locator('#sceneNext').isHidden());
+      // A thanks is said while he stands with the one he gave to (`tack:<friend>`, docs/dialogue.md): Continue is offered,
+      // never needed, and the line finishes by itself below.
+      if (standing) check(`${id}: said while he stands with the guest`, (await state()).held === true);
       // Do not attach read.page: this receipt must arrive automatically, without the general helper pressing Continue.
       await until(() => state(), s => s.said.includes(id) && !s.pendingDialogue.includes(id),
         `${id}: the visible line finishes`, 60000);
+      // And then he is free to give the next sweet.
+      if (standing) await until(state, (s) => !s.held, `${id}: free again after the thanks`, 10000);
     };
     const thankYou = {
       mamma: 'Tack, Elof! Vad gott med en godis.', pappa: 'Tack, Elof. Vad fint att du delar.',
       moa: 'Tack, lillebror! Den här tycker jag om.', bertil: 'Tack! Nu är det ett riktigt godiskalas.',
       spoket: 'Klonk, klonk!',
     };
-    const thanks = friend => readLine(`partyThanks:${friend}`, thankYou[friend], true);
+    const thanks = friend => readLine(`partyThanks:${friend}`, thankYou[friend], false, true);
     await reach(page, 'giveMamma', 'first guest is reachable');
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     check('the family party offers three candies and five guests', await page.locator('[data-sweet]:visible').count() === 3 && await page.locator('[data-friend]:visible').count() === 5);
