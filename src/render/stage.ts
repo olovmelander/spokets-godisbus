@@ -1,4 +1,6 @@
 import { flashlightCarryTarget, holdFlashlight, quietLampArm } from './lamp-hold';
+import { createLampSpot } from './lamp-spot';
+import { HOME_LAYOUT } from '../content/home-layout';
 import { lampHandTransfer } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
@@ -62,9 +64,11 @@ interface State {
   act: Act;
   /** When the act began, and the act and stance before it, for the blend between them. */
   actAt: number;
-  before: { act: Act; t: number; stance: Stance; settledLow: boolean; aim: Point | null; mug: 0 | 1 | null; held: [Thing | null, Thing | null]; previous: State['before'] } | null;
+  before: { act: Act; t: number; stance: Stance; settledLow: boolean; aim: Point | null; beam?: Point | null; mug: 0 | 1 | null; held: [Thing | null, Thing | null]; previous: State['before'] } | null;
   stance: Stance;
   aim: Point | null;
+  /** Where a held torch shines when not where they look (`ActorKey.beam`). */
+  beam?: Point | null;
   glance: { from: Point; weight: number } | null;
   follow: number | null;
   holds: Thing | null;
@@ -85,6 +89,9 @@ const fresh = (): State => ({
   x: 0, y: 0, z: 0, face: 0.25, act: 'stand', actAt: -99, before: null, stance: 'stand', aim: null, glance: null, follow: null,
   holds: null, holdsLeft: null, rough: 0, away: false, walk: null,
 });
+/** Where a held torch shines now, and where it shone before the act now playing: where they look, unless a key said. */
+const beamOf = (state: State): Point | null => state.beam ?? state.aim;
+const beamBefore = (state: State): Point | null | undefined => state.before ? state.before.beam ?? state.before.aim : undefined;
 const smooth = (t: number) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 /** The shortest way round between two facings, in turns. */
@@ -238,7 +245,7 @@ function apply(state: State, key: ActorKey, since: number): void {
     // Keep any unfinished blend when the next key interrupts it. Relative ages also survive scene changes.
     const age = Math.max(0, key.at - state.actAt);
     // Repeating a lowered act is already down; retain that fact even after its earlier transition history expires.
-    state.before = first ? null : { act: state.act, t: age, stance: state.stance, settledLow: LOW.includes(state.stance) && state.before?.stance === state.stance, aim: state.aim,
+    state.before = first ? null : { act: state.act, t: age, stance: state.stance, settledLow: LOW.includes(state.stance) && state.before?.stance === state.stance, aim: state.aim, beam: state.beam,
       mug: state.holds === 'mug' ? 1 : state.holdsLeft === 'mug' ? 0 : null, held: [state.holdsLeft, state.holds], previous: age < .45 ? state.before : null };
     state.stance = stanceOf(key.act, state.stance);
     state.act = key.act;
@@ -249,6 +256,7 @@ function apply(state: State, key: ActorKey, since: number): void {
     state.glance = key.act === undefined && state.aim && key.aim && p < 1 ? { from: state.aim, weight: p } : null;
     state.aim = key.aim;
   }
+  if (key.beam !== undefined || key.aim !== undefined) state.beam = key.beam ?? null;
   if (key.follow !== undefined) state.follow = key.follow;
   if (key.holds !== undefined) state.holds = key.holds;
   if (key.holdsLeft !== undefined) state.holdsLeft = key.holdsLeft;
@@ -554,6 +562,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
     const lamp = litLamp(); lamp.name = 'stage-thing:lamp-pappa'; drawnWhile(lamp, false);
     things.set('lamp-pappa', lamp); holders.add(lamp);
   }
+  // Indoors, where each held torch shines on the back wall or its window (./lamp-spot.ts).
+  const lampSpots = chapter.place === 'home' && chapter.house ? [...things].filter(([kind]) => kind.startsWith('lamp-')).map(([, mesh]) => {
+    const spot = createLampSpot(); holders.add(spot.mesh); return { mesh, spot };
+  }) : [];
   /** The chairs and stools, and who sits on each (below): getting up, they push it back from the table, and draw it in sitting down. */
   const chairs: { made: Group; x: number; y: number; z: number; face: number; top: number; owner: string | null; near: number }[] = [];
   for (const piece of chapter.furniture ?? []) {
@@ -1393,7 +1405,13 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // Both hands meet at a reachable point ahead of the waist. Raw sleeve-gesture sockets can lie outside
           // the other arm's reach. The receiving hand arrives before the giving hand lets go, so changing the
           // fully supporting socket cannot jump the torch. The free arm keeps the authored sleeve movement.
-          flashlightCarryTarget(rig, 0, lampMeeting); flashlightCarryTarget(rig, 1, lampOther);
+          // Each hand's carry follows the beam's way (./lamp-hold.ts), so the meeting point is worked out for it too.
+          const beam = beamOf(state), from = state.glance ? state.glance.from : beamBefore(state);
+          lampAim.set(beam?.x ?? elof.x, beam?.y ?? elof.y + .4, beam?.z ?? 0);
+          lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
+          const aimWeight = calm ? 1 : state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
+          flashlightCarryTarget(rig, 0, lampMeeting, lampAim, lampBefore, aimWeight);
+          flashlightCarryTarget(rig, 1, lampOther, lampAim, lampBefore, aimWeight);
           lampMeeting.lerp(lampOther, transfer);
         }
         const heldHands = handingLamp && transfer > .5 ? [[0, state.holdsLeft], [1, state.holds]] as const
@@ -1410,12 +1428,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           rig.hand(side, hand);
           if (held === 'drawing') continue;
           if (held.startsWith('lamp-')) {
-            const aim = state.aim;
+            // Where the beam goes: where they look, or where the key says it shines (`beam`: Pappa's out through the
+            // window while he looks up to pull it to).
+            const aim = beamOf(state);
             lampAim.set(aim?.x ?? elof.x, aim?.y ?? elof.y + .4, aim?.z ?? 0);
             // Looking to a new person turns the held torch over the same authored interval as the body.
             // A raw aim here would snap the wrist even while the head/arms were still blending. Use scene time,
             // so a reading hold or Pause keeps this turn where it was, without accumulating presentation frames.
-            const from = state.glance ? state.glance.from : state.before?.aim;
+            const from = state.glance ? state.glance.from : beamBefore(state);
             const aimWeight = state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
             lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
             // Newly taking a torch must follow the same event-time blend as the authored arms.
@@ -1474,6 +1494,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       }
 
       for (const mesh of things.values()) drawnWhile(mesh, holding.has(mesh));
+      for (const { mesh, spot } of lampSpots) spot.place(mesh, HOME_LAYOUT.wall.z + .14, holding.has(mesh) && mesh.position.x < (chapter.outdoors ?? chapter.house!.to));
 
       // The scene's glitter, shavings, glows and the bird at the window.
       let spark = 0, glow = 0, curl = 0, wind = 0;

@@ -81,7 +81,9 @@ describe('a flashlight carried in front of a posed body', () => {
         if (i === rate) for (let redraw = 0; redraw < 100; redraw++) expect(frame(0, 1).angleTo(current)).toBeLessThan(1e-7);
       }
       const completed = previous.clone(), rewound = frame(1, 0);
-      expect(rewound.angleTo(frame(1, 4, true))).toBeLessThan(1e-7);
+      // Timed, going back is a seek: the authored frame exactly. With reduced motion there is no clock to tell a seek,
+      // and the hand now goes with the beam (the forearm along it), so the frame carried round comes back within a hair.
+      expect(rewound.angleTo(frame(1, 4, true))).toBeLessThan(timed ? 1e-7 : .03);
       return completed;
     };
     const at30 = trace(30), at60 = trace(60), at120 = trace(120);
@@ -116,7 +118,8 @@ describe('a flashlight carried in front of a posed body', () => {
       previous = current;
       if (i === 42) for (let paused = 0; paused < 30; paused++) expect(pose(i / 120).angleTo(current)).toBeLessThan(1e-7);
     }
-    expect(ray.angleTo(new Vector3(x, y, z).normalize())).toBeLessThan(1e-7);
+    // It ends shining exactly at what it was turned to, from where the hand now carries it (the hand goes with the beam).
+    expect(ray.angleTo(aim.clone().sub(socket))).toBeLessThan(1e-7);
   });
 
   it.each(['pappa', 'mamma', 'moa', 'bertil'] as Role[])('%s keeps the carrying elbow outside the torso and below its shoulder in every stance', who => {

@@ -17,8 +17,10 @@ import { HOME_LAYOUT } from '../../home-layout';
  * 3. **Fönsterhaken:** Pappa has fitted a new latch, and goes to the window. *Haka fast fönsterhaken*: the hook swings
  *    up and drops into its eye. "Nu blåser ingen bort."
  * 4. **Namnet:** the little one flew like a wisp of fluff in the storm. "Du ska heta Fjun!" Klonk: klonk, klonk.
- * 5. **Söndag:** his cup of cocoa from the table, and on to the door, out into the washed-clean morning. There he turns
- *    to them all, and the story ends (`slut`): everyone home, the two of them on the shelf together. The last card.
+ * 5. **Söndag:** his cup of cocoa from the table, and there he thanks each of them for what they did in the night
+ *    (`tack`). Then on down the room, past the TV, where he may play before the end, to the door in the hall, out into
+ *    the washed-clean morning. There he turns to them all, and the story ends (`slut`): everyone home, the two of them
+ *    on the shelf together, and the little one winks. The last card.
  */
 
 /** Pappa's shelf, its first place, as on the evening of the storm; and the window by it, with the new latch. */
@@ -46,18 +48,27 @@ const BY_WINDOW = { x: 7.1, z: -6.6 };
 const TOY_SHELF = { x: 21.3, z: DOLL_Z - 0.8 };
 /** Where he takes his cup of cocoa: at the front of the table, where it stands poured for him. */
 const COCOA = TABLE.x + 1.6;
-/** Where he turns at the door to the veranda, out into the morning, and the story ends. */
-const DOOR = 27;
+/**
+ * Where he turns at the door, out into the morning, and the story ends: in the hall, past the wet raincoats, and past
+ * the TV (Olov, 12 November 2026: "Under frukosten så ska man kunna gå förbi TV:n och spela innan äventyr två tar
+ * slut"). At 27, before the TV, the end came before he could reach it.
+ */
+const DOOR = 42.5;
+/** When the little one winks one eye on the shelf in the last scene, as at the end of the first adventure. */
+export const WINK = { scene: 'slut', at: 5.45, seconds: 0.55 } as const;
 
-/** Each of them, by face, and the two figures on the shelf: for the others to look at. */
+/** Each of them, by face, and the two figures on the shelf: for the others to look at. Pappa's by the window, too. */
 const FACE = {
   mamma: { x: MAMMA.x, y: 4.6, z: MAMMA.z }, pappa: { x: PAPPA.x, y: 4.8, z: PAPPA.z }, moa: { x: MOA.x, y: 2.9, z: MOA.z },
   bertil: { x: BERTIL.x, y: 2.6, z: BERTIL.z }, mormor: { x: MORMOR.x, y: 4.4, z: MORMOR.z }, morfar: { x: MORFAR.x, y: 4.6, z: MORFAR.z },
+  pappaWindow: { x: BY_WINDOW.x, y: 4.8, z: BY_WINDOW.z },
 };
 const ON_SHELF = { x: FIRST.x + 0.4, y: FIRST.y + 0.5, z: FIRST.z };
 /** His face, a boy's height: where he stands at the start, and at the door. */
 const ELOF_START = { x: 1, y: 2.6, z: 0 };
 const ELOF_DOOR = { x: DOOR, y: 2.6, z: 0 };
+/** His face by the table, where he stands with his cup: for the others to look at as he thanks them. */
+const AT_COCOA = { x: COCOA, y: 2.6, z: 0 };
 
 /** Set when the picture has the shelf and the two on it, for the name; and when the family has looked up at his cup. */
 const AT_SHELF = 'mo:at-shelf';
@@ -261,12 +272,64 @@ const SCENES: SceneDef[] = [
     },
   },
   {
+    // His thanks (Olov, 12 November 2026: "Sen vill jag att Elof tackar alla för vad de gjort under äventyrets gång"),
+    // told standing by the table with his cup, once Moa's thanks and his answer are said: each one he names looks to him
+    // and answers with a nod, a wave or a cheer, in the order the night went. Bertil's boot in the garden, Pappa's lamp
+    // in the forest and his scarf at the bridge, Moa's umbrella in the village, Mamma's board at Flärken, mormor's lantern
+    // and morfar's ladder at Billsta, and Klonk's last star, which began it all. The scene's clock waits at each line.
+    id: 'tack',
+    on: 'beat:moAnswer',
+    seconds: 8.9,
+    hold: true,
+    lines: [
+      { at: 0.5, who: 'elof', line: 'moThanksAll' },
+      { at: 1.6, who: 'elof', line: 'moThanksBertil' },
+      { at: 2.7, who: 'elof', line: 'moThanksPappa' },
+      { at: 3.8, who: 'elof', line: 'moThanksMoa' },
+      { at: 4.9, who: 'elof', line: 'moThanksMamma' },
+      { at: 6.0, who: 'elof', line: 'moThanksGrand' },
+      { at: 7.2, who: 'elof', line: 'moThanksKlonk' },
+      { at: 8.2, who: 'spoket', line: 'moKlonkLine' },
+    ],
+    stage: {
+      // The table and all of them round it, Pappa by the window; then down to him and Klonk for the last thanks.
+      shots: [
+        { at: 0, x: 13.4, y: 3.9, height: 8, width: 16, move: 1 },
+        // (Before Klonk's line: the scene's clock, and the picture with it, waits while each line is read.)
+        { at: 6.1, x: COCOA + 0.8, y: 1.9, height: 4.8, width: 7, move: 1 },
+      ],
+      actors: {
+        mamma: [{ at: 0.2, act: 'look', aim: AT_COCOA }, { at: 4.7, act: 'nod', aim: AT_COCOA }, { at: 5.9, act: 'look', aim: FACE.mormor }],
+        bertil: [{ at: 0.3, act: 'look', aim: AT_COCOA }, { at: 1.4, act: 'nod', aim: AT_COCOA }, { at: 3.7, act: 'look', aim: FACE.moa }],
+        pappa: [{ at: 0.4, act: 'look', aim: AT_COCOA }, { at: 2.5, act: 'wave', aim: AT_COCOA }, { at: 3.7, act: 'look', aim: AT_COCOA }],
+        moa: [{ at: 0.3, act: 'look', aim: AT_COCOA }, { at: 3.6, act: 'cheer' }, { at: 4.8, act: 'look', aim: AT_COCOA }, { at: 5.8, act: 'draw' }],
+        ghost: [
+          { at: 0, x: COCOA + 1.4, y: 0, z: 0, face: 0.5, move: 0.01, act: 'stand' },
+          { at: 7.1, act: 'tilt' },
+          { at: 8.0, act: 'hop' },
+        ],
+      },
+      elof: [
+        { at: 0, face: 0.3, act: 'watch', aim: { x: TABLE.x, y: 3.6, z: TABLE.z - 1.5 } },
+        { at: 1.4, aim: FACE.bertil },
+        { at: 2.5, aim: FACE.pappaWindow },
+        { at: 3.6, aim: FACE.moa },
+        { at: 4.7, aim: FACE.mamma },
+        // Mormor by her lantern first, and morfar on his other side after: the line names them both.
+        { at: 5.8, aim: FACE.mormor },
+        { at: 6.4, aim: FACE.morfar },
+        { at: 7.0, face: 0.1, act: 'nod', aim: { x: COCOA + 1.4, y: 0.6, z: 0 } },
+      ],
+    },
+  },
+  {
     // The end of the story. At the door out into the morning he turns to them all: they wave to him, the picture goes over
     // to the two of them on the shelf, home together, and back to him. The goal waits for this (`a2slut`).
     //
-    // It is due at the door once the cocoa's words are said, and waits there for his last line ("Alla är hemma. Det är
-    // bäst av allt.", said on the way to the door) to be read: he stands at the door for it (`quiet`). Waiting for
-    // that line itself, he had run on down the room while it was read, and turned to them from outside the picture.
+    // It is due at the door once the cocoa's words are said (and his thanks, which stand him at the table till they are
+    // done), and waits there for his last line ("Alla är hemma. Det är bäst av allt.", said in the hall on the way to
+    // the door, past the TV) to be read: he stands at the door for it (`quiet`). Waiting for that line itself, he had run
+    // on down the room while it was read, and turned to them from outside the picture.
     id: 'slut',
     at: DOOR,
     needs: 'beat:moAnswer',
@@ -277,16 +340,19 @@ const SCENES: SceneDef[] = [
     sounds: [{ at: 5.4, sound: 'blink' }, { at: 5.6, sound: 'swell' }],
     stage: {
       shots: [
-        // From the door, back over the room: all of them at the table, and him.
-        { at: 0, x: 20.4, y: 4.2, height: 8.4, width: 19, move: 1.2 },
-        // The two of them on the shelf, side by side, home: as close as the picture comes to the wall.
-        { at: 3.0, x: FIRST.x + 0.4, y: FIRST.y + 0.5, z: FIRST.z + 0.2, height: 1.4, width: 2.0, move: 2.8 },
-        { at: 7.4, x: 20.4, y: 4.2, height: 8.4, width: 19, move: 2.4 },
+        // Him at the door in the hall, by the wet raincoats, turning back to the room; then them at the table, waving.
+        { at: 0, x: DOOR - 2.8, y: 3.4, height: 7, width: 10.4, move: 1.2 },
+        { at: 1.1, x: 15.2, y: 3.8, height: 7.8, width: 13.6, move: 0.01 },
+        // The two of them on the shelf, side by side, home: as close as the picture comes to the wall. The little one
+        // winks (`WINK`, ../render.ts).
+        { at: 3.0, x: FIRST.x + 0.4, y: FIRST.y + 0.5, z: FIRST.z + 0.2, height: 1.4, width: 2.0, move: 2.6 },
+        // And all of it: them at the table, the TV, and him at the door.
+        { at: 7.4, x: (TABLE.x + DOOR) / 2 - 1, y: 5.6, height: 13.5, width: 38, move: 2.4 },
       ],
       fx: [{ at: 5.4, kind: 'sparkle', from: { x: FIRST.x + 0.4, y: FIRST.y + 0.6, z: FIRST.z + 0.3 }, seconds: 2.2 }],
       actors: {
-        mamma: [{ at: 0.3, act: 'look', aim: ELOF_DOOR }, { at: 0.9, act: 'wave', aim: ELOF_DOOR }, { at: 7.6, act: 'look', aim: ELOF_DOOR }],
-        moa: [{ at: 0.4, act: 'look', aim: ELOF_DOOR }, { at: 1.2, act: 'wave', aim: ELOF_DOOR }, { at: 8.0, act: 'cheer' }],
+        mamma: [{ at: 0.3, act: 'look', aim: ELOF_DOOR }, { at: 1.1, act: 'wave', aim: ELOF_DOOR }, { at: 7.6, act: 'look', aim: ELOF_DOOR }],
+        moa: [{ at: 0.4, act: 'look', aim: ELOF_DOOR }, { at: 1.3, act: 'wave', aim: ELOF_DOOR }, { at: 8.0, act: 'cheer' }],
         bertil: [{ at: 0.5, act: 'look', aim: ELOF_DOOR }, { at: 1.6, act: 'nod', aim: ELOF_DOOR }, { at: 8.2, act: 'wave', aim: ELOF_DOOR }],
         pappa: [{ at: 0.6, act: 'look', aim: ELOF_DOOR }, { at: 1.4, act: 'nod', aim: ELOF_DOOR }, { at: 7.8, act: 'wave', aim: ELOF_DOOR }],
         ghost: [{ at: 0, x: DOOR + 1, y: 0, z: 0, face: 0.5, move: 0.01, act: 'stand' }, { at: 1.0, act: 'hop' }, { at: 2.2, act: 'tilt' }, { at: 8.0, act: 'hop' }],
@@ -354,7 +420,7 @@ export const morgonen: ChapterData = {
     { at: { x: 2.4, y: 0 }, until: 'scene:frukost', near: 99 },
     { at: { x: SHELF.x - 0.8, y: 0 }, until: 'shelf:small', near: 99 },
     { at: { x: WINDOW.x + 1.8, y: 0 }, until: 'beat:moKlonk', near: 99 },
-    { at: { x: COCOA + 1.4, y: 0 }, until: 'cocoa', near: 99 },
+    { at: { x: COCOA + 1.4, y: 0 }, until: 'scene:tack', near: 99 },
     { at: { x: DOOR + 1, y: 0 }, near: 0 },
   ],
   beats: [
@@ -376,7 +442,7 @@ export const morgonen: ChapterData = {
     { id: 'moAll', at: DOOR - 2.4, needs: 'beat:moAnswer', who: 'elof', line: 'moAllLine', read: true },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],
-  candy: [...row(3, 25, 0)],
+  candy: [...row(3, DOOR - 2, 0)],
 };
 
 /** What "Just nu" says here. */

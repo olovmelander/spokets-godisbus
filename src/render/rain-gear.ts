@@ -346,22 +346,24 @@ const bootOrderAt = (span: [number, number], y: number) => clamp01((y - span[0])
  * (above 1, all of it). Every piece of every one of the family shares the one program, made in the warm-up with the rest
  * of the chapter (they are in the scene, hidden, from when they are made).
  */
-function revealed(mesh: SkinnedMesh, order: Float32Array, front = new Float32Array(order.length * 3)): { value: number } {
+function revealed(mesh: SkinnedMesh, order: Float32Array, front = new Float32Array(order.length * 3), hem = new Float32Array(order.length).fill(1)): { value: number } {
   mesh.geometry.setAttribute('gearOrder', new BufferAttribute(order, 1));
   mesh.geometry.setAttribute('gearFront', new BufferAttribute(front, 3));
+  // How far above its hem each corner of a coat made of the body's own shells is (`buildShells`): left out below it.
+  mesh.geometry.setAttribute('gearHem', new BufferAttribute(hem, 1));
   const on = { value: 2 };
   const material = mesh.material as MeshStandardMaterial;
   const before = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     before.call(material, shader, renderer);
     shader.uniforms.gearOn = on;
-    shader.vertexShader = 'attribute float gearOrder;\nattribute vec3 gearFront;\nvarying float vGearOrder;\nvarying vec3 vGearFront;\n'
-      + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGearOrder = gearOrder;\n  vGearFront = gearFront;');
-    shader.fragmentShader = 'uniform float gearOn;\nvarying float vGearOrder;\nvarying vec3 vGearFront;\n' + FRONT_ORDER
-      + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (gearFront(vGearFront, vGearOrder) > gearOn) discard;');
+    shader.vertexShader = 'attribute float gearOrder;\nattribute vec3 gearFront;\nattribute float gearHem;\nvarying float vGearOrder;\nvarying vec3 vGearFront;\nvarying float vGearHem;\n'
+      + shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vGearOrder = gearOrder;\n  vGearFront = gearFront;\n  vGearHem = gearHem;');
+    shader.fragmentShader = 'uniform float gearOn;\nvarying float vGearOrder;\nvarying vec3 vGearFront;\nvarying float vGearHem;\n' + FRONT_ORDER
+      + shader.fragmentShader.replace('void main() {', 'void main() {\n  if (vGearHem < 0.0 || gearFront(vGearFront, vGearOrder) > gearOn) discard;');
   };
   const key = material.customProgramCacheKey.bind(material);
-  material.customProgramCacheKey = () => `${key()}:gear-on-v2`;
+  material.customProgramCacheKey = () => `${key()}:gear-on-v3`;
   material.needsUpdate = true;
   return on;
 }
@@ -425,14 +427,26 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
   const over = wornOver(body);
   const inCoat = (i: number) => (COAT.has(owner[i]!) || (THIGH.has(owner[i]!) && position.getY(i) > thighCut(owner[i]!))) && !over?.(i);
   const inBoot = (side: 0 | 1) => (i: number) => BOOT[side].has(owner[i]!) && (!owner[i]!.startsWith('calf') || position.getY(i) < calfCut(owner[i]!));
+  // The coat's hem is one level line round both thighs (Olov, 12 November 2026: "Elofs regnjacka ser lite taggig ut längst
+  // ner"). Taken triangle by triangle, the body's own corners above a height made a hem of teeth; so the triangles that
+  // cross the hem's height are kept whole, and each point of them below it is left out where it is drawn (`gearHem`).
+  const thighs = [...THIGH].filter((name) => range.has(name));
+  const hemAt = thighs.length > 0 ? thighs.reduce((sum, name) => sum + thighCut(name), 0) / thighs.length : -Infinity;
+  const nearCoat = (i: number) => (COAT.has(owner[i]!) || THIGH.has(owner[i]!)) && !over?.(i);
+  const coatHem = { at: hemAt, keep: nearCoat };
 
-  function shell(keep: (i: number) => boolean, out: number, colour: string, glossy: number): { mesh: SkinnedMesh; picked: number[] } {
+  function shell(keep: (i: number) => boolean, out: number, colour: string, glossy: number, hem?: typeof coatHem): { mesh: SkinnedMesh; picked: number[]; hem: Float32Array<ArrayBuffer> } {
     const picked: number[] = [];
     for (let t = 0; t < triangles; t++) {
       const a = corner(t, 0), b = corner(t, 1), c = corner(t, 2);
-      // A triangle is in it when most of its corners are.
-      if ((keep(a) ? 1 : 0) + (keep(b) ? 1 : 0) + (keep(c) ? 1 : 0) >= 2) picked.push(a, b, c);
+      // A triangle is in it when most of its corners are; with a hem, when it also reaches above the hem.
+      if (hem) {
+        if ((hem.keep(a) ? 1 : 0) + (hem.keep(b) ? 1 : 0) + (hem.keep(c) ? 1 : 0) >= 2
+          && Math.max(position.getY(a), position.getY(b), position.getY(c)) > hem.at) picked.push(a, b, c);
+      } else if ((keep(a) ? 1 : 0) + (keep(b) ? 1 : 0) + (keep(c) ? 1 : 0) >= 2) picked.push(a, b, c);
     }
+    // How far above the hem each corner is (a sleeve's never goes under it): drawn only where that is above nought.
+    const under = Float32Array.from(picked, (i) => (!hem || armSide(owner[i]!) !== null ? 1 : (position.getY(i) - hem.at) / unit));
     const n = picked.length;
     const positions = new Float32Array(n * 3), normals = new Float32Array(n * 3), indices = new Uint16Array(n * 4), weights = new Float32Array(n * 4);
     for (const [j, i] of picked.entries()) {
@@ -458,10 +472,10 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     mesh.visible = false;
     mesh.name = 'rain-gear';
     body.parent?.add(mesh);
-    return { mesh, picked };
+    return { mesh, picked, hem: under };
   }
   // A raincoat is shiny and stands a little off the body; a rubber boot is shinier and stands further out.
-  const coat = shell(inCoat, 0.05, '#ffffff', 0.38);
+  const coat = shell(inCoat, 0.05, '#ffffff', 0.38, coatHem);
   coat.mesh.userData.wardrobe = 'shell raincoat';
   const boots = [shell(inBoot(0), 0.07, '#ffffff', 0.3), shell(inBoot(1), 0.07, '#ffffff', 0.3)] as const;
   // They go on in the order of the body's own corners at rest: the coat as `COAT_ORDER`, a boot from the sole up.
@@ -475,7 +489,7 @@ export function buildShells(body: SkinnedMesh, height: number): Shells | null {
     coat: coat.mesh,
     boots: [boots[0].mesh, boots[1].mesh],
     socks: [shell(inBoot(0), 0.015, SOCK, 0.95).mesh, shell(inBoot(1), 0.015, SOCK, 0.95).mesh],
-    on: { coat: revealed(coat.mesh, coatOrder, coatFront), boots: [bootOn[0]!, bootOn[1]!] },
+    on: { coat: revealed(coat.mesh, coatOrder, coatFront, coat.hem), boots: [bootOn[0]!, bootOn[1]!] },
     first: 0,
     reorder(first) {
       const shape = coatShape(rest, first, ahead, inCoat);

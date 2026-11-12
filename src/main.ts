@@ -819,7 +819,8 @@ async function start(): Promise<void> {
   document.body.append(consolePrompt);
   const consoleInert = new Map<HTMLElement, boolean>();
   const consoleAvailable = () => homeConsoleAvailable(chapter, game.sim.curr,
-    menuOpen() || platformBlocked() || game.sim.held || !!game.sim.story || hud.reading() || game.sim.flags.has('goal'));
+    menuOpen() || platformBlocked() || game.sim.held || !!game.sim.story || hud.reading() || game.sim.flags.has('goal'),
+    game.sim.flags); // no TV once the power is out (src/content/home-power.ts)
   const openConsole = () => { if (consoleAvailable()) void homeConsole?.show(); };
   consolePrompt.addEventListener('click', openConsole);
   homeConsole = createHomeConsole({
