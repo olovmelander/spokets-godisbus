@@ -39,7 +39,8 @@ export const words: ChapterWords = {
     biNearMiddle: 'Så! Nu har Klonk den långa änden.',
     biFly: 'Jag flyger över bäcken!',
     biThanksKlonk: 'Tack, Klonk! Du är min bästa vän.',
-    // What is seen there: shelves of rock up Billaberget's face, with sweets on them (there is no hazel bush to see).
+    // What is seen there: shelves of rock up Billaberget's face, with sweets on them (the hazel beside them, with its
+    // nuts, is the picture's: ../hazel.ts).
     biHazel: 'Hyllor i berget! Där uppe finns godis.',
     biWind: 'Blåsten! Jag gömmer mig bakom stenarna.',
     // 6. the brow: the flash, and the owl far off
