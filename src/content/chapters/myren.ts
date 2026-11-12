@@ -327,8 +327,10 @@ export const myren: ChapterData = {
   ledges: [BERRY_LEAF, ...LEAVES, ...STEPS, LANDING, PERCH],
   // The rings between the dead pines. They are off the way on: the boardwalk under them is the trail.
   hooks: RINGS,
-  // What the rings hang from: a rope from the top of one dead pine to the top of the other.
-  lines: [{ from: { x: STEPS[1]!.x, y: 10.3 }, to: { x: LANDING.x, y: 10.3 }, sag: 0.35, posts: true }],
+  // What the rings hang from: a rope from one dead pine to the other. The pines are the stems that hold their branches
+  // (../../render/ledges.ts), which reach out of the picture: the line's own posts stood a second, darker trunk in front
+  // of each, and the one at the landing crossed Elof where he stands.
+  lines: [{ from: { x: STEPS[1]!.x, y: 10.3 }, to: { x: LANDING.x, y: 10.3 }, sag: 0.35 }],
   // Side candy, off the trail. None is taken by walking under it, or by a hop along the trail. It is drawn as
   // a heart and a lollipop by turns, in the order of this list, so the first of each way is a heart: its tell.
   side: [
