@@ -623,7 +623,9 @@ export const flarken: ChapterData = {
     { at: { x: 179, y: 0 } },
     { at: { x: 183, y: DECK } },
     { at: { x: 186.6, y: DECK } },
-    { at: { x: 189.8, y: DECK } },
+    // Beyond the old one on the end post, at the jetty's very end: at 189.8 it stood in front of him and hid half of him
+    // while Elof watched him hop onto his log.
+    { at: { x: END.to - 0.5, y: DECK } },
   ],
   beats: [
     // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.

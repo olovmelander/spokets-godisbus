@@ -35,7 +35,8 @@ export const words: ChapterWords = {
     sjPlop: 'Plopp. Bra sten. Dålig båt.',
     sjPlopKlonk: 'Klonk!',
     sjBarkIdea: 'Klonk flyter. Bark är ju trä!',
-    sjRaft: 'En barkflotte! Nu kan jag hoppa.',
+    // Said when the bark floats, often while he is on it or over already: it was "Nu kan jag hoppa".
+    sjRaft: 'En barkflotte! Den håller för mig.',
     sjKlonkRaft: 'Klonk, klonk!',
     // 9. the jetty's end: the outlet takes them
     sjOutlet: 'Åh nej! Ån tar med sig lillgubben!',

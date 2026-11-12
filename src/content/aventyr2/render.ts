@@ -43,6 +43,8 @@ import { CANDLES_LIT, POWER_CHAPTER } from '../home-power';
 import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { jettyWavesExtra } from '../../render/jetty-waves';
+import { teamBenchesExtra } from './team-benches';
+import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -2141,7 +2143,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     casement: (spot) => casement(spot),
     latch: (spot) => latch(spot),
-    football: (spot) => standing(spot, (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
+    // `word: 'bag'`: Olympia's torn ball bag with the small balls in it (./ball-bag.ts).
+    football: (spot) => standing(spot, spot.word === 'bag' ? ballBag() : (() => { const g = new Group(); g.add(football(0.75)); return g; })()),
     whiteWater: (spot) => {
       // The rapids: wet boulders the river breaks over, worn round (./river-stones.ts), behind the lane the raft
       // goes down; and standing waves of white water that heave and never go, breaking white against the stones.
@@ -3184,6 +3187,8 @@ export function installPictures(): void {
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
   // The waves over a jetty where its gusts blow (Flärken; ../../render/jetty-waves.ts).
   if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
+  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts).
+  if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */
