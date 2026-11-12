@@ -142,6 +142,8 @@ export const stormbyn: ChapterData = {
     { from: STEPS_FROM, to: WALL_TO, kind: 'stone' },
     { from: 164, to: 168, kind: 'stone' },
     { from: 168, to: 186, kind: 'earth' },
+    // The street's end, past the goal: a tall leafy hedge, as at Gården's and Stormgården's ends, not a bare wall of earth.
+    { from: 184, to: 186, kind: 'hedge' },
   ],
   // What stands behind him, written by hand (docs/art-bible.md §2.3), all of it dark: the power is out. A near
   // wall is 7 EL behind the path, a far one across the street 20 EL off. No upright part of a near wall stands
@@ -187,9 +189,10 @@ export const stormbyn: ChapterData = {
     // he does for his own family on the jetty, at the end of the night.
     glows: [
       { at: { x: 72.5, y: 1 + CANDLE_FLAME }, z: -20.9, size: 3, candle: 1 },
-      { at: { x: 20.5, y: PAVEMENT + CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-yarn' },
-      { at: { x: 128.3, y: CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-shoes' },
-      { at: { x: 147.4, y: CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-bread' },
+      // Each on its sill at the end nearest its bell cord, so that it is in the picture where he stands and thanks them.
+      { at: { x: 22.8, y: PAVEMENT + CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-yarn' },
+      { at: { x: 131.2, y: CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-shoes' },
+      { at: { x: 148.8, y: CANDLE_FLAME }, z: -7.9, size: 3.6, candle: 1, after: 'sb:bell-bread' },
     ],
   },
   coda: 'moa',
@@ -373,10 +376,16 @@ export const stormbyn: ChapterData = {
   cameras: [
     // Up under the awning the picture rises with him, so that the stands and the hearts are in it.
     { from: 18, to: 30, above: 4.2, zoom: 1.35, lift: 0.8 },
+    // At the yarn shop's bell cord the picture takes in the window behind him, where the candle is lit when he rings.
+    { from: 24.5, to: 28.5, zoom: 1.2, lead: 0.4 },
     // Show the pointed yellow leaf below the kerb before he steps down to it.
     // The gutter is two EL below his kerb: keep the waiting leaf above the landscape controls too.
-    { from: 33, to: 39, zoom: 1.25, lift: -1.4, lead: 2.4 },
-    { from: 36, to: 66, zoom: 1.5, lift: 0.6 },
+    // It ends where the leaf waits: on the leaf the picture is a ride's, already two EL lower, and with this one as well
+    // it sank to the river's bed, him at the top edge, for the first seconds of the ride.
+    { from: 33, to: LEAF.from.x, zoom: 1.25, lift: -1.4, lead: 2.4 },
+    // Down the river on the leaf (a ride's picture is two EL lower): the water and the far bank, as over Byn's puddle.
+    { from: LEAF.from.x, to: LEAF.to.x, zoom: 1.5, lift: 2.2 },
+    { from: LEAF.to.x, to: 66, zoom: 1.5, lift: 0.6 },
     { from: 66, to: 86, zoom: 1.2 },
     // From the steps over the crossing the picture is wide, so that the far side is in it before he floats.
     { from: 90, to: 122, zoom: 1.9, lift: 2.5 },
