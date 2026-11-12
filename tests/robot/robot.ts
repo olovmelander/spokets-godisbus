@@ -87,12 +87,14 @@ export function decide(game: Game, chapter: ChapterData): Decision {
     }
   }
   // Logs the water turns to and fro: it goes to the end of what it stands on, and waits until the next is a hop away.
-  // On Lugnt it takes the gentle way, which is offered there.
+  // On Lugnt it never jumps there: it walks on, stopped at each edge (Lugnt's stopAtEdges), and steps across as the
+  // next log comes end to end with what it stands on.
   const turning = movers.filter((m) => m.def.cycle?.wait);
-  if (turning.length > 0 && p.grounded && !game.sim.options.gentle) {
+  if (turning.length > 0 && p.grounded) {
     const on = turning.find((m) => Math.abs(p.x - m.x) <= m.def.width / 2 + 0.2 && Math.abs(m.y + m.def.height - p.y) < 0.2);
     const next = turning.filter((m) => m !== on && m.x - m.def.width / 2 > p.x).sort((a, b) => a.x - b.x)[0];
-    if (on || (next && next.x - next.def.width / 2 - p.x < 4)) {
+    if (game.sim.options.gentle && (on || (next && next.x - next.def.width / 2 - p.x < 6))) return { ...wait, x: 1 };
+    if (!game.sim.options.gentle && (on || (next && next.x - next.def.width / 2 - p.x < 4))) {
       let edge = on ? on.x + on.def.width / 2 : p.x;
       if (!on) while (heightAt(chapter, edge + 0.1) > p.y - 1) edge += 0.1;
       let far = next ? next.x - next.def.width / 2 : edge;
