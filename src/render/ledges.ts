@@ -156,6 +156,17 @@ const LOOKS: Record<LedgeLook, Look> = {
 };
 
 export const LEDGE_LOOKS = (Object.keys(LOOKS) as LedgeLook[]).filter((look) => look !== 'shelf');
+
+/**
+ * A spruce bough the wind sways (./swaying-boughs.ts), as a forest branch ledge is drawn: the bough with its hanging
+ * branchlets, `width` wide with its top at 0; and, apart from it, the young stem it grows from, which leans as it swings.
+ */
+export function swayingBough(width: number): { bough: BufferGeometry; stem: BufferGeometry } {
+  return {
+    bough: together(painted(LOOKS.branch.shape('forest').scale(width, 1, 1), LOOKS.branch.colour), ...needles(width)),
+    stem: stem(0.3, -0.72, '#4f3f32', '#7d6753'),
+  };
+}
 /** How long a ledge that waits for a flag takes to come into being. */
 const GROW = 0.35;
 /** Ledges and rods further apart than this are in different places: no side way has a gap that wide. */
