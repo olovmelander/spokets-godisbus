@@ -256,7 +256,9 @@ export const granskog: ChapterData = {
     // The loose cone at the top of the slope: touching it sets the avalanche off.
     { id: 'avalanche', at: { x: 70.4, y: 0 }, verb: 'take', touch: true },
     // Called, he walks over to his seesaw's high end, at the ravine's edge, and holds it steady for Elof until he flies.
-    { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, goesTo: { x: 117.4, y: -8, z: -0.6 }, verb: 'call', word: 'callPappa' },
+    // He is called once he has said why (`family:pappa`): called in its first moment, his answer waited four seconds
+    // behind it, and came when Elof had gone back for the cone (the dialogue timeline, 12 November 2026).
+    { id: 'seesaw', look: 'sign', at: { x: 108.2, y: -8 }, goesTo: { x: 117.4, y: -8, z: -0.6 }, verb: 'call', word: 'callPappa', needs: 'beat:family:pappa' },
     // The low end of the seesaw. Pappa drops the cone on the high end, and Elof flies.
     { id: 'launch', look: 'seesaw', at: { x: 113.2, y: -8 }, verb: 'take', word: 'standOn', needs: 'placed:cone', ride: 'launch' },
     // Memory 2, after the log: the autumn walk, and the Saturday sweets he shared.

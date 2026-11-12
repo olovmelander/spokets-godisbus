@@ -22,7 +22,9 @@
 - **Thanks.** "Tack så mycket, Pappa!" as he lands across the ravine, turning and waving back (scene `tack-pappa`,
   as Moa's landing in Gården). At the top of the braid "Tack, Mamma! Vilken stark fläta!", and then her "På myren går
   vi på spången.", told standing (`flata-tack`; their receipts keep the old ids). Said free, the thanks came nine EL
-  past the braid behind her words about it. Two of Mamma's hints are let go once followed (`within`).
+  past the braid behind her words about it. Two of Mamma's hints are let go once followed (`within`). Ropa på Pappa
+  is offered once Pappa has said why ("Här är för långt att hoppa, Elof."), so his "Jag håller brädan." comes as he
+  arrives; called in its first moment, it came four seconds late, when Elof had gone back for the cone.
 - **The eddy and the cliff.** In the first adventure a waiting ghost rose out of reach whenever he came within 4 EL,
   and the picture kept it 3 EL off: so it hovered over the eddy and rose up the cliff by itself. A `still` perch now
   stays where it is however near he comes (the simulation and the picture both). In the eddy the ghost sits on its
