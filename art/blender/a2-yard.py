@@ -416,7 +416,8 @@ if wanted('gungor'):
 # --- the goals at Olympia ------------------------------------------------------------------------------------------------------------
 # White round posts and a crossbar, the mouth towards -X where he comes from, the frame going back along +X, and the net: white cord
 # in squares, hanging a little between its frame, slack at the bottom. 12 across (Y), as the stand-in was, so that the near post
-# stays behind the path. `fotbollsmal` is the training goal, 7 deep and 8 high; `fotbollsmal-stort` the big one, 10 deep, 16 high.
+# stays behind the path. `fotbollsmal` is the training goal, a box goal 7 deep and 6 high that he walks through and on top of;
+# `fotbollsmal-stort` the big one, 10 deep, 16 high, that he walks through.
 
 
 def goal(name, depth, high, span=12.0, opening=None):
@@ -506,8 +507,88 @@ def goal(name, depth, high, span=12.0, opening=None):
     finish(part, name, sharp=50.0, strength=0.3, reach=0.5, floor=0.0, leaf=True)
 
 
+def box_goal(name, depth, high, span=12.0, opening=None, tear_base=1.45):
+    """Olympia's training goal, a box goal: as high at the back as at its mouth, its top level at the crossbar's height
+    for him to walk on, in a frame of white tubes, and nets of the same cord as the big goal's. Its near side stands in
+    front of the path: he walks in at its mouth, inside it, and out under its back net, torn loose where he goes through
+    (`opening`, across), from a ragged edge a little over his head; then he climbs the back net. Olov, 12 November 2026:
+    "Vi kan göra båda stora målen på samma sätt på Olympia?" (it was built in code, plainer than the big one)."""
+    part = new_part()
+    WHITE__ = tone('#f2f2ee')
+    FRAME = lit(WHITE__, 0.9)
+    NET = tone('#e2e2de')
+    R = 0.35
+    top = high - 0.12
+    cord = 0.035
+    CELL = 0.9
+    for y in (-span / 2.0, span / 2.0):
+        tube(part, [Vector((0.0, y, 0.0)), Vector((0.0, y, high))], [R, R], [WHITE__] * 2, 12)
+        # The side frame: back along the top, down the back, and forward along the ground to the post.
+        tube(part, [Vector((0.0, y, top)), Vector((depth, y, top)), Vector((depth, y, 0.08)), Vector((0.0, y, 0.08))], [0.12] * 4, [FRAME] * 4, 6)
+    tube(part, [Vector((0.0, -span / 2.0 - R, high - R)), Vector((0.0, span / 2.0 + R, high - R))], [R, R], [WHITE__] * 2, 12)
+    tube(part, [Vector((depth, -span / 2.0, top)), Vector((depth, span / 2.0, top))], [0.12, 0.12], [FRAME] * 2, 6)
+    tube(part, [Vector((depth, -span / 2.0, 0.08)), Vector((depth, span / 2.0, 0.08))], [0.1, 0.1], [FRAME] * 2, 6)
+
+    def tear_top(y):
+        return tear_base + 0.18 * math.sin(y * 7.1 + 1.3)
+
+    def torn(y, z):
+        return opening is not None and abs(y - opening) < 1.1 and z < tear_top(y)
+    # The sides: squares from the ground to the top, bellying out a hair.
+    for y in (-span / 2.0, span / 2.0):
+        out = 1.0 if y > 0.0 else -1.0
+        steps_x = max(2, int(depth / CELL))
+        steps_z = max(2, int(top / CELL))
+        for i in range(1, steps_x):
+            x = depth * i / steps_x
+            path = [Vector((x, y + out * 0.12 * math.sin(math.pi * j / 6), top * j / 6)) for j in range(7)]
+            tube(part, path, [cord] * 7, [NET] * 7, 4, closed_ends=False)
+        for j in range(1, steps_z):
+            z = top * j / steps_z
+            path = [Vector((depth * i / 8, y + out * 0.12 * math.sin(math.pi * z / top), z)) for i in range(9)]
+            tube(part, path, [cord] * 9, [NET] * 9, 4, closed_ends=False)
+    # The top, level with a cord's sag between the bars, and on down the back, torn at its foot where he goes out.
+    steps_y = max(2, int(span / CELL))
+    for k in range(1, steps_y):
+        y = -span / 2.0 + span * k / steps_y
+        path = [Vector((depth * i / 8, y, high - 0.05 - 0.06 * math.sin(math.pi * i / 8))) for i in range(9)]
+        back = [Vector((depth + 0.12 * math.sin(math.pi * j / 6), y, top * (1.0 - j / 6))) for j in range(1, 7)]
+        whole = [p for p in back if not torn(y, p.z)]
+        path += whole
+        if len(whole) < len(back):
+            # Its cut end hangs loose from the edge, blown out a little, and clear of the opening he goes through.
+            path.append(Vector((depth + 0.3, y + 0.1, tear_top(y) + 0.2)))
+        tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    for i in range(1, max(2, int(depth / CELL))):
+        x = depth * i / max(2, int(depth / CELL))
+        path = [Vector((x, -span / 2.0 + span * k / 12, high - 0.05 - 0.06 * math.sin(math.pi * k / 12))) for k in range(13)]
+        tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    rows = max(2, int(top / CELL))
+    for j in range(1, rows):
+        z = top * j / rows
+        samples = 41 if opening is not None and z < 2.2 else 13
+        row = [Vector((depth + 0.12 * math.sin(math.pi * (1.0 - z / top)), -span / 2.0 + span * k / (samples - 1), z)) for k in range(samples)]
+        pieces, piece = [], []
+        for n, p in enumerate(row):
+            if torn(p.y, p.z):
+                if piece:
+                    pieces.append(piece + [Vector((p.x + 0.15, p.y, p.z - 0.3))])
+                    piece = []
+            else:
+                if not piece and n > 0 and torn(row[n - 1].y, z):
+                    piece = [Vector((p.x + 0.15, p.y, p.z - 0.3))]
+                piece.append(p)
+        if piece:
+            pieces.append(piece)
+        for path in pieces:
+            if len(path) > 1:
+                tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    finish(part, name, sharp=50.0, strength=0.3, reach=0.5, floor=0.0, leaf=True)
+
+
 if wanted('fotbollsmal'):
-    goal('fotbollsmal', 7.0, 8.0)
+    # Olympia's training goal stands at z -4.5 (the chapter's GOAL), as high as its bar, 6, and 7 deep.
+    box_goal('fotbollsmal', 7.0, 6.0, opening=-4.5)
 if wanted('fotbollsmal-stort'):
     # The path goes out through it 4.2 in front of its middle (Olympia's far goal stands at z -4.2; -Y is the front).
     goal('fotbollsmal-stort', 10.0, 16.0, opening=-4.2)

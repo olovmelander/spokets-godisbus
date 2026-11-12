@@ -29,8 +29,12 @@
   crouches at the wall's edge and holds it out until Elof takes it; he hangs from it with both hands
   (`src/render/umbrella-hold.ts`). Six texts reworded (list in the PR).
 - **Olympia.** The turf follows the ground's slope toward the camera, with fibre tufts near it (`pitch.ts`); both
-  puddles have irregular near edges, soaked turf and fringes. Elof walks through the small goal (a code-built level
-  goal with a torn back net; the climb is the net). The stump and branch lie on the ground; spruces that stood half
+  puddles have irregular near edges, soaked turf and fringes. Elof walks through the small goal and out through its back net,
+  torn open where the path goes; the climb is the back net, and he walks along its level top. Both goals are now
+  modelled the same way in the yard kit (Olov: "Vi kan göra båda stora målen på samma sätt på Olympia?"):
+  `box_goal('fotbollsmal', 7.0, 6.0, opening=-4.5)` and `goal('fotbollsmal-stort', ..., opening=-4.2)` in
+  `art/blender/a2-yard.py`, baked on Olov's computer; the code-built box in `buildings.ts` is drawn only until the
+  model is in, or if it cannot be loaded. The stump and branch lie on the ground; spruces that stood half
   over an edge are dropped by a rule in `src/render/dressing/forest.ts` (seven trunks in Granskogen, Stormskogen,
   Billsta and Olympia, all far behind the path). The pitch ends behind the far goal.
 - **Flärken.** The jetty's gusts are drawn as waves: a swell, spray up the posts, white water over the planks, dry
@@ -5692,9 +5696,10 @@ record identify the exact published revision.
 ## Next
 
 **Olov's Äventyr 2 list (12 November, night).** Next: the pass over candy, specials and finds in the whole adventure
-(laid out "fint och strukturerat och inte för plottrigt"), in its own PR. The far goal's back net is torn open where
-he walks out (`goal(..., opening=-4.2)` in `art/blender/a2-yard.py`, baked on Olov's computer; `tests/unit/olympia-far-goal.test.ts`
-reads the baked kit). Keep the power cut's single owner (`src/content/home-power.ts`) for lamp, TV, console and candle; keep
+(laid out "fint och strukturerat och inte för plottrigt"), in its own PR. Both of Olympia's goals are torn open where
+he walks out of them (`box_goal` and `goal` with `opening` in `art/blender/a2-yard.py`, baked on Olov's computer;
+`tests/unit/olympia-goals.test.ts` reads the baked kit and checks the openings, the net beside them and the training
+goal's level top). Keep the power cut's single owner (`src/content/home-power.ts`) for lamp, TV, console and candle; keep
 `lamp-hold.ts`'s forearm-along-the-beam hold for every family lamp; keep a handed-over sighting hidden at once.
 
 **Olov's Äventyr 1 playthrough (12 November, afternoon).** A ghost on a `still` perch waits for his help and never
@@ -5868,7 +5873,7 @@ needs no new Blender work. Device colour, readability and frame rate remain a ph
 no new *Senare* item or question for Olov; the existing lists below still apply.
 
 **Left of the overhaul:** the owl's flight and the ride home at Stormöga were not checked with stills since their water changed;
-Stormbyn's flat dark street; the raft tower and the goals are still drawn in code.
+Stormbyn's flat dark street; the raft tower is still drawn in code.
 
 **Earlier picture worklist, from three stills of every chapter on High (4 November 2026).** The completed graphics
 work above supersedes its room, shared-model and ground findings; remaining art/device judgements still apply:
