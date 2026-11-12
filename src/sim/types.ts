@@ -677,7 +677,12 @@ export interface ChapterData {
    * it (plan §3.4, Myren). What crosses it is ground, a tussock, a ride or a thing on a rail.
    */
   /** `eddy`, for the picture only: the water turns round in a whirl there (Granskogen's virvel, ../render/eddy.ts). */
-  water?: { from: number; to: number; y: number; eddy?: boolean }[];
+  /**
+   * `floats`: the id of a thing on a rail that floats on this water and is lifted as it fills (Stormgården's lid). The
+   * water stands under it as ./water-level.ts has it: low, with the thing awash, until the water comes, and at `y` once
+   * the thing is in place.
+   */
+  water?: { from: number; to: number; y: number; eddy?: boolean; floats?: string }[];
   /** The soft tussocks. */
   tussocks?: Tussock[];
   /** Where gusts sweep across. */

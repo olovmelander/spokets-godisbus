@@ -2,6 +2,7 @@ import { capArms, capHands, capHandoff } from './cap-handoff';
 import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from './lamp-hold';
 import { stormSweet } from './storm-sweet';
 import { createEddy } from './eddy';
+import { createRainBarrel } from './rain-barrel';
 import { lessMotion } from '../platform/motion';
 import { owlHollow } from './owl-trap';
 import { buildBraid } from './braid';
@@ -471,6 +472,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const eddy = createEddy(chapter);
   if (eddy) scene.add(eddy.group);
   let eddyLift = 0;
+  // Stormgården's rain barrel: the tap's water pours into the ditch, which fills under the lid (./rain-barrel.ts).
+  const rainBarrel = createRainBarrel(chapter);
+  if (rainBarrel) scene.add(rainBarrel.group);
   // A puddle in the street has birch leaves on it, from the yard across it (./afloat.ts).
   const afloat = createAfloat(place && dressing && waterKind(place.id).bed > 0 ? chapter.water ?? [] : []);
   scene.add(afloat.group);
@@ -1238,6 +1242,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     epilogueStage.update(flags, ending, lessMotion());
     moverMotion.update(movers, dt, lessMotion());
     eddyLift = eddy?.update(movers, moverMeshes, clock, lessMotion()) ?? 0;
+    // On the life clock: the water already in the air falls on while the words about it are read.
+    rainBarrel?.update(movers, lifeDt, lessMotion(), water);
     if (chapter.id === 'norrsken') {
       const eyes = scene.getObjectByName('first-carving-eyes');
       if (eyes) eyes.visible = flags.has('eyes');

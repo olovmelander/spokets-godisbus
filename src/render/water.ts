@@ -634,6 +634,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     // The lights it mirrors: where each stands (x, y, z) and how bright it is, and its colour.
     lamps: { value: Array.from({ length: LAMPS }, () => new Vector4(0, 0, 0, 0)) },
     lampTint: { value: Array.from({ length: LAMPS }, () => new Color()) },
+    // A pool that fills as the story goes (Stormgården's ditch, `floats`): from, to, and how far under its own height
+    // it stands now (`fillTo`).
+    fill: { value: new Vector4(0, 0, 0, 0) },
   };
   const material = new ShaderMaterial({
     // It writes no depth: a shaft of light or a sheet of mist that dips under the surface goes on into the
@@ -641,13 +644,16 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     uniforms, transparent: true, depthWrite: false, fog: true, side: DoubleSide,
     vertexShader: /* glsl */ `
       attribute vec4 part;
+      uniform vec4 fill;
       varying vec3 waterWorld; varying float waterDepth; varying vec4 waterPart;
       #include <fog_pars_vertex>
       void main() {
-        vec4 world = modelMatrix * vec4(position, 1.0);
+        // A pool that is still filling stands lower, all of it.
+        float under = position.x >= fill.x - 0.01 && position.x <= fill.y + 0.01 ? fill.z : 0.0;
+        vec4 world = modelMatrix * vec4(position.x, position.y - under, position.z, 1.0);
         waterWorld = world.xyz;
         // Its part, how much of it is there, how deep it is, and the height of its pool's surface.
-        waterPart = vec4(part.xyz, part.w + modelMatrix[3].y);
+        waterPart = vec4(part.xyz, part.w - under + modelMatrix[3].y);
         vec4 mvPosition = viewMatrix * world;
         waterDepth = -mvPosition.z;
         gl_Position = projectionMatrix * mvPosition;
@@ -1172,6 +1178,8 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     renderer.setRenderTarget(source);
   };
   const patched = new WeakSet<Material>();
+  /** How far under its own height each pool stands now: only one that fills (`fillTo`) is ever lower. */
+  const under = pools.map(() => 0);
   const causticPools = pools.slice(0, 8).map((w) => new Vector4(w.from, w.to, w.y, 0));
   while (causticPools.length < 8) causticPools.push(new Vector4(0, 0, -1e6, 0));
   let before = 0;
@@ -1260,7 +1268,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
       uniforms.nearOn.value = 0;
       const pool = nearTarget && near.length ? poolNear(x) : null;
       if (!pool || !nearTarget) return;
-      const level = pool.y + body.position.y;
+      const level = pool.y - under[pools.indexOf(pool)]! + body.position.y;
       camera.updateMatrixWorld();
       eye.setFromMatrixPosition(camera.matrixWorld);
       if (eye.y < level + 0.05) return;
@@ -1335,8 +1343,20 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     },
     /** The water's surface at `x`, where there is water: its height now. */
     surfaceAt(x: number): number | null {
-      const pool = pools.find((w) => x >= w.from && x <= w.to);
-      return pool ? pool.y + body.position.y : null;
+      const i = pools.findIndex((w) => x >= w.from && x <= w.to);
+      return i >= 0 ? pools[i]!.y - under[i]! + body.position.y : null;
+    },
+    /**
+     * The pool at `x` stands at `y` now, under its own height while it fills (Stormgården's ditch rises under the lid as
+     * the tap's water comes: ./rain-barrel.ts). Never higher than its own.
+     */
+    fillTo(x: number, y: number): void {
+      const i = pools.findIndex((w) => x >= w.from && x <= w.to);
+      if (i < 0) return;
+      const pool = pools[i]!;
+      under[i] = Math.max(0, pool.y - y);
+      uniforms.fill.value.set(pool.from, pool.to, under[i]!, 0);
+      causticPools[i]?.setZ(pool.y - under[i]!);
     },
     /** Something touches the water at x, z: a ring spreads from there (Mid and High). `strength` 1 is a landing. */
     ripple(x: number, z: number, strength: number): void {

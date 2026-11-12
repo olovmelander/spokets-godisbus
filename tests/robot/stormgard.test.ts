@@ -7,7 +7,7 @@ import { words } from '../../src/content/aventyr2/lines/stormgard';
 import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
-import { FALL_LIMIT, GHOST_CLEARANCE, JUMP_APEX, LEDGE_GIVE, RUNNING_JUMP_REACH } from '../../src/sim/constants';
+import { FALL_LIMIT, GHOST_CLEARANCE, JUMP_APEX, LEDGE_GIVE, RUNNING_JUMP_REACH, WATER_REACH } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { SimOptions } from '../../src/sim/types';
 import { idle, jump, leap, run, runPast, sideTaken, walkTo } from '../sim/drive';
@@ -156,16 +156,27 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
   });
 
   describe('Regntunnan', () => {
-    it('the ditch is wider than a running jump, its lid lies at the bottom, and the barrel is in the way', () => {
+    it('the ditch is wider than a running jump, its lid lies awash low in it, and the barrel is in the way', () => {
       expect(ditch.to - ditch.from).toBeGreaterThan(RUNNING_JUMP_REACH + 2);
-      expect(lid.stops[0]!.y).toBeCloseTo(heightAt(stormgard, (ditch.from + ditch.to) / 2), 5);
+      // Before the tap the lid floats low in the half-full ditch, awash (Olov, 12 November 2026: the water that is turned
+      // on is seen to lift it): over the ditch's bottom, and more than a jump's height under the lawn.
+      const bottom = heightAt(stormgard, (ditch.from + ditch.to) / 2);
+      expect(lid.stops[0]!.y).toBeGreaterThan(bottom + 0.5);
+      expect(lid.stops[0]!.y + lid.height).toBeLessThan(heightAt(stormgard, ditch.from - 0.5) - 1);
+      // The ditch's water stands under it: the lid's top within the water's reach, so a jump down onto it is the water's.
+      expect(ditch.floats).toBe(lid.id);
+      const low = new Sim(stormgard).waterLevel(ditch);
+      expect(lid.stops[0]!.y + lid.height - low).toBeGreaterThan(0);
+      expect(lid.stops[0]!.y + lid.height - low).toBeLessThan(WATER_REACH);
       // At its last stop the lid lies level with the lawn, and longer than the ditch, on both banks.
       const last = lid.stops[lid.stops.length - 1]!;
       expect(last.y + lid.height).toBeCloseTo(heightAt(stormgard, ditch.from - 0.5), 5);
       expect(last.x - lid.width / 2).toBeLessThan(ditch.from);
       expect(last.x + lid.width / 2).toBeGreaterThan(ditch.to);
-      // Its water's hands lift it: Använd never moves it.
-      expect(lid.on).toBe(tap.id);
+      // The tap's water lifts it: Använd never moves it. It comes as he watches (`kranen`), the scene on the tap.
+      const watched = stormgard.scenes!.find((scene) => scene.on === tap.id)!;
+      expect(watched.hold).toBe(true);
+      expect(watched.cues!.map((cue) => cue.flag)).toContain(lid.on);
       // The hose hangs where walking into the barrel takes hold of it, and its top is the tap's.
       expect(heightAt(stormgard, hose.x + 0.4)).toBeCloseTo(hose.top, 5);
       expect(tap.at.y).toBe(hose.top);
@@ -196,8 +207,16 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
       expect(sim.curr.word).toBe('sgTurnTap');
       sim.step({ ...idle, act: true });
       expect(sim.flags.has(tap.id)).toBe(true);
+      // He stands and watches the water come, the ditch fill and the lid rise with it.
       run(sim, 1);
+      expect(sim.held).toBe(true);
+      expect(sim.flags.has('placed:lid')).toBe(false);
+      const rising = sim.waterLevel(ditch);
+      run(sim, 1.5);
+      expect(sim.waterLevel(ditch)).toBeGreaterThan(rising);
+      for (let i = 0; i < 6 * 120 && sim.held; i++) sim.step(idle);
       expect(sim.flags.has('placed:lid')).toBe(true);
+      expect(sim.waterLevel(ditch)).toBeCloseTo(ditch.y, 5);
       runPast(sim, ditch.to + 2);
       run(sim, 0.3);
       expect(onTheTrail(sim)).toBe(true);

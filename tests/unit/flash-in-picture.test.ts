@@ -110,3 +110,49 @@ describe('the old one, where Elof calls out to him', () => {
     });
   }
 });
+
+/**
+ * Olov, 12 November 2026: "Det kan se bättre ut när trägubben i slutet av kapitlet syns." From Stormskogen's high root
+ * the old one is seen far down the hill: he was a grey figure under the boughs, behind their sweets, who vanished in the
+ * open halfway down. Now he is shown where nothing hangs over him, in front of the path's sweets, lit, in one picture
+ * with Elof; the picture goes with him; and the moment ends while he still walks, so that he walks out of the picture.
+ */
+describe('the old one down the hill at the end of Stormskogen', () => {
+  const chapter = AVENTYR2.find((one) => one.id === 'stormskog')!;
+  const moment = chapter.scenes!.find((scene) => scene.id === 'ss:old-downhill')!;
+  const cue = moment.cues!.find((one) => one.flag === 'ss:old-appears')!;
+  const flight = chapter.storm!.flybys!.find((one) => one.on === cue.flag)!;
+
+  it('is a moment he stands for, its line waiting for the flash, and the old one lit and bigger than a carving', () => {
+    expect(moment.hold).toBe(true);
+    expect(moment.dialogue).toEqual(['ss:see-old']);
+    expect(chapter.beats!.find((beat) => beat.id === 'ss:see-old')!.on).toBe(cue.flag);
+    expect(flight.who).toBe('tragubbe');
+    expect(flight.walk).toBe(true);
+    expect(flight.lit?.length).toBeGreaterThan(0);
+    expect(flight.size!).toBeGreaterThanOrEqual(1.7);
+  });
+
+  it('walks on the hill where nothing hangs over him, in front of the path and its sweets', () => {
+    for (let k = 0; k <= 1; k += 0.1) {
+      const at = flightAt(flight, k);
+      expect(at.y, `${Math.round(k * 100)} %`).toBeCloseTo(groundAt(chapter, at.x), 2);
+      // No bough off the high root over him (half his width beside its end at the least), nor the sweets on them.
+      for (const ledge of chapter.ledges!.filter((one) => one.y > at.y)) {
+        expect(Math.abs(ledge.x - at.x) > ledge.width / 2 + 0.5 || ledge.y - at.y > 2.6, `under a bough at ${at.x.toFixed(1)}`).toBe(true);
+      }
+    }
+    expect(flight.z!).toBeGreaterThan(0);
+  });
+
+  it('is in the first picture with Elof, the picture goes with him, and he still walks when it ends', () => {
+    const [first, follow] = moment.stage!.shots!;
+    const start = moment.at!;
+    expect(Math.abs(flight.from.x - first!.x)).toBeLessThan(first!.width! / 2 - 1);
+    expect(Math.abs(start - first!.x)).toBeLessThan(first!.width! / 2);
+    expect(follow!.x).toBeGreaterThan(first!.x);
+    // The moment's time after the flash is less than his walk: he walks on out of the picture as it goes back to Elof.
+    expect(moment.seconds - cue.at).toBeLessThan(flight.seconds);
+    expect(flight.to.x).toBeGreaterThan(follow!.x + follow!.width! / 2);
+  });
+});
