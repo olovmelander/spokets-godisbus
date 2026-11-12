@@ -1,7 +1,7 @@
 import { FELL_IN } from '../../../sim/constants';
-import type { Candy, ChapterData, GhostPerch, Jump, Mover, Vec } from '../../../sim/types';
+import type { Candy, ChapterData, Flyby, GhostPerch, Jump, Mover, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
-import { alongAll, hopCandy, round, row, slopeRow, timeCard } from '../kit';
+import { alongAll, hopCandy, round, row, sighting, slopeRow, timeCard } from '../kit';
 
 /**
  * Äventyr 2, Kapitel 6: Älven (docs/aventyr-2.md), down the river by night. Units: EL. At Flärken the lake's outlet
@@ -177,6 +177,11 @@ const KIDS = {
 };
 /** Where the old one is seen on his log: on the bank after the eddies, the stones and their logs ahead. */
 const OLD_SEEN = 50.4;
+/** The old one on his log among the logs between the stones, floating on down the stream. */
+const OLD_FLOATS: Flyby = { on: 'beat:al:old-one', from: { x: round(OLD_SEEN + 7.6, 1), y: 0.3 }, to: { x: round(OLD_SEEN + 21.6, 1), y: 0.5 }, seconds: 3.6, who: 'tragubbe', lit: [1.2] };
+/** From the bank after the eddies: Elof, the first stones and the old one on the water in one picture. */
+const OLD_SIGHTING = sighting('al:gamla', OLD_SEEN, 51.2, 'al:old-one', 'al:old-seen', OLD_FLOATS,
+  { x: OLD_SEEN + 5, y: 1.8, height: 7, width: 9 }, { x: OLD_SEEN + 10.4, y: 1.8, height: 7, width: 10 });
 /** Where the old one is seen once more, floating on ahead, a little before the trail's end. */
 const OLD_AHEAD = 171.6;
 /** Where the last of the handful lies, and the trail ends. */
@@ -226,6 +231,8 @@ export const alven: ChapterData = {
       moa: [{ at: 0, ...KIDS.car.moa, face: 0.36, move: 0.01, act: 'shine', aim: KIDS.river, holds: 'lamp-moa' }],
       bertil: [{ at: 0, ...KIDS.car.bertil, face: 0.4, move: 0.01, act: 'shine', aim: KIDS.river, holds: 'lamp-bertil' }],
     } } },
+    // On the bank after the eddies: the old one on his log, seen and called to (../kit.ts, `sighting`).
+    OLD_SIGHTING,
     // Called, Pappa is seen where he stands: up at the bridge's railing over the bank, lowering his scarf. The picture
     // opens out for a moment to show all of it: him on the bridge, the scarf coming down, and Elof on the bank below.
     {
@@ -348,7 +355,8 @@ export const alven: ChapterData = {
   checkpoints: [
     { x: 4, y: 0 },
     { x: 33.2, y: GRAVEL.y },
-    { x: 51.4, y: BANK.y },
+    // Past where he stands to see the old one on his log, so that the sight is before it, as it was.
+    { x: 52.4, y: BANK.y },
     { x: 70.4, y: BIG.y },
     { x: 86.2, y: BREDBYN.y },
     { x: 110.6, y: FAR_BANK.y },
@@ -406,7 +414,7 @@ export const alven: ChapterData = {
       // boulders of the far bank hide what floats behind the raft's own lane.
       { on: 'beat:al:flash', from: { x: round(RAFT.from.x + 5, 1), y: 0 }, to: { x: round(RAFT.from.x + 24.6, 1), y: 0.2 }, z: 1.4, seconds: 5, who: 'lillgubbe', lit: [1.8] },
       // From the bank after the eddies: the old one on his log, among the logs between the stones.
-      { on: 'beat:al:old-one', from: { x: round(OLD_SEEN + 7.6, 1), y: 0.3 }, to: { x: round(OLD_SEEN + 33.6, 1), y: 0.6 }, seconds: 3.2, who: 'tragubbe' },
+      OLD_FLOATS,
       // From the owl's back, high over the lake: the little one, far down the river.
       { on: 'al:little-seen', from: { x: 161, y: 0.4 }, to: { x: 167, y: 0.4 }, z: -2.8,
         seconds: 5, who: 'lillgubbe', size: 1.8, lit: [0, 2.4] },
@@ -517,7 +525,7 @@ export const alven: ChapterData = {
     { id: 'al:logs-wait', at: 31.2, who: 'elof', line: 'alLogsWait', read: true },
     { id: 'al:leaf-seen', on: FELL_IN, within: [GRAVEL.from, BANK.from], until: 'al:leaf', who: 'elof', line: 'alLeafSeen', read: true },
     // 2. the stones and the logs: from the bank after the eddies, the old one on his log among them
-    { id: 'al:old-one', at: OLD_SEEN, who: 'elof', line: 'alOldOne' },
+    { id: 'al:old-one', at: OLD_SEEN, needs: 'al:old-seen', who: 'elof', line: 'alOldOne' },
     // 3. Bredbyn, the rapids, and Pappa on the bridge. He sees the rapids as he steps onto the bank, and Pappa
     // answers; called, Pappa is shown lowering his scarf (`bron`), and then says what to do with it, which Elof is
     // free to do at once.

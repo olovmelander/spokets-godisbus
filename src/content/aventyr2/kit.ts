@@ -1,4 +1,5 @@
 import { rideY } from '../../sim/ride-path';
+import type { SceneDef, ShotKey } from '../../sim/scene';
 import type { Candy, Flyby, Jump, Ride, Vec } from '../../sim/types';
 
 /**
@@ -79,6 +80,28 @@ export const walkedAll = (walk: Walk, at: readonly number[]): Candy[] => at.map(
 
 /** A candy in the arc over a hop from one edge to a landing. */
 export const hopCandy = (from: Vec, to: Vec, lift = 1.1): Candy => ({ x: round((from.x + to.x) / 2, 1), y: round(Math.max(from.y, to.y) + lift) });
+
+type Frame = Omit<ShotKey, 'at' | 'move'>;
+
+/**
+ * Where Elof sees the old one and calls out (Olov, 12 November 2026: "Han ska synas tydligt överallt"). He stops, and
+ * the picture takes in the figure (`frame`): with Elof too on a phone held sideways, and close on a phone held upright
+ * or a tablet, where the two would be too small together. The figure stands lit in the dark
+ * while the line is read; then it leaps or floats away in its flight, lit, and the picture goes a little way with it
+ * (`follow`). The beat `needs` the cue `seen`, and the flight is `on` the beat: the scene's own reveal, which
+ * waits while the line is read (./render.ts). It is not begun from beyond `before`.
+ */
+export function sighting(id: string, at: number, before: number, beat: string, seen: string, flight: Flyby, frame: Frame, follow: Frame): SceneDef {
+  return {
+    id, at, before, seconds: round(0.8 + flight.seconds, 1), hold: true, dialogue: [beat],
+    cues: [{ at: 0.6, flag: seen }],
+    stage: {
+      shots: [{ at: 0, ...frame, move: 0.8 }, { at: 0.8, ...follow, move: round(0.9 * flight.seconds, 1) }],
+      // He points at the figure as he calls out, and follows it with his eyes as it goes.
+      elof: [{ at: 0.2, act: 'point', aim: flightAt(flight, 0) }, { at: 1.2, act: 'look', aim: flightAt(flight, 0.5) }],
+    },
+  };
+}
 
 /** Whether a flyby floats on the water, bobbing along, rather than tumbling through the air. */
 export const afloat = (f: Flyby): boolean => !f.walk && Math.max(f.from.y, f.to.y) < 1.5;

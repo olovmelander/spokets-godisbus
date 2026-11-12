@@ -120,7 +120,7 @@ describe('Äventyr 2, Kapitel 6: Älven', () => {
     expect(alven.checkpoints!.length).toBeLessThanOrEqual(10);
     expect(alven.coda).toBe('pappa');
     expect(alven.storm).toMatchObject({ rain: 1, lightning: 7.5 });
-    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'bron', 'al:little', 'al:kids', 'al:slut']);
+    expect(alven.scenes!.map((scene) => scene.id)).toEqual(['card', 'al:gamla', 'bron', 'al:little', 'al:kids', 'al:slut']);
     expect(sv.scene.alven).toBe('Älven · halv tolv');
   });
 

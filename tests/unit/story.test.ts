@@ -64,6 +64,9 @@ describe('choosing candy at the family party', () => {
       expect(sim.finishStory({ kind: 'party', friend, sweet: friend === 'moa' ? 'skumbanan' : 'karamell' })).toBe(true);
       expect(sim.candyCount).toBe(candy);
       sim.step(idle);
+      // He stands with the one he gave to while they thank him (`tack:<friend>`), and gives the next sweet after.
+      for (let i = 0; i < 600 && sim.held; i++) sim.step(idle);
+      expect(sim.flags.has(`scene:tack:${friend}`)).toBe(true);
       if (friend !== 'mamma') {
         expect(sim.flags.has('partied')).toBe(false);
         sim.step({ ...idle, act: true });

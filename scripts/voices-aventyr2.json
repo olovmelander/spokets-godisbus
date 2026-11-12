@@ -1904,13 +1904,6 @@
     "text": "Du ska heta Fjun!"
   },
   {
-    "key": "moKlonkLine",
-    "speaker": "spoket",
-    "situation": "Äventyr 2, morgonen",
-    "tag": "[playful wooden voice, wordless]",
-    "text": "Klonk, klonk!"
-  },
-  {
     "key": "moNiceLine",
     "speaker": "moa",
     "situation": "Äventyr 2, morgonen",
@@ -1923,6 +1916,13 @@
     "situation": "Äventyr 2, morgonen",
     "tag": "[warm, steady father]",
     "text": "Välkommen hem, lilla Fjun."
+  },
+  {
+    "key": "moKlonkLine",
+    "speaker": "spoket",
+    "situation": "Äventyr 2, morgonen",
+    "tag": "[playful wooden voice, wordless]",
+    "text": "Klonk, klonk!"
   },
   {
     "key": "moCupLine",

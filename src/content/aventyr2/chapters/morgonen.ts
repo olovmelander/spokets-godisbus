@@ -164,6 +164,10 @@ const SCENES: SceneDef[] = [
       ],
     },
   },
+  // What he says to each figure as he puts it back, said while he stands at the shelf: a boy who put the second one up
+  // at once had run to the window before "Och du bredvid." was said (docs/dialogue.md).
+  { id: 'hylla:old', on: 'shelf:old', before: 6, seconds: 0.4, hold: true, dialogue: ['moOld'] },
+  { id: 'hylla:small', on: 'shelf:small', before: 6, seconds: 0.4, hold: true, dialogue: ['moSmall'] },
   {
     // With both figures back on the shelf, Pappa goes over to the window by it, with his cup, to see to his new latch.
     id: 'fonster',
@@ -220,13 +224,17 @@ const SCENES: SceneDef[] = [
   },
   {
     // The others' answer to it: they turn to the shelf, Moa is up off her chair for it, and Pappa nods to the little one.
-    // Short, so that it is over before the cup of cocoa: one scene plays at a time.
+    // He stands under the shelf while they say it, and Klonk last: free to run, he had heard Moa from the table and
+    // Pappa from the door. The words come once they have turned (`NAMED`); the clock waits for them.
     id: 'namnet',
     on: 'beat:moName',
     seconds: 4,
+    hold: true,
+    dialogue: ['moNice', 'moWelcome', 'moKlonk'],
+    cues: [{ at: 0.9, flag: NAMED }],
     stage: {
       actors: {
-        moa: [{ at: 0.4, act: 'look', aim: ON_SHELF }, { at: 1.0, act: 'cheer' }, { at: 2.6, act: 'look', aim: ON_SHELF }, { at: 3.4, act: 'draw' }],
+        moa: [{ at: 0.4, act: 'look', aim: ON_SHELF }, { at: 0.7, act: 'cheer' }, { at: 2.6, act: 'look', aim: ON_SHELF }, { at: 3.4, act: 'draw' }],
         mamma: [{ at: 0.5, act: 'look', aim: ON_SHELF }, { at: 2.0, act: 'nod', aim: ON_SHELF }],
         bertil: [{ at: 0.6, act: 'look', aim: ON_SHELF }, { at: 1.8, aim: FACE.moa }],
         pappa: [{ at: 0.3, aim: ON_SHELF }, { at: 2.4, act: 'nod', aim: ON_SHELF }],
@@ -318,7 +326,6 @@ export const morgonen: ChapterData = {
     ...Object.values(TABLE.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
   ],
   checkpoints: [{ x: 3, y: 0 }, { x: 12, y: 0 }, { x: 21, y: 0 }],
-  later: [{ flag: NAMED, after: 'beat:moName', seconds: 0.7 }],
   spots: [
     { id: 'shelf:old', at: { x: FIRST.x + 0.2, y: 0 }, verb: 'give', word: 'moPutOld', needs: 'scene:frukost' },
     { id: 'shelf:small', at: { x: FIRST.x + 1.4, y: 0 }, verb: 'give', word: 'moPutSmall', needs: 'shelf:old' },
@@ -357,10 +364,10 @@ export const morgonen: ChapterData = {
     { id: 'moLatched', on: 'scene:haken', needs: AT_SHELF, who: 'pappa', line: 'moLatchLine', read: true },
     { id: 'moFluff', on: 'beat:moLatched', who: 'elof', line: 'moFluffLine', read: true },
     { id: 'moName', on: 'beat:moFluff', who: 'elof', line: 'moNameLine', read: true },
-    // What the others say to it comes a moment after, as they turn to the shelf (`namnet`), and he is free again.
-    { id: 'moKlonk', on: NAMED, who: 'spoket', line: 'moKlonkLine' },
+    // What the others say to it comes a moment after, as they turn to the shelf (`namnet`), and Klonk's klonk last.
     { id: 'moNice', on: NAMED, who: 'moa', line: 'moNiceLine', read: true },
     { id: 'moWelcome', on: 'beat:moNice', who: 'pappa', line: 'moWelcomeLine', read: true },
+    { id: 'moKlonk', on: 'beat:moWelcome', who: 'spoket', line: 'moKlonkLine' },
     // The cup, and what Moa and he say over it: said at the table (`kakao`).
     { id: 'moCup', on: 'cocoa', needs: CUP, who: 'mamma', line: 'moCupLine', read: true },
     // What she said on the jetty, in the dark, when her lamp lit by itself.

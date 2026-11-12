@@ -191,12 +191,55 @@ av Klonks ”Klonk!”. De är märkta `aside` i kapitlen. Ingen av dem behövs 
 
 ## Det som lämnades
 
-- **Äventyr 1:s ord är orörda.** Där var replikerna glesa från början, och de har inspelade röster. Två av Mammas
-  repliker på Myren är kommentarer nu (”På myren går vi på spången.” och ”Spången är klar! Gå över när du vill.”),
-  och Godiskalasets namngivning väntar på tacken.
+- **Äventyr 1:s ord är orörda.** Där var replikerna glesa från början, och de har inspelade röster. En replik med
+  nya ord spelas tyst tills den spelas in igen, så där flyttas repliker i stället för att skrivas om.
 - **Familjens löften på altanen** i prologen och i Stormkvällen sägs i tur och ordning medan Elof står vid kanten
   och lyssnar. Det är så de är tänkta.
-- **Godiskalasets tack** sägs alla, i tur och ordning, hur fort godiset än delas ut.
+
+## Olovs svar, och båda äventyren (12 november, eftermiddag)
+
+Olov svarade på frågorna: Elof ska stå still i de sex stunderna, inga av de omskrivna replikerna ska tillbaka, det är
+rätt att ett barn som springer hör färre kommentarer, och gamla trägubben *”ska synas tydligt överallt”*. Han frågade
+också om genomgången gällde båda äventyren. Reglerna och roboten gällde båda, men orden hade bara gåtts igenom i
+Äventyr 2. Nu är Äventyr 1 genomgånget på samma sätt.
+
+### Gamla trägubben syns där Elof ropar på honom
+
+På fyra ställen ropar Elof när han ser gamla trägubben. Förut var han en mörk skymt som hoppade iväg i samma stund,
+och i Stormgården och vid Flärken stod han utanför bilden. Nu stannar Elof, och bilden visar gamla trägubben, som
+står och lyser medan repliken läses. Sedan hoppar eller flyter han iväg, fortfarande upplyst, och bilden följer med
+en bit.
+
+| Kapitel | Replik | Var Elof står |
+| --- | --- | --- |
+| Stormgården | Gamla trägubben! Uppe på lekstugan! | Vid studsmattan. Gamla trägubben står på lekstugans tak. |
+| Olympia | Gamla trägubben seglar över vattnet! | Vid Bertil och bollen. Gamla trägubben seglar över den översvämmade mittcirkeln. |
+| Flärken | Spring, gamla trägubben! Vi kommer! | I lä av tredje stolpen, där ingen våg når honom. Repliken flyttades dit. |
+| Älven | Där! Gamla trägubben på en stock! | På stranden efter virvlarna. Gamla trägubben flyter iväg på sin stock. |
+
+På en telefon som hålls på bredden syns Elof och gamla trägubben tillsammans. På en telefon som hålls upprätt, och på
+en surfplatta, visar bilden gamla trägubben nära, eftersom båda annars blev för små. Där han redan syntes tydligt
+ändrades inget: han vandrar ner för backen i Stormskogen, hoppar på stocken vid Flärkens utlopp och håller lillgubben
+på stenen i Billsta.
+
+### Repliker som sägs medan Elof står där de hör hemma
+
+| Kapitel | Vad | Förut |
+| --- | --- | --- |
+| Godiskalaset | Var och en tackar för sitt godis medan Elof står hos dem: Mamma, Pappa, Moa, Bertil och spöket. Hittegodset och Pappas runda stenar sägs i samma stund. | Den som delade ut snabbt hörde Moas tack 30 EL bort och spökets 18 sekunder efter godiset. |
+| Morgonen efter | ”Först i raden. Där hör du hemma.” och ”Och du bredvid. Nu har ni varandra.” sägs vid hyllan. | Den andra sades när Elof redan stod vid fönstret. |
+| Morgonen efter | Moa, Pappa och Klonk svarar på namnet Fjun medan Elof står under hyllan: ”Fjun! Vilket fint namn.”, ”Välkommen hem, lilla Fjun.” och sist ”Klonk, klonk!”. | Moa hördes vid bordet och Pappa vid dörren. Klonk kom först. |
+| Byn | ”Godiset är större än jag!” sägs bland godisburkarna. | Repliken kom 7 EL för sent, eftersom ”Framme! Det luktar godis.” fortfarande lästes. |
+
+### Det som görs på annat håll eller lämnas
+
+- **Granskogen och Myren** rättas på grenen `aventyr1-genomspelning`, tillsammans med Olovs egen lista från samma
+  dag: ”Jag håller brädan. Rulla hit en kotte.” kom 4 s efter att Elof ropat på Pappa, och ”Så! Följ stocken över.
+  Jag är nära.” sades när Elof redan gått över stocken.
+- **Berget:** ”Spöket vill hämta hem min trägubbe!” sägs efter ”Tack för hjälpen! Nu är jag uppe.”, och hinner bli
+  det sista Elof säger innan sista sidan. Att flytta tacket skulle göra orden fel, eftersom han då ännu klättrar.
+- **Trädgården:** den som ropar på Moa i samma stund som hon syns hör inte hennes ”Spöket kröp ner under roten!”. Det
+  är vad en hjälpare säger innan man ropar, och det släpps när man har ropat.
 
 ## Rösterna i den här genomgången
 

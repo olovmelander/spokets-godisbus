@@ -57,3 +57,32 @@ describe('a moment he stands for, begun while another scene still plays', () => 
     expect(sim.held).toBe(false);
   });
 });
+
+/**
+ * A scene's own words (`dialogue`) are said while it plays. A game saved after the scene was over, with one of them
+ * still unsaid (made before the words were the scene's, say), says it freely: the cocoa in Morgonen waits for Pappa's
+ * welcome, which is now said in the name's moment at the shelf.
+ */
+describe('the words of a scene that is over', () => {
+  const told: ChapterData = {
+    id: 'told', spawn: { x: 0, y: 0.01 }, goalX: 1000, candy: [],
+    ground: [{ x: -10, y: 8 }, { x: -10, y: 0 }, { x: 80, y: 0 }, { x: 80, y: 8 }],
+    scenes: [{ id: 'named', at: 2, seconds: 0.4, hold: true, dialogue: ['welcome'], cues: [{ at: 0.1, flag: 'turned' }] }],
+    beats: [{ id: 'welcome', on: 'turned', who: 'pappa', line: 'moWelcomeLine', read: true }],
+  };
+  const listen = (sim: Sim, seconds: number) => { for (let i = 0; i < seconds / STEP; i++) sim.step({ ...idle, x: 1, talking: false }); };
+
+  it('are said in it while it plays', () => {
+    const sim = new Sim({ ...told, spawn: { x: 1.8, y: 0.01 } });
+    listen(sim, 0.5);
+    expect(sim.sceneFrame?.id).toBe('named');
+    expect(sim.said).toEqual(['welcome']);
+  });
+
+  it('are said freely once it is over, and not lost', () => {
+    const sim = new Sim({ ...told, spawn: { x: 3, y: 0.01 } }, {}, { flags: ['scene:named', 'turned'] });
+    listen(sim, 0.5);
+    expect(sim.sceneFrame).toBeNull();
+    expect(sim.said).toEqual(['welcome']);
+  });
+});
