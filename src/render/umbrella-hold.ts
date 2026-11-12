@@ -48,6 +48,29 @@ export function holdingOut(pose: Pose, legs: Legs, w: number): void {
   pose.lean += (UMBRELLA.bend - pose.lean) * w;
 }
 
+const smooth = (k: number) => { const t = Math.min(1, Math.max(0, k)); return t * t * (3 - 2 * t); };
+
+/**
+ * How far down Moa is at the wall's edge, frame by frame: `down`, where she is going (0 standing, 1 down), and `stoop`,
+ * where she is, which follows it softly. Called, she goes down after a breath. In a game taken up after the call, and
+ * without motion, she is down from the first frame. (The view's first nine seconds read "called nine seconds ago" as
+ * "not called yet": a game taken up showed her standing for a second, and then she crouched.)
+ */
+export function createHoldingOut() {
+  let called: number | null = null;
+  let stoop = 0;
+  return {
+    /** `asked`: she has been called, and he has not taken it yet. `first`: the view's first frame. */
+    update(asked: boolean, clock: number, dt: number, first: boolean, still: boolean): { down: number; stoop: number } {
+      if (!asked) called = null;
+      else if (called === null) called = first ? clock - 9 : clock;
+      const down = called === null ? 0 : still ? 1 : smooth((clock - called - 0.35) / 0.95);
+      stoop = still || first ? down : stoop + (down - stoop) * (1 - Math.exp(-6 * dt));
+      return { down, stoop };
+    },
+  };
+}
+
 const UP = new Vector3(0, 1, 0);
 const grip = new Vector3();
 
