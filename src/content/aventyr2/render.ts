@@ -2076,25 +2076,18 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       };
     },
     flashlight: (spot) => {
+      // Stormkvällen's flashlight, lying switched off on the table: Pappa can't find it in the dark ("Var är ficklampan?
+      // Jag ser ingenting!"), and Elof lights it as he takes it (../../render/view.ts, `carriedLamp`). It lay there
+      // shining a long beam across the room, before the power cut too. Its red body and pale glass catch the candle.
       const group = new Group();
       const body = new Mesh(new CylinderGeometry(0.09, 0.09, 0.6, 10), solid('#c8372a', 0.5));
       body.rotation.z = Math.PI / 2;
       const head = new Mesh(new CylinderGeometry(0.15, 0.1, 0.18, 12), solid('#2a2a2a', 0.4));
       head.rotation.z = Math.PI / 2;
       head.position.x = 0.38;
-      // Its beam fades away from the lamp, and has no end to see.
-      const long = 7;
-      const cone = new ConeGeometry(1.5, long, 18, 5, true).rotateZ(Math.PI / 2).translate(long / 2 + 0.46, 0, 0);
-      const place = cone.getAttribute('position');
-      const fade = new Float32Array(place.count * 3);
-      // Clamped: at the cone's far ring a float32 rounds a hair past the end, and a negative base to 1.6 is NaN, which the
-      // lens smears into a black blob in the room.
-      for (let i = 0; i < place.count; i++) fade.fill(Math.max(0, 1 - (place.getX(i) - 0.46) / long) ** 1.6, i * 3, i * 3 + 3);
-      cone.setAttribute('color', new Float32BufferAttribute(fade, 3));
-      const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.2, depthWrite: false, side: DoubleSide, blending: AdditiveBlending }));
-      const light = glow('#fff0c0', 1.2, 0.9);
-      light.position.x = 0.48;
-      group.add(body, head, beam, light);
+      const glass = new Mesh(new CircleGeometry(0.13, 14).rotateY(Math.PI / 2), new MeshStandardMaterial({ color: '#dfe6ea', roughness: 0.15, metalness: 0.3 }));
+      glass.position.x = 0.475;
+      group.add(body, head, glass);
       return standing(spot, group);
     },
     'tiny-cap': (spot) => {

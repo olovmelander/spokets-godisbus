@@ -86,8 +86,11 @@ const DOLL = { x: 20.45 };
 
 // Where each of the family is as the evening opens, clear of each other, the table and its chairs. The table is 5 long
 // and 2.2 deep (x 11.5 to 16.5, z -2.6 to -0.4), with a chair behind it and one at its right end (`furniture`).
-/** Mamma behind the table, and the candle she lights, near its back edge where she reaches it. */
-const MAMMA = { x: 12.4, z: -3.3 };
+/**
+ * Mamma behind the table, and the candle she lights, near its back edge where she reaches it. A step along from Pappa: at
+ * 12.4 she stood half behind him in the opening picture as she lit it and said so.
+ */
+const MAMMA = { x: 12.9, z: -3.4 };
 const CANDLE = { x: 13, y: 1.65, z: -2.1 };
 /** When the candle catches in the dark, a moment after the lamps went out: her hand is at its wick. */
 const CANDLE_CATCHES = 4.2;
@@ -182,7 +185,8 @@ const SCENES: SceneDef[] = [
     ],
     stage: {
       shots: [
-        { at: 0, x: 6.4, y: 4.6, height: 5.6, width: 8.4, move: 0.6 },
+        // The shelf and the two on it, and him under it as he says goodnight: his head and shoulders, not his crown.
+        { at: 0, x: 6.4, y: 4.1, height: 6.2, width: 8.4, move: 0.6 },
         { at: 1.4, x: 8.0, y: 5.6, height: 4.4, width: 7, move: 0.4 },
         { at: 4.2, x: 7.2, y: 3.6, height: 7, width: 11, move: 1.2 },
       ],
