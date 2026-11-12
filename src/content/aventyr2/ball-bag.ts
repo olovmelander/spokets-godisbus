@@ -6,7 +6,7 @@ import { footballGeometry, footballMaterial } from '../../render/football';
  * The ball bag at the foot of Olympia's fence, torn open by the wind (../chapters/olympia.ts): the small balls the wind
  * rolls across the pitch come out of it. It was drawn as one football as big as the one in the puzzle, a radius of 0.75,
  * which a child could take for something to kick; the rolling balls are smaller (0.45). Now it is a dark net sack lying
- * on its side, torn open towards the pitch, with three of the small balls still in it and one rolled out.
+ * on its side, torn open towards the pitch, with three of the small balls still in it and one half out of it.
  * Two draws: the net, and the balls.
  */
 
@@ -18,7 +18,8 @@ const BALLS = [
   { x: -0.55, y: BALL, z: 0.12 },
   { x: 0.25, y: BALL, z: -0.22 },
   { x: -0.2, y: BALL * 2.4, z: -0.02 },
-  { x: 2.15, y: BALL, z: 0.32 },
+  // Half out of the torn end, behind the path: lying on it, it looked like a ball about to roll at him.
+  { x: 1.3, y: BALL, z: -0.35 },
 ];
 
 /** A thin cord from one point to another. */
