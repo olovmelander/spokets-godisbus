@@ -141,8 +141,12 @@ describe('the family bathroom and first carving', () => {
         if (Math.abs(ghost.y - cloth.max.y) < .01 && Math.abs(ghost.z - HOME_LAYOUT.dining.z) < .01) tableLandings++;
       }
       expect(tableLandings).toBeGreaterThan(80);
+      // Moa stands across the table from him (12 November 2026: in front of it, she stood in the path he walks as a boy
+      // three times his small size), clear of its far edge and of the chair behind it.
       const moa = epilog.spots!.find(spot => spot.id === 'party:moa')!.standsAt!;
-      expect(moa.z - cloth.max.z).toBeGreaterThan(.6);
+      expect(cloth.min.z - moa.z).toBeGreaterThan(.45);
+      const back = HOME_LAYOUT.dining.chairs.back;
+      expect(Math.abs(moa.x - back.x)).toBeGreaterThan(1.2);
     } finally { vi.unstubAllGlobals(); }
   });
 

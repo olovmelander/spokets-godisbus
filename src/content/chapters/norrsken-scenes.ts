@@ -40,11 +40,13 @@ export const NORRSKEN_SCENES: readonly SceneDef[] = [{
     { at: 10.2, who: 'mamma', line: 'nrGoHome' },
   ],
   stage: {
+    // Mamma and Pappa stand 5.2 EL tall: at a picture 6.4 high round 2, Mamma's face was under the scene's top bar
+    // while she asked "Elof! Hur mår du?", and so was Pappa's as he came. A little higher, their faces are in it too.
     shots: [
       { at: 0, x: 27.6, y: 1.8, height: 6, width: 7.6, move: .6 },
-      { at: 1.1, x: 28.8, y: 2, height: 6.4, width: 9.2, move: 1 },
-      { at: 4, x: 27.7, y: 2.1, height: 5.4, width: 6.6, move: .7 },
-      { at: 9.8, x: 28.6, y: 2, height: 6.4, width: 9, move: .6 },
+      { at: 1.1, x: 28.8, y: 2.7, height: 7, width: 9.2, move: 1 },
+      { at: 4, x: 27.7, y: 2.6, height: 6.4, width: 6.6, move: .7 },
+      { at: 9.8, x: 28.6, y: 2.7, height: 7, width: 9, move: .6 },
     ],
     actors: {
       mamma: [
@@ -69,9 +71,10 @@ export const NORRSKEN_SCENES: readonly SceneDef[] = [{
         { at: 9, act: 'nod' },
         { at: 10.8, away: true },
       ],
+      // Behind the path like the others: at 0.3 EL back, Elof, grown big, walked through him on his way to the way home.
       bertil: [
-        { at: 0, x: 45, y: 0, z: -.3, face: .5, act: 'stand', away: false },
-        { at: 1.05, x: 32.1, z: -.3, move: 1.85, act: 'walk' },
+        { at: 0, x: 45, y: 0, z: -1.1, face: .5, act: 'stand', away: false },
+        { at: 1.05, x: 32.1, z: -1.1, move: 1.85, act: 'walk' },
         { at: 3, act: 'watch', face: .42, aim: { x: 26.6, y: 2.5, z: 0 } },
         { at: 8.7, act: 'cheer' },
         { at: 10.8, away: true },

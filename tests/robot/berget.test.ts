@@ -25,6 +25,25 @@ describe('Kapitel 4, Berget, in greybox', () => {
     });
   }
 
+  it('thanks the ghost standing at the top of the lace, so that what the memory showed him is said as it closes', () => {
+    // Said in passing, the thanks was still being read at the memory six EL on, and "Spöket vill hämta hem min trägubbe!"
+    // came four seconds after it, past the pine (12 November 2026).
+    const thanks = berget.scenes!.find((scene) => scene.id === 'berget:tack')!;
+    expect(thanks.hold).toBe(true);
+    expect(thanks.lines!.map((line) => line.id)).toEqual(['mountain:thanks']);
+    const game = new Game(berget);
+    let wasOffered = false, wasAhead = false, touched = -1, said = -1;
+    for (let frame = 0; frame < 60 * 300 && !game.sim.flags.has('goal'); frame++) {
+      const { x, y, ahead, offered } = decide(game, berget);
+      game.frame(1 / 60, { x, y, hopHeld: true }, { hop: ahead && !wasAhead, act: offered && !wasOffered, helper: false });
+      wasOffered = offered; wasAhead = ahead;
+      if (touched < 0 && game.sim.flags.has('memory')) touched = frame;
+      if (said < 0 && game.sim.said.includes('fetch')) said = frame;
+    }
+    expect(touched).toBeGreaterThan(0);
+    expect((said - touched) / 60).toBeLessThan(0.5);
+  });
+
   it('the robot leaves no candy behind: on the crane it steers through all of it', () => {
     const result = playThrough(60, berget, {}, 300);
     expect(result.missed.length, `it missed ${result.missed.map((i) => `${berget.candy[i]!.x},${berget.candy[i]!.y}`).join(' ')}`).toBe(0);

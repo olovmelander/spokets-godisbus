@@ -71,12 +71,15 @@ function reuse(game: Game, fps: number) {
 
 describe('Berget’s optional cairn lace loop', () => {
   it('preserves all original saved candy/checkpoint indices, the flight and the ghost’s lower lace', () => {
-    // Fingerprint from 09d931, before the loop. This guards every original position/order and flag.
+    // Fingerprint from 09d931, before the loop. This guards every original position/order and flag. Updated 12 November
+    // 2026, when three sweets on big candies' sticks (x 74, 95, 149.5) moved a little along the trail, keeping their
+    // indices: the count and the order are still checked here.
     const layout = { checkpoints: berget.checkpoints, candy: berget.candy,
       climbs: berget.climbs!.slice(0, 1).map(({ x, bottom, top, exit, needs }) => ({ x, bottom, top, exit, needs })), flight: berget.rides![0] };
     expect(berget.candy).toHaveLength(60);
     expect(berget.checkpoints).toHaveLength(5);
-    expect(createHash('sha256').update(JSON.stringify(layout)).digest('hex')).toBe('2f93e805d3d9dfd833c660fcab9b84a8053ec0534be16f73a93e55e2a5ac7b1f');
+    for (let i = 1; i < berget.candy.length; i++) if (berget.candy[i]!.x >= 72) expect(berget.candy[i]!.x).toBeGreaterThanOrEqual(berget.candy[i - 1]!.x);
+    expect(createHash('sha256').update(JSON.stringify(layout)).digest('hex')).toBe('0d0f10e3624be2c8f7dda376f3ab1c26f693430949017914165809b58515999d');
     expect(rope.bottom).toBeGreaterThan(31.4 + 0.5);
   });
 
