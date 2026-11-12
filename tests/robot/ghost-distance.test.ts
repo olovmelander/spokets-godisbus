@@ -28,6 +28,9 @@ describe('the whole chase keeps the ghost out of reach', () => {
           if (ghost && perch?.still && ghost.t >= 1 && perch.until !== undefined && !game.sim.flags.has(perch.until)) {
             rose = Math.max(rose, ghost.y - (seat ? seat.y + seat.def.height : perch.at.y));
             stillSamples++;
+          } else if (ghost && perch?.stays && ghost.t >= 1) {
+            // At the chapter's last place it stays with him to the end, behind the path (`stays`): he walks past it.
+            stillSamples++;
           } else if (ghost && !ghost.gone) {
             nearest = Math.min(nearest, Math.hypot(ghost.x - game.sim.curr.x, ghost.y - game.sim.curr.y));
             samples++;

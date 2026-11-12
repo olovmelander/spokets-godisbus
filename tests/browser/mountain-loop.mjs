@@ -31,6 +31,22 @@ async function until(read, accepts, name, timeout = 15000) {
   do { value = await read(); if (accepts(value)) return value; await sleep(20); } while (Date.now() < end);
   assert.fail(`${name}: timed out; last ${JSON.stringify(value)}`);
 }
+/**
+ * Waits for `accepts` until `seconds` of play have passed (120 steps a second), however slowly the game is drawn: on
+ * GitHub, in software, it has run at a tenth of real time. A game that stands still fails after four minutes.
+ */
+async function untilPlayed(read, accepts, name, seconds, timeout = 240000) {
+  const end = Date.now() + timeout;
+  const from = (await read()).steps;
+  let value;
+  do {
+    value = await read();
+    if (accepts(value)) return value;
+    if ((value.steps - from) / 120 > seconds) break;
+    await sleep(20);
+  } while (Date.now() < end);
+  assert.fail(`${name}: not within ${seconds} s of play; last ${JSON.stringify(value)}`);
+}
 async function ready(page) {
   await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
 }
@@ -134,9 +150,8 @@ try {
     await page.keyboard.up('ArrowRight'); await page.keyboard.press('e');
     await until(state, (s) => s.flags.includes('lift'), 'Lugnt: helps the actual ghost');
     await page.keyboard.down('ArrowRight');
-    // The walk to the lace and the climb take about 5 s of play. Drawn in software the game can run at a quarter of
-    // real time, so this waits as long as the climb back above does; the check is that he gets up, not how fast.
-    await until(state, (s) => s.y > 31.3 && s.grounded, 'Lugnt: existing lace climb', 60000);
+    // The walk to the lace and the climb take about 5 s of play; the check is that he gets up, not how fast.
+    await untilPlayed(state, (s) => s.y > 31.3 && s.grounded, 'Lugnt: existing lace climb', 20);
     await page.keyboard.up('ArrowRight');
     const lifted = await state();
     check('Lugnt: main cooperation needs no Hoppa and never grants optional prize', lifted.bubbles === 0 && lifted.blown === 0 && !lifted.flags.includes('found:chokladpralin'));

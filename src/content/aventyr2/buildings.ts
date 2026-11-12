@@ -148,8 +148,8 @@ function rod(a: Vector3, b: Vector3, r: number, colour: string, sides = 8): Buff
  * frame of white tubes whose tops are at its height, with the bar he walks along its middle (./render.ts, `bars:
  * 'goal'`). Its near side stands in front of the path, and he walks in at its mouth, inside it between its two sides,
  * and out under its back net, which the storm has torn loose where he goes through (Olov, 12 November 2026: "vi ska gå
- * inne i målet inte bredvid"). Its cords are fine, as the models' are (art/blender/a2-yard.py): those nets slope down
- * from the crossbar, and the top of this one is walked on.
+ * inne i målet inte bredvid"). It is drawn until the yard kit's `fotbollsmal` is in, the same box goal modelled
+ * (art/blender/a2-yard.py, `box_goal`), and wherever that model cannot be loaded.
  */
 function boxGoal(def: BuildingDef) {
   const depth = def.width ?? 7;
@@ -968,12 +968,14 @@ export function building(def: BuildingDef): Building {
     group.userData.disposeFallback = true;
     carGlass(group, true, 1 / (group.userData.fit as number));
   }
-  // Olympia's goals: the training goal, and the big one at the far end. A box goal is the one built here: the models'
-  // nets slope down from the crossbar, and he walks along the top of this one.
-  if (def.kind === 'goal' && !def.level) {
+  // Olympia's goals, both models from the yard kit (art/blender/a2-yard.py), each torn open at the back where the path
+  // goes out: the training goal a box goal 6 high, level on top for him to walk on (the box built here stands in for it
+  // until the model is in), and the big one at the far end, 16 high. Olov, 12 November 2026: "Vi kan göra båda stora
+  // målen på samma sätt på Olympia?"
+  if (def.kind === 'goal') {
     const big = (def.height ?? 8) > 12;
     group.userData.model = big ? 'fotbollsmal-stort' : 'fotbollsmal';
-    group.userData.fit = (def.height ?? 8) / (big ? 16 : 8);
+    group.userData.fit = (def.height ?? (big ? 16 : 6)) / (big ? 16 : 6);
   }
   const yard = YARD[def.kind];
   if (yard) {

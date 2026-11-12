@@ -133,6 +133,9 @@ const CINEMA = 0.8;
 const POOL_EYE = 1.6;
 /** The rides that lie ready where he boards them, in either adventure. */
 const WAITS_READY = new Set(['boot', 'umbrella', 'raft', 'leaf']);
+/** How far a flying crane's body hangs under his feet (./crane.ts), and how long it takes to fly on once he is down. */
+const CRANE_BELLY = 1.05;
+const CRANE_AWAY = 1.8;
 const BROOK_EYE = 3.0;
 /** A long lens from the side flattens depth the way a macro lens does (plan §5.2). */
 const FOV = 30;
@@ -431,7 +434,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       drawnWhile(prop, false);
       scene.add(prop);
     }
-    return { ride, prop, wasRidden: false, landed: Infinity };
+    return { ride, prop, wasRidden: false, landed: Infinity, setDown: new Vector3() };
   });
   const moverMeshes = buildMovers(chapter);
   /** The movers that go over the water: rafts, logs and boards, which it mirrors (./water.ts). */
@@ -1336,7 +1339,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     for (const c of carriers) {
       if (!c.prop) continue;
       if (c === carrier) { c.wasRidden = true; c.landed = 0; }
-      else if (c.wasRidden) { c.wasRidden = false; c.landed = 0; }
+      else if (c.wasRidden) { c.wasRidden = false; c.landed = 0; c.setDown.copy(c.prop.position); }
       else c.landed += dt;
       // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
       // Granskogen, and in the storm Bertil's boot on the flooded lawn ("Min stövel blir din båt. Kliv i!"), Moa's
@@ -1348,16 +1351,23 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const scored = football && flags.has(chapter.spots?.find(spot => spot.ride === c.ride.id)?.id ?? '') && x >= c.ride.to.x - 0.1 && c !== carrier;
       // Roll away into the goal promptly, so his soft step down clears the ball instead of passing through it.
       const rolling = scored ? 2 * smooth(c.landed / 0.4) : 0;
-      const propSize = waiting || scored ? 1 : c === carrier ? football ? Math.min(1, curr.t / 0.05) : size : 0;
+      // A crane sets him down and flies on, up and away: it shrank into the rock under him and was gone (PR #242's audit).
+      const crane = c.ride.look === 'crane';
+      const away = crane && c !== carrier && !calmStory && c.landed < CRANE_AWAY ? c.landed / CRANE_AWAY : -1;
+      const propSize = waiting || scored || away >= 0 ? 1 : c === carrier ? football || crane ? Math.min(1, curr.t / 0.05) : size : 0;
       c.prop.scale.setScalar(propSize);
       drawnWhile(c.prop, propSize > 0);
       c.prop.position.set(waiting ? c.ride.from.x : scored ? c.ride.to.x + rolling : x, (waiting ? c.ride.from.y : scored ? c.ride.to.y : y) - 0.05, scored ? -rolling : 0);
+      // Coming down to the ground its body stays over it, and he steps down off its back; then it flies on from there.
+      if (crane && c === carrier) c.prop.position.y = Math.max(c.prop.position.y, heightOfGroundAt(chapter, x) + CRANE_BELLY);
+      // It rises away behind him, not through him where he has just stepped down.
+      if (away >= 0) c.prop.position.set(c.setDown.x + away * 6 + away * away * 4, c.setDown.y + away * 1.2 + away * away * 7, -1.2 * smooth(Math.min(1, away * 4)) - away * 2);
       // A boat lies level on the water; a bird points the way it flies, and beats its wings.
       // A bird beats with a strong downstroke and a quicker upstroke, glides between bursts, and nods with each beat;
       // its wing tips follow a little behind.
       const wings = wingbeat(clock, 1.1, { every: 6.5, glide: 1.8, held: -0.2 });
       const flying = c.ride.look !== 'cap' && !waiting;
-      c.prop.rotation.z = football ? 0 : !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : heading * 0.6 + wings.pitch;
+      c.prop.rotation.z = football ? 0 : !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : (away >= 0 ? 0.35 * smooth(away * 3) : heading * 0.6) + wings.pitch;
       if (football && c.prop.children[0]) c.prop.children[0].rotation.z = -(c.prop.position.x - c.ride.from.x) / 0.8;
       const beat = wings.lift * 0.75;
       const lag = wingbeat(clock - 0.12, 1.1, { every: 6.5, glide: 1.8, held: -0.2 }).lift * 0.75;
@@ -1958,7 +1968,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // same chase clearance, without advancing the ghost past a puzzle's waiting perch.
       // A scene that places it (Berget's lift, in his hands) is not pushed off, nor is one that waits still on
       // something for his help, as in the simulation (the leaf in the eddy, the foot of the cliff).
-      const waitsStill = !hopping && perch?.still === true && perch.until !== undefined && !flags.has(perch.until);
+      const waitsStill = !hopping && (perch?.stays === true || (perch?.still === true && perch.until !== undefined && !flags.has(perch.until)));
       // On the leaf afloat in the eddy, it rides as high as the leaf is drawn.
       if (waitsStill && perch?.on !== undefined && !staged) ghostPlace.position.y += eddyLift;
       if (!chapter.ghostMeet && !staged && !waitsStill) {

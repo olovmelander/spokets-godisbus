@@ -55,16 +55,18 @@ const FENCE_UP: Climb = { x: 15.75, bottom: 0, top: FENCE.top, exit: 1, look: 'h
 
 /**
  * The balls the wind rolls across the small pitch: the youngest teams' small balls, out of their torn ball bag at
- * the foot of the fence. They set off once he is well past the bag, the first a second after the beat that shows
- * them, and then one every one and a half seconds, more than twice as fast as he runs: always from behind him, and a
- * held jump clears each. They are smaller than the big football of the puzzle: a ball of that size (radius 0.75)
- * rolls higher under him than any jump lifts his legs. The turf is level and whole from the bag to well past the
- * stretch's end.
+ * the foot of the fence. They set off once he is well past the bag, the first a second after the line that shows
+ * them is said, and then one every one and a half seconds, more than twice as fast as he runs: always from behind
+ * him, and a held jump clears each. A child who runs on still meets them all the way (Olov, 12 November 2026: "om man
+ * springer full fart frammåt så hinner inte bollarna komma"): a ball sets off no farther than `behind` back from him,
+ * out of the picture, so it reaches him within two and a half seconds even at a run. They are smaller than the big football of the
+ * puzzle: a ball of that size (radius 0.75) rolls higher under him than any jump lifts his legs. The turf is level and
+ * whole from the bag to well past the stretch's end.
  */
-const BALLS = { from: 17.8, to: 60, y: 0, every: 4.5, speed: 8.5, radius: 0.45, candy: 1.05 };
+const BALLS = { from: 17.8, to: 60, y: 0, every: 4.5, speed: 8.5, radius: 0.45, candy: 1.05, behind: 12 };
 const ROLLERS: Roller[] = [1, 2.5, 4].map((first) => ({
   from: { x: BALLS.from, y: BALLS.y }, to: { x: BALLS.to, y: BALLS.y }, every: BALLS.every, first, speed: BALLS.speed,
-  radius: BALLS.radius, needs: 'beat:ol:wind', until: 'beat:ol:phew',
+  radius: BALLS.radius, needs: 'beat:ol:wind', until: 'beat:ol:phew', behind: BALLS.behind,
 }));
 
 /** A place to stand, from one side to the other, at one height. */

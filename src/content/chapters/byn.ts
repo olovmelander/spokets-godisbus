@@ -236,7 +236,8 @@ export const byn: ChapterData = {
     { at: { x: 119.6, y: 3.3 }, near: 2.2 },
     { at: { x: 130, y: 3.3 } },
     { at: { x: 141, y: 3.3 } },
-    { at: { x: 156, y: 3.3 }, near: 2.2 },
+    // At the bag they share it stays with him to the end, a little behind the path (it vanished at x 152; PR #242's audit).
+    { at: { x: 156, y: 3.3 }, z: -0.45, stays: true },
   ],
   beats: [
     { id: 'again', at: 1.4, who: 'elof', line: 'again' },

@@ -173,8 +173,11 @@ try {
   await page.keyboard.press('KeyE');
   await page.locator('[data-sweet="gelehallon"]').tap();
   await page.locator('[data-friend="spoket"]').tap();
-  const namingDeadline = Date.now() + 30000;
-  while (!(await state()).flags.includes('beat:named') && Date.now() < namingDeadline) {
+  // Klonk's thanks and its name take about 8 s of play. Drawn in software on GitHub the game has run at a tenth of real
+  // time, so the limit is counted in play (120 steps a second), with a long one on the clock for a game that stands still.
+  const namingFrom = (await state()).steps;
+  const namingDeadline = Date.now() + 240000;
+  while (!(await state()).flags.includes('beat:named') && ((await state()).steps - namingFrom) / 120 < 30 && Date.now() < namingDeadline) {
     if ((await state()).storyReading) await continueDialogue(page);
     await page.waitForTimeout(40);
   }

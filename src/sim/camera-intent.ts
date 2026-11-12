@@ -1,4 +1,4 @@
-import { CAMERA_LEAD, FALL_LIMIT } from './constants';
+import { CAMERA_LEAD, FALL_LIMIT, STEP_HEIGHT } from './constants';
 import type { CameraZone, PlayerState } from './types';
 
 /** Where the camera wants to look, and how wide: 1 is the usual picture, more shows more of the place. */
@@ -26,7 +26,11 @@ export function cameraIntent(player: PlayerState, zones: readonly CameraZone[] =
   if (player.hook) return { x: player.hook.x + player.facing * 1.2, y: player.standY + lift, zoom };
   // On a ride the picture flies with him.
   if (player.mode === 'ride') return { x: player.x + player.facing * 3, y: player.y - 2 + lift, zoom };
-  const below = player.y - player.groundY > FALL_LIMIT ? player.standY : player.groundY;
+  // Standing, the ground he is over is what he stands on: straight down from his middle, over a crack narrower than he
+  // is (Norrsken's), it was the bottom of the crack, and the picture sank into the rock (PR #242).
+  const drop = player.y - player.groundY;
+  const standing = Math.abs(player.y - player.standY) < 0.02 && Math.abs(player.vy) < 0.05;
+  const below = standing && drop > STEP_HEIGHT ? player.y : drop > FALL_LIMIT ? player.standY : player.groundY;
   const ground = Math.max(below, player.y - 3);
   return { x: player.x + player.facing * (zone?.lead ?? CAMERA_LEAD), y: ground + lift, zoom };
 }

@@ -320,6 +320,11 @@ export interface Roller {
   needs?: string;
   /** A local story beat can end the hazard before a return path becomes a puzzle hub. */
   until?: string;
+  /**
+   * Cones that come from behind him and must reach him, however fast he runs: each sets off no farther than this
+   * behind where he is then (out of the picture), and from the rail's start while he is nearer it. The rhythm stays.
+   */
+  behind?: number;
 }
 
 /**
@@ -335,6 +340,11 @@ export interface GhostPerch {
    */
   on?: string;
   at: Vec;
+  /**
+   * The chapter's last place, where it stays with him to the end and never hops away (Berget's pine, Byn's shop bag):
+   * it vanished a few steps short of the goal. Give it a `z` behind the play plane, since he walks past it.
+   */
+  stays?: boolean;
   /** Takeoff distance, default 4 EL. Only close meetings may use a smaller value. */
   near?: number;
   /** Candy spilled on departure. Close meetings may instead offer Ta! and set it when grabbed. */

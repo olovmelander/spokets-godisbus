@@ -224,7 +224,10 @@ export const epilog: ChapterData = {
     // (`cues`): the klonk as it stands up on the table, and the name as it has come down and looks at him.
     { id: 'klonk-table', on: 'partied', until: 'knife', seconds: 7.2, quiet: true,
       cues: [{ at: KLONK_UP, flag: 'party:klonk-up' }, { at: KLONK_DOWN, flag: 'party:klonk-down' }],
-      stage: { actors: { ghost: [
+      // The picture takes in the table, then the floor it runs along: "Klonk, klonk!" and the naming are seen (the play
+      // camera stayed on Elof, up to eleven EL off; PR #242's audit). He is free, and walking away takes the picture back.
+      stage: { shots: [{ at: 0, x: 18.4, y: 2.4, height: 6.4, width: 15, move: .8 }, { at: 4.4, x: 22.8, y: 2.2, height: 6, width: 12.4, move: 1.4 }],
+        actors: { ghost: [
       { at: 0, x: 23.4, y: 0, z: 0, move: 0.01, act: 'hop' },
       // Up over the front edge, clear of the chair at the end; both landings happen above the tabletop.
       { at: .05, x: TABLE_HOP.right + .8, y: TABLE_HOP.top + .42, z: 1.65, move: 1.15 },
@@ -281,6 +284,9 @@ export const epilog: ChapterData = {
   ],
   goalX: 34.2,
   goalNeeds: 'bedtime',
+  // Pappa, given his candy, walks over to the carving once Elof has the knife (`goesTo`): about 4.3 s from x 11 at his
+  // pace, and a moment to kneel. His word about the knife, and the first cut, wait until he is there.
+  later: [{ flag: 'knife:pappa', after: 'knife', seconds: 4.5 }],
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
@@ -304,7 +310,8 @@ export const epilog: ChapterData = {
     // Pappa kneels beside him with a piece of linden and a knife: it waits until the ghost has its name.
     { id: 'knife', look: 'sign', at: { x: 29, y: 0 }, verb: 'take', word: 'takeKnife', needs: 'beat:named' },
     // Three strokes, each away from his body, and two dots of paint.
-    { id: 'cut1', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'knife', story: 'carve' },
+    // He carves once Pappa is beside him (`knife:pappa`), as Pappa tells him how to hold the knife.
+    { id: 'cut1', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'knife:pappa', story: 'carve' },
     { id: 'cut2', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut1', story: 'carve' },
     { id: 'cut3', at: { x: 32, y: 0 }, verb: 'turn', word: 'carve', needs: 'cut2', story: 'carve' },
     { id: 'dots', at: { x: 32, y: 0 }, verb: 'give', word: 'paintEyes', needs: 'cut3', story: 'paint' },
@@ -356,7 +363,8 @@ export const epilog: ChapterData = {
     // Said in the naming's scene (`klonk-table`), at its two moments.
     { id: 'klonk', on: 'party:klonk-up', who: 'spoket', line: 'klonk' },
     { id: 'named', on: 'party:klonk-down', who: 'elof', line: 'named' },
-    { id: 'away', on: 'knife', who: 'pappa', line: 'away' },
+    // Said when he has come over and knelt beside him (it was said from across the room; PR #242's audit).
+    { id: 'away', on: 'knife:pappa', who: 'pappa', line: 'away' },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],
   candy: [...row(3, 33, 0)],
