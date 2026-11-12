@@ -107,8 +107,10 @@ cup of cocoa in Morgonen efter.
 
 ### Prolog: Stormkvällen (home)
 
-1. **Lördagskväll.** The time card. Elof is a boy among small things. Rain lashes the windows; the lights go out.
-   Mamma lights candles, Pappa finds the flashlight.
+1. **Lördagskväll.** The time card. Elof is a boy among small things. Rain lashes the windows; the room is lit by its
+   lamp over the table, which flickers and goes out with the power (12 November 2026). In the dark Mamma lights the
+   candle on the table, unlit until then; the TV is dark, and its game is not offered all evening. Pappa finds the
+   flashlight, and shines it out through the window after the figures as he pulls it to.
 2. **Godnatt.** At Pappa's shelf Elof says goodnight to his own little trägubbe and the old one.
 3. **Fönstret slår upp** (held scene). The window by the shelf rattles on its hook all evening. A gust bursts it:
    its two halves fly outward, as Swedish windows open, and bang in the wind, the hook hanging loose (6 November
@@ -257,6 +259,10 @@ Själevadsfjärden.
    puts both figures back on the shelf.
 2. With Pappa he turns the new window latch: "Nu blåser ingen bort."
 3. The naming: "Du ska heta Fjun!" Klonk: *klonk, klonk*. The last card: *Ingen ska behöva vara ensam i mörkret.*
+4. The cup of cocoa, and his thanks at the table (12 November 2026, scene `tack`): each of them for what they did in
+   the night, Bertil's boot, Pappa's lamp and scarf, Moa's umbrella, Mamma's board, mormor's lantern and morfar's
+   ladder, and Klonk's last star. Then down the room past the TV (which may be played) to the door in the hall, where
+   they wave to him, and on the shelf the little one winks one eye, as it blinked at the end of the first adventure.
 
 ## What is new to play
 

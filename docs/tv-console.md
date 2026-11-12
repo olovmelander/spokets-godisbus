@@ -1,7 +1,9 @@
 # Godisracet – Varggropen
 
 An optional game at the television in Prolog, Godiskalaset, Stormkvällen and Morgonen. Walk near the TV and
-choose **Spela på TV:n**. An existing story interaction keeps priority on the ordinary action button;
+choose **Spela på TV:n**. Not in Stormkvällen once the power has gone (Olov, 12 November 2026): the screen is dark
+and the game is not offered (`src/content/home-power.ts`). In Morgonen the TV stands on the way to the door where the
+story ends, so it can be played before the end. An existing story interaction keeps priority on the ordinary action button;
 the TV has its own visible choice where the two overlap. Held story scenes finish before the console opens.
 
 The console preserves the live adventure rather than loading another chapter. The house's simulation,

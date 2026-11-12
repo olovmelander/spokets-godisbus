@@ -35,7 +35,12 @@ import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { otterLife } from './otter';
 import { RAPID_LANE, RAPID_STONES, riverStones } from './river-stones';
-import { morgonen } from './chapters/morgonen';
+import { morgonen, WINK } from './chapters/morgonen';
+import { paintedBlink } from '../../render/epilogue-stage';
+import type { SceneFrame } from '../../sim/scene';
+import { PENDANT } from './chapters/stormkvall';
+import { createPowerCut, LAMPLIT, LAMP_COLOUR } from '../../render/power-cut';
+import { CANDLES_LIT, POWER_CHAPTER } from '../home-power';
 import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -86,7 +91,7 @@ function scatter(seed: number): () => number {
 }
 
 /** Where Elof is, for those who look at him, how far the story has come, and whether the picture keeps still. */
-const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean; y: number; riding: boolean } = { x: 0, flags: null, still: false, y: 0, riding: false };
+const elof: { x: number; flags: ReadonlySet<string> | null; still: boolean; y: number; riding: boolean; scene?: SceneFrame | null } = { x: 0, flags: null, still: false, y: 0, riding: false };
 /** The chapter in the picture, for the things on rails that draw their own way there: Flärken's stone and bark. */
 const playing: { chapter: ChapterData | null } = { chapter: null };
 /** For the tests: where the storm says which chapter is in the picture. */
@@ -453,7 +458,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   // Out of the storm, the morning after, there is none of it to draw; but the pack's looks there still follow the story
   // (the new latch hooked, ../chapters/morgonen.ts).
   if (!storm && dim === undefined) {
-    return chapter.id === 'morgonen' ? { update({ x, flags, still }: ExtraFrame) { elof.x = x; elof.flags = flags; elof.still = still; } } : null;
+    return chapter.id === 'morgonen' ? { update({ x, flags, still, scene }: ExtraFrame) { elof.x = x; elof.flags = flags; elof.still = still; elof.scene = scene; } } : null;
   }
   const group = new Group();
   group.name = 'storm';
@@ -520,6 +525,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   // A home with a door out into the storm: the room's warm lamps stay behind him, and the night has the light.
   const doorway = rain > 0 ? chapter.outdoors : undefined;
   const room = { sky: hemisphere.color.clone(), ground: hemisphere.groundColor.clone(), sun: sun.color.clone() };
+  // The room's lamps on the evening of the storm, until the power goes (../../render/power-cut.ts).
+  const powerCut = chapter.id === POWER_CHAPTER ? createPowerCut(chapter.id, PENDANT, scene) : null;
+  if (powerCut) group.add(powerCut.group);
   let nextFlash = (storm?.lightning ?? 0) * 0.5;
   let flashAt = -99;
   let flashBolt = 0;
@@ -835,6 +843,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       // How high he is, and whether he rides: the otter goes when he walks out to it (./otter.ts).
       elof.y = y;
       elof.riding = riding;
+      elof.scene = moment;
       drift?.(dt, still);
       // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him. Its downstroke is
       // the slower, and between bursts it glides on wings held near level (a positive turn lowers its wings).
@@ -1066,8 +1075,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       const baseHemisphere = (chapter.night ? hemisphere.intensity : base.hemisphere) * (1 - 0.3 * out);
       const baseSun = (chapter.night ? sun.intensity : base.sun) * (1 - 0.5 * out);
-      hemisphere.intensity = baseHemisphere * (1 + 1.1 * flash + 0.25 * calm);
-      sun.intensity = baseSun * (1 + 0.8 * flash + 0.3 * calm);
+      // While the room's lamps are on it is lit brighter and whiter than by the candles (indoors only).
+      const lamps = (powerCut?.update(flags, moment, still) ?? 0) * (1 - out);
+      if (lamps > 0) sun.color.lerp(LAMP_COLOUR, 0.5 * lamps);
+      hemisphere.intensity = baseHemisphere * (1 + 1.1 * flash + 0.25 * calm + LAMPLIT.hemisphere * lamps);
+      sun.intensity = baseSun * (1 + 0.8 * flash + 0.3 * calm + LAMPLIT.sun * lamps);
       if (dim !== undefined) scene.backgroundIntensity = Math.min(1, dim + 0.14 * calm + 0.6 * flash);
       for (const pane of panes) pane.color.setScalar(1 + 1.6 * flash);
       tint.copy(night).lerp(eyeTint, storm?.calm ? calm : 0).multiplyScalar(1 + 1.3 * flash);
@@ -1857,9 +1869,21 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // Its gladness starts when it has its cap back, from the ground, and grows in over a moment: no hop is caught
       // halfway up, and the trembling fades into the sway.
       let gladFor = 0;
-      // Home on the shelf the morning after (`home`), it sways happily with both feet planted on the shelf.
+      // Home on the shelf the morning after (`home`), it sways happily with both feet planted on the shelf; and in the last
+      // scene it winks one eye, as it blinked at the end of the first adventure (Olov, 12 November 2026: "och att
+      // lillgubben blinkar med ena ögat som i slutet på äventyr 1"). The carving's own painted eye when it has come.
       const home = spot.word === 'home';
+      const winking = figure.getObjectByName('little-eye:1');
+      let winkModel: ((blink: number) => void) | null = null;
+      if (home) figure.userData.onModelInstalled = (model: Group) => { winkModel = paintedBlink(model, 1); };
       return standing(spot, figure, (clock, dt) => {
+        if (home) {
+          const t = elof.scene?.id === WINK.scene ? (elof.scene.seconds - WINK.at) / WINK.seconds : -1;
+          // Shut quickly, held a moment, and open again.
+          const wink = t <= 0 || t >= 1 ? 0 : t < 0.25 ? smooth(t / 0.25) : t < 0.6 ? 1 : 1 - smooth((t - 0.6) / 0.4);
+          if (winking) winking.scale.y = 1 - wink * 0.92;
+          winkModel?.(wink);
+        }
         const glad = home || (elof.flags?.has('scene:motet') ?? false);
         gladFor = glad ? gladFor + dt : 0;
         const k = smooth(gladFor / 0.4);
@@ -1911,14 +1935,27 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     // The rain barrel's tap, its outlet out over the can towards the ditch: its water is the pour's (render/rain-barrel.ts).
     tap: (spot) => barrelTap(spot),
     candle: (spot) => {
+      // Mamma's candle on the evening of the storm: on the table from the start, its wick black, until it catches in the
+      // dark after the power has gone (`CANDLES_LIT`, ../home-power.ts). Its flame grows up from the wick as it catches.
       const group = new Group();
       const wax = new Mesh(new CylinderGeometry(0.09, 0.1, 0.42, 10), solid('#f4ecd8', 0.7));
       wax.position.y = 0.21;
+      const wick = new Mesh(new CylinderGeometry(0.012, 0.012, 0.07, 5), solid('#2a2420', 0.9));
+      wick.position.y = 0.45;
       const flame = ball(0.05, new MeshBasicMaterial({ color: '#ffd27a' }), 0, 0.5, 0, [0.7, 1.4, 0.7]);
       const light = glow('#ffc070', 1.1, 0.7);
       light.position.y = 0.5;
-      group.add(wax, flame, light);
-      return standing(spot, group, (clock) => { flame.scale.y = 1.4 + 0.2 * Math.sin(clock * 13); });
+      group.add(wax, wick, flame, light);
+      let burning = 0;
+      return standing(spot, group, (clock, dt) => {
+        const lit = elof.flags?.has(CANDLES_LIT) ?? false;
+        burning = !lit ? 0 : elof.still ? 1 : Math.min(1, burning + dt / 0.6);
+        const k = smooth(burning);
+        flame.visible = light.visible = k > 0.01;
+        flame.scale.set(0.7 * k, (1.4 + 0.2 * Math.sin(clock * 13)) * k, 0.7 * k);
+        flame.position.y = 0.46 + 0.04 * k;
+        (light.material as MeshBasicMaterial).opacity = 0.7 * k;
+      });
     },
     cocoa: (spot) => {
       // Sunday's cup of hot chocolate ("Varm choklad efter stormen"): a white mug with a red heart, brown to the

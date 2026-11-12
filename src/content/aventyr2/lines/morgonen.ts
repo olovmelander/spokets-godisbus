@@ -21,6 +21,14 @@ export const words: ChapterWords = {
     moAnswerLine: 'Du lyste för mig. Jag lyste för dig.',
     moCupLine: 'Varm choklad efter stormen.',
     moAllLine: 'Alla är hemma. Det är bäst av allt.',
+    // His thanks at the table, each for what they did in the night (the scene `tack`).
+    moThanksAll: 'Tack för all hjälp i natt, allihop!',
+    moThanksBertil: 'Bertil, din stövel blev min båt!',
+    moThanksPappa: 'Pappa, du lyste och lyfte mig!',
+    moThanksMoa: 'Moa, ditt paraply bar mig över.',
+    moThanksMamma: 'Mamma, du höll brädan stilla åt mig.',
+    moThanksGrand: 'Och mormors lykta och morfars stege!',
+    moThanksKlonk: 'Och Klonk, du gav mig din sista stjärna.',
   },
   verbs: {
     moPutOld: 'Ställ upp trägubben',
@@ -40,5 +48,5 @@ export const words: ChapterWords = {
     moFamily: 'Hela familjen äter frukost, och mormor och morfar är med.',
     moPappa: 'Pappa har lagat fönstret.',
   },
-  moments: { frukost: 'Morgonen efter', fjun: 'Ett namn', kakao: 'Varm choklad' },
+  moments: { frukost: 'Morgonen efter', fjun: 'Ett namn', kakao: 'Varm choklad', tack: 'Tack, allihop' },
 };

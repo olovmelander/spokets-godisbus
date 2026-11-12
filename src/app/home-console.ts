@@ -1,12 +1,16 @@
 import { HOME_LAYOUT } from '../content/home-layout';
 import type { ChapterData, PlayerState } from '../sim/types';
+import { powerGone } from '../content/home-power';
 
 const HOME_CHAPTERS = new Set(['prolog', 'epilog', 'stormkvall', 'morgonen']);
 
-/** A repeatable optional activity, never a puzzle flag or a new chapter. */
+/**
+ * A repeatable optional activity, never a puzzle flag or a new chapter. Not while the power is out on the evening of the
+ * storm (Olov, 12 November 2026: "Man ska inte kunna spela på TV:n när strömmen gått."): `flags` are the story's.
+ */
 export function homeConsoleAvailable(chapter: Pick<ChapterData, 'id' | 'place' | 'outdoors'>,
-  player: Pick<PlayerState, 'x' | 'y' | 'grounded' | 'mode'>, busy: boolean): boolean {
-  return !busy && HOME_CHAPTERS.has(chapter.id) && chapter.place === 'home'
+  player: Pick<PlayerState, 'x' | 'y' | 'grounded' | 'mode'>, busy: boolean, flags: ReadonlySet<string> = new Set()): boolean {
+  return !busy && HOME_CHAPTERS.has(chapter.id) && chapter.place === 'home' && !powerGone(chapter.id, flags)
     && player.x < (chapter.outdoors ?? Infinity) && player.grounded && player.mode === 'free'
     && Math.abs(player.x - HOME_LAYOUT.television.x) <= 2.8 && player.y >= -.15 && player.y <= 1.2;
 }

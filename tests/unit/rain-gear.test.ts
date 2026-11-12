@@ -261,6 +261,38 @@ describe('the gear going on, on a body', () => {
     }
   });
 
+  it('ends the coat in one level hem round both thighs, not in teeth of whole triangles', () => {
+    // Olov, 12 November 2026: "Elofs regnjacka ser lite taggig ut längst ner." The figure's thighs run from 0.555 to 1.005
+    // high; the hem is 55 % up them. Each of a thigh's four sides is drawn down to the hem itself, in a level line.
+    const HEM = 0.555 + 0.45 * 0.55;
+    const shells = buildShells(figure(), 5.2)!;
+    const g = shells.coat.geometry, p = g.getAttribute('position'), hem = g.getAttribute('gearHem'), n = g.getAttribute('normal');
+    const bone = g.getAttribute('skinIndex'), names = shells.coat.skeleton.bones.map((one) => one.name);
+    const lowest = new Map<string, number>();
+    for (let t = 0; t < p.count; t += 3) {
+      const ids = [t, t + 1, t + 2];
+      // Every triangle of the coat reaches above the hem: none hangs wholly below it.
+      expect(Math.max(...ids.map((i) => hem.getX(i)))).toBeGreaterThan(0);
+      const thigh = ids.map((i) => names[bone.getX(i)]!).find((name) => name.startsWith('thigh'));
+      if (!thigh || Math.abs(n.getY(t)) > 0.5) continue;
+      // How low this triangle is drawn: its lowest corner, or where its edges cross the hem.
+      let low = Infinity;
+      for (const [a, b] of [[t, t + 1], [t + 1, t + 2], [t + 2, t]] as const) {
+        const ha = hem.getX(a), hb = hem.getX(b);
+        if (ha >= 0) low = Math.min(low, p.getY(a));
+        if ((ha < 0) !== (hb < 0)) low = Math.min(low, p.getY(a) + (p.getY(b) - p.getY(a)) * ha / (ha - hb));
+      }
+      const side = `${thigh} ${n.getX(t).toFixed(1)},${n.getZ(t).toFixed(1)}`;
+      lowest.set(side, Math.min(lowest.get(side) ?? Infinity, low));
+    }
+    expect(lowest.size).toBe(8);
+    for (const [side, low] of lowest) expect(low, side).toBeCloseTo(HEM, 6);
+    // The sleeves are never cut by it, however low the hands hang at rest.
+    const cuffs = Array.from({ length: p.count }, (_, i) => i).filter((i) => /arm_/.test(names[bone.getX(i)]!));
+    expect(cuffs.length).toBeGreaterThan(0);
+    expect(cuffs.every((i) => hem.getX(i) > 0)).toBe(true);
+  });
+
   it('draws each piece as far as it is on, and hides none of it once it is all on', () => {
     const shells = buildShells(figure(), 5.2)!;
     wearShells(shells, null);

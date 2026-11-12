@@ -129,6 +129,11 @@ export interface ActorKey {
   /** What the act is aimed at: what they look at, point to, reach for or offer to. */
   aim?: Point;
   /**
+   * Picture only: where a torch in their hand shines, when not where they look (Pappa's beam out through the window
+   * while he reaches up to pull it to). A later key with an `aim` and no `beam` has the beam follow the aim again.
+   */
+  beam?: Point;
+  /**
    * Picture only, after the scene: the actor walks along behind Elof, this far behind him, and stops where
    * he stops. Null: they stay where the scene left them. Left out: as before.
    */

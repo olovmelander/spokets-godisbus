@@ -28,7 +28,8 @@ const check = (name, condition) => { assert.ok(condition, name); checks++; conso
 const FLAGS = {
   prolog: ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar', 'mamma:passed'],
   epilog: ['scene:card', 'dots', 'scene:first-carving'],
-  // After the power cut and shrinking, the optional console remains available while the TV programme is dark.
+  // After the power cut the TV is dark and its game is not offered (Olov, 12 November 2026: "Man ska inte kunna spela
+  // på TV:n när strömmen gått."): checked below, at the TV, that it never opens.
   stormkvall: ['scene:kvall', 'candles', 'lamp:take', 'lamp:give', 'goodnight', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans'],
   morgonen: ['scene:frukost'],
 };
@@ -53,7 +54,7 @@ function installProbe() {
     }
   }).observe(document.body, { childList: true }));
 }
-async function open(chapter = 'epilog', options = {}, setup = async () => {}, saved = false) {
+async function open(chapter = 'epilog', options = {}, setup = async () => {}, saved = false, offered = true) {
   const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 844, height: 391 }, ...options });
   await context.addInitScript(installProbe);
   if (saved) await context.addInitScript(flags => {
@@ -73,7 +74,7 @@ async function open(chapter = 'epilog', options = {}, setup = async () => {}, sa
   if (!saved) { query.set('at', chapter === 'prolog' || chapter === 'stormkvall' ? '31.8,.01' : '30.8,.01'); query.set('flags', FLAGS[chapter].join(',')); }
   await page.goto(`${origin}${BASE}?${query}`);
   const state = () => page.evaluate(() => window.__godis?.state());
-  await until(state, s => s?.bootReady && s.homeConsole.available, `${chapter}: TV:n går att använda`);
+  await until(state, s => s?.bootReady && (!offered || s.homeConsole.available), `${chapter}: TV:n går att använda`);
   await frames(page);
   return { page, context, state, requests, async finish() { assert.deepEqual(errors, [], `${chapter}: körfel`); assert.deepEqual(external, [], `${chapter}: externa anrop`); await context.close(); } };
 }
@@ -106,8 +107,7 @@ try {
   if (cases.has('homes')) for (const [chapter, viewport, touch, method] of [
     ['prolog', { width: 1180, height: 820 }, false, 'keys'],
     ['epilog', { width: 391, height: 844 }, true, 'touch'],
-    ['stormkvall', { width: 844, height: 391 }, false, 'pad'],
-    ['morgonen', { width: 391, height: 844 }, false, 'keys'],
+    ['morgonen', { width: 391, height: 844 }, false, 'pad'],
   ]) {
     const game = await open(chapter, { viewport, hasTouch: touch });
     check(`${chapter}: tävlingsmodulen hämtas först när TV:n används`, !game.requests.some(url => new URL(url).pathname === kartPath));
@@ -122,6 +122,16 @@ try {
     await game.page.keyboard.down('ArrowRight');
     await until(game.state, s => s.x > x + .3, `${chapter}: nya rörelseknappar fungerar efter TV-spelet`);
     await game.page.keyboard.up('ArrowRight'); await game.finish();
+  }
+
+  if (cases.has('homes')) {
+    // The evening of the storm, at the TV after the power cut: no game offered, and a press does not open one.
+    const dark = await open('stormkvall', { viewport: { width: 844, height: 391 } }, async () => {}, false, false);
+    await frames(dark.page, 20);
+    check('stormkvall: inget TV-spel när strömmen har gått', !(await dark.state()).homeConsole.available && await dark.page.locator('#homeConsolePlay').isHidden());
+    await dark.page.keyboard.press('KeyE'); await pad(dark.page, 2, true); await pad(dark.page, 2, false); await frames(dark.page, 6);
+    check('stormkvall: varken tangent eller handkontroll öppnar TV:n', !(await dark.state()).homeConsole.open && await dark.page.locator('#homeConsole').count() === 0);
+    await dark.finish();
   }
 
   if (cases.has('race')) {
