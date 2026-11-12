@@ -394,8 +394,9 @@ export const myren: ChapterData = {
     { id: 'bog:return-bridge', look: 'sign', at: { x: 169.2, y: 0 }, verb: 'call', word: 'callMamma', needs: 'home', extra: true },
     // The return is its own discovery, not another candy or an album reward to complete.
     { id: 'bog:lantern-return', at: { x: 142, y: 0 }, verb: 'take', touch: true, needs: 'placed:bog-boardwalk', extra: true },
-    // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way.
-    { id: 'memory', look: 'memory', at: { x: 170.6, y: 0 }, verb: 'take', touch: true },
+    // Memory 3, where the ghost waits: the boardwalk, and the figure held up to see the way. Between two of the trail's
+    // sweets: at 170.6 one stood in its glow, a step from the big candy and Mamma's sign.
+    { id: 'memory', look: 'memory', at: { x: 171.5, y: 0 }, verb: 'take', touch: true },
     { id: 'crane', look: 'crane', at: { x: 182, y: 0 }, verb: 'take', word: 'boardCrane', needs: 'home', ride: 'crane' },
     // The toss: what glints under the first soft tussock after the island. He comes within its reach only
     // by sinking towards it, standing, and that throws him.

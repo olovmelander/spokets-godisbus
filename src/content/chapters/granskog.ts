@@ -58,7 +58,12 @@ function along(ride: { from: { x: number; y: number }; to: { x: number; y: numbe
   };
 }
 
-const ANT_LIFT = { from: { x: 58.6, y: 4 }, to: { x: 61.6, y: 10 }, rise: 0.4, time: 3, corridor: 0.2 };
+/**
+ * The ants carry him up the anthill's near side and set him down on its top. The anthill bulges out towards the camera
+ * from that side (the forest kit's `myrstack`), so the way rises high and early: lower, it went through the hill's
+ * corner, and he was out of sight behind it for most of the ride.
+ */
+const ANT_LIFT = { from: { x: 58.6, y: 4 }, to: { x: 61.6, y: 10 }, rise: 3, time: 3, corridor: 0.2 };
 /**
  * The bottom of the leaf in the eddy, before it is pulled up: its top lies 0.04 over the water at -9.1, under the
  * water's reach (WATER_REACH), so he cannot stand on it there.
@@ -310,10 +315,12 @@ export const granskog: ChapterData = {
     { id: 'seesaw:trial', look: 'none', ...TRIAL },
   ],
   // Three cones on the slope at a time, one setting off every 1.8 s. The first is the one he nudged: it rolls
-  // away ahead of him, and the rest come from behind.
+  // away ahead of him, and the rest come from behind. A child who runs on at full speed still meets them all the way
+  // down, as Olympia's balls (Olov, 12 November 2026): each sets off no farther than 12 EL behind him, out of the
+  // picture. From the top they set off from the slope's top as before, and none reached a runner after x 92.
   rollers: [0, 1.8, 3.6].map((first) => ({
     from: { x: 70.6, y: slope(70.6) }, to: { x: 103.4, y: slope(103.4) }, every: 5.4, first, speed: 7.5, radius: 0.28,
-    needs: 'avalanche', until: 'seesaw',
+    needs: 'avalanche', until: 'seesaw', behind: 12,
   })),
   water: [
     { from: 156, to: 176, y: -8.3 },
@@ -393,6 +400,9 @@ export const granskog: ChapterData = {
     { from: 25.2, to: 33, above: 2.12, zoom: 1.4, lift: -1 },
     { from: 137.7, to: 153.6, above: -5.9, zoom: 1.4, lift: -1.4 },
     { from: 46.5, to: 63.5, above: 5.4, zoom: 1.25, lift: 0.7, lead: 1 },
+    // At the ants the picture rises to the hilltop they will carry him to, so that it is already up there with him as
+    // they lift him: from the ant road it lagged under him and the anthill's near side hid him.
+    { from: 57.4, to: 59.6, zoom: 1.3, lift: 2.4 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },
     // On the slope the picture looks less far ahead, so that the cones coming from behind are seen.
     { from: 68, to: 105, zoom: 1.45, lead: 0.3 },

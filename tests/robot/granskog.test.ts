@@ -52,6 +52,40 @@ describe('Kapitel 2, Granskogen, in greybox', () => {
     expect(hops).toBe(0);
   });
 
+  it('the cones come from behind all the way down the slope, also to a child who runs on at full speed', () => {
+    // From the top of the slope, as the robot plays: it runs on, and jumps each cone that comes up behind it.
+    const game = new Game(granskog, {}, { checkpoint: 4, flags: ['berry', 'jay', 'antlift'], placed: ['twig'] });
+    const rollers = granskog.rollers!;
+    const met: number[] = [];
+    const behind = rollers.map(() => false);
+    let first: { x: number; him: number } | null = null;
+    let wasAhead = false;
+    let wasOffered = false;
+    for (let frame = 0; frame < 60 * 30 && game.sim.curr.x < rollers[0]!.to.x; frame++) {
+      const d = decide(game, granskog);
+      game.frame(1 / 60, { x: d.x, y: d.y, hopHeld: true }, { hop: d.ahead && !wasAhead, act: d.offered && !wasOffered, helper: false });
+      wasAhead = d.ahead;
+      wasOffered = d.offered;
+      const x = game.sim.curr.x;
+      for (const [i, cone] of game.sim.rollers.entries()) {
+        if (!first && cone.on) first = { x: cone.x, him: x };
+        if (behind[i] && cone.on && cone.x >= x) met.push(x);
+        behind[i] = cone.on && cone.x < x;
+      }
+    }
+    expect(game.sim.bowled).toBe(0);
+    // The one he nudged rolls away ahead of him, from the slope's top.
+    expect(first!.x).toBeGreaterThan(first!.him);
+    expect(first!.x).toBeCloseTo(rollers[0]!.from.x, 0);
+    // Then they catch him up from behind, the last of them in the slope's last ten EL: before each set off from the
+    // slope's top, and none reached a runner after x 92.
+    expect(met.length, `met at ${met.map((x) => x.toFixed(1)).join(' ')}`).toBeGreaterThanOrEqual(4);
+    expect(Math.max(...met)).toBeGreaterThan(rollers[0]!.to.x - 10);
+    for (const [i, x] of met.entries()) if (i > 0) expect(x - met[i - 1]!, `from ${met[i - 1]} to ${x}`).toBeLessThan(10);
+    // Each sets off out of the picture: no nearer than ten EL behind him.
+    for (const r of rollers) expect(r.behind).toBeGreaterThanOrEqual(10);
+  });
+
   it('says only lines the game has words for, each short enough for a bubble', () => {
     const lines: Record<string, string> = sv.lines;
     for (const beat of granskog.beats ?? []) {
