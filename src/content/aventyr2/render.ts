@@ -33,6 +33,7 @@ import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { morgonen } from './chapters/morgonen';
 import { openWaterAt } from '../../render/water';
+import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
@@ -1897,40 +1898,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         },
       };
     },
-    tap: (spot) => {
-      // The rain barrel's brass tap, and the water that pours from it once it is turned.
-      const group = new Group();
-      const brass = solid('#b8902e', 0.35, { metalness: 0.6 });
-      const pipe = new Mesh(new CylinderGeometry(0.09, 0.09, 0.7, 10), brass);
-      pipe.rotation.x = Math.PI / 2;
-      pipe.position.set(0, 0.5, 0.25);
-      const spout = new Mesh(new CylinderGeometry(0.07, 0.08, 0.35, 10), brass);
-      spout.position.set(0, 0.3, 0.6);
-      const handle = new Group();
-      for (const turn of [0, Math.PI / 2]) {
-        const bar = new Mesh(new BoxGeometry(0.5, 0.06, 0.06), brass);
-        bar.rotation.y = turn;
-        handle.add(bar);
-      }
-      handle.position.set(0, 0.68, 0.45);
-      const water = new Mesh(new CylinderGeometry(0.05, 0.09, 1, 8, 1, true), new MeshBasicMaterial({ color: '#a8c8ff', transparent: true, opacity: 0.6, depthWrite: false }));
-      water.position.set(0, -0.3, 0.6);
-      water.visible = false;
-      group.add(pipe, spout, handle, water);
-      const root = new Group();
-      root.position.set(spot.at.x, spot.at.y, -0.6);
-      root.add(group);
-      let turned = 0;
-      return {
-        group: root,
-        update(used, clock, dt) {
-          turned = used ? Math.min(1, turned + dt * 2) : 0;
-          handle.rotation.z = turned * Math.PI * 0.75;
-          water.visible = turned > 0.6;
-          water.scale.x = 1 + 0.15 * Math.sin(clock * 20);
-        },
-      };
-    },
+    // The rain barrel's tap, its outlet out over the can towards the ditch: its water is the pour's (render/rain-barrel.ts).
+    tap: (spot) => barrelTap(spot),
     candle: (spot) => {
       const group = new Group();
       const wax = new Mesh(new CylinderGeometry(0.09, 0.1, 0.42, 10), solid('#f4ecd8', 0.7));
@@ -3057,19 +3026,8 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       group.add(log);
       return group;
     },
-    lid: (mover) => {
-      // The rain barrel's round wooden lid, floating: boards across it, and a handle.
-      const group = new Group();
-      const lid = new Mesh(new CylinderGeometry(mover.width / 2, mover.width / 2, mover.height, 24), solid('#8a6a44', 0.85));
-      lid.position.y = mover.height / 2;
-      group.add(lid);
-      for (const x of [-0.25, 0.25]) {
-        const seam = new Mesh(new BoxGeometry(0.03, mover.height * 1.02, mover.width * 0.9), solid('#5a4428', 0.9));
-        seam.position.set(x * mover.width, mover.height / 2, 0);
-        group.add(seam);
-      }
-      return group;
-    },
+    // The round wooden lid in Stormgården's ditch, afloat (render/rain-barrel.ts).
+    lid: (mover) => barrelLid(mover),
     fieldstone: (mover) => fieldStone(mover),
     bark: (mover) => {
       const outer = barkRaft(mover);

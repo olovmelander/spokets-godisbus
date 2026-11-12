@@ -73,6 +73,21 @@ const CAN = { from: BARREL.to, to: 83.6, top: 1.2 };
 const DITCH = { from: 85, to: 90, bottom: -3 };
 /** The water's surface, a little under the lawn, in the ditch, on the flooded lawn and in the rut. */
 const WATER = -0.3;
+/**
+ * The lid in the ditch (Olov, 12 November 2026: "att vattnet man vrider på hänger ihop med locket som kommer upp
+ * visuellt"). Before the tap it floats low in the ditch, on the little water there is, where it is seen from the
+ * barrel; the tap's water fills the ditch, and the lid rises on it to lie level with the lawn. It is a little longer
+ * than the ditch is wide, like Myren's pine, so both its ends rest on the banks; its top is 0.35 over its bottom.
+ */
+const LID = { x: (DITCH.from + DITCH.to) / 2, low: -1.55, high: -0.35 };
+/**
+ * Turning the tap is a short moment he stands and watches (`kranen`): the picture takes in the barrel and the ditch,
+ * the water gushes from the tap's spout in an arc down into the ditch (src/render/rain-barrel.ts), and the lid rises
+ * with the water. `POUR` is when the water comes, from the moment's start; the lid starts up once the water has
+ * reached it (`wait`), and is in place `seconds` after the water came.
+ */
+const POUR = 0.35;
+const RISE = { wait: 1, seconds: 3.3 };
 
 /** The flooded lawn: a pit to the simulation, with the water drawn in it, and the boot's way over it (Granskog's cap). */
 const FLOOD = { from: 106, to: 126, bottom: -5 };
@@ -126,6 +141,31 @@ const OLD_LEAP: Flyby = {
 /** Seen from the trampoline's edge, before the climb: Elof, the playhouse and the old one on its roof in one picture. */
 const OLD_SEEN = sighting('sg:lekstugan', 131.6, 135, 'sg:playhouse', 'sg:old-seen', OLD_LEAP,
   { x: 142, y: 4.2, height: 9.6, width: 11 }, { x: 153.6, y: 6.2, height: 9.6, width: 10 });
+
+/**
+ * Vrid på kranen: he stands on the barrel and watches what his turn of the tap does. The camera eases out and down
+ * over the barrel and the ditch, so that the spout, the water's arc, the splash and the lid are in one picture, on a
+ * phone held sideways too. He watches the water go and the lid come up, and is glad when it lies there; his words
+ * about it ("Locket flyter upp! Det blev en bro!") come as it arrives, and he walks on over it while they are read.
+ */
+const TAP_SCENE: SceneDef = {
+  id: 'kranen', on: 'sg:tap', before: DITCH.to + 2, until: 'placed:lid', seconds: round(POUR + RISE.seconds + 0.9), hold: true,
+  // His words as the lid comes to lie there are read in this picture, before he walks on over it.
+  dialogue: ['sg:lid'],
+  cues: [{ at: POUR, flag: 'sg:pour' }],
+  sounds: [{ at: POUR, sound: 'pour' }],
+  stage: {
+    // From above and in front: the ditch's water near the path lies behind its near end, and is seen over it. Tall
+    // enough that he is under his words on a phone held sideways, where they cover the picture's top.
+    shots: [{ at: 0, x: 85.4, y: 2.2, height: 10, width: 12.4, eye: 5.6, move: 0.8 }],
+    elof: [
+      { at: 0, act: 'look', aim: { x: 82.4, y: 3.7, z: -1.7 } },
+      { at: POUR + 0.5, act: 'look', aim: { x: 86.2, y: -1.4, z: -4.4 } },
+      { at: POUR + RISE.wait + 0.6, act: 'look', aim: { x: LID.x, y: -0.8, z: -0.9 } },
+      { at: round(POUR + RISE.seconds - 0.3), act: 'cheer' },
+    ],
+  },
+};
 
 const HEDGE_SCENE: SceneDef = {
   id: 'haecken', at: 177, before: 180.5, seconds: 6.8, hold: true, dialogue: ['sg:flash'],
@@ -243,7 +283,7 @@ export const stormgard: ChapterData = {
   ],
   spawn: { x: 1, y: DECK + 0.01 },
   // Where and when, as the chapter opens (../kit.ts); and the little one over the hedge, watched.
-  scenes: [timeCard('stormgard', 1), OLD_SEEN, HEDGE_SCENE],
+  scenes: [timeCard('stormgard', 1), TAP_SCENE, OLD_SEEN, HEDGE_SCENE],
   goalX: 189,
   ground: [
     { x: -3, y: 16 },
@@ -292,7 +332,8 @@ export const stormgard: ChapterData = {
     HEDGE_TOP,
   ],
   water: [
-    { from: DITCH.from, to: DITCH.to, y: WATER },
+    // The ditch: half full until the tap's water fills it under the lid.
+    { from: DITCH.from, to: DITCH.to, y: WATER, floats: 'lid' },
     { from: FLOOD.from, to: FLOOD.to, y: WATER },
     { from: RUT.from, to: RUT.to, y: WATER },
   ],
@@ -314,7 +355,7 @@ export const stormgard: ChapterData = {
     { x: BARREL.from - 0.25, bottom: 0, top: BARREL.top, exit: 1, look: 'hose' },
   ],
   spots: [
-    // Regntunnan: the tap on the barrel's top. Its water fills the ditch, and the lid floats up.
+    // Regntunnan: the tap on the barrel's top. Its water pours into the ditch, and the lid floats up (`kranen`).
     { id: 'sg:tap', look: 'tap', at: { x: 81.2, y: BARREL.top }, verb: 'turn', word: 'sgTurnTap' },
     // The boot boat (Granskog's cap): calling prepares it, and Elof chooses when to step in.
     { id: 'sg:bertil', look: 'sign', at: BOOT.from, verb: 'call', word: 'callBertil' },
@@ -328,10 +369,9 @@ export const stormgard: ChapterData = {
   movers: [
     // The pumpkin crosses the play plane: a solid shoulder to hop onto from the higher step.
     { id: 'pumpkin', look: 'none', width: 2, height: 1.9, verb: 'push', stops: [{ x: LANTERN.x, y: LANTERN.y }] },
-    // The barrel's lid in the ditch: the tap's water lifts it, by itself, to lie level with the lawn. It is a
-    // little longer than the ditch is wide, like Myren's pine, so both its ends rest on the banks.
-    // Its last stop puts its top (0.35 over its bottom) at the lawn's height.
-    { id: 'lid', look: 'lid', width: 5.6, height: 0.35, verb: 'pull', on: 'sg:tap', stops: [{ x: (DITCH.from + DITCH.to) / 2, y: DITCH.bottom }, { x: (DITCH.from + DITCH.to) / 2, y: -0.35 }] },
+    // The lid in the ditch (`LID`): the tap's water lifts it, by itself, from the shallow water at the bottom to lie
+    // level with the lawn, once the water has come (`sg:pour`) and reached it. The ditch's water rises with it.
+    { id: 'lid', look: 'lid', width: 5.6, height: 0.35, verb: 'pull', on: 'sg:pour', ...RISE, stops: [{ x: LID.x, y: LID.low }, { x: LID.x, y: LID.high }] },
   ],
   rides: [{ id: 'boot', look: 'boot', ...BOOT }],
   later: [{ flag: 'sg:boot-ready', after: 'sg:bertil', until: 'sg:boot', within: [99, 108], seconds: 1.2, hold: true }],
@@ -419,6 +459,8 @@ export const stormgard: ChapterData = {
     { from: 4, to: 14, above: DECK + 0.8, zoom: 1.3, lift: -1 },
     // Up the trampoline's planks: the next plank, and the steps and roof below.
     { from: 134.8, to: 145, above: 3.1, zoom: 1.45, lift: -0.6 },
+    // On the barrel's top: lower and wider, over the ditch and the lid afloat down in it.
+    { from: 79.6, to: 83.2, above: 3.2, zoom: 1.65, lift: -2, lead: 3.4 },
     // Up the hose and on the barrel: the ditch and where the lid will float.
     { from: 78, to: 92, zoom: 1.5, lift: 0.8, lead: 3.2 },
     { from: -3, to: 24, zoom: 1.4, lift: 0.35 },

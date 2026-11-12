@@ -14,6 +14,7 @@ import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
 import { LEDGE_CORNER, LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
 import { hintFor } from './help';
 import { rideY } from './ride-path';
+import { levelUnder } from './water-level';
 import { partyReward, sharingReward, type StoryAnswer } from './story';
 import { eyeCentres, validCarveStroke, validEyeStroke } from './story-stroke';
 import { PrologueSequence } from './prologue';
@@ -745,8 +746,14 @@ export class Sim {
   private wade(): void {
     if (this.state.kind !== 'free') return;
     const p = this.curr;
-    const wet = (this.chapter.water ?? []).some((w) => p.x >= w.from && p.x <= w.to && p.y < w.y + WATER_REACH);
+    const wet = (this.chapter.water ?? []).some((w) => p.x >= w.from && p.x <= w.to && p.y < this.waterLevel(w) + WATER_REACH);
     if (wet) this.startBubble();
+  }
+
+  /** How high a stretch of water stands now: one that a floating thing rises on is low until it is filled (`floats`). */
+  waterLevel(w: NonNullable<ChapterData['water']>[number]): number {
+    const mover = w.floats === undefined ? undefined : this.movers.find((m) => m.def.id === w.floats);
+    return mover ? levelUnder(w, mover.def, mover.y) : w.y;
   }
 
   /**
