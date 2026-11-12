@@ -141,12 +141,17 @@ export const prolog: ChapterData = {
   ],
 };
 
-/** Who gets candy at the party, where each sits, and the word on the button. */
+/**
+ * Who gets candy at the party, where each stands, and the word on the button. He is a boy among them here, three times
+ * his small size, and at the help points' usual 0.9 EL behind the path he walked through their legs; Moa, in front of the
+ * table at 0.45, stood in his way. They stand further back now, Pappa clear of the table's corner, and Moa across the
+ * table from him, where the table hides her legs (`stand`).
+ */
 const GUESTS = [
-  { id: 'mamma', x: 7, word: 'giveMamma' },
-  { id: 'pappa', x: 11, word: 'givePappa' },
-  { id: 'moa', x: 15, word: 'giveMoa' },
-  { id: 'bertil', x: 19, word: 'giveBertil' },
+  { id: 'mamma', x: 7, word: 'giveMamma', stand: { x: 7, z: -1.4 } },
+  { id: 'pappa', x: 11, word: 'givePappa', stand: { x: 10.6, z: -1.4 } },
+  { id: 'moa', x: 15, word: 'giveMoa', stand: { x: 15.3, z: -3.25 } },
+  { id: 'bertil', x: 19, word: 'giveBertil', stand: { x: 19, z: -1.4 } },
 ] as const;
 
 /**
@@ -172,10 +177,13 @@ const KLONK_DOWN = 6.95;
 
 /**
  * Where his first carving goes on Pappa's shelf, between Pappa's old trägubbe and Klonk: where it stands on the evening of
- * the storm (../aventyr2/chapters/stormkvall.ts, LITTLE). The shelf is a grown-up's height, so a stool stands under it.
+ * the storm (../aventyr2/chapters/stormkvall.ts, LITTLE). The shelf is a grown-up's height, so a kitchen step stool stands
+ * under it (`steps`, src/render/stage.ts): from a plain stool 1.2 high his hands stopped an EL short of the shelf. He
+ * walks up to its front, steps onto its tread and up onto its top (2.2, the stage's STEPS_TOP), clear of the shelf's
+ * front edge at z -7.98.
  */
 const OWN_ON_SHELF = { x: HOME_LAYOUT.shelf.x - 2.9, y: HOME_LAYOUT.shelf.y + 0.08, z: -8.3 };
-const STOOL = { x: OWN_ON_SHELF.x, z: -7.55, top: 1.21 };
+export const STEP_STOOL = { x: OWN_ON_SHELF.x, z: -7.27, front: -6.2, tread: { y: 1.1, z: -6.99 }, top: { y: 2.2, z: -7.6 } };
 
 /**
  * Epilog: Godiskalaset, on the glazed veranda at nine in the evening.
@@ -206,8 +214,8 @@ export const epilog: ChapterData = {
   furniture: [
     { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z, cloth: '#f1ead8' },
     ...Object.values(HOME_LAYOUT.dining.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
-    // The stool under Pappa's shelf, for putting his carving up.
-    { look: 'stool', at: { x: STOOL.x, y: 0 }, z: STOOL.z },
+    // The step stool under Pappa's shelf, for putting his carving up.
+    { look: 'steps', at: { x: STEP_STOOL.x, y: 0 }, z: STEP_STOOL.z },
   ],
   epilogue: { window: { x: 9.4, y: 3.43, z: -8.3 }, shelf: OWN_ON_SHELF },
   spawn: { x: 1, y: 0.01 },
@@ -247,21 +255,23 @@ export const epilog: ChapterData = {
       stage: { shots: [{ at: 0, x: 33, y: 2.4, height: 5.7, width: 7.2, move: .001 }],
         elof: [{ at: 0, face: .22, act: 'offer', aim: { x: 32.9, y: 1.65 } }],
         actors: { pappa: [{ at: 0, x: 35.4, z: -2.2, act: 'kneel', face: .38, aim: { x: 32, y: 2.2 }, move: .001 }] } } },
-    // He carries his carving to Pappa's shelf, climbs the stool and puts it up between the old trägubbe and Klonk, then
-    // steps down and comes back. Only then is it time for his teeth. The carving leaves his hand at `shelf:placed`.
-    { id: 'hyllan', on: 'shelf', until: 'teeth', resumeAt: { x: OWN_ON_SHELF.x, y: 0 }, seconds: 5.6, hold: true,
-      cues: [{ at: 2.5, flag: 'shelf:placed' }],
-      lines: [{ at: 2.8, who: 'elof', line: 'onShelf' }],
+    // He carries his carving to Pappa's shelf, climbs the step stool and puts it up between the old trägubbe and Klonk,
+    // then steps down and comes back. Only then is it time for his teeth. The carving leaves his hand at `shelf:placed`.
+    { id: 'hyllan', on: 'shelf', until: 'teeth', resumeAt: { x: OWN_ON_SHELF.x, y: 0 }, seconds: 5.9, hold: true,
+      cues: [{ at: 2.6, flag: 'shelf:placed' }],
+      lines: [{ at: 2.9, who: 'elof', line: 'onShelf' }],
       // Close to the wall: Mamma, at her place from the party a little in front of the shelf, stays out of the picture.
-      stage: { shots: [{ at: 0, x: OWN_ON_SHELF.x - 1.1, y: 4.4, z: -7, height: 6, width: 5.6, move: .8 }],
+      stage: { shots: [{ at: 0, x: OWN_ON_SHELF.x - 1.1, y: 4.1, z: -7, height: 6, width: 5.6, move: .8 }],
         elof: [
-          { at: 0, face: .75, act: 'walk', to: { x: STOOL.x, y: 0, z: STOOL.z + 1.15 }, move: 1.2 },
-          { at: 1.2, act: 'stand', to: { x: STOOL.x, y: STOOL.top, z: STOOL.z }, move: .45 },
-          { at: 1.65, act: 'reach', aim: { x: OWN_ON_SHELF.x, y: OWN_ON_SHELF.y + .25, z: OWN_ON_SHELF.z } },
-          { at: 2.8, act: 'nod', aim: OWN_ON_SHELF },
-          { at: 3.5, face: .25, act: 'stand', to: { x: STOOL.x, y: 0, z: STOOL.z + 1.15 }, move: .45 },
-          { at: 4, act: 'walk', lift: { x: 0, y: 0, z: 0 }, move: 1.3 },
-          { at: 5.3, act: 'stand' },
+          { at: 0, face: .75, act: 'walk', to: { x: STEP_STOOL.x, y: 0, z: STEP_STOOL.front }, move: 1.2 },
+          { at: 1.2, act: 'stand', to: { x: STEP_STOOL.x, ...STEP_STOOL.tread }, move: .35 },
+          { at: 1.55, to: { x: STEP_STOOL.x, ...STEP_STOOL.top }, move: .35 },
+          { at: 1.9, act: 'reach', aim: { x: OWN_ON_SHELF.x, y: OWN_ON_SHELF.y + .25, z: OWN_ON_SHELF.z } },
+          { at: 2.9, act: 'nod', aim: OWN_ON_SHELF },
+          { at: 3.6, face: .25, act: 'stand', to: { x: STEP_STOOL.x, ...STEP_STOOL.tread }, move: .35 },
+          { at: 3.95, to: { x: STEP_STOOL.x, y: 0, z: STEP_STOOL.front }, move: .35 },
+          { at: 4.3, act: 'walk', lift: { x: 0, y: 0, z: 0 }, move: 1.3 },
+          { at: 5.6, act: 'stand' },
         ] } },
     // He opens the real bathroom door, walks in on his own feet, and brushes before the ending is allowed.
     { id: 'bathroom', on: 'teeth', until: 'goal', resumeAt: { x: HOME_BATHROOM.x, y: 0 }, seconds: HOME_BATHROOM.seconds, hold: true,
@@ -299,11 +309,13 @@ export const epilog: ChapterData = {
   house: { from: -40, to: 76, windows: HOME_LAYOUT.windows },
   // It is evening from the first moment: the lights are low, and the northern lights show in the windows.
   night: { after: null },
-  checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 33, y: 0 }],
+  // The last stood between him and Pappa in the carving's picture ("Titta, Pappa! Min egen Lillgubbe!"): it is there once
+  // his carving is on the shelf, the safe place before his teeth.
+  checkpoints: [{ x: 2.6, y: 0 }, { x: 25, y: 0 }, { x: 33, y: 0, after: 'shelf:placed' }],
   spots: [
     ...GUESTS.map((g) => ({ id: `party:${g.id}`, look: 'sign' as const, at: { x: g.x, y: 0 }, verb: 'give' as const, word: g.word, story: 'party' as const,
-      // Moa stands in front of the shared dining table, with the gift still offered at the same mark.
-      ...(g.id === 'moa' ? { standsAt: { x: g.x, y: 0, z: .45 } } : {}),
+      // Each stands back from the path he walks (`GUESTS`), with the gift still offered at the same mark.
+      standsAt: { x: g.stand.x, y: 0, z: g.stand.z },
       // Pappa comes over to the carving once Elof has the knife, and kneels at his side, behind the line he walks.
       ...(g.id === 'pappa' ? { goesTo: { x: 35.4, y: 0, z: -2.2 }, goesWhen: 'knife' } : {}) })),
     { id: 'party:spoket', at: { x: 22.4, y: 0 }, verb: 'give', word: 'giveGhost', story: 'party' },
@@ -367,5 +379,7 @@ export const epilog: ChapterData = {
     { id: 'away', on: 'knife:pappa', who: 'pappa', line: 'away' },
   ],
   cameras: [{ from: -3, to: 62, zoom: 1.5, lift: 0.3 }],
-  candy: [...row(3, 33, 0)],
+  // One every two EL from x 3 to 33 as it was (a save counts them by their place in the list), moved off the feet of
+  // the family, the things he found, the ghost's places, the knife's sign and the big candies' sticks.
+  candy: [3.6, 5.2, 8.2, 9.4, 12, 13.4, 15, 16.8, 17.9, 21.7, 24.2, 25.8, 27.6, 30, 31.2, 32.3].map((x) => ({ x, y: 0.45 })),
 };

@@ -21,12 +21,14 @@ import type { Candy, ChapterData } from '../../sim/types';
  * shoulder ride with both carvings are authored in norrsken-scenes.ts and the carrying picture code.
  */
 
-/** A row of candy over ground at one height, one every `every` EL. */
-function row(from: number, to: number, ground: number, every = 2): Candy[] {
-  const out: Candy[] = [];
-  for (let x = from; x <= to + 1e-6; x += every) out.push({ x: Math.round(x * 10) / 10, y: ground + 0.45 });
-  return out;
-}
+/**
+ * The summit's trail, one sweet every two EL from x 3 to 31, as it always was (a save keeps each one's index), with a few
+ * moved off what stands there: the ghost waiting by the crack, the bag, and the jay, which held one in its beak. The last
+ * three lie where the family stands to meet him: they come once the reunion is over, the trail on to the way home, and
+ * not at their feet while they talk (`after`).
+ */
+const SUMMIT_TRAIL = [3, 5, 7, 8.4, 11, 13, 15, 17, 20.1, 21.6, 24, 25, 27, 29, 31];
+const AFTER_REUNION = 'scene:aterfunna';
 
 /**
  * The walk home on Pappa's shoulders. Its arc is also the trail he walks, a little behind the play plane
@@ -78,7 +80,8 @@ export const norrsken: ChapterData = {
   checkpoints: [
     { x: 2.4, y: 0 },
     { x: 17.8, y: 0 },
-    { x: 30.4, y: 0 },
+    // Among the family where they stand to meet him: it comes once they have talked, not between them while they do.
+    { x: 30.4, y: 0, after: AFTER_REUNION },
   ],
   spots: [
     { id: 'lower', at: { x: 10.9, y: 0 }, verb: 'take', word: 'lowerLace' },
@@ -99,7 +102,7 @@ export const norrsken: ChapterData = {
   decor: [
     // The crack, marked: its lips weathered pale, and crowberry at its back.
     { look: 'crack', at: { x: FIGURE, y: 0 }, z: 0 },
-    { look: 'sign', at: { x: 32.1, y: 0 }, z: -.3, word: 'callBertil', after: 'scene:aterfunna' },
+    { look: 'sign', at: { x: 32.1, y: 0 }, z: -1.1, word: 'callBertil', after: 'scene:aterfunna' },
     { look: 'sign', at: { x: 30.9, y: 0 }, z: -.9, word: 'callMoa', after: 'scene:aterfunna' },
     { look: 'sign', at: { x: 25.3, y: 0 }, z: -.9, word: 'callMamma', after: 'scene:aterfunna' },
     { look: 'sign', at: { x: 29.4, y: 0 }, z: -.8, word: 'callPappa', after: 'scene:aterfunna' },
@@ -117,7 +120,8 @@ export const norrsken: ChapterData = {
   ghost: [
     // It is his partner now: it stays where each thing is done.
     { at: { x: 9.2, y: 0 }, until: 'placed:tragubbe' },
-    { at: { x: GHOST, y: 0 }, until: 'shared' },
+    // A little behind the path: the trägubbe he drags past it on to the jay went through it.
+    { at: { x: GHOST, y: 0 }, z: -0.6, until: 'shared' },
     { at: { x: 28, y: 0 }, until: 'taste' },
     { at: { x: 34.6, y: 0 }, near: 1.2 },
   ],
@@ -129,14 +133,9 @@ export const norrsken: ChapterData = {
     { from: 34, to: 86, zoom: 1.4, lift: 0.3 },
   ],
   candy: [
-    ...row(3, 31, 0),
-    along(0.15),
-    along(0.25),
-    along(0.35),
-    along(0.45),
-    along(0.55),
-    along(0.65),
-    along(0.75),
-    along(0.85),
+    ...SUMMIT_TRAIL.map((x): Candy => ({ x, y: 0.45, ...(x > 26.6 ? { after: AFTER_REUNION } : {}) })),
+    // On the way down, over the trail behind the summit's edge: before the reunion they led a child off the edge, on a
+    // trail he cannot walk (HANDOVER, known bugs). They are there once Pappa can carry him down it.
+    ...[0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85].map((t): Candy => ({ ...along(t), after: AFTER_REUNION })),
   ],
 };

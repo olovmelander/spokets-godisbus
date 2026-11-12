@@ -103,7 +103,7 @@ export const VOICE_LINES = [
   { key: 'cobbles1', speaker: 'elof', situation: 'Asking Pappa why the mountain\'s stones were round', tag: '[curious little boy, thoughtful wonder]', text: 'Varför var stenarna på berget så runda?' },
   { key: 'cobbles3', speaker: 'elof', situation: 'Realising that the high mountain was once a beach', tag: '[amazed little boy, delighted understanding]', text: 'En gammal strand, så högt uppe!' },
   { key: 'gardenLandedElof', speaker: 'elof', situation: 'Landing safely after Moa\'s paper-plane flight', tag: '[relieved, excited little boy, warm thanks]', text: 'Ja! Jag landade mjukt! Tack, Moa!' },
-  { key: 'mountainThanks', speaker: 'elof', situation: 'Reaching the top after climbing Mamma\'s braid', tag: '[grateful little boy, slightly breathless and happy]', text: 'Tack för hjälpen! Nu är jag uppe.' },
+  { key: 'mountainThanks', speaker: 'elof', situation: 'Up the cliff on Berget on the ghost\'s lace, turning to thank the ghost', tag: '[grateful little boy, slightly breathless and happy]', text: 'Tack för hjälpen! Nu är jag uppe.' },
   { key: 'nrFoundYou', speaker: 'elof', situation: 'Finding the old carving in the crack and promising to help', tag: '[gentle little boy, relieved and determined]', text: 'Där är du ju! Jag ska hjälpa dig.' },
   { key: 'nrAllRight', speaker: 'elof', situation: 'Reassuring Mamma at the reunion on the summit', tag: '[happy, relieved little boy, answering eagerly]', text: 'Bra! Vi hittade honom!' },
   { key: 'nrGhostHelped', speaker: 'elof', situation: 'Telling the family how the ghost helped throughout the adventure', tag: '[affectionate little boy, proud of his friend]', text: 'Spöket hjälpte mig hela vägen hit.' },

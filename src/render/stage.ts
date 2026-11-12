@@ -446,11 +446,15 @@ function moasDrawing(): CanvasTexture {
   return texture;
 }
 
+/** How high the step stool's top is (`furniture`, 'steps'): Godiskalaset stands him on it (src/content/chapters/ends.ts). */
+export const STEPS_TOP = 2.2;
+
 /** A kitchen table and chairs: plain stand-ins, never the family's own furniture (that is Olov's to model). */
-function furniture(look: 'table' | 'chair' | 'stool'): Group {
+function furniture(look: 'table' | 'chair' | 'stool' | 'steps'): Group {
   const group = new Group();
-  // Where the adventure's pack has it, the piece is a model (art/blender/a2-room.py), of the same size.
-  group.userData.model = look === 'table' ? 'bord' : look === 'chair' ? 'stol' : 'pall';
+  // Where the adventure's pack has it, the piece is a model (art/blender/a2-room.py), of the same size. The step stool
+  // has none: it is built here (`steps`, below).
+  if (look !== 'steps') group.userData.model = look === 'table' ? 'bord' : look === 'chair' ? 'stol' : 'pall';
   group.userData.disposeFallback = true;
   const wood = new MeshStandardMaterial({ color: look === 'table' ? '#b58a58' : '#d9cdb8', roughness: 0.8 });
   const box = (w: number, h: number, d: number, x: number, y: number, z: number) => {
@@ -462,6 +466,21 @@ function furniture(look: 'table' | 'chair' | 'stool'): Group {
     // 5 long, 1.65 high, 2.2 deep: a kitchen table beside a boy drawn three times his small size.
     box(5, 0.16, 2.2, 0, 1.57, 0);
     for (const [x, z] of [[-2.3, -0.9], [2.3, -0.9], [-2.3, 0.9], [2.3, 0.9]] as const) box(0.16, 1.5, 0.16, x, 0.75, z);
+  } else if (look === 'steps') {
+    // A kitchen step stool (Godiskalaset, ends.ts): a tread halfway up and a top at STEPS_TOP, its front legs slanting
+    // back to the top and its back legs straight, so that a boy three times his small size reaches Pappa's shelf from
+    // it. From a plain stool his hands stopped an EL short of the shelf (HANDOVER, known bugs). The front is +z.
+    const top = STEPS_TOP, slant = 0.85;
+    box(1.2, 0.12, 0.62, 0, top - 0.06, -0.33);
+    box(1.2, 0.1, 0.42, 0, top / 2 - 0.05, 0.28);
+    box(1.12, 0.07, 0.06, 0, top * 0.42, -0.6);
+    for (const x of [-0.56, 0.56]) {
+      box(0.08, top - 0.1, 0.1, x, (top - 0.1) / 2, -0.6);
+      const rail = new Mesh(new BoxGeometry(0.08, Math.hypot(top, slant), 0.1), wood);
+      rail.position.set(x, top / 2, 0.7 - slant / 2);
+      rail.rotation.x = -Math.atan2(slant, top);
+      group.add(rail);
+    }
   } else {
     const seat = look === 'stool' ? 1.15 : 1.25;
     box(1.1, 0.12, 1.1, 0, seat, 0);
@@ -570,7 +589,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   const chairs: { made: Group; x: number; y: number; z: number; face: number; top: number; owner: string | null; near: number }[] = [];
   for (const piece of chapter.furniture ?? []) {
     const made = furniture(piece.look);
-    if (piece.look !== 'table') {
+    if (piece.look === 'chair' || piece.look === 'stool') {
       chairs.push({ made, x: piece.at.x, y: piece.at.y, z: piece.z, face: piece.face ?? 0.25, top: piece.at.y + (piece.look === 'stool' ? 1.21 : 1.31), owner: null, near: 1 });
     }
     made.position.set(piece.at.x, piece.at.y, piece.z);
