@@ -1,6 +1,8 @@
+import { FELL_IN } from '../../../sim/constants';
 import type { Candy, ChapterData, Flyby, GhostPerch, Jump, Mover, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
 import { alongAll, hopCandy, round, row, sighting, slopeRow, timeCard } from '../kit';
+import { OTTER_REACH } from '../otter';
 
 /**
  * Äventyr 2, Kapitel 6: Älven (docs/aventyr-2.md), down the river by night. Units: EL. At Flärken the lake's outlet
@@ -153,6 +155,8 @@ const CALL_OWL = 133.8;
  */
 const OWL = { from: { x: 136.2, y: 0 }, to: { x: 166, y: 0.4 }, rise: 4.6, time: 6.6, corridor: 0.7, skim: { from: 138.4, to: 143.8, y: 1.85 } };
 const OTTER: Stone = { from: 145.2, to: 148.2, y: 0.5 };
+/** Where the otter sees him coming over the rolling logs, and dives (../otter.ts). */
+const OTTER_DIVES = round((OTTER.from + OTTER.to) / 2 - OTTER_REACH, 1);
 /**
  * Two logs the eddy rolls to and fro in the shallows, a hop apart, their tops at the shore's height: the way out to
  * the otter's stone, and back. Thinner than the logs between the stones, they float half under too.
@@ -192,8 +196,15 @@ const KIDS = {
 };
 /** Where the old one is seen on his log: on the bank after the eddies, the stones and their logs ahead. */
 const OLD_SEEN = 50.4;
+/**
+ * How high a floating flight of the old one goes over the water, for its size: the picture stands him half his
+ * height under the flight's line and lays his log under his feet, a quarter of his size thick (../render.ts,
+ * `flybys`). At this height the log rides half out of the water, his feet just over it. Lower, the log was under the
+ * water and he waded in it, while the line said "på en stock" (12 November 2026).
+ */
+const onLog = (water: number, size = 1.2) => round(water + 0.75 * size + 0.05, 2);
 /** The old one on his log among the logs between the stones, floating on down the stream. */
-const OLD_FLOATS: Flyby = { on: 'beat:al:old-one', from: { x: round(OLD_SEEN + 7.6, 1), y: 0.3 }, to: { x: round(OLD_SEEN + 21.6, 1), y: 0.5 }, seconds: 3.6, who: 'tragubbe', lit: [1.2] };
+const OLD_FLOATS: Flyby = { on: 'beat:al:old-one', from: { x: round(OLD_SEEN + 7.6, 1), y: onLog(STREAM) }, to: { x: round(OLD_SEEN + 21.6, 1), y: onLog(STREAM) }, seconds: 3.6, who: 'tragubbe', lit: [1.2] };
 /** From the bank after the eddies: Elof, the first stones and the old one on the water in one picture. */
 const OLD_SIGHTING = sighting('al:gamla', OLD_SEEN, 51.2, 'al:old-one', 'al:old-seen', OLD_FLOATS,
   { x: OLD_SEEN + 5, y: 1.8, height: 7, width: 9 }, { x: OLD_SEEN + 10.4, y: 1.8, height: 7, width: 10 });
@@ -250,9 +261,10 @@ export const alven: ChapterData = {
     OLD_SIGHTING,
     // Called, Pappa is seen where he stands: up at the bridge's railing over the bank, lowering his scarf. The picture
     // opens out for a moment to show all of it: him on the bridge, the scarf coming down, and Elof on the bank below.
+    // Pappa is tall to him: his head is about six EL over the deck. Framed lower, his head was under the line's card.
     {
       id: 'bron', on: 'al:pappa', until: 'al:lift', before: 92, seconds: 1.5, hold: true,
-      stage: { shots: [{ at: 0, x: SCARF.at + 0.6, y: DECK - 1.6, height: 15.5, width: 16, move: 0.35 }] },
+      stage: { shots: [{ at: 0, x: SCARF.at + 0.6, y: round(DECK - 0.4, 1), height: 18, width: 16, move: 0.35 }] },
     },
     // The owl keeps flying and answering the stick while Elof points out the little one. Only this distant
     // figure and its camera wait for the line; the wider shot includes the owl all the way to its landing.
@@ -428,12 +440,14 @@ export const alven: ChapterData = {
       { on: 'beat:al:flash', from: { x: round(RAFT.from.x + 5, 1), y: 0 }, to: { x: round(RAFT.from.x + 24.6, 1), y: 0.2 }, z: 1.4, seconds: 5, who: 'lillgubbe', lit: [1.8] },
       // From the bank after the eddies: the old one on his log, among the logs between the stones.
       OLD_FLOATS,
-      // From the owl's back, high over the lake: the little one, far down the river.
-      { on: 'al:little-seen', from: { x: 161, y: 0.4 }, to: { x: 167, y: 0.4 }, z: -2.8,
+      // From the owl's back, high over the lake: the little one, far down the river. A little past where Klonk floats
+      // (161): from there, the two were side by side in the picture, as if Klonk had found him.
+      { on: 'al:little-seen', from: { x: 163, y: 0.4 }, to: { x: 167.6, y: 0.4 }, z: -3,
         seconds: 5, who: 'lillgubbe', size: 1.8, lit: [0, 2.4] },
       // On Moälven: the old one once more, carried past on the wide water in front of the bank and on ahead. Behind
       // the bank are the fallen spruce, the road and the car, which hid him; the river itself is in front here.
-      { on: 'beat:al:old-ahead', from: { x: round(OLD_AHEAD + 1, 1), y: -0.1 }, to: { x: round(OLD_AHEAD + 15, 1), y: -0.1 }, z: 2.6, toZ: 3, size: 1.5, seconds: 5, who: 'tragubbe', lit: [2] },
+      // On his log, riding half out of the water (`onLog`): lower, he was waist deep in the river and the log under it.
+      { on: 'beat:al:old-ahead', from: { x: round(OLD_AHEAD + 1, 1), y: onLog(BROOK, 1.5) }, to: { x: round(OLD_AHEAD + 15, 1), y: onLog(BROOK, 1.5) }, z: 2.6, toZ: 3, size: 1.5, seconds: 5, who: 'tragubbe', lit: [2] },
     ],
     glows: [
       // Pappa's lamp up on the bridge, set down on the edge of its deck once he is called, to hold his scarf.
@@ -560,7 +574,10 @@ export const alven: ChapterData = {
     { id: 'al:follow', on: 'beat:al:thanks', who: 'pappa', line: 'alFollow' },
     // 4. the beaver's place
     { id: 'al:lodge', at: 120.8, who: 'elof', line: 'alLodge', aside: true },
-    { id: 'al:otter', at: 126.4, who: 'elof', line: 'alOtter', aside: true },
+    // The otter, as it dives off its stone with a splash: where he comes near it on the rolling logs (../otter.ts),
+    // which only one who walks out to it does; on the owl's back it is let go. It was said on the lodge's far side,
+    // twenty EL before the otter came into the picture, sitting still ("Den simmar ut mot stenen", 12 November 2026).
+    { id: 'al:otter', at: OTTER_DIVES, until: 'al:owl', who: 'elof', line: 'alOtter', aside: true },
     // 5. the lake, and the owl: who it is comes first; on its back the words are the little one's (`al:little`)
     { id: 'al:lake', at: 127.6, who: 'elof', line: 'alLake', aside: true },
     { id: 'al:owl-seen', at: 131.4, until: 'al:owl-call', who: 'elof', line: 'alOwlSeen', read: true },
@@ -666,7 +683,9 @@ export const context: Chooser = (has, player) => {
   if (has('al:scarf')) return ['alvenScarf', 'alvenPappa', 'heart', 'pappa'];
   if (at >= BREDBYN.from + 3) return ['alvenPappa', 'alvenPappa', 'water', 'pappa'];
   if (at >= BANK.from + 2) return ['alvenStones', 'alvenFamily', 'water'];
-  if (has('al:raft')) return at >= GRAVEL.from ? ['alvenEddy', 'alvenFamily', 'water'] : ['alvenCurrent', 'alvenFamily', 'water'];
+  // Where the water is the puzzle the gentler way is to wait at the edge and step on as a log comes (`FELL_IN`: Lugnt
+  // from the start, or after a fall): there "och hoppa" asked for a jump that is never needed.
+  if (has('al:raft')) return at >= GRAVEL.from ? [has(FELL_IN) ? 'alvenEddyStep' : 'alvenEddy', 'alvenFamily', 'water'] : ['alvenCurrent', 'alvenFamily', 'water'];
   if (at >= 9) return ['alvenRaft', 'alvenFamily', 'water'];
   return ['alvenOutlet', 'alvenFamily', 'water'];
 };
