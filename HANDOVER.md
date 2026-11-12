@@ -1,5 +1,62 @@
 # Handover
 
+## State (12 November 2026, night): Olov's playthrough list for Äventyr 2
+
+- **Olov asked**, after playing Äventyr 2 through, for about thirty fixes chapter by chapter, then a pass over how
+  candy and specials are laid out in the whole adventure, and graphic improvements on the way. Six builders worked in
+  parallel worktrees from `main` at `ca5cab6`, each on its own chapters; their branches are merged here without
+  changes beyond three conflict resolutions in `src/content/aventyr2/render.ts` (imports and the `elof` watcher kept
+  from both sides). The candy layout pass comes in its own PR after this one.
+- **Stormkvällen.** The room starts lit by a hanging lamp over the table; it flickers and goes out at the power cut
+  (`power:out`), the TV screen with it, and Mamma lights the candle that stood unlit (`candles`) as she says
+  "Strömmen gick! Jag tänder ljusen." (`src/content/home-power.ts`, `src/render/power-cut.ts`). The TV game is not
+  offered after the cut. Pappa's flashlight is held with a relaxed arm and the forearm along the beam, for every
+  family lamp (`src/render/lamp-hold.ts`); a scene key can point the beam apart from the look (`ActorKey.beam`), so he
+  shines out through the window; a soft spot of light shows where an indoor torch lands. Mamma, Pappa and Moa no
+  longer cross each other in `upptackt` (they came within 0.21 EL; now at least 1.8). Elof's raincoat has a level hem
+  (`rain-gear.ts`: the shader cuts at the hem instead of whole triangles).
+- **Stormgården.** The tap at the rain barrel is a held moment (`kranen`): the ditch starts half full with the lid
+  awash, the camera takes in barrel, water and ditch, a jet arcs from the brass outlet, the water rises and floats the
+  lid up onto the banks, and "Locket flyter upp! Det blev en bro!" is said with it in the picture
+  (`src/render/rain-barrel.ts`, `src/sim/water-level.ts`, `Water.floats`, a new `pour` sound).
+- **Stormskogen.** The three fallen trees across the path are young spruce trunks built in code, with scaled bark,
+  moss, lichen and snapped pale ends (`src/render/fallen-spruce.ts`). The old one at the chapter's end is seen where
+  the hill opens, framed with Elof, lit by a second flash, and walks out of the picture. Pappa's lamp at Klonk's bridge
+  follows the new hold.
+- **Byn i stormen** (and Byn). No cars: the passing car is gone from both village chapters, the legs stay. The power is
+  out in the whole village: dark windows, a candle across the street, and a candle in each shop when its bell is rung
+  (`src/render/window-candle.ts`; wet-road reflections come only from candles). Moa holds her umbrella by the crook,
+  crouches at the wall's edge and holds it out until Elof takes it; he hangs from it with both hands
+  (`src/render/umbrella-hold.ts`). Six texts reworded (list in the PR).
+- **Olympia.** The turf follows the ground's slope toward the camera, with fibre tufts near it (`pitch.ts`); both
+  puddles have irregular near edges, soaked turf and fringes. Elof walks through the small goal (a code-built level
+  goal with a torn back net; the climb is the net). The stump and branch lie on the ground; spruces that stood half
+  over an edge are dropped by a rule in `src/render/dressing/forest.ts` (seven trunks in Granskogen, Stormskogen,
+  Billsta and Olympia, all far behind the path). The pitch ends behind the far goal.
+- **Flärken.** The jetty's gusts are drawn as waves: a swell, spray up the posts, white water over the planks, dry
+  in each post's lee (`src/render/jetty-waves.ts`). Mamma's SUP stroke keeps her hands at chest height and off her face
+  (`paddle.ts`, limited by the rig's own arm). The old one at the end is one figure: a handed-over sighting is hidden
+  at once, even in reading stops, and he hops from the post onto a floating log before the line.
+- **Älven.** Rounded wet river stones and lighter froth (`river-stones.ts`; Flärken's outlet uses them too). The birch
+  leaf is gone; the eddy's logs now reach both banks, so walking and Lugnt cross without a jump. The chewed trunks
+  stand behind the path. The beaver comes out on the lodge's top while Elof is on the roof, then swims out over the
+  lake. The otter leaps in with a splash and floats off when he walks out to it (`otter.ts`). Branches, a stump and
+  Klonk's spot were moved off things they stood in.
+- **Billsta.** Elof turns and thanks Morfar at the ladder ("Tack, morfar! Vilken lång stege!", held `bi:tack-morfar`).
+  The barn has a proper long side with a sliding loft door Mormor rolls open, and a cutaway loft inside
+  (`barn-loft.ts`). The roof's lees are brick ventilation chimneys (`barn-chimney.ts`). Mormor now stands on the brow
+  with her lantern as she says "Kom, vi går ner till sundet." (it was only her glow).
+- **Morgonen.** The end door moved past the TV (x 42.5), so the TV game can be played at breakfast. Elof thanks
+  everyone in a held scene `tack` (seven lines, Klonk answers), and the little one winks one eye on the shelf.
+- **Validation.** Each builder ran typecheck, the full suite, the build and the privacy check, and looked at its items
+  in the running game with stand-in figures at 1280×720 and 844×390 (pictures kept outside the repo). The merged
+  branch passes typecheck, all 2,804 tests in 296 files, the build with its size gates (666.6 KB of gzipped JavaScript,
+  5,585.0 KB at boot) and the privacy check; and on the production build the browser suites aventyr2 (42), village (64),
+  home-console (48), walk-and-talk (34), dialogue-reading, journey, endings (78) and smoke. Not played by a person, not on the
+  family's devices, and the family's private models were not seen: Elof's coat hem, the flashlight grip's fingers, the
+  SUP stroke and the old one's lighting need a look on Olov's computer. No private asset, recording, release boundary
+  or rule changes; the voice catalog changes are metadata only.
+
 ## State (12 November 2026, late afternoon): Olov's playthrough list for Äventyr 1
 
 - **Olov asked**, after playing Äventyr 1 through, for ten fixes in the order played: unfinished-looking animals;
@@ -5634,6 +5691,14 @@ record identify the exact published revision.
 
 ## Next
 
+**Olov's Äventyr 2 list (12 November, night).** Next: the pass over candy, specials and finds in the whole adventure
+(laid out "fint och strukturerat och inte för plottrigt"), in its own PR. Then, on Olov's computer with Blender: an
+opening in the far goal's back net (`fotbollsmal-stort` in `art/blender/a2-yard.py`, re-baked), since Elof still walks
+out through it in Olympia. The MCP add-on in Blender 5.2 failed its handshake on 12 November (expected protocol 15):
+update it with `uvx mcp-for-blender install-addon`, re-enable it, start its server, and check `telemetry_consent` is
+false. Keep the power cut's single owner (`src/content/home-power.ts`) for lamp, TV, console and candle; keep
+`lamp-hold.ts`'s forearm-along-the-beam hold for every family lamp; keep a handed-over sighting hidden at once.
+
 **Olov's Äventyr 1 playthrough (12 November, afternoon).** A ghost on a `still` perch waits for his help and never
 rises by itself, in the simulation or the picture; keep the chase's 3 EL everywhere else (`tests/robot/ghost-distance.test.ts`
 measures both). A towed mover (`Mover.tow`) is the simulation's: spots that `follow` it, the helper and the picture read
@@ -6225,6 +6290,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 2 playthrough (12 Nov, night) | Olov's ~30 points from playing Äventyr 2 through | One session on Olov's computer with six parallel builders | — / 1 list | Power cut and lamps at home, the tap moment, fallen spruces, no cars and candle-lit village, Olympia's turf, puddles and goal, waves on the jetty, Älven's stones, beaver and otter, Billsta's barn, Morgonen's thanks and TV; candy pass next |
 | Äventyr 1 playthrough (12 Nov, afternoon) | Olov's ten points from playing Äventyr 1 through | One session on Olov's computer, stacked on #266 | — / 1 list | Finished carvings and beetle, Gården's hedge end, two thanks, the eddy and the lift with a still ghost, a first look for memories, the towed trägubbe in Norrskenet, the shelf before teeth, words for drops |
 | Lines at their moment (12 Nov) | Go through every conversation: fit, place and timing | One session on Olov's computer, continued after his answers | — / 2 requests | Queue rules in the simulation; 69 passing remarks; six moments told standing, then the old one's four sightings, the party's thanks and the shelf; twelve lines rewritten, merged or removed; a robot guard for late lines in every chapter |
 | Bertil's slippers (11 Nov, late evening) | Add a slipper wish before the Thailand trip | One text-only cloud continuation | — / 1 request | Existing dialogue receipt and reading hold retained; future recording metadata aligned. |
@@ -6285,6 +6351,12 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Äventyr 2 list (12 November, night):** the far goal in Olympia still has a closed back net that Elof walks out
+  through (needs Blender). Elof's coat hem, the flashlight fingers, Mamma's SUP stroke and the old one's lighting were
+  seen on stand-ins only. Billsta's bales are simple shapes, with a small grey wedge under one. A game loaded with Moa
+  already called shows her upright for about a second before she crouches. "En utter! Den simmar ut mot stenen." is
+  said while the otter still sits on its stone.
 
 - **Äventyr 1 playthrough (12 November, afternoon):** the bathroom walk's stride comes from the walk's depth and is
   not measured against the floor; it strides now, but whether the feet slide on the tiles was judged from stills only.
@@ -6528,6 +6600,7 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- The 12 November Äventyr 2 list is handled in this continuation, except the candy layout pass (next PR) and the far goal's opening (Blender).
 - The 12 November list from playing Äventyr 1 through (ten points) is handled in this continuation.
 - The 11 November request for Bertil's slipper wish before Thailand is handled in this continuation.
 - The 11 November evening request for the family to walk to the opening's lavskrika is handled in this
@@ -6566,6 +6639,22 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från din genomspelning av Äventyr 2 den 12 november (ingen av frågorna hindrar arbetet):
+
+- Strömmen har gått i hela byn, så där lyser bara stearinljus: ett hos grannen och ett i varje butik när Elof ringt i
+  klockan. Stämmer det? Ska Moas "Lillebror! Ropa, så får du mitt paraply!" bli en fråga, "Vill du låna mitt paraply?"?
+- Elofs tack i Morgonen (Mamma, Pappa, Moa, Bertil, mormor och morfar, Klonk): ska gamla trägubben också få ett tack?
+  Är pausen på drygt en sekund mellan tacken lagom? Dörren där kapitlet slutar står nu i hallen, efter TV:n: är det rätt?
+- Stormgården: Elof står stilla ungefär 4,5 sekunder medan vattnet stiger och locket flyter upp, och sedan läses
+  "Locket flyter upp! Det blev en bro!". Känns det för långt?
+- Billsta: tegelskorstenar för ventilation på ladan, eller hellre trähuvar? En skjutdörr på räls, eller pardörrar? Är
+  "Tack, morfar! Vilken lång stege!" bra?
+- Flärken: vinden över bryggan är dämpad så att vågorna syns först. Mer eller mindre vind?
+- Älven: på Lugnt behöver man inte hoppa i virveln längre; ska tipset "Vänta in stockarna och hoppa." bli "Vänta tills
+  stocken kommer och kliv på"? Bävern simmar nu ut från hyddan i stället för hem till den: är det rätt ordning?
+- Olympia: det lilla målet är nu byggt i kod (med plant tak så Elof kan gå igenom det) och är lite enklare än
+  Blender-modellen. Går det bra?
 
 Från din genomspelning av Äventyr 1 den 12 november (ingen av frågorna hindrar arbetet):
 
