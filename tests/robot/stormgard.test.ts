@@ -185,6 +185,17 @@ describe('Äventyr 2, Kapitel 1: Stormgården', () => {
       expect(hose.top - heightAt(stormgard, ditch.from - 0.5)).toBeLessThan(FALL_LIMIT);
     });
 
+    it('speaks of the ditch on the barrel\'s top, where it comes into the picture, and not at the barrel\'s foot', () => {
+      // From the lawn the barrel hides the ditch: "Diket är alldeles för brett!" was said with no ditch in sight.
+      const sim = new Sim(stormgard, {}, { checkpoint: 2 });
+      run(sim, 0.5);
+      for (let i = 0; i < 10 * 120 && sim.curr.mode !== 'climb'; i++) sim.step({ ...idle, x: 1 });
+      expect(sim.said).not.toContain('sg:ditch');
+      upTheBarrel(sim);
+      expect(sim.curr.y).toBeCloseTo(hose.top, 1);
+      expect(sim.said).toContain('sg:ditch');
+    });
+
     it('before the tap a running jump over the ditch ends in the glitter bubble, back on the near side', () => {
       const sim = new Sim(stormgard, {}, { checkpoint: 2 });
       run(sim, 0.5);

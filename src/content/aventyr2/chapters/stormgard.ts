@@ -402,7 +402,7 @@ export const stormgard: ChapterData = {
     { at: { x: 62.2, y: 0 } },
     { at: { x: 68, y: 0 } },
     { at: { x: 74.6, y: 0 } },
-    // on the barrel's top, beside the tap: the way is up there
+    // on the barrel's top, beside the tap: the way is up there, and it answers him there
     { at: { x: 81.8, y: BARREL.top } },
     // over the ditch, where Elof can't follow until the lid is up
     { at: { x: 91.4, y: 0 } },
@@ -434,8 +434,9 @@ export const stormgard: ChapterData = {
     { id: 'sg:gusts', at: 40.8, who: 'elof', line: 'sgPots' },
     { id: 'sg:pot-klonk', at: 45.2, who: 'spoket', line: 'sgKlonk', aside: true },
     { id: 'sg:pot', on: 'beat:sg:pot-klonk', who: 'elof', line: 'sgFlowerpot', aside: true },
-    // 4. Regntunnan: Klonk on the barrel answers, and shows the way up
-    { id: 'sg:ditch', at: 77, who: 'elof', line: 'sgDitch' },
+    // 4. Regntunnan: said on the barrel's top, where the ditch first comes into the picture (from the lawn at its foot
+    // the barrel hides it: he spoke of a ditch no one could see). Klonk beside him on the top answers.
+    { id: 'sg:ditch', at: BARREL.from + 0.2, who: 'elof', line: 'sgDitch' },
     { id: 'sg:barrel', on: 'beat:sg:ditch', who: 'spoket', line: 'sgKlonkKlonk', aside: true },
     { id: 'sg:lid', on: 'placed:lid', who: 'elof', line: 'sgLid' },
     // 5. Bertil and his boot. He is proud of it as it sets off, and the ride is the time to read it; the thanks on the
