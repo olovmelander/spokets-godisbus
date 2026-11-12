@@ -235,8 +235,15 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
     it('each sets off from the bag while he is near it, and otherwise out of the picture, behind him', () => {
       // The widest picture, a phone held sideways, shows about seven EL behind him.
       for (const r of rollers) expect(r.behind).toBeGreaterThanOrEqual(10);
-      for (const [x, from] of [[22.6, rollers[0]!.from.x], [40.6, 40.6 - rollers[0]!.behind!]] as const) {
-        const sim = new Sim(olympia, {}, { checkpoint: checkpoint(x), flags: ['beat:ol:wind'] });
+      // The big candy where they begin, near the bag, and the one in the middle of their stretch, far from it.
+      const { from: bag, to: end, behind } = rollers[0]!;
+      const near = olympia.checkpoints!.findIndex((c) => c.x > bag.x && c.x < bag.x + behind!);
+      const far = olympia.checkpoints!.findIndex((c) => c.x > bag.x + behind! + 2 && c.x < end.x - 5);
+      expect(near).toBeGreaterThanOrEqual(0);
+      expect(far).toBeGreaterThanOrEqual(0);
+      for (const [i, from] of [[near, bag.x], [far, olympia.checkpoints![far]!.x - behind!]] as const) {
+        const x = olympia.checkpoints![i]!.x;
+        const sim = new Sim(olympia, {}, { checkpoint: i, flags: ['beat:ol:wind'] });
         let first: number | null = null;
         for (let i = 0; i < 3 / STEP && first === null; i++) {
           sim.step(idle);
