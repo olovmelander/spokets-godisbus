@@ -5,20 +5,47 @@ import type { Pose } from './rig';
 const UP = new Vector3(0, 1, 0);
 const smooth = (t: number) => { const k = Math.max(0, Math.min(1, t)); return k * k * (3 - 2 * k); };
 
+/** Dra upp (the scene `hissa`, norrsken-scenes.ts): the three heaves, from its cue to the lip. */
+const HEAVE = { from: .4, each: .65, count: 3 };
+
+/**
+ * How hard he heaves at this moment of `hissa`, from 0 to 1: three heaves, while the mover brings the trägubbe up the
+ * crack in one go. Calm (reduced motion): one steady pull.
+ */
+export function heaveAt(seconds: number, calm = false): number {
+  const k = (seconds - HEAVE.from) / HEAVE.each;
+  if (k <= 0 || k >= HEAVE.count) return 0;
+  return calm ? .6 : Math.sin(Math.PI * (k % 1)) ** 2;
+}
+
+/** When the ghost has the lace's end in `hissa`, from 0 to 1: it waddles up behind him and takes it. */
+export function ghostHoldAt(seconds: number): number {
+  return smooth((seconds - .3) / .25);
+}
+
 /** The shoulder gives up the rope over the same interval as the real grip. */
 export function rescueCarryPose(pose: Pose, weight: number): void {
   pose.lean -= .13 * weight; pose.twist -= .12 * weight;
   pose.armR += (.22 - pose.armR) * weight; pose.elbowR += (.8 - pose.elbowR) * weight;
 }
+/** Pieces of the lace's end, from his back hand to the ghost, while they heave together. */
+const TAIL = 6;
+
+/** Dra upp, for the picture: how hard he heaves, and where the ghost is and how far it has the lace's end. */
+export interface Haul { heave: number; ghost: Vector3 | null; hold: number }
+
 /** The lace has one continuous path: Elof's hands, over the lip, and down around the old carving.
  * Afterwards the same line draws taut behind him as he drags the heavy wooden body along the rock.
+ * While they pull it up, its end goes back from his hands to the ghost, which heaves behind him.
  */
 export function createNorrskenRescue() {
   const group = new Group(); group.name = 'rescue-lace';
   const material = new MeshStandardMaterial({ color: '#d65c45', roughness: .82 });
   const geometry = new CylinderGeometry(.026, .026, 1, 7);
-  const pieces = Array.from({ length: 18 }, () => { const mesh = new Mesh(geometry, material); group.add(mesh); return mesh; });
+  // Eight from his hands to the lip, one down to the trägubbe, nine round it, and six back to the ghost (`TAIL`).
+  const pieces = Array.from({ length: 18 + TAIL }, () => { const mesh = new Mesh(geometry, material); group.add(mesh); return mesh; });
   const hand = new Vector3(), target = new Vector3(), tip = new Vector3(), lip = new Vector3(), last = new Vector3(), point = new Vector3(), along = new Vector3(), heldAxis = new Vector3();
+  const rear = new Vector3(), end = new Vector3(), loose = new Vector3();
   const turn = new Quaternion();
   let lastX: number | null = null;
   let haul = 0;
@@ -42,7 +69,8 @@ export function createNorrskenRescue() {
       return hadContact && tasteSeconds !== undefined && !calm ? 1 - smooth(tasteSeconds / .45) : 0;
     },
     update(rig: CarryingRig, player: Group, carving: Group, flags: ReadonlySet<string>, lowering: number,
-      pulling: boolean, clock: number, dt: number, calm: boolean, lifting = 0, feeding = false, releaseWeight = 0) {
+      pulling: boolean, clock: number, dt: number, calm: boolean, lifting = 0, feeding = false, releaseWeight = 0,
+      up: Haul = { heave: 0, ghost: null, hold: 0 }) {
       const lowered = flags.has('lower'), rescued = flags.has('placed:tragubbe');
       group.visible = lowered && !flags.has('taste') && !flags.has('home');
       const grip = { kind: 'power' as const, size: .026 };
@@ -75,6 +103,8 @@ export function createNorrskenRescue() {
       // Elof's outer group faces +x (the imported model is turned inside it). In the crouch his
       // chest is lower too: a standing-height target would put the feeding hand over his head.
       target.set(hauling ? -.17 : .28, feeding ? .3 : hauling ? .46 : .53, .12);
+      // Each heave draws both hands back towards his chest, the lace with them.
+      if (!rescued) { target.x -= .15 * up.heave; target.y -= .03 * up.heave; }
       player.localToWorld(target);
       lip.set(rescued ? carving.position.x : 12.4, rescued ? .39 : .1, .16);
       along.subVectors(lip, target).normalize();
@@ -99,6 +129,7 @@ export function createNorrskenRescue() {
         target.copy(hand).addScaledVector(along, pulling ? -.17 : -.11); target.z -= .05;
         if (rig.grasp) rig.grasp(0, grip, target, along, point);
         else { rig.reach(0, target); rig.hand(0, point); rig.hold?.(0, grip); }
+        rear.copy(point);
       }
       tip.copy(carving.position); tip.y += .38; tip.z += .1;
       if (rescued) lip.copy(tip);
@@ -119,6 +150,20 @@ export function createNorrskenRescue() {
         last.set(tip.x + Math.cos(a) * .19, tip.y, tip.z + Math.sin(a) * .14);
         point.set(tip.x + Math.cos(b) * .19, tip.y, tip.z + Math.sin(b) * .14);
         rod(i + 9, last, point);
+      }
+      // Dra upp: the lace's end, back from his hands to the ghost behind him. It picks it up from the rock where it
+      // lay, and holds it to its front; the line goes taut with each heave.
+      if (!rescued && up.ghost && up.hold > 0) {
+        const side = Math.sign(rear.x - up.ghost.x) || 1;
+        end.set(up.ghost.x + side * .26, up.ghost.y + .42, up.ghost.z + .08);
+        loose.set(rear.x - side * .5, .02, rear.z).lerp(end, up.hold);
+        last.copy(rear);
+        for (let i = 1; i <= TAIL; i++) {
+          const t = i / TAIL;
+          point.copy(rear).lerp(loose, t);
+          point.y -= Math.sin(Math.PI * t) * (.03 + .09 * (1 - up.heave)) * up.hold;
+          rod(17 + i, last, point); last.copy(point);
+        }
       }
     },
   };

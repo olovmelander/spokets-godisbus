@@ -121,6 +121,8 @@ export const sv = {
     board: 'Kliv på',
     lift: 'Lyft',
     lowerLace: 'Sänk snöret',
+    // Norrskenet: the one pull that brings the trägubbe up (Olov, 13 November 2026).
+    pullUp: 'Dra upp',
     paintEyes: 'Måla ögon',
     takeBag: 'Ta påsen',
     giveTragubbe: 'Ge trägubben',
@@ -223,8 +225,8 @@ export const sv = {
       figure: { purpose: 'Hämta hem min gamla trägubbe.', recap: 'Minnet visade min gamla trägubbe, ensam i en spricka.' },
       crack: { purpose: 'Hjälp spöket vid sprickan.', recap: 'Spöket visar att någon väntar där nere.' },
       pull: { purpose: 'Dra upp trägubben med snöret.', recap: 'Snöret är nere. Vi kan hjälpa den som sitter fast.' },
-      eyes: { purpose: 'Plocka ett bär och måla trägubbens ögon.', recap: 'Vi fick upp en ensam trägubbe. Hans gamla ögon är borta.' },
-      bag: { purpose: 'Ta tillbaka min godispåse.', recap: 'Trägubben har nya ögon. Spöket räcker tillbaka påsen.' },
+      // No eyes to paint in Norrskenet any more: he keeps his old ones (Olov, 13 November 2026).
+      bag: { purpose: 'Ta tillbaka min godispåse.', recap: 'Vi fick upp trägubben! Spöket räcker tillbaka påsen.' },
       share: { purpose: 'Dela godiset med mina vänner.', recap: 'Påsen är tillbaka. Nu väljer jag vem som får vad.' },
       welcome: { purpose: 'Dela godiset – ett välkommen-hem-kalas!', recap: 'Spöket tog godiset för att välkomna min gamla trägubbe hem!' },
       gold: { purpose: 'Smaka på guldgodiset.', recap: 'Vi har delat godiset. Guldgodiset glittrar som stjärnan.' },

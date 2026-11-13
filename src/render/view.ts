@@ -17,7 +17,8 @@ import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
 import { holdCarving } from './carrying';
-import { createNorrskenRescue, rescueCarryPose } from './norrsken-rescue';
+import { createNorrskenRescue, ghostHoldAt, heaveAt, rescueCarryPose } from './norrsken-rescue';
+import { createBagReturn } from './norrsken-bag';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -776,6 +777,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const carrySide = new Vector3(), carryAxis = new Vector3(), carryHips = new Vector3();
   const rescue = chapter.id === 'norrsken' ? createNorrskenRescue() : null;
   if (rescue) scene.add(rescue.group);
+  // Norrskenet: the ghost holds the bag out and sets it down before him (./norrsken-bag.ts). 0 carried, 1 set down.
+  const bagReturn = chapter.id === 'norrsken' ? createBagReturn() : null;
+  let bagOut = 0;
+  let bagDown: Vector3 | null = null;
   const laceHand = new Vector3(), laceAlong = new Vector3();
   /** Myren's lysklubba, held up in his right hand in the mist: where that hand is, from the frame before. */
   const lanternHand = new Vector3(), lanternLift = new Vector3();
@@ -1284,12 +1289,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     eddyLift = eddy?.update(movers, moverMeshes, clock, lessMotion()) ?? 0;
     // On the life clock: the water already in the air falls on while the words about it are read.
     rainBarrel?.update(movers, lifeDt, lessMotion(), water);
-    if (chapter.id === 'norrsken') {
-      const eyes = scene.getObjectByName('first-carving-eyes');
-      if (eyes) eyes.visible = flags.has('eyes');
-    }
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
+    bagOut = bagReturn?.update(flags, x, ghostState ?? null, dt, lessMotion()) ?? 0;
     const bathroom = homeRoutine?.body({ x, y });
     const onShoulders = chapter.id === 'norrsken' && curr.mode === 'ride' && flags.has('home');
     if (onShoulders) homeJourney = true;
@@ -1489,7 +1491,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           thing.spot.at.y + (1 - progress * progress) * .9, -.35);
       }
       if (thing.prop && chapter.id === 'norrsken' && thing.spot.id === 'bag') {
-        thing.prop.group.visible = flags.has('eyes') && !flags.has('bag');
+        // Set down once the ghost has held it out to him (./norrsken-bag.ts).
+        bagDown = thing.prop.group.position;
+        thing.prop.group.visible = bagOut >= 1 && !flags.has('bag');
         const tear = thing.prop.group.getObjectByName('saturday-bag-tear');
         if (tear) tear.visible = true;
       }
@@ -1725,6 +1729,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       rescueCarryPose(spokenPose, rescueGrip * (.4 + .6 * rescue.hauling));
     }
     if (rescue && sceneFrame?.id === 'uppdragen') spokenPose.lean -= .16;
+    // Dra upp: he leans back into the lace and bends his knees with each of the three heaves (./norrsken-rescue.ts).
+    const heave = rescue && sceneFrame?.id === 'hissa' ? heaveAt(sceneFrame.seconds, calmStory) : 0;
+    if (rescue && sceneFrame?.id === 'hissa') {
+      const into = smooth(clamp((sceneFrame.seconds - .2) / .3, 0, 1));
+      spokenPose.lean -= (.1 + .22 * heave) * into;
+      spokenPose.kneeL += .3 * heave; spokenPose.kneeR += .3 * heave;
+    }
     playerBody.pose(spokenPose);
     playerBody.face?.(elofTalker.mouth.open, elofTalker.mouth.round, elofTalker.lids);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
@@ -2079,7 +2090,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase. It was given
     // back on the summit, so neither the party nor Byn, a week later, has it.
     stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog' && chapter.id !== 'byn' && !chapter.named) &&
-      !(chapter.id === 'norrsken' && flags.has('eyes'));
+      !(chapter.id === 'norrsken' && bagOut >= 1);
     // The gold sweet glints at the bag's mouth all through the chase (plan §3.3 rule 3).
     const glint = stolenBag.getObjectByName('saturday-bag-glow');
     if (glint) {
@@ -2090,6 +2101,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (directions.ghost) stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -Math.sin(ghostTurn) * .4 - .05);
     else stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -.18 + Math.sin(ghostTurn) * .25);
     stolenBag.rotation.y = ghostTurn;
+    if (bagReturn && bagDown) bagReturn.hand(stolenBag, ghostPlace, bagDown, bagOut);
     const tear = stolenBag.getObjectByName('saturday-bag-tear');
     if (tear) tear.visible = chapter.prologue ? flags.has('bag:torn') : true;
     prologueStage.update(flags);
@@ -2415,7 +2427,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         sceneFrame?.id === 'snoret' ? clamp((sceneFrame.seconds - .4) / 1.7, 0, 1) : 1,
         flags.has('nr:rope-ready') && !flags.has('placed:tragubbe'), clock, dt, calmStory,
         sceneFrame?.id === 'uppdragen' ? smooth(clamp((sceneFrame.seconds - .5) / .65, 0, 1)) * (1 - smooth(clamp((sceneFrame.seconds - 1.9) / .6, 0, 1))) : 0,
-        sceneFrame?.id === 'snoret', rescueGrip);
+        sceneFrame?.id === 'snoret', rescueGrip,
+        // Dra upp: how hard he heaves, and the ghost behind him with the lace's end.
+        { heave, ghost: sceneFrame?.id === 'hissa' ? ghostPlace.position : null, hold: sceneFrame?.id === 'hissa' ? ghostHoldAt(sceneFrame.seconds) : 0 });
       if (carving && flags.has('taste') && !homeJourney) {
         // It was dragged up behind him: as he tastes it is set upright at his feet, from where it lay, not by a jump.
         const settle = sceneFrame?.id === 'aterfunna' && !calmStory ? smooth(clamp(sceneFrame.seconds / .7, 0, 1)) : 1;
