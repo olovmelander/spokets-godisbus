@@ -5,9 +5,10 @@ import {
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../extensions';
 import { sequence } from '../dressing/kit';
 import { drawnWhile } from '../idle';
-import { faunaPlan, girth, type Landing, type Plan, type Soarer } from './fauna/plan';
+import { forestFolk, installForestFolk } from './fauna/folk';
+import { faunaPlan, type Landing, type Plan, type Soarer } from './fauna/plan';
 import {
-  BIRDS, CARVINGS, SOARING, being, bird, creatureMaterial, fox, glintMaterial, glints, herd, owl, plain, soarer, squirrel,
+  BIRDS, CARVINGS, SOARING, bird, creatureMaterial, glintMaterial, glints, herd, owl, plain, soarer,
   type Species, type V3,
 } from './fauna/shapes';
 import { fireflyMaterial, smallMaterial, swarm, type SmallKind } from './fauna/small-kit';
@@ -24,6 +25,8 @@ import { fireflyMaterial, smallMaterial, swarm, type SmallKind } from './fauna/s
  */
 export function installFauna(): void {
   PACK.lifts.push(createFauna);
+  // The fox, the squirrels and the beings modelled, rigged and animated in Blender (./fauna/folk.ts).
+  PACK.models.push(installForestFolk);
 }
 
 /** A visitor's coming and going: where it may come down, how long until it comes, and how long it stays. */
@@ -66,9 +69,6 @@ const Q = new Quaternion();
 const E = new Euler();
 const P = new Vector3();
 const S = new Vector3();
-const F = new Vector3();
-const U = new Vector3();
-const W = new Vector3();
 const NOWHERE = new Matrix4().makeScale(0, 0, 0);
 
 /** A kind's mesh, and what it puts there this frame: shown only if anything of it is. */
@@ -132,14 +132,15 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
   // The calm of the storm's eye, as the storm itself fades it.
   let calm = 0;
   const storm = chapter.storm;
+  // The fox, the squirrels and the beings (./fauna/folk.ts): drawn rigged once their models have come.
+  const folk = forestFolk(plan, add, group);
+  group.userData.forestFolk = folk.wants;
   const kinds = [
-    squirrels(plan, add),
-    foxes(plan, add),
+    ...folk.kinds,
     owls(plan, add),
     birds(plan, add),
     soarers(plan, add),
     butterflies(plan, add),
-    beings(plan, add),
     carvings(plan, add),
     plan.dragonflies.length + plan.fireflies ? lights(plan, add, plan.fireflies ? adopt(glints(plan.fireflies, glint)) : null, glow, small) : null,
   ].filter((kind): kind is NonNullable<Kind> => kind !== null);
@@ -182,119 +183,6 @@ type SmallMaterials = { solid: Material; glass: Material; firefly: Material };
 /** How many of n are drawn: all on High, fewer on Mid. */
 const quota = (n: number, now: Now) => (now.share < 1 ? Math.max(1, Math.round(n * now.share)) : n);
 type Kind = ((now: Now, calm: number) => void) | null;
-
-// --- squirrels: dash up and round their trunk, pause, flick the tail, dash on ------------------------------------
-
-/** How far a squirrel comes in one stride, in EL. */
-const STRIDE = 0.5;
-
-function squirrels(plan: Plan, add: Add): Kind {
-  if (!plan.squirrels.length) return null;
-  const crowd = add(squirrel(), plan.squirrels.length, undefined, 'squirrels');
-  const next = sequence(11);
-  const all = plan.squirrels.map((s) => ({ ...s, a0: s.a, h0: s.h, a1: s.a, h1: s.h, k: 1, run: 0.5, long: 1, wait: next() * 2, fa: 0, fh: 1, flick: next() * 2 }));
-  return (now) => {
-    for (const [i, q] of all.entries()) {
-      const tree = q.tree;
-      if (i >= quota(all.length, now) || !seen(now, tree.x, tree.z, tree.r + 3)) { crowd.hide(i); continue; }
-      // When he comes near its trunk, it runs higher, and stays up while he is there.
-      const near = Math.abs(now.x - tree.x) < 3 + tree.r;
-      if (q.k < 1) q.k = Math.min(1, q.k + now.dt / q.run);
-      else if (!now.still && ((q.wait -= now.dt) <= 0 || (near && q.h < 6.5))) {
-        q.a0 = q.a;
-        q.h0 = q.h;
-        q.h1 = near ? 7.2 + next() * 2.5 : Math.min(6, Math.max(1.3, q.h + (next() - 0.45) * 3.6));
-        q.a1 = Math.min(2.5, Math.max(-2.5, q.a + (next() - 0.5) * 2.8));
-        const across = (q.a1 - q.a0) * girth(tree, (q.h0 + q.h1) / 2);
-        const long = Math.max(0.3, Math.hypot(across, q.h1 - q.h0));
-        q.fa = across / long;
-        q.fh = (q.h1 - q.h0) / long;
-        q.run = long / (near ? 5.5 : 3.8);
-        q.long = long;
-        q.k = 0;
-        q.wait = 0.9 + next() * 2.6;
-      }
-      const dash = q.k < 1;
-      const e = smooth(q.k);
-      q.a = lerp(q.a0, q.a1, e);
-      q.h = lerp(q.h0, q.h1, e);
-      // On the bark, belly to it: forward along its way, its back out from the trunk.
-      U.set(Math.sin(q.a), 0, Math.cos(q.a));
-      F.set(Math.cos(q.a) * q.fa, q.fh, -Math.sin(q.a) * q.fa).normalize();
-      W.crossVectors(F, U);
-      // It bounds: a stride for each half length it has come, so that no foot slides on the bark.
-      const stride = (e * q.long * Math.PI * 2) / STRIDE;
-      const out = girth(tree, q.h) + 0.03 + (dash ? 0.05 * Math.abs(Math.sin(stride)) : 0);
-      M.makeBasis(F, U, W).setPosition(tree.x + U.x * out, tree.y + q.h, tree.z + U.z * out);
-      crowd.matrix(i, M);
-      // A pause has a flick of the tail now and then, and a look round in quick snaps; a dash streams it out behind.
-      if (!dash && !now.still) q.flick -= now.dt;
-      if (q.flick < -0.8) q.flick = 1 + next() * 2.5;
-      const flick = q.flick < 0 ? Math.sin(-q.flick * 20) * Math.exp(q.flick * 4) * 0.6 : 0;
-      crowd.pose(i, 0, dash ? 0.3 + 0.12 * Math.sin(stride + 1) : flick, dash ? 0 : 0.35 * glance(now.t * 1.4, i * 2.7), dash ? 0.8 * Math.sin(stride) : 0);
-    }
-  };
-}
-
-// --- the fox: now and then, far back; it trots along, sits and looks, and trots off, never towards him -------------
-
-/** How the forest's floor rises far behind the path (../dressing/ground.ts, PROFILE_FOREST). */
-const backOf = (z: number) => (z > -16 ? -0.15 - (0.1 * (-10 - z)) / 6 : z > -22 ? -0.25 + (0.25 * (-16 - z)) / 6 : (0.3 * (-22 - z)) / 8);
-
-function foxes(plan: Plan, add: Add): Kind {
-  if (!plan.fox) return null;
-  const crowd = add(fox(), 1, undefined, 'fox');
-  const next = sequence(23);
-  const SIZE = 2.3;
-  const fx = { on: false, wait: 18 + next() * 20, x: 0, z: 0, dir: 1, yaw: 0, sat: false, sit: 0, k: 0, walked: 0, stay: 0, steps: 0 };
-  const shoulder = new Matrix4();
-  const flat = (x: number, dir: number) => [0, 3, 6, 9, 12, 15].every((d) => Math.abs(plan.ground(x + dir * d) - plan.ground(x)) < 0.4);
-  return (now) => {
-    if (!fx.on) {
-      crowd.hide(0);
-      if ((fx.wait -= now.dt) > 0 || now.day < 0.5 || now.still) return;
-      // It steps out from behind a trunk that is in the picture, on the side away from him.
-      const tree = plan.trees.find((t) => !t.snag && t.z < -7 && t.z > -18 && Math.abs(t.x - now.cx) < (now.cz - t.z) * now.slope * 0.6);
-      const dir = tree ? Math.sign(tree.x - now.x) || 1 : 1;
-      if (!tree || !flat(tree.x, dir)) { fx.wait = 3; return; }
-      Object.assign(fx, { on: true, x: tree.x, z: Math.max(-24, Math.min(-12, tree.z - 3 - next() * 4)), dir, yaw: dir > 0 ? 0 : Math.PI, sat: false, sit: 0, k: 0, walked: 0, stay: 2.5 + next() * 1.5 });
-    }
-    // Never towards him: if he is ahead of it, it turns and trots the other way.
-    if (!now.still && Math.sign(now.x - fx.x) === fx.dir && Math.abs(now.x - fx.x) > 1.5 && Math.abs(now.x - fx.x) < 30) fx.dir = -fx.dir;
-    fx.yaw += (((fx.dir > 0 ? 0 : Math.PI) - fx.yaw) * Math.min(1, now.dt * 5));
-    const sitting = !fx.sat && fx.walked > 4;
-    if (sitting) {
-      fx.sit = Math.min(1, fx.sit + now.dt / 0.7);
-      if (fx.sit >= 1 && (fx.stay -= now.dt) <= 0) fx.sat = true;
-    } else {
-      fx.sit = Math.max(0, fx.sit - now.dt / 0.6);
-      // It goes the way it faces: turning round, it stops until it has.
-      const pace = 1.7 * now.dt * Math.max(0, Math.cos(fx.yaw - (fx.dir > 0 ? 0 : Math.PI)));
-      if (fx.sit === 0) {
-        fx.x += fx.dir * pace;
-        fx.walked += pace;
-        // Its legs go by the way it has come, so that no foot slides over the ground, and it never trots on the spot.
-        fx.steps += pace * 3.8;
-      }
-    }
-    // Gone once it has trotted out of the picture; it comes again after a while.
-    if (fx.sat && !seen(now, fx.x, fx.z, 4)) {
-      fx.on = false;
-      fx.wait = 40 + next() * 40;
-      crowd.hide(0);
-      return;
-    }
-    const sit = smooth(fx.sit) * 0.45;
-    const trot = fx.sit === 0 ? Math.sin(fx.steps) : 0;
-    shoulder.makeTranslation(-0.48, -0.66, 0).premultiply(R.makeRotationZ(sit)).premultiply(M.makeTranslation(0.48, 0.66, 0))
-      .premultiply(R.makeScale(SIZE, SIZE, SIZE)).premultiply(M.makeRotationY(fx.yaw))
-      .premultiply(R.makeTranslation(fx.x, plan.ground(fx.x) - backOf(fx.z) + 0.05 * Math.abs(trot), fx.z));
-    crowd.matrix(0, shoulder);
-    // Sitting, it looks round at the picture, and a little about.
-    const look = smooth(fx.sit) * (fx.dir > 0 ? -1.1 : 1.1) + (fx.sit > 0.9 ? 0.2 * Math.sin(now.t * 0.9) : 0);
-    crowd.pose(0, 0, 0.55 * trot, look, sit);
-  };
-}
 
 // --- owls: on a branch or a stump at dusk and by night; they blink slowly, and turn their heads now and then ----
 
@@ -743,37 +631,6 @@ function butterflies(plan: Plan, add: Add): Kind {
       crowd.put(b.slot, x, y, z, b.yaw, 1.4, (1 - k) * (1 - gliding) * 0.18 * Math.sin(beat + 0.6));
       const [fore, hind] = butterflyWings(t, b.p, now.still ? 1 : b.sit, b.species);
       crowd.pose(b.slot, fore, hind, 0, 0);
-    }
-  };
-}
-
-// --- the little beings: they peek out from behind their stones, and duck back when he comes ----------------------
-
-/** How big a being is drawn: three quarters of him. */
-const BEING = 1.35;
-
-function beings(plan: Plan, add: Add): Kind {
-  if (!plan.beings.length) return null;
-  const crowd = add(being(plan.beings[0]!.lichen), plan.beings.length, undefined, 'beings');
-  const next = sequence(61);
-  const all = plan.beings.map((b) => ({ ...b, out: 1, wait: 0, blink: 1 + next() * 3 }));
-  return (now) => {
-    for (const [i, b] of all.entries()) {
-      if (i >= quota(all.length, now) || !seen(now, b.at[0], b.at[2], 2)) { crowd.hide(i); continue; }
-      const near = Math.abs(now.x - b.at[0]) < 3 && Math.abs(now.y - b.at[1]) < 4;
-      if (!now.still) {
-        // Quick to duck, slow and careful to come out again, a while after he has gone by.
-        if (near) { b.out = Math.max(0, b.out - now.dt / 0.25); b.wait = 2 + next() * 2; }
-        else if ((b.wait -= now.dt) <= 0) b.out = Math.min(1, b.out + now.dt / 1.4);
-        b.blink -= now.dt;
-        if (b.blink < -0.3) b.blink = 2.5 + next() * 3;
-      }
-      const out = smooth(b.out);
-      const shut = b.blink < 0 ? Math.sin((-b.blink / 0.3) * Math.PI) : 0;
-      // Behind its stone: out, its eyes are just over the top, and it leans out to one side to look.
-      crowd.put(i, b.at[0] + b.side * b.wide * lerp(0.05, 0.32, out), b.top - lerp(0.82, 0.36, out), b.at[2] - b.deep - 0.28, -Math.PI / 2 + b.side * 0.3, BEING, 0,
-        -b.side * (0.16 * out + 0.04 * Math.sin(now.t * 0.7 + i)));
-      crowd.pose(i, 0, 0, 0, shut);
     }
   };
 }
