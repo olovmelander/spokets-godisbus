@@ -124,7 +124,7 @@ export const prolog: ChapterData = {
   ],
   beats: [
     // Once the ghost lies on the floor before her (src/sim/prologue.ts, MAMMA_SEEN).
-    { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
+    { id: 'dropped', on: 'mamma:sees', who: 'mamma', line: 'dropped' },
     { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', read: true },
     // Their promises, one from each as he passes them on the deck. Nothing is said of the ghost slipping off to the
     // edge behind Pappa's back: it is seen, and the children point (Olov, 13 November 2026: "så man inte säger 'Det

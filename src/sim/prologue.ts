@@ -24,7 +24,7 @@ export const PAPPA_TIME = 5.2;
 /**
  * Mamma's joke: the ghost stiffens in mid-hop as she turns (FROZEN), drops like a dropped piece of wood, lands with a
  * knock (LANDS), rocks once and lies still on the floor (DOWN). Only once it has lain there a moment does she see it
- * (`mamma:noticed`, SEEN), and say "Hoppsan! Vem tappade spöket?": the line freezes the picture while it is read, so
+ * (`mamma:sees`, SEEN), and say "Hoppsan! Vem tappade spöket?": the line freezes the picture while it is read, so
  * that picture is the joke, and the ghost lies in it (Olov, 13 November 2026: "så måste spöket först ligga på golvet").
  */
 export const MAMMA_FROZEN = 0.3;
@@ -61,18 +61,18 @@ export class PrologueSequence {
         : player.x >= 44.4;
       const kind = conditions.has('blink') && !conditions.has('mamma:passed') && ghost.x >= this.layout.doorway.x - MAMMA_BEFORE_DOOR ? 'mamma'
         : conditions.has('star') && !conditions.has('pappa:done') && pappaDue ? 'pappa' : null;
-      // Pappa's line is said as it begins, and Mamma's as she sees the ghost on the floor: the words before are let
-      // finish first.
+      // Pappa's line is said as it begins, and Mamma's as she sees the ghost on the floor (`mamma:sees`): the words
+      // before are let finish first.
       if (kind && talking) this.listening = true;
       else if (kind) {
-        if (kind === 'pappa') flags.add('pappa:noticed');
+        flags.add(`${kind}:noticed`);
         this.frame = { kind, seconds: 0, ghost: { x: ghost.x, y: ghost.y } };
       }
     }
     if (this.frame) {
       this.frame.seconds += STEP;
       const mamma = this.frame.kind === 'mamma';
-      if (mamma && this.frame.seconds + STEP / 2 >= MAMMA_SEEN) flags.add('mamma:noticed');
+      if (mamma && this.frame.seconds + STEP / 2 >= MAMMA_SEEN) flags.add('mamma:sees');
       if (this.frame.seconds + STEP / 2 >= (mamma ? MAMMA_TIME : PAPPA_TIME)) {
         flags.add(mamma ? 'mamma:passed' : 'pappa:done');
         if (!mamma) this.hide(ghost);

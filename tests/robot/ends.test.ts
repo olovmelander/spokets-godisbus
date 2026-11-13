@@ -44,7 +44,7 @@ describe('Prolog, Lördagsmorgon', () => {
       expect(result.goal, `it got to x ${result.x.toFixed(1)}`).toBe(true);
       // The morning, two eyes, the waking he watches, the chase, the star, the family, Pappa's hand and the title.
       expect(did(result.flags).filter((flag) => !flag.startsWith('scene:'))).toEqual([
-        'eye', 'paint', 'woke', 'grab', 'blink', 'mamma:noticed', 'mamma:passed', 'bag:torn', 'star', 'hand',
+        'eye', 'paint', 'woke', 'grab', 'blink', 'mamma:noticed', 'mamma:sees', 'mamma:passed', 'bag:torn', 'star', 'hand',
         'pappa:noticed', 'pappa:done', 'promised', 'leap', 'titel', 'goal']);
       // The title is still on the screen when the chapter reaches its goal: its scene ends behind the card.
       expect(did(result.flags).filter((flag) => flag.startsWith('scene:'))).toEqual(

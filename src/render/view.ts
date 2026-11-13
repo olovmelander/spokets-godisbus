@@ -2015,6 +2015,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostSize = pose.scale;
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
+        // Its bag goes with its front: scurrying off to the deck's edge it is not held out behind it.
+        ghostTurn = pose.turn;
         ghostStaged = true;
         if (prologue.kind === 'pappa') {
           const catcher = stage.actors.get('pappa')?.rig;

@@ -140,8 +140,9 @@ describe('the prologue freeze jokes', () => {
     const sim = new Sim({ ...prolog, spawn: { x: prolog.spawn.x + 2.9, y: 0.01 } }, {}, { flags: ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar'] });
     for (let i = 0; i < 240 && !sim.prologue!.frame; i++) sim.step(go);
     expect(sim.prologue!.frame?.kind).toBe('mamma');
-    // Mamma has not seen it yet: it has still to fall.
-    expect(sim.flags.has('mamma:noticed')).toBe(false);
+    expect(sim.flags.has('mamma:noticed')).toBe(true);
+    // Mamma has not seen it on the floor yet: it has still to fall.
+    expect(sim.flags.has('mamma:sees')).toBe(false);
     expect(sim.flags.has('bag:torn')).toBe(false);
     tick(sim, MAMMA_DOWN + 0.05, { ...go, hop: true, hopHeld: true, act: true });
     const frame = sim.prologue!.frame!;
@@ -181,6 +182,19 @@ describe('the prologue freeze jokes', () => {
     expect(pose.y + bag.y).toBeLessThan(layout.doorway.y + 0.25);
     // And the ghost has its bag in its hands again as it is off.
     expect(droppedBag(layout, { ...frame, seconds: MAMMA_TIME }, held)!.out).toBeCloseTo(0);
+  });
+
+  it('says Mamma\'s line on the floor in a game saved in the middle of her joke, before this', () => {
+    // Older games set `mamma:noticed` as the joke began, and said the line then: one saved before it was read replays.
+    const sim = new Sim({ ...prolog, spawn: { x: prolog.spots!.find((spot) => spot.id === 'paint')!.at.x, y: 0.01 } }, {},
+      { flags: ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar', 'mamma:noticed'] });
+    for (let i = 0; i < 600 && !sim.said.includes('dropped'); i++) {
+      sim.step(idle);
+      if (!sim.said.includes('dropped')) continue;
+      expect(sim.prologue!.frame?.kind).toBe('mamma');
+      expect(sim.prologue!.frame!.seconds).toBeGreaterThanOrEqual(MAMMA_SEEN - STEP);
+    }
+    expect(sim.said).toEqual(['dropped']);
   });
 
   it('waits for Pappa until Moa\'s drawing is told, lifts the wooden ghost onto the railing, and leaves it at the deck\'s edge', () => {
