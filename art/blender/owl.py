@@ -34,25 +34,25 @@ import math
 
 from mathutils import Matrix, Vector
 
-RUSSET = tone('#9c6539')       # noqa: F821 (kit-tools.py)
-RUSSET_DEEP = tone('#7c4b29')  # noqa: F821
-UMBER = tone('#4e3019')        # noqa: F821
-DARK = tone('#2f1d11')         # noqa: F821
-BUFF = tone('#d3ab7b')         # noqa: F821
-CREAM = tone('#ead8b6')        # noqa: F821
-WHITE = tone('#f3ebda')        # noqa: F821
-DISC = tone('#c8ac88')         # noqa: F821
-DISC_PALE = tone('#e0ccaa')    # noqa: F821
-RIM = tone('#3c2213')          # noqa: F821
+RUSSET = tone('#8c5631')       # noqa: F821 (kit-tools.py)
+RUSSET_DEEP = tone('#6c3e21')  # noqa: F821
+UMBER = tone('#45281a')        # noqa: F821
+DARK = tone('#29180e')         # noqa: F821
+BUFF = tone('#b4844f')         # noqa: F821
+CREAM = tone('#ccaa7c')        # noqa: F821
+WHITE = tone('#e6d8bc')        # noqa: F821
+DISC = tone('#a48262')         # noqa: F821
+DISC_PALE = tone('#bc9a72')    # noqa: F821
+RIM = tone('#381f11')          # noqa: F821
 EYE = tone('#0b0806')          # noqa: F821
 IRIS = tone('#2b170c')         # noqa: F821
 SHINE = tone('#f6f2ea')        # noqa: F821
-BEAK = tone('#dccf9a')         # noqa: F821
+BEAK = tone('#cdbd86')         # noqa: F821
 BEAK_TIP = tone('#a8986a')     # noqa: F821
-LID = tone('#bc9c78')          # noqa: F821
-LID_EDGE = tone('#6e4630')     # noqa: F821
+LID = tone('#8e6c4e')          # noqa: F821
+LID_EDGE = tone('#553422')     # noqa: F821
 TALON = tone('#2a221c')        # noqa: F821
-TOE = tone('#dcc8a4')          # noqa: F821
+TOE = tone('#b8996e')          # noqa: F821
 
 
 def smooth(t):
@@ -602,14 +602,16 @@ def breathe(k):
 # the rest. Angles as the crane's (art/blender/crane.py): for a left wing, X beats it up, Z sweeps it back.
 
 def beat(phase, far=True, scale=1.0):
+    """The near wing (far=False, towards the camera) beats lower: at the top only a little under level, so that it never
+    hides a rider and the camera, a little above, sees the top of it."""
     if phase == 'top':
-        return {'upperarm': ((52 if far else 6) * scale, 0, 4), 'forearm': (8, 0, 12), 'hand': (-12, 6, 22), 'spread': 0.7, 'tip': 6}
+        return {'upperarm': ((52 if far else -6) * scale, 0, 4), 'forearm': (8, 0, 12), 'hand': (-12 if far else 4, 6, 22), 'spread': 0.7, 'tip': 6}
     if phase == 'mid-down':
-        return {'upperarm': ((8 if far else 0) * scale, 0, -8), 'forearm': (2, 0, -4), 'hand': (14 if far else 6, -4, -6), 'spread': 1.12,
-                'tip': 12 if far else 0}
+        return {'upperarm': ((8 if far else -16) * scale, 0, -8), 'forearm': (2, 0, -4), 'hand': (14 if far else 10, -4, -6), 'spread': 1.12,
+                'tip': 12 if far else 2}
     if phase == 'bottom':
-        return {'upperarm': (-44 * scale, 0, -6), 'forearm': (-6, 0, -6), 'hand': (-10, 0, 0), 'spread': 1.08, 'tip': -4}
-    return {'upperarm': ((-6 if far else -14) * scale, 0, 6), 'forearm': (6, 0, 30), 'hand': (-28, 12, 48), 'spread': 0.5, 'tip': -12}
+        return {'upperarm': ((-44 if far else -50) * scale, 0, -6), 'forearm': (-6, 0, -6), 'hand': (-10, 0, 0), 'spread': 1.08, 'tip': -4}
+    return {'upperarm': ((-6 if far else -26) * scale, 0, 6), 'forearm': (6, 0, 30), 'hand': (-28, 12, 48), 'spread': 0.5, 'tip': -12}
 
 
 def wing(tag, b):
@@ -635,7 +637,8 @@ def wings(far_b, near_b):
     return out
 
 
-TUCKED = {'thigh.L': (48, 0, 0), 'tarsus.L': (62, 0, 0), 'foot.L': (-55, 0, 0), 'hind.L': (-50, 0, 0)}
+# Its feet drawn up into the feathers of its belly, the toes balled.
+TUCKED = {'thigh.L': (25, 0, 0), 'tarsus.L': (105, 0, 0), 'foot.L': (-60, 0, 0), 'hind.L': (-50, 0, 0)}
 FLIGHT_TAIL = {'tail': (-28, 0, 0), 'tailfan.L': (0, 0, 0)}
 CAMERA = -22.0
 
@@ -655,10 +658,10 @@ clip(arm, 'carry', 24, [(f, flight(wings(beat(p, scale=0.9), beat(p, far=False, 
 
 # Gliding, its far wing a little up and its near one a little down, so that the camera, a little above it, sees the
 # top of both, and neither hides a rider.
-GLIDE = {'upperarm': (9, 0, 0), 'forearm': (0, 0, -3), 'hand': (4, 0, 3), 'spread': 1.22, 'tip': 10}
-GLIDE2 = {'upperarm': (12, 0, 2), 'forearm': (1, 0, 0), 'hand': (6, 0, 1), 'spread': 1.26, 'tip': 13}
-GLIDE_NEAR = {'upperarm': (-7, 0, 0), 'forearm': (0, 0, -3), 'hand': (6, 0, 3), 'spread': 1.22, 'tip': 10}
-GLIDE2_NEAR = {'upperarm': (-5, 0, 2), 'forearm': (1, 0, 0), 'hand': (8, 0, 1), 'spread': 1.26, 'tip': 13}
+GLIDE = {'upperarm': (17, 0, 0), 'forearm': (0, 0, -3), 'hand': (-2, 0, 3), 'spread': 1.22, 'tip': 10}
+GLIDE2 = {'upperarm': (20, 0, 2), 'forearm': (1, 0, 0), 'hand': (0, 0, 1), 'spread': 1.26, 'tip': 13}
+GLIDE_NEAR = {'upperarm': (-21, 0, 0), 'forearm': (0, 0, -3), 'hand': (8, 0, 3), 'spread': 1.22, 'tip': 10}
+GLIDE2_NEAR = {'upperarm': (-18, 0, 2), 'forearm': (1, 0, 0), 'hand': (10, 0, 1), 'spread': 1.26, 'tip': 13}
 SPREAD_TAIL = {'tail': (-26, 0, 0), 'tailfan.L': (0, 0, -18)}
 clip(arm, 'glide', 48, [  # noqa: F821
     (0, flight(over(wings(GLIDE, GLIDE_NEAR), {'body': {'loc': (0, 0, 0), 'rot': (-86, 2, 0)}}), tail=SPREAD_TAIL)),
@@ -774,16 +777,19 @@ clip(arm, 'takeoff', 20, [  # noqa: F821
 # --- landing: pitching up, talons forward and spread, wings cupped and braking, touchdown, folded ----------------------
 def reaching(f):
     """Its legs swung forward under it, ready to grip: `f` from 0 (tucked) to 1 (talons out in front, spread)."""
-    return {'thigh.L': (48 + 22 * f, 0, 0), 'tarsus.L': (62 - 52 * f, 0, 0), 'foot.L': (-55 + 95 * f, 0, 0), 'hind.L': (-50 + 90 * f, 0, 0)}
+    return {'thigh.L': (25 + 45 * f, 0, 0), 'tarsus.L': (105 - 95 * f, 0, 0), 'foot.L': (-60 + 100 * f, 0, 0), 'hind.L': (-50 + 90 * f, 0, 0)}
 
 
 CUPPED = {'upperarm': (30, 0, -20), 'forearm': (6, 0, -12), 'hand': (-30, -6, -8), 'spread': 1.28, 'tip': -8}
 BRAKE = {'upperarm': (48, 0, -30), 'forearm': (4, 0, -14), 'hand': (-24, 0, -12), 'spread': 1.32, 'tip': 6}
+# The near wing brakes lower, so that it never hides a rider it sets down.
+CUPPED_NEAR = {'upperarm': (-24, 0, -18), 'forearm': (6, 0, -10), 'hand': (-6, -6, -6), 'spread': 1.28, 'tip': -8}
+BRAKE_NEAR = {'upperarm': (-30, 0, -22), 'forearm': (4, 0, -10), 'hand': (-4, 0, -8), 'spread': 1.32, 'tip': 6}
 clip(arm, 'land', 30, [  # noqa: F821
     (0, flight(wings(GLIDE, GLIDE_NEAR), tail=SPREAD_TAIL)),
-    (6, over(flight(wings(CUPPED, CUPPED), 0.0, 22, CAMERA * 0.6, tail=SPREAD_TAIL), reaching(0.5))),
-    (11, over(flight(wings(BRAKE, BRAKE), 0.0, 52, CAMERA * 0.3, tail={'tail': (-50, 0, 0), 'tailfan.L': (0, 0, -22)}), reaching(0.95))),
-    (15, over(flight(wings(BRAKE, BRAKE), 0.0, 70, 0.0, tail={'tail': (-30, 0, 0), 'tailfan.L': (0, 0, -22)}), reaching(1.0))),
+    (6, over(flight(wings(CUPPED, CUPPED_NEAR), 0.0, 22, CAMERA * 0.6, tail=SPREAD_TAIL), reaching(0.5))),
+    (11, over(flight(wings(BRAKE, BRAKE_NEAR), 0.0, 52, CAMERA * 0.3, tail={'tail': (-50, 0, 0), 'tailfan.L': (0, 0, -22)}), reaching(0.95))),
+    (15, over(flight(wings(BRAKE, BRAKE_NEAR), 0.0, 70, 0.0, tail={'tail': (-30, 0, 0), 'tailfan.L': (0, 0, -22)}), reaching(1.0))),
     # Touchdown: its feet on the ground, its knees taking its weight, its wings still up.
     (19, over(perched(over({'body': {'loc': (0, -0.07, 0), 'rot': (-8, 0, 0)}}, look(0, -4))), wings(CUPPED, CUPPED))),
     (24, perched(over({'body': {'loc': (0, -0.03, 0), 'rot': (-3, 0, 0)}}, look(0, 0)), open_=0.5)),

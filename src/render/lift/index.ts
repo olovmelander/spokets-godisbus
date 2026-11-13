@@ -19,6 +19,7 @@ import { installBeetles } from './beetles';
 import { installBumblebee } from './bumblebee';
 import { installFauna } from './fauna';
 import { installSmallLife } from './fauna/small-kit';
+import { installOwls } from '../owl';
 import { installFlora } from './flora';
 import { installMaterials } from './materials';
 import { installNearMotes } from './near-motes';
@@ -46,6 +47,8 @@ export function installLift(): void {
   // The small life modelled in Blender (./fauna/small-kit.ts) comes for every one of it in the scene: the fauna's,
   // the bumblebee and the ants that carry him (../ant-ride.ts).
   PACK.models.push(installSmallLife);
+  // The rigged owl (../owl.ts) comes for the story's owl and for the near forest's owls on their branches.
+  PACK.models.push(installOwls);
   if (!out.has('atmosphere')) installAtmosphere();
   if (!out.has('atmosphere') && !out.has('near')) installNearMotes();
   if (!out.has('fauna')) installFauna();
