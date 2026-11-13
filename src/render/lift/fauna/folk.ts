@@ -221,7 +221,7 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
   type Where = 'trunk' | 'leap-off' | 'out' | 'ground' | 'in' | 'leap-on';
   const all = plan.squirrels.map((s) => ({
     ...s, a0: s.a, h0: s.h, a1: s.a, h1: s.h, k: 1, run: 0.5, long: 1, wait: next() * 2, fa: 0, fh: 1, flick: next() * 2,
-    where: 'trunk' as Where, down: false, air: 0, eat: 0, flickT: 9, bounds: 0, look: 0, side: 1,
+    where: 'trunk' as Where, down: false, air: 0, eat: 0, bounds: 0, look: 0, side: 1,
     from: new Matrix4(), to: new Matrix4(), place: new Matrix4(), foot: new Matrix4(), dash: 0,
     // The sides of its trunk where it may sit on the ground: those where, seen from the path, no big candy stands in
     // front of it.
