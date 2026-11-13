@@ -306,7 +306,7 @@ def pose(*extra):
 UPRIGHT = {
     'root': {'loc': (0, 0.52, -0.14), 'rot': ZERO},
     'hips': D(0.32, 1.0), 'spine': D(0.12, 1.0), 'chest': D(0.04, 1.0), 'neck': D(0.35, 1.0), 'head': D(1.0, 0.05),
-    'tail1': D(-0.7, -1.0), 'tail2': D(-1.0, -0.3), 'tail3': D(-1.0, -0.05), 'tail4': D(-1.0, 0.0, 0.25),
+    'tail1': D(-1.0, -0.55), 'tail2': D(-1.0, -0.12), 'tail3': D(-1.0, 0.0), 'tail4': D(-1.0, 0.03, 0.25),
     'upper_arm.L': D(0.35, -1.0, 0.1), 'forearm.L': {'con': 0.0, 'dir': (1.0, -0.2, 0.35), 'up': (-0.35, 0.0, 1.0)},
     'hand.L': D(0.3, -1.0),
     'heel_ik.L': {'at': (-0.02, 0.2, 0.07)}, 'ball_ik.L': {'at': (0.2, 0.24, 0.025)},
@@ -334,7 +334,7 @@ TALL = over(UPRIGHT, {'root': {'loc': (0, 0.52, -0.08), 'rot': ZERO}, 'hips': D(
 CROUCH = over(UPRIGHT, {'root': {'loc': (0, 0.4, -0.22), 'rot': ZERO}, 'hips': D(0.75, 1.0), 'spine': D(0.6, 1.0),
                         'chest': D(0.55, 1.0), 'neck': D(1.0, 1.0), 'head': D(1.0, 0.0),
                         'upper_arm.L': D(0.6, -1.0, 0.1), 'forearm.L': {'con': 0.0, 'dir': (1.0, 0.0, -0.4), 'up': (0.4, 0.0, 1.0)},
-                        'tail1': D(-0.8, -1.0)})
+                        'tail1': D(-1.0, -0.3), 'tail2': D(-1.0, -0.04)})
 clip(arm, 'look', 14, [(0, pose(UPRIGHT)), (4, pose(TALL)), (7, pose(TALL)), (14, pose(CROUCH))], loop=False)  # noqa: F821
 
 # leap: from the crouch, out long through the air, forepaws tucked back, hind feet trailing, head first.

@@ -18,8 +18,8 @@ export type RiverCreature = 'beaver' | 'otter';
 
 /** How warm their fur glows of its own: the night's light comes from behind them, and dark fur would go black there. */
 const WARMTH: Record<RiverCreature, readonly [colour: string, intensity: number]> = {
-  beaver: ['#4a3020', 0.55],
-  otter: ['#3c2818', 0.45],
+  beaver: ['#4a3020', 0.3],
+  otter: ['#3c2818', 0.35],
 };
 
 /** An empty holder for the rigged creature in `parent`, which the shared models' install keeps (`keep`). */

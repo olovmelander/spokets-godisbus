@@ -507,8 +507,8 @@ clip(arm, 'look', 48, [(f, look_pose(f)) for f in range(0, 49, 2)])  # noqa: F82
 # thump: up goes the tail, and down, thump; the body jolts with it.
 UP_TAIL = {'tail1': (-48, 0, 0), 'tail2': (-14, 0, 0), 'tail3': (-8, 0, 0), 'spine': (0, 0, 0), 'chest': (1, 0, 0),
            'head': (16, 0, 0)}
-HIT = {'tail1': (2, 0, 0), 'tail2': (3, 0, 0), 'tail3': (-6, 0, 0), 'spine': (-1, 0, 0), 'chest': (1, 0, 0),
-       'head': (8, 0, 0), 'ear.L': (0, 0, -16), 'root': {'loc': (0, 0, -0.02), 'rot': ZERO}}
+HIT = {'tail1': (-1, 0, 0), 'tail2': (1, 0, 0), 'tail3': (-6, 0, 0), 'spine': (-1, 0, 0), 'chest': (1, 0, 0),
+       'head': (8, 0, 0), 'ear.L': (0, 0, -16), 'root': {'loc': (0, 0, -0.008), 'rot': ZERO}}
 clip(arm, 'thump', 22, [  # noqa: F821
     (0, sit(LOOK)),
     (7, sit(LOOK, UP_TAIL)),
@@ -522,7 +522,7 @@ clip(arm, 'thump', 22, [  # noqa: F821
 # waddle: one stride on all fours, diagonal pairs, rocking from side to side, the stick in its teeth.
 QUAD = {'hips': D(1.0, -0.02), 'spine': D(1.0, -0.04), 'chest': D(1.0, -0.1), 'neck': D(0.8, 1.0), 'head': D(1.0, -0.08),
         'tail1': D(-1.0, -0.42), 'tail2': D(-1.0, -0.12), 'tail3': D(-1.0, 0.0)}
-QUAD_HIGH = 0.4
+QUAD_HIGH = 0.5
 QUAD_BACK = -0.42
 
 
@@ -553,8 +553,8 @@ def waddle_pose(p):
         sign = 1.0 if tag == '.L' else -1.0
         x, up = step((p + offset) % 1.0, 0.6, reach, 0.13)
         pose['heel_ik' + tag] = {'at': (x - 0.62, 0.4 * sign, 0.1 + up)}
-        pose['ball_ik' + tag] = {'at': (x - 0.2, 0.43 * sign, 0.05 + up * 0.5)}
-        pose['toes' + tag] = (-20.0 * up / 0.13, 0, 0)
+        pose['ball_ik' + tag] = {'at': (x - 0.2, 0.43 * sign, 0.05 + up * 0.95)}
+        pose['toes' + tag] = (-14.0 * up / 0.13, 0, 0)
         # The front paw on the other side steps with it.
         front = '.R' if tag == '.L' else '.L'
         x, up = step((p + offset) % 1.0, 0.6, reach * 0.8, 0.1)
@@ -574,7 +574,7 @@ def stand(extra=None):
         'upper_arm.L': D(0.45, -1.0, 0.05), 'forearm.L': {'con': 0.0, 'dir': (1.0, -0.15, 0.55), 'up': (-0.5, 0.0, 1.0)},
         'hand.L': D(0.6, -1.0),
         'heel_ik.L': {'at': (-0.16, HEEL.y, 0.1)}, 'ball_ik.L': {'at': (0.28, BALL.y, 0.05)},
-        'tail1': D(-1.0, -0.55), 'tail2': D(-1.0, -0.08), 'tail3': D(-1.0, 0.0),
+        'tail1': D(-1.0, -0.55), 'tail2': D(-1.0, -0.04), 'tail3': D(-1.0, 0.03),
     })
     return over(pose, extra or {})
 
