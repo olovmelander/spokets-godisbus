@@ -674,6 +674,21 @@ async function start(): Promise<void> {
     writeSave();
   }
   let pendingStart: { style: PlayStyle | null } | null = null;
+  /**
+   * A start pressed while a new version downloads (the first open after a release) waits for it, saying so: the title
+   * then puts the new version in place and reloads, and he starts in it. If it has not come within the limit, the game
+   * starts as it is. Olov, 13 November 2026: half of Äventyr 1's lines played no voice, because a device played on with
+   * the version before the recordings and its list of them.
+   */
+  function keepStart(style: PlayStyle | null): void {
+    pendingStart = { style };
+    title.waiting(style);
+    byId('titleUpdating').hidden = false;
+    offline.whenSettled(() => {
+      if (offline.canStart()) byId('titleUpdating').hidden = true;
+      if (pendingStart && title.open && !byId('titleFront').hidden && !platformBlocked()) startPlay(pendingStart.style);
+    });
+  }
   /** When the game began from the title: a turn of the phone just after does not open Pause. */
   let startedAt = -Infinity;
   const newPlayerChapter = courseFor(new URLSearchParams(params.has('dev') ? 'dev' : ''), null).id;
@@ -719,6 +734,7 @@ async function start(): Promise<void> {
         return;
       }
       if (platformBlocked()) return;
+      if (offline.downloading()) { keepStart(style); return; }
       startPlay(style);
     },
     async onStartOver() {
@@ -1041,7 +1057,10 @@ async function start(): Promise<void> {
     offerRecovery();
     if (title.open) offline.check();
     // A start pressed while loading begins now, if the title still waits on its front for it.
-    if (pendingStart && title.open && !byId('titleFront').hidden && !platformBlocked()) startPlay(pendingStart.style);
+    if (pendingStart && title.open && !byId('titleFront').hidden && !platformBlocked()) {
+      if (offline.downloading()) keepStart(pendingStart.style);
+      else startPlay(pendingStart.style);
+    }
   }).catch(() => {
     paused = true;
     input.release();
