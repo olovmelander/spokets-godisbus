@@ -72,6 +72,7 @@ import { createHomeRoutine } from './home-routine';
 import { createPrologueStage } from './prologue-stage';
 import { createStage, litLamp } from './stage';
 import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
+import { handOnKnee, kneelOnOwnLegs } from './knee-hands';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
 import { createAurora } from './aurora';
@@ -2240,9 +2241,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Down on his right knee, the left foot forward, leaning to the board, turned towards it.
         // Mixed so that at full weight each is exactly its value, frame after frame (a paused picture never drifts).
         const w = gesture.hold, mixTo = (from: number, to: number) => from * (1 - w) + to * w;
-        posed.lean = mixTo(posed.lean, 0.85);
-        posed.legL = mixTo(posed.legL, 1.35); posed.kneeL = mixTo(posed.kneeL, 1.55);
-        posed.legR = mixTo(posed.legR, 0.1); posed.kneeR = mixTo(posed.kneeR, 1.65);
+        if (board) {
+          posed.lean = mixTo(posed.lean, 0.85);
+          posed.legL = mixTo(posed.legL, 1.35); posed.kneeL = mixTo(posed.kneeL, 1.55);
+          posed.legR = mixTo(posed.legR, 0.1); posed.kneeR = mixTo(posed.kneeR, 1.65);
+        // Beside the carving he kneels on his own legs, the knee on the floor, a hand to the other knee (./knee-hands.ts).
+        } else kneelOnOwnLegs(posed, one.rig.legs, w, one.who);
         facing = facingBetween(facing, board ? -0.95 : -1.15, w);
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
@@ -2327,7 +2331,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         lampLocal.copy(rootReach);
         one.rig.group.worldToLocal(lampLocal);
         one.rig.reach(lampLocal.x >= 0 ? 0 : 1, rootReach, gesture.hold);
-      }
+      } else if (gesture.hold > 0.001) handOnKnee(one.rig, 1, smooth(gesture.hold / .7));
       if (gesture.reach > 0.001) {
         const poke = calmStory ? 0 : Math.sin(clock * 2.3) * 0.12;
         one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9 * gesture.reach);

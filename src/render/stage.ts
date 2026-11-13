@@ -17,6 +17,7 @@ import { createFootwork, type Footwork } from './footwork';
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
+import { ABOVE } from './knee-hands';
 import { jayStandIn, poseWindowJay } from './jay';
 import { goldSweet } from './gold-sweet';
 import { goldMouthWeight } from './gold-contact';
@@ -1300,6 +1301,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           // through the abdomen, and aiming only the fingers left a vertical palm beside the knee.
           if (rig.kneeSurface) rig.kneeSurface(side, kneeAt);
           else rig.knee!(side, kneeAt).addScaledVector(up, rig.height * KNEE_HAND.up);
+          // On its way to the knee or off it, the palm keeps over the knee, not up through it (./knee-hands.ts).
+          kneeAt.addScaledVector(up, (1 - handOnKnee) * rig.height * ABOVE);
           kneeOutside.set(Math.cos(yaw(face)), 0, -Math.sin(yaw(face))).multiplyScalar(side === 0 ? 1 : -1);
           rig.grip(side, kneeAt, forward, hand, handOnKnee, kneeNormal, kneeOutside);
           rig.hold?.(side, FLAT, handOnKnee);
