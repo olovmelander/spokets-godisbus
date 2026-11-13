@@ -18,6 +18,7 @@ import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
 import { ABOVE } from './knee-hands';
+import { clearOf, drawingCentre, shyness } from './drawing-hold';
 import { jayStandIn, poseWindowJay } from './jay';
 import { goldSweet } from './gold-sweet';
 import { goldMouthWeight } from './gold-contact';
@@ -1227,7 +1228,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         // What is said (./talk.ts), drawn over what the scene asks for and never kept in it: they look at whoever speaks, from
         // where their face was a moment ago, and speak with their mouths, their heads and a free hand.
         const talker = talkers.get(who) ?? talkers.set(who, createTalker(who, 101 + 37 * FAMILY.indexOf(who))).get(who)!;
-        const other = talk.lookAt(who), there = other ? talk.face(other) : null;
+        // Shy, she keeps her eyes down rather than looking up at whoever speaks (./drawing-hold.ts).
+        const other = state.act === 'shy' ? null : talk.lookAt(who), there = other ? talk.face(other) : null;
         if (there) rig.mouth(faceAt);
         const hangs = HANDS_HANG.includes(state.act);
         const free = HANDS_FREE[(hangs && !state.holdsLeft && supportLeft <= 1e-3 ? 0 : 2) + (hangs && !state.holds && supportRight <= 1e-3 ? 0 : 1)]!;
@@ -1377,7 +1379,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           }
         }
         const showsDrawing = state.holds === 'drawing' || state.holdsLeft === 'drawing';
-        const leavesShowing = state.before?.act === 'show' && state.before.held.includes('drawing') && elapsed < .45;
+        const leavesShowing = (state.before?.act === 'show' || state.before?.act === 'shy') && state.before.held.includes('drawing') && elapsed < .45;
         if (sheet && (showsDrawing || leavesShowing)) {
           rig.mouth(heldPoint);
           // Her head can turn toward a speaker without pulling the page, and an arm, across her abdomen.
@@ -1388,10 +1390,15 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             heldPoint.x = (hand.x + otherHand.x) * .5;
             heldPoint.z = (hand.z + otherHand.z) * .5;
           }
-          heldPoint.addScaledVector(up, -.64 / unit).addScaledVector(forward, .45 / unit);
+          // Held out clear of her chest and hair, or up in front of her face as she hides behind it (./drawing-hold.ts).
+          const shy = shyness(state.act, state.before?.act, since(state.actAt), elapsed, calm, showsDrawing);
+          drawingCentre(heldPoint, forward, unit, shy, time, calm);
           rig.hand(1, hand); rig.hand(0, otherHand); hand.add(otherHand).multiplyScalar(.5).addScaledVector(up, .18);
-          const arrival = calm || leavesShowing ? 1 : smooth(since(state.actAt) / .5);
-          sheet.position.copy(hand).lerp(heldPoint, arrival);
+          // It comes from her hands, in front of her, never from inside her; already in her hands, it stays there. Let go,
+          // it goes down with her hands.
+          clearOf(hand, heldPoint, forward);
+          const arrival = calm || leavesShowing || state.before?.held.includes('drawing') ? 1 : smooth(since(state.actAt) / .5);
+          sheet.position.copy(hand).lerp(heldPoint, leavesShowing ? 1 - smooth(elapsed / .45) : arrival);
           // Her page faces Elof in front of her, and the audience alongside him. Body turns may follow a
           // speaker, but never turn the explanation back to front or reverse its left-to-right pictures.
           sheet.rotation.set(0, 0, 0); sheet.scale.setScalar(.52);
@@ -1399,6 +1406,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           sheetLeft.position.copy(sheet.position).addScaledVector(across, .494).addScaledVector(up, -.18);
           sheetRight.position.copy(sheet.position).addScaledVector(across, -.494).addScaledVector(up, -.18);
           const weight = showsDrawing ? arrival : 1 - smooth(elapsed / .45);
+          if (leavesShowing) holding.add(sheet);
           rig.grip(0, sheetLeft.position, up, otherHand, weight);
           rig.grip(1, sheetRight.position, up, hand, weight);
           rig.hold?.(0, GRIPS.drawing, weight);

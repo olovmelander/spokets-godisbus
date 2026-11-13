@@ -181,15 +181,17 @@ it('shows the drawing below Moa’s face with both palms on its lower side edges
 });
 
 it('releases the drawing hands continuously when Moa sits back and when she puts the picture down', () => {
-  for (const [id, at, prop] of [['morgon', 8.4, 'crayon'], ['handen', 8, 'drawing']] as const) {
+  for (const [id, at, prop] of [['morgon', 8.4, 'crayon'], ['handen', 8.3, 'drawing']] as const) {
     const stage = stageFor(), rig = actor(stage, 'moa');
     show(stage, id, at - 1e-6);
     const before = [palm(rig, 0), palm(rig, 1)];
     show(stage, id, at);
     for (const side of [0, 1] as const) expect(palm(rig, side).distanceTo(before[side]!), `${id} hand ${side}`).toBeLessThan(1e-4);
-    expect(thing(stage, `stage-thing:${prop}`).visible).toBe(false);
+    // The crayon is put away at once; her drawing goes down with her hands as she lets it go (src/render/drawing-hold.ts).
+    expect(thing(stage, `stage-thing:${prop}`).visible).toBe(prop === 'drawing');
     show(stage, id, at + .6);
     expect(palm(rig, 1).distanceTo(before[1]!)).toBeGreaterThan(.1);
+    expect(thing(stage, `stage-thing:${prop}`).visible).toBe(false);
   }
 });
 
