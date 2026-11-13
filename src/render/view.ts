@@ -1635,7 +1635,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
         busy: !curr.grounded || curr.mode !== 'free' || !!nearbyFamily || (!!chapter.mist && flags.has(chapter.mist.after)) || gusts.some((gust) => gust.blow > 0 || gust.warn > 0),
         calm: calmStory, eye: camera.position.z, slope: Math.tan((FOV * Math.PI) / 360) * camera.aspect,
-      });
+      }, { x, y });
       if (place.id === 'dusk') {
         scene.backgroundIntensity = nightBrightness(darkness);
         // Fog keeps a copy of its initial colour; changing `sky` alone never changes the haze.

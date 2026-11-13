@@ -123,7 +123,7 @@ def shine(part, centre, size, colour=None):
 
 DRAKE = {
     'head': tone('#1d5a3a'), 'head_dark': tone('#0f3424'), 'head_light': tone('#2f8a58'), 'ring': tone('#f2f0e8'),
-    'breast': tone('#6a3622'), 'breast_dark': tone('#4a2618'), 'flank': tone('#cdcbc2'), 'flank_line': tone('#a6a49a'),
+    'breast': tone('#5e3a2c'), 'breast_dark': tone('#40261c'), 'flank': tone('#cdcbc2'), 'flank_line': tone('#a6a49a'),
     'back': tone('#8c8070'), 'back_dark': tone('#5e5446'), 'rump': tone('#18181a'), 'tail': tone('#e6e2d8'),
     'tail_mid': tone('#9c988e'), 'covert': tone('#8e8a80'), 'tertial': tone('#a89c88'), 'primary': tone('#5e584e'),
     'bill': tone('#d8c43a'), 'bill_dark': tone('#a89a2c'), 'nail': tone('#3a3a2c'), 'belly': tone('#d8d6cc'),
@@ -793,7 +793,7 @@ if wanted('groda'):
 # brown fur under them, a pointed face with a black nose, small dark eyes and round ears, and four little legs.
 # =====================================================================================================================
 
-HOG_SKIN = tone('#4a3a2c')  # noqa: F821
+HOG_SKIN = tone('#5e4a36')  # noqa: F821
 HOG_FUR = tone('#7a6248')  # noqa: F821
 HOG_FUR_DARK = tone('#5a4634')  # noqa: F821
 HOG_FACE = tone('#b08e64')  # noqa: F821
@@ -803,9 +803,10 @@ HOG_NOSE = tone('#141010')  # noqa: F821
 HOG_EAR = tone('#6a4e3e')  # noqa: F821
 HOG_PAW = tone('#5a4234')  # noqa: F821
 HOG_CLAW = tone('#c8b8a0')  # noqa: F821
-SPINE_BASE = tone('#d4c4a4')  # noqa: F821
-SPINE_BAND = tone('#3a2a1e')  # noqa: F821
-SPINE_TIP = tone('#ece2cc')  # noqa: F821
+SPINE_BASE = tone('#5a4634')  # noqa: F821
+SPINE_PALE = tone('#e2d4b6')  # noqa: F821
+SPINE_BAND = tone('#4a3626')  # noqa: F821
+SPINE_TIP = tone('#f2eada')  # noqa: F821
 
 MANTLE_C = V(-0.1, 0.0, 0.3)
 MANTLE_AXES = (0.95, 0.72, 0.62)
@@ -841,18 +842,18 @@ def mantle_point(a, b):
 
 
 def spine(part, root, way, long, wide, dark):
-    """One spine: a thin three-sided cone, pale at its root, a dark band, and a pale tip."""
+    """One spine: a thin three-sided cone, brown at its root, a pale band, a dark band, and a pale tip."""
     side = way.cross(V(0, 0, 1))
     if side.length < 0.01:
         side = way.cross(V(1, 0, 0))
     side.normalize()
     up = side.cross(way).normalized()
     rings = []
-    for s, r in ((0.0, wide), (0.42, wide * 0.8), (0.74, wide * 0.55)):
+    for s, r in ((0.0, wide), (0.34, wide * 0.84), (0.66, wide * 0.6)):
         centre = root + way * (long * s)
         rings.append([centre + (side * math.cos(TAU * j / 3.0) + up * math.sin(TAU * j / 3.0)) * r for j in range(3)])  # noqa: F821
     band = lit(SPINE_BAND, dark)  # noqa: F821
-    skin(part, rings, [lit(SPINE_BASE, 0.8 + 0.2 * dark), band, band], None, (root + way * long, SPINE_TIP))  # noqa: F821
+    skin(part, rings, [SPINE_BASE, lit(SPINE_PALE, 0.8 + 0.2 * dark), band], None, (root + way * long, SPINE_TIP))  # noqa: F821
 
 
 def hog_mesh(arm):
