@@ -35,17 +35,17 @@ import math
 
 from mathutils import Matrix, Vector
 
-BACK = tone('#6c6158')        # noqa: F821 (kit-tools.py)  the grey-brown of its back
-GREY = tone('#867b71')        # noqa: F821  its sides
-PALE = tone('#b6ab9c')        # noqa: F821  the grey-buff breast
-THROAT = tone('#c8beb0')      # noqa: F821
+BACK = tone('#6e6157')        # noqa: F821 (kit-tools.py)  the grey-brown of its back
+GREY = tone('#887a6d')        # noqa: F821  its sides
+PALE = tone('#b9ab99')        # noqa: F821  the grey-buff breast
+THROAT = tone('#bfb4a5')      # noqa: F821
 BUFF = tone('#c39a72')        # noqa: F821  the warm belly
 RUST = tone('#cf6d2b')        # noqa: F821  tail, rump, wing patch
 RUST_DEEP = tone('#a9521e')   # noqa: F821
 CAP = tone('#3a302a')         # noqa: F821
 CAP_EDGE = tone('#54483f')    # noqa: F821
-HEAD = tone('#a39a90')        # noqa: F821
-FACE = tone('#ddd5c8')        # noqa: F821
+HEAD = tone('#887e75')        # noqa: F821
+FACE = tone('#cbc1b2')        # noqa: F821
 WING = tone('#6a5f56')        # noqa: F821
 WING_EDGE = tone('#857a6f')   # noqa: F821
 WING_TIP = tone('#463e38')    # noqa: F821
@@ -548,9 +548,9 @@ CROUCH = {'body': {'loc': (0, 0, -0.045), 'rot': (-8, 0, 0)}, 'tail': (-14, 0, 0
 clip(arm, 'hop', 12, [  # noqa: F821
     (0, pose()),
     (3, pose(CROUCH, legs=feet(bend=0.04))),
-    (5, pose({'body': {'loc': (0, 0, 0.09), 'rot': (6, 0, 0)}, 'tail': (6, 0, 0)}, wings=folded(0.1), legs=feet(lift=0.05))),
-    (7, pose({'body': {'loc': (0, 0, 0.13), 'rot': (4, 0, 0)}, 'tail': (10, 0, 0)}, fan(0.3), wings=folded(0.08), legs=feet(lift=0.11, grip=0.4))),
-    (9, pose({'body': {'loc': (0, 0, 0.05), 'rot': (-2, 0, 0)}, 'tail': (-6, 0, 0)}, wings=folded(0.04), legs=feet(lift=0.04))),
+    (5, pose({'body': {'loc': (0, 0, 0.09), 'rot': (6, 0, 0)}, 'tail': (6, 0, 0)}, wings=folded(0.04), legs=feet(lift=0.05))),
+    (7, pose({'body': {'loc': (0, 0, 0.13), 'rot': (4, 0, 0)}, 'tail': (10, 0, 0)}, fan(0.3), wings=folded(0.03), legs=feet(lift=0.11, grip=0.4))),
+    (9, pose({'body': {'loc': (0, 0, 0.05), 'rot': (-2, 0, 0)}, 'tail': (-6, 0, 0)}, wings=folded(0.015), legs=feet(lift=0.04))),
     (10, pose(over(CROUCH, {'body': {'loc': (0, 0, -0.035), 'rot': (-6, 0, 0)}}), legs=feet(bend=0.03))),
 ], loop=True)
 
@@ -568,8 +568,8 @@ clip(arm, 'peck', 30, [  # noqa: F821
 ])
 
 # --- eat: it reaches out, takes the berry, tips its head back and swallows, pleased -------------------------------------
-REACH = {'body': {'loc': (0.02, 0, 0.0), 'rot': (-12, 0, 0)}, 'neck1': (-10, 0, 0), 'neck2': (-4, 0, 0), 'head': (8, 0, 0), 'tail': (-12, 0, 0)}
-FAR = over(REACH, {'body': {'loc': (0.05, 0, 0.0), 'rot': (-14, 0, 0)}})
+REACH = {'body': {'loc': (0.04, 0, 0.0), 'rot': (-12, 0, 0)}, 'neck1': (-14, 0, 0), 'neck2': (-6, 0, 0), 'head': (12, 0, 0), 'tail': (-12, 0, 0)}
+FAR = over(REACH, {'body': {'loc': (0.09, 0, -0.01), 'rot': (-16, 0, 0)}, 'neck1': (-18, 0, 0)})
 clip(arm, 'eat', 56, [  # noqa: F821
     (0, pose()),
     (6, pose(REACH, {'jaw': (-28, 0, 0), 'crest': (-10, 0, 0)}, legs=feet(bend=0.02))),

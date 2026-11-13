@@ -1623,7 +1623,7 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           case 'jay': {
             // It flies in, lands on the sill, calls, sits turned to the room, and flies away at the end (./jay.ts).
             jayOn = true;
-            poseWindowJay(jay, at, age, fx.seconds, calm);
+            poseWindowJay(jay, at, age, fx.seconds, calm, dt);
             break;
           }
         }

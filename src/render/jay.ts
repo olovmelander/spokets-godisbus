@@ -86,6 +86,8 @@ export interface JayRig {
   since: number;
   /** The clip it plays now, when it plays one on its own clock. */
   playing: string;
+  /** How long it has sat at the window, on its own clock. */
+  life: number;
 }
 
 const rigs = new WeakMap<Object3D, JayRig>();
@@ -118,7 +120,7 @@ export function rigJay(bird: Object3D, model: Object3D, fade = 0.25): JayRig | n
   // Pinched at the tip of its beak: the bone's own y runs along the beak.
   berry.position.set(0, -0.02, 0);
   clips.bone('bill')?.add(berry);
-  const rig: JayRig = { clips, berry, heading: 1, turn: null, since: -1, playing: '' };
+  const rig: JayRig = { clips, berry, heading: 1, turn: null, since: -1, playing: '', life: 0 };
   rigs.set(bird, rig);
   return rig;
 }
@@ -230,30 +232,30 @@ export interface WindowPose {
   heading: number;
   /** Tipped as it banks in flight (the stand-in's lean). */
   lean: number;
-  /** In the air (its wings beat); landed and not yet gone. */
+  /** In the air (its wings beat). */
   flying: boolean;
-  perched: boolean;
-  /** The clips that make its pose, each at a phase and with a weight: for the rigged jay. */
+  /** The clips of its flight, landing and leaving, each at a phase and with a weight: for the rigged jay. */
   clips: { name: string; phase: number; weight: number }[];
+  /** The share of its pose that is its sitting on the sill, which goes on on its own clock (`sitting`). */
+  settled: number;
   /** How far its beak is open for its call, 0 to 1. */
   call: number;
 }
 
 /**
- * Where the jay at the window is at `age` seconds of a scene `seconds` long, and how it is posed: all from the scene's
- * own seconds, so that a scene taken up again, or paused, shows the same. It flies in from up to the right and lands on
- * the sill at 1.6 s, calls, sits there turned to the room, and at the end takes off and flies away up to the right.
+ * Where the jay at the window is at `age` seconds of a scene `seconds` long, and how it flies: all from the scene's own
+ * seconds, so that a scene taken up again, or paused, shows the same. It flies in from up to the right and lands on the
+ * sill at 1.6 s, calls, sits there turned to the room, and at the end takes off and flies away up to the right.
  */
 export function windowPose(age: number, seconds: number, calm: boolean): WindowPose {
   const offset = new Vector3();
   const scale = SIZE * smooth(Math.min(1, age / 0.3, (seconds - age) / 0.4));
-  if (calm) {
-    return { offset, scale, heading: -0.35, lean: 0, flying: false, perched: true, clips: [{ name: 'perch', phase: 0, weight: 1 }], call: 0 };
-  }
+  if (calm) return { offset, scale, heading: -0.35, lean: 0, flying: false, clips: [], settled: 1, call: 0 };
   const landing = smooth(age / WINDOW.landed), fly = 1 - landing;
   offset.set(fly * 2.8, fly * 1.8, fly * 0.8);
   const leaveAt = seconds - WINDOW.leave;
-  const up = age > leaveAt + WINDOW.takeoff * 0.4 ? smooth((age - leaveAt - WINDOW.takeoff * 0.4) / (WINDOW.leave - WINDOW.takeoff * 0.4)) : 0;
+  const rise = WINDOW.takeoff * 0.4;
+  const up = age > leaveAt + rise ? smooth((age - leaveAt - rise) / (WINDOW.leave - rise)) : 0;
   offset.x += up * 3.2;
   offset.y += up * 2.4;
   offset.z += up * 0.9;
@@ -267,6 +269,7 @@ export function windowPose(age: number, seconds: number, calm: boolean): WindowP
   };
   let heading: number;
   let flying = true;
+  let settled = 0;
   if (age < landFrom) {
     flight(1);
     // In from the right, facing the way it flies.
@@ -274,23 +277,40 @@ export function windowPose(age: number, seconds: number, calm: boolean): WindowP
   } else if (age < leaveAt) {
     const k = (age - landFrom) / WINDOW.land;
     const into = smooth((age - landFrom) / 0.12);
+    settled = smooth((k - 1) / 0.45);
     flight(1 - into);
-    if (k < 1) clips.push({ name: 'land', phase: Math.min(1, k), weight: into });
-    else clips.push({ name: 'perch', phase: ((age - landFrom - WINDOW.land) / 4) % 1, weight: into });
+    if (settled < 1) clips.push({ name: 'land', phase: Math.min(1, k), weight: into * (1 - settled) });
     flying = k < WINDOW.touchdown;
     // Down on the sill it turns to the room, to the family coming to look at it.
     heading = -1 + 0.65 * smooth((age - WINDOW.landed) / 1.2);
   } else {
     const k = (age - leaveAt) / WINDOW.takeoff;
-    if (k < 1) clips.push({ name: 'takeoff', phase: k, weight: 1 });
+    settled = 1 - smooth(k / 0.15);
+    if (k < 1) clips.push({ name: 'takeoff', phase: k, weight: 1 - settled });
     else flight(1);
     flying = k > 0.3;
     // It turns to the way it goes, up to the right, as it springs.
     heading = -0.35 + 1.35 * smooth(k / 0.6);
   }
   let call = 0;
-  for (const [at, long] of CALL) call = Math.max(call, Math.sin(Math.PI * Math.min(1, Math.max(0, (age - at) / long))));
-  return { offset, scale, heading, lean: flying ? -0.18 * fly : 0, flying, perched: !flying, clips, call };
+  for (const [at, long] of CALL) {
+    const k = (age - at) / long;
+    if (k > 0 && k < 1) call = Math.max(call, Math.sin(Math.PI * k));
+  }
+  return { offset, scale, heading, lean: flying ? -0.18 * fly : 0, flying, clips, settled, call };
+}
+
+/**
+ * Its sitting on the sill, `t` seconds into it: it grips the sill and looks about (`perch`), and every so often cocks
+ * its head at the family (`look`). These go on through a held line, on their own clock.
+ */
+export function sitting(t: number): { name: string; phase: number; weight: number }[] {
+  const cycle = 10, looking = 6, fade = 0.35;
+  const c = t % cycle;
+  const look = Math.min(smooth((c - looking) / fade), smooth((cycle - c) / fade));
+  const out = [{ name: 'perch', phase: (t / 4) % 1, weight: 1 - look }];
+  if (look > 0) out.push({ name: 'look', phase: ((c - looking) / 3) % 1, weight: look });
+  return out;
 }
 
 const turn = new Quaternion();
@@ -298,9 +318,10 @@ const X = new Vector3(1, 0, 0);
 
 /**
  * Poses the jay at the window (`jay`: its group on the stage, `at`: the place on the sill) for a frame: the stand-in
- * as before, its wings beating while it flies; the rigged jay by its clips. Only `age` decides it, never the clock.
+ * as before, its wings beating while it flies; the rigged jay by its clips. Where it is and how it flies come from `age`
+ * alone, never the clock; sitting, it goes on looking about by `dt` (0 while the game is paused), as the family breathes.
  */
-export function poseWindowJay(jay: Object3D, at: { x: number; y: number; z?: number }, age: number, seconds: number, calm: boolean): void {
+export function poseWindowJay(jay: Object3D, at: { x: number; y: number; z?: number }, age: number, seconds: number, calm: boolean, dt = 0): void {
   const pose = windowPose(age, seconds, calm);
   const bird = jay.getObjectByName('bird');
   const rig = jayRigOf(bird);
@@ -321,6 +342,10 @@ export function poseWindowJay(jay: Object3D, at: { x: number; y: number; z?: num
     return;
   }
   for (const clip of pose.clips) rig.clips.scrub(clip.name, clip.phase, clip.weight);
+  if (pose.settled > 0) {
+    if (!calm) rig.life += dt;
+    for (const clip of sitting(calm ? 0 : rig.life)) rig.clips.scrub(clip.name, clip.phase, clip.weight * pose.settled);
+  } else rig.life = 0;
   rig.clips.update(0);
   // Its call: the beak opens on each note, the crown up.
   if (pose.call > 0) {

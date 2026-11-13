@@ -21,6 +21,9 @@ describe('the rigged creatures from Blender', () => {
       bones: ['body', 'saddle', 'belly', 'neck1', 'head', 'upperarm.L', 'hand.R', 'prim6.L', 'thigh.L', 'tarsus.R', 'toes.L', 'tail', 'bustle2'] },
     { file: 'art/baked/boot/crane-chick.glb', creature: 'crane-chick', clips: ['idle', 'walk', 'run'],
       bones: ['body', 'neck1', 'head', 'jaw', 'wing.L', 'wing.R', 'thigh.L', 'toes.R'] },
+    { file: 'art/baked/boot/jay.glb', creature: 'jay', clips: ['idle', 'look', 'hop', 'peck', 'eat', 'call', 'takeoff', 'fly', 'glide', 'land', 'perch'],
+      bones: ['body', 'puff', 'neck2', 'head', 'jaw', 'bill', 'crest', 'tail', 'fan1.L', 'fan2.R', 'upperarm.L', 'hand.R', 'prim5.L', 'sec2.R',
+        'tert.L', 'thigh.L', 'tarsus.R', 'toes.L', 'claws.R', 'hallux.L'] },
   ];
   for (const { file, creature, clips, bones } of creatures) {
     it(`${creature}: one skinned mesh, its bones by their names, and every clip`, () => {
