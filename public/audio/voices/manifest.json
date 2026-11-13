@@ -154,12 +154,12 @@
   },
   "mountainLoop": {
     "speaker": "elof",
-    "text": "Snöret runt röset. En väg ner!",
-    "tag": "[satisfied]",
+    "text": "Ett snöre här uppe! Nu kan jag åka ner.",
+    "tag": "[delighted]",
     "voiceId": "pKEH83CenvGnvS9JlN8f",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:42:33.782Z"
+    "generatedAt": "2026-11-13T14:59:08.696Z"
   },
   "eyesAlive": {
     "speaker": "elof",
@@ -706,17 +706,21 @@
   },
   "scene_granskog": {
     "speaker": "storyteller",
-    "text": "Granskogen. Halv tolv.",
-    "tag": "[fairytale narrator, atmospheric]",
+    "text": "Granskogen. klockan halv tolv",
+    "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
-    "generatedAt": "2026-10-10T11:22:53.897Z"
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-13T14:59:08.597Z"
   },
   "scene_myren": {
     "speaker": "storyteller",
-    "text": "Myren. Halv fem.",
-    "tag": "[mysterious, gentle mist narrator]",
+    "text": "Myren. klockan halv fem",
+    "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
-    "generatedAt": "2026-10-10T11:22:55.040Z"
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-13T14:59:10.236Z"
   },
   "scene_berget": {
     "speaker": "storyteller",
@@ -3775,5 +3779,23 @@
     "model": "eleven_v4",
     "stability": 0.35,
     "generatedAt": "2026-11-12T21:45:30.140Z"
+  },
+  "forestThanksBertil": {
+    "speaker": "elof",
+    "text": "Tack, Bertil! Din keps kan simma!",
+    "tag": "[grateful, giggling]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-13T14:59:08.686Z"
+  },
+  "bogLightMist": {
+    "speaker": "elof",
+    "text": "Oj, vad dimmigt! Tur att klubban lyser.",
+    "tag": "[startled, relieved]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-13T14:59:09.148Z"
   }
 }
