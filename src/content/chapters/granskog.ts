@@ -69,9 +69,13 @@ const ANT_LIFT = { from: { x: 58.6, y: 4 }, to: { x: 61.6, y: 10 }, rise: 3, tim
  * water's reach (WATER_REACH), so he cannot stand on it there.
  */
 const EDDY_LEAF = -9.36;
+/** Where the ghost stands once the leaf is pulled up level with the stone: on its top, at its middle (the mover `rescue`). */
+const RESCUED = { x: 186.8, y: -7.5 };
 const LAUNCH = { from: { x: 113.2, y: -8 }, to: { x: 128.4, y: -8 }, rise: 5, time: 1.8, corridor: 0.4 };
 const TRIAL = { from: { x: 113.2, y: -8 }, to: { x: 116.5, y: -8 }, rise: 1.3, time: 1.5, corridor: 0.15 };
 const CAP = { from: { x: 154.6, y: -8 }, to: { x: 177.4, y: -8 }, rise: 0.15, time: 8, corridor: 0.3 };
+/** Where Bertil stands, by his sign at the near end of the pool (the `cap:ready` spot, behind the path as signs are). */
+const BERTIL = { x: CAP.from.x, y: -8, z: -0.6 };
 
 export const granskog: ChapterData = {
   id: 'granskog',
@@ -105,6 +109,42 @@ export const granskog: ChapterData = {
     id: 'tack-pappa', on: 'launch', from: LAUNCH.to.x - 1, before: LAUNCH.to.x + 4.5, seconds: 1.4, hold: true,
     lines: [{ at: .2, who: 'elof', line: 'forestThanksPappa' }],
     stage: { elof: [{ at: 0, face: .5, act: 'wave', aim: { x: 117.4, y: -6.6, z: -0.6 } }] },
+  }, {
+    // Over the pool and out of the cap, he turns back to Bertil on the far bank and waves; the picture opens out over the
+    // water to take in both, and he thanks Bertil with a joke, while Bertil cheers and waves back (../../render/cap-thanks.ts)
+    // (Olov, 13 November 2026: "Elof måste säga något till Bertil efter att han har fått åka i Bertils kepa över vattnet.
+    // Något roligt och tack."). Told standing, as `tack-pappa`: the picture holds while the words are up. A game taken up
+    // at the big candy after it has seen it.
+    id: 'tack-bertil', on: 'cap', from: CAP.to.x - 1, before: 178.9, seconds: 2.4, hold: true,
+    lines: [{ at: 1.9, who: 'elof', line: 'forestThanksBertil' }],
+    stage: {
+      shots: [
+        { at: 0, x: CAP.to.x - 1.5, y: -6.4, height: 4.4, width: 7, move: .6 },
+        { at: .7, x: (BERTIL.x + CAP.to.x) / 2 - 0.1, y: -5.6, height: 8, width: 25.5, move: 1.2 },
+      ],
+      elof: [{ at: 0, face: .5, act: 'wave', aim: { x: BERTIL.x, y: -5, z: BERTIL.z } }],
+    },
+  }, {
+    // Pulled ashore out of the eddy, the ghost thanks him where he stands, so that what he says is what he has seen (Olov,
+    // 13 November 2026: "Det måste vara tydligare att spöket tackar Elof när Elof säger 'spöket tackade mig'."): turned to
+    // him on its leaf, it bows deep with a knock of wood, a glitter rises round it, and it gives two glad hops
+    // (../../render/ghost-thanks.ts); then he says it. It waits on its leaf for this (its perch after the eddy's), and goes
+    // on ahead once it is told. A game taken up beyond the stone has seen it.
+    id: 'tackar', on: 'placed:rescue', from: 182.5, before: 189, seconds: 2.9, hold: true,
+    lines: [{ at: 2.35, who: 'elof', line: 'thanked', id: 'thanked' }],
+    sounds: [{ at: .8, sound: 'blink' }],
+    stage: {
+      shots: [{ at: 0, x: RESCUED.x - 1.15, y: -6.55, height: 4.2, width: 6.8, move: .7 }],
+      elof: [
+        { at: 0, face: 0, act: 'look', aim: { x: RESCUED.x, y: RESCUED.y + .6, z: 0 } },
+        { at: .95, act: 'gasp', aim: { x: RESCUED.x, y: RESCUED.y + .6, z: 0 } },
+      ],
+      fx: [
+        { at: .75, kind: 'glow', from: { x: RESCUED.x - .1, y: RESCUED.y + .55, z: .2 }, seconds: 1.5 },
+        { at: .8, kind: 'sparkle', from: { x: RESCUED.x, y: RESCUED.y + .2, z: 0 }, seconds: 1.45 },
+        { at: .95, kind: 'sparkle', from: { x: RESCUED.x - .2, y: RESCUED.y + .45, z: .1 }, seconds: 1.3 },
+      ],
+    },
   }],
   goalX: 204,
   // For the picture only (content/life.ts): far in among the trunks, where the trail is calm after a big candy. A moose
@@ -369,6 +409,8 @@ export const granskog: ChapterData = {
     // off nor rises out of reach, and it comes up with the leaf (Olov, 12 November 2026)
     { at: { x: 180.5, y: -8 } },
     { at: { x: 186.8, y: EDDY_LEAF + 0.3 }, until: 'placed:rescue', still: true, on: 'rescue' },
+    // Pulled ashore, it stays on its leaf by the stone until it has thanked him (the scene `tackar`).
+    { at: { x: RESCUED.x, y: RESCUED.y }, until: 'scene:tackar', still: true },
     // It waits to show the way, still several Elof lengths ahead.
     { at: { x: 197, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },
     { at: { x: 205.5, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },
@@ -382,7 +424,6 @@ export const granskog: ChapterData = {
     { id: 'family:bertil', at: 152.4, until: 'cap', who: 'bertil', line: 'familyBertil', read: true },
     { id: 'family:cap-ready', on: 'family:cap-ready', until: 'cap', within: [149, 158], who: 'bertil', line: 'familyCapReady', read: true },
     { id: 'heja', at: 166, who: 'bertil', line: 'heja' },
-    { id: 'thanked', on: 'placed:rescue', who: 'elof', line: 'thanked' },
     { id: 'vittra-clue', on: 'keepsake:vittra', who: 'elof', line: 'forestVittraClue' },
     { id: 'seesaw-trial', on: 'seesaw:trial:landed', who: 'elof', line: 'forestTrial' },
   ],

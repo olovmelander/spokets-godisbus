@@ -381,6 +381,8 @@ export const sv = {
     familySeesawReady: 'Bra! Ställ dig på änden som är nere.',
     // Landed across the ravine, he turns and thanks Pappa at the seesaw (Olov, 12 November 2026).
     forestThanksPappa: 'Tack så mycket, Pappa!',
+    // Over the pool, out of the cap, he turns and thanks Bertil, with a joke (Olov, 13 November 2026).
+    forestThanksBertil: 'Tack, Bertil! Din keps kan simma!',
     familyBertil: 'Min keps blir din båt, lillebror.',
     familyCapReady: 'Kliv i när du vill. Jag hejar på dig.',
     familyMamma: 'Jag lägger en stock över vattnet.',
