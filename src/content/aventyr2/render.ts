@@ -34,6 +34,7 @@ import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { otterLife } from './otter';
+import { installRiverCreatures } from './river-creatures';
 import { RAPID_LANE, RAPID_STONES, riverStones } from './river-stones';
 import { DOOR, morgonen, WINK } from './chapters/morgonen';
 import { frontDoor } from '../../render/front-door';
@@ -3217,6 +3218,8 @@ export function installPictures(): void {
   if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
+  // Älven's beaver and otter with bones and clips, from Blender, where their lives wait for them (./river-creatures.ts).
+  if (!PACK.models.includes(installRiverCreatures)) PACK.models.push(installRiverCreatures);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */
