@@ -16,8 +16,9 @@ export const NORRSKEN_SCENES: readonly SceneDef[] = [{
   id: 'snoret', on: 'lower', from: 9.2, before: 17.7, until: 'placed:tragubbe', seconds: 2.6, hold: true,
   cues: [{ at: 2.3, flag: 'nr:rope-ready' }],
   stage: {
-    // Keep the whole stranded figure below the lip visible in a short landscape frame too.
-    shots: [{ at: 0, x: 11.8, y: -1.05, height: 5.4, width: 4.5, eye: .4, move: .65 }],
+    // Keep the whole stranded figure below the lip visible in a short landscape frame too, and his head and the ghost's
+    // under the scene's top bar (at -1.05 and 5.4 high, they were at its edge).
+    shots: [{ at: 0, x: 11.7, y: -.5, height: 5.6, width: 4.8, eye: .4, move: .65 }],
     elof: [{ at: 0, act: 'crouch', aim: { x: 12.4, y: -2.3, z: 0 }, face: .05 },
       { at: .45, act: 'reach', aim: { x: 12.4, y: -1.2, z: .1 } }],
   },
@@ -28,10 +29,12 @@ export const NORRSKEN_SCENES: readonly SceneDef[] = [{
   id: 'hissa', on: 'haul', from: 9.2, before: 17.7, until: 'placed:tragubbe', seconds: 3.1, hold: true,
   cues: [{ at: .35, flag: 'nr:heave' }],
   stage: {
+    // The two of them on the rock, heads well under the scene's top bar, and the trägubbe deep in the crack below them;
+    // then up with it to the lip, where `uppdragen` takes over.
     shots: [
-      { at: 0, x: 11.5, y: -1.05, height: 5.4, width: 5.2, eye: .4, move: .5 },
-      { at: 1.3, x: 11.5, y: -.3, height: 4.6, width: 5.2, move: 1 },
-      { at: 2.4, x: 11.6, y: .5, height: 3.8, width: 5, move: .6 },
+      { at: 0, x: 11.5, y: -.5, height: 5.6, width: 5.2, eye: .4, move: .5 },
+      { at: 1.2, x: 11.5, y: 0, height: 4.6, width: 5.2, move: 1 },
+      { at: 2.3, x: 11.6, y: .5, height: 3.8, width: 5, move: .6 },
     ],
     elof: [{ at: 0, act: 'stand', face: .05 }],
     actors: { ghost: [

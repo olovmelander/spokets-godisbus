@@ -781,6 +781,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const bagReturn = chapter.id === 'norrsken' ? createBagReturn() : null;
   let bagOut = 0;
   let bagDown: Vector3 | null = null;
+  const bagBackAt = new Vector3();
   const laceHand = new Vector3(), laceAlong = new Vector3();
   /** Myren's lysklubba, held up in his right hand in the mist: where that hand is, from the frame before. */
   const lanternHand = new Vector3(), lanternLift = new Vector3();
@@ -2101,6 +2102,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (directions.ghost) stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -Math.sin(ghostTurn) * .4 - .05);
     else stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -.18 + Math.sin(ghostTurn) * .25);
     stolenBag.rotation.y = ghostTurn;
+    // Norrskenet's pull: it has the lace's end in front of it, and the bag on its back (./norrsken-rescue.ts); the
+    // trägubbe out, it takes the bag round in front again.
+    const bagBack = !rescue ? 0 : sceneFrame?.id === 'hissa' ? 1 : sceneFrame?.id === 'uppdragen' ? 1 - smooth(clamp((sceneFrame.seconds - .3) / .8, 0, 1)) : 0;
+    if (bagBack > 0) stolenBag.position.lerp(bagBackAt.set(-Math.cos(ghostTurn) * .42, .18, -.14), bagBack);
     if (bagReturn && bagDown) bagReturn.hand(stolenBag, ghostPlace, bagDown, bagOut);
     const tear = stolenBag.getObjectByName('saturday-bag-tear');
     if (tear) tear.visible = chapter.prologue ? flags.has('bag:torn') : true;

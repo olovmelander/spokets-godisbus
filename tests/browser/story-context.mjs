@@ -205,7 +205,7 @@ try {
   await ready(unknown.page);
   check('a direct early summit start has no identity or candy-motive spoiler', await purpose(unknown.page) === 'crack' && !/första|välkommen|tog godiset för/.test(await unknown.page.locator('#pauseStory').textContent()));
   check('the normal-play motive remains absent before the actual rescue prerequisites', await unknown.page.locator('#storyPurposeReveal').isHidden() && await unknown.page.locator('#storyPurposeReveal').textContent() === '');
-  await unknown.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low&at=18.8,0&flags=placed:tragubbe,eyes`);
+  await unknown.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low&at=18.8,0&flags=placed:tragubbe`);
   await ready(unknown.page);
   await unknown.page.evaluate(() => { document.getElementById('debug').hidden = true; });
   check('the rescued figure without its returned bag still does not reveal the motive',
@@ -256,7 +256,7 @@ try {
   await picture(home.page, join(shots, 'epilogue-motive-without-memory.png'));
   await home.finish();
 
-  const unfinished = await open({ width: 390, height: 844 }, saved('epilog', 0, { norrsken: ['placed:tragubbe', 'eyes'] }));
+  const unfinished = await open({ width: 390, height: 844 }, saved('epilog', 0, { norrsken: ['placed:tragubbe'] }));
   await unfinished.page.goto(`${base}?dev&debug&standin&course=epilog&tier=low&title`);
   await ready(unfinished.page);
   check('a resumed epilogue cannot invent the motive if the saved bag-return receipt is absent',
@@ -265,7 +265,7 @@ try {
   await unfinished.finish();
 
   const known = await open({ width: 390, height: 844 }, saved('norrsken', 1, { berget: ['memory'] }));
-  await known.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low&at=18.8,0&flags=placed:tragubbe,eyes`);
+  await known.page.goto(`${base}?dev&debug&standin&course=norrsken&tier=low&at=18.8,0&flags=placed:tragubbe`);
   await ready(known.page);
   // Inspect the player-facing HUD; the opt-in debug inspector otherwise covers this corner.
   await known.page.evaluate(() => { document.getElementById('debug').hidden = true; });

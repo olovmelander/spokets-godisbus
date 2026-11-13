@@ -85,8 +85,8 @@ Appendix C lists exactly what carries over. What is new here:
     plats tom.
   - Spöket bär på Pappas minne. Det tar godiset för att ha ett välkommen-hem-kalas för den ensamma trägubben, men
     det kan inte be om hjälp, för det har ingen mun.
-  - Uppe på berget drar Elof och spöket upp trägubben tillsammans. Elof målar nya ögon på den med ett kråkbär, och
-    bestämmer själv vem som ska få hans godis.
+  - Uppe på berget drar Elof och spöket upp trägubben tillsammans, med ett enda tag i snöret. Den har kvar sina gamla
+    målade ögon. Elof bestämmer själv vem som ska få hans godis.
   - Hemma lär Pappa honom att tälja, och spöket får sitt namn: **Klonk**, efter ljudet av dess träfötter.
 - **För Elof, som är sju och spelar spel för 11+:**
   - hopp som blir högre om man håller in knappen, en gunga som man själv tar fart på, pussel i ett till fyra
@@ -241,8 +241,8 @@ börjar det vänta på honom?*
    - When Elof was about three, Pappa carved his very first trägubbe, for Elof. Little Elof carried it everywhere
      and shared his Saturday sweets with it, until it was lost on the mountain.
    - The ghost carries that memory. It borrowed the bag to give the lonely trägubbe a welcome-home party.
-   - On the summit Elof understands that the trägubbe was his all along. He paints it new eyes with a crowberry
-     and shares his candy: one goes into the ghost's carved bag, which has always been empty. Then he eats his own
+   - On the summit Elof understands that the trägubbe was his all along. He pulls it up with the ghost, its old
+     painted eyes still on it, and shares his candy: one goes into the ghost's carved bag, which has always been empty. Then he eats his own
      golden geléhallon, and grows back.
    - At home, Pappa teaches him to carve, and the ghost gets its name: *Klonk*.
 
@@ -268,7 +268,7 @@ börjar det vänta på honom?*
 | **Knuffa, Dra, Vänd, Ge, Lyft** | Använd button | The button always shows the specific verb with an icon, and the icon also floats over the target. |
 | **Ta!** | Använd button close to the ghost | A near-catch, once or twice per chapter. Elof lunges, the ghost squeaks free and drops a handful of candy. |
 | **Ropa på …** | Använd button at a helper spot | Calls Moa, Pappa, Bertil or Mamma for their helper moment. |
-| **Måla** | Trace with a finger, or the Använd button | Two eyes: on the ghost (the prologue), on the old trägubbe with a crowberry (the summit), and on his own first figure (the epilogue). |
+| **Måla** | Trace with a finger, or the Använd button | Two eyes: on the ghost (the prologue), and on his own first figure (the epilogue). The summit's crowberry eyes were taken out (Olov, 13 November 2026): the old trägubbe keeps its own. |
 | **Smaka** | Använd button | Only a lingonberry (sour face!), and on the summit Elof's own golden candy. |
 | **Plocka godis** | Just touch it | The candy hops into the bag. |
 | **Peka** | Tap anything | A candy jiggles, and Elof walks to it if it is near. The ghost peeks, animals look up. Tapping Elof makes him wave and give a tiny wordless call. Never needed. |
@@ -808,13 +808,15 @@ Näckens fiol (O5).
   - Elof: "Spöket vill hämta hem min trägubbe!"
 
 **Final: Norrsken (blue hour into night; about 6 min, with a tap at least every 30 s)**
-1. **The crack** (P16). Elof lowers the lace; the ghost climbs down and takes the trägubbe in its
-   arms. They pull together, and out it comes: grey, mossy and smiling, with no eyes left.
-2. **New eyes.** Elof picks a crowberry from the heather and dots two eyes on the old figure, as he did on the
-   ghost that morning.
+1. **The crack** (P16). Elof lowers the lace once, and its loop takes hold of the trägubbe. One *Dra upp*: the ghost
+   takes the lace's end behind him, they heave together, and out it comes in one go: grey, mossy and smiling, its
+   old painted eyes still on it (Olov, 13 November 2026: it was lowered and pulled twice, and the eye painting with a
+   crowberry "känns som att det inte passar in"; both are gone).
+2. *(The eye painting was here.)*
 3. **The party it wanted.** The ghost sets the trägubbe by the pine, facing the view, and puts a
    raspberry jelly in its lap, as little Elof used to: its welcome-home party.
-4. **The bag comes back.** The ghost gives Elof the bag: it was only borrowed.
+4. **The bag comes back.** The ghost gives Elof the bag: it was only borrowed. It has gone ahead with it, and holds it
+   out as he comes.
 5. **Dela godiset** (P17), a real choice. Elof taps a candy, then a friend, and decides himself who gets what:
    - the trägubbe;
    - the ghost: the candy goes into its carved bag, which has always been empty;
@@ -1239,7 +1241,7 @@ help is big and spectacular, but Elof still does the part that matters. How the 
 | E4 | Vindbyarna | Berget, the open granite | run between boulders between gusts | Read the lichen | 1.0 |
 | P15 | Två är starkare än en | Berget | duo: boost; then hold and push | Together instead of against | 1.0 (one); 1.1 (two more) |
 | C4 | Toppröset | Berget, above the pine | a hard climb | — | 1.0 |
-| P16 | Den första trägubben | Final, the crack | Kasta snöret, Dra, duo; then Måla with a crowberry | — | 1.0 |
+| P16 | Den första trägubben | Final, the crack | Sänk snöret, then one Dra upp, duo (no eyes to paint since 13 November 2026) | — | 1.0 |
 | P17 | Dela godiset | Final | Ge: choose who gets what | Sharing is a choice, not a loss | 1.0 |
 | P18 | Godiskalaset | Epilog | Ge (tap each person) | — | 1.0 |
 | P19 | Elofs första trägubbe | Epilog | trace three strokes away from the body; Måla | "Jag kan tälja!" | 1.0 |
