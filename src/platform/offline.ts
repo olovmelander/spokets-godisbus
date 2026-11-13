@@ -4,6 +4,34 @@ export interface Offline {
   canStart(): boolean;
   /** Call when the title is shown. Visibility changes are handled here too. */
   check(): void;
+  /**
+   * Whether a new version is being looked for or downloaded while an older one plays: the first open after a release.
+   * A start pressed then waits for it (`whenSettled`), so that nobody plays on with the old version unknowing (Olov,
+   * 13 November 2026: half of Äventyr 1's lines played no voice, because the old version's list of recordings ran on).
+   */
+  downloading(): boolean;
+  /** Calls `go` once no new version is downloading or being put in place, or after `limit` ms whatever happens. */
+  whenSettled(go: () => void, limit?: number): void;
+}
+
+/**
+ * Calls `go` once `busy()` has been false for `grace` ms (a finished download hands over to the title's update vote,
+ * which needs a moment to begin), or after `limit` ms in any case. Checks every `every` ms.
+ */
+export function waitUntilSettled(busy: () => boolean, go: () => void, { limit = 45000, grace = 1500, every = 250 } = {}): void {
+  const began = Date.now();
+  let quietSince: number | null = null;
+  const look = () => {
+    const now = Date.now();
+    if (busy()) quietSince = null;
+    else quietSince ??= now;
+    if (now - began >= limit || (quietSince !== null && now - quietSince >= grace)) {
+      go();
+      return;
+    }
+    setTimeout(look, every);
+  };
+  look();
 }
 
 export function createOffline(options: { isTitle(): boolean; setUpdateLock(locked: boolean): void }): Offline {
@@ -107,5 +135,13 @@ export function createOffline(options: { isTitle(): boolean; setUpdateLock(locke
     }).catch(() => { /* Private mode, insecure LAN and storage failures do not block play. */ });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) void check(); });
   }
-  return { canStart: () => !locked, check: () => { void check(); } };
+  // An update, not the first install: a worker controls this page, and a newer one is looked for or installing.
+  const downloading = () => import.meta.env.PROD && 'serviceWorker' in navigator && !!navigator.serviceWorker.controller
+    && (checking || !!registration?.installing);
+  return {
+    canStart: () => !locked,
+    check: () => { void check(); },
+    downloading,
+    whenSettled: (go, limit) => waitUntilSettled(() => downloading() || !!locked || updating, go, { limit }),
+  };
 }
