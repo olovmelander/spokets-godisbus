@@ -18,6 +18,7 @@ import { antRide } from './ant-ride';
 import { craneFlying, craneKneeling } from './crane';
 import { craneRigOf, kneel } from './crane-ride';
 import { wingbeat } from './wingbeat';
+import { HELPER_BEAT, jayRigOf, jayStandIn, stepFlyingJay, stepGroundJay } from './jay';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
 import { streetLeaf } from './village';
@@ -47,24 +48,6 @@ const glance = (t: number, seed: number) => {
   const n = Math.floor(w);
   return hashed(n - 1) + (hashed(n) - hashed(n - 1)) * smoothstep((w - n) / 0.07);
 };
-/**
- * The neck of the Blender jay (art/blender/jay.py): its head, beak and eyes are parts of their own, gathered once
- * under a pivot at the nape so that they turn together. Null for the stand-in.
- */
-function headOf(bird: Object3D): Object3D | null {
-  const rigged = bird.getObjectByName('jay-neck');
-  if (rigged) return rigged;
-  const head = bird.getObjectByName('head'), beak = bird.getObjectByName('beak'), eyes = bird.getObjectByName('eyes');
-  if (!head || !beak || !eyes || !head.parent) return null;
-  const neck = new Object3D();
-  neck.name = 'jay-neck';
-  neck.position.copy(head.position).add(new Vector3(-0.05, -0.07, 0));
-  head.parent.add(neck);
-  neck.updateMatrixWorld(true);
-  for (const part of [head, beak, eyes]) neck.attach(part);
-  return neck;
-}
-
 // --- things on rails -----------------------------------------------------------------------------------------
 
 /** A thing on a rail, as what it is. Its origin is the middle of its bottom, as the simulation's. Null: a plain box. */
@@ -352,8 +335,17 @@ function crowberryEyesApart(model: Group): void {
 /** A thing at a spot: what it looks like, and how it answers to being used. */
 export interface SpotProp {
   group: Group;
-  /** `used`: its flag is set. `clock` and `dt` are in seconds. */
-  update(used: boolean, clock: number, dt: number, strike?: number): void;
+  /**
+   * `used`: its flag is set. `clock` and `dt` are in seconds. `world`, where the view gives it: where Elof is, and
+   * whether things should move less (the jay turns to him, ./jay.ts).
+   */
+  update(used: boolean, clock: number, dt: number, strike?: number, world?: SpotWorld): void;
+}
+
+/** What a thing at a help point may know of the world around it. */
+export interface SpotWorld {
+  elof: { x: number; y: number };
+  calm: boolean;
 }
 
 /** The colour of a person's sign: Moa's denim, Pappa's green, Bertil's cap, Mamma's mug. No likeness. */
@@ -531,30 +523,19 @@ export function spotProp(spot: Spot): SpotProp | null {
       } };
     }
     case 'jay': {
-      // Lavskrikan: grey-brown, with a dark cap and a rust-red tail. It hops when it gets its berry.
-      const bird = new Group();
-      // The view puts the jay modelled in Blender here, once it has arrived: it finds this group by its name.
-      bird.name = 'bird';
-      const grey = solid('#8c7f72', 0.9);
-      const tail = new Mesh(new BoxGeometry(0.42, 0.05, 0.16), solid('#b5622c', 0.8));
-      tail.position.set(-0.36, 0.3, 0);
-      tail.rotation.z = 0.35;
-      const beak = new Mesh(new ConeGeometry(0.04, 0.14, 8), solid('#2a2622', 0.5));
-      beak.rotation.z = -Math.PI / 2;
-      beak.position.set(0.38, 0.55, 0);
-      bird.add(
-        ball(1, grey, 0, 0.36, 0, [0.3, 0.22, 0.2]), ball(0.14, solid('#5a4c42', 0.9), 0.22, 0.55, 0), tail, beak,
-        ball(0.03, solid('#111111', 0.2), 0.3, 0.59, 0.1), ball(1, solid('#b5622c', 0.8), -0.05, 0.36, 0.19, [0.16, 0.1, 0.03]),
-      );
-      for (const z of [-0.07, 0.07]) {
-        const leg = rod(0.015, 0.2, solid('#3a3028'));
-        leg.position.set(0.02, 0.1, z);
-        bird.add(leg);
-      }
+      // Lavskrikan: grey-brown, with a dark cap and a rust-red tail. The view puts the rigged jay modelled in Blender
+      // in this group once it has arrived (./jay.ts), finding it by its name, 'bird': that one turns to him, takes his
+      // berry and swallows it. The stand-in hops when it gets its berry.
+      const bird = jayStandIn();
       group.add(bird);
       return {
         group,
-        update(used, clock, dt) {
+        update(used, clock, dt, _strike, world) {
+          const rig = jayRigOf(bird);
+          if (rig) {
+            stepGroundJay(bird, rig, { used, clock, dt, x: spot.at.x, ...(world ? { elof: world.elof } : {}), calm: world?.calm ?? false });
+            return;
+          }
           since = used ? since + dt : 0;
           // Given its berry it hops: three hops, each from a crouch, and lands with a give.
           let hop = 0, squat = 0;
@@ -565,14 +546,8 @@ export function spotProp(spot: Spot): SpotProp | null {
           }
           bird.position.y = hop - squat * 0.03;
           bird.scale.set(1, 1 - squat * 0.12 + Math.sin(clock * 2.2) * 0.008, 1);
-          // The Blender jay turns only its head, in quick snaps with holds, mostly towards him; the stand-in, which
-          // has no neck, turns its body a little.
-          const neck = headOf(bird);
-          const look = used ? -0.5 : 0.55 * glance(clock, 2.3) - 0.25;
-          if (neck) {
-            bird.rotation.y = 0;
-            neck.rotation.set(0.12 * glance(clock * 0.7, 5.1), look, 0.15 * glance(clock * 0.9, 8.7));
-          } else bird.rotation.y = look * 0.6;
+          // It has no neck: it turns its body a little, in quick snaps with holds, mostly towards him.
+          bird.rotation.y = (used ? -0.5 : 0.55 * glance(clock, 2.3) - 0.25) * 0.6;
         },
       };
     }
@@ -905,29 +880,6 @@ export function spotProp(spot: Spot): SpotProp | null {
 
 // --- the helper ----------------------------------------------------------------------------------------------
 
-/** A small bird, facing +x, with its feet at the origin: the jay's shape, used for the helper as well. */
-function bird(): Group {
-  const group = new Group();
-  group.name = 'bird';
-  const grey = solid('#8c7f72', 0.9);
-  const tail = new Mesh(new BoxGeometry(0.42, 0.05, 0.16), solid('#b5622c', 0.8));
-  tail.position.set(-0.36, 0.3, 0);
-  tail.rotation.z = 0.35;
-  const beak = new Mesh(new ConeGeometry(0.04, 0.14, 8), solid('#2a2622', 0.5));
-  beak.rotation.z = -Math.PI / 2;
-  beak.position.set(0.38, 0.55, 0);
-  group.add(ball(1, grey, 0, 0.36, 0, [0.3, 0.22, 0.2]), ball(0.14, solid('#5a4c42', 0.9), 0.22, 0.55, 0), tail, beak, ball(0.03, solid('#111111', 0.2), 0.3, 0.59, 0.1));
-  for (const side of [-1, 1]) {
-    const wing = new Mesh(new BoxGeometry(0.3, 0.03, 0.34), solid('#b5622c', 0.8));
-    wing.geometry.translate(0, 0, 0.17);
-    wing.position.set(-0.04, 0.44, side * 0.12);
-    wing.scale.z = side;
-    wing.name = side > 0 ? 'wingNear' : 'wingFar';
-    group.add(wing);
-  }
-  return group;
-}
-
 /** How far in front of the play plane the dotted Elof is drawn: 0.3 EL nearer than the nearest prop. */
 const DEMO_Z = 0.95;
 /** How high over what it shows the jay perches. */
@@ -944,7 +896,9 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   group.name = 'helper';
   const flyer = new Group();
   flyer.name = 'helper-actor';
-  flyer.add(ghost ?? bird());
+  // The jay (./jay.ts): the stand-in, until the view puts the rigged one in its place.
+  const bird = ghost ? null : jayStandIn();
+  flyer.add(ghost ?? bird!);
   flyer.scale.setScalar(0);
   drawnWhile(flyer, false);
   const pale = () => new MeshStandardMaterial({ color: '#fff6dc', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#fff0c0', emissiveIntensity: 0.65 });
@@ -1034,7 +988,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     const targetX = ghost ? x + ahead : last.x - 0.1;
     const targetY = ghost ? Math.max(y + ahead, demoFloor(chapter, targetX) + 0.6) : last.y + BIRD_PERCH;
     // The jay beats in bursts, rising a little with each downstroke, and between them holds its wings out and sinks.
-    const wings = wingbeat(clock, 3.5, { every: 1.7, glide: 0.4, held: 0.1 });
+    const wings = wingbeat(clock, HELPER_BEAT.hz, HELPER_BEAT.rhythm);
     const bob = (wings.pitch / 0.03) * 0.04 - wings.glide * 0.05;
     const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : bob), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
     const k = still ? 1 : 1 - Math.exp(-5 * dt);
@@ -1064,10 +1018,16 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
       drawnWhile(thought, thought.material.opacity > 0);
       thought.position.set(flyer.position.x + 0.15, flyer.position.y + 1.5, 0.65);
     }
-    const beat = still ? 0 : wings.lift * 0.9;
-    const near = flyer.getObjectByName('wingNear'), far = flyer.getObjectByName('wingFar');
-    if (near) near.rotation.x = -beat;
-    if (far) far.rotation.x = beat;
+    const rig = jayRigOf(bird);
+    if (rig && bird) {
+      // The rigged jay beats its wings by the same rhythm, and turns to him; leaving, to the way it goes.
+      if (shown > 0) stepFlyingJay(bird, rig, clock, dt, still, here ? x - flyer.position.x : 1);
+    } else {
+      const beat = still ? 0 : wings.lift * 0.9;
+      const near = flyer.getObjectByName('wingNear'), far = flyer.getObjectByName('wingFar');
+      if (near) near.rotation.x = -beat;
+      if (far) far.rotation.x = beat;
+    }
     const key = step >= 3 && at ? `${at.x},${at.y},${help.verb},${help.replay ?? 0}` : '';
     if (key !== demoKey) { demoKey = key; elapsed = 0; demonstration = demoFor(chapter, help, standY); }
     if (key) elapsed = Math.min(DEMO_SECONDS, elapsed + dt);

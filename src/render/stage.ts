@@ -5,7 +5,7 @@ import { lampHandTransfer } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
   AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
-  MeshBasicMaterial, MeshLambertMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, SphereGeometry, SRGBColorSpace,
+  MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, SphereGeometry, SRGBColorSpace,
   TorusGeometry, Vector3,
 } from 'three';
 import type { ChapterData } from '../sim/types';
@@ -17,6 +17,7 @@ import { createFootwork, type Footwork } from './footwork';
 import { CLIPS, STANDS } from './motion-data';
 import { blendPose, createModelRig, createRehearsalRig, heightOf, JOINTS, STANDING, type Legs, type Pose, type Rig, type Role } from './rig';
 import { drawnWhile } from './idle';
+import { jayStandIn, poseWindowJay } from './jay';
 import { goldSweet } from './gold-sweet';
 import { goldMouthWeight } from './gold-contact';
 import type { Grip } from './fingers';
@@ -490,27 +491,10 @@ function furniture(look: 'table' | 'chair' | 'stool' | 'steps'): Group {
   return group;
 }
 
-/** A small stand-in bird for the window: grey-brown with a rust tail, until the jay modelled in Blender is put in. */
+/** The jay at the window: the stand-in (./jay.ts), until the view puts the rigged jay modelled in Blender in its place. */
 function windowJay(): Group {
   const group = new Group();
-  const bird = new Group();
-  bird.name = 'bird';
-  const grey = new MeshLambertMaterial({ color: '#8d8a84' });
-  const rust = new MeshLambertMaterial({ color: '#b0643a' });
-  const body = new Mesh(new SphereGeometry(0.22, 10, 8), grey);
-  body.scale.set(1.3, 1, 1);
-  const head = new Mesh(new SphereGeometry(0.14, 10, 8), grey);
-  head.name = 'head';
-  head.position.set(0.24, 0.16, 0);
-  const tail = new Mesh(new BoxGeometry(0.3, 0.06, 0.12), rust);
-  tail.position.set(-0.32, -0.02, 0);
-  bird.add(body, head, tail);
-  for (const side of [-1, 1]) {
-    const wing = new Mesh(new BoxGeometry(.35, .05, .18), rust);
-    wing.name = side > 0 ? 'wingNear' : 'wingFar';
-    wing.position.set(-.04, .04, side * .17); bird.add(wing);
-  }
-  group.add(bird);
+  group.add(jayStandIn());
   return group;
 }
 
@@ -1637,18 +1621,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             break;
           }
           case 'jay': {
+            // It flies in, lands on the sill, calls, sits turned to the room, and flies away at the end (./jay.ts).
             jayOn = true;
-            const landing = calm ? 1 : smooth(age / 1.6), fly = 1 - landing;
-            jay.position.set(at.x + fly * 2.8, at.y + fly * 1.8, (at.z ?? 0) + fly * .8);
-            jay.scale.setScalar(1.6 * smooth(Math.min(1, age / .3, (fx.seconds - age) / .4)));
-            jay.rotation.y = Math.PI / 2 * 0.6;
-            jay.rotation.z = calm ? 0 : -.18 * fly + .045 * Math.sin(Math.max(0, age - 1.6) * 1.8);
-            const wingBeat = calm ? 0 : Math.sin(age * 19) * .9 * fly;
-            const near = jay.getObjectByName('wingNear'), far = jay.getObjectByName('wingFar');
-            if (near) near.rotation.x = -wingBeat;
-            if (far) far.rotation.x = wingBeat;
-            const head = jay.getObjectByName('head');
-            if (head) head.rotation.z = calm ? 0 : Math.sin(Math.max(0, age - 1.6) * 2) * .12;
+            poseWindowJay(jay, at, age, fx.seconds, calm, dt);
             break;
           }
         }
