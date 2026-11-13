@@ -146,8 +146,8 @@ export interface Spot {
   id: string;
   at: Vec;
   /**
-   * It is wherever this mover is now: the towed trägubbe's eyes are painted, and its candy given, where he has dragged
-   * it to, not back at the crack it came out of. `at` is where it is before the mover is towed.
+   * It is wherever this mover is now: the towed trägubbe's candy is given where he has dragged it to, not back at the
+   * crack it came out of. `at` is where it is before the mover is towed.
    */
   follows?: string;
   /** For the picture: whoever of the family is shown here sits, in a boat, say. */

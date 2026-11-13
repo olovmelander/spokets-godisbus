@@ -259,13 +259,13 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'figure': {
-      // The pointed cap and crooked smile match the remembered first carving. Its restored eyes
-      // become visible only after Elof paints them; the collider keeps its existing saved meaning.
+      // The pointed cap, crooked smile and old painted eyes match the remembered first carving: he comes out of the
+      // crack with them, friendly as ever (Olov, 13 November 2026: no new eyes are painted on him any more).
       const old = solid('#8f8c7e', 1);
       const body = new Mesh(new CylinderGeometry(.13, .2, .48, 8), old);
       body.position.set(0, .24, 0); body.rotation.z = -.08;
       const cap = new Mesh(new ConeGeometry(.17, .34, 7), old); cap.position.set(.02, .84, 0); cap.rotation.z = -.1;
-      const dark = solid('#3d3932', .9), eyes = new Group(); eyes.name = 'first-carving-eyes'; eyes.visible = false;
+      const dark = solid('#3d3932', .9), eyes = new Group(); eyes.name = 'first-carving-eyes';
       for (const x of [-.075, .075]) eyes.add(ball(.023, dark, x, .61, .146));
       const smile = new Mesh(new TorusGeometry(.055, .009, 5, 12, Math.PI), dark);
       smile.position.set(0, .57, .146); smile.rotation.z = Math.PI;
@@ -273,61 +273,15 @@ export function moverProp(mover: Mover): Group | null {
         ball(.06, solid('#6f8a45', 1), -.13, .38, .08, [1, .5, 1]));
       group.name = 'first-carving';
       // The carving made in Blender takes its place where the private pack has it (./shared-models.ts), as big as
-      // it is in Äventyr 2. It is made with the crowberry eyes Elof gives it here, so they wait until he has.
+      // it is in Äventyr 2, with its own dark eyes on it all the way.
       group.userData.model = 'tragubbe';
       group.userData.fit = 0.72;
-      group.userData.onModelInstalled = crowberryEyesApart;
       break;
     }
     default:
       return PACK.movers.get(mover.look ?? '')?.(mover) ?? null;
   }
   return group;
-}
-
-/**
- * The first trägubbe's model (the private pack's `tragubbe`) has Elof's crowberries for eyes. In Norrsken he has not
- * given them yet: they are drawn apart, as `first-carving-eyes`, which the view shows once he has painted them.
- * They are the only near-black, bluish parts of its face, and their glints the only bluish-white ones. The model's
- * own geometry is shared with every other copy, so both parts get geometries of their own over its attributes.
- */
-function crowberryEyesApart(model: Group): void {
-  const mesh = model.getObjectByProperty('isMesh', true) as Mesh | undefined;
-  const geometry = mesh?.geometry;
-  const colour = geometry?.getAttribute('color');
-  const position = geometry?.getAttribute('position');
-  const index = geometry?.getIndex();
-  if (!mesh || !geometry || !colour || !position || !index) return;
-  geometry.computeBoundingBox();
-  const box = geometry.boundingBox!;
-  // The head is the top part of the figure, its hat included.
-  const head = box.min.y + (box.max.y - box.min.y) * 0.45;
-  const face: number[] = [];
-  const eyes: number[] = [];
-  for (let i = 0; i < index.count; i += 3) {
-    let r = 0, g = 0, b = 0, y = 0;
-    for (let k = 0; k < 3; k++) {
-      const v = index.getX(i + k);
-      r += colour.getX(v) / 3; g += colour.getY(v) / 3; b += colour.getZ(v) / 3; y += position.getY(v) / 3;
-    }
-    const berry = Math.max(r, g, b) < 0.16 && b > r && b > g;
-    const glint = Math.min(r, g, b) > 0.6 && b > r + 0.03 && b > g + 0.03;
-    (y > head && (berry || glint) ? eyes : face).push(index.getX(i), index.getX(i + 1), index.getX(i + 2));
-  }
-  if (eyes.length === 0) return;
-  const part = (list: number[]) => {
-    const made = new BufferGeometry();
-    for (const [name, attribute] of Object.entries(geometry.attributes)) made.setAttribute(name, attribute);
-    made.setIndex(list);
-    made.computeBoundingBox();
-    made.computeBoundingSphere();
-    return made;
-  };
-  mesh.geometry = part(face);
-  const painted = new Mesh(part(eyes), mesh.material);
-  painted.name = 'first-carving-eyes';
-  painted.visible = false;
-  mesh.add(painted);
 }
 
 // --- things to use -------------------------------------------------------------------------------------------

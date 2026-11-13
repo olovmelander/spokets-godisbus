@@ -24,7 +24,7 @@ describe('the reunion resumes acknowledged reading', () => {
   });
 
   it('restores the taste mark from an earlier checkpoint and repeats only the unread origin after two resumptions', () => {
-    const saved = ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste', 'beat:aterfunna:0', 'beat:aterfunna:1', 'beat:first1'];
+    const saved = ['placed:tragubbe', 'haul', 'bag', 'shared', 'taste', 'beat:aterfunna:0', 'beat:aterfunna:1', 'beat:first1'];
     for (let visit = 0; visit < 2; visit++) {
       const sim = new Sim(norrsken, {}, { checkpoint: 1, flags: saved });
       expect(sim.curr.x).toBe(26.6);
