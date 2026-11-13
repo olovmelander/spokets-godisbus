@@ -54,11 +54,12 @@ function testOwl(): Group {
   body.name = 'body';
   body.position.set(0, 0.9, 0);
   root.add(body);
-  for (const [name, at] of [['saddle', [-0.5, 0.1, 0]], ['plume', [0, 0, 0]], ['footL', [0.1, -0.85, 0.2]], ['footR', [0.1, -0.85, -0.2]],
-    ['hindL', [0, -0.85, 0.2]], ['hindR', [0, -0.85, -0.2]]] as const) {
+  const bones: [string, number, number, number][] = [['saddle', -0.5, 0.1, 0], ['plume', 0, 0, 0], ['footL', 0.1, -0.85, 0.2], ['footR', 0.1, -0.85, -0.2],
+    ['hindL', 0, -0.85, 0.2], ['hindR', 0, -0.85, -0.2]];
+  for (const [name, x, y, z] of bones) {
     const bone = new Bone();
     bone.name = name;
-    bone.position.set(...at);
+    bone.position.set(x, y, z);
     body.add(bone);
   }
   // Each clip lifts the body to its own height, so that the test can tell which is shown.
@@ -77,7 +78,7 @@ function heldOwl(): { holder: Group; rig: NonNullable<ReturnType<typeof rigOwl>>
 
 const fakeAssets = (withOwl: boolean): Assets => ({
   model: async () => testOwl(),
-  manifest: async () => ({ version: 1, packs: { boot: { bytes: 0, files: withOwl ? { 'owl.glb': 1 } : {} } } }),
+  manifest: async () => ({ version: 1, packs: { boot: { bytes: 0, files: withOwl ? { 'owl.glb': 1 } as Record<string, number> : {} } } }),
   restoreTextures: async () => {},
   textureInfo: () => ({}) as ReturnType<Assets['textureInfo']>,
 });
