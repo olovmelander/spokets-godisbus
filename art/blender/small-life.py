@@ -338,7 +338,6 @@ def strip_wing(part, root, out, long, chords, top_tint, sweep=0.0, lean=0.0):
     spans = sorted(set([round(v, 3) for v in spans]))
     across = [0.0, 0.12, 0.3, 0.55, 0.8, 1.0]
     lines = [0.0, 0.3, 0.55]
-    cross = [round(0.14 + 0.11 * k, 3) for k in range(7)]
     grid = []
     tops = []
     for sp in spans:
@@ -354,9 +353,12 @@ def strip_wing(part, root, out, long, chords, top_tint, sweep=0.0, lean=0.0):
             at = lead - FWD * (width * c * tipcut)
             row.append(at)
             colour = blend(top_tint, MEMBRANE, sp * 0.8 + 0.2)
-            vein = (c in lines) or (sp in cross and c < 0.95) or sp >= 0.999 or c >= 0.999
-            if vein:
-                colour = VEIN if c == 0.0 else blend(colour, VEIN, 0.75)
+            # On a grid this coarse a corner on a vein darkens all round it: so only the leading edge is dark, the long
+            # veins faint, and the cross veins are left to the eye. The membrane stays clear.
+            if c == 0.0:
+                colour = VEIN
+            elif c in lines:
+                colour = blend(colour, VEIN, 0.3)
             if 0.84 <= sp <= 0.92 and c <= 0.12:
                 colour = STIGMA
             trow.append(colour)
