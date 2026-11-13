@@ -18,6 +18,7 @@ import { installAtmosphere } from './atmosphere';
 import { installBeetles } from './beetles';
 import { installBumblebee } from './bumblebee';
 import { installFauna } from './fauna';
+import { installBirds } from './fauna/bird-kit';
 import { installSmallLife } from './fauna/small-kit';
 import { installFlora } from './flora';
 import { installMaterials } from './materials';
@@ -46,6 +47,8 @@ export function installLift(): void {
   // The small life modelled in Blender (./fauna/small-kit.ts) comes for every one of it in the scene: the fauna's,
   // the bumblebee and the ants that carry him (../ant-ride.ts).
   PACK.models.push(installSmallLife);
+  // The birds modelled in Blender (./fauna/bird-kit.ts), small and high, the same way.
+  PACK.models.push(installBirds);
   if (!out.has('atmosphere')) installAtmosphere();
   if (!out.has('atmosphere') && !out.has('near')) installNearMotes();
   if (!out.has('fauna')) installFauna();
