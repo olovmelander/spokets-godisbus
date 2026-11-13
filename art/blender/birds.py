@@ -496,7 +496,7 @@ def wing(species, sp, side, rows, fingers=None):
                     n = 9.0 if u > wrist else 10.0
                     k = (u - wrist) / (1.0 - wrist) if u > wrist else u / wrist
                     notch = (0.04 + 0.06 * sstep(wrist, 1.0, u)) * (0.5 - 0.5 * math.cos(TAU * n * k)) * sstep(0.85, 1.0, v)
-                thick = (0.004 + 0.016 * (1.0 - v) * (1.0 - u) ** 1.5) * (1.6 if fingers else 1.0)
+                thick = (0.003 + 0.009 * (1.0 - v) * (1.0 - u) ** 1.5) * (1.6 if fingers else 1.0)
                 spread_at = shoulder + out * (span * u) + X * (span * along(lead, u) - v * c * (1.0 - notch)) + Z * (0.18 * c * math.sin(math.pi * min(1.0, v * 1.2)) * (1.0 - u) * 0.3 + layer * thick * 0.5)
                 # Folded: back along the flank and over the rump, its leading edge low on the side, its trailing
                 # edge (the tertials) along the back, the hand's tips over the tail.
