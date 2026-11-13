@@ -4,6 +4,7 @@ import {
 } from 'three';
 import { shadeAmong, type Among } from './forest-kit';
 import { STONE, barkDetail, barky } from './bark-detail';
+import { pineBark, pineNeedles } from './old-pine';
 import type { ChapterData } from '../sim/types';
 import { grows, heightAt, noise, sequence } from './dressing/kit';
 
@@ -26,6 +27,12 @@ export interface Shape {
   /** Empty where a part has no colours: one that only says where a tree's shoots stand. */
   colour: ArrayLike<number>;
   index: ArrayLike<number>;
+  /**
+   * The old pine's two layers of numbers on its corners, two to a corner (./old-pine.ts): on its wood where it is
+   * on the wood and what bark is there, on its shoot where on a needle card. Counted up, as Blender has them.
+   */
+  uv?: ArrayLike<number>;
+  uv1?: ArrayLike<number>;
   /** For what he stands on: its flat top's width, its height over the ground, and how far under it a second flat top lies. */
   wide?: number;
   drop?: number;
@@ -67,15 +74,29 @@ export function mountainKit(model: Object3D): MountainKit {
     const mesh = node as Mesh;
     if (!mesh.isMesh) return;
     const { wide, drop, step } = mesh.userData as { wide?: number; drop?: number; step?: number };
-    kit.set(mesh.name, { ...shapeOf(mesh.geometry, mesh.matrixWorld), ...(wide !== undefined && drop !== undefined ? { wide, drop, step: step ?? 0 } : {}) });
+    kit.set(mesh.name, { ...shapeOf(mesh.geometry, mesh.matrixWorld), ...layersOf(mesh.geometry), ...(wide !== undefined && drop !== undefined ? { wide, drop, step: step ?? 0 } : {}) });
   });
   return kit;
 }
 
+/** A part's two layers of numbers, if it has them. glTF counts their second number down from 1; they are turned back. */
+function layersOf(geometry: BufferGeometry): Pick<Shape, 'uv' | 'uv1'> {
+  const out: Pick<Shape, 'uv' | 'uv1'> = {};
+  for (const name of ['uv', 'uv1'] as const) {
+    const layer = geometry.getAttribute(name);
+    if (!layer) continue;
+    const values = new Float32Array(layer.count * 2);
+    for (let i = 0; i < layer.count; i++) values.set([layer.getX(i), 1 - layer.getY(i)], i * 2);
+    out[name] = values;
+  }
+  return out;
+}
+
 // --- putting shapes together ---------------------------------------------------------------------------------
 
-interface Build { position: number[]; normal: number[]; colour: number[]; index: number[] }
-const build = (): Build => ({ position: [], normal: [], colour: [], index: [] });
+/** A shape being put together. With `uv` (and `uv1`) it keeps the parts' layers of numbers too, as ./old-pine.ts reads them. */
+interface Build { position: number[]; normal: number[]; colour: number[]; index: number[]; uv?: number[]; uv1?: number[] }
+const build = (layers = 0): Build => ({ position: [], normal: [], colour: [], index: [], ...(layers > 0 ? { uv: [] } : {}), ...(layers > 1 ? { uv1: [] } : {}) });
 type Paint = (colour: Color, at: Vector3, facing: Vector3) => void;
 const turned = new Matrix3();
 
@@ -91,17 +112,23 @@ function put(into: Build, shape: Shape, matrix: Matrix4, paint?: Paint): void {
     into.position.push(point.x, point.y, point.z);
     into.normal.push(facing.x, facing.y, facing.z);
     into.colour.push(tint.r, tint.g, tint.b);
+    const corner = (i / 3) * 2;
+    into.uv?.push(shape.uv?.[corner] ?? 0, shape.uv?.[corner + 1] ?? 0);
+    into.uv1?.push(shape.uv1?.[corner] ?? 0, shape.uv1?.[corner + 1] ?? 0);
   }
   // A shape that is mirrored has its faces turned inside out: their corners are taken the other way round.
   const mirrored = matrix.determinant() < 0;
   for (let i = 0; i < shape.index.length; i += 3) into.index.push(first + shape.index[i]!, first + shape.index[i + (mirrored ? 2 : 1)]!, first + shape.index[i + (mirrored ? 1 : 2)]!);
 }
 
-function shaped(from: Build): BufferGeometry {
+/** A shape of the scene from what was put together; its layers of numbers, if it kept them, under the names given. */
+function shaped(from: Build, layers: readonly string[] = []): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(from.position, 3));
   geometry.setAttribute('normal', new Float32BufferAttribute(from.normal, 3));
   geometry.setAttribute('color', new Float32BufferAttribute(from.colour, 3));
+  if (from.uv && layers[0]) geometry.setAttribute(layers[0], new Float32BufferAttribute(from.uv, 2));
+  if (from.uv1 && layers[1]) geometry.setAttribute(layers[1], new Float32BufferAttribute(from.uv1, 2));
   geometry.setIndex(from.index);
   geometry.computeBoundingSphere();
   return geometry;
@@ -243,9 +270,10 @@ const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math
 
 /**
  * Stones as one shape: each is one of `shapes`, turned every way and sunk into the ground, with lichen on the
- * side that ends up facing the sky and the damp dark where it meets the rock.
+ * side that ends up facing the sky and the damp dark where it meets the rock. Shapes that are `painted` lie as
+ * they were built, with their own lichen (the worn stones by the old pine): those get only the damp.
  */
-export function stones(places: readonly StonePlace[], shapes: readonly Shape[]): BufferGeometry {
+export function stones(places: readonly StonePlace[], shapes: readonly Shape[], painted = false): BufferGeometry {
   const made = build();
   const matrix = new Matrix4();
   const turn = new Quaternion();
@@ -254,7 +282,7 @@ export function stones(places: readonly StonePlace[], shapes: readonly Shape[]):
     matrix.compose(point.set(place.x, place.y, place.z), turn.setFromEuler(new Euler(...place.turn)), size.setScalar(place.size));
     put(made, shapes[place.shape % shapes.length]!, matrix, (colour, where, towards) => {
       colour.multiplyScalar(place.tone);
-      colour.lerp(CRUST, smooth(0.35, 0.95, towards.y) * (0.25 + 0.5 * noise(where.x * 2.1 + 3, where.z * 2.1)));
+      if (!painted) colour.lerp(CRUST, smooth(0.35, 0.95, towards.y) * (0.25 + 0.5 * noise(where.x * 2.1 + 3, where.z * 2.1)));
       colour.multiplyScalar(0.62 + 0.38 * smooth(0, 0.3 * place.size + 0.08, where.y - place.foot));
     });
   }
@@ -288,14 +316,49 @@ export function shootsOf(frames: Shape): Matrix4[] {
   return out;
 }
 
+/** The tint of each shoot, where the tree's `-skott` part is painted (the old pine's: its light and its green). */
+export function shootTints(frames: Shape): Color[] {
+  const out: Color[] = [];
+  for (let i = 0; i < frames.index.length; i += 3) {
+    const at = frames.index[i]! * 3;
+    out.push(frames.colour.length > at ? new Color(frames.colour[at], frames.colour[at + 1], frames.colour[at + 2]) : new Color(1, 1, 1));
+  }
+  return out;
+}
+
 /**
- * A pine of the kit where a matrix puts it: its wood, and one shoot of needles at each place its `-skott` part
- * says. The old pine has the fine shoot; a pine of the rim, far off and out of focus, has the coarse one.
+ * The old pine where a matrix puts it, as two shapes: its wood, which carries what its bark is drawn from, and its
+ * needles, a card shoot at each place its `tall-skott` part says, in that shoot's tint (./old-pine.ts draws both).
+ * Null where the kit has no old pine of that kind.
+ */
+export function oldPine(kit: MountainKit, matrix: Matrix4): { wood: BufferGeometry; needles: BufferGeometry } | null {
+  const wood = kit.get('tall');
+  const frames = kit.get('tall-skott');
+  const shoot = kit.get('skott');
+  if (!wood?.uv || !wood.uv1 || !frames || !shoot?.uv) return null;
+  const bark = build(2);
+  put(bark, wood, matrix);
+  const needles = build(1);
+  const tints = shootTints(frames);
+  const there = new Matrix4();
+  for (const [i, frame] of shootsOf(frames).entries()) {
+    there.multiplyMatrices(matrix, frame);
+    // A shoot that stands up into the light is paler than one that hangs in the tree's own shade.
+    const up = 0.8 + 0.3 * Math.max(0, there.elements[5]! / Math.hypot(there.elements[4]!, there.elements[5]!, there.elements[6]!));
+    const tint = tints[i]!;
+    put(needles, shoot, there, (colour) => colour.multiply(tint).multiplyScalar(up));
+  }
+  return { wood: shaped(bark, ['barkAt', 'barkKind']), needles: shaped(needles, ['needleAt']) };
+}
+
+/**
+ * A pine of the rim where a matrix puts it: its wood, and one shoot of coarse needles at each place its `-skott`
+ * part says, far off and out of focus. (The old pine is `oldPine`.)
  */
 function pine(into: Build, kit: MountainKit, name: string, matrix: Matrix4): void {
   const wood = kit.get(name);
   const frames = kit.get(`${name}-skott`);
-  const shoot = (name === 'tall' ? undefined : kit.get('skott-grov')) ?? kit.get('skott');
+  const shoot = kit.get('skott-grov');
   if (!wood || !frames || !shoot) return;
   put(into, wood, matrix);
   const there = new Matrix4();
@@ -373,8 +436,21 @@ export function shelterStandIn(gust: { y: number; shelters: readonly number[] },
   return mesh;
 }
 
-/** The stones round the old pine's foot, counted from its stem: to its windward side, depth, size, shape. */
-const BY_THE_PINE: readonly [number, number, number, number][] = [[3.3, 1.2, 1.5, 0], [4.6, -1.4, 0.95, 2], [-2.4, -2.6, 0.8, 1], [1.9, 2.3, 0.45, 0]];
+/**
+ * The stones round the old pine's foot, counted from its stem: to its windward side, depth, size, which of the
+ * worn ones (`WORN`), and which way round. The first is the stone the first trägubbe stood on before the gust took it
+ * (Memory 4): in Norrsken it is the first thing he passes. They lie as they were built, their worn tops up.
+ */
+const BY_THE_PINE: readonly [number, number, number, number, number][] = [[3.3, 1.2, 1.5, 0, 0.4], [4.6, -1.4, 0.95, 2, 2.1], [-2.4, -2.6, 0.8, 1, 4.2], [1.9, 2.3, 0.45, 1, 1.3]];
+/** The worn stones by the old pine (art/blender/mountain-kit.py): the trägubbe's, a round one, a low one. */
+export const WORN = ['sten-rund-a', 'sten-rund-b', 'sten-rund-c'] as const;
+/** How far under a worn stone's middle the ground meets it, in its size (`STONE_GROUND` in the kit). */
+const WORN_GROUND = 0.28;
+
+/** The stones by the old pine as they lie, where its stem is and with the way it is turned (`side`: -1 mirrored). */
+export function byThePine(pineX: number, foot: number, side: number): StonePlace[] {
+  return BY_THE_PINE.map(([dx, dz, size, shape, turn]): StonePlace => ({ x: pineX + dx * side, y: foot + size * WORN_GROUND, z: PINE_DEPTH + dz, size, turn: [0, turn, 0], shape, tone: 1, foot }));
+}
 
 /**
  * The mountain's part of a chapter's picture: what the kit brings that has no stand-in (the pines), and the
@@ -465,18 +541,18 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
       node.removeFromParent();
     }
 
-    // The old pine, with the stones at its foot. Mirrored, it is swept the other way.
-    if (chapter.pine && kit.has('tall')) {
-      const made = build();
-      const side = chapter.pine.flip ? -1 : 1;
-      const foot = heightAt(chapter, chapter.pine.x);
-      pine(made, kit, 'tall', at(chapter.pine.x, foot - 0.04, PINE_DEPTH, side < 0));
-      const mesh = new Mesh(shaped(made), rock);
-      mesh.name = 'old-pine';
-      const lying = BY_THE_PINE.map(([dx, dz, size, shape], i): StonePlace => ({ x: chapter.pine!.x + dx * side, y: foot + size * 0.28, z: PINE_DEPTH + dz, size, turn: [i * 1.3, i * 2.1 + 0.4, i * 0.7], shape, tone: 0.86, foot }));
-      const beside = new Mesh(stones(lying, loose), rock);
+    // The old pine, with the stones at its foot. Mirrored, it is swept the other way. Its wood and its needles are
+    // two draws, each with what draws its bark or its needles (./old-pine.ts).
+    const tree = chapter.pine ? oldPine(kit, at(chapter.pine.x, heightAt(chapter, chapter.pine.x) - 0.04, PINE_DEPTH, chapter.pine.flip === true)) : null;
+    const worn = WORN.flatMap((name) => kit.get(name) ?? []);
+    if (chapter.pine && tree && worn.length === WORN.length) {
+      const wood = new Mesh(tree.wood, pineBark(new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 })));
+      wood.name = 'old-pine';
+      const needles = new Mesh(tree.needles, pineNeedles());
+      needles.name = 'old-pine-needles';
+      const beside = new Mesh(barky(stones(byThePine(chapter.pine.x, heightAt(chapter, chapter.pine.x), chapter.pine.flip ? -1 : 1), worn, true), STONE), rock);
       beside.name = 'old-pine-stones';
-      group.add(mesh, beside);
+      group.add(wood, needles, beside);
     }
 
     // The crooked pines of the rim, a piece of the chapter at a time.

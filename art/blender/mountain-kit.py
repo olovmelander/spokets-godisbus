@@ -33,11 +33,16 @@ from mathutils import Matrix, Vector
 
 TAU = math.pi * 2.0
 
-# For looking at a few parts while working on them, a first line may set ONLY to their names.
+# For looking at a few parts while working on them, a first line may set ONLY to their names, and BAKE = False
+# leaves out the bake of the shade.
 try:
     ONLY
 except NameError:
     ONLY = None
+try:
+    BAKE
+except NameError:
+    BAKE = True
 
 for obj in list(bpy.data.objects):
     bpy.data.objects.remove(obj, do_unlink=True)
@@ -182,11 +187,16 @@ for node in MATERIAL.node_tree.nodes:
 
 # --- building ------------------------------------------------------------------------------------------------
 
-def new_part():
+def new_part(bark=False):
     """One part while it is being built: its mesh, the layer its corners are painted in, and the faces of it
-    that are wood: a tree's stem is cut in flat faces with edges between them, and its needles are soft."""
+    that are wood: a tree's stem is cut in flat faces with edges between them, and its needles are soft.
+    With `bark` its corners also say what the game's bark is drawn from (see BARK below)."""
     bm = bmesh.new()
-    return {'bm': bm, 'colour': bm.loops.layers.float_color.new('Color'), 'hard': []}
+    part = {'bm': bm, 'colour': bm.loops.layers.float_color.new('Color'), 'hard': []}
+    if bark:
+        part['bark'] = bm.loops.layers.uv.new('bark')
+        part['kind'] = bm.loops.layers.uv.new('kind')
+    return part
 
 
 def paint(part, faces, rgb):
@@ -652,6 +662,94 @@ if wanted('sten-c'):
     take(part, piece)
     finish(part, 'sten-c', 0.7)
 
+# --- the stones by the old pine ------------------------------------------------------------------------------
+# Boulders the ice left on the summit by the old pine, and the weather has worn round since: the stone the first
+# tragubbe stood on before the gust took it (Memory 4), and smaller ones round it. Unlike the stones of the scatter
+# they lie as they are built, their worn tops up: the game turns them only about the upright. Each is about one
+# length across, with its middle at the origin, and the ground meets it at STONE_GROUND: its colours are painted
+# for that, with lichen on its top, rain streaks down its sides, and the damp dark and a little moss at its foot.
+STONE_GROUND = -0.28
+LICHEN = tone('#b9b58c')
+TRIPE = tone('#37332f')
+MOSS = tone('#5d6a30')
+
+
+def worn(name, key, radii, cuts, top, pits, crust, levels):
+    """A worn boulder: a ball of `radii`, broken long ago along `cuts` planes that are now broad faces turning
+    softly into each other, its top worn nearly level at `top` of its height, and a shallow pan or two in it
+    where rain stands."""
+    start(key)
+    part = new_part()
+    bm = part['bm']
+    layer = part['colour']
+    bmesh.ops.create_icosphere(bm, subdivisions=levels, radius=1.0)
+    # Each plane as (which way it faces, how far out it is, how softly the faces meet there).
+    planes = []
+    for i in range(cuts):
+        z = between(-0.25, 0.5)
+        turn = rnd() * TAU
+        ring = math.sqrt(max(0.0, 1.0 - z * z))
+        normal = Vector((ring * math.cos(turn), ring * math.sin(turn), z))
+        reach = math.sqrt((radii[0] * normal[0]) ** 2 + (radii[1] * normal[1]) ** 2 + (radii[2] * normal[2]) ** 2)
+        planes.append((normal, reach * between(0.7, 0.82), reach * between(0.06, 0.1)))
+    # Its top, worn nearly level, and its foot, which the ground hides.
+    planes.append((Vector((between(-0.14, 0.14), between(-0.06, 0.06), 1.0)).normalized(), radii[2] * top, radii[2] * 0.24))
+    planes.append((Vector((0.0, 0.0, -1.0)), radii[2] * 0.62, radii[2] * 0.2))
+    pans = []
+    for i in range(pits):
+        turn = rnd() * TAU
+        out = between(0.05, 0.3)
+        pans.append((math.cos(turn) * radii[0] * out, math.sin(turn) * radii[1] * out, between(0.13, 0.19) * radii[0], between(0.03, 0.05) * radii[2]))
+    for vert in bm.verts:
+        d = vert.co.normalized()
+        p = Vector((d[0] * radii[0], d[1] * radii[1], d[2] * radii[2]))
+        p = p * (1.0 + 0.1 * (noise(d + Vector((key, 0.0, 0.0)), 1.2) - 0.5) + 0.035 * (noise(d, 3.4) - 0.5))
+        for plane in planes:
+            past = p.dot(plane[0]) - plane[1]
+            p = p - plane[0] * ((past + math.sqrt(past * past + plane[2] * plane[2])) * 0.5)
+        for pan in pans:
+            gone = math.hypot(p[0] - pan[0], p[1] - pan[1]) / pan[2]
+            if gone < 1.0 and p[2] > radii[2] * top - 0.12:
+                p[2] -= pan[3] * (1.0 - gone * gone) ** 2
+        vert.co = p
+    bm.normal_update()
+    for vert in bm.verts:
+        co = vert.co
+        up = vert.normal[2]
+        at = max(0.0, min(2.999, 1.25 + 2.2 * (noise(co + Vector((key, 2.0, 0.0)), 1.1) - 0.5)))
+        c = dim(blend(GRANITE[int(at)], GRANITE[int(at) + 1], at - int(at)), 0.9 + 0.18 * noise(co, 6.5))
+        # Rain runs down its sides from the edge of its top: long dark streaks.
+        sides = 1.0 - step(0.35, 0.85, up)
+        streak = noise(Vector((co[0] * 5.0 + co[1] * 3.0, co[1] * 5.0 - co[0] * 3.0, co[2] * 0.5)), 1.0)
+        c = dim(c, 1.0 - 0.24 * step(0.55, 0.82, streak) * sides * (0.4 + 0.6 * step(-0.2, 0.3, co[2])))
+        # Lichen on what faces the sky: the pale crust in broad patches, and grey-yellow map lichen in islands,
+        # each with a dark line round it; dark rosettes of rock tripe here and there on its sides.
+        sky = step(0.15, 0.85, up)
+        c = blend(c, CRUST, sky * crust * step(0.45, 0.62, noise(co + Vector((0.0, key, 3.0)), 2.1)))
+        isle = noise(co + Vector((key, 5.0, 1.0)), 3.6)
+        c = dim(c, 1.0 - 0.3 * sky * step(0.6, 0.64, isle) * (1.0 - step(0.66, 0.7, isle)))
+        c = blend(c, LICHEN, sky * step(0.65, 0.7, isle) * 0.85)
+        c = blend(c, TRIPE, (1.0 - sky) * step(0.78, 0.82, noise(co + Vector((7.0, 1.0, key)), 7.5)) * 0.35 * step(STONE_GROUND + 0.1, STONE_GROUND + 0.3, co[2]))
+        # The foot: damp and dark where it meets the ground, and moss on its shaded back.
+        low = 1.0 - step(STONE_GROUND, STONE_GROUND + 0.3, co[2])
+        c = blend(c, dim(blend(c, DEEP, 0.3), 0.62), low * 0.85)
+        c = blend(c, MOSS, low * step(-0.2, 0.6, co[1] / radii[1]) * step(0.45, 0.7, noise(co, 2.6)) * 0.8)
+        for loop in vert.link_loops:
+            loop[layer] = (c[0], c[1], c[2], 1.0)
+    finish(part, name, 0.75, STONE_GROUND, False, 180.0)
+
+
+if wanted('sten-rund-a'):
+    # The stone the tragubbe stood on: broad, its top worn into a low table with a pan in it.
+    worn('sten-rund-a', 91, (1.0, 0.82, 0.64), 5, 0.72, 1, 0.8, 5)
+if wanted('sten-rund-b'):
+    # A round one, higher than it is broad.
+    worn('sten-rund-b', 93, (1.0, 0.9, 0.76), 4, 0.78, 0, 0.6, 4)
+if wanted('sten-rund-c'):
+    # A low one, nearly a slab, with a pan.
+    worn('sten-rund-c', 97, (1.0, 0.78, 0.44), 4, 0.6, 1, 0.7, 4)
+
+
 if wanted('klapper'):
     # A cobble: an egg of pale stone, smooth, with a vein of quartz round it.
     part = new_part()
@@ -740,6 +838,8 @@ PLATE = (tone('#7d6657'), tone('#a58470'))
 FURROW = tone('#3f342e')
 ORANGE = (tone('#a0683f'), tone('#bf8b5c'))
 SILVER = (tone('#77756f'), tone('#aeaaa1'), tone('#d8d4ca'))
+# The old pine's plates at its foot and on its roots: greyer than a young pine's.
+OLD_PLATE = (tone('#6c625c'), tone('#91857b'))
 TWIG = tone('#5e4c40')
 NEEDLE = (tone('#1c3019'), tone('#2f4c27'), tone('#4f7030'), tone('#7f9648'))
 
@@ -803,7 +903,7 @@ def wood(kind, at, angle, thin):
     if kind == 'twig':
         return dim(TWIG, 0.75 + 0.5 * grain)
     if kind == 'root':
-        c = blend(PLATE[0], PLATE[1], grain)
+        c = blend(OLD_PLATE[0], OLD_PLATE[1], grain)
         c = blend(c, FURROW, step(0.55, 0.8, noise(at, 5.0)) * 0.75)
         return blend(c, SILVER[1], thin * step(0.4, 0.7, noise(at, 1.6)) * 0.8)
     if kind == 'stem':
@@ -820,8 +920,48 @@ def wood(kind, at, angle, thin):
     return blend(c, TWIG, step(0.45, 1.0, thin))
 
 
-def limb(part, path, radii, sides, kind, lobes=0.0, tip=True):
-    """A round limb along a path, as thick at each point as `radii` says, closed at both ends."""
+# BARK: the old pine's wood says on its corners what the game draws its bark from (src/render/old-pine.ts), in two
+# layers of the kind a picture is laid on by, which the exporter writes upside down (v becomes 1 - v):
+#   - `bark`, where on the wood a corner is, in lengths: round the limb from the side turned to him (its seam is on
+#     the side he never sees: the back of a stem, the top of a limb, the underside of a root), and along it;
+#   - `kind`, what bark is there: how thick and old (1 the furrowed grey plates at the foot, 0 the thin orange
+#     flakes high up and on the limbs), and whether it is bare silver wood (1).
+HIDDEN = {'root': (0.0, 0.0, -1.0), 'stem': (0.0, 1.0, 0.0)}
+
+
+def bark_of(kind, at, thin):
+    """What bark a limb has at a place, as the layer `kind` says it: (how thick and old, how bare)."""
+    if kind == 'dead':
+        return (0.0, 1.0)
+    if kind == 'twig':
+        return (0.0, 0.0)
+    if kind == 'root':
+        return (0.65 * (1.0 - 0.5 * thin), thin * step(0.4, 0.7, noise(at, 1.6)) * 0.8)
+    if kind == 'stem':
+        return (1.0 - step(0.25, 0.7, thin), 0.0)
+    # A limb: patches of older grey bark near its foot, thin orange bark everywhere else.
+    return (0.25 * (1.0 - step(0.0, 0.4, thin)) + step(0.48, 0.66, noise(at, 1.2)) * 0.5 * (1.0 - thin), 0.0)
+
+
+def seam_of(frame, hidden):
+    """The angle round a limb, from its frame, of the side that is turned most towards `hidden`."""
+    away = Vector(hidden)
+    return math.atan2(away.dot(frame[1]), away.dot(frame[0]))
+
+
+def lay_bark(part, loops, corners):
+    """Writes the two bark layers on a face's corners: each corner as (its angle past the seam, the limb's
+    radius there, how far along it, and what bark is there)."""
+    for n in range(len(loops)):
+        corner = corners[n]
+        loops[n][part['bark']].uv = ((corner[0] - math.pi) * corner[1], corner[2])
+        loops[n][part['kind']].uv = corner[3]
+
+
+def limb(part, path, radii, sides, kind, lobes=0.0, tip=True, key=0.0):
+    """A round limb along a path, as thick at each point as `radii` says, closed at both ends. On the old pine
+    (a part with `bark`) its corners say what bark it has; `key` moves its bark's pattern so that no two limbs
+    share it."""
     bm = part['bm']
     layer = part['colour']
     frames = across(path)
@@ -829,6 +969,10 @@ def limb(part, path, radii, sides, kind, lobes=0.0, tip=True):
     thick = max(radii)
     rings = []
     faces = []
+    along = [key * 7.31]
+    for i in range(1, count):
+        along.append(along[-1] + (path[i] - path[i - 1]).length)
+    seam = seam_of(frames[count // 2], HIDDEN.get(kind, (0.0, 0.55, 0.83)))
     for i in range(count):
         ring = []
         for j in range(sides):
@@ -837,6 +981,7 @@ def limb(part, path, radii, sides, kind, lobes=0.0, tip=True):
             far = 1.0 + lobes * ((noise(there, 1.7) - 0.5) + 0.5 * (noise(there, 4.3) - 0.5)) + (0.07 * (hash3(i * 1.0, j * 1.0, 3.0) - 0.5) if sides >= 7 else 0.0)
             ring.append((bm.verts.new(path[i] + (there - path[i]) * far), angle, 1.0 - radii[i] / thick))
         rings.append(ring)
+    barked = 'bark' in part
     for i in range(count - 1):
         for j in range(sides):
             k = (j + 1) % sides
@@ -846,16 +991,26 @@ def limb(part, path, radii, sides, kind, lobes=0.0, tip=True):
             for n in range(4):
                 c = wood(kind, corners[n][0].co, corners[n][1], corners[n][2])
                 loops[n][layer] = (c[0], c[1], c[2], 1.0)
+            if barked:
+                # Round from the seam: the face's second side is one step further round, past the seam if need be.
+                first = (TAU * j / sides - seam) % TAU
+                turned = (first, first + TAU / sides, first + TAU / sides, first)
+                rows = (i, i, i + 1, i + 1)
+                lay_bark(part, loops, [(turned[n], radii[rows[n]], along[rows[n]], bark_of(kind, corners[n][0].co, corners[n][2])) for n in range(4)])
             faces.append(made)
-    ends = [(bm.verts.new(path[0]), rings[0], True)]
+    ends = [(bm.verts.new(path[0]), rings[0], True, 0)]
     if tip:
-        ends.append((bm.verts.new(path[-1] + (path[-1] - path[-2]).normalized() * radii[-1] * 1.2), rings[-1], False))
+        ends.append((bm.verts.new(path[-1] + (path[-1] - path[-2]).normalized() * radii[-1] * 1.2), rings[-1], False, count - 1))
     for end in ends:
         c = wood(kind, end[0].co, 0.0, 1.0 if not end[2] else 0.0)
         for j in range(sides):
             k = (j + 1) % sides
             made = bm.faces.new((end[1][k][0], end[1][j][0], end[0]) if end[2] else (end[1][j][0], end[1][k][0], end[0]))
             paint(part, [made], c)
+            if barked:
+                for loop in made.loops:
+                    loop[part['bark']].uv = (0.0, along[end[3]])
+                    loop[part['kind']].uv = bark_of(kind, loop.vert.co, 1.0 if not end[2] else 0.0)
             faces.append(made)
     return faces
 
@@ -865,11 +1020,12 @@ def limb(part, path, radii, sides, kind, lobes=0.0, tip=True):
 SHOOTS = []
 
 
-def shoot(foot, towards, size):
+def shoot(foot, towards, size, tint=None):
+    """A shoot where it stands. `tint` is the old pine's: how light and what green it is (see `shoots_of`)."""
     side = towards.cross(Vector((0.2, 0.9, 0.33))).normalized()
     up = towards.cross(side)
     turn = rnd() * TAU
-    SHOOTS.append((foot.copy(), towards * size, (side * math.cos(turn) + up * math.sin(turn)) * size))
+    SHOOTS.append((foot.copy(), towards * size, (side * math.cos(turn) + up * math.sin(turn)) * size, tint))
 
 
 def puff(part, centre, radius, shoots, size, wind, sides=6, levels=4):
@@ -938,13 +1094,24 @@ def bough(part, hub, radii, key, puffs, shoots, size, wind, twigs=2, fine=True):
 def shoots_of(name):
     """Makes the part that says where a tree's shoots stand, and forgets them: a small triangle for each,
     with a square corner at the shoot's foot, its long leg along the shoot and as long as it, and its short
-    leg, 0.4 as long, to one side. Whatever order the corners end up in, the game can read that."""
+    leg, 0.4 as long, to one side. Whatever order the corners end up in, the game can read that. Where the
+    shoots have a tint (the old pine's), each triangle is painted in it: the game lays it over the shoot's own
+    colours."""
     bm = bmesh.new()
+    tinted = any(row[3] is not None for row in SHOOTS)
+    layer = bm.loops.layers.float_color.new('Color') if tinted else None
     for row in SHOOTS:
-        bm.faces.new((bm.verts.new(row[0]), bm.verts.new(row[0] + row[1]), bm.verts.new(row[0] + row[2] * 0.4)))
+        made = bm.faces.new((bm.verts.new(row[0]), bm.verts.new(row[0] + row[1]), bm.verts.new(row[0] + row[2] * 0.4)))
+        if tinted:
+            tint = row[3] if row[3] is not None else (1.0, 1.0, 1.0)
+            for loop in made.loops:
+                loop[layer] = (tint[0], tint[1], tint[2], 1.0)
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
+    if tinted:
+        # The exporter writes a part's colours only where its material reads them.
+        mesh.materials.append(MATERIAL)
     made = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(made)
     made['shade'] = 0.0
@@ -954,11 +1121,11 @@ def shoots_of(name):
     return count
 
 
-# One shoot of a pine: its needles stand out round it like a bottle brush, forward at its end. It is one long
-# from its foot at the origin to its end along +Z. A needle is a thin blade seen from both sides, and is lit as
-# if it were part of a round mass, so that a bough is light above and dark below. The coarse one, of a few
-# broad needles, is for the pines that stand far off and out of focus.
-for row in (('skott', 13, 0.06, 64), ('skott-grov', 7, 0.11, 65)):
+# One shoot of a pine of the rim: its needles stand out round it like a bottle brush, forward at its end. It is
+# one long from its foot at the origin to its end along +Z. A needle is a broad blade seen from both sides, and is
+# lit as if it were part of a round mass, so that a bough is light above and dark below: few and large, for pines
+# that stand far off and out of focus.
+for row in (('skott-grov', 7, 0.11, 65),):
     if not wanted(row[0]):
         continue
     part = new_part()
@@ -990,29 +1157,113 @@ for row in (('skott', 13, 0.06, 64), ('skott-grov', 7, 0.11, 65)):
     finish(part, row[0], 0.0, None, False, 50.0, normals)
 
 
-if wanted('tall'):
-    # The old pine. Its foot is at the origin; it is swept towards -X, away from the wind.
+# One shoot of the old pine, as the game draws its needles (src/render/old-pine.ts): three cards through its
+# middle line, turned a third of the way round from each other, each in two lengths so that its light can change
+# along it. A card's corners say where on it they are (the layer `card`: across it from 0 to 1, along it from 0 to
+# 1; the exporter writes it upside down), and the game draws the needles there: in pairs out of the twig, leaning
+# forward, longest in its middle and a brush at its tip. The shoot is one long, from its foot at the origin along
+# +Z, and its cards reach a little past its end, where the needles of its tip do. CARD says how far: half a card's
+# width, and where along the shoot it begins and ends (old-pine.ts has the same numbers). Its corners are lit as a
+# round tuft is: forward at its end, out at its sides, back at its foot.
+CARD = (0.34, -0.03, 1.22)
+# The old pine's needles: a grey, blue-green, darker where a shoot comes out of its twig.
+PINE_NEEDLE = (tone('#1e3027'), tone('#36503f'), tone('#5b7556'))
+
+if wanted('skott'):
     part = new_part()
     bm = part['bm']
     layer = part['colour']
+    card = bm.loops.layers.uv.new('card')
+    normals = []
+    for k in range(3):
+        out = Vector((math.cos(math.pi * k / 3.0), math.sin(math.pi * k / 3.0), 0.0))
+        rows = []
+        for along in (0.0, 0.42, 1.0):
+            z = CARD[1] + (CARD[2] - CARD[1]) * along
+            row = []
+            for side in (-1.0, 1.0):
+                row.append(bm.verts.new(out * CARD[0] * side + Vector((0.0, 0.0, z))))
+                normals.append((out * side * 0.8 + Vector((0.0, 0.0, (along - 0.32) * 1.6))).normalized())
+            rows.append(row)
+        for r in range(2):
+            made = bm.faces.new((rows[r][0], rows[r][1], rows[r + 1][1], rows[r + 1][0]))
+            for loop in made.loops:
+                co = loop.vert.co
+                along = (co[2] - CARD[1]) / (CARD[2] - CARD[1])
+                loop[card].uv = ((co.dot(out) / CARD[0] + 1.0) / 2.0, along)
+                c = blend(PINE_NEEDLE[0], PINE_NEEDLE[2], step(0.0, 0.9, along))
+                loop[layer] = (c[0], c[1], c[2], 1.0)
+    finish(part, 'skott', 0.0, None, False, 50.0, normals)
+
+
+def tufts(part, hub, radii, key, count, size, wind):
+    """A plate of needles as an old pine carries it: its branch splits into twigs that fan out nearly level from
+    the hub, and each ends in a tuft of shoots turned up to the light, with the sky between the tufts. The tufts
+    in its middle stand highest, and those at its rim droop. Each shoot is tinted by the light it has: those on
+    the plate's top and rim are lit, those in its middle and under it are in its shade, and one tuft is a little
+    yellower or bluer than the next."""
+    start(key)
+    hub = Vector(hub)
+    centre = hub + Vector((wind * 0.12, 0.0, radii[2] * 0.45))
+    up = Vector((0.0, 0.0, 1.0))
+    for k in range(count):
+        turn = k * 2.399963 + rnd() * 0.8
+        far = math.sqrt((k + 0.6) / count) * between(0.82, 1.0)
+        at = centre + Vector((math.cos(turn) * radii[0] * far, math.sin(turn) * radii[1] * far, radii[2] * (between(-0.15, 0.2) - 0.55 * far * far)))
+        out = Vector((at[0] - hub[0], at[1] - hub[1], 0.0))
+        if out.length < 0.05:
+            out = Vector((math.cos(turn), math.sin(turn), 0.0))
+        out.normalize()
+        side = out.cross(up).normalized()
+        limb(part, [hub, (hub + at) / 2.0 + Vector((0.0, 0.0, -0.08)), at], [0.065, 0.048, 0.03], 4, 'twig', 0.0, False, key + k)
+        lit = 0.58 + 0.27 * far + 0.25 * step(-0.6, 0.6, (at[2] - centre[2]) / radii[2])
+        hue = rnd()
+        tint = (lit * (0.94 + 0.12 * hue), lit * (1.0 + 0.02 * hue), lit * (1.06 - 0.12 * hue))
+        n = 9 + int(rnd() * 5.0)
+        for s in range(n):
+            # A half ball round the twig's end: up, forward and out to the sides, and few downwards.
+            spin = s * 2.399963 + rnd() * 0.9
+            tilt = 0.2 + 1.45 * math.sqrt((s + 0.5) / n)
+            towards = (up * math.cos(tilt) + (out * math.cos(spin) + side * math.sin(spin)) * math.sin(tilt) + out * 0.45 + Vector((wind * 0.2, 0.0, 0.1))).normalized()
+            shade = 1.0 - 0.45 * max(0.0, -towards[2])
+            shoot(at + towards * 0.03, towards, size * between(0.82, 1.12), (tint[0] * shade, tint[1] * shade, tint[2] * shade))
+
+
+# The old pine's bark, as its corners are painted: the game draws its plates and flakes over these (BARK).
+GREY_PLATE = tone('#8f8b87')
+FOX = tone('#b8653a')
+
+if wanted('tall'):
+    # The old pine. Its foot is at the origin; it is swept towards -X, away from the wind.
+    part = new_part(True)
+    bm = part['bm']
+    layer = part['colour']
     start(7)
-    SIDES = 24
+    SIDES = 32
     # The stem, and on from it the leader, which the wind has laid over: one line from the root to the top.
     spine = smooth([(0.05, 0.0, -0.6), (0.0, 0.0, 0.0), (-0.12, 0.04, 0.8), (-0.4, 0.0, 1.65), (-0.55, 0.12, 2.5), (-0.38, 0.5, 3.4),
-                    (-0.7, 0.95, 4.4), (-1.5, 1.3, 5.35), (-2.5, 1.5, 5.95)], 4, 0.06, 3.0)
+                    (-0.7, 0.95, 4.4), (-1.5, 1.3, 5.35), (-2.5, 1.5, 5.95)], 6, 0.06, 3.0)
     # Where its roots leave it, round the foot. The bare wood starts at the foot on the side towards him and
     # winds a third of the way round, up to where the dead limb leaves the stem; the stem's own ridges wind
     # with it.
     ROOTS = (-2.45, -1.2, 0.1, 1.4, 2.6)
     BARE_FROM = -2.0
     WIND = 0.92
-    rings = []
     frames = across(spine)
+    along = [0.0]
+    for i in range(1, len(spine)):
+        along.append(along[-1] + (spine[i] - spine[i - 1]).length)
+    seam = seam_of(frames[len(spine) // 3], HIDDEN['stem'])
+    rings = []
+    mean = []
     for i in range(len(spine)):
         height = spine[i][2]
         # Thick at the ground, where it flares into its roots; thinning into the leader above the fork.
         far = 0.25 + 0.56 * (1.0 - step(1.5, 4.4, height)) + 0.62 * math.exp(-max(0.0, height + 0.1) * 1.7) - 0.14 * step(4.6, 6.2, height)
+        # Old furrowed plates up to the fork, and thin orange bark above it.
+        thick = 1.0 - step(1.6, 3.4, height)
         ring = []
+        total = 0.0
         for j in range(SIDES):
             angle = TAU * j / SIDES
             wound = angle - BARE_FROM - WIND * height
@@ -1023,14 +1274,15 @@ if wanted('tall'):
             wide = (0.7 - 0.14 * step(0.4, 2.0, height)) * (1.0 - step(2.3, 3.0, height))
             bare = 1.0 - step(wide - 0.1, wide + 0.05, abs(off))
             roll = math.exp(-((abs(off) - wide - 0.15) / 0.13) ** 2) * (1.0 if wide > 0.05 else 0.0)
-            # Plates of bark: every third line up the stem is a furrow, broken where one plate ends.
-            thick = 1.0 - step(1.5, 3.0, height)
-            row = int((height + 0.41 * (j // 3)) / 0.6)
-            furrow = 1.0 if (j + row) % 3 == 0 or (i + (j // 3) * 2) % 5 == 0 else 0.0
-            r *= 1.0 - 0.07 * bare + 0.08 * roll * (1.0 - bare) - 0.13 * furrow * thick * (1.0 - bare) + 0.07 * (hash3(j // 3, row, 5.0) - 0.5) * thick + 0.05 * (hash3(i * 1.0, j * 1.0, 7.0) - 0.5) * (1.0 - thick) * (1.0 - bare)
+            # The old bark is rough: its plates stand out of the stem's line here and there. The bare wood is
+            # sunk a little, and the bark has rolled over its edge where it has grown round it.
+            rough = noise(spine[i] + Vector((math.cos(angle) * 1.4, math.sin(angle) * 1.4, 0.0)), 3.2) - 0.5
+            r *= 1.0 - 0.07 * bare + 0.08 * roll * (1.0 - bare) + 0.08 * rough * thick * (1.0 - bare)
+            total += r
             point = spine[i] + (frames[i][0] * math.cos(angle) + frames[i][1] * math.sin(angle)) * r
-            ring.append((bm.verts.new(point), bare, furrow, thick, hash3(j // 3, row, 9.0), off))
+            ring.append((bm.verts.new(point), bare, thick))
         rings.append(ring)
+        mean.append(total / SIDES)
     for i in range(len(rings) - 1):
         for j in range(SIDES):
             k = (j + 1) % SIDES
@@ -1040,22 +1292,35 @@ if wanted('tall'):
             for n in range(4):
                 note = corners[n]
                 co = note[0].co
-                plate = blend(PLATE[0], PLATE[1], note[4])
-                plate = blend(plate, FURROW, note[2] * 0.9)
-                c = blend(wood('limb', co, 0.0, 1.0 - step(5.6, 3.2, co[2])), plate, note[3])
+                # The foot's plates, grey-brown and weathered grey in patches; the thin bark above, orange, and
+                # redder where it has just flaked.
+                plate = blend(OLD_PLATE[0], OLD_PLATE[1], noise(co, 1.3))
+                plate = blend(plate, GREY_PLATE, 0.5 * step(0.45, 0.8, noise(co + Vector((4.0, 0.0, 0.0)), 0.8)))
+                flake = blend(ORANGE[0], ORANGE[1], noise(co, 1.9))
+                flake = blend(flake, FOX, 0.55 * step(0.5, 0.9, noise(co + Vector((0.0, 9.0, 0.0)), 0.9)))
+                c = blend(flake, plate, note[2])
                 # The bare wood: silver, in streaks along the grain, with a dark line where it meets the bark.
-                grey = blend(SILVER[0], SILVER[1], 0.1 + 0.9 * hash3(math.floor(note[5] * 11.0), 2.0, 2.0))
+                grey = blend(SILVER[0], SILVER[1], 0.3 + 0.7 * noise(co, 2.4))
                 grey = blend(grey, SILVER[2], step(0.45, 0.8, noise(co, 3.0)))
                 c = blend(c, grey, note[1])
                 c = blend(c, FURROW, (1.0 - abs(note[1] * 2.0 - 1.0)) * 0.55)
                 # A scar of an old fire, low on the side towards him.
-                c = blend(c, tone('#2a2422'), (1.0 - step(0.2, 1.0, co[2])) * step(0.45, 0.8, noise(co, 1.3)) * (1.0 - note[1]) * 0.75)
+                c = blend(c, tone('#2a2422'), (1.0 - step(0.2, 1.0, co[2])) * step(0.5, 0.8, noise(co, 1.3)) * (1.0 - note[1]) * 0.6)
                 loops[n][layer] = (c[0], c[1], c[2], 1.0)
+            first = (TAU * j / SIDES - seam) % TAU
+            turned = (first, first + TAU / SIDES, first + TAU / SIDES, first)
+            rows = (i, i, i + 1, i + 1)
+            lay_bark(part, loops, [(turned[n], mean[rows[n]], along[rows[n]], (corners[n][2] * (1.0 - corners[n][1]), corners[n][1])) for n in range(4)])
     top = bm.verts.new(spine[-1] + (spine[-1] - spine[-2]).normalized() * 0.15)
     for j in range(SIDES):
-        paint(part, [bm.faces.new((rings[-1][j][0], rings[-1][(j + 1) % SIDES][0], top))], TWIG)
+        made = bm.faces.new((rings[-1][j][0], rings[-1][(j + 1) % SIDES][0], top))
+        paint(part, [made], TWIG)
+        for loop in made.loops:
+            loop[part['bark']].uv = (0.0, along[-1])
+            loop[part['kind']].uv = (0.0, 0.0)
 
-    # Its roots run out over the rock, half in it. One stands up in an arch over a hollow.
+    # Its roots run out over the rock, half in it, and grip it: one stands up in an arch over a hollow, and the
+    # thin ones go down into its cracks.
     number = 0
     for root in (
         ((-0.95, -0.7, 0.4), (-1.7, -1.3, 0.2), (-2.5, -1.5, 0.08), (-3.3, -1.85, 0.0), (-4.2, -1.8, -0.1)),
@@ -1065,8 +1330,16 @@ if wanted('tall'):
         ((-1.15, 0.5, 0.4), (-2.0, 1.1, 0.18), (-2.9, 1.2, 0.08), (-3.6, 1.8, -0.1)),
     ):
         number += 1
-        path = smooth(root, 4, 0.1, number * 3.7)
-        limb(part, path, spread([0.52, 0.34, 0.24, 0.16, 0.06], len(path)), 8, 'root', 0.45)
+        path = smooth(root, 5, 0.1, number * 3.7)
+        limb(part, path, spread([0.52, 0.34, 0.24, 0.16, 0.06], len(path)), 12, 'root', 0.45, True, number * 3.1)
+    for root in (
+        ((-0.5, -0.95, 0.25), (-0.9, -1.55, 0.1), (-1.1, -1.95, -0.02), (-1.05, -2.15, -0.22)),
+        ((1.6, -0.6, 0.3), (2.3, -0.95, 0.12), (2.85, -1.0, 0.0), (3.1, -1.05, -0.2)),
+        ((-1.6, -0.1, 0.3), (-2.4, -0.3, 0.12), (-3.0, -0.25, 0.02), (-3.35, -0.2, -0.18)),
+    ):
+        number += 1
+        path = smooth(root, 4, 0.06, number * 3.7)
+        limb(part, path, spread([0.2, 0.14, 0.09, 0.04], len(path)), 8, 'root', 0.3, True, number * 3.1)
 
     # A few heavy limbs under a flat crown: (its path, how thick, then its plates of needles as hub, size and
     # how far along the limb their branch leaves it).
@@ -1088,31 +1361,47 @@ if wanted('tall'):
     for row in LIMBS:
         number += 1
         path = smooth(row[0], 6, 0.13, number * 5.3)
-        limb(part, path, spread(row[1], len(path)), 10, 'limb', 0.4)
+        limb(part, path, spread(row[1], len(path)), 12, 'limb', 0.4, True, number * 2.3)
         for plate in row[2]:
             # A branch from the limb up into the plate.
             at = path[min(len(path) - 1, int(plate[2] * (len(path) - 1)))]
             hub = Vector(plate[0])
-            limb(part, [at, (at + hub) / 2.0 + Vector((0.14, 0.0, -0.1)), hub], [0.12, 0.09, 0.06], 5, 'limb', 0.0, False)
-            bough(part, plate[0], plate[1], 40 + number * 10 + int(plate[2] * 7.0), 5, 8, 0.56, -1.0)
+            limb(part, [at, (at + hub) / 2.0 + Vector((0.14, 0.0, -0.1)), hub], [0.12, 0.09, 0.06], 6, 'limb', 0.0, False, number * 3.7 + plate[2])
+            tufts(part, plate[0], plate[1], 40 + number * 10 + int(plate[2] * 7.0), int(6.0 + 5.5 * plate[1][0] * plate[1][1]), 0.44, -1.0)
     # The leader carries the crown's top, well over the rest.
     for plate in (((-0.85, 1.1, 5.1), (1.3, 1.15, 0.6), 0.74), ((-2.1, 1.4, 5.85), (1.5, 1.2, 0.62), 0.9), ((-3.35, 1.6, 6.0), (1.2, 1.05, 0.52), 1.0)):
         at = spine[min(len(spine) - 1, int(plate[2] * (len(spine) - 1)))]
         hub = Vector(plate[0])
-        limb(part, [at, (at + hub) / 2.0 + Vector((0.1, 0.0, -0.1)), hub], [0.12, 0.09, 0.06], 5, 'limb', 0.0, False)
-        bough(part, plate[0], plate[1], 90 + int(plate[2] * 9.0), 5, 8, 0.56, -1.0)
+        limb(part, [at, (at + hub) / 2.0 + Vector((0.1, 0.0, -0.1)), hub], [0.12, 0.09, 0.06], 6, 'limb', 0.0, False, 20.0 + plate[2])
+        tufts(part, plate[0], plate[1], 90 + int(plate[2] * 9.0), int(6.0 + 5.5 * plate[1][0] * plate[1][1]), 0.44, -1.0)
 
     # The dead limb: silver, bare, crooked, with the stubs of its twigs.
-    dead = smooth([(0.15, -0.2, 1.72), (0.9, -0.42, 2.1), (1.6, -0.6, 2.45), (2.6, -0.85, 2.62), (3.35, -0.65, 3.2), (3.8, -0.5, 4.0)], 4, 0.09, 8.0)
-    limb(part, dead, spread([0.36, 0.31, 0.25, 0.18, 0.12, 0.045], len(dead)), 8, 'dead', 0.45)
+    dead = smooth([(0.15, -0.2, 1.72), (0.9, -0.42, 2.1), (1.6, -0.6, 2.45), (2.6, -0.85, 2.62), (3.35, -0.65, 3.2), (3.8, -0.5, 4.0)], 5, 0.09, 8.0)
+    limb(part, dead, spread([0.36, 0.31, 0.25, 0.18, 0.12, 0.045], len(dead)), 12, 'dead', 0.5, True, 31.0)
+    number = 0
     for snag in (
         ((1.9, -0.68, 2.5), (1.7, -0.95, 3.1), (1.9, -1.05, 3.55)),
         ((2.85, -0.8, 2.75), (3.25, -1.25, 2.55), (3.7, -1.4, 2.72)),
         ((3.4, -0.64, 3.28), (3.1, -0.5, 3.85), (3.22, -0.3, 4.25)),
         ((1.15, -0.45, 2.15), (1.3, -0.72, 1.78)),
     ):
+        number += 1
         path = smooth(snag, 2)
-        limb(part, path, spread([0.1, 0.06, 0.022], len(path)), 5, 'dead', 0.2)
+        limb(part, path, spread([0.1, 0.06, 0.022], len(path)), 6, 'dead', 0.2, True, 40.0 + number)
+    # Stubs of limbs it lost long ago, low on the stem: grey and broken short. (Height, which way, how long.)
+    number = 0
+    for stub in ((1.2, -2.2, 0.5), (2.15, -0.75, 0.42), (2.75, 0.5, 0.36)):
+        number += 1
+        i = 0
+        for n in range(len(spine)):
+            if abs(spine[n][2] - stub[0]) < abs(spine[i][2] - stub[0]):
+                i = n
+        ahead = (spine[min(i + 1, len(spine) - 1)] - spine[max(i - 1, 0)]).normalized()
+        out = Vector((math.cos(stub[1]), math.sin(stub[1]), 0.0))
+        out = (out - ahead * out.dot(ahead)).normalized()
+        foot = spine[i] + out * mean[i] * 0.8
+        tip = foot + out * (mean[i] * 0.2 + stub[2]) + Vector((0.0, 0.0, 0.08))
+        limb(part, [foot, (foot + tip) / 2.0 + Vector((0.0, 0.0, 0.03)), tip], [0.13, 0.1, 0.065], 8, 'dead', 0.25, True, 50.0 + number)
     finish(part, 'tall', 0.8, 0.0, False, 32.0)
     shoots_of('tall-skott')
 
@@ -1154,7 +1443,7 @@ try:
 except TypeError:
     pass
 shaded = 0
-if scene.render.engine == 'CYCLES':
+if BAKE and scene.render.engine == 'CYCLES':
     scene.cycles.device = 'CPU'
     scene.cycles.samples = 48
     if scene.world is not None:
