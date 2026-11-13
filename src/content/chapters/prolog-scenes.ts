@@ -578,7 +578,7 @@ export const PROLOG_SCENES: SceneDef[] = [
         mamma: [{ at: 3.7, act: 'nod', aim: { x: 51.7, y: 0, z: 0 } }, { at: 7.6, act: 'wave' }],
         moa: [{ at: 4.5, act: 'wave', aim: { x: 51.7, y: 0, z: 0 } }, { at: 7.5, act: 'wave' }],
         bertil: [{ at: 5.3, act: 'cheer' }, { at: 7.7, act: 'cheer' }],
-        pappa: [{ at: 6.0, act: 'point', aim: { x: 58, y: -5, z: 0 } }, { at: 7.8, act: 'nod', aim: { x: 51.7, y: 0, z: 0 } }],
+        pappa: [{ at: 6.0, act: 'point', aim: { x: 58, y: 0.8, z: -1 } }, { at: 7.8, act: 'nod', aim: { x: 51.7, y: 0, z: 0 } }],
       },
       elof: [
         { at: 0, act: 'watch', aim: { x: 57.5, y: -6, z: 0 }, face: 0 },
