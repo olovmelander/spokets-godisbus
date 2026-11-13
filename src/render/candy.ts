@@ -180,7 +180,8 @@ export function installSweets(root: Object3D, kit: CandyKit): number {
     for (const child of [...holder.children]) discard(child);
     holder.clear();
     const material = socket.lantern
-      ? new MeshBasicMaterial({ vertexColors: true, fog: false })
+      // A light: brighter than anything lit round it, so that it shines in the mist (Myren's lysklubba).
+      ? new MeshBasicMaterial({ vertexColors: true, fog: false, color: new Color(1.5, 1.4, 1.2) })
       : socket.glow !== undefined ? candyMaterial(socket.glow, { roughness: 0.25 }) : socket.paper ? kit.paper : kit.material;
     const mesh = new Mesh(shape, material);
     mesh.scale.setScalar(socket.scale ?? 1);

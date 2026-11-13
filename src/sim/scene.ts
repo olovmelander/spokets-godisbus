@@ -37,6 +37,11 @@ export interface SceneDef {
   resumeAt?: Vec;
   /** It is never played once this flag is set: the story has gone past it, in an older save too. */
   until?: string;
+  /**
+   * It plays only when its `on` flag is set while he plays: a game taken up with that flag already set has seen it
+   * (Myren's lysklubba, held up as he takes it).
+   */
+  live?: boolean;
   /** How long it lasts, in seconds of game time. */
   seconds: number;
   /**
@@ -300,6 +305,7 @@ export class SceneDirector {
     // A scene that waits for a place he starts beyond has been seen: the game was taken up after it.
     for (const scene of scenes) if (scene.at !== undefined && scene.on === undefined && scene.at < spawn.x - 0.5 && !unheardReveal(scene, flags)) flags.add(sceneDone(scene.id));
     for (const scene of scenes) if (scene.before !== undefined && spawn.x > scene.before) flags.add(sceneDone(scene.id));
+    for (const scene of scenes) if (scene.live && scene.on !== undefined && flags.has(scene.on)) flags.add(sceneDone(scene.id));
     // An older save can remember the later action without the scene added around it. Its until flag
     // already means the story has passed this scene; retain that completion for presentation too.
     for (const scene of scenes) if (scene.until && flags.has(scene.until) && !sceneWaits(scene, flags)) flags.add(sceneDone(scene.id));
