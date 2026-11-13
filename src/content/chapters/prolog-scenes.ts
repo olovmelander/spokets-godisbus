@@ -44,7 +44,7 @@ const PALM = { x: STAR + 0.8, y: 1.3, z: 0.05 };
 /** The deck's railing, along its far side (ends.ts, `prologue.rail`). */
 const RAIL = { z: -3.4 };
 /** Where the ghost is on the deck as Elof calls "Det smiter!", running off to its edge (src/sim/prologue.ts). */
-const RUNS = { x: 49.4, y: -0.4, z: 0 };
+const RUNS = { x: 50, y: -0.3, z: 0 };
 
 /**
  * The morning's first shot, alive, under the title (docs/ux-audit/first-minutes.md row 4): Pappa carves and the
