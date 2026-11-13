@@ -93,6 +93,8 @@ TOE_MID = V(0.068, 0.058, 0.012)
 TOE_TIP = V(0.112, 0.058, 0.004)
 HALLUX = V(-0.035, 0.058, 0.008)
 UP = V(0, 0, 0.05)
+GONE = 0.02                         # the scale of a part drawn in to nothing
+COVER_AT = V(0.02, 0.09, 0.44)
 SEC_AT = [0.25, 0.75]
 PRIM_AT = [0.08, 0.3, 0.52, 0.74, 0.96]
 PRIM_TURN = [58.0, 44.0, 31.0, 18.0, 6.0]   # how far back from straight out each group points, at rest
@@ -125,6 +127,9 @@ BONES = [
     ('tail', 'body', (-0.17, 0, 0.35), tuple(TAIL_ROOT)),
     ('fan1.L', 'tail', tuple(TAIL_ROOT + V(0, 0.012, 0)), tuple(TAIL_ROOT + V(0, 0.012, 0) + tail_dir(1.5) * TAIL_LONG)),
     ('fan2.L', 'tail', tuple(TAIL_ROOT + V(0, 0.024, -0.004)), tuple(TAIL_ROOT + V(0, 0.024, -0.004) + tail_dir(3.5) * TAIL_LONG)),
+    # The folded wing as it lies on its side: a shell of its own, shown while the wing is folded and drawn in to
+    # nothing, inside the body, while the wing of feathers below is open.
+    ('cover.L', 'puff', tuple(COVER_AT), tuple(COVER_AT + V(-0.1, 0, -0.02))),
     ('upperarm.L', 'body', tuple(SHOULDER), tuple(ELBOW)),
     ('forearm.L', 'upperarm.L', tuple(ELBOW), tuple(WRIST), {'connect': True}),
     ('hand.L', 'forearm.L', tuple(WRIST), tuple(HAND), {'connect': True}),
@@ -355,11 +360,12 @@ for side, tag in ((1.0, '.L'), (-1.0, '.R')):
         return V(0, 0, 0.0025 * order)
 
     # the leading edge, round where the bones are
-    for bone, a, b, r0, r1 in (('upperarm', SHOULDER - V(0, 0.03, 0), ELBOW, 0.024, 0.018), ('forearm', ELBOW, WRIST, 0.018, 0.014),
-                               ('hand', WRIST, HAND + V(0.0, 0.02, 0), 0.014, 0.008)):
+    # thin, and under the coverts, so that folded it is the coverts that show, not a bracket of bones
+    for bone, a, b, r0, r1 in (('upperarm', SHOULDER - V(0, 0.03, 0), ELBOW, 0.014, 0.011), ('forearm', ELBOW, WRIST, 0.011, 0.009),
+                               ('hand', WRIST, HAND + V(0.0, 0.02, 0), 0.009, 0.005)):
         at = mark(part)  # noqa: F821
-        tube(part, [S(lerp(a, b, k / 4.0)) + lift_of(10) for k in range(5)], [r0 + (r1 - r0) * k / 4.0 for k in range(5)],  # noqa: F821
-             [WING_EDGE] * 5, 8, squash=0.6, lean=V(0, 0, 1), twist=0.0)
+        tube(part, [S(lerp(a, b, k / 4.0)) + lift_of(3) for k in range(5)], [r0 + (r1 - r0) * k / 4.0 for k in range(5)],  # noqa: F821
+             [WING] * 5, 8, squash=0.6, lean=V(0, 0, 1), twist=0.0)
         bind(arm, part, at, bone + tag)  # noqa: F821
 
     # the coverts: rows of short round feathers over the base of the flight feathers; those over the hand are rust. Each
@@ -404,6 +410,68 @@ for side, tag in ((1.0, '.L'), (-1.0, '.R')):
             feather(S(r) + lift_of(-2 - k - 0.5 * j), S(d), S(V(d.y, -d.x, 0)), PRIM_LONG[k] + 0.02 - 0.03 * j, 0.036, 0.03,
                     RUST, WING_TIP, 6, bend=V(0, 0, -1), c_edge=WING_EDGE)
         bind(arm, part, at, 'prim%d%s' % (k + 1, tag))  # noqa: F821
+
+# --- the folded wing: a cupped shell on each flank, its feathers painted on ---------------------------------------------
+# Lesser coverts at its front and top, a row of greater coverts with pale edges, the rust of the primary coverts and the
+# bases of the primaries low at its front, the tertials and secondaries with pale fringes, and the dark primaries
+# drawn out to a point over the rump. Built in the body's own frame, a little out from its surface.
+
+def body_half_width(u, w):
+    """How far out the body's side is at u along it and w up from its middle (its egg, without its fluff)."""
+    ax = 0.25 if u > 0 else 0.3
+    az = 0.2 if w > 0 else 0.22
+    a = u / ax
+    c = w / az
+    r = 1.0 - a * a - c * c
+    if r <= 0.0:
+        return 0.0
+    ay = 0.205 * (1.0 - 0.22 * max(0.0, -a) ** 2) * (1.0 - 0.08 * max(0.0, c))
+    return ay * math.sqrt(r)
+
+
+COVER_S = 16
+COVER_T = 8
+for side, tag in ((1.0, '.L'), (-1.0, '.R')):
+    at = mark(part)  # noqa: F821
+    rows = []
+    for i in range(COVER_S + 1):
+        s = i / COVER_S
+        top = 0.12 - 0.075 * s
+        bottom = min(-0.055 + 0.17 * s ** 1.4, top - 0.02 * (1.0 - s) - 0.004)
+        row = []
+        for j in range(COVER_T + 1):
+            t = j / COVER_T
+            u = 0.17 - 0.52 * s - 0.05 * (2.0 * t - 1.0) ** 2 * (1.0 - s) ** 2
+            w = top + (bottom - top) * t
+            # The trailing edge in feather tips: the secondaries, then the long primaries.
+            if j == COVER_T:
+                w -= 0.012 * abs(math.sin(s * math.pi * 7.0)) * (1.0 - s)
+                u -= 0.01 * abs(math.sin(s * math.pi * 7.0))
+            y = body_half_width(u, w)
+            y = max(y, 0.035 + 0.05 * (1.0 - s)) + 0.017 + 0.012 * math.sin(math.pi * t) * (1.0 - 0.6 * s)
+            point = BODY_C + U * u + VV * (side * y) + W * w
+            # Its feathers, by where on the wing the point is.
+            lesser = smooth((0.4 - t) / 0.12) * smooth((0.5 - s) / 0.12)
+            greater = smooth((t - 0.3) / 0.08) * smooth((0.62 - t) / 0.08) * smooth((0.6 - s) / 0.1)
+            # The rust: the primary coverts and the bases of the primaries, feathered at its edges.
+            ragged = 0.05 * math.sin(s * 40.0) + 0.04 * math.sin(t * 23.0 + s * 9.0)
+            rust = 0.9 * smooth((t - 0.5 + ragged) / 0.18) * smooth((s - 0.06 + ragged) / 0.1) * smooth((0.4 - s + ragged) / 0.14)
+            primaries = smooth((s - 0.66) / 0.1)
+            col = mix(WING, WING_EDGE, 0.25)
+            col = mix(col, GREY, lesser)
+            fringe = smooth((((s * 9.0 + t * 1.2) % 1.0) - 0.78) / 0.15)
+            col = mix(col, mix(WING, PALE, 0.4 * fringe), greater)
+            col = mix(col, mix(RUST, RUST_DEEP, 0.3 * fringe), rust * (1.0 - primaries))
+            tertial = smooth((s - 0.42) / 0.08) * (1.0 - primaries)
+            col = mix(col, mix(WING, WING_EDGE, 0.7 * smooth((((t * 4.0 + s * 2.0) % 1.0) - 0.8) / 0.12)), tertial * (1.0 - rust))
+            col = mix(col, mix(WING_TIP, WING, 0.35 * smooth((((t * 5.0) % 1.0) - 0.75) / 0.2)), primaries)
+            row.append(put(part, point, lit(col, 0.94 + 0.08 * math.sin(s * 23.0 + t * 7.0))))  # noqa: F821
+        rows.append(row)
+    for i in range(COVER_S):
+        for j in range(COVER_T):
+            quad = [rows[i][j], rows[i + 1][j], rows[i + 1][j + 1], rows[i][j + 1]]
+            face(part, quad if side > 0 else quad[::-1])  # noqa: F821
+    bind(arm, part, at, 'cover' + tag)  # noqa: F821
 
 # --- the legs: short and dark, three toes forward and one behind ------------------------------------------------------
 for side, tag in ((1.0, '.L'), (-1.0, '.R')):
@@ -453,15 +521,19 @@ def folded(lift=0.0):
     # The wrist tucked into the feathers of its breast, the flight feathers drawn in over its rump, where it narrows.
     up = (0.0, 0.88, 0.45)
     out = {
-        'upperarm.L': {'dir': (-0.88, 0.1 + lift, -0.45), 'up': up, 'of': 'body'},
+        # The wing of feathers drawn in under the shell (inside the body), but for its primaries over the rump.
+        'upperarm.L': {'dir': (-0.88, 0.1 + lift, -0.45), 'up': up, 'of': 'body', 'loc': (-0.04, -0.07, 0.0)},
+        'cover.L': {'rot': (0, 0, 0), 'scale': 1.0},
         'forearm.L': {'dir': (0.96, -0.06 + lift * 0.5, 0.24), 'up': up, 'of': 'body'},
         'hand.L': {'dir': (-0.97, -0.06 + lift, -0.2), 'up': up, 'of': 'body'},
-        'tert.L': {'dir': (-0.95, -0.12 + lift, -0.22), 'up': (0.0, 0.85, 0.5), 'of': 'body'},
+        'tert.L': {'dir': (-0.95, -0.12 + lift, -0.22), 'up': (0.0, 0.85, 0.5), 'of': 'body', 'scale': GONE},
     }
+    # Its flight feathers drawn in to nothing under the shell: folded, it is the shell's feathers that show.
     for i in range(2):
-        out['sec%d.L' % (i + 1)] = {'dir': (-0.95, -0.12 + lift, -0.28 + 0.07 * i), 'up': up, 'of': 'body'}
+        out['sec%d.L' % (i + 1)] = {'dir': (-0.95, -0.12 + lift, -0.28 + 0.07 * i), 'up': up, 'of': 'body', 'scale': GONE}
     for k in range(5):
-        out['prim%d.L' % (k + 1)] = {'dir': (-0.95, -0.2 + 0.015 * k + lift, -0.2 + 0.015 * k), 'up': (0.0, 0.88, 0.42), 'of': 'body'}
+        out['prim%d.L' % (k + 1)] = {'dir': (-0.95, -0.2 + 0.015 * k + lift, -0.2 + 0.015 * k), 'up': (0.0, 0.88, 0.42), 'of': 'body',
+                                     'scale': GONE}
     return out
 
 
@@ -620,12 +692,13 @@ def beat(phase):
 
 
 def wing(b):
-    out = {'upperarm.L': b['upperarm'], 'forearm.L': b['forearm'], 'hand.L': b['hand']}
+    out = {'upperarm.L': {'rot': b['upperarm'], 'loc': (0, 0, 0)}, 'forearm.L': b['forearm'], 'hand.L': b['hand'],
+           'cover.L': {'rot': (0, 0, 0), 'scale': GONE}}
     for k in range(5):
-        out['prim%d.L' % (k + 1)] = (b['tip'] * (0.4 + 0.15 * k), 0, PRIM_TURN[k] * (b['spread'] - 1.0))
+        out['prim%d.L' % (k + 1)] = {'rot': (b['tip'] * (0.4 + 0.15 * k), 0, PRIM_TURN[k] * (b['spread'] - 1.0)), 'scale': 1.0}
     for i in range(2):
-        out['sec%d.L' % (i + 1)] = (b['tip'] * 0.3, 0, 0)
-    out['tert.L'] = (b['tip'] * 0.2, 0, 0)
+        out['sec%d.L' % (i + 1)] = {'rot': (b['tip'] * 0.3, 0, 0), 'scale': 1.0}
+    out['tert.L'] = {'rot': (b['tip'] * 0.2, 0, 0), 'scale': 1.0}
     return out
 
 
