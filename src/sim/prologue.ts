@@ -19,7 +19,7 @@ export interface PrologueLayout {
 }
 export interface PrologueFrame { kind: 'mamma' | 'pappa'; seconds: number; ghost: Vec }
 // The family returns from the window around the kitchen table before the frozen carving moves again.
-export const MAMMA_TIME = 9.0;
+export const MAMMA_TIME = 9.4;
 export const PAPPA_TIME = 5.2;
 /**
  * Mamma's joke: the ghost stiffens in mid-hop as she turns (FROZEN), drops like a dropped piece of wood, lands with a
