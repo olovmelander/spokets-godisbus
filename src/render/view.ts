@@ -1,4 +1,6 @@
 import { capArms, capHands, capHandoff } from './cap-handoff';
+import { createBertilAnswer } from './cap-thanks';
+import { ghostThanks } from './ghost-thanks';
 import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from './lamp-hold';
 import { stormSweet } from './storm-sweet';
 import { createEddy } from './eddy';
@@ -1061,6 +1063,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let kickSince = -1;
   /** Bertil removes his cap, turns it over and sets it on the pool during the chapter's held preparation. */
   const capGift = chapter.id === 'granskog' ? carriers.find(carrier => carrier.ride.id === 'cap') : undefined;
+  // Bertil's answer to Elof's thanks across the pool (./cap-thanks.ts).
+  const bertilAnswer = createBertilAnswer();
   const capTime = chapter.later?.find(wait => wait.flag === 'family:cap-ready')?.seconds ?? 2.4;
   let capSince = -1;
   const capFrom = new Vector3(), capAt = new Vector3();
@@ -1616,7 +1620,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const tall = Math.max(s.height, s.width / camera.aspect);
       const away = tall / 2 / Math.tan(FOV * Math.PI / 360);
       const w = shotWeight * shotWeight * (3 - 2 * shotWeight);
-      playAim.set(camera.position.x, camera.position.y, 0);
+      // Where the play camera looks: over a brook or a pool its eye is raised and looks down (`overWater`), so not
+      // straight ahead of it. Taken as straight ahead, the shot's release over the eddy in Granskogen looked level from on
+      // high, and Elof sank to the picture's foot before it rose again.
+      playAim.copy(camAt);
       // A shot of something further back (`z`) looks at it from as far in front of it, and the lens focuses there.
       camera.position.set(lerp(camera.position.x, s.x, w), lerp(camera.position.y, s.y + s.eye, w), lerp(camera.position.z, s.z + away, w));
       camera.lookAt(lerp(playAim.x, s.x, w), lerp(playAim.y, s.y, w), s.z * w);
@@ -2021,8 +2028,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
       if (!hopping) ghostGroundY = ghostState.y;
+      // Pulled ashore in Granskogen, it thanks him: turned to him and to us, it bows and hops (./ghost-thanks.ts).
+      const thanks = chapter.id === 'granskog' ? ghostThanks(sceneFrame, calmStory) : null;
       // 0 faces along the course; a half turn faces back at him.
-      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : (hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
+      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : thanks ? Math.PI + thanks.turn
+        : (hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
       const ghostDelta = wanted - ghostTurn;
       ghostTurn += Math.atan2(Math.sin(ghostDelta), Math.cos(ghostDelta)) * ease(7, dt);
       const awake = !chapter.prologue || flags.has('blink');
@@ -2078,12 +2088,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       blinkEyes(paintedEyes, staged?.blink ?? 1);
       const ghostIdle = ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged,
         performance: staged ?? undefined, elof: x - ghostPlace.position.x, wind: gale * windAt(ghostPlace.position.x) });
-      ghostLook = ghostStaged ? 0 : ghostIdle.look;
+      ghostLook = ghostStaged || thanks ? 0 : ghostIdle.look;
       if (!ghostStaged) {
-        // Its idle: a bob of the whole toy with its bag, and a curious tilt towards him when he is near.
-        ghostPlace.position.y += ghostIdle.bob;
-        ghost.rotation.x += ghostFaces ? ghostIdle.pitch : ghostIdle.roll;
-        ghost.rotation.z += ghostFaces ? ghostIdle.roll : -ghostIdle.pitch;
+        // Its idle: a bob of the whole toy with its bag, and a curious tilt towards him when he is near; and its thanks.
+        ghostPlace.position.y += ghostIdle.bob + (thanks?.bob ?? 0);
+        ghost.rotation.x += ghostFaces ? ghostIdle.pitch + (thanks?.pitch ?? 0) : ghostIdle.roll;
+        ghost.rotation.z += ghostFaces ? ghostIdle.roll : -ghostIdle.pitch - (thanks?.pitch ?? 0);
       }
       // It has no mouth (plan §2.2): saying "Klonk", it bobs up once for each, tipping back a little, as a wooden toy would
       // (./talk.ts). Its knock is its voice already (../audio/cues.ts).
@@ -2196,6 +2206,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           posed.lean = Math.max(posed.lean, 0.85 * low);
         }
       }
+      // Thanked across the pool for his cap, Bertil cheers and waves back (./cap-thanks.ts).
+      if (capGift && one.who === 'bertil') bertilAnswer.update(words, lifeDt, calmStory, one.rig.legs, posed);
 
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.

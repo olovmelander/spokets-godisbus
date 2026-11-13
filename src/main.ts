@@ -53,6 +53,7 @@ import { createStoryPanel } from './ui/story';
 import { createSceneUi } from './ui/scene';
 import { openingCues, openingQuiet } from './audio/opening';
 import { endsInScene, sceneBeats, sceneWaits } from './sim/scene';
+import { walkedOff, walkOffOf } from './sim/walk-off';
 import { createDevicePlay, createHighLanding, isAndroid, isApple } from './platform/device';
 import './ui/ui.css';
 import './ui/home-console.css';
@@ -1001,6 +1002,9 @@ async function start(): Promise<void> {
   // The coda before the last page (docs/narrative-audit/threads.md §5.4): the tune closes, and one of the family
   // answers from afar. Not where a scene is the chapter's end, nor in the epilogue, which has its own.
   const coda = !endsInScene(chapter) && !chapter.epilogue;
+  // A walk staged after the goal (Gården's: on through the arch into the forest) is the coda's picture, and the page
+  // waits for it (./sim/walk-off.ts).
+  const walkOff = walkOffOf(chapter);
   let closing = false;
   let answered = false;
   // A memory plays once, when he touches its shaving: not again in a game that has seen it.
@@ -1416,7 +1420,7 @@ async function start(): Promise<void> {
     }
     const wait = coda ? CODA : 1.4;
     quietFor = hud.reading() || hud.speaking() || game.sim.unsaid ? 0 : quietFor + (menuOpen() ? 0 : dt);
-    if (endFor > wait && quietFor > END_QUIET && !benchOn && !ended) {
+    if (endFor > wait && quietFor > END_QUIET && walkedOff(walkOff, game.sim.flags, game.sim.sceneFrame) && !benchOn && !ended) {
       ended = true;
       paused = true;
       if (!coda) audio.menu(true);

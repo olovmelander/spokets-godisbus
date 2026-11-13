@@ -120,6 +120,7 @@ export const VOICE_LINES = [
   { key: 'dripSplash', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Plask! Rakt i huvudet.' },
   { key: 'dripAgain', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Aj då! En droppe till.' },
   { key: 'bogLightMist', speaker: 'elof', situation: 'Holding up the glowing lollipop as the mist rolls in', tag: '[surprised, then relieved little boy]', text: 'Oj, vad dimmigt! Tur att klubban lyser.' },
+  { key: 'forestThanksBertil', speaker: 'elof', situation: 'Thanking his brother after riding in his cap across the water', tag: '[cheeky, grateful little boy, a giggle]', text: 'Tack, Bertil! Din keps kan simma!' },
 
   // MOA
   { key: 'clipBack', speaker: 'moa', situation: 'Getting lost hair clip back', tag: '[delighted, hugging brother]', text: 'Mitt hårspänne! Tack, lillebror!' },
