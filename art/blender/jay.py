@@ -17,7 +17,10 @@ toes forward and one behind, that grip.
 Its rest pose is the bird standing with its wings spread, tail closed. It is one mesh with its colours on its corners,
 skinned to its bones: the body and the neck bend smoothly, each part of the arm of a wing, each group of flight
 feathers and each half of the tail goes rigidly with its own bone, so that a wing folds as a bird's does and the tail
-fans. The body's feathers go with 'puff', which swells as it fluffs itself up. The clips, each named 'jay:<clip>':
+fans. The body's feathers go with 'puff', which swells as it fluffs itself up. Folded, the wing of feathers is drawn in
+to nothing under the body and a cupped shell on each flank shows instead ('cover.L', 'cover.R': coverts, the rust patch,
+tertials and the primaries' point painted on); in flight the shell is drawn in and the wing opens. The clips, each
+named 'jay:<clip>':
     idle      looks about in quick snaps, flicks its tail, fluffs itself up and shakes                     (loop)
     look      cocks its head at him, one eye and then the other, its crown up                            (loop)
     hop       one hop on the spot, from a crouch, landing with a give                                     (loop)
