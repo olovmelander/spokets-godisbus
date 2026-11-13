@@ -438,6 +438,7 @@ export const sv = {
     goldInBag: 'Det ligger kvar i spökets påse!',
     findBag: 'Jag följer godiset och hittar påsen!',
     onlyWood: 'Jag fångar honom. Stanna där!',
+    // No longer said (Olov, 13 November 2026). Kept only while its recording (public/audio/voices/snuck.mp3) is there.
     snuck: 'Det smiter!',
     nearYou: 'Vi är nära dig hela tiden.',
     mapForYou: 'Jag ritar en karta åt dig!',

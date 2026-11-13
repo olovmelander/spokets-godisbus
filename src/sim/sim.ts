@@ -325,6 +325,9 @@ export class Sim {
       shape: new ChainShape(chapter.ground.map((p) => new Vec2(p.x, p.y)), false),
       friction: 0,
     });
+    // The prologue's deck: he can stand at the waiting ghost's side, and never goes past it over the edge (./prologue.ts).
+    const deck = chapter.prologue;
+    if (deck?.beside !== undefined && deck.edge) ground.createFixture({ shape: new ChainShape([new Vec2(deck.beside, deck.edge.y + 0.15), new Vec2(deck.beside, deck.edge.y + 9)], false), friction: 0 });
 
     this.body = this.world.createBody({
       type: 'dynamic',

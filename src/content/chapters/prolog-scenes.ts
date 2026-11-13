@@ -1,6 +1,6 @@
 import type { SceneDef } from '../../sim/scene';
 import { HOME_LAYOUT } from '../home-layout';
-import { MAMMA_TIME } from '../../sim/prologue';
+import { MAMMA_SEEN, MAMMA_TIME } from '../../sim/prologue';
 
 /**
  * The prologue as it is told now (docs/narrative-audit.md, "the intro"): a Saturday morning at home, the ghost
@@ -34,6 +34,10 @@ const faceWindow = (from: { x: number; z: number }) => 0.25 - Math.atan2(WINDOW.
 // the family therefore waits behind this earliest position, then follows him forwards when he sets off.
 const REJOIN = atTable(-2.9);
 const FOLLOW = { mamma: 5.2, pappa: 2.7, moa: 3.7, bertil: 4.5 };
+/** Where the ghost lies on the floor in Mamma's joke: it froze in its hop this far before the doorway (src/sim/prologue.ts). */
+const DROPPED = { x: atTable(4.1), y: 0.35, z: 0.1 };
+/** Back with Elof, where he stood to paint the eyes, they look at him: their backs are to the ghost as it gets up. */
+const BACK = { x: atTable(-1.8), y: 2.4, z: 0 };
 /** The deck mark for the star encounter: Elof stops here to look, taste, and become small. */
 const STAR = 40.5;
 const PALM = { x: STAR + 0.8, y: 1.3, z: 0.05 };
@@ -229,48 +233,54 @@ export const PROLOG_SCENES: SceneDef[] = [
     },
   },
   {
-    // The first freeze joke, played by the prologue's own clock (src/sim/prologue.ts): Mamma turns round, the
-    // ghost drops stiff in mid-hop, and Mamma sees only a carving on the floor. Then they all go after Elof.
+    // The first freeze joke, played by the prologue's own clock (src/sim/prologue.ts): Mamma turns round, the ghost
+    // stiffens in mid-hop and drops like a piece of wood, and lies on the floor. They all look at it, and once it has
+    // lain there a moment Mamma says "Hoppsan! Vem tappade spöket?" (MAMMA_SEEN): that picture is held while it is
+    // read, so it is the joke (Olov, 13 November 2026: "så måste spöket först ligga på golvet. Så det blir visuellt och
+    // perfekt"). She shrugs, and they all go back to Elof; behind their backs it gets up and is off.
     id: 'prologue:mamma',
     by: { done: 'mamma:passed' },
     seconds: MAMMA_TIME,
     stage: {
       shots: [
-        { at: 0, x: 14.0, y: 3.0, z: -2, height: 8, width: 17, move: 0.01 },
-        { at: 2.9, x: 12.5, y: 3.1, z: -1.5, height: 8, width: 18, move: 2.0 },
+        // The ghost on the floor, the family at the window and Elof between them: all in the one picture.
+        { at: 0, x: 15.4, y: 2.4, z: -2, height: 6.8, width: 13.5, move: 0.01 },
+        // As they walk back, a little way with them; the ghost stays in the picture, to be seen getting up.
+        { at: 3.2, x: 13.4, y: 3.0, z: -1.5, height: 8, width: 17, move: 2.2 },
       ],
       actors: {
         // The window is left of the table. Return through that clear side aisle, then join Elof in front;
         // handing a window mark directly to the followers would cut diagonally through the table.
         mamma: [
-          { at: 0, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.6, x: REJOIN - FOLLOW.mamma, z: -5.4, move: 2.2, act: 'walk' },
-          { at: 2.9, x: REJOIN - FOLLOW.mamma, z: 3.0, move: 2.4 },
-          { at: 5.4, face: 0.05, act: 'look', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
-          { at: 6.7, act: 'shrug', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
+          { at: 0, face: 0.1, act: 'look', aim: DROPPED },
+          { at: MAMMA_SEEN + 0.4, act: 'shrug', aim: DROPPED },
+          { at: 3.1, x: REJOIN - FOLLOW.mamma, z: -5.4, move: 2.0, act: 'walk' },
+          { at: 5.15, x: REJOIN - FOLLOW.mamma, z: 3.0, move: 2.4 },
+          { at: 7.6, face: 0.05, act: 'look', aim: BACK },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.mamma, holdsLeft: null },
         ],
         pappa: [
-          { at: 0.2, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 1.5, x: REJOIN - FOLLOW.pappa, z: 0.3, move: 4.95, act: 'walk' },
-          { at: 6.5, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.2, face: 0.1, act: 'look', aim: DROPPED },
+          { at: 2.3, x: REJOIN - FOLLOW.pappa, z: 0.3, move: 4.95, act: 'walk' },
+          { at: 7.3, face: 0, act: 'look', aim: BACK },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.pappa },
         ],
         moa: [
-          { at: 0.15, act: 'look', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.35, x: REJOIN - FOLLOW.moa, z: 3.6, move: 3.65, act: 'walk' },
-          { at: 4.1, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.15, act: 'look', face: 0.1, aim: DROPPED },
+          { at: 2.2, x: REJOIN - FOLLOW.moa, z: 3.6, move: 3.65, act: 'walk' },
+          { at: 5.95, face: 0, act: 'look', aim: BACK },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.moa },
         ],
         bertil: [
-          { at: 0.25, act: 'startle', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.55, x: atTable(-4.3), z: -4.6, move: 2.3, act: 'walk' },
-          { at: 2.9, x: atTable(-4.3), z: 1.7, move: 2.15 },
-          { at: 5.2, x: REJOIN - FOLLOW.bertil, z: 1.7, move: 2, face: 0 },
+          { at: 0.25, act: 'startle', face: 0.1, aim: DROPPED },
+          { at: 1.4, act: 'look', aim: DROPPED },
+          { at: 2.25, x: atTable(-4.3), z: -4.6, move: 2.0, act: 'walk' },
+          { at: 4.3, x: atTable(-4.3), z: 1.7, move: 2.0 },
+          { at: 6.35, x: REJOIN - FOLLOW.bertil, z: 1.7, move: 1.75, face: 0 },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.bertil },
         ],
       },
-      elof: [{ at: 0.2, act: 'watch', aim: { x: atTable(5.4), y: 0.6, z: 0 } }],
+      elof: [{ at: 0.2, act: 'watch', aim: DROPPED }],
     },
   },
   {
@@ -520,13 +530,16 @@ export const PROLOG_SCENES: SceneDef[] = [
   },
   {
     // 7. At the deck's edge the garden opens below, the ghost hops down into it with the bag, he turns to wave
-    // to them, and turns back to the garden: the game's title over the whole of it.
+    // to them, and turns back to the garden: the game's title over the whole of it. It begins where he stands on the
+    // last stretch of the deck, up to the ghost's side (ends.ts, `beside`).
     id: 'titel',
     at: 51.4,
-    needs: 'pappa:done',
+    // Their promises are let finish first, every one: until then he is free on the deck, and may walk up and stand
+    // beside the waiting ghost and listen (Olov, 13 November 2026: "kan man bara stå bredvid spöket fram tills dess
+    // att hela familjen pratat klart och spöket hoppar ner"). It cannot leave him there: the deck stops him at its side.
+    needs: 'promised',
     seconds: 11.4,
     hold: true,
-    // Their promises are let finish first: he stands at the edge and listens.
     quiet: true,
     cues: [{ at: 0.9, flag: 'leap' }, { at: 11.2, flag: 'titel' }],
     lines: [{ at: 2.8, who: 'elof', line: 'findBag' }],

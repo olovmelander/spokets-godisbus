@@ -55,8 +55,8 @@ export const prolog: ChapterData = {
     })),
   ],
   scenes: PROLOG_SCENES,
-  // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away.
-  later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: 4.1 }],
+  // The family has said all its promises, each read to its end: only then does the ghost leap (`titel`).
+  sets: [{ flag: 'promised', when: ['beat:nearYou', 'beat:mapForYou', 'beat:heja', 'beat:followTrail'] }],
   // In reach of the brush Pappa holds out, so the morning ends with "Måla ögonen!" lit on Använd: the first thing
   // asked of him has its button ready (docs/ux-audit/first-minutes.md row 19). The move lesson waits for the hall.
   spawn: { x: HOME_LAYOUT.dining.x - 2.9, y: 0.01 },
@@ -65,8 +65,9 @@ export const prolog: ChapterData = {
   prologue: {
     // Pappa notices the ghost once Moa's drawing is told, as Elof sets off towards it.
     // The ghost waits at the very edge of the boards, ready to jump: at 52.6 it stood at his side, the bag in reach,
-    // all the while the family said their promises (12 November 2026).
-    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 53.3, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
+    // all the while the family said their promises (12 November 2026). He may walk up and stand beside it now, while
+    // they say them (Olov, 13 November 2026), up to `beside`: it faces the garden then, the bag held out over the edge.
+    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 53.3, y: -0.8 }, beside: 52.75, pappaAfter: 'scene:handen', pappaFrom: 41.5,
     // The deck's railing runs along its far side: Pappa puts the frozen ghost up on its top rail.
     rail: { from: 38.4, to: 53.8, z: -3.4 },
   },
@@ -116,15 +117,18 @@ export const prolog: ChapterData = {
     { at: { x: 35, y: 0 } },
     // On the deck, beyond the star it lost: it waits there until Pappa's joke.
     { at: { x: 44.4, y: -0.8 }, until: 'pappa:done', near: 0 },
-    // At the deck's edge, where it hid behind his back; then down into the garden, as the title comes.
+    // At the deck's edge, where it hid behind his back, until the family has said all it has to say; then down into
+    // the garden, as the title comes.
     { at: { x: 53.3, y: -0.8 }, until: 'leap', near: 99 },
     { at: { x: 57.5, y: -7 }, near: 0 },
   ],
   beats: [
+    // Once the ghost lies on the floor before her (src/sim/prologue.ts, MAMMA_SEEN).
     { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
     { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', read: true },
-    { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
-    // Their promises, one from each as he passes them on the deck.
+    // Their promises, one from each as he passes them on the deck. Nothing is said of the ghost slipping off to the
+    // edge behind Pappa's back: it is seen, and the children point (Olov, 13 November 2026: "så man inte säger 'Det
+    // smiter'").
     { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou', read: true },
     { id: 'mapForYou', at: 47.0, needs: 'pappa:done', who: 'moa', line: 'mapForYou', read: true },
     { id: 'heja', at: 48.8, needs: 'pappa:done', who: 'bertil', line: 'heja', read: true },
