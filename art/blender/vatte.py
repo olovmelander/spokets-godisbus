@@ -68,8 +68,8 @@ BONES = [
     ('body', 'root', (0, 0, 0.04), (0, 0, 0.24)),
     ('head', 'body', (0, 0, 0.24), (0, 0, 0.46), {'connect': True}),
     ('lid.L', 'head', (EYE_AT.x + 0.004, EYE_AT.y, EYE_AT.z + 0.058), (EYE_AT.x + 0.004, EYE_AT.y, EYE_AT.z - 0.058)),
-    ('arm.L', 'body', (0.04, 0.165, 0.22), (0.07, 0.27, 0.12)),
-    ('hand.L', 'arm.L', (0.07, 0.27, 0.12), (0.085, 0.31, 0.085), {'connect': True}),
+    ('arm.L', 'body', (0.03, 0.15, 0.23), (0.08, 0.30, 0.12)),
+    ('hand.L', 'arm.L', (0.08, 0.30, 0.12), (0.10, 0.355, 0.08), {'connect': True}),
     ('cap.leaf', 'head', (0, 0, 0.47), (0, 0, 0.56)),
     ('cap.lichen', 'head', (0, 0, 0.47), (0, 0, 0.56)),
 ]
@@ -134,18 +134,20 @@ for side, tag in ((1.0, '.L'), (-1.0, '.R')):
 # --- the twig arms, each with three twig fingers ---------------------------------------------------------------------
 for side, tag in ((1.0, '.L'), (-1.0, '.R')):
     at = mark(part)  # noqa: F821
-    tube(part, [V(0.03, 0.14 * side, 0.23), V(0.055, 0.21 * side, 0.17), V(0.07, 0.27 * side, 0.12)], [0.016, 0.013, 0.011],  # noqa: F821
-         [TWIG, TWIG, TWIG], 6)
+    tube(part, [V(0.02, 0.12 * side, 0.24), V(0.055, 0.22 * side, 0.175), V(0.08, 0.30 * side, 0.12)], [0.026, 0.021, 0.017],  # noqa: F821
+         [TWIG, TWIG, TWIG], 7)
     # A little side twig with a bud, on the forearm.
-    tube(part, [V(0.055, 0.21 * side, 0.17), V(0.07, 0.235 * side, 0.205)], [0.006, 0.003], [TWIG, TWIG], 4)  # noqa: F821
-    lump(part, V(0.072, 0.237 * side, 0.21), (0.009, 0.009, 0.012), 1, MOSS_TIP)  # noqa: F821
+    tube(part, [V(0.055, 0.22 * side, 0.175), V(0.07, 0.25 * side, 0.215)], [0.009, 0.004], [TWIG, TWIG], 4)  # noqa: F821
+    lump(part, V(0.072, 0.252 * side, 0.222), (0.013, 0.013, 0.017), 1, MOSS_TIP)  # noqa: F821
     bind(arm, part, at, 'arm' + tag)  # noqa: F821
     at = mark(part)  # noqa: F821
-    tube(part, [V(0.07, 0.27 * side, 0.12), V(0.085, 0.31 * side, 0.085)], [0.011, 0.009], [TWIG, TWIG], 6)  # noqa: F821
-    for k, spread in enumerate((-0.5, 0.0, 0.5)):
-        root = V(0.085, 0.31 * side, 0.085)
-        d = V(0.25 + 0.6 * spread, 0.55 * side, -0.75 + 0.2 * abs(spread)).normalized()
-        tube(part, [root, root + d * 0.028, root + d * 0.05 + V(0.0, 0.0, 0.006)], [0.006, 0.0045, 0.002], [TWIG, TWIG, TWIG], 4)  # noqa: F821
+    tube(part, [V(0.08, 0.30 * side, 0.12), V(0.10, 0.355 * side, 0.08)], [0.017, 0.015], [TWIG, TWIG], 7)  # noqa: F821
+    # A tuft of moss at the wrist, and three twig fingers spread out from it.
+    lump(part, V(0.095, 0.345 * side, 0.088), (0.022, 0.022, 0.02), 2, MOSS)  # noqa: F821
+    for k, spread in enumerate((-0.55, 0.0, 0.55)):
+        root = V(0.10, 0.355 * side, 0.08)
+        d = V(0.25 + 0.65 * spread, 0.55 * side, -0.75 + 0.25 * abs(spread)).normalized()
+        tube(part, [root, root + d * 0.04, root + d * 0.075 + V(0.0, 0.0, 0.008)], [0.009, 0.007, 0.003], [TWIG, TWIG, TWIG], 5)  # noqa: F821
     bind(arm, part, at, 'hand' + tag)  # noqa: F821
 
 # --- the caps: a leaf with its stalk, or a tuft of lichen ----------------------------------------------------------
@@ -243,8 +245,8 @@ def waving(k, shut=0.45):
     """Its left arm up, its twig hand swinging from side to side; its head tilted towards it, its eyes smiling."""
     swing = math.sin(k)
     return peeking(8, 12, 6, shut, 0.02, {
-        'arm.L': {'dir': tuple(V(0.25, 0.55, 0.8).normalized()), 'up': (0.0, -0.8, 0.55)},
-        'hand.L': {'dir': tuple(V(0.25 + 0.15 * swing, 0.15 + 0.55 * swing, 0.95).normalized()), 'up': (-1.0, 0.0, 0.2)},
+        'arm.L': {'dir': tuple(V(0.2, 0.8, 0.56).normalized()), 'up': (0.0, -0.6, 0.8)},
+        'hand.L': {'dir': tuple(V(0.2 + 0.1 * swing, 0.2 + 0.6 * swing, 0.95).normalized()), 'up': (-1.0, 0.0, 0.2)},
         'arm.R': (0, 0, 0), 'hand.R': (0, 0, 0),
     })
 
