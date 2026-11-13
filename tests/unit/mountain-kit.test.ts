@@ -3,7 +3,8 @@ import { BufferGeometry, Float32BufferAttribute, Matrix4, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest';
 import { berget } from '../../src/content/chapters/berget';
 import { norrsken } from '../../src/content/chapters/norrsken';
-import { PINE_DEPTH, fitted, outcrops, rimPines, rockAt, shapeOf, shootsOf, stones, type MountainKit, type Outcrop, type Shape } from '../../src/render/mountain-kit';
+import { PINE_DEPTH, WORN, byThePine, fitted, oldPine, outcrops, rimPines, rockAt, shapeOf, shootTints, shootsOf, stones, wornNearPine, type MountainKit, type Outcrop, type Shape, type StonePlace } from '../../src/render/mountain-kit';
+import { NEEDLE_CARD } from '../../src/render/old-pine';
 import type { ChapterData } from '../../src/sim/types';
 
 /**
@@ -35,9 +36,12 @@ function readKit(): MountainKit {
     const primitive = json.meshes[node.mesh].primitives[0];
     const colour = primitive.attributes.COLOR_0 === undefined ? [] : read(primitive.attributes.COLOR_0);
     const parts = colour.length / (json.accessors[primitive.attributes.POSITION].count || 1);
+    // A layer of numbers as the game reads it: glTF counts its second number down from 1, and it is turned back.
+    const layer = (name: string) => (primitive.attributes[name] === undefined ? undefined : read(primitive.attributes[name]).map((v, i) => (i % 2 === 1 ? 1 - v : v)));
     kit.set(node.name, {
       position: read(primitive.attributes.POSITION), normal: read(primitive.attributes.NORMAL),
       colour: colour.filter((_, i) => i % parts < 3), index: read(primitive.indices), ...(node.extras ?? {}),
+      ...(layer('TEXCOORD_0') ? { uv: layer('TEXCOORD_0') } : {}), ...(layer('TEXCOORD_1') ? { uv1: layer('TEXCOORD_1') } : {}),
     });
   }
   return kit;
@@ -186,13 +190,15 @@ describe('the mountain kit from Blender', () => {
       expect([side.x, side.y, side.z].map((n) => Math.round(n * 1000) / 1000), String(order)).toEqual([1.5, 2, 3]);
       expect(matrix!.determinant()).toBeGreaterThan(0);
     }
-    // The old pine has a few hundred shoots, each about half a length long and within its crown.
+    // The old pine has some thousand shoots in tufts, each under half a length long and within its crown (13 November
+    // 2026: shorter, and many more, than the few hundred of half a length it had, so that its plates are full).
     const shoots = shootsOf(kit.get('tall-skott')!);
-    expect(shoots.length).toBeGreaterThan(200);
+    expect(shoots.length).toBeGreaterThan(800);
+    expect(shoots.length).toBeLessThan(2000);
     for (const matrix of shoots) {
       const long = new Vector3().setFromMatrixColumn(matrix, 1).length();
-      expect(long).toBeGreaterThan(0.4);
-      expect(long).toBeLessThan(0.75);
+      expect(long).toBeGreaterThan(0.3);
+      expect(long).toBeLessThan(0.5);
     }
   });
 
@@ -251,6 +257,97 @@ describe('the pines of the mountain', () => {
     }
     // At night two of them stand against the northern lights where the family is.
     expect(rimPines(norrsken).filter((one) => one.x > 14 && one.x < 36).length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('the old pine\'s bark and needles, and the worn stones by it (Olov, 13 November 2026)', () => {
+  const tree = oldPine(kit, new Matrix4())!;
+  const layer = (shape: BufferGeometry, name: string) => shape.getAttribute(name);
+
+  it('carries what its bark is drawn from: thick grey plates at its foot, thin orange bark high up, bare wood on the dead limb', () => {
+    expect(tree).not.toBeNull();
+    const at = layer(tree.wood, 'position');
+    const kind = layer(tree.wood, 'barkKind');
+    const bark = layer(tree.wood, 'barkAt');
+    expect(kind.count).toBe(at.count);
+    let [footOld, foot, topOld, top, bare] = [0, 0, 0, 0, 0];
+    for (let i = 0; i < at.count; i++) {
+      expect(kind.getX(i), 'how thick').toBeGreaterThanOrEqual(-0.001);
+      expect(kind.getX(i), 'how thick').toBeLessThanOrEqual(1.001);
+      expect(kind.getY(i), 'how bare').toBeGreaterThanOrEqual(-0.001);
+      expect(kind.getY(i), 'how bare').toBeLessThanOrEqual(1.001);
+      // Where on the wood, in lengths: never further round than the thickest root, and along it small enough numbers
+      // that the shader's patterns stay sharp (each limb's starts somewhere under 23).
+      expect(Math.abs(bark.getX(i))).toBeLessThan(6);
+      expect(Math.abs(bark.getY(i))).toBeLessThan(40);
+      const y = at.getY(i);
+      if (y > 0.2 && y < 1.2 && Math.hypot(at.getX(i), at.getZ(i)) < 1.4) { foot++; footOld += kind.getX(i); }
+      if (y > 4.5) { top++; topOld += kind.getX(i); }
+      if (kind.getY(i) > 0.99) bare++;
+    }
+    expect(footOld / foot).toBeGreaterThan(0.6);
+    expect(topOld / top).toBeLessThan(0.3);
+    expect(bare).toBeGreaterThan(300);
+  });
+
+  it('draws its needles on cards as wide and as long as the shader takes them, in the shoots\' tints', () => {
+    const card = kit.get('skott')!;
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (let i = 0; i < card.position.length; i += 3) { xs.push(Math.hypot(card.position[i]!, card.position[i + 2]!)); ys.push(card.position[i + 1]!); }
+    expect(Math.max(...xs)).toBeCloseTo(NEEDLE_CARD.half, 2);
+    expect(Math.min(...ys)).toBeCloseTo(NEEDLE_CARD.from, 2);
+    expect(Math.max(...ys)).toBeCloseTo(NEEDLE_CARD.to, 2);
+    // Its layer counts up the card from its foot, and across it from 0 to 1.
+    for (let i = 0; i < ys.length; i++) expect(card.uv![i * 2 + 1]!).toBeCloseTo((ys[i]! - NEEDLE_CARD.from) / (NEEDLE_CARD.to - NEEDLE_CARD.from), 2);
+    expect(layer(tree.needles, 'needleAt').count).toBe(layer(tree.needles, 'position').count);
+    // Lit at the plates' tops and rims, in their shade in their middles and under them; none black, none glaring.
+    const tints = shootTints(kit.get('tall-skott')!);
+    expect(tints.length).toBe(shootsOf(kit.get('tall-skott')!).length);
+    const light = tints.map((tint) => (tint.r + tint.g + tint.b) / 3);
+    expect(Math.min(...light)).toBeGreaterThan(0.25);
+    expect(Math.max(...light)).toBeLessThan(1.25);
+    expect(Math.max(...light) - Math.min(...light)).toBeGreaterThan(0.3);
+  });
+
+  it('lays the worn stones with their worn tops up and their lichen there, round and sunk into the ground', () => {
+    for (const name of WORN) {
+      const stone = kit.get(name)!;
+      expect(triangles(stone), name).toBeLessThanOrEqual(name === 'sten-rund-a' ? 5200 : 1300);
+      // Round: the normals of neighbouring corners never turn sharply, as the edges of the scatter's stones do.
+      let [up, ups, side, sides] = [0, 0, 0, 0];
+      for (let i = 0; i < stone.normal.length; i += 3) {
+        const light = (stone.colour[i]! + stone.colour[i + 1]! + stone.colour[i + 2]!) / 3;
+        if (stone.normal[i + 1]! > 0.85) { up += light; ups++; }
+        else if (Math.abs(stone.normal[i + 1]!) < 0.3 && stone.position[i + 1]! > 0) { side += light; sides++; }
+      }
+      expect(up / ups, `${name}: lichen on its top`).toBeGreaterThan(side / sides);
+    }
+    const lying = byThePine(norrsken.pine!.x, 0, -1);
+    // The tragubbe's stone is the big one, the first he passes in Norrsken, behind the path.
+    expect(lying[0]!.shape).toBe(0);
+    expect(lying[0]!.x).toBeLessThan(norrsken.pine!.x);
+    expect(Math.max(...lying.map((one) => one.size))).toBe(lying[0]!.size);
+    for (const one of lying) {
+      expect(one.turn[0]).toBe(0);
+      expect(one.turn[2]).toBe(0);
+      expect(one.z + one.size).toBeLessThan(0);
+    }
+    // Each goes well down under where the ground meets it (0.28 under its middle, as `byThePine` lays it).
+    for (const name of WORN) {
+      const stone = kit.get(name)!;
+      let lowest = Infinity;
+      for (let i = 1; i < stone.position.length; i += 3) lowest = Math.min(lowest, stone.position[i]!);
+      expect(lowest, `${name}: sunk into the ground`).toBeLessThan(-0.28 - 0.12);
+    }
+  });
+
+  it('wears the scatter\'s stones round near the old pine, and leaves the rest of the mountain as it is', () => {
+    const near: StonePlace = { x: norrsken.pine!.x - 8, y: 0.5, z: -3, size: 0.5, turn: [1, 2, 3], shape: 2, tone: 1, foot: 0 };
+    expect(wornNearPine(norrsken, near)).toEqual({ ...near, shape: 5, turn: [0, 2, 0], y: 0.14 });
+    const far: StonePlace = { ...near, x: norrsken.pine!.x + 12 };
+    expect(wornNearPine(norrsken, far)).toBe(far);
+    expect(wornNearPine({ ...norrsken, pine: undefined }, near)).toBe(near);
   });
 });
 
