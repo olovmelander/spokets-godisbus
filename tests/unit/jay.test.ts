@@ -125,6 +125,14 @@ describe('the jay on the ground (src/render/jay.ts)', () => {
     expect(rig.playing).toBe('look');
   });
 
+  it('given its berry before it came (a game taken up again), it does not eat it again', () => {
+    const bird = new Group();
+    const rig = rigJay(bird, model)!;
+    frame(bird, true, 38, 0.2);
+    expect(rig.playing).toBe('look');
+    expect(rig.berry.visible).toBe(false);
+  });
+
   it('with less motion it turns to him at once, holds still and shows no berry', () => {
     const bird = new Group();
     const rig = rigJay(bird, model)!;

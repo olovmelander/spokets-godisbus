@@ -82,7 +82,7 @@ export interface JayRig {
   /** Where it faces (see `face`), and the turn it hops through, if it is turning. */
   heading: number;
   turn: { from: number; to: number; t: number } | null;
-  /** For how long it has had its berry; -1 before. */
+  /** For how long it has had its berry; -1 before; NaN until its first frame on the ground. */
   since: number;
   /** The clip it plays now, when it plays one on its own clock. */
   playing: string;
@@ -120,7 +120,7 @@ export function rigJay(bird: Object3D, model: Object3D, fade = 0.25): JayRig | n
   // Pinched at the tip of its beak: the bone's own y runs along the beak.
   berry.position.set(0, -0.02, 0);
   clips.bone('bill')?.add(berry);
-  const rig: JayRig = { clips, berry, heading: 1, turn: null, since: -1, playing: '', life: 0 };
+  const rig: JayRig = { clips, berry, heading: 1, turn: null, since: Number.NaN, playing: '', life: 0 };
   rigs.set(bird, rig);
   return rig;
 }
@@ -159,7 +159,9 @@ export function stepGroundJay(bird: Object3D, rig: JayRig, f: GroundFrame): void
   const dx = f.elof ? f.elof.x - f.x : Infinity;
   const want = !f.elof ? rig.heading : dx < -0.25 ? -1 : dx > 0.25 ? 1 : Math.sign(rig.heading) || 1;
   const near = Math.abs(dx) < NEAR;
-  if (f.used) rig.since = rig.since < 0 ? 0 : rig.since + f.dt;
+  // Given its berry before it came (a game taken up again), it has had it long since.
+  if (Number.isNaN(rig.since)) rig.since = f.used ? Infinity : -1;
+  else if (f.used) rig.since = rig.since < 0 ? 0 : rig.since + f.dt;
   else rig.since = -1;
   const eating = rig.since >= 0 && rig.since < EAT.seconds;
   const glad = rig.since >= EAT.seconds && rig.since < EAT.seconds + EAT.hops * HOP.seconds;
