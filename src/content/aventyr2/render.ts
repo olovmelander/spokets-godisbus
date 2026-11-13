@@ -1378,7 +1378,7 @@ function lightFromWithin(figure: Group): void {
   });
 }
 
-/** Pappa's very first trägubbe: grey old wood, a pointed cap, a crooked smile and the crowberry eyes Elof gave it. */
+/** Pappa's very first trägubbe: grey old wood, a pointed cap, a crooked smile and its old painted eyes. */
 function oldFigure(silhouette = false): Group {
   const group = new Group();
   const wood = silhouette ? solid('#3a3a40', 1, { emissive: '#30384c', emissiveIntensity: 0.6 }) : solid('#8f8c7e', 1);
@@ -1393,7 +1393,7 @@ function oldFigure(silhouette = false): Group {
   smile.position.set(0, 0.57, 0.146);
   smile.rotation.z = Math.PI;
   group.add(body, ball(0.16, wood, 0.015, 0.58), cap, smile, ball(0.06, solid('#6f8a45', 1), -0.13, 0.38, 0.08, [1, 0.5, 1]));
-  // The crowberry eyes: dark, a little shiny.
+  // Its old painted eyes: dark, a little shiny.
   for (const x of [-0.06, 0.06]) group.add(ball(0.026, solid('#1a1530', 0.3), x, 0.62, 0.148));
   group.name = 'old-trägubbe';
   if (!silhouette) { group.userData.model = 'tragubbe'; group.userData.fit = 0.72; }

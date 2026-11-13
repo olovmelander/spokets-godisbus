@@ -1482,7 +1482,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (thing.prop && (thing.spot.word === 'gardenBoard' || thing.spot.word === 'capBoard')) {
         thing.prop.group.visible = flags.has(thing.spot.needs!) && !flags.has(thing.spot.id);
       }
-      // The star comes from the torn bag; the returned bag is offered only after the repaired eyes.
+      // The star comes from the torn bag; the returned bag is held out once the trägubbe is out of the crack.
       if (thing.prop && chapter.prologue && thing.spot.id === 'star') {
         const spilled = flags.has('blink') && flags.has('bag:torn') && (starDropTime > 0 || (x >= 37.5 && (ghostState?.x ?? 0) >= 40.5));
         if (spilled && dt > 0) starDropTime = Math.min(.65, starDropTime + dt);
@@ -1726,7 +1726,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const rescueGrip = rescue?.weight(flags, sceneFrame?.id === 'aterfunna' ? sceneFrame.seconds : undefined, calmStory) ?? 0;
     if (rescue && flags.has('scene:uppdragen') && rescueGrip > 0) {
       // Lean into the load with the carrying shoulder behind him, instead of jogging empty-handed: wherever he drags
-      // it, the eyes' and the candy's places too, and less while it lies still behind him.
+      // it, the candy's place too, and less while it lies still behind him.
       rescueCarryPose(spokenPose, rescueGrip * (.4 + .6 * rescue.hauling));
     }
     if (rescue && sceneFrame?.id === 'uppdragen') spokenPose.lean -= .16;
@@ -2425,7 +2425,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
-      // Out of the crack for good, the lace is off it: its ring no longer hides the face he paints.
+      // Out of the crack for good, the lace is off it: its ring no longer hides its old painted face.
       const ring = carving?.getObjectByName('pull-ring');
       if (ring) ring.visible = !flags.has('placed:tragubbe');
       if (carving && rescue) rescue.update(playerBody, elof.group, carving as Group, flags,

@@ -87,8 +87,8 @@ export function createNorrskenRescue() {
         return;
       }
       for (const piece of pieces) piece.visible = false;
-      // Where it lies is the simulation's (its mover is towed, Mover.tow): the spots for its eyes and its candy
-      // go with it, and a game taken up again finds it at his heels.
+      // Where it lies is the simulation's (its mover is towed, Mover.tow): the spot for its candy goes
+      // with it, and a game taken up again finds it at his heels.
       const distance = player.position.x - carving.position.x;
       const moved = lastX === null ? 0 : Math.abs(carving.position.x - lastX) / Math.max(dt, 1e-3);
       lastX = carving.position.x;
