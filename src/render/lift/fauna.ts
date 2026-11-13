@@ -11,6 +11,7 @@ import {
   type Species, type V3,
 } from './fauna/shapes';
 import { fireflyMaterial, smallMaterial, swarm, type SmallKind } from './fauna/small-kit';
+import { OWL_TALL, type OwlRig } from '../owl';
 
 /**
  * The near forest's life (docs/visual-upgrade.md), behind the play plane in every chapter of both adventures:
@@ -304,8 +305,13 @@ function owls(plan: Plan, add: Add): Kind {
   const next = sequence(31);
   const all = plan.owls.map((o) => ({ ...o, from: 0, to: 0, k: 1, look: 2 + next() * 4, blink: 1 + next() * 3 }));
   return (now) => {
+    const rigs = crowd.mesh.userData.owlRigs as OwlRig[] | undefined;
     for (const [i, o] of all.entries()) {
-      if (now.day > 0.6 || !seen(now, o.at[0], o.at[2], 3)) { crowd.hide(i); continue; }
+      if (now.day > 0.6 || !seen(now, o.at[0], o.at[2], 3)) {
+        crowd.hide(i);
+        if (rigs?.[i]) drawnWhile(rigs[i]!.turn, false);
+        continue;
+      }
       if ((o.look -= now.dt) <= 0) {
         o.from = lerp(o.from, o.to, smooth(o.k));
         o.to = next() < 0.3 ? 0 : (next() - 0.5) * 1.8;
@@ -318,6 +324,18 @@ function owls(plan: Plan, add: Add): Kind {
       // Down in 0.35 s, shut for a moment, and up again in 0.45.
       // Its lids rest half down, sleepy and kind.
       const shut = 0.45 + 0.55 * (o.blink >= 0 ? 0 : -o.blink < 0.35 ? smooth(-o.blink / 0.35) : -o.blink < 0.55 ? 1 : 1 - smooth((-o.blink - 0.55) / 0.45));
+      // The rigged owl (../owl.ts), once it has come, sits there instead: its own breathing, blinks and looks about.
+      const rig = rigs?.[i];
+      if (rig) {
+        crowd.hide(i);
+        drawnWhile(rig.turn, true);
+        rig.turn.position.set(o.at[0], o.at[1], o.at[2]);
+        rig.turn.rotation.set(0, o.yaw, 0);
+        rig.turn.scale.setScalar(1.8 / OWL_TALL);
+        rig.clips.scrub('perch', now.still ? 0 : (now.t + i * 4.3) / rig.clips.duration('perch'));
+        rig.clips.update(now.dt);
+        continue;
+      }
       crowd.put(i, o.at[0], o.at[1], o.at[2], o.yaw, 1.8);
       crowd.pose(i, 0, 0, lerp(o.from, o.to, smooth(o.k)), shut);
     }
