@@ -14,6 +14,7 @@ import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
 import { antColumn, antTrail, ladybird } from './critters';
+import { antRide } from './ant-ride';
 import { craneFlying, craneKneeling } from './crane';
 import { craneRigOf, kneel } from './crane-ride';
 import { wingbeat } from './wingbeat';
@@ -1149,11 +1150,9 @@ export function rideProp(look: RideLook): Object3D | null {
     case 'crane':
       group.add(craneFlying());
       break;
-    case 'ants': {
-      const dark = solid('#2a1e18', 0.5);
-      for (let i = 0; i < 5; i++) group.add(ball(0.07, dark, -0.5 + i * 0.25 - 0.11, -0.06, i % 2 ? 0.1 : -0.1), ball(0.06, dark, -0.5 + i * 0.25 + 0.03, -0.05, i % 2 ? 0.1 : -0.1));
-      break;
-    }
+    case 'ants':
+      // Real wood ants, walking him up the hill on their backs (./ant-ride.ts); the view steps their legs.
+      return antRide();
     default:
       return PACK.rides.get(look)?.(look) ?? null;
   }

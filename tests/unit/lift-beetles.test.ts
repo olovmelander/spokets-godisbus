@@ -1,6 +1,6 @@
 import { Color, DirectionalLight, HemisphereLight, InstancedMesh, Matrix4, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { COURSES } from '../../src/content/chapters';
+import { ADVENTURE2, COURSES, loadAdventure2 } from '../../src/content/chapters';
 import type { ExtraFrame } from '../../src/render/extensions';
 import { createBeetles } from '../../src/render/lift/beetles';
 import type { ChapterData } from '../../src/sim/types';
@@ -30,6 +30,14 @@ describe('the beetles', () => {
   it('live in the forest, and not in the village street', () => {
     expect(make(forest).extra).not.toBeNull();
     expect(make(COURSES['look-street']!).extra).toBeNull();
+  });
+
+  it('hide in the storm with the rest of the near life', async () => {
+    await loadAdventure2();
+    for (const chapter of ADVENTURE2.filter((c) => c.storm?.rain && c.place && ['forest', 'garden', 'bog'].includes(c.place))) {
+      expect(make(chapter).extra, chapter.id).toBeNull();
+    }
+    expect(ADVENTURE2.some((c) => c.storm?.rain && c.place === 'forest')).toBe(true);
   });
 
   it('walk about, and hurry away from him when he comes close', () => {

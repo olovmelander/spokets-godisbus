@@ -2,7 +2,7 @@ import { InstancedMesh, Matrix4, Quaternion, Vector3, type Object3D } from 'thre
 import type { ChapterData, PlaceId } from '../../../sim/types';
 import { standing } from '../../dressing/foreground';
 import { KIT, grows, heightAt, landscape, sequence, surfaceAt } from '../../dressing/kit';
-import { BIRDS, branch, stone, stump, type Carving, type Part, type Species, type V3 } from './shapes';
+import { BIRDS, branch, reed, stone, stump, type Carving, type Part, type Species, type V3 } from './shapes';
 
 /**
  * Where the near life lives in a chapter (docs/visual-upgrade.md): read from the chapter's own data and from the
@@ -38,6 +38,8 @@ export interface Plan {
   soarers: { kind: Soarer; count: number }[];
   butterflies: { home: V3; flowers: V3[] }[];
   dragonflies: V3[];
+  /** Where each dragonfly perches between its darts: the tip of a reed in the water near where it hovers. */
+  reeds: V3[];
   fireflies: number;
   beings: Peek[];
   carvings: Carved[];
@@ -328,12 +330,22 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
 
   // Dragonflies over the water by day: one every dozen EL of it, clear of the candy over the hops.
   const dragonflies: V3[] = [];
+  const reeds: V3[] = [];
   if (cast.dragonflies) {
+    // The reeds draw from a sequence of their own, so that everything placed after them stays where it was.
+    const stem = sequence(seedOf(source.id) ^ 0x5eed1e);
     for (const w of source.water ?? []) {
       for (let x = w.from + 2 + next() * 3; x < w.to - 1.5; x += 8 + next() * 5) {
         // Over the water behind the path, out of the candy's way: it darts about a step from where it hovers.
         const at: V3 = [x, w.y + 1.3 + next() * 0.6, -2.6 - next() * 1.2];
-        if (clear(at[0], at[1], at[2], 2.2)) dragonflies.push(at);
+        if (!clear(at[0], at[1], at[2], 2.2)) continue;
+        dragonflies.push(at);
+        // A reed stands in the water beside it, a little further back, as tall as he is: its tip is where it perches
+        // between its darts (the creature overhaul, 13 November 2026).
+        const tall = 0.95 + stem() * 0.35;
+        const foot: V3 = [Math.min(w.to - 0.5, Math.max(w.from + 0.5, at[0] + (stem() - 0.5) * 1.6)), w.y - 0.3, Math.min(-2.3, at[2] - 0.2 - stem() * 0.5)];
+        props.push(...placed(reed(tall), foot[0], foot[1], foot[2], stem() * 6));
+        reeds.push([foot[0], foot[1] + tall, foot[2]]);
       }
     }
   }
@@ -395,7 +407,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
 
   // Fireflies at dusk, and in the storm's eye once it is calm.
   const fireflies = place === 'dusk' || (storm && source.storm?.calm) ? 36 : 0;
-  const plan: Plan = { place, trees, squirrels, fox: !!cast.fox, owls, flocks, visitors, soarers, butterflies, dragonflies, fireflies, beings, carvings, props, ground };
+  const plan: Plan = { place, trees, squirrels, fox: !!cast.fox, owls, flocks, visitors, soarers, butterflies, dragonflies, reeds, fireflies, beings, carvings, props, ground };
   const any = squirrels.length + owls.length + flocks.length + visitors.length + soarers.length + butterflies.length + dragonflies.length + fireflies + beings.length + carvings.length;
   return any > 0 || plan.fox ? plan : null;
 }

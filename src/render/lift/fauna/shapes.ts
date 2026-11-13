@@ -437,6 +437,19 @@ export function stump(tall: number, wide: number): Part[] {
   ];
 }
 
+/**
+ * A reed in the water, `tall` from its foot at the origin to its tip, straight up: a dragonfly perches on its tip. A
+ * leaf leans off it, and its top is a little darker and thinner.
+ */
+export function reed(tall: number): Part[] {
+  return [
+    ['r', '#7a8646', [0, tall * 0.42, 0], [0.014, tall * 0.84, 0.014]],
+    ['r', '#6a7440', [0, tall * 0.92, 0], [0.009, tall * 0.16, 0.009]],
+    ['f', '#86924e', [0.07, tall * 0.5, 0.01], [0.014, tall * 0.42, 0.04], [0, 0, -0.32]],
+    ['f', '#7c8848', [-0.05, tall * 0.3, -0.01], [0.012, tall * 0.3, 0.035], [0, 0.4, 0.28]],
+  ];
+}
+
 /** A dead branch that grows out of a trunk along `toward` (a turn about y), `long`, with a twig. Its root is at the origin. */
 export function branch(long: number, toward: number, thick = 0.07): Part[] {
   const along = (k: number): V3 => [Math.cos(toward) * long * k, long * k * 0.12, -Math.sin(toward) * long * k];
