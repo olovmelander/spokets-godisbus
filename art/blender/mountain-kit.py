@@ -694,7 +694,7 @@ def worn(name, key, radii, cuts, top, pits, crust, levels):
         planes.append((normal, reach * between(0.7, 0.82), reach * between(0.06, 0.1)))
     # Its top, worn nearly level, and its foot, which the ground hides.
     planes.append((Vector((between(-0.14, 0.14), between(-0.06, 0.06), 1.0)).normalized(), radii[2] * top, radii[2] * 0.24))
-    planes.append((Vector((0.0, 0.0, -1.0)), radii[2] * 0.62, radii[2] * 0.2))
+    planes.append((Vector((0.0, 0.0, -1.0)), 0.24 - STONE_GROUND, 0.1))
     pans = []
     for i in range(pits):
         turn = rnd() * TAU
@@ -969,7 +969,7 @@ def limb(part, path, radii, sides, kind, lobes=0.0, tip=True, key=0.0):
     thick = max(radii)
     rings = []
     faces = []
-    along = [key * 7.31]
+    along = [(key * 7.31) % 23.0]
     for i in range(1, count):
         along.append(along[-1] + (path[i] - path[i - 1]).length)
     seam = seam_of(frames[count // 2], HIDDEN.get(kind, (0.0, 0.55, 0.83)))
@@ -1199,9 +1199,9 @@ if wanted('skott'):
 def tufts(part, hub, radii, key, count, size, wind):
     """A plate of needles as an old pine carries it: its branch splits into twigs that fan out nearly level from
     the hub, and each ends in a tuft of shoots turned up to the light, with the sky between the tufts. The tufts
-    in its middle stand highest, and those at its rim droop. Each shoot is tinted by the light it has: those on
-    the plate's top and rim are lit, those in its middle and under it are in its shade, and one tuft is a little
-    yellower or bluer than the next."""
+    in its middle stand highest, and those at its rim droop. Each shoot is tinted by the light it has: the tufts
+    at the plate's rim are lit and those in its middle are in its shade, a shoot that hangs down is darker than one
+    that stands up, and one tuft is a little lighter, yellower or bluer than the next."""
     start(key)
     hub = Vector(hub)
     centre = hub + Vector((wind * 0.12, 0.0, radii[2] * 0.45))
@@ -1216,7 +1216,7 @@ def tufts(part, hub, radii, key, count, size, wind):
         out.normalize()
         side = out.cross(up).normalized()
         limb(part, [hub, (hub + at) / 2.0 + Vector((0.0, 0.0, -0.08)), at], [0.065, 0.048, 0.03], 4, 'twig', 0.0, False, key + k)
-        lit = 0.58 + 0.27 * far + 0.25 * step(-0.6, 0.6, (at[2] - centre[2]) / radii[2])
+        lit = 0.5 + 0.38 * far + 0.18 * rnd()
         hue = rnd()
         tint = (lit * (0.94 + 0.12 * hue), lit * (1.0 + 0.02 * hue), lit * (1.06 - 0.12 * hue))
         n = 9 + int(rnd() * 5.0)
@@ -1225,7 +1225,7 @@ def tufts(part, hub, radii, key, count, size, wind):
             spin = s * 2.399963 + rnd() * 0.9
             tilt = 0.2 + 1.45 * math.sqrt((s + 0.5) / n)
             towards = (up * math.cos(tilt) + (out * math.cos(spin) + side * math.sin(spin)) * math.sin(tilt) + out * 0.45 + Vector((wind * 0.2, 0.0, 0.1))).normalized()
-            shade = 1.0 - 0.45 * max(0.0, -towards[2])
+            shade = 1.0 - 0.55 * max(0.0, -towards[2])
             shoot(at + towards * 0.03, towards, size * between(0.82, 1.12), (tint[0] * shade, tint[1] * shade, tint[2] * shade))
 
 
