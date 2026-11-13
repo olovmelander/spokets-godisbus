@@ -361,3 +361,47 @@ function soaringFallback(kind: 'raven' | 'crow'): BufferGeometry {
   ];
   return assemble(pieces, 0, new Vector3(), { span: 0.95, fold: 0.5 });
 }
+
+// --- the vertex stage's pose, worked out on the CPU ----------------------------------------------------------------------
+
+const rx = (a: number) => new Matrix3().set(1, 0, 0, 0, Math.cos(a), -Math.sin(a), 0, Math.sin(a), Math.cos(a));
+const ry = (a: number) => new Matrix3().set(Math.cos(a), 0, Math.sin(a), 0, 1, 0, -Math.sin(a), 0, Math.cos(a));
+const rz = (a: number) => new Matrix3().set(Math.cos(a), -Math.sin(a), 0, Math.sin(a), Math.cos(a), 0, 0, 0, 1);
+const turned = (m: Matrix3, v: Vector3, about: Vector3) => v.clone().sub(about).applyMatrix3(m).add(about);
+
+/**
+ * Where corner i of a bird's shape is, posed by its eight numbers: the shader's `birdPose` (above), the same steps on
+ * the CPU, for the tests and for a session's pictures.
+ */
+export function posedCorner(shape: BufferGeometry, i: number, act: readonly number[], act2: readonly number[]): Vector3 {
+  const read = (name: string) => new Vector3().fromBufferAttribute(shape.getAttribute(name) as BufferAttribute, i);
+  const rig = shape.getAttribute('rig');
+  const [kind, side, share, tiltAngle] = [rig.getX(i), rig.getY(i), rig.getZ(i), rig.getW(i)];
+  const [beat, spread, yaw, nod] = act as [number, number, number, number];
+  const [tail, fan, bill, bend] = act2 as [number, number, number, number];
+  const p = read('position');
+  const pivot = read('pivot');
+  const joint = read('joint');
+  const tilt = rz(tiltAngle);
+  const level = rz(-tiltAngle);
+  const via = (...ms: Matrix3[]) => ms.reduce((all, m) => all.multiply(m), new Matrix3());
+  if (kind < 0.5) return p;
+  if (kind < 2.5) {
+    const opened = kind > 1.5 ? turned(rz(-bill * 0.5), p, joint) : p;
+    return turned(via(ry(yaw), rz(-nod)), opened, pivot);
+  }
+  if (kind < 3.5) {
+    const k = Math.min(1, Math.max(0, spread));
+    const a = p.clone().sub(pivot);
+    const b = a.clone().add(read('fold'));
+    const m = b.clone().lerp(a, k);
+    const long = b.length() + (a.length() - b.length()) * k;
+    const q = m.length() > 1e-5 ? m.normalize().multiplyScalar(long) : m;
+    const wrist = joint.clone().sub(pivot);
+    q.lerp(turned(via(tilt, rx(-side * bend * k), level), q, wrist), share);
+    return q.applyMatrix3(via(tilt, rx(-side * beat), level)).add(pivot);
+  }
+  if (kind < 4.5) return turned(via(rz(-tail), tilt, ry(share * fan * 0.5), level), p, pivot);
+  const t = Math.min(1, Math.max(0, (spread - 0.3) / 0.55));
+  return turned(rz(-t * t * (3 - 2 * t) * 1.35), p, pivot);
+}

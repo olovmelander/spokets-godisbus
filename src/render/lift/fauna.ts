@@ -351,6 +351,11 @@ export function smallStroke(phase: number, strong: number): [number, number, num
   // Up with its wings half drawn in and its hands trailing down; down with them wide, the hands trailing up.
   return [strong * Math.sin(phase), 1 - 0.32 * Math.max(0, rising) ** 2 * Math.min(1, strong), -0.5 * rising * strong];
 }
+/** How far round under its twig a tit is at time t (0 on top, 1 hanging): now and then, for a few seconds. */
+export function hanging(t: number, seed: number): number {
+  const w = (((t * 0.16 + seed * 0.13) % 1) + 1) % 1;
+  return smooth((w - 0.4) / 0.06) - smooth((w - 0.86) / 0.06);
+}
 /** A wagtail's tail at time t: up quick, down slow, over and over. */
 export function wagtailBob(t: number, seed: number): number {
   const w = (((t * 1.7 + seed) % 1) + 1) % 1;
@@ -497,12 +502,14 @@ function birds(plan: Plan, add: AddFlock): Kind {
         // A wagtail's tail goes up and down all the time it is not flying.
         const bob = f.species === 'wagtail' ? 0.5 * wagtailBob(now.t, b.seed) - 0.12 : 0;
         if (b.gone && b.perch) {
-          // On its bough, looking about, until he has gone by; its wings settle.
+          // On its bough, looking about, until he has gone by; its wings settle. A tit or a blue tit swings round to
+          // hang under it a while, pecking at it, and up again.
           b.open = Math.max(0, b.open - now.dt / 0.2);
           b.lean = Math.max(0, b.lean - now.dt / 0.25);
-          crowd.put(i, b.perch[0], b.perch[1], b.perch[2], b.yaw, s, b.lean * 0.35);
-          crowd.pose(i, 0, b.open, glance(now.t, i * 1.9) * 0.7, 0);
-          crowd.pose2(i, bob, 0, 0, 0);
+          const under = HANGS.has(f.species) ? hanging(now.t, b.seed) : 0;
+          crowd.put(i, b.perch[0], b.perch[1] - (1 - Math.cos(Math.PI * under)) * 0.06, b.perch[2], b.yaw, s, b.lean * 0.35, Math.PI * under);
+          crowd.pose(i, 0, b.open, glance(now.t, i * 1.9) * (0.7 - 0.2 * under), under * Math.max(0, Math.sin(now.t * 7 + b.seed)) * 0.7);
+          crowd.pose2(i, bob + 0.25 * under, 0, 0, 0);
           continue;
         }
         if (b.fly) {
