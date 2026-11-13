@@ -77,7 +77,7 @@ export const MEMORIES: Record<string, string[]> = {
       <path d="M192 141l-4 -7m13 9 6 -5" stroke="#f9e3ae" stroke-width="2" stroke-linecap="round"/>`, 'sunset'),
     frame(`<path d="M0 77q58 -16 125 0l-17 123H0zm193 -1q73 -12 127 2v122H214z" fill="#9b8065"/>
       <path d="M125 77q11 60 -17 123h106q-28 -76 -21 -124z" fill="#433d36"/><path d="M121 83l-7 26m85 -10 6 33m-13 6 10 38" stroke="#c1a783" stroke-width="2" opacity=".7"/>
-      ${jelly(112,72,7)}${motion('walk',`<g opacity=".76">${grownUp(274,74,45)}${littleElof(252,75,29,true)}${grownUp(227,73,43,'braid')}${storyPerson('moa',211,74,30)}${storyPerson('bertil',299,75,33)}</g>`)}
+      ${jelly(112,72,7)}${motion('walk',`<g>${grownUp(274,74,45)}${littleElof(252,75,29,true)}${grownUp(227,73,43,'braid')}${storyPerson('moa',211,74,30)}${storyPerson('bertil',299,75,33)}</g>`)}
       <path d="M128 78 151 176h44L190 79z" fill="#e9ce90" opacity=".09"/>${figure(163,184,67)}${shadow(165,188,24)}`, 'crack'),
   ],
 };

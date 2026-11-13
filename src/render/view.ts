@@ -85,6 +85,7 @@ import { carryGold, GOLD_GRIP, GOLD_HAND, goldCarryWeight, tasteGrowingGold } fr
 import { createHomeTrail } from './home-trail';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
+import { drawOverFrame, overFrame } from './over-frame';
 import { drawnWhile } from './idle';
 import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
@@ -715,7 +716,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   ghostPlace.visible = chapter.ghost !== undefined;
   scene.add(ghostPlace);
   const ghostThought = createGhostThought(chapter);
-  if (ghostThought) scene.add(ghostThought.mesh);
+  // Drawn over the finished frame in the drawing's own colours, not graded or blurred with the place (./over-frame.ts).
+  if (ghostThought) { overFrame(ghostThought.mesh); scene.add(ghostThought.mesh); }
   const prologueStage = createPrologueStage(chapter.prologue, (x) => heightOfGroundAt(chapter, x));
   scene.add(prologueStage.group);
   const epilogueStage = createEpilogueStage(chapter.epilogue);
@@ -1256,6 +1258,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
       }
+      // The ghost's thought, last, onto the finished picture (./over-frame.ts).
+      if (ghostThought) drawOverFrame(renderer, ghostThought.mesh, camera);
     } finally {
       renderer.setRenderTarget(null);
       if (warm > 0) {

@@ -58,7 +58,8 @@ export function createGhostThought(chapter: ChapterData) {
   texture.generateMipmaps = false; texture.minFilter = LinearFilter; texture.magFilter = LinearFilter;
   texture.repeat.x = 1 / artworks.length;
   // A thought is a readable overlay anchored above its story source; a roof or foreground reed must not mask it.
-  const material = new MeshBasicMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false, depthTest: false, fog: false });
+  // Drawn over the finished frame (./over-frame.ts) in the picture's own sRGB colours, as the memories show them.
+  const material = new MeshBasicMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false, depthTest: false, fog: false, toneMapped: false });
   const mesh = new Mesh(new PlaneGeometry(CARD_WIDTH, CARD_HEIGHT), material);
   mesh.name = 'ghost-thought'; mesh.renderOrder = 20;
   mesh.userData.illustrations = artworks;
