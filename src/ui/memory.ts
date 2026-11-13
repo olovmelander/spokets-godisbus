@@ -123,7 +123,10 @@ export function createMemory(doc: Document): Memory {
     const bounds = back.getBoundingClientRect();
     presentation = { kind, done, duration, width: bounds.width, height: bounds.height };
     const travel = [{ transform: bubble! }, { transform: 'none' }];
-    const fade = [{ opacity: resumed?.opacity ?? (growing ? 0 : 1) }, { opacity: growing ? 1 : 0 }];
+    // Solid early in its growth and until late in its return: the game behind must not tint the family's faces
+    // for more than a moment (Olov, 13 November 2026: "färgerna kan se konstigt ut").
+    const fade = resumed ? [{ opacity: resumed.opacity }, { opacity: growing ? 1 : 0 }]
+      : growing ? [{ opacity: 0 }, { opacity: 1, offset: 0.35 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 1, offset: 0.55 }, { opacity: 0 }];
     movement = [
       bubble ? animate(panel, growing ? travel : [...travel].reverse(), duration) : null,
       animate(back, fade, duration),
@@ -268,7 +271,10 @@ export function createMemory(doc: Document): Memory {
         for (const animation of [...animations]) if (!movement.includes(animation)) {
           animations.delete(animation); animation.cancel();
         }
-        card.replaceChildren();
+        // The picture being left stays under the next one while it dissolves in, so a page never fades through the
+        // card's paper: faces and clothes keep their own colours throughout (Olov, 13 November 2026).
+        const leaving = at >= 0 && !calm ? card.lastElementChild : null;
+        card.replaceChildren(...(leaving ? [leaving] : []));
         at = index;
         card.insertAdjacentHTML('beforeend', ownIds(pictures[at]!));
         const drawing = card.lastElementChild!;
@@ -282,7 +288,12 @@ export function createMemory(doc: Document): Memory {
         nextButton.innerHTML = at === pictures.length - 1
           ? `<span>${sv.memories.finish}</span>${use('check')}`
           : `<span>${sv.memories.next}</span>${use('next')}`;
-        if (!calm) animate(drawing, [{ opacity: .25 }, { opacity: 1 }], at === 0 ? 320 : DISSOLVE_TIME);
+        // The first picture comes with the opening's own fade.
+        if (leaving) {
+          const dissolve = animate(drawing, [{ opacity: 0 }, { opacity: 1 }], DISSOLVE_TIME);
+          if (dissolve) void dissolve.finished.then(() => leaving.remove(), () => {});
+          else leaving.remove();
+        }
         bringToLife(drawing);
       };
       const openedAt = performance.now();
