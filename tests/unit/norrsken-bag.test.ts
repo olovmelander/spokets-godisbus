@@ -14,7 +14,7 @@ describe("Norrskenet: the ghost gives the bag back (Olov, 13 November 2026)", ()
     // Hopping ahead to its place: not yet.
     expect(bag.update(out, 16, { x: 17, t: .5 }, .1, false)).toBe(0);
     // Near: held out and set down before him over a moment, not at once.
-    const steps = [16, 16.2, 16.4, 16.6, 16.8, 17, 17.2, 17.4].map((x) => bag.update(out, x, ghost, .1, false));
+    const steps = [16, 16.2, 16.4, 16.6, 16.8, 17, 17.2, 17.4, 17.6, 17.6].map((x) => bag.update(out, x, ghost, .1, false));
     expect(steps[0]).toBeGreaterThan(0);
     expect(steps[0]).toBeLessThan(.5);
     for (let i = 1; i < steps.length; i++) expect(steps[i]).toBeGreaterThanOrEqual(steps[i - 1]!);
