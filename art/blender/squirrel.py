@@ -279,7 +279,7 @@ at = mark(part)  # noqa: F821
 profile = []
 for k in range(9):
     t = k / 8.0
-    profile.append((0.035 * math.sin(math.pi * (0.08 + 0.84 * t)) ** 0.7, 0.3 + 0.13 * t))
+    profile.append((0.045 * math.sin(math.pi * (0.08 + 0.84 * t)) ** 0.7, 0.3 + 0.15 * t))
 rings = []
 tones = []
 for k, (r, z) in enumerate(profile):
@@ -292,7 +292,7 @@ for k, (r, z) in enumerate(profile):
         shade.append(CONE if k % 2 else CONE_DARK)
     rings.append(ring)
     tones.append(shade)
-skin(part, rings, tones, (V(0.3, 0, 0.295), CONE_DARK), (V(0.3, 0, 0.435), CONE_DARK))  # noqa: F821
+skin(part, rings, tones, (V(0.3, 0, 0.295), CONE_DARK), (V(0.3, 0, 0.455), CONE_DARK))  # noqa: F821
 bind(arm, part, at, 'cone')  # noqa: F821
 
 skinned(arm, part, 'squirrel-body', strength=0.3, reach=0.06, floor=0.0)  # noqa: F821
@@ -365,9 +365,9 @@ def sitting(chew=0.0, turn=0.0, look=0.0, extra=None):
     return over(CENTRE, {
         'hips': {'loc': (0, -0.02, -0.06), 'rot': (58, 0, 0)}, 'chest': (14, 0, 0),
         'neck': sag((0.55, 0, 0.83)), 'head': sag((0.9, look, -0.3)), 'jaw': (-10 * chew, 0, 0), 'ear.L': (-6, 0, 0),
-        'arm.L': sag((0.55, -0.35, -0.2)), 'fore.L': sag((0.35, -0.35, 0.85)),
+        'arm.L': sag((0.8, -0.25, 0.05)), 'fore.L': sag((0.45, -0.5, 0.75)),
         'thigh.L': sag((0.9, 0.15, -0.4)), 'shin.L': sag((-0.85, 0, -0.5)), 'foot.L': sag((0.97, 0, -0.1)),
-        'cone': {'loc': (0, 0.21, 0.13), 'rot': (-20, turn, 0), 'scale': 0.995},
+        'cone': {'loc': (0, 0.19, 0.04), 'rot': (-12, turn, 0), 'scale': 0.995},
     }, tail_dirs(SIT_TAIL, None), extra or {})
 
 
