@@ -55,6 +55,13 @@ function row(from: number, to: number, ground: number, every = 2): Candy[] {
   return out;
 }
 
+/**
+ * The arch in the hedge at the garden's end, as src/render/dressing/hedge-gate.ts (`gateOf`) cuts it from the hedge marked
+ * `gate` (212 to 214): the middle of its opening, and how far behind the path its hedge stands, front and back. Its
+ * trodden path runs straight back from the lawn to the arch, and bends a little to the right among the spruces beyond.
+ */
+const ARCH = { x: 211.95, front: -4, back: -6.6 };
+
 /** Where the plane is at `t` of its way, `offset` EL above the middle of its path: as the simulation flies it. */
 const PLANE = { from: { x: 166, y: 0 }, to: { x: 206, y: 0 }, rise: 8, time: 7 };
 function inFlight(t: number, offset: number): Candy {
@@ -113,6 +120,21 @@ export const garden: ChapterData = {
     stage: {
       shots: [{ at: 0, x: 206, y: 1.1, height: 4.2, width: 5.5, move: .6 }],
       elof: [{ at: 0, face: .5, act: 'wave', aim: { x: 166, y: 3, z: 0 } }],
+    },
+  }, {
+    // At the goal he walks on through the arch in the hedge and into the forest, while the picture holds on the arch
+    // and the tune closes: the coda's picture (Olov, 13 November 2026: "När kapitlet slutar, kan man få se Elof gå
+    // igenom gången mot granskogen."). First onto the trodden path, then in along it, through the arch and on among the
+    // spruces into their shade. For the picture only: the simulation keeps him at the goal. The last page comes once he
+    // is well in, a second before the scene's end (src/main.ts, `walkOff`), so its photo is of him going into the forest.
+    id: 'skogen', on: 'goal', seconds: 8.2, hold: true,
+    stage: {
+      bars: false,
+      shots: [{ at: 0, x: ARCH.x - 0.9, y: 2.4, z: -3, height: 7, width: 7.5, eye: 1.2, move: 1.8 }],
+      elof: [
+        { at: 0, face: .9, act: 'walk', to: { x: ARCH.x - 0.15, y: 0.02, z: -1.2 }, move: 1.4 },
+        { at: 1.2, face: .76, to: { x: ARCH.x + 0.6, y: 0.22, z: -16 }, move: 10 },
+      ],
     },
   }],
   goalX: 210,

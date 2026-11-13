@@ -1001,6 +1001,12 @@ async function start(): Promise<void> {
   // The coda before the last page (docs/narrative-audit/threads.md §5.4): the tune closes, and one of the family
   // answers from afar. Not where a scene is the chapter's end, nor in the epilogue, which has its own.
   const coda = !endsInScene(chapter) && !chapter.epilogue;
+  // A walk staged after the goal (Gården's: on through the arch into the forest, garden.ts `skogen`) is the coda's
+  // picture: the page waits until it is a second from its end, so that its photo is of him going, and turns before the
+  // scene is over and puts him back at the goal. One already seen in this save is not waited for.
+  const walkOff = chapter.scenes?.find((scene) => scene.on === 'goal' && scene.hold);
+  const walkedOff = () => !walkOff || !sceneWaits(walkOff, game.sim.flags)
+    || (game.sim.sceneFrame?.id === walkOff.id && game.sim.sceneFrame.seconds >= walkOff.seconds - 1);
   let closing = false;
   let answered = false;
   // A memory plays once, when he touches its shaving: not again in a game that has seen it.
@@ -1416,7 +1422,7 @@ async function start(): Promise<void> {
     }
     const wait = coda ? CODA : 1.4;
     quietFor = hud.reading() || hud.speaking() || game.sim.unsaid ? 0 : quietFor + (menuOpen() ? 0 : dt);
-    if (endFor > wait && quietFor > END_QUIET && !benchOn && !ended) {
+    if (endFor > wait && quietFor > END_QUIET && walkedOff() && !benchOn && !ended) {
       ended = true;
       paused = true;
       if (!coda) audio.menu(true);
