@@ -14,7 +14,8 @@ import { grows, heightAt, noise, sequence } from './dressing/kit';
  * cobbles and reindeer lichen. They arrive in one file, `boot/mountain-kit`. Until it has, and wherever it is
  * missing, the mountain keeps the plain shapes it builds in code; the pines have none, and are not there.
  *
- * Nothing in the kit has a texture: its colours are on its corners, with its own shade baked into them.
+ * Nothing in the kit has a texture: its colours are on its corners, with its own shade baked into them. The old
+ * pine's wood and needle cards also say on their corners what its bark and needles are drawn from (./old-pine.ts).
  * What he stands on is put where the chapter has it, and never the other way round: a shelf, a boulder and a
  * stack of the cairn each say how wide their flat top is, how high over the ground and how far under it a
  * second one lies, and take the place of the ledges and steps that have those numbers.

@@ -2,13 +2,17 @@
 
   - tall: the old pine that the story walks to. Low and broad, as an old pine stands on a mountain top in the
     north: a short twisted trunk with a strip of bare silver wood winding up it, furrowed plates of bark at the
-    foot and thin orange bark above, a few heavy limbs under a flat crown swept to one side, one dead limb,
-    and roots that run out over the rock;
+    foot and thin orange bark above, a few heavy limbs under a flat crown swept to one side, its needles in
+    tufts at the ends of the twigs, one dead limb and the stubs of lost ones, and roots that run out over the
+    rock and grip it. Its corners say what the game draws its bark from (BARK), and its shoot, `skott`, is
+    needle cards that the game draws its needles on (CARD);
   - martall-a and -b: small crooked pines for the rim behind the path;
   - what he stands on, each with its flat tops where the chapter has them (see STANDS below): hylla-1 to -7,
     a slab of rock on the blocks it has weathered out of; la-1 to -3 and la-topp, a boulder to shelter behind
     with a step on its lee side and a flat top; rose-1 to -3, the three stacks of Topproset, the summit cairn;
   - sten-a, -b and -c: stones as the ice left them, one whole, one split in two, one a slab;
+  - sten-rund-a, -b and -c: boulders worn round, for the summit round the old pine: the one the first tragubbe
+    stood on, a round one and a low one;
   - klapper: a cobble worn round by an old shore, and strandsten, the same of fewer corners; lav: a cushion
     of reindeer lichen.
 
@@ -17,7 +21,8 @@ a part's front faces -Y, which is towards the camera in the game. Every part is 
 the game asks for it.
 
 Nothing here has a texture. A part's colours are painted on its corners (the colour attribute "Color"), with
-the shade of its own corners and creases baked into them.
+the shade of its own corners and creases baked into them. The old pine's wood and its shoot also carry layers
+of numbers on their corners, from which the game draws its bark and needles (src/render/old-pine.ts).
 
 A pine's needles are one shoot, `skott`, set many times. Where a tree's shoots stand is a part of its own,
 named after the tree with `-skott`: a small triangle for each shoot (see `shoots_of`).
@@ -700,9 +705,13 @@ def worn(name, key, radii, cuts, top, pits, crust, levels):
         turn = rnd() * TAU
         out = between(0.05, 0.3)
         pans.append((math.cos(turn) * radii[0] * out, math.sin(turn) * radii[1] * out, between(0.13, 0.19) * radii[0], between(0.03, 0.05) * radii[2]))
+    # It is broader at its foot than at its top, as a stone lies that has settled, and its top leans to one side.
+    lean = rnd() * TAU
     for vert in bm.verts:
         d = vert.co.normalized()
-        p = Vector((d[0] * radii[0], d[1] * radii[1], d[2] * radii[2]))
+        rise = max(0.0, d[2])
+        narrow = 1.0 - 0.3 * rise ** 1.3
+        p = Vector((d[0] * radii[0] * narrow + math.cos(lean) * 0.14 * radii[0] * rise, d[1] * radii[1] * narrow + math.sin(lean) * 0.1 * radii[1] * rise, d[2] * radii[2]))
         p = p * (1.0 + 0.18 * (noise(d + Vector((key, 0.0, 0.0)), 1.2) - 0.5) + 0.05 * (noise(d, 3.4) - 0.5))
         for plane in planes:
             past = p.dot(plane[0]) - plane[1]
@@ -741,7 +750,7 @@ def worn(name, key, radii, cuts, top, pits, crust, levels):
 
 if wanted('sten-rund-a'):
     # The stone the tragubbe stood on: broad, its top worn into a low table with a pan in it.
-    worn('sten-rund-a', 91, (1.0, 0.82, 0.64), 5, 0.72, 1, 0.8, 5)
+    worn('sten-rund-a', 91, (1.0, 0.82, 0.68), 5, 0.8, 1, 0.8, 5)
 if wanted('sten-rund-b'):
     # A round one, higher than it is broad.
     worn('sten-rund-b', 93, (1.0, 0.9, 0.76), 4, 0.78, 0, 0.6, 4)
