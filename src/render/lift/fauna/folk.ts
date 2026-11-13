@@ -64,6 +64,8 @@ export const WALK_STRIDE = 0.42;
 export const LEAP = 1.0;
 /** How far a squirrel comes in one bound, in EL (art/blender/squirrel.py RUN_STRIDE). */
 export const STRIDE = 0.5;
+/** How far out from the foot of its trunk a squirrel runs to sit and eat, in EL. */
+export const RUN_OUT = 1;
 /** How big a being is drawn: three quarters of him. */
 export const BEING = 1.35;
 /** How far down a being ducks in its `hide` clip, in its own units (art/blender/vatte.py HIDE). */
@@ -216,27 +218,32 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
   // What a squirrel decides about the ground, apart from where it runs on its trunk: so that its trunk runs are as
   // they always were.
   const chance = sequence(13);
-  type Where = 'trunk' | 'leap-off' | 'ground' | 'leap-on';
+  type Where = 'trunk' | 'leap-off' | 'out' | 'ground' | 'in' | 'leap-on';
   const all = plan.squirrels.map((s) => ({
     ...s, a0: s.a, h0: s.h, a1: s.a, h1: s.h, k: 1, run: 0.5, long: 1, wait: next() * 2, fa: 0, fh: 1, flick: next() * 2,
     where: 'trunk' as Where, down: false, air: 0, eat: 0, flickT: 9, bounds: 0, look: 0, side: 1,
-    from: new Matrix4(), to: new Matrix4(), place: new Matrix4(),
+    from: new Matrix4(), to: new Matrix4(), place: new Matrix4(), foot: new Matrix4(), dash: 0,
     // The sides of its trunk where it may sit on the ground: those where, seen from the path, no big candy stands in
     // front of it.
     sides: [-1, 1].filter((side) => {
-      const x = s.tree.x + side * (girth(s.tree, 0.1) + 0.5);
+      const x = s.tree.x + side * (girth(s.tree, 0.1) + 0.12 + RUN_OUT * 0.9);
       return sweets.every((c) => Math.abs(c.x - x) > 1.6 || c.y < s.tree.y - 3 || c.y > s.tree.y + 4);
     }),
   }));
   type One = (typeof all)[number];
-  /** Where it sits at the foot of its tree: beside the trunk, a little in front, facing out across the picture. */
-  const groundOf = (q: One, out: Matrix4) => {
+  /**
+   * On the ground by its tree, `far` out from the foot of its trunk on its side, a little towards the picture, facing
+   * out (or, `back`, in towards the trunk): it lands by the trunk and runs out to where it sits.
+   */
+  const groundOf = (q: One, far: number, out: Matrix4, back = false) => {
     const tree = q.tree;
     const r = girth(tree, 0.1);
     F.set(q.side, 0, 0.5).normalize();
+    P.set(tree.x, tree.y, tree.z).addScaledVector(F, r + 0.12 + far);
+    if (back) F.negate();
     U.set(0, 1, 0);
     W.crossVectors(F, U);
-    return out.makeBasis(F, U, W).setPosition(tree.x + q.side * (r + 0.5), tree.y, tree.z + r * 0.4);
+    return out.makeBasis(F, U, W).setPosition(P);
   };
   /** Where it is on the bark: at angle a round the trunk and height h, running along (fa, fh), belly to it. */
   const barkOf = (q: One, a: number, h: number, fa: number, fh: number, out: Matrix4, lift = 0) => {
@@ -259,6 +266,8 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
     return out.compose(P, Q, S.set(1, 1, 1));
   };
   const leapLong = 0.42;
+  /** How fast it runs on the ground, in EL a second. */
+  const RUN_PACE = 3.2;
   // `?eat` sends each down to eat as soon as it can, to look at it.
   const hungry = asked('eat');
 
@@ -286,7 +295,7 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
           q.air = 0;
           q.side = q.sides[Math.floor(chance() * q.sides.length)] ?? 1;
           q.from.copy(q.place);
-          groundOf(q, q.to);
+          groundOf(q, 0, q.to);
         } else if (!now.still && ((q.wait -= dt) <= 0 || (near && q.h < 6.5))) {
           q.a0 = q.a;
           q.h0 = q.h;
@@ -318,8 +327,9 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
         phase = Math.min(0.999, q.air);
         if (q.air >= 1) {
           if (q.where === 'leap-off') {
-            q.where = 'ground';
-            q.eat = 3.5 + chance() * 4;
+            // Down by the trunk: it runs out a little way, to sit.
+            q.where = 'out';
+            q.dash = 0;
             q.place.copy(q.to);
           } else {
             // Back on the bark, it runs on up.
@@ -332,17 +342,33 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
             q.wait = 0;
           }
         }
+      } else if (q.where === 'out' || q.where === 'in') {
+        // A short run on the ground, out from its trunk or back to it, a bound for each STRIDE.
+        q.dash = Math.min(RUN_OUT, q.dash + dt * RUN_PACE);
+        const k = q.dash / RUN_OUT;
+        groundOf(q, (q.where === 'out' ? k : 1 - k) * RUN_OUT, q.place, q.where === 'in');
+        pose = 'run';
+        phase = q.dash / STRIDE;
+        if (k >= 1) {
+          if (q.where === 'out') {
+            q.where = 'ground';
+            q.eat = 3.5 + chance() * 4;
+          } else {
+            q.where = 'leap-on';
+            q.air = 0;
+            groundOf(q, 0, q.from, true);
+            q.a1 = (next() - 0.5) * 0.6;
+            barkOf(q, q.a1, 0.7, 0, 1, q.to);
+          }
+        }
       } else {
-        // On the ground: it sits up and eats, until he comes near or it has had enough.
-        q.place.copy(q.to);
+        // On the ground: it sits up and eats, until he comes near or it has had enough; then it runs back to its trunk.
+        groundOf(q, RUN_OUT, q.place);
         pose = 'sit-eat';
         phase = now.t / 2;
         if (!now.still && ((q.eat -= dt) <= 0 || near)) {
-          q.where = 'leap-on';
-          q.air = 0;
-          q.from.copy(q.to);
-          q.a1 = (next() - 0.5) * 0.6;
-          barkOf(q, q.a1, 0.7, 0, 1, q.to);
+          q.where = 'in';
+          q.dash = 0;
         }
       }
       // A pause has a flick of the tail now and then, and a look round in quick snaps.
@@ -367,7 +393,7 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
       }
       // The shape built in code: as it always moved.
       M.copy(q.place);
-      if (pose === 'run-up') {
+      if (pose === 'run-up' || pose === 'run') {
         const stride = phase * Math.PI * 2;
         M.multiply(R.makeTranslation(0, 0.05 * Math.abs(Math.sin(stride)), 0));
         crowd.matrix(i, M);

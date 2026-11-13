@@ -194,7 +194,7 @@ describe('the forest folk in the near life (src/render/lift/fauna/folk.ts)', () 
     const big = chapter.checkpoints ?? [];
     // He stands a little off its tree, for two minutes.
     const x = s.tree.x - 6;
-    let clock = 0, onTrunk = 0, eating = 0;
+    let clock = 0, onTrunk = 0, eating = 0, running = 0;
     for (let k = 0; k < 120 * 30; k++) {
       extra.update(frame(chapter, x, (clock += 1 / 30)));
       expect(root.visible).toBe(true);
@@ -203,6 +203,8 @@ describe('the forest folk in the near life (src/render/lift/fauna/folk.ts)', () 
       // Never inside its trunk (a leap from the ground onto it may brush its bark).
       const out = Math.hypot(at.x - s.tree.x, at.z - s.tree.z);
       if (at.y - s.tree.y > 0.5) { onTrunk++; expect(out).toBeGreaterThan(girth(s.tree, at.y - s.tree.y) - 0.05); }
+      // It runs out from its trunk to sit, and back again.
+      if (showing(root, 'run') > 0.5) running++;
       if (showing(root, 'sit-eat') > 0.9) {
         eating++;
         // On the ground beside its tree, with no big candy in front of it.
@@ -212,6 +214,7 @@ describe('the forest folk in the near life (src/render/lift/fauna/folk.ts)', () 
     }
     expect(onTrunk).toBeGreaterThan(30 * 30);
     expect(eating).toBeGreaterThan(30);
+    expect(running).toBeGreaterThan(5);
     // He comes to its tree: it is up the trunk, high.
     for (let k = 0; k < 8 * 30; k++) extra.update(frame(chapter, s.tree.x - 1, (clock += 1 / 30)));
     expect(root.position.y - s.tree.y).toBeGreaterThan(6);
