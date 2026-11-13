@@ -114,7 +114,11 @@ export function pineBark(material: MeshStandardMaterial): MeshStandardMaterial {
         vec3 sx = dFdx(barkPosition), sy = dFdy(barkPosition);
         vec3 r1 = cross(sy, normal), r2 = cross(normal, sx);
         float det = dot(sx, r1);
-        vec3 slope = sign(det) * (dFdx(height) * r1 + dFdy(height) * r2);
+        // No steeper than a furrow's wall: where the pattern meets itself round the back of a limb it jumps, and
+        // that must not catch the light as a seam.
+        vec2 rise = vec2(dFdx(height), dFdy(height));
+        rise *= min(1.0, 0.012 / max(1e-5, length(rise)));
+        vec3 slope = sign(det) * (rise.x * r1 + rise.y * r2);
         normal = normalize(abs(det) * normal - slope);
       }`);
   };

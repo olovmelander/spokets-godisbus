@@ -932,7 +932,7 @@ def wood(kind, at, angle, thin):
 # BARK: the old pine's wood says on its corners what the game draws its bark from (src/render/old-pine.ts), in two
 # layers of the kind a picture is laid on by, which the exporter writes upside down (v becomes 1 - v):
 #   - `bark`, where on the wood a corner is, in lengths: round the limb from the side turned to him (its seam is on
-#     the side he never sees: the back of a stem, the top of a limb, the underside of a root), and along it;
+#     the side he never sees: the back of a stem or a limb, and the underside of a root), and along it;
 #   - `kind`, what bark is there: how thick and old (1 the furrowed grey plates at the foot, 0 the thin orange
 #     flakes high up and on the limbs), and whether it is bare silver wood (1).
 HIDDEN = {'root': (0.0, 0.0, -1.0), 'stem': (0.0, 1.0, 0.0)}
@@ -981,7 +981,7 @@ def limb(part, path, radii, sides, kind, lobes=0.0, tip=True, key=0.0):
     along = [(key * 7.31) % 23.0]
     for i in range(1, count):
         along.append(along[-1] + (path[i] - path[i - 1]).length)
-    seam = seam_of(frames[count // 2], HIDDEN.get(kind, (0.0, 0.55, 0.83)))
+    seam = seam_of(frames[count // 2], HIDDEN.get(kind, (0.0, 0.94, 0.33)))
     for i in range(count):
         ring = []
         for j in range(sides):
