@@ -2,7 +2,7 @@ import { souvenir } from './souvenir';
 import { owlTwig } from './owl-trap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
-  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, Sphere, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import { PLANK, barkDetail, barky } from './bark-detail';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
@@ -646,7 +646,8 @@ export function spotProp(spot: Spot): SpotProp | null {
       const SPARKS = 7;
       const sparks = new InstancedMesh(new OctahedronGeometry(1), new MeshBasicMaterial({ color: '#ffc24a', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }), SPARKS);
       sparks.instanceMatrix.setUsage(DynamicDrawUsage);
-      sparks.frustumCulled = false;
+      // Where they drift, so that they are left out of the picture with the lollipop when it is not in it.
+      sparks.boundingSphere = new Sphere(new Vector3(0, 1.2, 0), 1.2);
       const spark = new Object3D();
       group.add(stick, sweet, warmth, halo, pool, sparks);
       group.position.z = -0.35;

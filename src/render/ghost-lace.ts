@@ -48,7 +48,6 @@ export function buildGhostLace(chapter: ChapterData) {
   const material = new MeshStandardMaterial({ color: '#d4b783', roughness: 0.9 });
   const piece = () => {
     const mesh = new Mesh(new CylinderGeometry(0.045, 0.045, 1, 8), material);
-    mesh.frustumCulled = false;
     group.add(mesh);
     return mesh;
   };
