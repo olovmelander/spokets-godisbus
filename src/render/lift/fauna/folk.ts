@@ -153,7 +153,7 @@ const shown = (rig: CreatureClips, on: boolean) => { if (rig.root.visible !== on
 /**
  * The forest folk of a chapter's plan: their kinds, in the order the fauna updates them, and what each asks of the
  * loader. The rigged copies go in a group of their own in `fauna`; the code-built shapes are made by `add`. `sweets`
- * are the chapter's candy, which nothing of them sits behind.
+ * are the chapter's big candies (its checkpoints), tall on the path, which nothing of them sits behind.
  */
 export function forestFolk(plan: Plan, add: FolkAdd, fauna: Object3D, sweets: readonly Sweet[] = []): { kinds: FolkKind[]; wants: FolkWant[] } {
   const wants: FolkWant[] = [];
@@ -205,7 +205,7 @@ export async function installForestFolk(assets: Assets, scene: Object3D): Promis
 
 // --- the squirrels: up and round their trunks, and now and then down to eat a cone at its foot -------------------------
 
-/** A candy of the chapter, where it is along the path and how high. */
+/** A big candy of the chapter, where it is along the path and how high. */
 export interface Sweet { x: number; y: number }
 
 function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], sweets: readonly Sweet[]): FolkKind | null {
@@ -221,10 +221,11 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
     ...s, a0: s.a, h0: s.h, a1: s.a, h1: s.h, k: 1, run: 0.5, long: 1, wait: next() * 2, fa: 0, fh: 1, flick: next() * 2,
     where: 'trunk' as Where, down: false, air: 0, eat: 0, flickT: 9, bounds: 0, look: 0, side: 1,
     from: new Matrix4(), to: new Matrix4(), place: new Matrix4(),
-    // The sides of its trunk where it may sit on the ground: those where, seen from the path, no candy stands in front.
+    // The sides of its trunk where it may sit on the ground: those where, seen from the path, no big candy stands in
+    // front of it.
     sides: [-1, 1].filter((side) => {
       const x = s.tree.x + side * (girth(s.tree, 0.1) + 0.5);
-      return sweets.every((c) => Math.abs(c.x - x) > 1.4 || c.y < s.tree.y - 1.5 || c.y > s.tree.y + 4);
+      return sweets.every((c) => Math.abs(c.x - x) > 1.6 || c.y < s.tree.y - 3 || c.y > s.tree.y + 4);
     }),
   }));
   type One = (typeof all)[number];
@@ -246,11 +247,14 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
     const r = girth(tree, h) + 0.03 + lift;
     return out.makeBasis(F, U, W).setPosition(tree.x + U.x * r, tree.y + h, tree.z + U.z * r);
   };
-  /** Between two places, along an arc `high` over the straight way, turned from one's way to the other's. */
-  const between = (a: Matrix4, b: Matrix4, k: number, high: number, out: Matrix4) => {
+  /** Between two places, along an arc `high` over the straight way and round its trunk, turned from one's way to the other's. */
+  const between = (q: One, a: Matrix4, b: Matrix4, k: number, high: number, out: Matrix4) => {
     const e = smooth(k);
     P.setFromMatrixPosition(a).lerp(W.setFromMatrixPosition(b), e);
     P.y += Math.sin(Math.PI * k) * high;
+    const dx = P.x - q.tree.x, dz = P.z - q.tree.z, r = Math.hypot(dx, dz);
+    const bark = girth(q.tree, Math.max(0, P.y - q.tree.y)) + 0.03;
+    if (r < bark && r > 1e-6) { P.x = q.tree.x + (dx / r) * bark; P.z = q.tree.z + (dz / r) * bark; }
     Q.setFromRotationMatrix(a).slerp(TQ.setFromRotationMatrix(b), smooth(Math.min(1, k * 1.4)));
     return out.compose(P, Q, S.set(1, 1, 1));
   };
@@ -309,7 +313,7 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], s
         if (dash) { pose = 'run-up'; phase = q.bounds; }
       } else if (q.where === 'leap-off' || q.where === 'leap-on') {
         q.air = Math.min(1, q.air + dt / leapLong);
-        between(q.from, q.to, q.air, q.where === 'leap-off' ? 0.25 : 0.4, q.place);
+        between(q, q.from, q.to, q.air, q.where === 'leap-off' ? 0.25 : 0.4, q.place);
         pose = 'leap';
         phase = Math.min(0.999, q.air);
         if (q.air >= 1) {
@@ -388,8 +392,8 @@ const FOX_ACTS: Record<FoxAct, readonly [number, number]> = {
 };
 /** What the fox does after each act: one of these, by chance. */
 const FOX_NEXT: Record<FoxAct, readonly FoxAct[]> = {
-  out: ['trot'], trot: ['sniff', 'sniff', 'look'], sniff: ['pounce', 'look', 'sniff'], pounce: ['look', 'sniff'],
-  look: ['sit', 'sit', 'trot'], sit: ['scratch', 'yawn', 'sit', 'trot'], scratch: ['sit', 'trot'], yawn: ['sit', 'trot'],
+  out: ['trot'], trot: ['sniff', 'look', 'sit'], sniff: ['pounce', 'look', 'sit'], pounce: ['look', 'sit'],
+  look: ['sit', 'sit', 'sniff'], sit: ['scratch', 'yawn', 'sit', 'trot'], scratch: ['sit', 'trot'], yawn: ['sit', 'trot'],
 };
 
 function foxes(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): FolkKind | null {

@@ -133,7 +133,7 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
   let calm = 0;
   const storm = chapter.storm;
   // The fox, the squirrels and the beings (./fauna/folk.ts): drawn rigged once their models have come.
-  const folk = forestFolk(plan, add, group, [...chapter.candy, ...(chapter.side ?? []), ...(chapter.hidden ?? []), ...(chapter.checkpoints ?? [])]);
+  const folk = forestFolk(plan, add, group, chapter.checkpoints ?? []);
   group.userData.forestFolk = folk.wants;
   const kinds = [
     ...folk.kinds,
