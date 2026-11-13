@@ -1,5 +1,21 @@
 # Handover
 
+## State (13 November 2026, evening): Mormor out of the sofa in Morgonen efter
+
+- **Olov, playing Äventyr 2 through:** "På morgonen i äventyr 2 så står mormor mitt i soffkanten, vi måste fixa det!"
+- **Cause:** a grandparent placed as `decor` stands 1.9 EL behind its `z` (`grandparents.ts`), and Morgonen gave her
+  body's place as that `z`. Her body was at z −5.2, in the sofa's left arm, instead of behind the table's far end
+  (z −3.3), where the others look when she speaks. Morfar had the same offset: his body stood clear, but the family
+  looked 1.9 in front of his face.
+- **Fix:** `ELDER_BACK` in `src/content/aventyr2/kit.ts` is the one number for that offset (`grandparents.ts` and
+  `render.ts` use it). In `morgonen.ts`, `MORMOR` and `MORFAR` are body places and the decor adds `ELDER_BACK`. Mormor
+  now stands behind the table's far end; Morfar stands where he stood, and the others look at his face.
+- **Guard:** `tests/unit/home-layout.test.ts` builds both as the game places them and checks they are clear of the
+  baked sofa (it failed before the fix); the latch-picture test in `tests/robot/aventyr2-ends.test.ts` uses her body's z.
+- **Not changed:** Stormöga's and Billsta's decor grandparents (their `z` is still the group's); none of them was
+  reported standing in anything.
+- **Next:** Olov plays on through Äventyr 2; his further points go on this branch or the next. Needs no Blender.
+
 ## State (13 November 2026, afternoon): Olov's 18 points from playing Äventyr 1
 
 Olov played Äventyr 1 through and listed 18 things to fix. Seven builders did them in parallel (each on a branch from
@@ -6525,6 +6541,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Mormor and the sofa (13 Nov, evening) | Mormor stands in the sofa's arm in Morgonen efter | One session on Olov's computer, while he played Äventyr 2 | — / 1 report | Grandparents' body offset in one constant; Mormor behind the table's far end; a sofa-clearance test |
 | Äventyr 1 round (13 Nov) | Olov's 18 points from playing Äventyr 1 | The same session: seven builders and the lead; Blender headless for the pine | — / 1 list (+1 correction) | Ghost on the floor and getting away, hands on knees, Moa's drawing and shyness, picture colours, the walk into the forest, thanks to Bertil and from the ghost, time cards, the lysklubba, the ghost's lace, the cairn line, the old pine and stones, one pull, no eye painting; 5 lines recorded |
 | Creature overhaul (13 Nov) | Every animal and creature designed and animated in Blender | One session on Olov's computer: a pilot, then seven builders; Blender headless | — / 2 requests | A rigging pipeline and a clip player; the crane, chick, jay, owl, fox, squirrel, vättar, beaver, otter, ducks, frog, hedgehog and snail rigged; insects, bats, ants, birds and far flocks remade |
 | Voices heard (13 Nov) | Find why many of Äventyr 1's lines played no voice | One session on Olov's computer | — / 1 report | The old version ran on after the release; a title start now waits for a new version that is downloading |

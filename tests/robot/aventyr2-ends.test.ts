@@ -5,6 +5,7 @@ import '../../src/content/aventyr2/aventyr2';
 import { stormkvall } from '../../src/content/aventyr2/chapters/stormkvall';
 import { stormoga } from '../../src/content/aventyr2/chapters/stormoga';
 import { morgonen } from '../../src/content/aventyr2/chapters/morgonen';
+import { ELDER_BACK } from '../../src/content/aventyr2/kit';
 import { storyContext } from '../../src/content/story-context';
 import { endsInScene } from '../../src/sim/scene';
 import { groundAlong } from '../../src/sim/sim';
@@ -343,6 +344,8 @@ describe('Äventyr 2: Morgonen efter', () => {
     // She stood in front of the window, at the table's front corner: her face filled a third of the latch's picture.
     const close = morgonen.scenes!.find((one) => one.id === 'haken')!.stage!.shots!.find((shot) => shot.width! < 4)!;
     const mormor = morgonen.decor!.find((thing) => thing.look === 'mormorHome')!;
+    // Her body stands behind where she is put.
+    const body = mormor.z! - ELDER_BACK;
     for (const aspect of [390 / 844, 844 / 390, 780 / 360, 1180 / 820, 1440 / 900, 1280 / 720]) {
       const camera = new PerspectiveCamera(30, aspect, 0.1, 140);
       const height = Math.max(close.height!, close.width! / aspect);
@@ -351,12 +354,12 @@ describe('Äventyr 2: Morgonen efter', () => {
       camera.updateMatrixWorld();
       // Her head and shoulders: none of it in the picture.
       for (const dx of [-0.5, 0.5]) for (const y of [3.6, 4.9]) {
-        const at = new Vector3(mormor.at.x + dx, y, mormor.z!).project(camera);
+        const at = new Vector3(mormor.at.x + dx, y, body).project(camera);
         expect(Math.abs(at.x) > 1 || Math.abs(at.y) > 1, `${aspect.toFixed(2)}: ${dx}, ${y}`).toBe(true);
       }
     }
     const latch = morgonen.spots!.find((spot) => spot.id === 'latch')!;
-    expect(Math.abs(mormor.at.x - latch.at.x) > 1.5 || mormor.z! < -2.5).toBe(true);
+    expect(Math.abs(mormor.at.x - latch.at.x) > 1.5 || body < -2.5).toBe(true);
     // Behind the table, not hidden behind Mamma or Bertil: at least a body's width from each, sideways.
     const frukost = morgonen.scenes!.find((one) => one.id === 'frukost')!.stage!.actors!;
     for (const who of ['mamma', 'bertil', 'pappa'] as const) {
