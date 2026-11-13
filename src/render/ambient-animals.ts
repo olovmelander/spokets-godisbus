@@ -84,6 +84,18 @@ export interface AmbientContext {
   range?: number;
 }
 
+/**
+ * The rigged animal installed in a place (by ./shared-models.ts). Kept beside the scene, not in the place's userData,
+ * which three copies as JSON when an object is cloned.
+ */
+const RIGS = new WeakMap<Object3D, AmbientRig>();
+export function attachAmbient(place: Object3D, rig: AmbientRig): void {
+  RIGS.set(place, rig);
+}
+export function ambientOf(place: Object3D): AmbientRig | undefined {
+  return RIGS.get(place);
+}
+
 /** A copy of the animal `kind` from its model, with its own bones and clips; null if the model has none. */
 export function rigAmbient(model: Object3D, kind: string): AmbientRig | null {
   const spec = AMBIENT[kind];
@@ -145,7 +157,7 @@ const sized = new Vector3();
  * stand-in then lives as before). In reduced motion it rests where it was put, in its first pose.
  */
 export function stepAmbient(place: Object3D, context: AmbientContext): boolean {
-  const rig = place.userData.ambient as AmbientRig | undefined;
+  const rig = RIGS.get(place);
   if (!rig) return false;
   const { clock, still } = context;
   const dt = rig.lastClock === null ? 0 : Math.min(0.1, Math.max(0, clock - rig.lastClock));

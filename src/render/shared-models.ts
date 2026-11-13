@@ -5,7 +5,7 @@ import { firewood } from './firewood';
 import { forestKit } from './forest-kit';
 import { weathered } from './weathered';
 import { carGlass } from './car-glass';
-import { AMBIENT, rigAmbient } from './ambient-animals';
+import { AMBIENT, attachAmbient, rigAmbient } from './ambient-animals';
 
 /** Authored models shared by both adventures. Only files actually used in this scene are fetched. */
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
@@ -142,7 +142,7 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
     // Packed-node transforms encode quantisation. Fit and placement belong to a wrapper around that node.
     const copy = new Group();
     copy.add(rig ? rig.level : made.clone());
-    if (rig) place.userData.ambient = rig;
+    if (rig) attachAmbient(place, rig);
     const fit = place.userData.fit as number | undefined;
     if (fit) copy.scale.setScalar(fit);
     if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;

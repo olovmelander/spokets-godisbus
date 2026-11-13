@@ -15,7 +15,7 @@ import { glowTexture } from '../../render/glow';
 import { windowCandle } from '../../render/window-candle';
 import { wingbeat } from '../../render/wingbeat';
 import { kitLife } from '../../render/kit-life';
-import { stepAmbient } from '../../render/ambient-animals';
+import { ambientOf, stepAmbient } from '../../render/ambient-animals';
 import { drawnWhile } from '../../render/idle';
 import { litLamp } from '../../render/stage';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
@@ -2359,7 +2359,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // What is alive breathes, and what is afloat lifts on the water.
       // The rigged ones live their own lives by their places, and know where he is (../../render/ambient-animals.ts).
       const rigged = (clock: number) => {
-        if (!model.userData.ambient) return false;
+        if (!ambientOf(model)) return false;
         model.position.set(0, 0, 0);
         model.rotation.set(0, 0, 0);
         model.scale.setScalar(1);

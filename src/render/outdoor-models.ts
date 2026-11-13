@@ -3,7 +3,7 @@ import type { ChapterData } from '../sim/types';
 import { heightAt, landscape } from './dressing/kit';
 import { granite } from './dressing/ground';
 import { kitLife } from './kit-life';
-import { stepAmbient } from './ambient-animals';
+import { ambientOf, stepAmbient } from './ambient-animals';
 
 /** Authored scenery, shared with Stormnatten's model library. None of these objects is a platform or a clue. */
 interface Planting {
@@ -157,7 +157,7 @@ export function updateOutdoorModels(group: Group, clock: number, still: boolean,
   for (const holder of group.children) {
     const life = holder.userData.outdoorLife as { kind: string; x: number; y: number; turn: number; size: number; phase: number; water: boolean; level: boolean } | undefined;
     if (!life) continue;
-    if (holder.userData.ambient) {
+    if (ambientOf(holder)) {
       holder.position.set(life.x, life.y, holder.position.z);
       holder.rotation.set(0, life.turn, 0);
       holder.scale.setScalar(life.size);

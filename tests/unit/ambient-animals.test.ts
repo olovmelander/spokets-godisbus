@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { Group, type Object3D, type SkinnedMesh } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
-import { AMBIENT, HEDGEHOG_STRIDE, HOP_DISTANCE, HOP_FRAMES, HOP_LAND, HOP_LIFT, hopProgress, rigAmbient, stepAmbient, type AmbientRig } from '../../src/render/ambient-animals';
+import { AMBIENT, HEDGEHOG_STRIDE, HOP_DISTANCE, HOP_FRAMES, HOP_LAND, HOP_LIFT, ambientOf, attachAmbient, hopProgress, rigAmbient, stepAmbient, type AmbientRig } from '../../src/render/ambient-animals';
 import { OUTDOOR_MODELS } from '../../src/render/outdoor-models';
 
 /** The JSON of a GLB, as Blender wrote it (art/baked). */
@@ -87,14 +87,14 @@ function placed(rig: AmbientRig, x: number, turn = 0, size = 1): Group {
   place.rotation.y = turn;
   place.scale.setScalar(size);
   place.add(rig.level);
-  place.userData.ambient = rig;
+  attachAmbient(place, rig);
   place.updateMatrixWorld(true);
   return place;
 }
 
 /** Runs its life for `seconds` with Elof at `elof` (null: nowhere), and gives what it did on the way. */
 function live(place: Group, from: number, seconds: number, elof: { x: number; y: number } | null, still = false) {
-  const rig = place.userData.ambient as AmbientRig;
+  const rig = ambientOf(place)!;
   const modes = new Set<string>();
   let farthest = 0;
   for (let t = from; t < from + seconds; t += 1 / 30) {
@@ -130,9 +130,14 @@ describe('their lives in the game (src/render/ambient-animals.ts)', () => {
     expect(Object.keys(AMBIENT).sort()).toEqual(['and', 'and-hona', 'groda', 'igelkott', 'snigel']);
   });
 
+  it('a place with its animal can be cloned (three copies userData as JSON)', async () => {
+    const place = placed(rigAmbient(await model('snigel'), 'snigel')!, 10);
+    expect(() => place.clone()).not.toThrow();
+  });
+
   it('the hedgehog rolls into a ball when Elof comes near, and unrolls once he has gone', async () => {
     const place = placed(rigAmbient(await model('igelkott'), 'igelkott')!, 100, -0.2, 0.65);
-    const rig = place.userData.ambient as AmbientRig;
+    const rig = ambientOf(place)!;
     let run = live(place, 0, 20, { x: 80, y: 0 });
     expect(run.modes.has('curl')).toBe(false);
     expect(run.farthest).toBeLessThan(1.6);
@@ -145,7 +150,7 @@ describe('their lives in the game (src/render/ambient-animals.ts)', () => {
 
   it('the snail draws into its shell when he comes, and out again after he has gone', async () => {
     const place = placed(rigAmbient(await model('snigel'), 'snigel')!, 50, 0.4, 0.8);
-    const rig = place.userData.ambient as AmbientRig;
+    const rig = ambientOf(place)!;
     let run = live(place, 0, 40, null);
     expect(rig.hidden).toBe(0);
     expect(run.farthest).toBeLessThan(0.9);
@@ -158,7 +163,7 @@ describe('their lives in the game (src/render/ambient-animals.ts)', () => {
 
   it('the frog sits, croaks and catches flies, and hops away from him, never far from its place', async () => {
     const place = placed(rigAmbient(await model('groda'), 'groda')!, 137, -0.3, 0.75);
-    const rig = place.userData.ambient as AmbientRig;
+    const rig = ambientOf(place)!;
     let run = live(place, 0, 90, null);
     expect(run.modes.has('hop')).toBe(true);
     expect(run.modes.has('croak') || run.modes.has('catch')).toBe(true);
@@ -179,7 +184,7 @@ describe('their lives in the game (src/render/ambient-animals.ts)', () => {
 
   it('in calm motion each rests at its place, as it was put, in its first pose', async () => {
     const place = placed(rigAmbient(await model('igelkott'), 'igelkott')!, 20, 0.5, 0.65);
-    const rig = place.userData.ambient as AmbientRig;
+    const rig = ambientOf(place)!;
     live(place, 0, 30, null);
     live(place, 30, 1, { x: 20, y: 0 }, true);
     expect(rig.x).toBe(0);
