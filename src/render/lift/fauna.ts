@@ -7,15 +7,17 @@ import { sequence } from '../dressing/kit';
 import { drawnWhile } from '../idle';
 import { faunaPlan, girth, type Landing, type Plan, type Soarer } from './fauna/plan';
 import {
-  BIRDS, CARVINGS, SOARING, bat, being, bird, butterfly, creatureMaterial, dragonfly, fox, glintMaterial, glints, herd, owl, plain, soarer, squirrel,
+  BIRDS, CARVINGS, SOARING, being, bird, creatureMaterial, fox, glintMaterial, glints, herd, owl, plain, soarer, squirrel,
   type Species, type V3,
 } from './fauna/shapes';
+import { fireflyMaterial, smallMaterial, swarm, type SmallKind } from './fauna/small-kit';
 
 /**
  * The near forest's life (docs/visual-upgrade.md), behind the play plane in every chapter of both adventures:
  * squirrels that dash up their trunks, a fox far back now and then, owls at dusk, small birds that lift as he comes,
  * fireflies, dragonflies and butterflies, and the little forest beings and carved figures that peek out from behind
- * stones and roots. Where they live is ./fauna/plan.ts; their shapes ./fauna/shapes.ts.
+ * stones and roots. Where they live is ./fauna/plan.ts; their shapes ./fauna/shapes.ts, and the small and the many
+ * (butterflies, dragonflies, bats, fireflies), modelled in Blender and posed in the vertex stage, ./fauna/small-kit.ts.
  *
  * All of it is drawn on Mid and High only (the rich layer), one draw call a kind, and only while some of a kind is
  * in the picture. With less motion asked for, everything holds still and the birds stay where they sit.
@@ -119,8 +121,11 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
     crowds.push(made);
     return made;
   };
-  const add: Add = (shape, count, with_ = material, name = '') => {
-    const made = adopt(herd(shape, count, with_));
+  // The small and the many are modelled in Blender and posed by their own rig (./fauna/small-kit.ts): a kind's name
+  // instead of a shape, and their own material.
+  const small = { solid: smallMaterial(), glass: smallMaterial(true), firefly: fireflyMaterial(time, glow) };
+  const add: Add = (shape, count, with_, name = '') => {
+    const made = adopt(typeof shape === 'string' ? swarm(shape, count, with_ ?? small.solid) : herd(shape, count, with_ ?? material));
     made.mesh.name = `fauna-${name}`;
     return made;
   };
@@ -136,7 +141,7 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
     butterflies(plan, add),
     beings(plan, add),
     carvings(plan, add),
-    plan.dragonflies.length + plan.fireflies ? lights(plan, add, adopt(glints(plan.dragonflies.length * 2 + plan.fireflies, glint)), glow) : null,
+    plan.dragonflies.length + plan.fireflies ? lights(plan, add, plan.fireflies ? adopt(glints(plan.fireflies, glint)) : null, glow, small) : null,
   ].filter((kind): kind is NonNullable<Kind> => kind !== null);
   if (plan.props.length) {
     const props = new Mesh(plain(plan.props), new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
@@ -151,6 +156,8 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
   return {
     update(frame: ExtraFrame) {
       const camera = frame.camera as PerspectiveCamera;
+      // For a session's close pictures: the lens, to find a creature in the picture by. Not in a build.
+      if (import.meta.env.DEV && typeof window !== 'undefined') (window as { __lens?: PerspectiveCamera }).__lens = camera;
       if (frame.tier === 'low') {
         for (const c of crowds) c.flush();
         return;
@@ -170,7 +177,8 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
   };
 }
 
-type Add = (shape: BufferGeometry, count: number, material?: Material, name?: string) => Crowd;
+type Add = (shape: BufferGeometry | SmallKind, count: number, material?: Material, name?: string) => Crowd;
+type SmallMaterials = { solid: Material; glass: Material; firefly: Material };
 /** How many of n are drawn: all on High, fewer on Mid. */
 const quota = (n: number, now: Now) => (now.share < 1 ? Math.max(1, Math.round(n * now.share)) : n);
 type Kind = ((now: Now, calm: number) => void) | null;
@@ -560,8 +568,16 @@ function birds(plan: Plan, add: Add): Kind {
 const SOAR: Record<Soarer, { size: number; up: readonly [number, number]; z: readonly [number, number]; r: readonly [number, number]; turn: number; beat: number; flaps: number }> = {
   raven: { size: 1.6, up: [6.5, 9], z: [-17, -27], r: [3.5, 5.5], turn: 0.3, beat: 6, flaps: -0.45 },
   crow: { size: 1.3, up: [5.5, 8], z: [-14, -24], r: [3, 4.5], turn: 0.36, beat: 8, flaps: 0.2 },
-  bat: { size: 0.75, up: [3.8, 5.4], z: [-5, -9], r: [2.2, 3], turn: 1, beat: 70, flaps: 2 },
+  bat: { size: 0.75, up: [3.8, 5.4], z: [-5, -9], r: [2.2, 3], turn: 1, beat: 52, flaps: 2 },
 };
+/**
+ * A bat's wings at a point of its stroke (a phase in radians): how far up they are (0 out level), and how far its hands
+ * are folded. Up as the stroke rises, the hand folds in; down, it opens wide to push on the air.
+ */
+export function batStroke(phase: number): [number, number] {
+  const fold = Math.max(0, Math.cos(phase));
+  return [0.12 + 0.8 * Math.sin(phase), fold * fold * (3 - 2 * fold) * 0.95];
+}
 /** The window of the world, round the camera, where each keeps its place: it is put anew only when it wraps, out of sight. */
 const SKY_SPAN = { raven: 60, crow: 56, bat: 34 } as const;
 /** `?soar` brings them over the middle of the picture as the view starts, to look at them (as `?life=` does the far life). */
@@ -577,7 +593,8 @@ function soarers(plan: Plan, add: Add): Kind {
   if (!plan.soarers.length) return null;
   const next = sequence(97);
   const flights = plan.soarers.map(({ kind, count }) => {
-    const crowd = add(kind === 'bat' ? bat() : soarer(SOARING[kind]), count, undefined, `soarers:${kind}`);
+    // A bat is one of the small life, modelled in Blender: its wings beat at the shoulder and fold at the wrist.
+    const crowd = add(kind === 'bat' ? 'bat' : soarer(SOARING[kind]), count, undefined, `soarers:${kind}`);
     const own = SOAR[kind];
     // Ravens and crows in twos, one a little behind the other on the same circle; bats each on its own.
     const all = Array.from({ length: count }, (_, i) => {
@@ -637,7 +654,11 @@ function soarers(plan: Plan, add: Add): Kind {
         // crow's beat is shallow and mostly down: a deep upstroke, seen from the side, stood up over its back like a fin.
         const beating = kind === 'bat' || Math.sin(t * 0.45 + one.phase * 3) < own.flaps;
         const beat = Math.sin(t * own.beat + one.phase * 5);
-        crowd.pose(i, !beating ? -0.12 : kind === 'bat' ? 0.85 * beat : 0.15 + 0.5 * beat, 1, 0, 0);
+        if (kind === 'bat') {
+          // A bat's stroke: its wings sweep down full and wide, and come up with its hands folded in at the wrist.
+          const [stroke, fold] = batStroke(t * own.beat + one.phase * 5);
+          crowd.pose(i, stroke, fold, 0, 0);
+        } else crowd.pose(i, !beating ? -0.12 : 0.15 + 0.5 * beat, 1, 0, 0);
       }
     }
     asked = false;
@@ -646,20 +667,46 @@ function soarers(plan: Plan, add: Add): Kind {
 
 // --- butterflies: soft arcs by day, settling on a flower now and then ------------------------------------------
 
-/** Brimstone, wood white and a blue: pale, and none red. */
-const WINGS = ['#ece7a6', '#f4f2ea', '#9db4e0'].map((hex) => new Color(hex));
+/**
+ * A brimstone, a wood white and a blue, each its own wings and patterns (art/blender/small-life.py), and each its own
+ * mesh: the first butterfly of a place is a brimstone, the next a wood white, and so on.
+ */
+const BUTTERFLIES = ['butterfly-1', 'butterfly-2', 'butterfly-3'] as const;
+/** How it holds its wings: upright and closed over its back, as it sits; and gliding, a little up in a shallow V. */
+const CLOSED = 1.5;
+const GLIDE = 0.3;
+
+/**
+ * Its wings at a moment: the fore pair raised, the hind pair raised (both in radians, 0 out flat and π/2 upright). It
+ * flies in bursts of beats with short glides between; sitting (`sit` 1) it closes them upright, and opens and shuts
+ * them slowly as it rests in the sun, a blue (species 2) wide open, the others only a little.
+ */
+export function butterflyWings(t: number, phase: number, sit: number, species: number): [number, number] {
+  const beat = t * 38;
+  const gliding = smooth((Math.sin(t * 0.55 + phase * 2) - 0.55) / 0.3);
+  const fore = lerp(0.55 + 0.8 * Math.sin(beat), GLIDE, gliding);
+  const hind = lerp(0.5 + 0.75 * Math.sin(beat - 0.45), GLIDE - 0.05, gliding);
+  const bask = smooth(0.5 + 0.7 * Math.sin(t * 0.33 + phase)) * (species === 2 ? 1.25 : 0.45);
+  const rest = CLOSED - bask + 0.02 * Math.sin(t * 9 + phase);
+  const k = smooth(sit);
+  return [lerp(fore, rest, k), lerp(hind, rest - 0.03, k)];
+}
 
 function butterflies(plan: Plan, add: Add): Kind {
   if (!plan.butterflies.length) return null;
-  const crowd = add(butterfly(), plan.butterflies.length, undefined, 'butterflies');
+  const counts = BUTTERFLIES.map((_, s) => plan.butterflies.filter((_, i) => i % 3 === s).length);
+  const crowds = BUTTERFLIES.map((kind, s) => (counts[s] ? add(kind, counts[s]!, undefined, `butterflies:${s + 1}`) : null));
   const next = sequence(53);
-  const all = plan.butterflies.map((b, i) => {
-    crowd.mesh.setColorAt(i, WINGS[i % 3]!);
-    return { ...b, p: next() * 6.28, sit: 0, wait: 4 + next() * 8, stay: 0, flower: b.flowers[0]!, yaw: 0, x: b.home[0], y: b.home[1], z: b.home[2] };
-  });
+  // On a dandelion in the garden it sits on the head's top; on the bog's moss, a little over the plan's flower.
+  const perch = plan.place === 'garden' ? 0.11 : 0.02;
+  const all = plan.butterflies.map((b, i) => ({
+    ...b, species: i % 3, slot: Math.floor(i / 3), p: next() * 6.28, sit: 0, wait: 4 + next() * 8, stay: 0, flower: b.flowers[0]!, yaw: 0,
+    x: b.home[0], y: b.home[1], z: b.home[2],
+  }));
   return (now) => {
     for (const [i, b] of all.entries()) {
-      if (i >= quota(all.length, now) || now.day < 0.5 || !seen(now, b.home[0], b.home[2], 4)) { crowd.hide(i); continue; }
+      const crowd = crowds[b.species]!;
+      if (i >= quota(all.length, now) || now.day < 0.5 || !seen(now, b.home[0], b.home[2], 4)) { crowd.hide(b.slot); continue; }
       const t = now.t + b.p * 3;
       if (now.still) b.sit = 1;
       else if (b.wait > 0) {
@@ -671,23 +718,31 @@ function butterflies(plan: Plan, add: Add): Kind {
         if (b.sit >= 1 && (b.stay -= now.dt) <= 0) b.wait = 8 + next() * 9;
       }
       // Its own soft loops round its home, with the small sudden swerves of a butterfly's way, and a lift with each
-      // downstroke of its wings.
+      // downstroke of its wings; gliding, it sinks a little instead.
       const beat = t * 38;
+      const gliding = smooth((Math.sin(t * 0.55 + b.p * 2) - 0.55) / 0.3);
       const fx = b.home[0] + 1.5 * Math.sin(t * 0.31 + b.p) + 0.6 * Math.sin(t * 0.73 + 2 * b.p) + 0.16 * Math.sin(t * 2.9 + b.p) * Math.sin(t * 1.3);
-      const fy = b.home[1] + 0.45 * Math.sin(t * 0.47 + b.p) + 0.12 * Math.sin(t * 2.3 + 2 * b.p) * Math.sin(t * 1.1) + 0.035 * Math.sin(beat + 1.2);
+      const fy = b.home[1] + 0.45 * Math.sin(t * 0.47 + b.p) + 0.12 * Math.sin(t * 2.3 + 2 * b.p) * Math.sin(t * 1.1)
+        + lerp(0.035 * Math.sin(beat + 1.2), -0.05, gliding);
       const fz = Math.min(-1.2, b.home[2] - 0.6 * Math.sin(t * 0.27 + 1.3 * b.p));
       const k = smooth(b.sit);
-      const x = lerp(fx, b.flower[0], k), y = lerp(fy, b.flower[1], k), z = lerp(fz, b.flower[2], k);
-      // It turns into its way quickly, but never in one frame.
-      if (!now.still && Math.hypot(x - b.x, z - b.z) > 1e-4) {
-        const wanted = Math.atan2(-(z - b.z), x - b.x);
-        b.yaw += Math.atan2(Math.sin(wanted - b.yaw), Math.cos(wanted - b.yaw)) * Math.min(1, now.dt * 10);
+      const x = lerp(fx, b.flower[0], k), y = lerp(fy, b.flower[1] + perch, k), z = lerp(fz, b.flower[2], k);
+      if (!now.still) {
+        if (k < 0.9 && Math.hypot(x - b.x, z - b.z) > 1e-4) {
+          // It turns into its way quickly, but never in one frame.
+          const wanted = Math.atan2(-(z - b.z), x - b.x);
+          b.yaw += Math.atan2(Math.sin(wanted - b.yaw), Math.cos(wanted - b.yaw)) * Math.min(1, now.dt * 10);
+        } else if (k >= 0.9) {
+          // Settled, it turns side on, so that its closed wings are seen.
+          const side = Math.cos(b.yaw) >= 0 ? 0 : Math.PI;
+          b.yaw += Math.atan2(Math.sin(side - b.yaw), Math.cos(side - b.yaw)) * Math.min(1, now.dt * 2);
+        }
       }
       b.x = x; b.y = y; b.z = z;
-      crowd.put(i, x, y, z, b.yaw, 1.4, 0, 0);
-      // Flying, its wings beat about six times a second, held up in a V; sitting, they stand closed over its back
-      // and open slowly.
-      crowd.pose(i, k > 0.95 ? -1.35 + 0.3 * (0.5 + 0.5 * Math.sin(t * 1.4)) : lerp(-0.45 + 0.9 * Math.sin(beat), -1.2, k), 1);
+      // Flying, its body nods with each beat.
+      crowd.put(b.slot, x, y, z, b.yaw, 1.4, (1 - k) * (1 - gliding) * 0.18 * Math.sin(beat + 0.6));
+      const [fore, hind] = butterflyWings(t, b.p, now.still ? 1 : b.sit, b.species);
+      crowd.pose(b.slot, fore, hind, 0, 0);
     }
   };
 }
@@ -754,68 +809,105 @@ function carvings(plan: Plan, add: Add): Kind {
   };
 }
 
-// --- glints: fireflies at dusk and in the storm's calm; dragonflies over the water by day, their wings glints -----
+// --- fireflies at dusk and in the storm's calm; dragonflies over the water by day ------------------------------
 
-/** Fireflies' soft warm green, and a dragonfly wing's pale shine. */
+/** Fireflies' soft warm green. */
 const GREEN = new Color('#d4f09a');
-const SHEEN = new Color('#cfe6ea');
 
-function lights(plan: Plan, add: Add, shine: Crowd, glow: { value: number }): Kind {
+/**
+ * A dragonfly's wings at a moment: the fore pair raised, the hind pair raised, both swept back (in radians). Flying,
+ * the two pairs beat out of step, fast and shallow, a shimmer; perched (`rest` 1), they lie out flat, a little down
+ * and forward, as a resting dragonfly's do.
+ */
+export function dragonflyWings(t: number, phase: number, rest: number): [number, number, number] {
+  const k = smooth(rest);
+  return [lerp(0.12 + 0.42 * Math.sin(t * 150 + phase), -0.1, k), lerp(0.12 + 0.42 * Math.sin(t * 150 + phase - 1.6), -0.14, k), lerp(0, -0.12, k)];
+}
+
+function lights(plan: Plan, add: Add, shine: Crowd | null, glow: { value: number }, small: SmallMaterials): Kind {
   const flies = plan.dragonflies.length;
-  const fireflies = plan.fireflies;
+  const fireflies = shine ? plan.fireflies : 0;
   if (!flies && !fireflies) return null;
-  const bodies = flies ? add(dragonfly(), flies, undefined, 'dragonflies') : null;
-  const fly = shine.mesh.geometry.getAttribute('fly') as InstancedBufferAttribute;
+  const bodies = flies ? add('dragonfly', flies, small.glass, 'dragonflies') : null;
+  // Each firefly's glow has a body under it, which drifts and glows by the same numbers (./fauna/small-kit.ts).
+  const lamps = fireflies ? add('firefly', fireflies, small.firefly, 'fireflies') : null;
+  const fly = shine?.mesh.geometry.getAttribute('fly') as InstancedBufferAttribute | undefined;
+  const flown = lamps ? new InstancedBufferAttribute(new Float32Array(fireflies * 4), 4) : null;
+  if (lamps && flown) lamps.mesh.geometry.setAttribute('fly', flown);
   const next = sequence(71);
+  // What a dragonfly decides as it goes, apart from where everything is.
+  const chance = sequence(73);
   const SPAN = 30;
   const swarm = Array.from({ length: fireflies }, (_, i) => {
-    fly.setXYZW(flies * 2 + i, next() * 6.28, 0.4 + next() * 0.5, 0.25 + next() * 0.3, 1.1 + next() * 0.5);
-    shine.mesh.setColorAt(flies * 2 + i, GREEN);
+    const own = [next() * 6.28, 0.4 + next() * 0.5, 0.25 + next() * 0.3, 1.1 + next() * 0.5] as const;
+    fly!.setXYZW(i, ...own);
+    flown!.setXYZW(i, ...own);
+    shine!.mesh.setColorAt(i, GREEN);
     return { k: next() * SPAN, up: 0.3 + next() * 1.9, z: -1.9 - next() * 5, at: NaN };
   });
-  const darts = plan.dragonflies.map((home, d) => {
-    for (const w of [0, 1]) { fly.setXYZW(d * 2 + w, 0, 0, 0, 0.45); shine.mesh.setColorAt(d * 2 + w, SHEEN); }
-    return { home, from: [...home], to: [...home], k: 1, wait: next() * 2, yaw: 0, face: 0, long: 0.3 };
-  });
+  const darts = plan.dragonflies.map((home, d) => ({
+    home, reed: plan.reeds[d] ?? null, from: [...home], to: [...home], k: 1, wait: next() * 2, yaw: 0, face: 0, long: 0.3,
+    // How many darts since it last sat, whether it is on its way to its reed or on it, and how settled it is there.
+    darts: 0, landing: false, perched: false, rest: 0,
+  }));
   return (now, calm) => {
     // Fireflies glow up as the dusk deepens or the storm's eye opens, and fade with the day.
     const want = fireflies ? (plan.place === 'dusk' ? 1 : calm) : 0;
     glow.value = now.still ? want : lerp(glow.value, want, Math.min(1, now.dt / 2));
     for (const [i, s] of swarm.entries()) {
-      if (glow.value < 0.01 || i >= quota(fireflies, now)) { shine.hide(flies * 2 + i); s.at = NaN; continue; }
+      if (glow.value < 0.01 || i >= quota(fireflies, now)) { shine!.hide(i); lamps!.hide(i); s.at = NaN; continue; }
+      // Its thin wings whir under its lifted wing cases.
+      const whir = now.still ? 0.5 : 0.55 + 0.4 * Math.sin(now.t * 47 + i * 2.3);
+      lamps!.pose(i, whir, whir, -0.15, 0);
       // Each keeps its place in a window that goes with the camera; only when it wraps round is it put anew.
       const at = now.cx - SPAN / 2 + ((((s.k - now.cx) % SPAN) + SPAN) % SPAN);
-      if (at === s.at) { shine.keep(); continue; }
+      if (at === s.at) { shine!.keep(); lamps!.keep(); continue; }
       s.at = at;
-      shine.matrix(flies * 2 + i, M.makeScale(0.3, 0.3, 1).setPosition(at, plan.ground(at) + s.up, s.z));
+      shine!.matrix(i, M.makeScale(0.3, 0.3, 1).setPosition(at, plan.ground(at) + s.up, s.z));
+      lamps!.matrix(i, M.makeTranslation(at, plan.ground(at) + s.up, s.z));
     }
     for (const [d, f] of darts.entries()) {
       if (!bodies || d >= quota(flies, now) || now.day < 0.5 || !seen(now, f.home[0], f.home[2], 2)) {
         bodies?.hide(d);
-        shine.hide(d * 2);
-        shine.hide(d * 2 + 1);
         continue;
       }
-      if (f.k < 1) f.k = Math.min(1, f.k + now.dt / f.long);
-      else if (!now.still && (f.wait -= now.dt) <= 0) {
-        // A dart to somewhere near, and a hover there.
+      // He comes near its reed: it is up and away at once.
+      const near = !!f.reed && Math.abs(now.x - f.reed[0]) < 2.6 && Math.abs(now.y - f.reed[1]) < 3.5;
+      if (f.k < 1) {
+        f.k = Math.min(1, f.k + now.dt / f.long);
+        if (f.k >= 1 && f.landing) { f.landing = false; f.perched = true; }
+      } else if (!now.still && ((f.wait -= now.dt) <= 0 || (f.perched && near))) {
         f.from = [...f.to];
-        f.to = [f.home[0] + (next() - 0.5) * 2.4, f.home[1] + (next() - 0.5) * 0.6, f.home[2] + (next() - 0.6) * 1.2];
-        f.long = 0.3 + next() * 0.2;
+        if (f.reed && !f.perched && f.darts >= 2 && !near && chance() < 0.6) {
+          // Down onto its reed's tip, slower, to sit a while with its wings out.
+          f.to = [f.reed[0], f.reed[1] + 0.055, f.reed[2]];
+          f.long = 0.55;
+          f.wait = 3 + chance() * 5;
+          f.landing = true;
+          f.darts = 0;
+        } else {
+          // A dart to somewhere near, and a hover there.
+          f.to = [f.home[0] + (next() - 0.5) * 2.4, f.home[1] + (next() - 0.5) * 0.6, f.home[2] + (next() - 0.6) * 1.2];
+          f.long = 0.3 + next() * 0.2;
+          f.wait = 0.8 + next() * 2.2;
+          f.darts++;
+        }
+        f.perched = false;
         f.k = 0;
-        f.wait = 0.8 + next() * 2.2;
         f.yaw = Math.atan2(-(f.to[2]! - f.from[2]!), f.to[0]! - f.from[0]!);
       }
-      // It turns to its new way first, quick but not in one frame, then darts, nose down, and hovers level.
-      f.face += Math.atan2(Math.sin(f.yaw - f.face), Math.cos(f.yaw - f.face)) * Math.min(1, now.dt * 28);
+      f.rest = f.perched ? Math.min(1, f.rest + now.dt / 0.35) : Math.max(0, f.rest - now.dt / 0.08);
+      // On its reed it turns side on, slowly; flying, it turns to its new way first, quick but not in one frame, then
+      // darts, nose down, and hovers level.
+      const facing = f.perched ? (Math.cos(f.face) >= 0 ? 0 : Math.PI) : f.yaw;
+      f.face += Math.atan2(Math.sin(facing - f.face), Math.cos(facing - f.face)) * Math.min(1, now.dt * (f.perched ? 3 : 28));
       const e = smooth(Math.max(0, (f.k - 0.15) / 0.85));
       const x = lerp(f.from[0]!, f.to[0]!, e);
-      const y = lerp(f.from[1]!, f.to[1]!, e) + 0.03 * Math.sin(now.t * 9 + d);
+      const y = lerp(f.from[1]!, f.to[1]!, e) + 0.03 * Math.sin(now.t * 9 + d) * (1 - smooth(f.rest));
       const z = lerp(f.from[2]!, f.to[2]!, e);
-      bodies.put(d, x, y, z, f.face, 1.25, -0.3 * Math.sin(Math.PI * e));
-      // Its wings, over its back: a faint shine on each pair, flickering as they beat.
-      const flicker = 0.85 + 0.15 * Math.sin(now.t * 47 + d * 2.1);
-      for (const w of [0, 1]) shine.matrix(d * 2 + w, M.makeScale((w ? 0.34 : 0.42) * flicker, (w ? 0.1 : 0.13) * flicker, 1).setPosition(x + Math.cos(f.face) * (w ? -0.03 : 0.06), y + 0.045, z + 0.01));
+      bodies.put(d, x, y, z, f.face, 1.25, -0.3 * Math.sin(Math.PI * e) * (f.landing ? 0.4 : 1));
+      const [fore, hind, sweep] = dragonflyWings(now.still ? 0 : now.t, d * 2.1, now.still ? 1 : f.rest);
+      bodies.pose(d, fore, hind, sweep, 0);
     }
   };
 }

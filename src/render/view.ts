@@ -1393,6 +1393,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const flying = c.ride.look !== 'cap' && !waiting;
       c.prop.rotation.z = football ? 0 : !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : (away >= 0 ? 0.35 * smooth(away * 3) : heading * 0.6) + wings.pitch;
       if (football && c.prop.children[0]) c.prop.children[0].rotation.z = -(c.prop.position.x - c.ride.from.x) / 0.8;
+      // What walks him along steps its own legs and leans with its own slope, and does not nod as a bird does
+      // (Granskogen's ants, ./ant-ride.ts).
+      (c.prop.userData.walk as ((clock: number, dt: number, still: boolean) => void) | undefined)?.(clock, dt, calmStory);
       const beat = wings.lift * 0.75;
       const lag = wingbeat(clock - 0.12, 1.1, { every: 6.5, glide: 1.8, held: -0.2 }).lift * 0.75;
       const near = c.prop.getObjectByName('wingNear');

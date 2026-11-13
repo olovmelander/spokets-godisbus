@@ -246,6 +246,22 @@ describe('the near life', () => {
     }
   });
 
+  it('gives each dragonfly a reed to perch on, standing in its water behind the path, clear of the candy', () => {
+    for (const chapter of chapters) {
+      const plan = built.get(chapter.id)!.plan;
+      if (!plan) continue;
+      expect(plan.reeds.length, chapter.id).toBe(plan.dragonflies.length);
+      const sweets = [...chapter.candy, ...(chapter.side ?? []), ...(chapter.hidden ?? []), ...(chapter.checkpoints ?? [])];
+      for (const [i, tip] of plan.reeds.entries()) {
+        expect(tip[2], `${chapter.id} reed behind`).toBeLessThan(-2);
+        expect(Math.abs(tip[0] - plan.dragonflies[i]![0]), `${chapter.id} reed by its dragonfly`).toBeLessThan(1);
+        expect((chapter.water ?? []).some((w) => tip[0] >= w.from && tip[0] <= w.to), `${chapter.id} reed in the water`).toBe(true);
+        for (const c of sweets) expect(Math.hypot(c.x - tip[0], c.y - tip[1], tip[2]), `${chapter.id} reed by a candy`).toBeGreaterThan(1.2);
+      }
+    }
+    expect(built.get('myren')!.plan!.reeds.length).toBeGreaterThan(2);
+  });
+
   it("has Pappa's hidden carvings in every chapter that hides one, each of its kind where it was found", () => {
     // [chapter, kind, x, depth]: Myren's is new, and Granskogen's nisse peeks out beside the nest tree (Olov, 12 November
     // 2026); the others are where they have always been. A rule change that turns the bird into a hare fails here.

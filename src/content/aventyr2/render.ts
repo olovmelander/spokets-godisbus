@@ -22,7 +22,7 @@ import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { GRAVITY, STEP } from '../../sim/constants';
-import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
+import { BIRDS, bird as smallBird, creatureMaterial, herd, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { stepLength } from '../../render/acting';
 import { footballGeometry, footballMaterial } from '../../render/football';
 import { box, building, paint, PANE, rock } from './buildings';
@@ -2574,8 +2574,10 @@ function aftermath(): SpotProp {
   }
   group.add(leaves);
   // A great tit on the sill of the window with the new latch: the storm is over, and it has come for what the night left.
-  const tit = new Mesh(smallBird(BIRDS.tit), new MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }));
-  tit.scale.setScalar(1);
+  // Drawn with the fauna's own rig (../../render/lift/fauna/shapes.ts), so that its wings lie folded and its head
+  // turns and pecks: with a plain material its wings stood out as two flat discs (creature overhaul, 13 November 2026).
+  const tit = herd(smallBird(BIRDS.tit), 1, creatureMaterial());
+  const titPose = tit.geometry.getAttribute('act');
   tit.position.set(MORNING_WINDOWS[0], SILL, WALL + 0.12);
   group.add(tit);
   // Three slow drops from the coats' hems.
@@ -2598,7 +2600,11 @@ function aftermath(): SpotProp {
       tit.position.x = MORNING_WINDOWS[0] - 0.6 + along * 1.5;
       tit.position.y = SILL + (hop + back) * 0.16;
       tit.rotation.y = round > 2.2 && round < 5.2 ? Math.PI + 0.5 : 0.5;
-      tit.rotation.z = (round > 3 && round < 3.4) || (round > 6.2 && round < 6.6) ? -0.6 : 0;
+      // A peck at the sill twice a round, and between them it looks about in quick snaps of its head.
+      const peck = Math.max(0, Math.sin(Math.min(1, Math.max(0, (round - 3) / 0.4)) * Math.PI), Math.sin(Math.min(1, Math.max(0, (round - 6.2) / 0.4)) * Math.PI));
+      const look = round < 1.8 ? 0.5 : round < 2.6 ? 0 : round < 4.4 ? -0.6 : round < 5.2 ? 0.4 : 0;
+      titPose.setXYZW(0, 0, 0, look, peck * 0.95);
+      titPose.needsUpdate = true;
       for (const { drop, from, phase } of drops) {
         const k = (clock * 0.45 + phase) % 1;
         drop.position.y = from * (1 - k * k);

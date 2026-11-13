@@ -1,9 +1,8 @@
-import { AdditiveBlending, Color, Group, MeshBasicMaterial, Vector3, type Object3D } from 'three';
+import { AdditiveBlending, Color, Group, MeshBasicMaterial, type Object3D } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { quadBatch } from '../quads';
 import { windAt } from '../wind';
-import { standing } from './foreground';
-import { KIT, drawn, grows, heightAt, sequence } from './kit';
+import { drawn, grows, heightAt, sequence } from './kit';
 
 // --- effects: shafts of light, what floats in them, what falls and flies, and the mist on the ground ------------
 
@@ -40,7 +39,8 @@ export const fallingCount = (chapter: Pick<ChapterData, 'storm'>, where: PlaceId
  */
 export interface AirMood { share: number; day: number; light: number; storm: number; calm: number }
 
-export function effects(chapter: ChapterData, from: number, to: number, where: PlaceId, built: Object3D = new Group()) {
+// `_built`, what stands on the ground, told the bee where the dandelions were; the bee finds them itself now.
+export function effects(chapter: ChapterData, from: number, to: number, where: PlaceId, _built: Object3D = new Group()) {
   const group = new Group();
   group.name = 'air';
   const mood: AirMood = { share: 1, day: chapter.storm ? 0 : 1, light: chapter.storm ? 0 : 1, storm: chapter.storm ? 1 : 0, calm: 0 };
@@ -173,10 +173,11 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   if (light.count) group.add(light.mesh);
 
   // --- what falls and flies -----------------------------------------------------------------------------------
-  // A bumblebee and two brimstone butterflies in the garden; midges over the bog's water; and leaves and needles
-  // falling. All of it is behind the path, so that none of it is ever in front of him, and dark or pale: a bright
-  // speck beside a sweet would be taken for its glitter. The village's leaves fall out of doors only.
-  const heads = garden ? standing(built, KIT.petal).map((head) => head.at).filter((head) => head.z > -3.6) : [];
+  // Two brimstone butterflies far off in the garden; midges over the bog's water; and leaves and needles falling. All
+  // of it is behind the path, so that none of it is ever in front of him, and dark or pale: a bright speck beside a
+  // sweet would be taken for its glitter. The village's leaves fall out of doors only. The garden's first three cards
+  // were its bumblebee, which is modelled now and flies by itself (../lift/bumblebee.ts): they stay, unseen, so that
+  // the rest keep their places.
   const FLYING = garden ? 7 : 0;
   const L = fallingCount(chapter, where);
   // Where the midges dance: over the water, every dozen EL of it. Three clouds of twenty are in the air.
@@ -201,9 +202,6 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
   // Under the shrubs' fringe and over what stands on the ground: before everything else that blends.
   life.mesh.renderOrder = -0.5;
   if (life.count) group.add(life.mesh);
-  /** The bee: where it is, the flower it is on or on its way to, where it left from, and how long it stays. */
-  const bee = { at: new Vector3(), on: -1, stay: 0, flown: 1, from: new Vector3(), far: 1 };
-  const order = sequence(83);
 
   // --- mist on the ground -------------------------------------------------------------------------------------
   // Long pale sheets that lie low behind the path, a little in front of the far scenery, and drift: over the bog's
@@ -394,42 +392,8 @@ export function effects(chapter: ChapterData, from: number, to: number, where: P
     }
 
     if (FLYING) {
-      // The bee works the dandelions nearest him: two seconds on each, then on to another. In a storm it is away.
-      const near = chapter.storm ? [] : heads.filter((head) => Math.abs(head.x - cameraX) < 7);
-      if (bee.on < 0 && near.length) {
-        bee.on = heads.indexOf(near[0]!);
-        bee.at.copy(near[0]!);
-      }
-      bee.stay -= dt;
-      const others = near.filter((head) => head !== heads[bee.on]);
-      if (bee.on >= 0 && bee.stay < 0 && bee.flown >= 1 && others.length) {
-        bee.on = heads.indexOf(others[Math.floor(order() * others.length)]!);
-        bee.from.copy(bee.at);
-        bee.far = Math.max(0.6, bee.at.distanceTo(heads[bee.on]!));
-        bee.flown = 0;
-      }
-      const to = chapter.storm ? undefined : heads[bee.on];
-      const wings = bee.flown < 1;
-      if (to) {
-        // The head it sits on nods in the wind, and the bee with it.
-        const goal = to.x + windAt(to.x) * 0.045;
-        if (wings) {
-          // A little over an EL a second, and faster when its flowers are far behind him.
-          bee.flown = Math.min(1, bee.flown + dt * (1.1 / bee.far + 0.2));
-          const t = bee.flown * bee.flown * (3 - 2 * bee.flown);
-          bee.at.lerpVectors(bee.from, to, t);
-          bee.at.y += Math.sin(t * Math.PI) * 0.35;
-          if (bee.flown >= 1) bee.stay = 2;
-        } else bee.at.set(goal, to.y, to.z);
-      }
-      const size = to ? 0.085 : 0;
-      life.put(0, bee.at.x, bee.at.y + 0.19, bee.at.z + 0.05, size, 0, 0, size * 0.62);
-      // Its wings blur when it flies and lie folded when it sits.
-      for (const side of [-1, 1]) {
-        const beat = wings ? Math.sin(time * 38) * 0.5 : 0.75;
-        life.put(1.5 + side / 2, bee.at.x - 0.02, bee.at.y + 0.25, bee.at.z + 0.05, size * 0.75, size * 0.5 * side * beat, -size * 0.2 * side * beat, size * 0.3);
-        life.tint(1.5 + side / 2, tints.gauze.r, tints.gauze.g, tints.gauze.b, wings ? 0.35 : 0.55);
-      }
+      // The bee's three cards: none of them drawn.
+      for (let i = 0; i < 3; i++) off(life, i);
       // Two brimstones cross far behind him now and then, each as two pale wings that open and close.
       for (let b = 0; b < 2; b++) {
         const x = cameraX - 26 + wrap(b * 23 + time * (0.9 + b * 0.25) - cameraX, 52);
