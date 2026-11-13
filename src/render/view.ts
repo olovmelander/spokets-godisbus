@@ -96,7 +96,7 @@ import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
 import { windAt, type Blow } from './wind';
 import { layRich, seeRich } from './rich';
-import { prologuePose, type PrologueFrame } from '../sim/prologue';
+import { droppedBag, prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type Act, type SceneFrame } from '../sim/scene';
 import { BERRY_HALF, BERRY_HEIGHT, GHOST_CLEARANCE, JUMP_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
@@ -2047,6 +2047,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostSize = pose.scale;
         ghostPlace.scale.setScalar(ghostSize);
         ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
+        // Its bag goes with its front: running off along the deck it is not held out behind it.
+        ghostTurn = pose.turn;
         ghostStaged = true;
         if (prologue.kind === 'pappa') {
           const catcher = stage.actors.get('pappa')?.rig;
@@ -2126,7 +2128,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Carried before it: in a scene it may face the camera, and the bag goes with its front.
     if (directions.ghost) stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -Math.sin(ghostTurn) * .4 - .05);
     else stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -.18 + Math.sin(ghostTurn) * .25);
-    stolenBag.rotation.y = ghostTurn;
+    // Mamma's joke: the ghost drops the bag as it drops, and it lies on its side apart from it (../sim/prologue.ts).
+    const dropped = chapter.prologue && prologue ? droppedBag(chapter.prologue, prologue, stolenBag.position) : null;
+    if (dropped) stolenBag.position.set(dropped.x, dropped.y, dropped.z);
+    stolenBag.rotation.set(0, ghostTurn * (1 - (dropped?.out ?? 0)), dropped?.tilt ?? 0);
     // Norrskenet's pull: it has the lace's end in front of it, and the bag on its back (./norrsken-rescue.ts); the
     // trägubbe out, it takes the bag round in front again.
     const bagBack = !rescue ? 0 : sceneFrame?.id === 'hissa' ? 1 : sceneFrame?.id === 'uppdragen' ? 1 - smooth(clamp((sceneFrame.seconds - .3) / .8, 0, 1)) : 0;

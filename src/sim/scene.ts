@@ -86,7 +86,7 @@ export interface SceneDef {
 
 /** Who acts in a scene. Elof is the player: in a held scene he acts too. */
 export type Actor = 'pappa' | 'mamma' | 'moa' | 'bertil' | 'ghost' | 'elof';
-export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath' | 'wind' | 'pour';
+export type StorySound = 'bird' | 'blink' | 'paper' | 'taste' | 'swell' | 'poff' | 'breath' | 'wind' | 'pour' | 'clatter';
 
 /**
  * What an actor does from a moment on. Each is a movement made in code on the body's joints (src/render/acting.ts),
