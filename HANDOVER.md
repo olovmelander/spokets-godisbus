@@ -82,6 +82,26 @@ family's real models (locally only; no such picture leaves the scratchpad).
   stayed level or fell (each rigged creature is one draw; the jay went from 14 to 1). Seen with stand-in figures only;
   not on the family's devices. Contact sheets of every creature were sent to Olov (scratch, not in the repository).
 
+## State (13 November 2026): every recorded line heard, on the first open after a release too
+
+- **Olov:** "jag spelar äventyr 1 nu och många av dialogerna har ingen inspelad röst." Every one of Äventyr 1's 102
+  lines has its new recording, and the published site's list of recordings has them all; played in the built game,
+  each line said played its voice. The previous version's list had left 41 of the 102 silent (rewritten since the
+  October recordings). The service worker keeps the game's code, not its voice files, so a device still running the
+  previous version heard the new voices on 61 lines and nothing on the other 41: Olov's device had started a chapter
+  on the first open after the release, before the new version had downloaded, and so played on with the old one.
+- **The fix:** a start pressed on the title while a new version downloads now waits for it, showing "Spelet uppdateras
+  …"; once it is in, the title puts it in place and reloads, and the next start goes into the new version. If it has not
+  come within 45 s the game starts as it is (`downloading`, `whenSettled` and `waitUntilSettled` in
+  `src/platform/offline.ts`; `keepStart` in `src/main.ts`; `tests/unit/offline-settle.test.ts`).
+- **Validation:** typecheck, all 2,891 tests, the build, the privacy check, and the browser suites offline (21),
+  lifecycle (44) and smoke pass. A check with two real builds served slowly (a scratch script, not in the repository)
+  pressed start while version B downloaded: the start waited on the title saying it updates, the page reloaded into B
+  after 11 s with only B's cache left, and the next start went into the game.
+- **Not done:** a chapter link (`?course=…`) still starts without the title, so it keeps an old copy until the bare
+  address is opened (Known bugs). Voices on an iPad or iPhone were not tried: the game makes a new audio element for each
+  line, and if Safari plays none after the first tap, the next step is one voice channel unlocked by that tap and reused.
+
 ## State (12 November 2026, night): Olov's answers, and every line recorded with direction
 
 - **Olov's answers to the fine-tuning's questions:** Gården's hedge gets an opening into the forest (a clipped arch
@@ -6507,6 +6527,7 @@ The older list, still true where it is not struck:
 | --- | --- | --- | --- | --- |
 | Äventyr 1 round (13 Nov) | Olov's 18 points from playing Äventyr 1 | The same session: seven builders and the lead; Blender headless for the pine | — / 1 list (+1 correction) | Ghost on the floor and getting away, hands on knees, Moa's drawing and shyness, picture colours, the walk into the forest, thanks to Bertil and from the ghost, time cards, the lysklubba, the ghost's lace, the cairn line, the old pine and stones, one pull, no eye painting; 5 lines recorded |
 | Creature overhaul (13 Nov) | Every animal and creature designed and animated in Blender | One session on Olov's computer: a pilot, then seven builders; Blender headless | — / 2 requests | A rigging pipeline and a clip player; the crane, chick, jay, owl, fox, squirrel, vättar, beaver, otter, ducks, frog, hedgehog and snail rigged; insects, bats, ants, birds and far flocks remade |
+| Voices heard (13 Nov) | Find why many of Äventyr 1's lines played no voice | One session on Olov's computer | — / 1 report | The old version ran on after the release; a title start now waits for a new version that is downloading |
 | Answers and voices (12 Nov, night) | Olov's five answers; record every line with direction | The same session, two builders and the lead | — / 2 requests | An arch into the forest, the nisse seen and Myren's carving, the family on the deck, the club's crest, hazel bushes; 401 lines recorded and levelled |
 | Final fine-tuning (12 Nov, late evening) | Play every chapter of both adventures through and fix picture, words, puzzles and bugs | One session on Olov's computer with seven parallel builders, Blender for the fence | — / 1 request (+1 answer) | Lines heard in place, hidden things shown (ant lift, plane, benches), hollow tussocks, runners meet the hazards, family out of his path, step stool, straw bales, wooden dugouts, a front door |
 | Äventyr 2 playthrough (12 Nov, night) | Olov's ~30 points from playing Äventyr 2 through | One session on Olov's computer with six parallel builders | — / 1 list | Power cut and lamps at home, the tap moment, fallen spruces, no cars and candle-lit village, Olympia's turf, puddles and goal, waves on the jetty, Älven's stones, beaver and otter, Billsta's barn, Morgonen's thanks and TV; candy pass next |
@@ -6985,7 +7006,7 @@ The 10 November full-playthrough, aurora, owl-tree, visual/motion and dialogue-f
 
 - Morfars glasögon ligger uppskjutna i håret, som på fotot. Vill du ha dem på näsan? Det är en rad i `morfar.py`.
 - Mormor och Morfar liknar nu verkliga personer på den öppna sidan. Vill de själva ha det så? De kan tas bort med en ny deploy.
-- Spelet uppdaterar sig bara när titelskärmen visas, så en länk direkt till ett kapitel (`?course=olympia`) behåller den
+- (13 november: en start från titelskärmen väntar nu på en ny version som laddas ner.) Spelet uppdaterar sig bara när titelskärmen visas, så en länk direkt till ett kapitel (`?course=olympia`) behåller den
   gamla versionen. Vill du att den också hämtar den nya, med en knapp "Ny version – ladda om" som inte avbryter när Elof
   spelar?
 
