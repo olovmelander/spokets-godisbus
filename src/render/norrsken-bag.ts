@@ -5,7 +5,7 @@ const OUT = 'scene:uppdragen';
 /** How near he comes to the ghost before it holds the bag out to him, in EL. Further than he can take it from. */
 const NEAR = 4;
 /** How long it takes to hold it out and set it down before him, in seconds. */
-const SECONDS = .7;
+const SECONDS = .9;
 
 const smooth = (t: number) => { const k = Math.max(0, Math.min(1, t)); return k * k * (3 - 2 * k); };
 
@@ -39,7 +39,7 @@ export function createBagReturn() {
       const k = smooth(given);
       const scale = holder.scale.x || 1;
       const x = (down.x - holder.position.x) / scale, y = (down.y - holder.position.y) / scale, z = (down.z - holder.position.z) / scale;
-      bag.position.set(bag.position.x + (x - bag.position.x) * k, bag.position.y + (y - bag.position.y) * k + Math.sin(Math.PI * k) * .22,
+      bag.position.set(bag.position.x + (x - bag.position.x) * k, bag.position.y + (y - bag.position.y) * k + Math.sin(Math.PI * k) * .3,
         bag.position.z + (z - bag.position.z) * k);
       bag.rotation.y *= 1 - k;
     },
