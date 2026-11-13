@@ -14,7 +14,7 @@ export interface Manifest {
 }
 
 export interface Assets {
-  /** Loads public/packs/<pack>/<name>.glb, as written by scripts/build-assets.mjs. */
+  /** Loads public/packs/<pack>/<name>.glb, as written by scripts/build-assets.mjs; its clips are its `animations`. */
   model(pack: string, name: string): Promise<Group>;
   /** Which packs and files this build has. A private pack is only there where its files are. */
   manifest(): Promise<Manifest>;
@@ -57,6 +57,8 @@ export function createAssets(renderer: WebGLRenderer): Assets {
       const url = `${import.meta.env.BASE_URL}packs/${pack}/${name}.glb${hash ? `?v=${hash}` : ''}`;
       const gltf = await parse(url);
       textures.track(url, gltf);
+      // A creature's clips go with it (./creature-clips.ts): the model is all a caller is given.
+      gltf.scene.animations = gltf.animations;
       return gltf.scene;
     },
     manifest() {
