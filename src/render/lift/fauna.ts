@@ -6,8 +6,9 @@ import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../ext
 import { sequence } from '../dressing/kit';
 import { drawnWhile } from '../idle';
 import { faunaPlan, girth, type Landing, type Plan, type Soarer } from './fauna/plan';
+import { BIRD_TILT, birdMaterial, flockOf, type BirdKind } from './fauna/bird-kit';
 import {
-  BIRDS, CARVINGS, SOARING, being, bird, creatureMaterial, fox, glintMaterial, glints, herd, owl, plain, soarer, squirrel,
+  BIRDS, CARVINGS, being, creatureMaterial, fox, glintMaterial, glints, herd, owl, plain, squirrel,
   type Species, type V3,
 } from './fauna/shapes';
 import { fireflyMaterial, smallMaterial, swarm, type SmallKind } from './fauna/small-kit';
@@ -18,7 +19,8 @@ import { OWL_TALL, type OwlRig } from '../owl';
  * squirrels that dash up their trunks, a fox far back now and then, owls at dusk, small birds that lift as he comes,
  * fireflies, dragonflies and butterflies, and the little forest beings and carved figures that peek out from behind
  * stones and roots. Where they live is ./fauna/plan.ts; their shapes ./fauna/shapes.ts, and the small and the many
- * (butterflies, dragonflies, bats, fireflies), modelled in Blender and posed in the vertex stage, ./fauna/small-kit.ts.
+ * (butterflies, dragonflies, bats, fireflies), modelled in Blender and posed in the vertex stage, ./fauna/small-kit.ts;
+ * the birds, small and high, the same way, ./fauna/bird-kit.ts.
  *
  * All of it is drawn on Mid and High only (the rich layer), one draw call a kind, and only while some of a kind is
  * in the picture. With less motion asked for, everything holds still and the birds stay where they sit.
@@ -75,6 +77,8 @@ const NOWHERE = new Matrix4().makeScale(0, 0, 0);
 /** A kind's mesh, and what it puts there this frame: shown only if anything of it is. */
 function crowd(mesh: InstancedMesh) {
   const act = mesh.geometry.getAttribute('act') as InstancedBufferAttribute | undefined;
+  // A bird's second four numbers: its tail, its bill and its hands (./fauna/bird-kit.ts).
+  const act2 = mesh.geometry.getAttribute('act2') as InstancedBufferAttribute | undefined;
   let shown = false;
   return {
     mesh,
@@ -88,12 +92,14 @@ function crowd(mesh: InstancedMesh) {
     /** Instance i stays where it was put. */
     keep() { shown = true; },
     pose(i: number, x: number, y = 0, z = 0, w = 0) { act?.setXYZW(i, x, y, z, w); },
+    pose2(i: number, x: number, y = 0, z = 0, w = 0) { act2?.setXYZW(i, x, y, z, w); },
     hide(i: number) { mesh.setMatrixAt(i, NOWHERE); },
     flush() {
       drawnWhile(mesh, shown);
       if (shown) {
         mesh.instanceMatrix.needsUpdate = true;
         if (act) act.needsUpdate = true;
+        if (act2) act2.needsUpdate = true;
       }
       shown = false;
     },
@@ -130,6 +136,13 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
     made.mesh.name = `fauna-${name}`;
     return made;
   };
+  // The birds have a material of their own, with their rig (./fauna/bird-kit.ts).
+  const feathers = birdMaterial();
+  const addFlock: AddFlock = (kind, count, name) => {
+    const made = adopt(flockOf(kind, count, feathers));
+    made.mesh.name = `fauna-${name}`;
+    return made;
+  };
   // The calm of the storm's eye, as the storm itself fades it.
   let calm = 0;
   const storm = chapter.storm;
@@ -137,8 +150,8 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
     squirrels(plan, add),
     foxes(plan, add),
     owls(plan, add),
-    birds(plan, add),
-    soarers(plan, add),
+    birds(plan, addFlock),
+    soarers(plan, add, addFlock),
     butterflies(plan, add),
     beings(plan, add),
     carvings(plan, add),
@@ -179,6 +192,7 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
 }
 
 type Add = (shape: BufferGeometry | SmallKind, count: number, material?: Material, name?: string) => Crowd;
+type AddFlock = (kind: BirdKind, count: number, name: string) => Crowd;
 type SmallMaterials = { solid: Material; glass: Material; firefly: Material };
 /** How many of n are drawn: all on High, fewer on Mid. */
 const quota = (n: number, now: Now) => (now.share < 1 ? Math.max(1, Math.round(n * now.share)) : n);
@@ -346,7 +360,27 @@ function owls(plan: Plan, add: Add): Kind {
 // Visitors (one bird each) come by themselves: in from out of the picture, down where they like, a while there, and
 // off again, so that the birds come and go whether he is near or not.
 
-function birds(plan: Plan, add: Add): Kind {
+/** Those that hang upside down under a twig to feed, and those that sing from where they sit. */
+const HANGS = new Set<Species>(['tit', 'blue']);
+const SINGS = new Set<Species>(['tit', 'blue', 'thrush', 'sparrow']);
+/** A small bird's wingbeat at a point of its stroke: the wing's angle (rad, up), how open it is, and its hand's bend. */
+export function smallStroke(phase: number, strong: number): [number, number, number] {
+  const rising = Math.cos(phase);
+  // Up with its wings half drawn in and its hands trailing down; down with them wide, the hands trailing up.
+  return [strong * Math.sin(phase), 1 - 0.32 * Math.max(0, rising) ** 2 * Math.min(1, strong), -0.5 * rising * strong];
+}
+/** How far round under its twig a tit is at time t (0 on top, 1 hanging): now and then, for a few seconds. */
+export function hanging(t: number, seed: number): number {
+  const w = (((t * 0.16 + seed * 0.13) % 1) + 1) % 1;
+  return smooth((w - 0.4) / 0.06) - smooth((w - 0.86) / 0.06);
+}
+/** A wagtail's tail at time t: up quick, down slow, over and over. */
+export function wagtailBob(t: number, seed: number): number {
+  const w = (((t * 1.7 + seed) % 1) + 1) % 1;
+  return w < 0.18 ? smooth(w / 0.18) : 1 - smooth((w - 0.18) / 0.62);
+}
+
+function birds(plan: Plan, add: AddFlock): Kind {
   if (!plan.flocks.length && !plan.visitors.length) return null;
   const next = sequence(41);
   // The visitors' own chances, so that the flocks do what they always did.
@@ -355,7 +389,7 @@ function birds(plan: Plan, add: Add): Kind {
   const counts = new Map<Species, number>();
   for (const f of plan.flocks) counts.set(f.species, (counts.get(f.species) ?? 0) + f.birds.length);
   for (const v of plan.visitors) counts.set(v.species, (counts.get(v.species) ?? 0) + 1);
-  for (const [species, count] of counts) meshes.set(species, add(bird(BIRDS[species]), count, undefined, `birds:${species}`));
+  for (const [species, count] of counts) meshes.set(species, add(species, count, `birds:${species}`));
   const used = new Map<Species, number>();
   const member = (species: Species, at: V3, yaw: number) => {
     const i = used.get(species) ?? 0;
@@ -363,6 +397,8 @@ function birds(plan: Plan, add: Add): Kind {
     return {
       crowd: meshes.get(species)!, i, rest: [...at] as [number, number, number], yaw, home: at,
       doing: 0, k: 0, long: 0, wait: next() * 2, look: 0, look2: 0, hop: 0, from: 0,
+      // How open its wings are and how it leans as it lands, settling; and its own beat.
+      open: 0, lean: 0, seed: i * 2.39,
       // Where it has come down in a tree, while he goes by.
       perch: null as V3 | null,
       fly: null as null | { a: V3; b: V3; c: V3; k: number; long: number; out: boolean },
@@ -480,10 +516,18 @@ function birds(plan: Plan, add: Add): Kind {
         const s = size(f.species);
         // A visitor bigger than a tit hops and dips by its size, and beats its wings slower.
         const big = f.visit ? Math.max(1, s) : 1;
+        const tilt = BIRD_TILT[f.species];
+        // A wagtail's tail goes up and down all the time it is not flying.
+        const bob = f.species === 'wagtail' ? 0.5 * wagtailBob(now.t, b.seed) - 0.12 : 0;
         if (b.gone && b.perch) {
-          // On its bough, looking about, until he has gone by.
-          crowd.put(i, b.perch[0], b.perch[1], b.perch[2], b.yaw, s);
-          crowd.pose(i, 0, 0, glance(now.t, i * 1.9) * 0.7, 0);
+          // On its bough, looking about, until he has gone by; its wings settle. A tit or a blue tit swings round to
+          // hang under it a while, pecking at it, and up again.
+          b.open = Math.max(0, b.open - now.dt / 0.2);
+          b.lean = Math.max(0, b.lean - now.dt / 0.25);
+          const under = HANGS.has(f.species) ? hanging(now.t, b.seed) : 0;
+          crowd.put(i, b.perch[0], b.perch[1] - (1 - Math.cos(Math.PI * under)) * 0.06, b.perch[2], b.yaw, s, b.lean * 0.35, Math.PI * under);
+          crowd.pose(i, 0, b.open, glance(now.t, i * 1.9) * (0.7 - 0.2 * under), under * Math.max(0, Math.sin(now.t * 7 + b.seed)) * 0.7);
+          crowd.pose2(i, bob + 0.25 * under, 0, 0, 0);
           continue;
         }
         if (b.fly) {
@@ -493,7 +537,9 @@ function birds(plan: Plan, add: Add): Kind {
             // Crouching for the spring, the moment before it goes.
             const crouch = fl.out ? smooth((fl.k * fl.long + 0.14) / 0.1) : 0;
             crowd.put(i, b.rest[0], b.rest[1] - crouch * 0.02, b.rest[2], b.yaw, s, -crouch * 0.15, 0, s * (1 - crouch * 0.12));
-            crowd.pose(i, 0, 0, 0, 0);
+            // Its wings come a little open and its tail up, for the spring.
+            crowd.pose(i, 0, crouch * 0.25, 0, 0);
+            crowd.pose2(i, crouch * 0.3 + bob, 0, 0, 0);
             continue;
           }
           if (fl.k >= 1) {
@@ -517,29 +563,50 @@ function birds(plan: Plan, add: Add): Kind {
             const coming = (!fl.out || !!b.perch) && fl.k > 0.72;
             const beating = coming || Math.sin(now.t * 7 + i * 2.1) > -0.35;
             const dip = coming ? 0 : Math.sin(now.t * 7 + i * 2.1 - 1) * 0.09 * big * Math.min(1, fl.k * 5);
-            // Landing, it flares: body up, wings wide, to brake.
+            // Landing, it flares: body up, wings wide, tail spread and down, to brake.
             const flare = coming && !fl.out ? smooth((fl.k - 0.8) / 0.16) : 0;
-            crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6 * (1 - flare) + flare * 0.75);
+            // Flying, its body is level, not tipped up as it sits.
+            const climb = Math.atan2(d[1]!, Math.hypot(d[0]!, d[2]!)) * 0.6;
+            crowd.put(i, at[0]!, at[1]! + dip, at[2]!, b.yaw, s, (climb - tilt) * (1 - flare) + flare * 0.35);
             const spread = Math.min(1, fl.k * 6, coming ? 1 : (1 - fl.k) * 9);
-            crowd.pose(i, (beating ? 0.95 : 0.12) * Math.sin((now.t * (coming ? 30 : 46 + (i % 4) * 3)) / Math.sqrt(big) + i * 1.7), spread * (beating ? 1 : 0.25), 0, 0);
+            const [beat, open, hand] = smallStroke((now.t * (coming ? 30 : 46 + (i % 4) * 3)) / Math.sqrt(big) + i * 1.7, beating ? 0.95 : 0.12);
+            b.open = spread * (beating ? open : 0.2);
+            b.lean = flare;
+            crowd.pose(i, beat * spread, b.open, 0, -0.15 * (1 - flare));
+            crowd.pose2(i, -0.35 * flare + 0.08, beating ? 0.25 + 0.75 * flare : 0, 0, hand * spread);
             continue;
           }
         }
         // Where it sits: a peck, a hop, a look round. Sheltering from the rain it sits fluffed and only looks.
         if (b.doing === 0 && (b.wait -= now.dt) <= 0) {
           const r = next();
-          b.doing = f.shelter || f.perch ? 3 : r < 0.45 ? 1 : r < 0.75 ? 2 : 3;
-          b.long = b.doing === 1 ? 0.55 : b.doing === 2 ? 0.34 : 1.3;
+          // On a twig a tit or a blue tit now and then swings round to hang under it and feed; a singer sings.
+          b.doing = f.shelter ? 3 : f.perch ? (HANGS.has(f.species) && r < 0.3 ? 5 : SINGS.has(f.species) && r < 0.6 ? 6 : 3)
+            : r < 0.45 ? 1 : r < 0.75 ? 2 : f.species === 'thrush' && r < 0.82 ? 6 : 3;
+          b.long = b.doing === 1 ? 0.55 : b.doing === 2 ? (f.species === 'magpie' ? 0.5 : 0.34) : b.doing === 5 ? 3.4 : b.doing === 6 ? 1.7 : 1.3;
           b.look = (next() - 0.5) * 1.4;
           b.look2 = (next() - 0.5) * 1.4;
           b.hop = (0.1 + next() * 0.14) * big;
           b.k = 0;
         }
-        let peck = 0, turn = 0, up = 0, squat = 0;
+        let peck = 0, turn = 0, up = 0, squat = 0, roll = 0, sing = 0, tail = bob, flick = 0;
         if (b.doing) {
           b.k += now.dt / b.long;
           const k = Math.min(1, b.k);
           if (b.doing === 1) peck = Math.abs(Math.sin(k * Math.PI * 2)) * 0.95;
+          else if (b.doing === 5) {
+            // Round under its twig, a while there pecking at it and looking about, and up again.
+            const under = smooth(k / 0.13) - smooth((k - 0.87) / 0.13);
+            roll = Math.PI * under;
+            peck = under * Math.max(0, Math.sin(k * 23)) * 0.7;
+            turn = under * glance(now.t * 1.3, i * 2.3) * 0.6;
+            tail = 0.25 * under;
+          } else if (b.doing === 6) {
+            // Its head up, its bill opening on each note.
+            const lift = smooth(k / 0.12) * (1 - smooth((k - 0.85) / 0.15));
+            peck = -0.38 * lift;
+            sing = lift * Math.max(0, Math.sin(k * b.long * Math.PI * (f.species === 'thrush' ? 9 : 6.5))) ** 0.7;
+          }
           else if (b.doing === 3) {
             // A look round, in quick snaps of the head, each held: one way, another, and back.
             const snap = (at: number) => smooth((k - at) / 0.05);
@@ -553,6 +620,9 @@ function birds(plan: Plan, add: Add): Kind {
             squat = k < 0.24 ? Math.sin((k / 0.24) * Math.PI) : 0;
             const air = Math.max(0, (k - 0.24) / 0.76);
             up = (Math.sin(air * Math.PI) * 0.09 - squat * 0.015) * big;
+            // Its tail flicks up as it lands; a magpie bounds high on both feet, tail up and its wings flicked open.
+            tail += squat * 0.2 + (f.species === 'magpie' ? 0.55 * Math.sin(air * Math.PI) : 0);
+            if (f.species === 'magpie') { up *= 1.6; flick = Math.sin(air * Math.PI); }
             const step = k > 0.24 ? (b.hop * now.dt) / (b.long * 0.76) : 0;
             const z = b.rest[2] - Math.sin(b.yaw) * step;
             b.rest[0] += Math.cos(b.yaw) * step;
@@ -569,8 +639,14 @@ function birds(plan: Plan, add: Add): Kind {
           }
         }
         const fluff = f.shelter ? 1.12 : 1;
-        crowd.put(i, b.rest[0], (f.perch ? b.rest[1] : plan.ground(b.rest[0])) + up, b.rest[2], b.yaw, s * fluff, -squat * 0.12, 0, s * (f.shelter ? 1.08 : 1) * (1 - squat * 0.12));
-        crowd.pose(i, 0, 0, turn, peck);
+        // Just landed, its wings fold and it settles level on its feet.
+        b.open = Math.max(0, b.open - now.dt / 0.18);
+        b.lean = Math.max(0, b.lean - now.dt / 0.25);
+        // Hanging, its feet hold the twig's underside: half a twig's width down.
+        const hang = (1 - Math.cos(roll)) * 0.06;
+        crowd.put(i, b.rest[0], (f.perch ? b.rest[1] : plan.ground(b.rest[0])) + up - hang, b.rest[2], b.yaw, s * fluff, -squat * 0.12 + b.lean * 0.35, roll, s * (f.shelter ? 1.08 : 1) * (1 - squat * 0.12));
+        crowd.pose(i, 0.45 * flick, Math.max(b.open, 0.3 * flick), turn, peck);
+        crowd.pose2(i, tail, 0.4 * flick, sing, 0);
       }
     }
   };
@@ -607,12 +683,26 @@ function soarHere(): boolean {
   }
 }
 
-function soarers(plan: Plan, add: Add): Kind {
+/**
+ * A raven's or a crow's wings at a point of its stroke (a phase in radians): how far up they are (rad), how open, and
+ * how far its hands are bent up at the wrist. Its beat is deep and slow, mostly down; on the way up its hands trail and
+ * its wings draw in a little. Gliding (`beating` 0) it holds them a little over level, its fingers turned up.
+ */
+export function corvidStroke(phase: number, beating: number): [number, number, number] {
+  const beat = 0.12 + 0.52 * Math.sin(phase);
+  const rising = Math.cos(phase);
+  return [lerp(0.1, beat, beating), lerp(1, 1 - 0.2 * Math.max(0, rising) ** 2, beating), lerp(0.16, 0.38 * Math.sin(phase - 1.1), beating)];
+}
+
+function soarers(plan: Plan, add: Add, addFlock: AddFlock): Kind {
   if (!plan.soarers.length) return null;
   const next = sequence(97);
+  // When each croaks and rolls: its own, so that where they fly stays as it was.
+  const chance = sequence(101);
   const flights = plan.soarers.map(({ kind, count }) => {
-    // A bat is one of the small life, modelled in Blender: its wings beat at the shoulder and fold at the wrist.
-    const crowd = add(kind === 'bat' ? 'bat' : soarer(SOARING[kind]), count, undefined, `soarers:${kind}`);
+    // A bat is one of the small life, modelled in Blender: its wings beat at the shoulder and fold at the wrist. A raven
+    // and a crow are birds of the bird kit (./fauna/bird-kit.ts).
+    const crowd = kind === 'bat' ? add('bat', count, undefined, `soarers:${kind}`) : addFlock(kind, count, `soarers:${kind}`);
     const own = SOAR[kind];
     // Ravens and crows in twos, one a little behind the other on the same circle; bats each on its own.
     const all = Array.from({ length: count }, (_, i) => {
@@ -621,6 +711,8 @@ function soarers(plan: Plan, add: Add): Kind {
         k: pair ? NaN : next() * SKY_SPAN[kind], phase: next() * 6.28, lag: pair ? 0.5 + next() * 0.3 : 0,
         up: own.up[0] + next() * (own.up[1] - own.up[0]), z: own.z[0] + next() * (own.z[1] - own.z[0]), r: own.r[0] + next() * (own.r[1] - own.r[0]),
         drift: (next() < 0.5 ? -1 : 1) * (0.25 + next() * 0.35), way: next() < 0.5 ? -1 : 1, yaw: 0, climb: 0, x: NaN, y: 0, zz: 0,
+        // How long until it croaks, and how far into its croak it is; how long until a raven rolls over, and how far.
+        croak: 3 + chance() * 9, croaking: -1, roll: 15 + chance() * 25, rolling: -1, beating: 0,
       };
     });
     for (const [i, one] of all.entries()) if (Number.isNaN(one.k)) Object.assign(one, { k: all[i - 1]!.k, z: all[i - 1]!.z, drift: all[i - 1]!.drift, way: all[i - 1]!.way, phase: all[i - 1]!.phase, up: all[i - 1]!.up + 0.6 });
@@ -666,17 +758,38 @@ function soarers(plan: Plan, add: Add): Kind {
         const climb = one.climb;
         one.x = x; one.y = y; one.zz = z;
         // Ravens and crows bank into their circle; a bat rolls as it jinks.
-        const bank = kind === 'bat' ? 0.5 * Math.sin(t * 3.3 + 2 * one.phase) : -one.way * 0.32;
-        crowd.put(i, x, y, z, one.yaw, own.size, climb * 0.5, bank);
-        // Beats in bursts, and between them a glide on wings held a little up; a bat never glides. A raven's or a
-        // crow's beat is shallow and mostly down: a deep upstroke, seen from the side, stood up over its back like a fin.
-        const beating = kind === 'bat' || Math.sin(t * 0.45 + one.phase * 3) < own.flaps;
-        const beat = Math.sin(t * own.beat + one.phase * 5);
+        let bank = kind === 'bat' ? 0.5 * Math.sin(t * 3.3 + 2 * one.phase) : -one.way * 0.32;
         if (kind === 'bat') {
+          crowd.put(i, x, y, z, one.yaw, own.size, climb * 0.5, bank);
           // A bat's stroke: its wings sweep down full and wide, and come up with its hands folded in at the wrist.
           const [stroke, fold] = batStroke(t * own.beat + one.phase * 5);
           crowd.pose(i, stroke, fold, 0, 0);
-        } else crowd.pose(i, !beating ? -0.12 : 0.15 + 0.5 * beat, 1, 0, 0);
+          continue;
+        }
+        // Beats in bursts, and between them a glide on wings held a little up, its fingers spread and turned up; it
+        // eases from one to the other.
+        const beating = Math.sin(t * 0.45 + one.phase * 3) < own.flaps ? 1 : 0;
+        one.beating = now.still ? beating : one.beating + (beating - one.beating) * Math.min(1, now.dt * 3);
+        const [stroke, open, hand] = corvidStroke(t * own.beat + one.phase * 5, one.beating);
+        // Now and then it croaks: its bill opens twice, its head a little down; between, it looks about.
+        if (!now.still) {
+          if (one.croaking >= 0) one.croaking += now.dt;
+          if (one.croaking > 1.1) { one.croaking = -1; one.croak = 7 + chance() * 10; }
+          if (one.croaking < 0 && (one.croak -= now.dt) <= 0) one.croaking = 0;
+          // A raven, now and then, rolls right over in the air, as ravens do for the fun of it.
+          if (kind === 'raven') {
+            if (one.rolling >= 0) one.rolling += now.dt / 0.9;
+            if (one.rolling > 1) { one.rolling = -1; one.roll = 25 + chance() * 30; }
+            if (one.rolling < 0 && (one.roll -= now.dt) <= 0) one.rolling = 0;
+          }
+        }
+        const c = one.croaking;
+        const bill = c < 0 ? 0 : Math.max(0, Math.sin(Math.PI * Math.min(1, Math.max(0, (c - 0.1) / 0.3))), Math.sin(Math.PI * Math.min(1, Math.max(0, (c - 0.55) / 0.3))));
+        if (one.rolling >= 0) bank -= one.way * Math.PI * 2 * smooth(one.rolling);
+        crowd.put(i, x, y, z, one.yaw, own.size, climb * 0.5, bank);
+        crowd.pose(i, stroke, open, 0.45 * glance(t * 0.4, i * 3.1 + 1), c < 0 ? 0 : 0.3 * Math.sin(Math.PI * Math.min(1, c / 1.1)));
+        // A crow fans its round tail wide as it glides; a raven's wedge opens less.
+        crowd.pose2(i, 0.05 * Math.sin(t * 0.7 + one.phase), (kind === 'crow' ? 0.7 : 0.4) * (1 - 0.6 * one.beating), bill, hand);
       }
     }
     asked = false;

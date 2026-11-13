@@ -26,10 +26,13 @@ export const STRIPS = {
   walk: [0, 0, 160, 128, 12, 6],
   /** The moose standing: as it stopped, its head coming up and turning this way in three steps, looking, and with an ear flicked. */
   stand: [0, 384, 160, 128, 6, 6],
-  /** A crane's wingbeat: up, level, down, level. Neck out, legs trailing. It faces right. */
-  crane: [640, 256, 96, 48, 4, 4],
-  /** A goose's: a shorter neck, no legs to see. */
-  goose: [640, 304, 96, 48, 4, 4],
+  /**
+   * A crane's wingbeat, eight cells from the top, rendered from a bird with a body, a neck and wings that bend at the
+   * wrist, seen a little from below: neck out, legs trailing, its fingers spread. It faces right.
+   */
+  crane: [128, 256, 96, 48, 8, 4],
+  /** A goose's: a heavier body, a shorter dark neck, pointed wings, no legs to see. */
+  goose: [640, 256, 96, 48, 8, 4],
   /** A soft puff of smoke. */
   puff: [960, 0, 64, 64, 1, 1],
   /** A soft dot: a far window, a car's light. */

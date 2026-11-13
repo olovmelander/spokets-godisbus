@@ -20,7 +20,9 @@ two together, through life.json).
   turning to the camera, looking, and with one ear laid back.
 - The forest's bigger life, the same way: a moose cow with her calf at her heels, a roe deer (who stops and looks up
   as the moose does) and a brown bear, each with a body, legs and a gait of its own.
-- The birds, the smoke, the far window and the shooting star are drawn here, in white, from plain shapes.
+- The far flocks, the same way: a crane and a goose, each with a body, a neck, a head and wings that beat and bend at
+  the wrist, rendered from a little below in eight cells a wingbeat (the creature overhaul, 13 November 2026).
+- The smoke, the far window and the shooting star are drawn here, in white, from plain shapes.
 
 Nothing in it comes from anyone else: no model, no picture, no photograph. It empties the scene first.
 Units: 1 Blender unit is 1 EL. Z is up, the animal faces +X, and the camera looks along +Y.
@@ -52,8 +54,8 @@ TALL = 1024
 STRIPS = {
     'walk': (0, 0, 160, 128, 12, 6),
     'stand': (0, 384, 160, 128, 6, 6),
-    'crane': (640, 256, 96, 48, 4, 4),
-    'goose': (640, 304, 96, 48, 4, 4),
+    'crane': (128, 256, 96, 48, 8, 4),
+    'goose': (640, 256, 96, 48, 8, 4),
     'puff': (960, 0, 64, 64, 1, 1),
     'dot': (960, 64, 32, 32, 1, 1),
     'streak': (0, 256, 128, 64, 1, 1),
@@ -89,57 +91,6 @@ def clamp(value):
 
 
 # --- the drawn cells -----------------------------------------------------------------------------------------
-
-def to_capsule(px, py, shape):
-    """How far a point is from a tapered stroke: from (ax, ay) with radius ra to (bx, by) with radius rb."""
-    ax, ay, bx, by, ra, rb = shape
-    dx = bx - ax
-    dy = by - ay
-    along = clamp(((px - ax) * dx + (py - ay) * dy) / max(1e-9, dx * dx + dy * dy))
-    return math.hypot(px - ax - dx * along, py - ay - dy * along) - (ra + (rb - ra) * along)
-
-
-def draw_strokes(name, cell, shapes, scale, mid_x, mid_y, soft):
-    """Strokes given in the shape's own measure, y up, with (0, 0) at mid_x and mid_y of the cell (y from its top)."""
-    left, top = cell_origin(name, cell)
-    wide = STRIPS[name][2]
-    tall = STRIPS[name][3]
-    for y in range(tall):
-        for x in range(wide):
-            px = (x + 0.5 - mid_x) / scale
-            py = (mid_y - y - 0.5) / scale
-            near = 9.0
-            for shape in shapes:
-                near = min(near, to_capsule(px, py, shape))
-            alpha = clamp(0.5 - near * scale / soft)
-            if alpha > 0.0:
-                dab(left + x, top + y, alpha, 1.0)
-
-
-def bird(neck, legs, wing):
-    """A flying bird from the side, facing right, in four beats: its wings up, level, down, level."""
-    body = [
-        (-0.15, 0.0, 0.10, 0.01, 0.052, 0.046),
-        (0.10, 0.015, 0.10 + neck, 0.045, 0.024, 0.014),
-        (0.10 + neck, 0.045, 0.17 + neck, 0.04, 0.017, 0.006),
-        (-0.15, 0.0, -0.25, -0.005, 0.034, 0.012),
-    ]
-    if legs > 0.0:
-        body.append((-0.15, -0.01, -0.15 - legs, -0.05, 0.016, 0.007))
-    beats = [
-        [(0.02, 0.02, -0.01, 0.15 * wing, 0.065, 0.055), (-0.01, 0.15 * wing, -0.07, 0.27 * wing, 0.055, 0.018)],
-        [(0.02, 0.02, -0.16, 0.08 * wing, 0.048, 0.018)],
-        [(0.02, 0.0, -0.01, -0.11 * wing, 0.06, 0.05), (-0.01, -0.11 * wing, -0.06, -0.21 * wing, 0.05, 0.018)],
-        [(0.02, 0.01, -0.15, -0.03 * wing, 0.048, 0.018)],
-    ]
-    return [body + beat for beat in beats]
-
-
-crane = bird(0.30, 0.32, 1.25)
-goose = bird(0.22, 0.0, 1.1)
-for beat in range(4):
-    draw_strokes('crane', beat, crane[beat], 66.0, 48.0, 27.0, 1.6)
-    draw_strokes('goose', beat, goose[beat], 72.0, 50.0, 26.0, 1.6)
 
 # A puff of smoke: a few soft rounds, heaped.
 left, top = cell_origin('puff', 0)
@@ -720,6 +671,212 @@ DEER_REST = (DEER_HALT + 0.5) / 12.0
 for i, (lift, look, flick) in enumerate(((0.0, 0.0, 0.0), (0.35, 0.05, 0.0), (0.68, 0.35, 0.0), (0.92, 0.75, 0.0), (1.0, 1.0, 0.0), (1.0, 1.0, 1.0))):
     build_deer(DEER_REST, True, lift, look, flick)
     wild_shades['deer'].append(shoot('deerStand', i))
+
+# --- the far flocks: cranes in a V and geese, as birds -------------------------------------------------------------
+#
+# Each a bird with a body, a neck, a head and a bill, and wings that beat: a crane (art/blender/crane.py's bird, far
+# off) with its long neck out, its legs trailing behind its tail and the black fingers of its wings spread; a goose
+# with a heavy body, a shorter neck and pointed wings. The wing turns at the shoulder and bends at the wrist, its hand
+# trailing the arm through the beat: eight cells a beat, from the top. Seen a little from below and in front, as a
+# flock high over the place is, so that both wings show. The flight feathers are darker than the body: the game gives
+# the bird its colour, and this its light and dark.
+
+FEATHER = paint('flock-body', 0.62, 1.0)
+QUILL = paint('flock-quill', 0.2, 1.0)
+FLYERS = {
+    # body stations (x, z, half width, half thickness); neck from, head at, head size, bill length; the shoulder, the
+    # span from it, the arm's share, the wing's chord at the shoulder, how many fingers; legs trailing (to x), or none.
+    'crane': {
+        'body': [(-0.34, 0.0, 0.03, 0.03), (-0.27, 0.0, 0.08, 0.07), (-0.14, 0.0, 0.11, 0.1), (0.02, 0.0, 0.115, 0.105),
+                 (0.14, 0.01, 0.095, 0.09), (0.22, 0.02, 0.06, 0.06)],
+        'neck': ((0.2, 0.02), (0.68, 0.0), 0.034), 'head': (0.72, 0.0, 0.045), 'bill': 0.13,
+        'shoulder': (0.06, 0.1, 0.05), 'span': 1.05, 'arm': 0.42, 'chord': 0.3, 'fingers': 6, 'legs': -0.86,
+        'beat': (34.0, -26.0), 'tilt': 4.0,
+    },
+    'goose': {
+        'body': [(-0.36, 0.0, 0.04, 0.035), (-0.28, 0.0, 0.11, 0.09), (-0.12, 0.0, 0.15, 0.13), (0.05, 0.0, 0.15, 0.13),
+                 (0.18, 0.02, 0.12, 0.11), (0.26, 0.04, 0.07, 0.07)],
+        'neck': ((0.24, 0.04), (0.56, 0.06), 0.045), 'head': (0.6, 0.06, 0.052), 'bill': 0.08,
+        'shoulder': (0.06, 0.12, 0.06), 'span': 0.86, 'arm': 0.38, 'chord': 0.24, 'fingers': 0, 'legs': None,
+        'beat': (36.0, -28.0), 'tilt': 2.0,
+    },
+}
+
+
+def sheet(name, grid, material):
+    """A thin two-sided surface over a grid of points (rows of points): a wing, a feather."""
+    bm = bmesh.new()
+    made = [[bm.verts.new(p) for p in row] for row in grid]
+    for i in range(len(made) - 1):
+        for j in range(len(made[0]) - 1):
+            bm.faces.new((made[i][j], made[i][j + 1], made[i + 1][j + 1], made[i + 1][j]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    mesh = bpy.data.meshes.new(name)
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.materials.append(material)
+    made_ = bpy.data.objects.new(name, mesh)
+    solid = made_.modifiers.new('solid', 'SOLIDIFY')
+    solid.thickness = 0.012
+    bpy.context.scene.collection.objects.link(made_)
+    PARTS.append(made_)
+    return made_
+
+
+def flyer_wing(f, side, phase):
+    """A wing at a moment of its beat (phase 0 to 1, from the top): the arm out from the shoulder, raised by the beat;
+    the hand out from the wrist, trailing the arm (up as the wing goes down, down and swept back as it comes up); and,
+    for a crane, its fingers splayed at the tip. Side +1 is the near side (-Y)."""
+    top, deep = f['beat']
+    a = math.tau * phase
+    up = math.radians(deep + (top - deep) * 0.5 * (1.0 + math.cos(a)))
+    lag = math.radians(-22.0 * math.sin(a))
+    sweep = math.radians(24.0 * max(0.0, -math.sin(a)) + 4.0)
+    s = Vector(f['shoulder'])
+    s.y *= -side
+    span = f['span']
+    arm = span * f['arm']
+    hand = span - arm
+    out_arm = Vector((0.0, -side * math.cos(up), math.sin(up)))
+    out_hand = Vector((-math.sin(sweep), -side * math.cos(up + lag) * math.cos(sweep), math.sin(up + lag) * math.cos(sweep)))
+    wrist = s + out_arm * arm + Vector((0.04, 0.0, 0.0))
+    back = Vector((-1.0, 0.0, 0.0))
+    rows = []
+    chord = f['chord']
+    for k in range(6):
+        u = k / 5.0
+        lead = s + out_arm * (arm * u) + Vector((0.04 * u, 0.0, 0.0))
+        c = chord * (1.0 - 0.1 * u)
+        rows.append([lead + back * (c * v) for v in (0.0, 0.35, 0.7, 1.0)])
+    fingers = f['fingers']
+    reach = 0.55 if fingers else 1.0
+    hand_back = (back - out_hand * back.dot(out_hand)).normalized()
+    for k in range(1, 6):
+        u = k / 5.0 * reach
+        lead = wrist + out_hand * (hand * u)
+        c = chord * 0.9 * (1.0 - (0.15 if fingers else 0.9) * u / reach) + 0.01
+        rows.append([lead + hand_back * (c * v) for v in (0.0, 0.35, 0.7, 1.0)])
+    sheet('wing', rows, FEATHER)
+    # The flight feathers: darker, along the trailing edge, and out to the tip.
+    quills = []
+    for row in rows:
+        lead = row[0]
+        tail = row[-1]
+        quills.append([lead.lerp(tail, 0.55), lead.lerp(tail, 0.8), tail + (tail - lead).normalized() * 0.03])
+    sheet('quills', quills, QUILL)
+    if not fingers:
+        tip = wrist + out_hand * (hand * 1.08)
+        sheet('tip', [[rows[-1][0], rows[-1][-1]], [tip, tip + hand_back * 0.01]], QUILL)
+        return
+    # A crane's fingers: the long primaries, each its own, splayed and curling up at the tip.
+    root = wrist + out_hand * (hand * reach)
+    for k in range(fingers):
+        t = k / (fingers - 1.0)
+        turn = math.radians(-6.0 + 34.0 * t)
+        way = (out_hand * math.cos(turn) + hand_back * math.sin(turn)).normalized()
+        long = hand * (0.5 - 0.12 * abs(t - 0.3))
+        start = root + hand_back * (chord * 0.75 * t)
+        wide = 0.018
+        across = hand_back
+        pts = []
+        for j in range(4):
+            q = j / 3.0
+            at = start + way * (long * q) + Vector((0.0, 0.0, 0.04 * q * q))
+            w = wide * (1.0 - 0.4 * q)
+            pts.append([at - across * w, at + across * w])
+        sheet('finger', pts, QUILL)
+
+
+def build_flyer(kind, phase):
+    """A crane or a goose at a moment of its beat, facing +X, its middle at the origin."""
+    clear_parts()
+    f = FLYERS[kind]
+    still = Matrix.Rotation(math.radians(f['tilt']), 4, 'Y').inverted()
+    # It rises a little as its wings go down, and sinks as they come up.
+    lift = 0.02 * math.sin(math.tau * phase)
+    move = Matrix.Translation((0.0, 0.0, lift)) @ still
+    tube('body', f['body'], FEATHER, move)
+    (nx, nz), (hx, hz), thick = f['neck']
+    neck = [(nx, nz, thick * 1.6, thick * 1.6), ((nx + hx) / 2.0, (nz + hz) / 2.0 + 0.01, thick, thick), (hx, hz, thick * 0.9, thick * 0.9)]
+    tube('neck', neck, FEATHER, move)
+    x, z, r = f['head']
+    tube('head', [(x - r, z, r * 0.8, r * 0.8), (x, z + 0.005, r, r), (x + r * 0.8, z - 0.005, r * 0.6, r * 0.55)], QUILL if kind == 'goose' else FEATHER, move)
+    stick('bill', (x + r * 0.7, 0.0, z - 0.008), (x + r * 0.7 + f['bill'], 0.0, z - 0.02), r * 0.32, r * 0.08, QUILL, move)
+    if kind == 'goose':
+        # A goose's dark neck.
+        tube('collar', [(nx + 0.02, nz, thick * 1.3, thick * 1.3), (hx, hz, thick * 0.95, thick * 0.95)], QUILL, move)
+    if f['legs'] is not None:
+        for side in (1.0, -1.0):
+            stick('leg', (-0.12, -side * 0.035, -0.05), (f['legs'], -side * 0.02, -0.07), 0.014, 0.009, QUILL, move)
+        # The bustle: a crane's long tertials, drooping over its tail.
+        ball('bustle', (-0.3, 0.0, 0.0), (1.0, 0.0, -0.25), (0.0, 0.0, 1.0), (0.1, 0.05, 0.03), QUILL, move)
+    else:
+        stick('tail', (-0.34, 0.0, 0.0), (-0.44, 0.0, 0.005), 0.05, 0.02, QUILL, move)
+    for side in (1.0, -1.0):
+        before = len(PARTS)
+        flyer_wing(f, side, phase)
+        for part in PARTS[before:]:
+            part.matrix_world = move @ part.matrix_world
+
+
+# Seen from a little below and in front of its near side, as a flock high over the place is.
+FLOCK_VIEW = (math.radians(16.0), math.radians(22.0))
+
+
+def flock_eye():
+    below, front = FLOCK_VIEW
+    eye = Vector((math.sin(front) * math.cos(below), -math.cos(front) * math.cos(below), -math.sin(below)))
+    turn = (-eye).to_track_quat('-Z', 'Y').to_matrix()
+    return eye, turn @ Vector((1.0, 0.0, 0.0)), turn @ Vector((0.0, 1.0, 0.0)), turn
+
+
+def flock_frame(name):
+    """Where to look and how wide, so that every cell of the beat fits its cell with a margin, the bird in the same
+    place in each: the box round all of them, as the camera sees it."""
+    eye, right, up, _ = flock_eye()
+    box = [9.0, 9.0, -9.0, -9.0]
+    for i in range(STRIPS[name][4]):
+        build_flyer(name, i / STRIPS[name][4])
+        for part in PARTS:
+            for vert in part.data.vertices:
+                p = part.matrix_world @ vert.co
+                box = [min(box[0], p.dot(right)), min(box[1], p.dot(up)), max(box[2], p.dot(right)), max(box[3], p.dot(up))]
+    wide, tall = STRIPS[name][2], STRIPS[name][3]
+    across = max(box[2] - box[0], (box[3] - box[1]) * wide / tall) * 1.1
+    return right * ((box[0] + box[2]) / 2.0) + up * ((box[1] + box[3]) / 2.0), across
+
+
+def shoot_flock(name, cell, centre, across):
+    """Renders the bird as it is built now into a cell of its strip, its light and dark scaled so that its body is
+    nearly white: the game's ink is its colour."""
+    wide, tall = STRIPS[name][2], STRIPS[name][3]
+    scene.render.resolution_x = wide
+    scene.render.resolution_y = tall
+    camera.data.ortho_scale = across
+    eye, _, _, turn = flock_eye()
+    camera.location = centre + eye * 20.0
+    camera.rotation_euler = turn.to_euler()
+    scene.render.filepath = WORK + '/flock-%s-%02d.png' % (name, cell)  # noqa: F821
+    bpy.ops.render.render(write_still=True)
+    frame = bpy.data.images.load(scene.render.filepath)
+    pixels = list(frame.pixels)
+    bpy.data.images.remove(frame)
+    left, top = cell_origin(name, cell)
+    greys = sorted(pixels[at] for at in range(0, len(pixels), 4) if pixels[at + 3] > 0.6)
+    bright = greys[int(len(greys) * 0.9)] if greys else 1.0
+    for row in range(tall):
+        for x in range(wide):
+            at = (row * wide + x) * 4
+            alpha = pixels[at + 3]
+            grey = clamp(pixels[at] / max(1e-4, bright)) if alpha > 0.1 else 1.0
+            dab(left + x, top + tall - 1 - row, alpha, grey)
+
+
+for name in ('crane', 'goose'):
+    centre, across = flock_frame(name)
+    for i in range(STRIPS[name][4]):
+        build_flyer(name, i / STRIPS[name][4])
+        shoot_flock(name, i, centre, across)
 
 for part in PARTS:
     mesh = part.data

@@ -18,6 +18,7 @@ import { installAtmosphere } from './atmosphere';
 import { installBeetles } from './beetles';
 import { installBumblebee } from './bumblebee';
 import { installFauna } from './fauna';
+import { installBirds } from './fauna/bird-kit';
 import { installSmallLife } from './fauna/small-kit';
 import { installOwls } from '../owl';
 import { installFlora } from './flora';
@@ -49,6 +50,8 @@ export function installLift(): void {
   PACK.models.push(installSmallLife);
   // The rigged owl (../owl.ts) comes for the story's owl and for the near forest's owls on their branches.
   PACK.models.push(installOwls);
+  // The birds modelled in Blender (./fauna/bird-kit.ts), small and high, the same way.
+  PACK.models.push(installBirds);
   if (!out.has('atmosphere')) installAtmosphere();
   if (!out.has('atmosphere') && !out.has('near')) installNearMotes();
   if (!out.has('fauna')) installFauna();

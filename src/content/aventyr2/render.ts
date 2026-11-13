@@ -27,7 +27,8 @@ import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { GRAVITY, STEP } from '../../sim/constants';
-import { BIRDS, bird as smallBird, creatureMaterial, herd, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
+import { birdMaterial, flockOf } from '../../render/lift/fauna/bird-kit';
+import { owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { stepLength } from '../../render/acting';
 import { footballGeometry, footballMaterial } from '../../render/football';
 import { box, building, paint, PANE, rock } from './buildings';
@@ -2653,9 +2654,9 @@ function aftermath(): SpotProp {
   }
   group.add(leaves);
   // A great tit on the sill of the window with the new latch: the storm is over, and it has come for what the night left.
-  // Drawn with the fauna's own rig (../../render/lift/fauna/shapes.ts), so that its wings lie folded and its head
-  // turns and pecks: with a plain material its wings stood out as two flat discs (creature overhaul, 13 November 2026).
-  const tit = herd(smallBird(BIRDS.tit), 1, creatureMaterial());
+  // The great tit of the bird kit (../../render/lift/fauna/bird-kit.ts), modelled in Blender: its wings lie folded,
+  // its head turns and pecks by the same numbers as the fauna's did (creature overhaul, 13 November 2026).
+  const tit = flockOf('tit', 1, birdMaterial());
   const titPose = tit.geometry.getAttribute('act');
   tit.position.set(MORNING_WINDOWS[0], SILL, WALL + 0.12);
   group.add(tit);
