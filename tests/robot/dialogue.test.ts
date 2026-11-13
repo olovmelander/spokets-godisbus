@@ -28,13 +28,12 @@ const AFTER_ACTION = 6.5;
 const STANDS = 7;
 
 /**
- * The family's words along the deck in the two evenings at home: each kneels where he passes and says one thing, and
- * he stands at the deck's edge and listens until the last of them has spoken (prolog-scenes.ts, `titel`: "Their
- * promises are let finish first"). They are a farewell said in turn, not remarks about places he has left. In the
- * prologue he stands there free, beside the waiting ghost (Olov, 13 November 2026), and is not held while they speak.
+ * The family's words along the deck on the evening of the storm: each kneels where he passes and says one thing, and
+ * he stands at the deck's edge and listens until the last of them has spoken. They are a farewell said in turn, not
+ * remarks about places he has left. In the prologue the same promises are read standing in its last scene, at the
+ * edge, after the ghost has leapt (prolog-scenes.ts, `titel`; Olov, 13 November 2026).
  */
 const IN_TURN: Record<string, { lines: readonly string[]; stands: number }> = {
-  prolog: { lines: ['mapForYou', 'heja', 'followTrail'], stands: STANDS },
   stormkvall: { lines: ['skFollow'], stands: 8.5 },
 };
 

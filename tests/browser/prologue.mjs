@@ -319,38 +319,31 @@ try {
     await until(state, (s) => s.prologue?.kind === 'pappa', 'Pappa notices the ghost', 120000);
     await page.keyboard.up('ArrowRight');
     await until(state, (s) => s.flags.includes('pappa:done'), 'Pappa\'s freeze joke', 120000);
+    check('shrinking: Elof calls out as the ghost runs off along the deck', (await state()).said.includes('snuck'));
     check('shrinking: the walk to the edge is still his', !(await state()).flags.includes('goal'));
-    // Ordinary promises keep their full words in order while he walks. Only the authored title scene
-    // stops him at the edge, after every promise has finished without needing Continue.
+    // The ghost waits at the deck's edge and leaps down into the garden as he comes, before he is there (Olov,
+    // 13 November 2026). Only then, standing at the edge, does the family say its promises, in the title scene.
     const promises = [
       ['nearYou', 'Vi är nära dig hela tiden.'], ['mapForYou', 'Jag ritar en karta åt dig!'],
       ['heja', 'Heja, lillebror!'], ['followTrail', 'Följ godisspåret, Elof.'],
     ];
     await page.keyboard.down('ArrowRight');
     try {
-      for (const [id, words] of promises) {
-        await page.waitForFunction(([id, words]) => window.__godis.state().said.includes(id) &&
-          !document.getElementById('bubble').hidden && document.getElementById('bubbleLine').textContent === words,
-        [id, words], { timeout: 120000 });
-        check(`${id}: the full promise appears without mandatory Continue`,
-          !(await state()).storyReading && await page.locator('#sceneNext').isHidden());
-        if (id === 'nearYou') {
-          const before = await state();
-          await page.waitForFunction(x => window.__godis.state().x > x + .2, before.x, { timeout: 60000 });
-          const moved = await state();
-          check('the first promise preserves held movement and its complete words', moved.x > before.x + .2 &&
-            moved.steps > before.steps && await page.locator('#bubble').isVisible() &&
-            await page.locator('#bubbleLine').textContent() === words);
-        }
-      }
+      await until(state, (s) => s.flags.includes('leap'), 'the ghost leaps as he comes', 120000);
+      const leaping = await state();
+      check('shrinking: the ghost leaps while he is still a way off', leaping.ghost.x - leaping.x > 4 &&
+        !promises.some(([id]) => leaping.said.includes(id)));
+      await until(state, (s) => s.scene?.id === 'titel', 'the title scene', 120000);
     } finally { await page.keyboard.up('ArrowRight'); }
-    await until(state, s => promises.every(([id]) => s.said.includes(id) && !s.pendingDialogue.includes(id)),
-      'all four promises finish automatically', 120000);
-    await until(state, (s) => s.scene?.id === 'titel', 'the title scene', 120000);
-    const promised = await state();
-    check('shrinking: the authored title holds Elof at the edge', promised.held && promised.x >= 51.4);
-    check('shrinking: all four promises were said before the title', ['nearYou', 'mapForYou', 'heja', 'followTrail'].every((id) => promised.said.includes(id)));
-    await until(state, (s) => s.scene?.id === 'titel' && s.scene.seconds > 7.7, 'the title shows', 120000);
+    const atEdge = await state();
+    check('shrinking: the authored title holds Elof at the edge', atEdge.held && atEdge.x >= 51.4 && atEdge.x < 54 && atEdge.y > -0.85);
+    for (const [id, words] of promises) {
+      await readStop(page, state, id, words);
+      await continueDialogue(page);
+    }
+    const heard = (await state()).said.filter((id) => promises.some(([one]) => one === id));
+    check('shrinking: all four promises were said after the leap, in turn', JSON.stringify(heard) === JSON.stringify(promises.map(([id]) => id)));
+    await until(state, (s) => s.scene?.id === 'titel' && s.scene.seconds > 12.3, 'the title shows', 120000);
     check('shrinking: the game\'s title over the garden', await page.locator('#sceneTitle').textContent() === 'Elof och det stora godisäventyret'
       && Number(await page.locator('#sceneTitle').evaluate((node) => node.style.opacity)) > 0.5);
     await until(state, (s) => s.flags.includes('goal'), 'the prologue ends', 120000);

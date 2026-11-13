@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { prolog } from '../../src/content/chapters/ends';
 import { STEP } from '../../src/sim/constants';
-import { ELOF_HALF_WIDTH } from '../../src/sim/constants';
-import { MAMMA_DOWN, MAMMA_SEEN, MAMMA_TIME, PAPPA_TIME, droppedBag, prologuePose } from '../../src/sim/prologue';
+import { MAMMA_DOWN, MAMMA_SEEN, MAMMA_TIME, PAPPA_SNUCK, PAPPA_TIME, droppedBag, prologuePose } from '../../src/sim/prologue';
 import { sceneBeats } from '../../src/sim/scene';
 import { Sim } from '../../src/sim/sim';
 import type { StepInput } from '../../src/sim/types';
@@ -208,11 +207,21 @@ describe('the prologue freeze jokes', () => {
     expect(placed.x).toBeCloseTo(layout.railing.x);
     expect(placed.y).toBeCloseTo(layout.railing.y);
     expect(sim.curr.x).toBeCloseTo(start);
-    tick(sim, 2.4);
+    // Behind his back it is off the railing and running along the deck as Elof calls "Det smiter!".
+    tick(sim, PAPPA_SNUCK - 2.95 + STEP);
+    const running = prologuePose(layout, sim.prologue!.frame!);
+    expect(sim.flags.has('snuck')).toBe(true);
+    expect(running.y).toBeLessThan(layout.edge!.y + 0.25);
+    expect(running.x).toBeGreaterThan(layout.railing.x + 1.5);
+    expect(running.x).toBeLessThan(layout.edge!.x - 2);
+    expect(Math.cos(running.turn)).toBeGreaterThan(0.8);
+    expect(running.tilt).toBeLessThan(-0.1);
+    tick(sim, PAPPA_TIME - PAPPA_SNUCK + 0.1);
     expect(sim.flags.has('pappa:done')).toBe(true);
-    // The railing is empty: the ghost is at the deck's edge, and waits there for him.
+    // The railing is empty: the ghost is at the deck's edge, and waits there for him, looking back.
     expect(sim.ghost!.gone).toBe(false);
     expect(sim.ghost!.x).toBeCloseTo(layout.edge!.x);
+    expect(prologuePose(layout, { kind: 'pappa', seconds: PAPPA_TIME, ghost: { x: 44.4, y: -0.8 } }).turn).toBeCloseTo(Math.PI - 0.4);
     expect(sim.flags.has('goal')).toBe(false);
   });
 
@@ -287,51 +296,48 @@ describe('the prologue freeze jokes', () => {
   });
 });
 
-describe('the ghost at the deck\'s edge waits for every promise', () => {
+describe('the ghost gets away from the deck\'s edge before he is there', () => {
   const PROMISES = ['nearYou', 'mapForYou', 'heja', 'followTrail'];
+  /** After Pappa's joke and "Det smiter!": the ghost waits at the deck's edge. */
+  const afterJoke = [...told, 'pappa:noticed', 'snuck', 'beat:onlyWood', 'beat:snuck', 'pappa:done'];
   /** A page that reads each line it is given for `seconds`, one after another, and says when each is read. */
   function page(sim: Sim, seconds = 4.5) {
     const queue: string[] = [];
-    const read = new Map<string, number>();
     let told = sim.said.length;
     let reading = 0;
-    return {
-      read,
-      step(input: StepInput) {
-        sim.step({ ...input, talking: queue.length > 0 });
-        for (; told < sim.said.length; told++) queue.push(sim.said[told]!);
-        if (queue.length > 0 && (reading += STEP) >= seconds) {
-          const id = queue.shift()!;
-          sim.acknowledge(id);
-          read.set(id, sim.steps);
-          reading = 0;
-        }
-      },
+    return (input: StepInput) => {
+      sim.step({ ...input, talking: queue.length > 0 });
+      for (; told < sim.said.length; told++) queue.push(sim.said[told]!);
+      if (queue.length > 0 && (reading += STEP) >= seconds) {
+        sim.acknowledge(queue.shift()!);
+        reading = 0;
+      }
     };
   }
 
-  it('lets a child who runs straight to the edge stand free at its side, never past it, until the family is done', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 41.8, y: -0.79 } }, {}, { flags: [...told, 'pappa:noticed', 'pappa:done'] });
-    const reader = page(sim);
-    let furthest = -Infinity, lowest = Infinity, freeBeside = 0, leapt = -1;
-    for (let i = 0; i < 60 / STEP && !sim.flags.has('goal'); i++) {
-      // Running and jumping at the edge all the while, as a child might.
-      reader.step({ ...go, hop: i % 40 === 0, hopHeld: true });
-      furthest = Math.max(furthest, sim.curr.x);
-      lowest = Math.min(lowest, sim.curr.y);
-      if (sim.curr.x > layout.beside! - 0.6 && !sim.held && !sim.flags.has('leap')) freeBeside += STEP;
-      if (leapt < 0 && sim.flags.has('leap')) leapt = sim.steps;
-      // However near he stands, it waits where it is until then.
-      if (leapt < 0) expect(sim.ghost!.x).toBeCloseTo(layout.edge!.x);
-    }
-    expect(sim.flags.has('goal')).toBe(true);
-    // He reached the ghost's side and stayed on the deck: never past it, never over the edge.
-    expect(furthest).toBeGreaterThan(layout.beside! - ELOF_HALF_WIDTH - 0.1);
-    expect(furthest).toBeLessThanOrEqual(layout.beside! - ELOF_HALF_WIDTH + 0.02);
-    expect(lowest).toBeGreaterThan(layout.edge!.y - 0.05);
-    // He stood there free, not held, while they spoke; and the ghost leapt only once the last of them was read.
-    expect(freeBeside).toBeGreaterThan(5);
-    for (const id of PROMISES) expect(reader.read.get(id), id).toBeLessThan(leapt);
-    expect(sim.said.filter((id) => PROMISES.includes(id))).toEqual(PROMISES);
-  });
+  for (const [how, input] of [['runs and jumps at it', { ...go, hopHeld: true }], ['walks up to it', { ...idle, x: 0.45 }]] as const) {
+    it(`leaps down into the garden while a child who ${how} is still a way off, and the family's promises follow`, () => {
+      const sim = new Sim({ ...prolog, spawn: { x: 41.8, y: -0.79 } }, {}, { flags: afterJoke });
+      const read = page(sim);
+      let nearest = Infinity, lowest = Infinity, standing = 0, leapt = -1, apart = 0;
+      for (let i = 0; i < 90 / STEP && !sim.flags.has('goal'); i++) {
+        read({ ...input, hop: input.hopHeld && i % 40 === 0 });
+        lowest = Math.min(lowest, sim.curr.y);
+        // Held while nothing is staged: he would stand waiting for words.
+        if (sim.held && !sim.sceneFrame) standing += STEP;
+        if (leapt < 0 && sim.flags.has('leap')) { leapt = sim.said.length; apart = sim.ghost!.x - sim.curr.x; }
+        // While it is still on the deck, he never comes near it.
+        if (sim.ghost!.y > layout.edge!.y - 0.3) nearest = Math.min(nearest, Math.abs(sim.ghost!.x - sim.curr.x));
+      }
+      expect(sim.flags.has('goal')).toBe(true);
+      // It went from five EL away, in the picture with him, and he was never within reach of it on the deck.
+      expect(apart).toBeGreaterThan(4.5);
+      expect(nearest).toBeGreaterThan(2.5);
+      // He never fell off the edge, and never stood about waiting.
+      expect(lowest).toBeGreaterThan(layout.edge!.y - 0.05);
+      expect(standing).toBeLessThan(1);
+      // The family's promises, every one, after it has gone; then his own words, and the title.
+      expect(sim.said.slice(leapt)).toEqual([...PROMISES, 'titel:0']);
+    });
+  }
 });

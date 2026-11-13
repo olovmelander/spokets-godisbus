@@ -45,12 +45,12 @@ describe('Prolog, Lördagsmorgon', () => {
       // The morning, two eyes, the waking he watches, the chase, the star, the family, Pappa's hand and the title.
       expect(did(result.flags).filter((flag) => !flag.startsWith('scene:'))).toEqual([
         'eye', 'paint', 'woke', 'grab', 'blink', 'mamma:noticed', 'mamma:sees', 'mamma:passed', 'bag:torn', 'star', 'hand',
-        'pappa:noticed', 'pappa:done', 'promised', 'leap', 'titel', 'goal']);
+        'pappa:noticed', 'snuck', 'pappa:done', 'leap', 'titel', 'goal']);
       // The title is still on the screen when the chapter reaches its goal: its scene ends behind the card.
       expect(did(result.flags).filter((flag) => flag.startsWith('scene:'))).toEqual(
         ['scene:morgon', 'scene:vaknar', 'scene:stjarnan', 'scene:poff', 'scene:familj', 'scene:handen', 'scene:lofte']);
       expect(result.said).toEqual(['morgon:0', 'morgon:1', 'vaknar:0', 'vaknar:jayClose', 'vaknar:1', 'vaknar:2', 'vaknar:3', 'dropped', 'stjarnan:0', 'stjarnan:1', 'poff:0', 'poff:1', 'familj:0', 'familj:1', 'familj:2', 'familj:3',
-        'handen:0', 'handen:1', 'handen:2', 'handen:3', 'onlyWood', 'nearYou', 'mapForYou', 'heja', 'followTrail', 'titel:0']);
+        'handen:0', 'handen:1', 'handen:2', 'handen:3', 'onlyWood', 'snuck', 'nearYou', 'mapForYou', 'heja', 'followTrail', 'titel:0']);
       expect(result.bubbles).toBe(0);
       expect(result.missed).toEqual([]);
     });

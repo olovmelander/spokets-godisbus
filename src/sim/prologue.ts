@@ -9,18 +9,31 @@ import type { GhostPerch, PlayerState, Vec } from './types';
 export interface PrologueLayout {
   doorway: Vec; railing: Vec; edge?: Vec; pappaAfter?: string; pappaFrom?: number;
   /**
-   * How far along he can go on the deck while the ghost waits at its edge: he walks up and stands at its side, and is
-   * never past it and over the edge, at a run or in a jump (Olov, 13 November 2026: "kan man bara stå bredvid
-   * spöket"). An unseen wall there, from the deck's boards up (./sim.ts).
+   * Where he is when the ghost, waiting at the deck's edge, leaps down into the garden (`leap`): far enough from it
+   * that he never reaches it, at a run or in a jump, and in the picture, so that a child who walks sees it go too
+   * (Olov, 13 November 2026: "fixa så att spöket hoppar ner innan man hinner fram till det").
    */
-  beside?: number;
+  leapFrom?: number;
   /** For the picture only: where the deck's railing runs, and how far behind the play plane. */
   rail?: { from: number; to: number; z: number };
 }
 export interface PrologueFrame { kind: 'mamma' | 'pappa'; seconds: number; ghost: Vec }
 // The family returns from the window around the kitchen table before the frozen carving moves again.
 export const MAMMA_TIME = 9.4;
-export const PAPPA_TIME = 5.2;
+/**
+ * Pappa's joke: he puts the stiff ghost up on the railing and turns his back. It hops down onto the deck (PAPPA_DOWN)
+ * and scurries off along it to the deck's edge (PAPPA_EDGE), where it turns to look back at Elof. Elof's "Det smiter!"
+ * (PAPPA_SNUCK, ../content/chapters/ends.ts) is said while it runs, and the picture held while it is read shows it
+ * running away along the boards (Olov, 13 November 2026: "Jag vill ju att det ska kännas som att det smiter").
+ */
+export const PAPPA_TIME = 5.9;
+const PAPPA_OFF = 3.4;
+const PAPPA_DOWN = 3.8;
+export const PAPPA_SNUCK = 4.4;
+const PAPPA_EDGE = 5.4;
+/** Where it lands on the deck, off the railing, and how many quick hops its scurry to the edge takes. */
+const DECK_LANDING = 47.4;
+const SCURRY_HOPS = 6;
 /**
  * Mamma's joke: the ghost stiffens in mid-hop as she turns (FROZEN), drops like a dropped piece of wood, lands with a
  * knock (LANDS), rocks once and lies still on the floor (DOWN). Only once it has lain there a moment does she see it
@@ -81,6 +94,8 @@ export class PrologueSequence {
     }
     // The first doorway catches the bag after Mamma has passed. The existing trail begins just beyond it.
     if (conditions.has('mamma:passed') && ghost.x >= this.layout.doorway.x) flags.add('bag:torn');
+    // At the deck's edge it waits for him, looking back, and leaps down into the garden as he comes: before he is there.
+    if (this.layout.leapFrom !== undefined && conditions.has('pappa:done') && player.x >= this.layout.leapFrom) flags.add('leap');
   }
 
   /**
@@ -135,15 +150,27 @@ export function prologuePose(layout: PrologueLayout, frame: PrologueFrame) {
   }
   const lift = between(t, 1.1, 2.8), sneak = between(t, 3.4, 4.9);
   if (layout.edge) {
-    // Behind his back it hops down off the railing and scurries to the deck's edge, where it waits.
-    const hop = Math.sin(Math.PI * sneak) * 1.1;
+    // Behind his back it hops down off the railing onto the deck, and scurries off along it to the deck's edge.
     const rail = layout.rail?.z ?? PLAY_Z;
+    const onRail = { x: mix(frame.ghost.x, layout.railing.x, lift), y: mix(frame.ghost.y, layout.railing.y, lift), z: mix(PLAY_Z, rail, lift) };
+    // It turns round to go as it sets off, over a third of a second.
+    const away = mix(Math.PI - 0.4, 0.4, between(t, 3.15, 3.5));
+    if (t < PAPPA_DOWN) {
+      const k = Math.max(0, (t - PAPPA_OFF) / (PAPPA_DOWN - PAPPA_OFF));
+      return {
+        x: mix(onRail.x, DECK_LANDING, k), y: mix(onRail.y, layout.edge.y, k * k) + Math.sin(Math.PI * k) * 0.45,
+        z: mix(onRail.z, PLAY_Z, k), tilt: -0.1 * Math.sin(Math.PI * k), turn: away, scale: 1,
+      };
+    }
+    // Along the boards in quick little hops, leaning into its run; at the edge it turns to look back at him.
+    const run = Math.min(1, (t - PAPPA_DOWN) / (PAPPA_EDGE - PAPPA_DOWN));
     return {
-      x: mix(mix(frame.ghost.x, layout.railing.x, lift), layout.edge.x, sneak),
-      y: mix(mix(frame.ghost.y, layout.railing.y, lift), layout.edge.y, sneak) + hop,
-      z: mix(mix(PLAY_Z, rail, lift), PLAY_Z, sneak),
-      // It turns round to go as it sets off, over a third of a second, and leans into its scurry and out of it.
-      tilt: -0.12 * Math.sin(Math.PI * sneak), turn: mix(Math.PI - 0.4, 0.4, between(t, 3.15, 3.5)), scale: 1,
+      x: mix(DECK_LANDING, layout.edge.x, between(run, 0, 1)),
+      y: layout.edge.y + Math.abs(Math.sin(Math.PI * SCURRY_HOPS * run)) * 0.2,
+      z: PLAY_Z,
+      tilt: -0.3 * Math.sin(Math.PI * run),
+      turn: mix(0.4, Math.PI - 0.4, between(t, PAPPA_EDGE + 0.05, PAPPA_EDGE + 0.4)),
+      scale: 1,
     };
   }
   return {
