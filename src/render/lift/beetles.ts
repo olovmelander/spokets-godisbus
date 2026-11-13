@@ -14,7 +14,7 @@ import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../ext
  * its own patch of ground, on six legs in a tripod, feelers twitching. Now and then one stops and stands; when he
  * comes close, it hurries off out of his way, and comes back when he has gone.
  *
- * In the places where the ground is moss or grass: the forest, the garden, the bog. Mid and High only (../rich.ts),
+ * In the places where the ground is moss or grass: the forest, the garden, the bog, and never in the storm. Mid and High only (../rich.ts),
  * three draws, and only while one is in the picture. With less motion asked for, they stand still.
  */
 export function installBeetles(): void {
@@ -90,7 +90,9 @@ function homes(chapter: ChapterData): Beetle[] {
 }
 
 export function createBeetles({ chapter, scene }: ExtraContext): ViewExtra | null {
-  if (!chapter.place || !PLACES.has(chapter.place)) return null;
+  // In the storm they are hidden away under the moss and the bark with the rest of the near life (./fauna/plan.ts),
+  // and none walk out into the rain (the creature overhaul, 13 November 2026).
+  if (!chapter.place || !PLACES.has(chapter.place) || chapter.storm?.rain) return null;
   const beetles = homes(chapter);
   if (beetles.length === 0) return null;
   const group = new Group();

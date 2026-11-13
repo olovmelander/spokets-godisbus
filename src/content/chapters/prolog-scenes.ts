@@ -1,6 +1,6 @@
 import type { SceneDef } from '../../sim/scene';
 import { HOME_LAYOUT } from '../home-layout';
-import { MAMMA_TIME } from '../../sim/prologue';
+import { MAMMA_LANDS, MAMMA_SEEN, MAMMA_TIME, PAPPA_SNUCK, PAPPA_TIME } from '../../sim/prologue';
 
 /**
  * The prologue as it is told now (docs/narrative-audit.md, "the intro"): a Saturday morning at home, the ghost
@@ -34,11 +34,17 @@ const faceWindow = (from: { x: number; z: number }) => 0.25 - Math.atan2(WINDOW.
 // the family therefore waits behind this earliest position, then follows him forwards when he sets off.
 const REJOIN = atTable(-2.9);
 const FOLLOW = { mamma: 5.2, pappa: 2.7, moa: 3.7, bertil: 4.5 };
+/** Where the ghost lies on the floor in Mamma's joke: it froze in its hop this far before the doorway (src/sim/prologue.ts). */
+const DROPPED = { x: atTable(4.1), y: 0.35, z: 0.1 };
+/** Back with Elof, where he stood to paint the eyes, they look at him: their backs are to the ghost as it gets up. */
+const BACK = { x: atTable(-1.8), y: 2.4, z: 0 };
 /** The deck mark for the star encounter: Elof stops here to look, taste, and become small. */
 const STAR = 40.5;
 const PALM = { x: STAR + 0.8, y: 1.3, z: 0.05 };
 /** The deck's railing, along its far side (ends.ts, `prologue.rail`). */
 const RAIL = { z: -3.4 };
+/** Where the ghost is on the deck as Elof calls "Det smiter!", running off to its edge (src/sim/prologue.ts). */
+const RUNS = { x: 50, y: -0.3, z: 0 };
 
 /**
  * The morning's first shot, alive, under the title (docs/ux-audit/first-minutes.md row 4): Pappa carves and the
@@ -229,48 +235,58 @@ export const PROLOG_SCENES: SceneDef[] = [
     },
   },
   {
-    // The first freeze joke, played by the prologue's own clock (src/sim/prologue.ts): Mamma turns round, the
-    // ghost drops stiff in mid-hop, and Mamma sees only a carving on the floor. Then they all go after Elof.
+    // The first freeze joke, played by the prologue's own clock (src/sim/prologue.ts): Mamma turns round, the ghost
+    // stiffens in mid-hop and drops like a piece of wood, and lies on the floor. They all look at it, and once it has
+    // lain there a moment Mamma says "Hoppsan! Vem tappade spöket?" (MAMMA_SEEN): that picture is held while it is
+    // read, so it is the joke (Olov, 13 November 2026: "så måste spöket först ligga på golvet. Så det blir visuellt och
+    // perfekt"). She shrugs, and they all go back to Elof; behind their backs it gets up and is off.
     id: 'prologue:mamma',
     by: { done: 'mamma:passed' },
     seconds: MAMMA_TIME,
+    // It lands on the floorboards with a wooden knock.
+    sounds: [{ at: MAMMA_LANDS, sound: 'clatter' }],
     stage: {
       shots: [
-        { at: 0, x: 14.0, y: 3.0, z: -2, height: 8, width: 17, move: 0.01 },
-        { at: 2.9, x: 12.5, y: 3.1, z: -1.5, height: 8, width: 18, move: 2.0 },
+        // The ghost on the floor, the family at the window and Elof between them: all in the one picture.
+        { at: 0, x: 15.4, y: 2.4, z: -2, height: 6.8, width: 13.5, move: 0.01 },
+        // As they walk back, a little way with them; the ghost stays in the picture, to be seen getting up.
+        { at: 3.2, x: 13.4, y: 3.0, z: -1.5, height: 8, width: 17, move: 2.2 },
       ],
       actors: {
         // The window is left of the table. Return through that clear side aisle, then join Elof in front;
         // handing a window mark directly to the followers would cut diagonally through the table.
         mamma: [
-          { at: 0, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.6, x: REJOIN - FOLLOW.mamma, z: -5.4, move: 2.2, act: 'walk' },
-          { at: 2.9, x: REJOIN - FOLLOW.mamma, z: 3.0, move: 2.4 },
-          { at: 5.4, face: 0.05, act: 'look', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
-          { at: 6.7, act: 'shrug', aim: { x: atTable(5.4), y: 0.4, z: 0 } },
+          { at: 0, face: 0.1, act: 'look', aim: DROPPED },
+          { at: MAMMA_SEEN + 0.4, act: 'shrug', aim: DROPPED },
+          { at: 3.1, x: REJOIN - FOLLOW.mamma, z: -5.4, move: 2.0, act: 'walk' },
+          { at: 5.15, x: REJOIN - FOLLOW.mamma, z: 3.0, move: 2.4 },
+          { at: 8.0, face: 0.05, act: 'look', aim: BACK },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.mamma, holdsLeft: null },
         ],
+        // Pappa, Moa and Bertil go back by the ways they always went, each as long after the others as before: only
+        // later, once Mamma has said her line, so that they all stand and look at the ghost on the floor as she does.
         pappa: [
-          { at: 0.2, face: 0.1, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 1.5, x: REJOIN - FOLLOW.pappa, z: 0.3, move: 4.95, act: 'walk' },
-          { at: 6.5, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.2, face: 0.1, act: 'look', aim: DROPPED },
+          { at: 2.9, x: REJOIN - FOLLOW.pappa, z: 0.3, move: 4.95, act: 'walk' },
+          { at: 7.9, face: 0, act: 'look', aim: BACK },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.pappa },
         ],
         moa: [
-          { at: 0.15, act: 'look', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.35, x: REJOIN - FOLLOW.moa, z: 3.6, move: 3.65, act: 'walk' },
-          { at: 4.1, face: 0, act: 'look', aim: { x: atTable(5.4), y: 0.6, z: 0 } },
+          { at: 0.15, act: 'look', face: 0.1, aim: DROPPED },
+          { at: 1.75, x: REJOIN - FOLLOW.moa, z: 3.6, move: 3.65, act: 'walk' },
+          { at: 5.5, face: 0, act: 'look', aim: BACK },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.moa },
         ],
         bertil: [
-          { at: 0.25, act: 'startle', face: 0.1, aim: { x: atTable(5.4), y: 0.6, z: 0 } },
-          { at: 0.55, x: atTable(-4.3), z: -4.6, move: 2.3, act: 'walk' },
-          { at: 2.9, x: atTable(-4.3), z: 1.7, move: 2.15 },
-          { at: 5.2, x: REJOIN - FOLLOW.bertil, z: 1.7, move: 2, face: 0 },
+          { at: 0.25, act: 'startle', face: 0.1, aim: DROPPED },
+          { at: 1.4, act: 'look', aim: DROPPED },
+          { at: 1.95, x: atTable(-4.3), z: -4.6, move: 2.3, act: 'walk' },
+          { at: 4.3, x: atTable(-4.3), z: 1.7, move: 2.15 },
+          { at: 6.6, x: REJOIN - FOLLOW.bertil, z: 1.7, move: 2, face: 0 },
           { at: MAMMA_TIME - 0.2, act: 'stand', follow: FOLLOW.bertil },
         ],
       },
-      elof: [{ at: 0.2, act: 'watch', aim: { x: atTable(5.4), y: 0.6, z: 0 } }],
+      elof: [{ at: 0.2, act: 'watch', aim: DROPPED }],
     },
   },
   {
@@ -440,7 +456,10 @@ export const PROLOG_SCENES: SceneDef[] = [
         moa: [
           { at: 1.8, act: 'stand' },
           { at: 2.2, act: 'show', holds: 'drawing' },
-          { at: 8.0, act: 'crouch', holds: null, aim: { x: 44.4, y: -0.4, z: 0 } },
+          // Pappa reads the hope in her drawing out, and Elof looks at it: a little shy, she lowers it, looks down and
+          // sways (Olov, 13 November 2026: "Sen skäms Moa litegrann av pappa och Elof"), until Elof sees the ghost.
+          { at: 7.1, act: 'shy' },
+          { at: 8.3, act: 'crouch', holds: null, aim: { x: 44.4, y: -0.4, z: 0 } },
         ],
         bertil: [
           { at: 0.6, act: 'look', aim: { x: PALM.x, y: PALM.y + 0.6, z: PALM.z } },
@@ -453,6 +472,8 @@ export const PROLOG_SCENES: SceneDef[] = [
         { at: 0, rides: 'pappa', move: 0.5, act: 'watch', aim: { x: 43.1, y: 2.6, z: -1.4 } },
         { at: 2.6, act: 'watch', aim: { x: 40.8, y: 3.2, z: -2.4 } },
         { at: 6.3, act: 'watch', aim: { x: 43.1, y: 2.6, z: -1.4 } },
+        // And back to Moa's drawing, as Pappa reads it: it makes her a little shy.
+        { at: 6.8, act: 'watch', aim: { x: 40.8, y: 1.8, z: -2.2 } },
         { at: 8.2, act: 'point', aim: { x: 44.4, y: -0.4, z: 0 } },
         // Set down on the planks again, he steps off.
         { at: 9.7, rides: null, move: 0.5, act: null },
@@ -461,15 +482,20 @@ export const PROLOG_SCENES: SceneDef[] = [
   },
   {
     // The second freeze joke (src/sim/prologue.ts): Pappa looks at the ghost and it stiffens, so he puts the
-    // "carving" up on the railing's post; behind his back it hops down and scurries to the deck's edge.
+    // "carving" up on the railing's post; behind his back it hops down onto the deck and scurries off along it to the
+    // deck's edge. Elof and Bertil point: "Det smiter!" (ends.ts, `later`). The picture held while it is read shows it
+    // running away along the boards, with Elof pointing after it and Pappa's back to it.
     id: 'prologue:pappa',
     by: { done: 'pappa:done' },
-    seconds: 5.2,
+    seconds: PAPPA_TIME,
     stage: {
       shots: [
         { at: 0, x: 43.7, y: .8, height: 5, width: 6.6, move: .5 },
         { at: 1.4, x: 45.6, y: 1.2, z: -1.3, height: 5.4, width: 7, move: 1.2 },
-        { at: 3.4, x: 48.6, y: .9, height: 5.4, width: 9, move: .9 },
+        // Elof pointing, and the ghost off along the deck: both in the one picture as he calls out.
+        { at: 3.3, x: 46.4, y: 1.0, height: 5.2, width: 11, move: .9 },
+        // Then on with it to the edge, where it turns and looks back at him.
+        { at: PAPPA_SNUCK + .2, x: 49.4, y: .9, height: 5.4, width: 10, move: 1.1 },
       ],
       actors: {
         pappa: [
@@ -482,17 +508,18 @@ export const PROLOG_SCENES: SceneDef[] = [
           // He deliberately turns his back: the rigid carving comes alive where everyone else can see it.
           { at: 3.05, act: 'look', face: .4, aim: { x: STAR, y: -.4, z: 0 } },
           { at: 3.4, x: 43.8, z: -.6, move: .9, act: 'kneel', face: .4 },
-          { at: 4.7, act: 'shrug', face: .3 },
+          { at: 5.2, act: 'shrug', face: .3 },
         ],
-        moa: [{ at: 3.5, act: 'look', aim: { x: 50, y: -0.3, z: 0 } }],
-        bertil: [{ at: 3.5, act: 'point', aim: { x: 50, y: -0.3, z: 0 } }],
-        mamma: [{ at: 0.4, act: 'look', aim: { x: 46.6, y: 2, z: RAIL.z } }],
+        moa: [{ at: 3.5, act: 'look', aim: RUNS }],
+        bertil: [{ at: 3.5, act: 'point', aim: RUNS }],
+        mamma: [{ at: 0.4, act: 'look', aim: { x: 46.6, y: 2, z: RAIL.z } }, { at: 3.6, act: 'look', aim: RUNS }],
       },
-      elof: [{ at: 3.5, act: 'point', aim: { x: 50, y: 0, z: 0 } }],
+      elof: [{ at: 3.5, act: 'point', aim: RUNS }],
     },
   },
   {
-    // 6. The promise. Not held: they kneel along the deck as he goes, and each says one thing as he passes.
+    // 6. Not held: they kneel along the deck as he goes after the ghost. Their promises are said at the edge, once it
+    // has leapt (`titel`).
     id: 'lofte',
     on: 'pappa:done',
     seconds: 1.6,
@@ -519,38 +546,53 @@ export const PROLOG_SCENES: SceneDef[] = [
     },
   },
   {
-    // 7. At the deck's edge the garden opens below, the ghost hops down into it with the bag, he turns to wave
-    // to them, and turns back to the garden: the game's title over the whole of it.
+    // 7. The ghost has leapt down into the garden as he came (src/sim/prologue.ts, `leapFrom`). At the deck's edge he
+    // looks down at it on the lawn, and turns to his family: each says the promise they have for him, one after another
+    // (Olov, 13 November 2026: the ghost goes before he is there, and they speak after it). He waves to them, and turns
+    // back to the garden: the game's title over the whole of it.
     id: 'titel',
     at: 51.4,
-    needs: 'pappa:done',
-    seconds: 11.4,
+    needs: 'leap',
+    seconds: 16.0,
     hold: true,
-    // Their promises are let finish first: he stands at the edge and listens.
     quiet: true,
-    cues: [{ at: 0.9, flag: 'leap' }, { at: 11.2, flag: 'titel' }],
-    lines: [{ at: 2.8, who: 'elof', line: 'findBag' }],
+    cues: [{ at: 15.8, flag: 'titel' }],
+    // The promises keep the ids they had as lines said on the deck, so a saved game's receipts still fit.
+    lines: [
+      { at: 4.0, who: 'mamma', line: 'nearYou', id: 'nearYou' },
+      { at: 4.8, who: 'moa', line: 'mapForYou', id: 'mapForYou' },
+      { at: 5.6, who: 'bertil', line: 'heja', id: 'heja' },
+      { at: 6.4, who: 'pappa', line: 'followTrail', id: 'followTrail' },
+      { at: 7.4, who: 'elof', line: 'findBag', id: 'titel:0' },
+    ],
     stage: {
       // The garden is revealed first. Its title then has four unhurried seconds in the settled shot.
-      words: [{ at: 7.0, seconds: 4.2, kind: 'title', text: 'title' }],
+      words: [{ at: 11.6, seconds: 4.2, kind: 'title', text: 'title' }],
       shots: [
         { at: 0, x: 52.2, y: -0.1, height: 2.9, width: 5.2, eye: -0.05, move: 0.8 },
-        // Down over the edge with it, to the lawn where it lands. Kept to the lawn's side of the deck's corner: at x 55
+        // Down over the edge, to the lawn where it landed. Kept to the lawn's side of the deck's corner: at x 55
         // half the picture was the dark under the boards on a phone held sideways (12 November 2026).
         { at: 0.9, x: 60.2, y: -5.3, height: 6.2, width: 13, move: 1.8 },
-        { at: 2.8, x: 51.2, y: 0.8, height: 5.6, width: 10, move: 1.2 },
-        { at: 4.4, x: 56.5, y: 1.2, height: 15, width: 28, move: 2.6 },
+        // Back up to him and the family kneeling along the deck, for their promises.
+        { at: 3.0, x: 48.8, y: 1.3, height: 5.6, width: 10.5, move: 1.1 },
+        { at: 7.2, x: 50.4, y: 1.0, height: 5.6, width: 10, move: 0.8 },
+        { at: 9.0, x: 56.5, y: 1.2, height: 15, width: 28, move: 2.6 },
       ],
       actors: {
-        mamma: [{ at: 3.0, act: 'wave' }],
-        moa: [{ at: 2.9, act: 'wave' }],
-        bertil: [{ at: 3.1, act: 'cheer' }],
-        pappa: [{ at: 3.2, act: 'nod' }],
+        // Each makes their promise with a gesture, a moment before the words, so that it shows while they are read.
+        mamma: [{ at: 3.7, act: 'nod', aim: { x: 51.7, y: 0, z: 0 } }, { at: 7.6, act: 'wave' }],
+        moa: [{ at: 4.5, act: 'wave', aim: { x: 51.7, y: 0, z: 0 } }, { at: 7.5, act: 'wave' }],
+        bertil: [{ at: 5.3, act: 'cheer' }, { at: 7.7, act: 'cheer' }],
+        pappa: [{ at: 6.0, act: 'point', aim: { x: 58, y: 0.8, z: -1 } }, { at: 7.8, act: 'nod', aim: { x: 51.7, y: 0, z: 0 } }],
       },
       elof: [
         { at: 0, act: 'watch', aim: { x: 57.5, y: -6, z: 0 }, face: 0 },
-        { at: 2.8, face: 0.44, act: 'wave', aim: { x: 49.5, y: 2, z: -2 } },
-        { at: 4.6, face: 0, act: 'watch', aim: { x: 70, y: 0, z: -10 } },
+        { at: 3.0, face: 0.44, act: 'watch', aim: { x: 45.6, y: 2.2, z: -1.7 } },
+        { at: 4.5, aim: { x: 47.6, y: 1.7, z: -2.1 } },
+        { at: 5.3, aim: { x: 49.4, y: 1.7, z: -1.7 } },
+        { at: 6.0, aim: { x: 51.7, y: 2.3, z: -2.5 } },
+        { at: 7.4, act: 'wave', aim: { x: 49.5, y: 2, z: -2 } },
+        { at: 9.2, face: 0, act: 'watch', aim: { x: 70, y: 0, z: -10 } },
       ],
     },
   },

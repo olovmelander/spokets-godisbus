@@ -218,7 +218,7 @@ export function actPose(act: Act, c: ActContext, out: Pose, stance: Stance = 'st
  * kneel or a crouch): the body goes on living under them. A sip keeps still for the mug at the lips.
  */
 const LIVES: readonly Act[] = ['point', 'show', 'shine', 'offer', 'reach', 'lift', 'gasp', 'wave', 'cheer', 'shrug', 'hug', 'nod',
-  'startle', 'eat', 'blow', 'hands', 'paint', 'sneak', 'kneel', 'crouch'];
+  'startle', 'eat', 'blow', 'hands', 'paint', 'sneak', 'kneel', 'crouch', 'shy'];
 /** Acts with legs of their own standing: a cheer's bounce, a low reach's bent knees. */
 const OWN_LEGS: readonly Act[] = ['cheer', 'reach'];
 /** The arms an act leaves hanging (left, right). */
@@ -591,6 +591,24 @@ function actOf(act: Act, c: ActContext, out: Pose, stance: Stance): Pose {
       if (k <= 0) return out;
       play(clip, Math.min(t, clip.seconds), Object.assign(dressing, out));
       for (const joint of JOINTS) out[joint] += (dressing[joint] - out[joint]) * k;
+      return out;
+    }
+    case 'shy': {
+      // A little shy (Moa, when Pappa reads her drawing out and Elof looks at it; Olov, 13 November 2026: "Sen skäms Moa
+      // litegrann av pappa och Elof"): she lifts what she showed up in front of her face and hides behind it (the stage
+      // holds it there, ./drawing-hold.ts), her head a little down and to the side so that her eyes peek over its top at
+      // them, and she sways on her feet, the shoulders twisting from side to side, as long as it lasts. Reduced motion:
+      // hidden behind it, still.
+      under();
+      const k = c.calm ? 1 : rise(t, .6), hips = hipsOf(out);
+      const sway = c.calm ? 0 : Math.sin((c.clock ?? c.t) * 2.2);
+      handTo(out, .8, hips + SHOULDER - .3, 0, k);
+      handTo(out, .8, hips + SHOULDER - .3, 1, k);
+      out.nod += (.12 - out.nod) * k;
+      out.tilt += .22 * k;
+      out.turn += (.15 - out.turn) * k;
+      out.twist += .12 * sway * k;
+      out.bendSide += .035 * sway * k;
       return out;
     }
     case 'paint': {

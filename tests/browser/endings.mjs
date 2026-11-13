@@ -104,7 +104,9 @@ try {
     const reached = Date.now();
     await page.keyboard.up('ArrowRight');
     check(`${name}: no card at the goal itself: the coda plays first`, await page.locator('#endCard').isHidden());
-    await page.waitForSelector('#endCard:not([hidden])', { timeout: 90000 });
+    // The page waits for his walk into the forest (about 7.6 s of frame time after the goal); under CI's software
+    // rendering that is two minutes or more.
+    await page.waitForSelector('#endCard:not([hidden])', { timeout: 240000 });
     // The coda's seconds are counted in frame time, which never runs ahead of the clock.
     check(`${name}: the page comes after the coda`, Date.now() - reached >= 4000);
     check(`${name}: the coda's last picture is glued into the page`, await page.locator('#endPicture canvas').count() === 1
@@ -196,7 +198,7 @@ try {
   {
     const { page, state, finish } = await open('granskog-card', {}, '?dev&debug&standin&course=granskog&tier=low');
     await until(state, (s) => s.scene?.id === 'card' && s.scene.seconds > 0.9, 'the time card', 30000);
-    check('granskog: the card says where and when', await page.locator('#sceneCaption').textContent() === 'Granskogen · halv tolv');
+    check('granskog: the card says where and when', await page.locator('#sceneCaption').textContent() === 'Granskogen · klockan halv tolv');
     check('granskog: the card does not hold him', !(await state()).held);
     const x = (await state()).x;
     await page.keyboard.down('ArrowRight');
@@ -228,7 +230,7 @@ try {
     // Not a debug session: the public game, where every load used to open on the title.
     await page.goto(`${origin}${BASE}?dev&standin&course=granskog&tier=low`);
     await page.waitForFunction(() => document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
-    await page.waitForFunction(() => document.getElementById('sceneCaption')?.textContent === 'Granskogen · halv tolv', null, { timeout: 30000 });
+    await page.waitForFunction(() => document.getElementById('sceneCaption')?.textContent === 'Granskogen · klockan halv tolv', null, { timeout: 30000 });
     check('onward: Granskogen opens on its card', true);
     check('onward: no title between the chapters', await page.locator('#title').isHidden());
     await page.reload();

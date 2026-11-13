@@ -18,7 +18,9 @@ describe('the four memories', () => {
     expect(found.match(/data-memory=/g)).toHaveLength(2);
     expect(found).toContain('data-memory="garden"');
     expect(found).toContain('data-memory="berget"');
-    expect(found).toContain(MEMORIES.garden![0]);
+    // The same picture, with gradient ids of its own so the memory shown from it paints by itself (src/ui/svg-ids.ts).
+    expect(found).not.toContain(MEMORIES.garden![0]);
+    expect(found.replace(/-c\d+(?=[")])/g, '')).toContain(MEMORIES.garden![0]);
     expect(found).not.toContain('data-memory="granskog"');
     expect(found).not.toContain('unknown');
   });

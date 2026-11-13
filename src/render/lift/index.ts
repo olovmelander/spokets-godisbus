@@ -8,6 +8,7 @@
  *   dragonflies, butterflies) and the little forest beings and carved figures that peek out;
  * - `near-motes.ts`: pollen and dust drifting just in front of the lens, out of focus, soft discs of light;
  * - `beetles.ts`: dor beetles walking on the forest floor just behind the path, which hurry out of his way;
+ * - `bumblebee.ts`: the garden's bumblebee, which bumbles from dandelion to dandelion;
  * - `flora.ts`: birch crowns, pines, moss, ferns, tall grass, glowing mushrooms, and plants that bend as he passes;
  * - `materials.ts`: wet and dry surfaces, dew, brooks that mirror the bank.
  *
@@ -15,10 +16,15 @@
  */
 import { installAtmosphere } from './atmosphere';
 import { installBeetles } from './beetles';
+import { installBumblebee } from './bumblebee';
 import { installFauna } from './fauna';
+import { installBirds } from './fauna/bird-kit';
+import { installSmallLife } from './fauna/small-kit';
+import { installOwls } from '../owl';
 import { installFlora } from './flora';
 import { installMaterials } from './materials';
 import { installNearMotes } from './near-motes';
+import { PACK } from '../extensions';
 
 let installed = false;
 
@@ -39,10 +45,18 @@ export function installLift(): void {
   if (installed) return;
   installed = true;
   const out = left();
+  // The small life modelled in Blender (./fauna/small-kit.ts) comes for every one of it in the scene: the fauna's,
+  // the bumblebee and the ants that carry him (../ant-ride.ts).
+  PACK.models.push(installSmallLife);
+  // The rigged owl (../owl.ts) comes for the story's owl and for the near forest's owls on their branches.
+  PACK.models.push(installOwls);
+  // The birds modelled in Blender (./fauna/bird-kit.ts), small and high, the same way.
+  PACK.models.push(installBirds);
   if (!out.has('atmosphere')) installAtmosphere();
   if (!out.has('atmosphere') && !out.has('near')) installNearMotes();
   if (!out.has('fauna')) installFauna();
   if (!out.has('beetles')) installBeetles();
+  if (!out.has('fauna') && !out.has('bee')) installBumblebee();
   if (!out.has('flora')) installFlora();
   if (!out.has('materials')) installMaterials(out);
 }

@@ -1,17 +1,55 @@
 import type { SceneDef } from '../../sim/scene';
 
-/** The rescue and the reunion have visible beginnings; nobody appears on the word "Smaka". */
+/** Where the ghost is, beside the crack, while they pull: a step behind him, on his side of it. */
+const BEHIND = -0.95;
+/** Where it waits with the bag once the trägubbe is out (norrsken.ts, its second place). */
+const AHEAD = { x: 19.4, z: -0.6 };
+
+/**
+ * The rescue and the reunion have visible beginnings; nobody appears on the word "Smaka".
+ *
+ * The rescue is one lowering and one pull (Olov, 13 November 2026: "När man hissar ner röda snöret till trägubben som
+ * fastnat så gör man det två gånger"): *Sänk snöret* and the loop takes hold (`snoret`); *Dra upp*, and he and the
+ * ghost heave it up in one go (`hissa`); and he lifts it out onto the rock (`uppdragen`).
+ */
 export const NORRSKEN_SCENES: readonly SceneDef[] = [{
   id: 'snoret', on: 'lower', from: 9.2, before: 17.7, until: 'placed:tragubbe', seconds: 2.6, hold: true,
   cues: [{ at: 2.3, flag: 'nr:rope-ready' }],
   stage: {
-    // Keep the whole stranded figure below the lip visible in a short landscape frame too.
-    shots: [{ at: 0, x: 11.8, y: -1.05, height: 5.4, width: 4.5, eye: .4, move: .65 }],
+    // Keep the whole stranded figure below the lip visible in a short landscape frame too, and his head and the ghost's
+    // under the scene's top bar (at -1.05 and 5.4 high, they were at its edge).
+    shots: [{ at: 0, x: 11.7, y: -.5, height: 5.6, width: 4.8, eye: .4, move: .65 }],
     elof: [{ at: 0, act: 'crouch', aim: { x: 12.4, y: -2.3, z: 0 }, face: .05 },
       { at: .45, act: 'reach', aim: { x: 12.4, y: -1.2, z: .1 } }],
   },
 }, {
-  id: 'uppdragen', on: 'placed:tragubbe', from: 9.2, before: 17.7, until: 'eyes', seconds: 2.9, hold: true,
+  // Dra upp: he stands, the ghost waddles up behind him and takes the lace's end, and the two of them heave three
+  // times while the trägubbe comes up the crack, all the way, in one go (the mover, from `nr:heave`). The heaves are
+  // drawn by the picture (src/render/norrsken-rescue.ts, `heaveAt`). The picture follows it up to the lip.
+  id: 'hissa', on: 'haul', from: 9.2, before: 17.7, until: 'placed:tragubbe', seconds: 3.1, hold: true,
+  cues: [{ at: .35, flag: 'nr:heave' }],
+  stage: {
+    // The two of them on the rock, heads well under the scene's top bar, and the trägubbe deep in the crack below them;
+    // then up with it to the lip, where `uppdragen` takes over.
+    shots: [
+      { at: 0, x: 11.5, y: -.5, height: 5.6, width: 5.2, eye: .4, move: .5 },
+      { at: 1.2, x: 11.5, y: 0, height: 4.6, width: 5.2, move: 1 },
+      { at: 2.3, x: 11.6, y: .5, height: 3.8, width: 5, move: .6 },
+    ],
+    elof: [{ at: 0, act: 'stand', face: .05 }],
+    actors: { ghost: [
+      // From where it waited by the pine (norrsken.ts, its first place).
+      { at: 0, x: 9.2, y: 0, z: 0, face: 0, move: .01 },
+      { at: .05, byElof: BEHIND, z: .05, move: .45, act: 'waddle' },
+      // Each heave a little step back, the lace taut between them.
+      { at: .5, act: 'grab' },
+      { at: 1.15, byElof: BEHIND - .15, move: .3, act: 'grab' },
+      { at: 1.8, byElof: BEHIND - .3, move: .3, act: 'grab' },
+      { at: 2.55, act: 'hop' },
+    ] },
+  },
+}, {
+  id: 'uppdragen', on: 'placed:tragubbe', from: 9.2, before: 17.7, until: 'bag', seconds: 2.9, hold: true,
   stage: {
     shots: [{ at: 0, x: 11.9, y: .8, height: 3.4, width: 4.6, move: .5 }],
     elof: [
@@ -20,6 +58,13 @@ export const NORRSKEN_SCENES: readonly SceneDef[] = [{
       { at: 2.2, act: 'crouch' },
       { at: 2.5, lift: { x: 0, y: 0, z: 0 }, move: .4, act: null },
     ],
+    // It is glad with him while he lifts it out, and then goes on ahead, behind the path, to wait with the bag where
+    // the simulation has it next: no jump as the scene lets it go.
+    actors: { ghost: [
+      { at: 0, byElof: BEHIND - .3, z: .05, face: 0, act: 'hop' },
+      { at: 1.3, act: 'tilt' },
+      { at: 2, x: AHEAD.x, z: AHEAD.z, move: .9, act: 'hop' },
+    ] },
   },
 }, {
   id: 'aterfunna', on: 'taste', from: 25, before: 35, until: 'home', seconds: 10.8, hold: true,

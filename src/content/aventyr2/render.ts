@@ -14,7 +14,12 @@ import { littleCarving } from '../../render/little-carving';
 import { glowTexture } from '../../render/glow';
 import { windowCandle } from '../../render/window-candle';
 import { wingbeat } from '../../render/wingbeat';
+// The rigged owl (art/blender/owl.py) and its moments in the story (./owl-moments.ts).
+import { owlRigOf } from '../../render/owl';
+import { away as owlAway, called as calledMoment, groundAt as owlGround, hollow as hollowMoment, landing as landingMoment, ride as rideMoment, sit as sitMoment } from './owl-moments';
+import { lessMotion } from '../../platform/motion';
 import { kitLife } from '../../render/kit-life';
+import { ambientOf, stepAmbient } from '../../render/ambient-animals';
 import { drawnWhile } from '../../render/idle';
 import { litLamp } from '../../render/stage';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
@@ -22,7 +27,8 @@ import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
 import { GRAVITY, STEP } from '../../sim/constants';
-import { BIRDS, bird as smallBird, owl as tawnyOwl } from '../../render/lift/fauna/shapes';
+import { birdMaterial, flockOf } from '../../render/lift/fauna/bird-kit';
+import { owl as tawnyOwl } from '../../render/lift/fauna/shapes';
 import { stepLength } from '../../render/acting';
 import { footballGeometry, footballMaterial } from '../../render/football';
 import { box, building, paint, PANE, rock } from './buildings';
@@ -33,6 +39,7 @@ import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
 import { otterLife } from './otter';
+import { installRiverCreatures } from './river-creatures';
 import { RAPID_LANE, RAPID_STONES, riverStones } from './river-stones';
 import { DOOR, morgonen, WINK } from './chapters/morgonen';
 import { frontDoor } from '../../render/front-door';
@@ -930,7 +937,23 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         const ride = riding ? owlRides.find((r) => x >= r.from.x - 0.5 && x <= r.to.x + 0.5) : undefined;
         if (ride && ride !== carrying) { carrying = ride; boardedAt = clock; landedAt = -1; }
         if (!ride && carrying && landedAt < 0) { landedAt = clock; setDown.copy(ridden.position); }
-        if (ride) {
+        // The rigged owl (./owl-moments.ts): up from where it stood, its back under him all the way, braking with its
+        // talons forward where he comes down, and away behind him.
+        const holder = ridden.children.find((child) => typeof child.userData.owl === 'string');
+        const rig = owlRigOf(holder);
+        if (ride && rig) {
+          holder!.position.set(0, 0, 0);
+          ridden.scale.setScalar(1);
+          rideMoment(rig, ridden, {
+            since: clock - boardedAt, left: (ride.to.x - x) / Math.max(1, ride.to.x - ride.from.x), clock, dt, still, waits: ride.waits,
+            ground: owlGround(chapter, x),
+          });
+          drawnWhile(ridden, true);
+        } else if (!ride && rig && carrying && landedAt >= 0) {
+          const k = still ? 1 : (clock - landedAt) / 1.8;
+          if (k < 1) owlAway(rig, ridden, setDown, k, clock - landedAt, dt, still);
+          drawnWhile(ridden, k < 1);
+        } else if (ride) {
           const k = still ? 1 : smooth((clock - boardedAt) / 0.45);
           ridden.scale.setScalar(SITTING_SIZE + (1 - SITTING_SIZE) * k);
           if (ride.waits && k < 1) {
@@ -1355,7 +1378,7 @@ function lightFromWithin(figure: Group): void {
   });
 }
 
-/** Pappa's very first trägubbe: grey old wood, a pointed cap, a crooked smile and the crowberry eyes Elof gave it. */
+/** Pappa's very first trägubbe: grey old wood, a pointed cap, a crooked smile and its old painted eyes. */
 function oldFigure(silhouette = false): Group {
   const group = new Group();
   const wood = silhouette ? solid('#3a3a40', 1, { emissive: '#30384c', emissiveIntensity: 0.6 }) : solid('#8f8c7e', 1);
@@ -1370,7 +1393,7 @@ function oldFigure(silhouette = false): Group {
   smile.position.set(0, 0.57, 0.146);
   smile.rotation.z = Math.PI;
   group.add(body, ball(0.16, wood, 0.015, 0.58), cap, smile, ball(0.06, solid('#6f8a45', 1), -0.13, 0.38, 0.08, [1, 0.5, 1]));
-  // The crowberry eyes: dark, a little shiny.
+  // Its old painted eyes: dark, a little shiny.
   for (const x of [-0.06, 0.06]) group.add(ball(0.026, solid('#1a1530', 0.3), x, 0.62, 0.148));
   group.name = 'old-trägubbe';
   if (!silhouette) { group.userData.model = 'tragubbe'; group.userData.fit = 0.72; }
@@ -1672,7 +1695,10 @@ function pumpkin(): { group: Group; light: Mesh; face: MeshBasicMaterial } {
 /** The owl, tawny and round, with big dark eyes in a pale face. */
 function owl(flying = false): Group {
   const group = new Group();
-  group.userData.model = flying ? undefined : 'uggla';
+  // The rigged owl comes in the place of what is built here (../../render/owl.ts `installOwls`); where its file is
+  // missing, the kit's older owl does, by these names (`owlStatic`).
+  group.userData.owl = flying ? 'flying' : 'perched';
+  if (!flying) group.userData.owlStatic = 'uggla';
   if (!flying) {
     // Until the kit's has come, the same tawny owl as sits in the forest's trees (../../render/lift/fauna/shapes.ts), only
     // near and large, with its lids resting half down, set here once: the forest's own move them in its vertex stage.
@@ -1724,13 +1750,13 @@ function owl(flying = false): Group {
     // The shorter feathers over the wing's root: the same wing, smaller and paler, lying on it.
     const coverts = new Mesh(new ShapeGeometry(outline, 8).scale(0.74, 0.56, 1).rotateX(Math.PI / 2).scale(1, 1, side).translate(0, 0.03, 0), lit('#a08a6c'));
     hinge.add(feathers, coverts);
-    hinge.userData.model = side > 0 ? 'uggla-vinge-n' : 'uggla-vinge-f';
+    hinge.userData.owlStatic = side > 0 ? 'uggla-vinge-n' : 'uggla-vinge-f';
     group.add(hinge);
   }
   // The kit's body, under its wings and under him. What is built above stands in until it has come.
   const carried = new Group();
   carried.position.y = -0.6;
-  carried.userData.model = 'uggla-flyger';
+  carried.userData.owlStatic = 'uggla-flyger';
   for (const part of group.children.filter((child) => child.name !== 'owl-wing')) carried.add(part);
   group.add(carried);
   return group;
@@ -1746,6 +1772,8 @@ const SITTING_LIFT = 1.4;
  */
 function sittingSizeFlyer(): Group {
   const flyer = owl(true);
+  // The rigged owl flies itself: this stands empty where it has come.
+  flyer.userData.owl = 'spare';
   flyer.scale.setScalar(SITTING_SIZE);
   flyer.position.y = SITTING_LIFT;
   flyer.traverse((node) => { if (node.name === 'owl-wing') node.name = 'owl-wing-away'; });
@@ -1778,6 +1806,16 @@ function calledOwl(spot: Spot, sitting: Group, alive: (clock: number) => void): 
         spot.at.y + (to.y - spot.at.y) * k + Math.sin(k * Math.PI) * 1.1,
         -0.6 + (to.z + 0.6) * k,
       );
+      const rig = owlRigOf(sitting);
+      if (rig) {
+        // The rigged owl flies over itself: off its stone, a glide, and down beside him (./owl-moments.ts).
+        drawnWhile(flyer, false);
+        drawnWhile(sitting, true);
+        root.rotation.z = 0;
+        calledMoment(rig, used ? since : -1, GLIDE, to.x >= spot.at.x, clock, dt, spot.at.x * 1.7, lessMotion());
+        drawnWhile(root, waitingOwl(root));
+        return;
+      }
       const gliding = used && since < GLIDE;
       drawnWhile(sitting, !gliding);
       drawnWhile(flyer, gliding);
@@ -2001,13 +2039,34 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // their own, so the ridden owl's beat does not drive them. One that he climbs onto does not fly off: it carries him.
       const flyer = decor ? sittingSizeFlyer() : undefined;
       const prop = standing(spot, bird, alive, decor ? 'fly' : 'shrink', flyer);
+      // The rigged owl (./owl-moments.ts): one in front of the nest hollow is trapped in it until it is freed, and then
+      // flies off; any other sits and waits.
+      let freedFor = -1;
+      let trapped: boolean | null = null;
+      const from = new Vector3();
       return {
         group: prop.group,
         update(used, clock, dt) {
           // At no size, as the view hides a thing that stands about once it is gone (`decor.after`).
           const waits = waitingOwl(prop.group);
           prop.group.scale.setScalar(waits ? 1 : 0);
-          if (waits) prop.update(used, clock, dt);
+          const rig = owlRigOf(bird);
+          if (waits && rig) {
+            if (flyer) drawnWhile(flyer, false);
+            if (trapped === null) {
+              const nest = prop.group.parent?.getObjectByName('owl-nest-hollow');
+              trapped = !!nest && Math.abs(nest.position.x - spot.at.x) < 2;
+              from.set(spot.at.x, spot.at.y, prop.group.position.z);
+            }
+            if (trapped || (decor && used)) {
+              // Freed in a game taken up later, it is gone already.
+              freedFor = !used ? -1 : freedFor < 0 && clock < 0.5 ? 99 : freedFor < 0 ? 0 : freedFor + dt;
+              drawnWhile(prop.group, hollowMoment(rig, prop.group, from, freedFor, clock, dt, lessMotion()));
+            } else {
+              sitMoment(rig, clock, dt, spot.at.x * 1.7, lessMotion());
+              drawnWhile(prop.group, true);
+            }
+          } else if (waits) prop.update(used, clock, dt);
           else drawnWhile(prop.group, false);
         },
       };
@@ -2325,6 +2384,8 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // It has seen the light, and comes in from the lake: down out of the storm, onto the jetty's end.
       const sitting = owl();
       const flying = owl(true);
+      // The rigged owl flies in itself (./owl-moments.ts `landing`): this stands empty where it has come.
+      flying.userData.owl = 'spare';
       const root = new Group();
       root.add(sitting, flying);
       root.position.set(spot.at.x, spot.at.y, -0.6);
@@ -2338,6 +2399,15 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
           const left = (1 - k) ** 3;
           root.position.x = spot.at.x + left * 26;
           root.position.y = spot.at.y + left * 9;
+          const rig = owlRigOf(sitting);
+          if (rig) {
+            // In from the lake on still wings, its nose down along its way, and down onto the jetty's end.
+            drawnWhile(flying, false);
+            drawnWhile(sitting, true);
+            landingMoment(rig, k, since - 1.3, Math.atan2(9, 26), clock, dt, spot.at.x * 1.7, lessMotion());
+            drawnWhile(root, called && !used && waitingOwl(root));
+            return;
+          }
           sitting.rotation.y = Math.sin(clock * 0.7) * 0.25;
           sitting.visible = k >= 1;
           flying.visible = k < 1;
@@ -2356,8 +2426,18 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.add(model);
       const phase = spot.at.x * 1.7;
       // What is alive breathes, and what is afloat lifts on the water.
+      // The rigged ones live their own lives by their places, and know where he is (../../render/ambient-animals.ts).
+      const rigged = (clock: number) => {
+        if (!ambientOf(model)) return false;
+        model.position.set(0, 0, 0);
+        model.rotation.set(0, 0, 0);
+        model.scale.setScalar(1);
+        // A frog on its stone or log hops short, and the snail on his blocks stays on its step.
+        const range = spot.word === 'groda' ? 0.6 : spot.word === 'snigel' ? 0.25 : undefined;
+        return stepAmbient(model, { clock, still: elof.still, elof, ...(range ? { range } : {}) });
+      };
       if (spot.word === 'and' || spot.word === 'and-hona') {
-        return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
+        return { group, update: (_, clock) => { if (rigged(clock)) return; model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
       }
       // The beaver gnaws, looks at him, thumps its tail, goes into its lodge, comes out on its top, and swims out
       // over the lake (./beaver.ts).
@@ -2365,7 +2445,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // The hedgehog snuffles, the frog hops on the spot, the snail creeps (../../render/kit-life.ts).
       if (spot.word === 'igelkott' || spot.word === 'groda' || spot.word === 'snigel') {
         const rest = { x: 0, y: 0, turn: 0, size: 1 };
-        return { group, update: (_, clock) => { kitLife(spot.word!, model, rest, clock, phase, elof.still); } };
+        return { group, update: (_, clock) => { if (!rigged(clock)) kitLife(spot.word!, model, rest, clock, phase, elof.still); } };
       }
       return { group, update: () => {} };
     },
@@ -2574,8 +2654,10 @@ function aftermath(): SpotProp {
   }
   group.add(leaves);
   // A great tit on the sill of the window with the new latch: the storm is over, and it has come for what the night left.
-  const tit = new Mesh(smallBird(BIRDS.tit), new MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }));
-  tit.scale.setScalar(1);
+  // The great tit of the bird kit (../../render/lift/fauna/bird-kit.ts), modelled in Blender: its wings lie folded,
+  // its head turns and pecks by the same numbers as the fauna's did (creature overhaul, 13 November 2026).
+  const tit = flockOf('tit', 1, birdMaterial());
+  const titPose = tit.geometry.getAttribute('act');
   tit.position.set(MORNING_WINDOWS[0], SILL, WALL + 0.12);
   group.add(tit);
   // Three slow drops from the coats' hems.
@@ -2598,7 +2680,11 @@ function aftermath(): SpotProp {
       tit.position.x = MORNING_WINDOWS[0] - 0.6 + along * 1.5;
       tit.position.y = SILL + (hop + back) * 0.16;
       tit.rotation.y = round > 2.2 && round < 5.2 ? Math.PI + 0.5 : 0.5;
-      tit.rotation.z = (round > 3 && round < 3.4) || (round > 6.2 && round < 6.6) ? -0.6 : 0;
+      // A peck at the sill twice a round, and between them it looks about in quick snaps of its head.
+      const peck = Math.max(0, Math.sin(Math.min(1, Math.max(0, (round - 3) / 0.4)) * Math.PI), Math.sin(Math.min(1, Math.max(0, (round - 6.2) / 0.4)) * Math.PI));
+      const look = round < 1.8 ? 0.5 : round < 2.6 ? 0 : round < 4.4 ? -0.6 : round < 5.2 ? 0.4 : 0;
+      titPose.setXYZW(0, 0, 0, look, peck * 0.95);
+      titPose.needsUpdate = true;
       for (const { drop, from, phase } of drops) {
         const k = (clock * 0.45 + phase) % 1;
         drop.position.y = from * (1 - k * k);
@@ -3200,6 +3286,8 @@ export function installPictures(): void {
   if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
+  // Älven's beaver and otter with bones and clips, from Blender, where their lives wait for them (./river-creatures.ts).
+  if (!PACK.models.includes(installRiverCreatures)) PACK.models.push(installRiverCreatures);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

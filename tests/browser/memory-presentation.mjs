@@ -57,7 +57,7 @@ try {
     return { phase: document.getElementById('memory').dataset.phase, open: window.memory.open,
       finished: window.finished, focus: document.activeElement.id,
       centre: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }, width: rect.width,
-      transform: getComputedStyle(panel).transform, opacity: card.firstElementChild ? getComputedStyle(card.firstElementChild).opacity : null,
+      transform: getComputedStyle(panel).transform, opacity: card.lastElementChild ? getComputedStyle(card.lastElementChild).opacity : null,
       picture: document.getElementById('memoryProgress').textContent,
       times: document.getAnimations().map((animation) => animation.currentTime) };
   });

@@ -28,6 +28,12 @@ export interface Climb {
   needs?: string;
   /** Keep a reused climbing rule recognizable as the story's actual tool. */
   look?: 'hose' | 'lace' | 'braid' | 'lichen' | 'root' | 'ladder';
+  /**
+   * Picture only: the ghost lets it down and holds it (Berget's lace; src/render/ghost-lace.ts). It runs out from the
+   * top `at` seconds into the scene `scene`, over `seconds`, and the ghost holds its end until `until` is set; after
+   * that its end is tied round the stone at `tied`.
+   */
+  heldBy?: { scene: string; at: number; seconds: number; until: string; tied: { x: number; y: number; z: number } };
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
@@ -146,8 +152,8 @@ export interface Spot {
   id: string;
   at: Vec;
   /**
-   * It is wherever this mover is now: the towed trägubbe's eyes are painted, and its candy given, where he has dragged
-   * it to, not back at the crack it came out of. `at` is where it is before the mover is towed.
+   * It is wherever this mover is now: the towed trägubbe's candy is given where he has dragged it to, not back at the
+   * crack it came out of. `at` is where it is before the mover is towed.
    */
   follows?: string;
   /** For the picture: whoever of the family is shown here sits, in a boat, say. */
@@ -722,8 +728,11 @@ export interface ChapterData {
   glance?: { from: string; until: string; seconds: number; at: { x: number; y: number; z: number }[] };
   /** For the picture: night falls and the northern lights flare when this flag is set. Null: it is night from the start. */
   night?: { after: string | null };
-  /** For the picture: the mist rolls in when this flag is set, and he carries a light. `lamp` glows behind him in it. */
-  mist?: { after: string; lamp?: Vec };
+  /**
+   * For the picture: the mist rolls in when this flag is set, and he carries a light. `lamp` glows behind him in it.
+   * Before it is taken, the light glows where the spot of that id stands. While the scene `raise` plays, he holds it up high.
+   */
+  mist?: { after: string; lamp?: Vec; raise?: string };
   /**
    * For the picture: someone small who waits at `at`, follows him once `after` is set, and stays at `home`
    * once `until` is set. The flags come from things he touches.

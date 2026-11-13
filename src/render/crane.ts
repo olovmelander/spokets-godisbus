@@ -8,8 +8,9 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
  * The common crane of Myren and Berget, and the crane chick that follows Elof (plan §3.4), built in code: a long
  * body with the grey of its back, an S-shaped neck that is black in front with a white stripe from behind the eye
  * down its side, a red crown, the drooping bustle of dark feathers over its tail and, in flight, black
- * "fingers" at its wing tips. Each faces +x, and the parts that move are named. These stand in until the crane
- * modelled in Blender (art/blender/crane.py, boot/crane.glb) has come: it has the same parts by the same names.
+ * "fingers" at its wing tips. Each faces +x, and the parts that move are named. These are drawn where the rigged
+ * crane and chick modelled in Blender (art/blender/crane.py, crane-chick.py; ./crane-ride.ts, ./crane-chick.ts) are
+ * missing from the build.
  */
 
 const GREY = '#9aa1a8';

@@ -438,6 +438,12 @@ export function createAudio(): Audio {
             puff('lowpass', 420, 950, 2.8, 0.11, 0, 0.6);
             puff('bandpass', 760, 1500, 2.3, 0.055, 0.18, 0.5);
             break;
+          case 'clatter':
+            // A wooden figure dropped on the floor (the prologue, Mamma's joke): its knock, and a smaller one as it bounces.
+            knock(430, 0.16);
+            knock(520, 0.08, 0.17);
+            puff('lowpass', 600, 160, 0.08, 0.06);
+            break;
           case 'pour':
             // The rain barrel's tap (Stormgården, `kranen`): a squeak as it turns, the gush into the ditch, and a
             // gurgle that sinks as the ditch fills and the barrel runs dry.

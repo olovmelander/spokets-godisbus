@@ -1,5 +1,87 @@
 # Handover
 
+## State (13 November 2026, afternoon): Olov's 18 points from playing Äventyr 1
+
+Olov played Äventyr 1 through and listed 18 things to fix. Seven builders did them in parallel (each on a branch from
+`djur`); the lead merged them into `a1-fixar`, recorded the new and changed lines and checked the moments on the
+family's real models (locally only; no such picture leaves the scratchpad).
+
+- **Lördagsmorgon.**
+  - (1) At the doorway the ghost freezes 2.5 EL before the post, topples and lies on the floor, the bag apart, with a
+    wooden knock (`clatter`); Mamma's "Hoppsan! Vem tappade spöket?" waits for a new flag `mamma:sees` at 1.7 s, so
+    the held picture shows it lying there (`src/sim/prologue.ts`, `droppedBag`).
+  - (4) Olov corrected the first version: "Det smiter!" stays, said while the ghost hops off the railing and runs
+    along the deck; it leaps from the edge when Elof reaches x 48.3 (`leapFrom`), 5 EL short, so he can never stand
+    beside it; the family's four promises are then said at the edge in the `titel` scene, before the title.
+  - (2) The hands through the knees were the real models only: `knee-support.ts` cached the knee's triangles before
+    the model's ×3 scale was in its bind matrices, and missed the knee cap's `calf_r_half` bone, so the palm aimed at
+    the shin. Fixed for every kneel and crouch, in both adventures; the palm stays above the knee on its way on and off.
+  - (3) Moa holds her drawing out in front of her (`drawing-hold.ts`), and when Pappa reads its hope and Elof turns to
+    look she hides behind it and peeks over the top (new act `shy`).
+  - The ghost model tipped sideways in the prologue's poses (its tilt went to z, where the model faces its own +z):
+    it now tips about its own side, as the stand-in does, so it lies clear of the end chair and leans into its run.
+- **Gården.** (5) The memory pictures' colours: the same drawing was in the page twice (the hidden album thumbnail),
+  with the same gradient ids, so the open picture painted faces, skies and wood from a hidden copy: see-through skin.
+  Every copy now gets its own ids (`src/ui/svg-ids.ts`, also the faces); page turns crossfade instead of fading over
+  tan paper; Berget's last memory's family is solid; the ghost's 3D thought card is drawn after the grade and blur.
+  (6) At the goal Elof walks through the arch into the forest before the end page (`skogen`, `src/sim/walk-off.ts`).
+- **Granskogen.** (7) After the cap ride, Elof turns, waves and says "Tack, Bertil! Din keps kan simma!" and Bertil
+  cheers and waves (`tack-bertil`, `cap-thanks.ts`). (8) The ghost waits on the leaf, turns to him and bows with a
+  knock, a glow and glitter, hops twice, and then he thinks "Spöket tackade mig!" (`tackar`, `ghost-thanks.ts`).
+  Also: a scene camera handing back over water no longer drops Elof to the bottom of the picture for a second.
+- **Myren.** (9) The time cards say "Myren · klockan halv fem" and "Granskogen · klockan halv tolv". (10) The
+  lysklubba glows from afar (heart, halo, a warm pool on the moss, sparks; the mist's light stands at it), the mist
+  rises and is darker and blue-grey, and taking it is a held moment: he holds it up and says "Oj, vad dimmigt! Tur att
+  klubban lyser." (new `SceneDef.live`: not replayed when a game is taken up with it in hand).
+- **Berget.** (11) Lifted up, the ghost lets the lace down from the cliff top, braces behind a stone holding its end
+  while he climbs, is beside him for "Tack för hjälpen! Nu är jag uppe." and then lets go (`ghost-lace.ts`).
+  (12) At the cairn: "Ett snöre här uppe! Nu kan jag åka ner." (13, 14) The old pine rebuilt in Blender
+  (`mountain-kit.py`, same silhouette): plate bark grey low and fox-red high, roots gripping the rock, needle tufts
+  drawn in code (`old-pine.ts`) instead of blobs; one more draw call.
+- **Norrskenet.** (15) The stone at the start (where the first trägubbe stood) and the stones round the pine are worn,
+  rounded granite with lichen. (16) The lace is lowered once and "Dra upp" pulls the trägubbe out in one go, the ghost
+  holding the lace's end behind Elof (`hissa`). (17) The eye painting is gone: the trägubbe keeps its old eyes, and the
+  ghost sets the bag down before him. Older saves at the old steps go on.
+- **Godiskalaset.** (18) Pappa's long kneel by the carving uses the scenes' kneel, his hand on his knee
+  (`knee-hands.ts`); the scene kneels are fixed by (2).
+- **Voices:** recorded with direction and levelled: `scene_myren`, `scene_granskog`, `bogLightMist`, `mountainLoop`,
+  `forestThanksBertil`. No other spoken line changed words.
+- **Validation:** typecheck, all 3,009 tests, the build (705.0 KB gzipped JS; 7,033 KB at boot of 10,240) and the
+  privacy check pass; each builder ran its browser suites. The fall, the run, the bow, the lace, the pull and the
+  kneels were looked at on the family's real models, locally.
+
+## State (13 November 2026): every animal and creature made in Blender, rigged and animated
+
+- **Olov asked** to improve the look, design and animation of every animal and creature, not the humans or the
+  trägubbar: "förbättra räven, tranan och alla andra djur och varelser ... ser fantastiskt och roligt ut", and then
+  "Kan vi designa och animera alla djur i Blender?" Yes: the larger animals and story creatures are modelled, rigged
+  (armature and skin) and animated (clips) in Blender; the small and the many are modelled in Blender and animated in the
+  vertex stage, so hundreds cost little. No creature had a skeleton or a clip before; all moved as stiff parts in code.
+- **The pipeline** (pilot): `art/blender/creature-tools.py` (armature from a bone table, skinning by part with blended
+  joints, clips from pose tables, IK baked to plain keys); `scripts/bake/blender-kit.mjs` builds, bakes, exports and
+  renders previews headless with Blender 5.2 on Olov's computer (no MCP: `blender.exe -b`); `src/render/creature-clips.ts`
+  plays a creature's clips per copy (`play`, and `scrub` for rhythms the game drives: a wingbeat, a stride by distance);
+  `assets.ts` keeps the GLB's clips. Every creature keeps its code-built fallback.
+- **Rigged, with clips:** the crane (Myren and Berget: kneels, rises with him, takes off, flies with the game's wingbeat,
+  glides, lands, and flies away behind him: no more shrinking and growing; `crane-ride.ts`) and its chick (walks and runs
+  after him); the Siberian jay (11 clips; eats the berry from its bill, the window visit lands and flies off, the helper
+  flies; one stand-in instead of three; `src/render/jay.ts`); the tawny owl (blinks, turns its head, trapped and freed,
+  carries him with the near wing below him, lands with talons forward; also the forest owls; `src/render/owl.ts`,
+  `owl-moments.ts`); the fox (trots, sits, sniffs, the mouse jump), the squirrel (runs the trunk, comes down to eat a cone)
+  and the vättar (peek, hide, blink, wave; `lift/fauna/folk.ts`); the beaver (gnaws, thumps, waddles, rises on the lodge,
+  swims, slaps, dives) and the otter (leaps, floats on its back with a pebble, climbs, shakes; `river-creatures.ts`); the
+  mallards, frog, hedgehog and snail (swim and dabble, hop away, curl into a ball, hide in the shell when he comes;
+  `ambient-animals.ts`).
+- **Modelled in Blender, animated in the vertex stage:** butterflies (three species), dragonflies (with reeds to perch
+  on), bats, fireflies, a 3D bumblebee, the ants that carry him (eight wood ants walking; `ant-ride.ts`; was ten balls)
+  (`small-life.py`, `small-kit.ts`); seven small birds by species, the raven and the hooded crow (`birds.py`,
+  `bird-kit.ts`); the far crane and goose flocks re-rendered from 3D birds, eight frames a beat (`life.py`).
+- **Fixes on the way:** the great tit on Morgonen's sill showed its folded wings as discs; beetles walked in the storm.
+- **Validation:** typecheck, all 2,980 tests, the build (696.7 KB of gzipped JavaScript, 6,878.7 KB at boot, of 10,240)
+  and the privacy check pass on the merged branch; each builder ran the browser suites covering its creatures. Draw calls
+  stayed level or fell (each rigged creature is one draw; the jay went from 14 to 1). Seen with stand-in figures only;
+  not on the family's devices. Contact sheets of every creature were sent to Olov (scratch, not in the repository).
+
 ## State (13 November 2026): every recorded line heard, on the first open after a release too
 
 - **Olov:** "jag spelar äventyr 1 nu och många av dialogerna har ingen inspelad röst." Every one of Äventyr 1's 102
@@ -5834,6 +5916,11 @@ record identify the exact published revision.
 
 ## Next
 
+**The creature overhaul (13 November).** A new creature: a kit `art/blender/<creature>.py` built with
+`creature-tools.py` (recipe in its header and `crane-chick.py`), `node scripts/bake/blender-kit.mjs <kit> --out=<glb>`,
+and `creatureClips(model, '<creature>')` in the game with a code fallback. Keep one skinned draw per creature, and the
+vertex-stage kits (`small-kit.ts`, `bird-kit.ts`) for anything that comes in numbers.
+
 **The final fine-tuning (12 November, late evening).** Keep `Roller.behind` for hazards from behind (Olympia and
 Granskogen), the step stool (`steps`) under the home's shelf in Godiskalaset and Morgonen, `bale` as a picture-only
 landmark that the floor runs on under, and the tussocks' outward outline. The list of what was found and not fixed is
@@ -6438,6 +6525,8 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 1 round (13 Nov) | Olov's 18 points from playing Äventyr 1 | The same session: seven builders and the lead; Blender headless for the pine | — / 1 list (+1 correction) | Ghost on the floor and getting away, hands on knees, Moa's drawing and shyness, picture colours, the walk into the forest, thanks to Bertil and from the ghost, time cards, the lysklubba, the ghost's lace, the cairn line, the old pine and stones, one pull, no eye painting; 5 lines recorded |
+| Creature overhaul (13 Nov) | Every animal and creature designed and animated in Blender | One session on Olov's computer: a pilot, then seven builders; Blender headless | — / 2 requests | A rigging pipeline and a clip player; the crane, chick, jay, owl, fox, squirrel, vättar, beaver, otter, ducks, frog, hedgehog and snail rigged; insects, bats, ants, birds and far flocks remade |
 | Voices heard (13 Nov) | Find why many of Äventyr 1's lines played no voice | One session on Olov's computer | — / 1 report | The old version ran on after the release; a title start now waits for a new version that is downloading |
 | Answers and voices (12 Nov, night) | Olov's five answers; record every line with direction | The same session, two builders and the lead | — / 2 requests | An arch into the forest, the nisse seen and Myren's carving, the family on the deck, the club's crest, hazel bushes; 401 lines recorded and levelled |
 | Final fine-tuning (12 Nov, late evening) | Play every chapter of both adventures through and fix picture, words, puzzles and bugs | One session on Olov's computer with seven parallel builders, Blender for the fence | — / 1 request (+1 answer) | Lines heard in place, hidden things shown (ant lift, plane, benches), hollow tussocks, runners meet the hazards, family out of his path, step stool, straw bales, wooden dugouts, a front door |
@@ -6766,6 +6855,18 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- From Olov's Äventyr 1 round (13 November): in Pappa's quick freeze joke his free left hand clips his thigh for about
+  0.2 s as he lunges down; Pappa's kneel at Granskogen's seesaw still uses fixed angles (its comment says the other hand
+  is on his knee, the code does not); the stage's `staged.tilt` (view.ts) still tilts the ghost model about z, as the
+  prologue's poses did: check the acts that tilt it on the real model; the ghost's 3D thought card compiles one unused
+  HDR shader when a chapter loads.
+- From the creature overhaul (13 November): sounds for the quack, the croak, the crow's caw and the tit's song (they only
+  open their bills); the far crane and goose flocks fly above the top of the picture where the builder looked; the fox
+  lives far back (z −12 to −24) and is small and soft in the depth of field; the beaver on its lodge is half behind sticks
+  and tiny far out on the lake; the otter's shake throws no drops; close up, the crane's folded wing shows a few pale
+  covert flags and the owl's folded wing a ragged front edge; the sitting owl reads a little long and pale; on Mid and
+  High only, as before, the near fauna; the old unrigged owl, beaver and otter stay in `creatures.glb` as fallbacks and
+  could go once nothing needs them; the crane with calm motion still vanishes after its ride.
 - From the final fine-tuning (12 November), found but needing design or Blender: Granskogen's anthill flank reads as a
   dark teal slab (`forest-kit.py` `myrstack`: a peat-brown `HILL_SHADE` and `HILL_FRONT` about 3.5, then
   `ANTHILL_DEPTH` back to 1); Norrskenet's path from the summit looks walkable before the reunion (start it lower,
@@ -6814,6 +6915,40 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från genomspelningen av Äventyr 1 den 13 november (allt är byggt; inget hindrar):
+
+- Lördagsmorgon: Mamma rycker på axlarna och spöket reser sig bakom ryggen på dem: eller ska hon plocka upp det?
+  Spöket hoppar när Elof är fem steg från kanten: tidigare eller senare? Löftena sägs vid kanten efter hoppet: bra?
+  Träknacket när spöket slår i golvet: lagom? Moa gömmer sig bakom teckningen: blyg nog, eller ska hon säga något?
+- Bilderna: nästa bild tonar in över den förra när man bläddrar: okej, eller fortare? Spökets tankebild är nu skarp i
+  sina egna färger: bra?
+- Gården: slutsidan kommer cirka 7½ s efter målet (var 5 s) för promenaden in i skogen: lagom?
+- Granskogen: "Tack, Bertil! Din keps kan simma!" eller hellre något annat? Glitter när spöket bockar, eller hjärtan?
+  Ska Pappa ha andra handen på knät vid gungbrädan också?
+- Myren: dimman är blågrå och mörkare så att klubbans ljus syns: för dystert? Elof står cirka 7 s när han håller upp
+  klubban: okej?
+- Berget: snöret sitter knutet runt en liten sten när spöket släppt det: ser det rätt ut?
+- Norrskenet: "Dra upp" eller bara "Dra" på knappen? Ska spöket låta när trägubben kommer upp? Tallens barr är
+  blågröna: varmare? Var det stenen vid tallen du menade, eller den lilla där Elof börjar (båda är runda nu)?
+
+Från djuröversynen den 13 november (allt är byggt; inget hindrar):
+
+- Tranan: ser den och ungen ut som du vill, och är benen lagom långa? Ska den med lugna animationer ändå flyga iväg
+  efter landningen? Ska den synas flyga iväg på Myren innan kapitelslutet kommer?
+- Lavskrikan: ska den hålla bäret i näbben i Norrsken, flyga upp till lavens topp när den fått bäret, och sitta
+  uppburrad i regnet i Stormskogen?
+- Ugglan: kattuggla nog? Mörkare ansiktsskiva, mer rostbrunt bröst? Ska den som bär Elof landa helt, och ska den som väntar
+  titta efter honom? Är ugglorna i skogen bra som samma uggla fast mindre?
+- Räven: ska den komma närmare stigen (8–12 EL bakom) så att man ser ansiktet? Ekorren äter kotte ibland, vättarna vinkar
+  sällan: lagom?
+- Bävern tar pinnen i munnen in i hyddan: bra? Ska den simma närmare Elof? Ska uttern skvätta droppar, och vara mörkare?
+- Änderna, grodan, igelkotten och snigeln: ljud när de kvackar och kväker? Snigeln på lekstugans trappsteg i
+  Stormgården, ser den rätt ut med den riktiga lekstugan? Igelkotten rullar ihop sig vid cirka 2,6 EL och grodan hoppar
+  cirka 1,6 EL: modigare eller räddare?
+- Fåglarna: ska tran- och gåsflockarna flyga lägre så att de syns? Ska fåglarna låta? Kråkan är en gråkråka: rätt?
+- De små: myrstackens utbuktning skymmer myrorna mitt i backen: flytta vägen närmare kameran? Humlan syns även på Låg:
+  bra? Eldflugornas kroppar är mycket små: större?
 
 Från finjusteringen den 12 november (Olov svarade på Gården, Granskogen, Stormkvällen, Olympia och Billsta; se
 "State"):

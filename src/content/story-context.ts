@@ -18,6 +18,9 @@ export interface StoryContext {
 }
 type History = Readonly<Record<string, readonly string[]>>;
 
+/** Norrskenet's rescue, done: the trägubbe out of the crack, and the bag back in his hands. */
+const RESCUED = ['placed:tragubbe', 'bag'] as const;
+
 /** A chapter pack's own reminders, by chapter id (docs/aventyr-2.md): put here when the pack loads. */
 export const PACK_CONTEXTS = new Map<string, (flags: ReadonlySet<string>, player: Vec) => StoryContext | null>();
 
@@ -26,7 +29,8 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
   const has = (flag: string) => flags.has(flag);
   const at = player.x;
   const knownFigure = chapter === 'berget' ? has('memory') : !!history.berget?.includes('memory');
-  const homeParty = ['placed:tragubbe', 'eyes', 'bag'].every((flag) =>
+  // Out of the crack and the bag given back. (The eyes he once painted are no step any more: Olov, 13 November 2026.)
+  const homeParty = RESCUED.every((flag) =>
     chapter === 'norrsken' ? has(flag) : history.norrsken?.includes(flag));
   const context = (id: StoryPurpose, helper: Helper, icon: PurposeIcon = 'trail', addition?: string): StoryContext => {
     const copy = sv.storyContext.purposes[id];
@@ -120,7 +124,6 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
       if (has('taste')) return context('reunion', 'reunion', 'house');
       if (has('shared')) return context('gold', 'mountain', 'sparkle');
       if (!has('placed:tragubbe')) return context(has('lower') ? 'pull' : knownFigure ? 'figure' : 'crack', 'mountain', 'heart');
-      if (!has('eyes')) return context('eyes', 'mountain', 'brush');
       if (!has('bag')) return context('bag', 'mountain');
       return context(knownFigure ? 'welcome' : 'share', 'mountain', 'heart');
     case 'epilog':
@@ -140,7 +143,7 @@ export function storyContext(chapter: string, flags: ReadonlySet<string>, player
 
 /** A bridge to the next place, shown inside the existing chapter card without a second dialog. */
 export function storyHandoff(chapter: string, flags: ReadonlySet<string>): { title: string; text: string } | null {
-  const rescued = ['placed:tragubbe', 'eyes', 'bag'].every((flag) => flags.has(flag));
+  const rescued = RESCUED.every((flag) => flags.has(flag));
   const id = chapter === 'garden' && !flags.has('plane:board') ? 'gardenClue'
     : chapter === 'epilog' && !flags.has('partied') ? 'epilogClue'
     : chapter === 'berget' && !flags.has('memory') ? 'bergetClue'

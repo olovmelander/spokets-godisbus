@@ -1,9 +1,16 @@
 import { Bone, Object3D, Ray, SkinnedMesh, Triangle, Vector3 } from 'three';
+import { jointOf } from './sleeves';
 
 /** A palm rests on the visible knee, not the joint inside it. Cache only nearby leg triangles when the rig is installed. */
 export function kneeSupport(model: Object3D, knee: Object3D, side: 'l' | 'r', height: number): (out: Vector3) => Vector3 {
   const patches: { mesh: SkinnedMesh; bones: Bone[]; triangles: number[]; vertices: { index: number; at: Vector3 }[] }[] = [];
+  // The knee's own half bone (./joints.ts) was bound in just before this, which leaves each mesh's attached bind inverse
+  // as the mesh was exported, not as it now stands, scaled to its height: skinned now, every corner came out in the wrong
+  // place, the knee's cap was never cached, and the hand went to the shin under it, through the knee (Olov, 13 November
+  // 2026). Bring every matrix up to date first, as each frame below does.
+  model.updateMatrixWorld(true);
   const center = knee.getWorldPosition(new Vector3()), at = new Vector3();
+  // The knee's cap is weighted to that half bone, which bends the knee; a twist bone is its limb's too (./sleeves.ts).
   const names = new RegExp(`^(thigh|calf)_${side}$`), radius = height * .1;
   model.traverse(node => {
     if (!(node instanceof SkinnedMesh)) return;
@@ -12,7 +19,7 @@ export function kneeSupport(model: Object3D, knee: Object3D, side: 'l' | 'r', he
     const rest = new Map<number, Vector3>(), triangle = new Triangle();
     for (let i = 0; i < skin.count; i++) {
       let weight = 0;
-      for (let j = 0; j < 4; j++) if (names.test(node.skeleton.bones[skin.getComponent(i, j)]?.name ?? '')) weight += weights.getComponent(i, j);
+      for (let j = 0; j < 4; j++) if (names.test(jointOf(node.skeleton.bones[skin.getComponent(i, j)]?.name ?? ''))) weight += weights.getComponent(i, j);
       if (weight < .8) continue;
       rest.set(i, node.getVertexPosition(i, new Vector3()).applyMatrix4(node.matrixWorld));
     }

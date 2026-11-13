@@ -7,6 +7,8 @@ import './memory.css';
 import { playVoice, suspendVoice } from '../audio/voice-player';
 
 import { MEMORIES } from './memory-art';
+// Each copy of a picture paints with its own gradients, also while the album holds another copy (svg-ids.ts).
+import { ownIds } from './svg-ids';
 export { MEMORIES } from './memory-art';
 
 /** A memory not yet found: a faint drawing of the glowing curl of shaving that starts one, not a "?" (menus.md row 12). */
@@ -16,7 +18,7 @@ const CURL = '<svg viewBox="0 0 64 40" aria-hidden="true"><path d="M10 30c6-16 3
 export function memoryAlbumHtml(flags: Record<string, string[]>): string {
   return `<section id="albumMemories" class="album-section" tabindex="0" aria-label="${sv.album.sections.memories}"><h3>${sv.memories.title}</h3><div class="memory-album">${Object.entries(MEMORIES).map(([id, pictures]) =>
     flags[id]?.includes('memory')
-      ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${pictures[0]}<span>${sv.explore.chapters[id]}</span>${use('play', 'memory-play')}</button>`
+      ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.explore.chapters[id]}">${ownIds(pictures[0]!)}<span>${sv.explore.chapters[id]}</span>${use('play', 'memory-play')}</button>`
       : `<div class="memory-missing" role="img" aria-label="${sv.memories.waiting}">${CURL}</div>`,
   ).join('')}</div><h3>${sv.collection.stormTitle}</h3><p class="setting-hint">${sv.collection.stormHint}</p><div class="memory-album">${Object.keys(STORM_MEMORIES).map(id => memoryFound(id, flags)
     ? `<button type="button" class="memory-thumb" data-memory="${id}" aria-label="${sv.memories.watch}: ${sv.collection.stories[id]!.title}">${stormMemoryPictures(id)![0]}<span>${sv.collection.stories[id]!.title}</span>${use('play', 'memory-play')}</button>`
@@ -121,7 +123,10 @@ export function createMemory(doc: Document): Memory {
     const bounds = back.getBoundingClientRect();
     presentation = { kind, done, duration, width: bounds.width, height: bounds.height };
     const travel = [{ transform: bubble! }, { transform: 'none' }];
-    const fade = [{ opacity: resumed?.opacity ?? (growing ? 0 : 1) }, { opacity: growing ? 1 : 0 }];
+    // Solid early in its growth and until late in its return: the game behind must not tint the family's faces
+    // for more than a moment (Olov, 13 November 2026: "färgerna kan se konstigt ut").
+    const fade = resumed ? [{ opacity: resumed.opacity }, { opacity: growing ? 1 : 0 }]
+      : growing ? [{ opacity: 0 }, { opacity: 1, offset: 0.35 }, { opacity: 1 }] : [{ opacity: 1 }, { opacity: 1, offset: 0.55 }, { opacity: 0 }];
     movement = [
       bubble ? animate(panel, growing ? travel : [...travel].reverse(), duration) : null,
       animate(back, fade, duration),
@@ -266,9 +271,12 @@ export function createMemory(doc: Document): Memory {
         for (const animation of [...animations]) if (!movement.includes(animation)) {
           animations.delete(animation); animation.cancel();
         }
-        card.replaceChildren();
+        // The picture being left stays under the next one while it dissolves in, so a page never fades through the
+        // card's paper: faces and clothes keep their own colours throughout (Olov, 13 November 2026).
+        const leaving = at >= 0 && !calm ? card.lastElementChild : null;
+        card.replaceChildren(...(leaving ? [leaving] : []));
         at = index;
-        card.insertAdjacentHTML('beforeend', pictures[at]!);
+        card.insertAdjacentHTML('beforeend', ownIds(pictures[at]!));
         const drawing = card.lastElementChild!;
         const words = story.captions[at]!;
         caption.textContent = words;
@@ -280,7 +288,12 @@ export function createMemory(doc: Document): Memory {
         nextButton.innerHTML = at === pictures.length - 1
           ? `<span>${sv.memories.finish}</span>${use('check')}`
           : `<span>${sv.memories.next}</span>${use('next')}`;
-        if (!calm) animate(drawing, [{ opacity: .25 }, { opacity: 1 }], at === 0 ? 320 : DISSOLVE_TIME);
+        // The first picture comes with the opening's own fade.
+        if (leaving) {
+          const dissolve = animate(drawing, [{ opacity: 0 }, { opacity: 1 }], DISSOLVE_TIME);
+          if (dissolve) void dissolve.finished.then(() => leaving.remove(), () => {});
+          else leaving.remove();
+        }
         bringToLife(drawing);
       };
       const openedAt = performance.now();

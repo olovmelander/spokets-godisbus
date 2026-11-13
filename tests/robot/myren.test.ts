@@ -19,8 +19,9 @@ describe('Kapitel 3, Myren, in greybox', () => {
       expect(result.checkpoint).toBe(myren.checkpoints!.length - 1);
       // Mamma's bridge and her braid, the lollipop, the chick brought home, and the crane.
       expect(result.flags).toEqual(expect.arrayContaining(['mamma', 'placed:pine', 'braid', 'light', 'chick', 'home', 'crane', 'goal']));
+      // Holding the lysklubba up in the rising mist, he says what it is for (Olov, 13 November 2026).
       expect(result.said).toEqual(['family:mamma', 'family:bridge-ready', 'family:braid', 'family:braid-ready',
-        'family:braid-thanks', 'spangen', 'bog:chick-light', 'bog:family-home', 'bog:bridge-ready']);
+        'family:braid-thanks', 'spangen', 'bog:light-mist', 'bog:chick-light', 'bog:family-home', 'bog:bridge-ready']);
       // It never falls in, and no tussock sinks under it: it keeps hopping.
       expect(result.bubbles).toBe(0);
       expect(result.sinks).toBe(0);

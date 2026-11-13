@@ -233,7 +233,9 @@ export interface Plumage {
 /**
  * The small birds, each 1 long before its size: a great tit, a blue tit, a house sparrow and a song thrush; and
  * those that come by themselves now and then (../fauna.ts, visitors): a white wagtail, a magpie and a jackdaw, as
- * big against him as they are against a child's hand. Black, white and grey: none has the candy's colours.
+ * big against him as they are against a child's hand. Black, white and grey: none has the candy's colours. They are
+ * modelled in Blender (./bird-kit.ts); these colours and sizes are what the game and the shapes built in code until the
+ * kit has come go by.
  */
 export const BIRDS = {
   tit: { size: 0.95, back: '#7f8f5a', belly: '#c8b863', head: '#29292c', cheek: '#ecebe4', wing: '#6b7988', tail: '#5d6a78', beak: '#2a2622', bib: '#29292c' },
@@ -245,39 +247,6 @@ export const BIRDS = {
   jackdaw: { size: 1.9, back: '#3b3e43', belly: '#464a4f', head: '#25272b', cheek: '#8e9398', wing: '#2c2f34', tail: '#2a2d31', beak: '#1a1b1e', cap: '#1d1e21', eye: '#d6dbdc', long: 1.2, pump: 0.4 },
 } satisfies Record<string, Plumage & { size: number }>;
 export type Species = keyof typeof BIRDS;
-
-export function bird(p: Plumage): BufferGeometry {
-  const head: Rig = [2, 1, -1, [0.17, 0.42, 0]];
-  // A long tail is cocked about its root as the head pecks (`act.w`, the head's nod), and lifts a little in a hop.
-  const long = p.long ?? 0;
-  const tail: Part = long
-    ? ['b', p.tail, [-0.2 - 0.17 * long, 0.42 + 0.02 * long, 0], [0.17 * long, 0.024, 0.06 + 0.008 * long], [0, 0, 0.16], [1, 0, -(p.pump ?? 0.6), [-0.22, 0.41, 0]]]
-    : ['b', p.tail, [-0.36, 0.41, 0], [0.2, 0.025, 0.07], [0, 0, 0.3]];
-  return build([
-    ['b', p.back, [0, 0.36, 0], [0.3, 0.2, 0.19]],
-    ['b', p.belly, [0.06, 0.3, 0], [0.25, 0.17, 0.165]],
-    ...(p.bib ? [['b', p.bib, [0.19, 0.31, 0], [0.13, 0.14, 0.065]] as Part] : []),
-    // The thrush's spotted breast and flanks: dark drops in rows, big enough to read from the path, which sees the
-    // bird from its side.
-    ...(p.speckled ? [0.21, 0.26, 0.31, 0.36].flatMap((y, row) => [0.05, 0.11, 0.17, 0.22]
-      .map((x) => ({ x: x + row * 0.012, out: 1 - ((x + row * 0.012 - 0.06) / 0.25) ** 2 - ((y - 0.3) / 0.17) ** 2 }))
-      .filter(({ out }) => out > 0.08)
-      .flatMap(({ x, out }) => both((s): Part => ['e', (row + Math.round(x * 20)) % 2 ? '#4a3c2e' : '#584a3a', [x, y, s * (0.165 * Math.sqrt(out) - 0.004)], [0.026, 0.028, 0.01]]))) : []),
-    ['b', p.head, [0.25, 0.5, 0], [0.14, 0.13, 0.13], NONE, head],
-    ...both((s) => ['b', p.cheek, [0.285, 0.475, s * 0.075], [0.075, 0.055, 0.05], NONE, head]),
-    ['c', p.beak, [0.42, 0.49, 0], [0.026, 0.1, 0.026], [0, 0, -Math.PI / 2], head],
-    ...(p.cap ? [['b', p.cap, [0.24, 0.56, 0], [0.12, 0.08, 0.12], NONE, head] as Part] : []),
-    // A pale iris round the dark middle (the jackdaw's), drawn under it.
-    ...(p.eye ? both((s): Part => ['e', p.eye!, [0.325, 0.52, s * 0.084], 0.03, NONE, head]) : []),
-    ...both((s) => ['e', '#141210', [0.33, 0.52, s * 0.088], 0.02, NONE, head]),
-    ...both((s) => ['b', p.wing, [-0.06, 0.41, s * 0.13], [0.22, 0.1, 0.05], [0, 0, -0.15]]),
-    ...(p.patch ? both((s): Part => ['b', p.patch!, [0.0, 0.44, s * 0.15], [0.13, 0.055, 0.04], [0, 0, -0.15]]) : []),
-    ...both((s) => ['b', p.wing, [0, 0.42, s * 0.3], [0.12, 0.012, 0.22], NONE, [3, s, 0, [0, 0.42, s * 0.08]]]),
-    tail,
-    ...both((s) => ['r', '#4e443a', [0.04, 0.1, s * 0.045], [0.013, 0.2, 0.013]]),
-    ...both((s) => ['b', '#4e443a', [0.08, 0.012, s * 0.045], [0.06, 0.012, 0.016]]),
-  ]);
-}
 
 /** A butterfly, 0.4 EL across: white wings that its instance tints, a dark body. Its wings beat about its body. */
 export function butterfly(): BufferGeometry {
@@ -300,33 +269,14 @@ export function dragonfly(): BufferGeometry {
 }
 
 /**
- * A big bird high in the air, as seen from below and the side: a raven or a crow, its body 1 long, its wings 2.2 across
- * when spread, with fingered tips; a raven's tail is a wedge. Its wings beat by `act.x` and spread by `act.y`, as a
- * small bird's do; it flies along +x with its middle at the origin.
+ * A big bird high in the air: a raven or a hooded crow, modelled in Blender (./bird-kit.ts). Its colours, for the shape
+ * built in code until the kit has come.
  */
 export interface Soaring { body: string; head: string; wing: string; tail: string; beak: string; wedge?: boolean }
 export const SOARING = {
   raven: { body: '#1c1e23', head: '#191b1f', wing: '#1e2127', tail: '#1b1d22', beak: '#141518', wedge: true },
   crow: { body: '#8d9094', head: '#202226', wing: '#23262b', tail: '#222428', beak: '#18191c' },
 } satisfies Record<string, Soaring>;
-
-export function soarer(p: Soaring): BufferGeometry {
-  // Far off, so its parts are the coarse beads and facets: a few hundred triangles a bird.
-  const wing = (s: number, at: V3, size: V3, shape: 'e' | 'f' = 'e'): Part => [shape, p.wing, [at[0], at[1], s * at[2]], size, NONE, [3, s, 0, [0, 0.03, s * 0.09]]];
-  return build([
-    ['b', p.body, [0, 0, 0], [0.38, 0.12, 0.13]],
-    ['e', p.head, [0.38, 0.035, 0], [0.12, 0.1, 0.095]],
-    // A heavy beak, short and deep: a long thin one reads as a stick from far off.
-    ['c', p.beak, [0.52, 0.02, 0], [0.045, 0.1, 0.035], [0, 0, -Math.PI / 2]],
-    // A raven's wedge of a tail, a crow's rounded one.
-    ['e', p.tail, [-0.5, 0.01, 0], p.wedge ? [0.24, 0.02, 0.13] : [0.2, 0.02, 0.1]],
-    ...(p.wedge ? [['c', p.tail, [-0.7, 0.01, 0], [0.02, 0.16, 0.12], [0, 0, Math.PI / 2]] as Part] : []),
-    ...both((s) => wing(s, [0.02, 0.03, 0.42], [0.2, 0.018, 0.36])),
-    ...both((s) => wing(s, [0.06, 0.03, 0.18], [0.24, 0.022, 0.14])),
-    // The fingers at the tip: four long feathers splayed.
-    ...[0, 1, 2, 3].flatMap((k) => both((s) => wing(s, [-0.06 + k * 0.055, 0.03, 0.82 + (k === 1 || k === 2 ? 0.04 : 0)], [0.035, 0.008, 0.11], 'f'))),
-  ]);
-}
 
 /** A bat at dusk, 1 across with its wings spread: a small dark furry body, two ears, and thin wings that beat fast. */
 export function bat(): BufferGeometry {
@@ -434,6 +384,19 @@ export function stump(tall: number, wide: number): Part[] {
     ['f', '#a39784', [0, tall, 0], [wide * 0.82, wide * 0.3, wide * 0.82], [0, 0.5, 0.15]],
     ...[0.4, 2.3, 4.2].map((a): Part => ['b', '#665442', [Math.cos(a) * wide, wide * 0.25, Math.sin(a) * wide], [wide * 0.6, wide * 0.32, wide * 0.32], [0, -a, -0.3]]),
     ['e', '#5f7a34', [wide * 0.3, tall * 0.35, wide * 0.8], [wide * 0.4, tall * 0.2, wide * 0.2]],
+  ];
+}
+
+/**
+ * A reed in the water, `tall` from its foot at the origin to its tip, straight up: a dragonfly perches on its tip. A
+ * leaf leans off it, and its top is a little darker and thinner.
+ */
+export function reed(tall: number): Part[] {
+  return [
+    ['r', '#7a8646', [0, tall * 0.42, 0], [0.014, tall * 0.84, 0.014]],
+    ['r', '#6a7440', [0, tall * 0.92, 0], [0.009, tall * 0.16, 0.009]],
+    ['f', '#86924e', [0.07, tall * 0.5, 0.01], [0.014, tall * 0.42, 0.04], [0, 0, -0.32]],
+    ['f', '#7c8848', [-0.05, tall * 0.3, -0.01], [0.012, tall * 0.3, 0.035], [0, 0.4, 0.28]],
   ];
 }
 

@@ -1,4 +1,6 @@
 import { capArms, capHands, capHandoff } from './cap-handoff';
+import { createBertilAnswer } from './cap-thanks';
+import { ghostThanks } from './ghost-thanks';
 import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from './lamp-hold';
 import { stormSweet } from './storm-sweet';
 import { createEddy } from './eddy';
@@ -17,7 +19,8 @@ import { coatPose } from './elof-coat';
 import { createHeldCoat, holdsCoat } from './elof-coat-mesh';
 import { createMoverMotion } from './mover-motion';
 import { holdCarving } from './carrying';
-import { createNorrskenRescue, rescueCarryPose } from './norrsken-rescue';
+import { createNorrskenRescue, ghostHoldAt, heaveAt, rescueCarryPose } from './norrsken-rescue';
+import { createBagReturn } from './norrsken-bag';
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide,
   DepthTexture, DynamicDrawUsage, ExtrudeGeometry, Fog, Group, HalfFloatType, HemisphereLight, InstancedMesh, LatheGeometry, Mesh,
@@ -72,6 +75,7 @@ import { createHomeRoutine } from './home-routine';
 import { createPrologueStage } from './prologue-stage';
 import { createStage, litLamp } from './stage';
 import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
+import { handOnKnee, kneelOnOwnLegs } from './knee-hands';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
 import { createAurora } from './aurora';
@@ -85,12 +89,14 @@ import { carryGold, GOLD_GRIP, GOLD_HAND, goldCarryWeight, tasteGrowingGold } fr
 import { createHomeTrail } from './home-trail';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
+import { drawOverFrame, overFrame } from './over-frame';
 import { drawnWhile } from './idle';
+import { buildGhostLace, letDown } from './ghost-lace';
 import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
 import { windAt, type Blow } from './wind';
 import { layRich, seeRich } from './rich';
-import { prologuePose, type PrologueFrame } from '../sim/prologue';
+import { droppedBag, prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type Act, type SceneFrame } from '../sim/scene';
 import { BERRY_HALF, BERRY_HEIGHT, GHOST_CLEARANCE, JUMP_SPEED } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
@@ -99,6 +105,10 @@ import { photoCut } from './crop';
 import { wingbeat } from './wingbeat';
 import { createFootSplash } from './foot-splash';
 import { craneChick, stepChick, type Gait } from './crane';
+import { craneRigOf, rideCrane, rigCrane } from './crane-ride';
+import { rigChick, stepRiggedChick, type ChickRig } from './crane-chick';
+import { hasJayClips, rigJay } from './jay';
+import { creatureClipsOf } from './creature-clips';
 import { lookAt } from './look';
 import { createTalker, talk, type Free, type Look, type TalkFrame, type Talker } from './talk';
 
@@ -463,6 +473,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const wetOutside = (chapter.storm?.rain ?? 0) > 0 && chapter.place !== 'home';
   if (wetOutside) scene.add(footSplash.mesh);
   const climbs = buildClimbs(chapter);
+  // Berget's lace, let down and held by the ghost (./ghost-lace.ts).
+  const ghostLace = buildGhostLace(chapter);
+  scene.add(ghostLace.group);
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
@@ -539,15 +552,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       });
     });
 
-  // The jay, modelled in Blender (art/blender/jay.py), takes the place of the bird built in code: the helper
-  // that comes when he asks, and the one he shares a berry with. Its wings are parts of their own, with the
-  // same names as the stand-in's, so they beat as before.
+  // The jay, modelled, rigged and animated in Blender (art/blender/jay.py), takes the place of the bird built in code
+  // (./jay.ts): the helper that comes when he asks, the one he gives a berry, and the one at the window, which works
+  // out every pose from the scene's seconds (its clips change at once). A model without its clips goes in as it is.
   const jayReady = birds.length > 0 ? assets
     .manifest()
     .then((manifest) => (manifest.packs.boot?.files['jay.glb'] ? assets.model('boot', 'jay') : null))
     .then((model) => {
       if (!model) return;
       for (const [i, bird] of birds.entries()) {
+        if (hasJayClips(model) && rigJay(bird, model, stage.birds.includes(bird) ? 0 : 0.25)) continue;
         bird.clear();
         bird.add(i === 0 ? model : model.clone());
       }
@@ -565,6 +579,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     .then((manifest) => (manifest.packs.boot?.files['crane.glb'] ? assets.model('boot', 'crane') : null))
     .then((model) => {
       if (!model) return;
+      // The rigged crane, with bones and clips (./crane-ride.ts): kneeling where it waits, and carrying him.
+      if (creatureClipsOf(model, 'crane').length > 0) {
+        for (const crane of cranes) rigCrane(crane, model, crane.name === 'crane-flying');
+        models.push('boot/crane');
+        modelInstallations++;
+        return;
+      }
       const shapes = { crane: model.getObjectByName('crane-kneeling'), 'crane-flying': model.getObjectByName('crane-flying') };
       for (const crane of cranes) {
         const shape = shapes[crane.name as keyof typeof shapes];
@@ -573,6 +594,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         for (const part of shape.children) crane.add(part.clone(true));
       }
       models.push('boot/crane');
+      modelInstallations++;
+    }) : Promise.resolve();
+  // The crane chick, modelled, rigged and animated in Blender (art/blender/crane-chick.py), takes the place of the one
+  // built in code (./crane-chick.ts). A build without the file keeps that one.
+  const chickReady = chapter.follower ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['crane-chick.glb'] ? assets.model('boot', 'crane-chick') : null))
+    .then((model) => {
+      if (!model || !follower.install(model)) return;
+      models.push('boot/crane-chick');
       modelInstallations++;
     }) : Promise.resolve();
   // The small sweets, modelled in Blender (art/blender/candy.py), take the place of the ones built in code: the
@@ -674,7 +705,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const packReady = Promise.resolve().then(() => Promise.all(PACK.models.map((load) => load(assets, scene))))
     .then((arrived) => { if (arrived.includes(true)) modelInstallations++; })
     .catch((error) => console.error('A building could not be loaded; its stand-in stays.', error));
-  const parts = [candyReady, jayReady, craneReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, sharedReady, packReady];
+  const parts = [candyReady, jayReady, craneReady, chickReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, sharedReady, packReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);
@@ -693,7 +724,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   ghostPlace.visible = chapter.ghost !== undefined;
   scene.add(ghostPlace);
   const ghostThought = createGhostThought(chapter);
-  if (ghostThought) scene.add(ghostThought.mesh);
+  // Drawn over the finished frame in the drawing's own colours, not graded or blurred with the place (./over-frame.ts).
+  if (ghostThought) { overFrame(ghostThought.mesh); scene.add(ghostThought.mesh); }
   const prologueStage = createPrologueStage(chapter.prologue, (x) => heightOfGroundAt(chapter, x));
   scene.add(prologueStage.group);
   const epilogueStage = createEpilogueStage(chapter.epilogue);
@@ -714,6 +746,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let shoulderLift = 0, shoulderT = 0, airStretch = 1;
   let drawnMode: string | null = null, drawnX = 0, drawnY = 0;
   const rideFrom = new Vector3();
+  /** On the rigged crane (./crane-ride.ts): where its back is, how far from where the simulation has him, and how much he is on it. */
+  const craneSeat = new Vector3(), craneFrom = new Vector3(), craneOff = new Vector3();
+  let craneHeld = false, craneHold = 0;
   type NearShot = { w: number; pos: Vector3; at: Vector3 };
   const nearShot = (): NearShot => ({ w: 0, pos: new Vector3(), at: new Vector3() });
   const nearShots = { family: nearShot(), taste: nearShot(), shoulders: nearShot() };
@@ -751,10 +786,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const carrySide = new Vector3(), carryAxis = new Vector3(), carryHips = new Vector3();
   const rescue = chapter.id === 'norrsken' ? createNorrskenRescue() : null;
   if (rescue) scene.add(rescue.group);
+  // Norrskenet: the ghost holds the bag out and sets it down before him (./norrsken-bag.ts). 0 carried, 1 set down.
+  const bagReturn = chapter.id === 'norrsken' ? createBagReturn() : null;
+  let bagOut = 0;
+  let bagDown: Vector3 | null = null;
+  const bagBackAt = new Vector3();
   const laceHand = new Vector3(), laceAlong = new Vector3();
   /** Myren's lysklubba, held up in his right hand in the mist: where that hand is, from the frame before. */
   const lanternHand = new Vector3(), lanternLift = new Vector3();
-  let lanternHeld = false;
+  let lanternHeld = false, lanternRaise = 0;
   const playerMotion = createPlayerMotion();
   // What is said (./talk.ts): one picture at a time, and this is it. Elof's part in it, the ghost's (its klonks), where a head
   // looks, and a pose to draw it on without keeping it.
@@ -1024,6 +1064,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let kickSince = -1;
   /** Bertil removes his cap, turns it over and sets it on the pool during the chapter's held preparation. */
   const capGift = chapter.id === 'granskog' ? carriers.find(carrier => carrier.ride.id === 'cap') : undefined;
+  // Bertil's answer to Elof's thanks across the pool (./cap-thanks.ts).
+  const bertilAnswer = createBertilAnswer();
   const capTime = chapter.later?.find(wait => wait.flag === 'family:cap-ready')?.seconds ?? 2.4;
   let capSince = -1;
   const capFrom = new Vector3(), capAt = new Vector3();
@@ -1231,6 +1273,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         gradePass.render(renderer, hdr.grade, hdr.scene);
         outputPass.render(renderer, hdr.grade, hdr.grade, 0, false);
       }
+      // The ghost's thought, last, onto the finished picture (./over-frame.ts).
+      if (ghostThought) drawOverFrame(renderer, ghostThought.mesh, camera);
     } finally {
       renderer.setRenderTarget(null);
       if (warm > 0) {
@@ -1259,12 +1303,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     eddyLift = eddy?.update(movers, moverMeshes, clock, lessMotion()) ?? 0;
     // On the life clock: the water already in the air falls on while the words about it are read.
     rainBarrel?.update(movers, lifeDt, lessMotion(), water);
-    if (chapter.id === 'norrsken') {
-      const eyes = scene.getObjectByName('first-carving-eyes');
-      if (eyes) eyes.visible = flags.has('eyes');
-    }
     const x = lerp(prev.x, curr.x, alpha);
     const y = lerp(prev.y, curr.y, alpha);
+    bagOut = bagReturn?.update(flags, x, ghostState ?? null, dt, lessMotion()) ?? 0;
     const bathroom = homeRoutine?.body({ x, y });
     const onShoulders = chapter.id === 'norrsken' && curr.mode === 'ride' && flags.has('home');
     if (onShoulders) homeJourney = true;
@@ -1330,7 +1371,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // all of it, so that the bog's water is lost in it as everything else is (./water.ts).
     water.setHaze(mist.thick());
     const gust = wind.update(gusts, clock);
-    climbs.update(flags, dt, clock, lessMotion());
+    climbs.update(flags, dt, clock, lessMotion(), sceneFrame ?? null);
     follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
@@ -1352,11 +1393,28 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // picture: flat on the ground it sank into the lawn under his boots, and only a sliver showed (12 November 2026).
     if (waitingPlane) { plane.position.y += 0.4; plane.position.z = -0.45; plane.rotation.z = 0.12; }
     plane.rotation.x = waitingPlane ? 0.5 : 0;
+    craneHeld = false;
     for (const c of carriers) {
       if (!c.prop) continue;
       if (c === carrier) { c.wasRidden = true; c.landed = 0; }
       else if (c.wasRidden) { c.wasRidden = false; c.landed = 0; c.setDown.copy(c.prop.position); }
       else c.landed += dt;
+      // The rigged crane (./crane-ride.ts) is posed, placed, shown and hidden by its ride, and gives the place on its back
+      // where he stands: it rises from where it knelt, takes off, flies, lands, and flies away behind him.
+      const craneRig = c.ride.look === 'crane' ? craneRigOf(c.prop.getObjectByName('crane-flying')) : undefined;
+      if (craneRig) {
+        const waits = things.find((thing) => thing.spot.ride === c.ride.id && thing.spot.look === 'crane')?.prop?.group.position;
+        const beat = wingbeat(clock, 1.1, { every: 6.5, glide: 1.8, held: -0.2 });
+        const held = rideCrane(craneRig, c.prop, {
+          ridden: c === carrier, t: curr.t, time: c.ride.time, x, y, heading, ground: (at) => heightOfGroundAt(chapter, at),
+          clock, dt, calm: calmStory, landed: c.wasRidden || c === carrier ? 0 : c.landed,
+          from: craneFrom.set(waits?.x ?? c.ride.from.x, waits?.y ?? c.ride.from.y, waits?.z ?? 0), beat: clock * 1.1, glide: beat.glide, pitch: beat.pitch,
+        });
+        c.prop.scale.setScalar(1);
+        drawnWhile(c.prop, held.shown);
+        if (held.seat) { craneSeat.copy(held.seat); craneHeld = true; }
+        continue;
+      }
       // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
       // Granskogen, and in the storm Bertil's boot on the flooded lawn ("Min stövel blir din båt. Kliv i!"), Moa's
       // umbrella on the wall, the raft and the birch leaves on the water.
@@ -1393,6 +1451,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const flying = c.ride.look !== 'cap' && !waiting;
       c.prop.rotation.z = football ? 0 : !flying ? calmStory ? 0 : Math.sin(clock * 2.4) * 0.05 : (away >= 0 ? 0.35 * smooth(away * 3) : heading * 0.6) + wings.pitch;
       if (football && c.prop.children[0]) c.prop.children[0].rotation.z = -(c.prop.position.x - c.ride.from.x) / 0.8;
+      // What walks him along steps its own legs and leans with its own slope, and does not nod as a bird does
+      // (Granskogen's ants, ./ant-ride.ts).
+      (c.prop.userData.walk as ((clock: number, dt: number, still: boolean) => void) | undefined)?.(clock, dt, calmStory);
       const beat = wings.lift * 0.75;
       const lag = wingbeat(clock - 0.12, 1.1, { every: 6.5, glide: 1.8, held: -0.2 }).lift * 0.75;
       const near = c.prop.getObjectByName('wingNear');
@@ -1413,7 +1474,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // The light counterweight tips the same board only during its safe bounce, then resets for another try.
       const trialTip = chapter.counterweight && thing.spot.id === chapter.counterweight.launch && riding
         && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial ?? chapter.counterweight.launch) && !flags.has(chapter.counterweight.launch);
-      thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id));
+      thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id), { elof: { x, y }, calm: calmStory });
       // The ghost's sweet on the vittra's doorstep, from when he sees it given away.
       if (thing.spot.look === 'vittra-door') { const sweet = thing.prop?.group.getObjectByName('vittra-candy'); if (sweet) sweet.visible = flags.has('beat:vittra'); }
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
@@ -1434,7 +1495,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (thing.prop && (thing.spot.word === 'gardenBoard' || thing.spot.word === 'capBoard')) {
         thing.prop.group.visible = flags.has(thing.spot.needs!) && !flags.has(thing.spot.id);
       }
-      // The star comes from the torn bag; the returned bag is offered only after the repaired eyes.
+      // The star comes from the torn bag; the returned bag is held out once the trägubbe is out of the crack.
       if (thing.prop && chapter.prologue && thing.spot.id === 'star') {
         const spilled = flags.has('blink') && flags.has('bag:torn') && (starDropTime > 0 || (x >= 37.5 && (ghostState?.x ?? 0) >= 40.5));
         if (spilled && dt > 0) starDropTime = Math.min(.65, starDropTime + dt);
@@ -1444,7 +1505,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           thing.spot.at.y + (1 - progress * progress) * .9, -.35);
       }
       if (thing.prop && chapter.id === 'norrsken' && thing.spot.id === 'bag') {
-        thing.prop.group.visible = flags.has('eyes') && !flags.has('bag');
+        // Set down once the ghost has held it out to him (./norrsken-bag.ts).
+        bagDown = thing.prop.group.position;
+        thing.prop.group.visible = bagOut >= 1 && !flags.has('bag');
         const tear = thing.prop.group.getObjectByName('saturday-bag-tear');
         if (tear) tear.visible = true;
       }
@@ -1558,7 +1621,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const tall = Math.max(s.height, s.width / camera.aspect);
       const away = tall / 2 / Math.tan(FOV * Math.PI / 360);
       const w = shotWeight * shotWeight * (3 - 2 * shotWeight);
-      playAim.set(camera.position.x, camera.position.y, 0);
+      // Where the play camera looks: over a brook or a pool its eye is raised and looks down (`overWater`), so not
+      // straight ahead of it. Taken as straight ahead, the shot's release over the eddy in Granskogen looked level from on
+      // high, and Elof sank to the picture's foot before it rose again.
+      playAim.copy(camAt);
       // A shot of something further back (`z`) looks at it from as far in front of it, and the lens focuses there.
       camera.position.set(lerp(camera.position.x, s.x, w), lerp(camera.position.y, s.y + s.eye, w), lerp(camera.position.z, s.z + away, w));
       camera.lookAt(lerp(playAim.x, s.x, w), lerp(playAim.y, s.y, w), s.z * w);
@@ -1592,7 +1658,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
         busy: !curr.grounded || curr.mode !== 'free' || !!nearbyFamily || (!!chapter.mist && flags.has(chapter.mist.after)) || gusts.some((gust) => gust.blow > 0 || gust.warn > 0),
         calm: calmStory, eye: camera.position.z, slope: Math.tan((FOV * Math.PI) / 360) * camera.aspect,
-      });
+      }, { x, y });
       if (place.id === 'dusk') {
         scene.backgroundIntensity = nightBrightness(darkness);
         // Fog keeps a copy of its initial colour; changing `sky` alone never changes the haze.
@@ -1676,10 +1742,17 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const rescueGrip = rescue?.weight(flags, sceneFrame?.id === 'aterfunna' ? sceneFrame.seconds : undefined, calmStory) ?? 0;
     if (rescue && flags.has('scene:uppdragen') && rescueGrip > 0) {
       // Lean into the load with the carrying shoulder behind him, instead of jogging empty-handed: wherever he drags
-      // it, the eyes' and the candy's places too, and less while it lies still behind him.
+      // it, the candy's place too, and less while it lies still behind him.
       rescueCarryPose(spokenPose, rescueGrip * (.4 + .6 * rescue.hauling));
     }
     if (rescue && sceneFrame?.id === 'uppdragen') spokenPose.lean -= .16;
+    // Dra upp: he leans back into the lace and bends his knees with each of the three heaves (./norrsken-rescue.ts).
+    const heave = rescue && sceneFrame?.id === 'hissa' ? heaveAt(sceneFrame.seconds, calmStory) : 0;
+    if (rescue && sceneFrame?.id === 'hissa') {
+      const into = smooth(clamp((sceneFrame.seconds - .2) / .3, 0, 1));
+      spokenPose.lean -= (.1 + .22 * heave) * into;
+      spokenPose.kneeL += .3 * heave; spokenPose.kneeR += .3 * heave;
+    }
     playerBody.pose(spokenPose);
     playerBody.face?.(elofTalker.mouth.open, elofTalker.mouth.round, elofTalker.lids);
     playerBody.breeze?.(breeze, dt, calmStory, playerMotion.ruffle);
@@ -1706,6 +1779,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     rideFrom.multiplyScalar(curr.mode === 'ride' ? Math.exp(-10 * dt) : 0);
     drawnMode = curr.mode; drawnX = x; drawnY = y;
     elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0) + rideFrom.x, y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + rideFrom.y, lift?.z ?? 0);
+    // On the rigged crane he stands on its back wherever it is (./crane-ride.ts): a hop up onto it as he boards, and one
+    // down from it when it has landed.
+    if (craneHeld) { craneHold = calmStory ? 1 : Math.min(1, craneHold + dt / 0.3); craneOff.set(craneSeat.x - x, craneSeat.y - y, craneSeat.z); }
+    else craneHold = calmStory ? 0 : Math.max(0, craneHold - dt / 0.35);
+    if (craneHold > 0) elof.group.position.addScaledVector(craneOff, smooth(craneHold)).y += craneHold < 1 ? 0.3 * Math.sin(Math.PI * craneHold) : 0;
     // On a mark in the place itself, such as Pappa's palm: wherever the run left him.
     if (scripted && scripted.ontoWeight > 0) {
       const on = scripted.ontoWeight;
@@ -1790,9 +1868,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     // In the mist he holds the lysklubba up before him, as a lantern (./view.ts buildMist).
     lanternHeld = !!chapter.mist && flags.has(chapter.mist.after) && !curr.hook && !!playerBody;
+    // As he takes it, he holds it up high for a moment, looking at it (the scene `mist.raise`; Olov, 13 November 2026).
+    const raising = !!chapter.mist?.raise && sceneFrame?.id === chapter.mist.raise;
+    lanternRaise = calmStory ? (raising ? 1 : 0) : lanternRaise + ((raising ? 1 : 0) - lanternRaise) * ease(raising ? 7 : 4, dt);
     if (lanternHeld && playerBody) {
       elof.group.updateWorldMatrix(true, false);
-      lanternLift.set(0.3, 0.98, 0.12).applyMatrix4(elof.group.matrixWorld);
+      lanternLift.set(0.3 - 0.08 * lanternRaise, 0.98 + 0.5 * lanternRaise, 0.12 + 0.05 * lanternRaise).applyMatrix4(elof.group.matrixWorld);
       playerBody.reach(1, lanternLift, 0.9);
       if (playerBody.grasp && playerBody.socket) {
         // Its stick upright in his fist, the sweet over his thumb (./fingers.ts).
@@ -1948,8 +2029,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
       if (!hopping) ghostGroundY = ghostState.y;
+      // Pulled ashore in Granskogen, it thanks him: turned to him and to us, it bows and hops (./ghost-thanks.ts).
+      const thanks = chapter.id === 'granskog' ? ghostThanks(sceneFrame, calmStory) : null;
       // 0 faces along the course; a half turn faces back at him.
-      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : (hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
+      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : thanks ? Math.PI + thanks.turn
+        : (hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
       const ghostDelta = wanted - ghostTurn;
       ghostTurn += Math.atan2(Math.sin(ghostDelta), Math.cos(ghostDelta)) * ease(7, dt);
       const awake = !chapter.prologue || flags.has('blink');
@@ -1962,7 +2046,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.position.set(pose.x, pose.y, pose.z);
         ghostSize = pose.scale;
         ghostPlace.scale.setScalar(ghostSize);
-        ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
+        // The tilt about its own side, as for the hop above: the stand-in's z, the model's x (it faces its own +z), or the
+        // model rolled sideways and lay the other way round in Mamma's joke, in among the end chair's legs (13 November).
+        ghost.rotation.set(ghostFaces ? -pose.tilt : 0, ghostFaces + pose.turn, ghostFaces ? 0 : pose.tilt, 'YXZ');
+        // Its bag goes with its front: running off along the deck it is not held out behind it.
+        ghostTurn = pose.turn;
         ghostStaged = true;
         if (prologue.kind === 'pappa') {
           const catcher = stage.actors.get('pappa')?.rig;
@@ -2005,12 +2093,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       blinkEyes(paintedEyes, staged?.blink ?? 1);
       const ghostIdle = ghostMotion.update({ dt, clock, hop: hopping ? ghostState.t : null, calm: calmStory, awake, staged: ghostStaged,
         performance: staged ?? undefined, elof: x - ghostPlace.position.x, wind: gale * windAt(ghostPlace.position.x) });
-      ghostLook = ghostStaged ? 0 : ghostIdle.look;
+      ghostLook = ghostStaged || thanks ? 0 : ghostIdle.look;
       if (!ghostStaged) {
-        // Its idle: a bob of the whole toy with its bag, and a curious tilt towards him when he is near.
-        ghostPlace.position.y += ghostIdle.bob;
-        ghost.rotation.x += ghostFaces ? ghostIdle.pitch : ghostIdle.roll;
-        ghost.rotation.z += ghostFaces ? ghostIdle.roll : -ghostIdle.pitch;
+        // Its idle: a bob of the whole toy with its bag, and a curious tilt towards him when he is near; and its thanks.
+        ghostPlace.position.y += ghostIdle.bob + (thanks?.bob ?? 0);
+        ghost.rotation.x += ghostFaces ? ghostIdle.pitch + (thanks?.pitch ?? 0) : ghostIdle.roll;
+        ghost.rotation.z += ghostFaces ? ghostIdle.roll : -ghostIdle.pitch - (thanks?.pitch ?? 0);
       }
       // It has no mouth (plan §2.2): saying "Klonk", it bobs up once for each, tipping back a little, as a wooden toy would
       // (./talk.ts). Its knock is its voice already (../audio/cues.ts).
@@ -2023,13 +2111,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (ghostPlace.visible && ghostSize > 0.5) talk.place('spoket', ghostPlace.position.x, ghostPlace.position.y + 0.75 * ghostPlace.scale.y, ghostPlace.position.z);
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
+    // Berget's lace in the ghost's hands, and how it leans to it (./ghost-lace.ts).
+    ghostLace.update({ flags, scene: sceneFrame ?? null, ghost: ghostState && !ghostState.gone ? ghost : null, facesModel: ghostFaces !== 0,
+      elof: { x, y, climbing: curr.mode === 'climb' }, clock, dt, calm: calmStory });
     if (chapter.prologue) {
       paintedEyes.forEach((eye, i) => { eye.visible = flags.has(i === 0 && paintedEyes.length > 1 ? 'eye' : 'paint'); });
     }
     // Keep the stolen paper bag distinct from the wooden pocket, across every chapter of the chase. It was given
     // back on the summit, so neither the party nor Byn, a week later, has it.
     stolenBag.visible = ghostPlace.visible && (chapter.prologue ? flags.has('grab') || flags.has('blink') : chapter.id !== 'epilog' && chapter.id !== 'byn' && !chapter.named) &&
-      !(chapter.id === 'norrsken' && flags.has('eyes'));
+      !(chapter.id === 'norrsken' && bagOut >= 1);
     // The gold sweet glints at the bag's mouth all through the chase (plan §3.3 rule 3).
     const glint = stolenBag.getObjectByName('saturday-bag-glow');
     if (glint) {
@@ -2039,7 +2130,15 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Carried before it: in a scene it may face the camera, and the bag goes with its front.
     if (directions.ghost) stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -Math.sin(ghostTurn) * .4 - .05);
     else stolenBag.position.set(Math.cos(ghostTurn) * .48, .18, -.18 + Math.sin(ghostTurn) * .25);
-    stolenBag.rotation.y = ghostTurn;
+    // Mamma's joke: the ghost drops the bag as it drops, and it lies on its side apart from it (../sim/prologue.ts).
+    const dropped = chapter.prologue && prologue ? droppedBag(chapter.prologue, prologue, stolenBag.position) : null;
+    if (dropped) stolenBag.position.set(dropped.x, dropped.y, dropped.z);
+    stolenBag.rotation.set(0, ghostTurn * (1 - (dropped?.out ?? 0)), dropped?.tilt ?? 0);
+    // Norrskenet's pull: it has the lace's end in front of it, and the bag on its back (./norrsken-rescue.ts); the
+    // trägubbe out, it takes the bag round in front again.
+    const bagBack = !rescue ? 0 : sceneFrame?.id === 'hissa' ? 1 : sceneFrame?.id === 'uppdragen' ? 1 - smooth(clamp((sceneFrame.seconds - .3) / .8, 0, 1)) : 0;
+    if (bagBack > 0) stolenBag.position.lerp(bagBackAt.set(-Math.cos(ghostTurn) * .42, .18, -.14), bagBack);
+    if (bagReturn && bagDown) bagReturn.hand(stolenBag, ghostPlace, bagDown, bagOut);
     const tear = stolenBag.getObjectByName('saturday-bag-tear');
     if (tear) tear.visible = chapter.prologue ? flags.has('bag:torn') : true;
     prologueStage.update(flags);
@@ -2115,6 +2214,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
           posed.lean = Math.max(posed.lean, 0.85 * low);
         }
       }
+      // Thanked across the pool for his cap, Bertil cheers and waves back (./cap-thanks.ts).
+      if (capGift && one.who === 'bertil') bertilAnswer.update(words, lifeDt, calmStory, one.rig.legs, posed);
 
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.
@@ -2190,9 +2291,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         // Down on his right knee, the left foot forward, leaning to the board, turned towards it.
         // Mixed so that at full weight each is exactly its value, frame after frame (a paused picture never drifts).
         const w = gesture.hold, mixTo = (from: number, to: number) => from * (1 - w) + to * w;
-        posed.lean = mixTo(posed.lean, 0.85);
-        posed.legL = mixTo(posed.legL, 1.35); posed.kneeL = mixTo(posed.kneeL, 1.55);
-        posed.legR = mixTo(posed.legR, 0.1); posed.kneeR = mixTo(posed.kneeR, 1.65);
+        if (board) {
+          posed.lean = mixTo(posed.lean, 0.85);
+          posed.legL = mixTo(posed.legL, 1.35); posed.kneeL = mixTo(posed.kneeL, 1.55);
+          posed.legR = mixTo(posed.legR, 0.1); posed.kneeR = mixTo(posed.kneeR, 1.65);
+        // Beside the carving he kneels on his own legs, the knee on the floor, a hand to the other knee (./knee-hands.ts).
+        } else kneelOnOwnLegs(posed, one.rig.legs, w, one.who);
         facing = facingBetween(facing, board ? -0.95 : -1.15, w);
       }
       // In the garden, until he calls her, Moa crouches and reaches into the root hole the ghost crept into ("Där
@@ -2277,7 +2381,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         lampLocal.copy(rootReach);
         one.rig.group.worldToLocal(lampLocal);
         one.rig.reach(lampLocal.x >= 0 ? 0 : 1, rootReach, gesture.hold);
-      }
+      } else if (gesture.hold > 0.001) handOnKnee(one.rig, 1, smooth(gesture.hold / .7));
       if (gesture.reach > 0.001) {
         const poke = calmStory ? 0 : Math.sin(clock * 2.3) * 0.12;
         one.rig.reach(1, rootReach.set(ROOT_HOLE.x + 0.2 + poke, ROOT_HOLE.y + 0.3, -0.2), 0.9 * gesture.reach);
@@ -2358,14 +2462,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     if (chapter.id === 'norrsken') {
       const carving = scene.getObjectByName('mover:tragubbe');
-      // Out of the crack for good, the lace is off it: its ring no longer hides the face he paints.
+      // Out of the crack for good, the lace is off it: its ring no longer hides its old painted face.
       const ring = carving?.getObjectByName('pull-ring');
       if (ring) ring.visible = !flags.has('placed:tragubbe');
       if (carving && rescue) rescue.update(playerBody, elof.group, carving as Group, flags,
         sceneFrame?.id === 'snoret' ? clamp((sceneFrame.seconds - .4) / 1.7, 0, 1) : 1,
         flags.has('nr:rope-ready') && !flags.has('placed:tragubbe'), clock, dt, calmStory,
         sceneFrame?.id === 'uppdragen' ? smooth(clamp((sceneFrame.seconds - .5) / .65, 0, 1)) * (1 - smooth(clamp((sceneFrame.seconds - 1.9) / .6, 0, 1))) : 0,
-        sceneFrame?.id === 'snoret', rescueGrip);
+        sceneFrame?.id === 'snoret', rescueGrip,
+        // Dra upp: how hard he heaves, and the ghost behind him with the lace's end.
+        { heave, ghost: sceneFrame?.id === 'hissa' ? ghostPlace.position : null, hold: sceneFrame?.id === 'hissa' ? ghostHoldAt(sceneFrame.seconds) : 0 });
       if (carving && flags.has('taste') && !homeJourney) {
         // It was dragged up behind him: as he tastes it is set upright at his feet, from where it lay, not by a jump.
         const settle = sceneFrame?.id === 'aterfunna' && !calmStory ? smooth(clamp(sceneFrame.seconds / .7, 0, 1)) : 1;
@@ -2807,15 +2913,19 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
   if (!chapter.mist) return { group, update: () => {}, thick: () => 0 };
   const after = chapter.mist.after;
   const light = new PointLight('#ffcf8a', 0, 9, 1.6);
-  // The lollipop, held up like a lantern: it glows through the mist.
+  // Before it is taken, its light is on the moss round the lysklubba where it stands (Olov, 13 November 2026: it has to
+  // read as a lollipop that shines). The same lamp: no light is added or taken out.
+  const source = chapter.spots?.find((spot) => spot.id === after)?.at;
+  // The lollipop, held up like a lantern: it glows through the mist. Big enough to be seen as a lollipop in his hand.
   const glow = new Group();
   const sweet = sweetSocket(new Group().add(new Mesh(new SphereGeometry(0.13, 14, 10), new MeshBasicMaterial({ color: '#ffe2a0', fog: false }))),
-    { shape: 'lysklubba', scale: 0.62, lantern: true });
-  const stick = new Mesh(new CylinderGeometry(0.018, 0.018, 0.4, 6), new MeshBasicMaterial({ color: '#fff6e0', fog: false }));
-  stick.position.y = -0.3;
+    { shape: 'lysklubba', scale: 0.85, lantern: true });
+  const stick = new Mesh(new CylinderGeometry(0.02, 0.02, 0.5, 6), new MeshBasicMaterial({ color: '#fff6e0', fog: false }));
+  stick.position.y = -0.36;
   glow.add(sweet, stick);
-  // Its light in the mist round it: a warm halo, brightest at the lantern (visual audit, myren rows 5 and 21).
-  const halo = new Mesh(new PlaneGeometry(3.2, 3.2), new MeshBasicMaterial({
+  // Its light in the mist round it: a warm halo, brightest at the lantern (visual audit, myren rows 5 and 21). Behind the
+  // lantern, so that it shines round his head and not over his face; and a wide glow further back, the mist lit by it.
+  const halo = new Mesh(new PlaneGeometry(2.4, 2.4), new MeshBasicMaterial({
     map: drawn(64, 64, (c) => {
       const round = c.createRadialGradient(32, 32, 0, 32, 32, 32);
       round.addColorStop(0, 'rgba(255,255,255,1)');
@@ -2839,29 +2949,54 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     lamp.position.set(at.x, at.y, -0.5);
     flame.position.set(at.x, at.y, -0.45);
   }
-  group.add(light, glow, halo, wall, ...(at ? [lamp, flame] : []));
-  // In the mist the sun goes pale and the air grey and cool, so that the lantern is the warmest thing there.
+  // The mist round him lit by the lysklubba: a wide, faint warmth further back than he is.
+  const aura = new Mesh(new PlaneGeometry(7, 7), (halo.material as MeshBasicMaterial).clone());
+  group.add(light, glow, halo, aura, wall, ...(at ? [lamp, flame] : []));
+  // In the mist the sun goes pale and the air grey-blue and cool, as a November afternoon at half past four is, so that
+  // the lantern is the warmest and brightest thing there: in a pale mist its light did not show (Olov, 13 November 2026).
   const clearDay = { sun: sun.intensity, sky: hemisphere.intensity, air: fog.color.clone() };
-  const grey = new Color('#c4c6bd');
-  let k = 0;
+  const grey = new Color('#7b868d');
+  /**
+   * The mist begins to rise as he comes down to the clearing where the lysklubba shines, this thick at most, and closes
+   * in once he has taken it: its light is seen in the mist before it is in his hand.
+   */
+  const RISING = 0.42;
+  /** The mist, from 0 to 1; whether the light is in his hand, from 0 to 1; and the clock its light breathes by. */
+  let k = 0, held = 0, life = 0;
   function update(flags: ReadonlySet<string>, x: number, y: number, facing: number, cameraZ: number, dt: number, hand: Vector3 | null = null): void {
-    k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
+    life += dt;
+    const rising = source ? RISING * Math.min(1, Math.max(0, (x - (source.x - 9)) / 6)) : 0;
+    const thick = flags.has(after) ? 1 : rising;
+    k = k < thick ? Math.min(thick, k + dt / 3) : Math.max(thick, k - dt / 3);
+    // In his hand at once as he takes it, while the one in the moss shrinks away (./props.ts); the mist takes longer.
+    held = Math.min(1, Math.max(0, held + (flags.has(after) ? dt : -dt) / 0.25));
+    const breath = 0.5 + 0.5 * Math.sin(life * 2.1);
     // The mist begins just behind the plane he walks in: he, the candy and what is near him stay clear, what is
     // further back goes pale, and 16 behind it is all mist. Before it comes, the air is the place's own.
     const clear = haze ? { near: cameraZ + haze.near, far: cameraZ + haze.far } : greybox;
     fog.near = lerp(clear.near, cameraZ + 0.5, k);
     fog.far = lerp(clear.far, cameraZ + 16, k);
-    sun.intensity = clearDay.sun * (1 - 0.45 * k);
-    hemisphere.intensity = clearDay.sky * (1 - 0.2 * k);
-    fog.color.copy(clearDay.air).lerp(grey, 0.5 * k);
-    light.intensity = 7 * k;
-    light.position.set(x + facing * 0.3, y + 1.4, 1);
+    sun.intensity = clearDay.sun * (1 - 0.65 * k);
+    hemisphere.intensity = clearDay.sky * (1 - 0.45 * k);
+    fog.color.copy(clearDay.air).lerp(grey, 0.75 * k);
+    if (held > 0 || !source) {
+      light.intensity = Math.max(4.5 * k, 3.5 * held);
+      light.position.set(x + facing * 0.3, y + 1.6, 0.8);
+    } else {
+      // Still in the moss: its light on the moss and the sedge round it, breathing with its halo.
+      light.intensity = 3 + 1.2 * breath;
+      light.position.set(source.x, source.y + 0.7, 0.6);
+    }
     // Held up in his hand like a lantern, its stick in his fist ("Följ mitt ljus hem till din familj.").
     if (hand) glow.position.set(hand.x, hand.y + 0.26, hand.z + 0.04);
     else glow.position.set(x + facing * 0.32, y + 1.42, 0.25);
-    glow.scale.setScalar(k);
-    halo.position.set(glow.position.x, glow.position.y, glow.position.z + 0.05);
-    (halo.material as MeshBasicMaterial).opacity = 0.85 * k;
+    glow.scale.setScalar(held);
+    // Its halo breathes as it did in the moss, and grows stronger as the mist closes in round it.
+    halo.position.set(glow.position.x, glow.position.y, glow.position.z - 0.3);
+    halo.scale.setScalar(0.95 + 0.1 * breath);
+    (halo.material as MeshBasicMaterial).opacity = (0.5 + 0.4 * k) * held * (0.85 + 0.15 * breath);
+    aura.position.set(glow.position.x, glow.position.y - 0.3, glow.position.z - 1.4);
+    (aura.material as MeshBasicMaterial).opacity = 0.45 * k * held;
     wall.position.set(x, level, -20);
     (wall.material as MeshBasicMaterial).color.copy(fog.color);
     (wall.material as MeshBasicMaterial).opacity = 0.92 * k;
@@ -2869,7 +3004,9 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     flame.scale.setScalar(k);
     // Only the lollipop, the halos, the lamp's flame and the wall go out of the picture. The light stays, dark:
     // taking a light out compiles every shader anew.
-    for (const one of [glow, halo, wall, lamp, flame]) drawnWhile(one, k > 0);
+    for (const one of [glow, halo]) drawnWhile(one, held > 0);
+    drawnWhile(aura, k * held > 0);
+    for (const one of [wall, lamp, flame]) drawnWhile(one, k > 0);
   }
   /** How far the mist has come in: 0 clear, 1 thick. */
   return { group, update, thick: () => k };
@@ -2883,7 +3020,7 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
 function buildFollower(chapter: ChapterData) {
   const group = new Group();
   const def = chapter.follower;
-  if (!def) return { group, update: () => {} };
+  if (!def) return { group, update: () => {}, install: () => false };
   // The crane chick (crane.ts): it walks on its long legs, turns through facing the camera, and bobs its head.
   const chick = craneChick();
   const gait: Gait = { phase: 0, speed: 0, facing: 0 };
@@ -2901,7 +3038,8 @@ function buildFollower(chapter: ChapterData) {
     const from = chick.group.position.x;
     chick.group.position.x += (to.x - from) * ease(following ? 4 : 2.5, dt);
     chick.group.position.y += (to.y - chick.group.position.y) * ease(6, dt);
-    stepChick(chick, gait, chick.group.position.x - from, dt, clock);
+    if (rigged) stepRiggedChick(rigged, chick.group.position.x - from, dt, clock);
+    else stepChick(chick, gait, chick.group.position.x - from, dt, clock);
     for (const [i, ring] of rings.entries()) {
       const k = (clock * 0.45 + i / rings.length) % 1;
       ring.position.set(def!.home.x, def!.home.y + 0.6 + k * 3.2, 0);
@@ -2911,7 +3049,16 @@ function buildFollower(chapter: ChapterData) {
       drawnWhile(ring, opacity > 0);
     }
   }
-  return { group, update };
+  /** The chick modelled in Blender (./crane-chick.ts) takes the place of the one built in code, which it walks as. */
+  let rigged: ChickRig | null = null;
+  function install(model: Object3D): boolean {
+    rigged = rigChick(model);
+    if (!rigged) return false;
+    chick.group.remove(chick.turn);
+    chick.group.add(rigged.turn);
+    return true;
+  }
+  return { group, update, install };
 }
 
 /** The rolling cones of the avalanche (plan §4.7, E2): brown, long, turning as they go. One instanced mesh. */
@@ -3166,16 +3313,19 @@ function buildClimbs(chapter: ChapterData) {
     group.add(hose);
     const ring = look === 'lace' ? new Mesh(ringGeometry, ringMaterial) : null;
     if (ring) { ring.position.set(climb.x, climb.top, -.12); group.add(ring); }
-    return [{ hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
+    return [{ hose, ring, climb, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
   });
   /** A hose that waits for something is let down when that has happened: the lichen, the braid, the lace. */
-  function update(flags: ReadonlySet<string>, dt: number, clock = 0, still = false): void {
+  function update(flags: ReadonlySet<string>, dt: number, clock = 0, still = false, scene: SceneFrame | null = null): void {
     for (const b of braids) {
       if (b.needs !== undefined) b.down = Math.min(1, Math.max(0, b.down + (flags.has(b.needs) ? dt : -dt) / 0.7));
       b.braid.update(b.down, clock, dt, still);
     }
     for (const h of hoses) {
-      if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
+      // Berget's lace runs out when the ghost lets it down in its scene (./ghost-lace.ts), not at the flag.
+      const held = letDown(h.climb, flags, scene);
+      if (held !== null) h.down = held;
+      else if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
       h.hose.scale.y = Math.max(0.001, h.down);
       if (h.ring) {
         h.ring.scale.setScalar(h.down);

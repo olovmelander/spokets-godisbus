@@ -121,6 +121,8 @@ export const sv = {
     board: 'Kliv på',
     lift: 'Lyft',
     lowerLace: 'Sänk snöret',
+    // Norrskenet: the one pull that brings the trägubbe up (Olov, 13 November 2026).
+    pullUp: 'Dra upp',
     paintEyes: 'Måla ögon',
     takeBag: 'Ta påsen',
     giveTragubbe: 'Ge trägubben',
@@ -223,8 +225,8 @@ export const sv = {
       figure: { purpose: 'Hämta hem min gamla trägubbe.', recap: 'Minnet visade min gamla trägubbe, ensam i en spricka.' },
       crack: { purpose: 'Hjälp spöket vid sprickan.', recap: 'Spöket visar att någon väntar där nere.' },
       pull: { purpose: 'Dra upp trägubben med snöret.', recap: 'Snöret är nere. Vi kan hjälpa den som sitter fast.' },
-      eyes: { purpose: 'Plocka ett bär och måla trägubbens ögon.', recap: 'Vi fick upp en ensam trägubbe. Hans gamla ögon är borta.' },
-      bag: { purpose: 'Ta tillbaka min godispåse.', recap: 'Trägubben har nya ögon. Spöket räcker tillbaka påsen.' },
+      // No eyes to paint in Norrskenet any more: he keeps his old ones (Olov, 13 November 2026).
+      bag: { purpose: 'Ta tillbaka min godispåse.', recap: 'Vi fick upp trägubben! Spöket räcker tillbaka påsen.' },
       share: { purpose: 'Dela godiset med mina vänner.', recap: 'Påsen är tillbaka. Nu väljer jag vem som får vad.' },
       welcome: { purpose: 'Dela godiset – ett välkommen-hem-kalas!', recap: 'Spöket tog godiset för att välkomna min gamla trägubbe hem!' },
       gold: { purpose: 'Smaka på guldgodiset.', recap: 'Vi har delat godiset. Guldgodiset glittrar som stjärnan.' },
@@ -326,8 +328,8 @@ export const sv = {
     morning: 'Lördagsmorgon',
     // Each chapter's time card: where, and the time of day (plan §4.9).
     garden: 'Gården · klockan tio',
-    granskog: 'Granskogen · halv tolv',
-    myren: 'Myren · halv fem',
+    granskog: 'Granskogen · klockan halv tolv',
+    myren: 'Myren · klockan halv fem',
     berget: 'Berget · klockan sex',
     norrsken: 'Norrskenet · i skymningen',
     epilog: 'Godiskalaset · klockan nio',
@@ -381,6 +383,8 @@ export const sv = {
     familySeesawReady: 'Bra! Ställ dig på änden som är nere.',
     // Landed across the ravine, he turns and thanks Pappa at the seesaw (Olov, 12 November 2026).
     forestThanksPappa: 'Tack så mycket, Pappa!',
+    // Over the pool, out of the cap, he turns and thanks Bertil, with a joke (Olov, 13 November 2026).
+    forestThanksBertil: 'Tack, Bertil! Din keps kan simma!',
     familyBertil: 'Min keps blir din båt, lillebror.',
     familyCapReady: 'Kliv i när du vill. Jag hejar på dig.',
     familyMamma: 'Jag lägger en stock över vattnet.',
@@ -405,13 +409,15 @@ export const sv = {
     heja: 'Heja, lillebror!',
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
+    // Holding the lysklubba up as the mist rolls in (Olov, 13 November 2026).
+    bogLightMist: 'Oj, vad dimmigt! Tur att klubban lyser.',
     bogChickLight: 'Följ mitt ljus hem till din familj.',
     bogFamilyHome: 'Tranungen är hemma! Får jag åka med dig?',
     bogBridgeReady: 'Spången är klar! Gå över när du vill.',
     bogLightReturn: 'Nu går spången åt båda hållen!',
     mountainThanks: 'Tack för hjälpen! Nu är jag uppe.',
     fetch: 'Spöket vill hämta hem min trägubbe!',
-    mountainLoop: 'Snöret runt röset. En väg ner!',
+    mountainLoop: 'Ett snöre här uppe! Nu kan jag åka ner.',
     // Pappa on the summit: one thing said, in four bubbles.
     first1: 'Min allra första trägubbe …',
     first2: 'Den täljde jag till dig',

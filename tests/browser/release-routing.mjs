@@ -55,9 +55,11 @@ try {
   check('the bonus Byn opens directly without dev', (await state(page)).course === 'byn');
   await page.close();
 
-  page = await open(context, 'course=garden&at=208.5,0.01&flags=dewsong');
+  page = await open(context, 'course=garden&at=208.5,0.01&flags=dewsong,scene:skogen');
   await page.keyboard.down('ArrowRight');
-  await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
+  // His walk into the forest counts as seen (`scene:skogen`): it takes minutes under CI's software rendering, and
+  // endings.mjs plays it. This checks the page's way on.
+  await page.waitForSelector('#endCard:not([hidden])', { timeout: 90000 });
   await page.keyboard.up('ArrowRight');
   check('a public end card offers the next chapter', await page.locator('#endOnward').isVisible());
   await Promise.all([page.waitForURL((url) => url.searchParams.get('course') === 'granskog'), page.click('#endOnward')]);

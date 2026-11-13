@@ -3,6 +3,7 @@ import type { Candy, ChapterData } from '../../sim/types';
 import { HOME_BATHROOM, HOME_LAYOUT } from '../home-layout';
 import { timeCard } from './cards';
 import { PROLOG_SCENES } from './prolog-scenes';
+import { PAPPA_SNUCK } from '../../sim/prologue';
 
 /**
  * The story's two ends (plan §3.4): the prologue before Kapitel 1, and the epilogue after the final. Both
@@ -29,8 +30,9 @@ function row(from: number, to: number, ground: number, every = 2, after?: string
  * 4. **The chase**, with Mamma's freeze joke at the doorway, whose hinge tears the bag: the candy trail.
  * 5. **The star** on the deck: look, choose *Smaka på stjärnan*, eat, and POFF: he is as small as the ghost.
  * 6. **The family** (scenes): they kneel round him; he steps onto Pappa's hand; Moa's drawing says what the
- *    star did and what the gold sweet could do; Pappa's freeze joke at the railing; their promises as he
- *    walks to the deck's edge, and the game's title over the garden.
+ *    star did and what the gold sweet could do; Pappa's freeze joke at the railing, and "Det smiter!" as the ghost
+ *    runs off along the deck; it leaps down into the garden as he comes after it; their promises at the deck's edge,
+ *    and the game's title over the garden.
  *
  * The family are rehearsal figures that act (src/render/stage.ts); their models from Blender take their
  * places where the private pack has them. The table and chairs are plain stand-ins: the house is Olov's.
@@ -55,8 +57,8 @@ export const prolog: ChapterData = {
     })),
   ],
   scenes: PROLOG_SCENES,
-  // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away.
-  later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: 4.1 }],
+  // Pappa's line after his freeze joke has its own moment: Elof sees the ghost slip away, running off along the deck.
+  later: [{ flag: 'snuck', after: 'pappa:noticed', seconds: PAPPA_SNUCK }],
   // In reach of the brush Pappa holds out, so the morning ends with "Måla ögonen!" lit on Använd: the first thing
   // asked of him has its button ready (docs/ux-audit/first-minutes.md row 19). The move lesson waits for the hall.
   spawn: { x: HOME_LAYOUT.dining.x - 2.9, y: 0.01 },
@@ -64,9 +66,10 @@ export const prolog: ChapterData = {
   goalNeeds: 'titel',
   prologue: {
     // Pappa notices the ghost once Moa's drawing is told, as Elof sets off towards it.
-    // The ghost waits at the very edge of the boards, ready to jump: at 52.6 it stood at his side, the bag in reach,
-    // all the while the family said their promises (12 November 2026).
-    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 53.3, y: -0.8 }, pappaAfter: 'scene:handen', pappaFrom: 41.5,
+    // The ghost waits at the very edge of the boards, looking back at him, and leaps down into the garden as he comes,
+    // five EL away: he never reaches it (Olov, 13 November 2026: "fixa så att spöket hoppar ner innan man hinner fram
+    // till det"). Until then it stood at the edge while the family said their promises, and he could walk up to it.
+    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 53.3, y: -0.8 }, leapFrom: 48.3, pappaAfter: 'scene:handen', pappaFrom: 41.5,
     // The deck's railing runs along its far side: Pappa puts the frozen ghost up on its top rail.
     rail: { from: 38.4, to: 53.8, z: -3.4 },
   },
@@ -116,19 +119,17 @@ export const prolog: ChapterData = {
     { at: { x: 35, y: 0 } },
     // On the deck, beyond the star it lost: it waits there until Pappa's joke.
     { at: { x: 44.4, y: -0.8 }, until: 'pappa:done', near: 0 },
-    // At the deck's edge, where it hid behind his back; then down into the garden, as the title comes.
+    // At the deck's edge, where it hid behind his back, until he comes near; then down into the garden.
     { at: { x: 53.3, y: -0.8 }, until: 'leap', near: 99 },
     { at: { x: 57.5, y: -7 }, near: 0 },
   ],
   beats: [
-    { id: 'dropped', on: 'mamma:noticed', who: 'mamma', line: 'dropped' },
+    // Once the ghost lies on the floor before her (src/sim/prologue.ts, MAMMA_SEEN).
+    { id: 'dropped', on: 'mamma:sees', who: 'mamma', line: 'dropped' },
     { id: 'onlyWood', on: 'pappa:noticed', who: 'pappa', line: 'onlyWood', read: true },
+    // As it runs off along the deck behind Pappa's back (src/sim/prologue.ts, PAPPA_SNUCK). The family's promises are
+    // said at the edge, after it has leapt (prolog-scenes.ts, `titel`).
     { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
-    // Their promises, one from each as he passes them on the deck.
-    { id: 'nearYou', at: 45.0, needs: 'pappa:done', who: 'mamma', line: 'nearYou', read: true },
-    { id: 'mapForYou', at: 47.0, needs: 'pappa:done', who: 'moa', line: 'mapForYou', read: true },
-    { id: 'heja', at: 48.8, needs: 'pappa:done', who: 'bertil', line: 'heja', read: true },
-    { id: 'followTrail', at: 50.8, needs: 'pappa:done', who: 'pappa', line: 'followTrail', read: true },
   ],
   // Indoors the picture is wide while he is big; on the deck it frames him small among the kneeling family.
   cameras: [{ from: -3, to: 38, zoom: 1.5, lift: 0.3 }, { from: 38, to: 60, zoom: 1.7, lift: 1.5 }],

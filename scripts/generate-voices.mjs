@@ -87,7 +87,7 @@ export const VOICE_LINES = [
   { key: 'bogChickLight', speaker: 'elof', situation: 'Guiding lost baby crane in mist', tag: '[soft, comforting little boy whisper]', text: 'Följ mitt ljus hem till din familj.' },
   { key: 'bogLightReturn', speaker: 'elof', situation: 'Discovering open path', tag: '[cheerful discovery, happy little boy]', text: 'Nu går spången åt båda hållen!' },
   { key: 'fetch', speaker: 'elof', situation: 'Understanding ghost\'s mission', tag: '[sudden realization, thoughtful little boy]', text: 'Spöket vill hämta hem min trägubbe!' },
-  { key: 'mountainLoop', speaker: 'elof', situation: 'Securing the rope route down', tag: '[satisfied little boy, problem solved]', text: 'Snöret runt röset. En väg ner!' },
+  { key: 'mountainLoop', speaker: 'elof', situation: 'On the summit cairn: a lace tied there, a quick way down', tag: '[delighted little boy, discovering]', text: 'Ett snöre här uppe! Nu kan jag åka ner.' },
   { key: 'eyesAlive', speaker: 'elof', situation: 'Wooden ghost blinks its eyes', tag: '[whispering in awe, breathless little boy]', text: 'Du blinkade! Kan du se mig?' },
   { key: 'starWonder', speaker: 'elof', situation: 'Magic star candy glows', tag: '[in wonder, gentle gasp from a small boy]', text: 'En godisstjärna … den lyser!' },
   { key: 'tinyCall', speaker: 'elof', situation: 'Shrunk small, looking for mom', tag: '[anxious, small 6-year-old boy voice, calling out]', text: 'Mamma? Var är du?' },
@@ -119,6 +119,8 @@ export const VOICE_LINES = [
   { key: 'dripWet', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Usch, jag blev blöt!' },
   { key: 'dripSplash', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Plask! Rakt i huvudet.' },
   { key: 'dripAgain', speaker: 'elof', situation: 'Äventyr 1, a drop of water knocks him over', tag: '[curious, kind little boy]', text: 'Aj då! En droppe till.' },
+  { key: 'bogLightMist', speaker: 'elof', situation: 'Holding up the glowing lollipop as the mist rolls in', tag: '[surprised, then relieved little boy]', text: 'Oj, vad dimmigt! Tur att klubban lyser.' },
+  { key: 'forestThanksBertil', speaker: 'elof', situation: 'Thanking his brother after riding in his cap across the water', tag: '[giggling, grateful little boy]', text: 'Tack, Bertil! Din keps kan simma!' },
 
   // MOA
   { key: 'clipBack', speaker: 'moa', situation: 'Getting lost hair clip back', tag: '[delighted, hugging brother]', text: 'Mitt hårspänne! Tack, lillebror!' },
@@ -192,8 +194,8 @@ export const VOICE_LINES = [
   { key: 'scene_title', speaker: 'storyteller', situation: 'Game title', tag: '[warm storyteller, inviting, slow pace]', text: 'Elof och det stora godisäventyret' },
   { key: 'scene_morning', speaker: 'storyteller', situation: 'Prologue opens', tag: '[cozy morning storytelling, soft]', text: 'Lördagsmorgon' },
   { key: 'scene_garden', speaker: 'storyteller', situation: 'Chapter 1 opens', tag: '[fairytale narrator, peaceful]', text: 'Gården. klockan tio' },
-  { key: 'scene_granskog', speaker: 'storyteller', situation: 'Chapter 2 opens', tag: '[fairytale narrator, atmospheric]', text: 'Granskogen. halv tolv' },
-  { key: 'scene_myren', speaker: 'storyteller', situation: 'Chapter 3 opens', tag: '[mysterious, gentle mist narrator]', text: 'Myren. halv fem' },
+  { key: 'scene_granskog', speaker: 'storyteller', situation: 'Chapter 2 opens', tag: '[fairytale narrator, atmospheric]', text: 'Granskogen. klockan halv tolv' },
+  { key: 'scene_myren', speaker: 'storyteller', situation: 'Chapter 3 opens, a clear autumn afternoon', tag: '[fairytale narrator, peaceful]', text: 'Myren. klockan halv fem' },
   { key: 'scene_berget', speaker: 'storyteller', situation: 'Chapter 4 opens', tag: '[grand, quiet mountain narrator]', text: 'Berget. klockan sex' },
   { key: 'scene_norrsken', speaker: 'storyteller', situation: 'Finale opens', tag: '[magical, awe-inspiring narrator]', text: 'Norrskenet. i skymningen' },
   { key: 'scene_epilog', speaker: 'storyteller', situation: 'Epilogue opens', tag: '[warm, cozy home narrator]', text: 'Godiskalaset. klockan nio' },

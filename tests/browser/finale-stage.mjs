@@ -82,7 +82,7 @@ try {
     await page.goto(`${origin}/spokets-godisbus/finale-probe`);
     const before = await page.evaluate(async ({ tier }) => {
       const f = await import('/spokets-godisbus/finale-stage-fixture.js');
-      const idle = { x:0,y:0,hopHeld:false,hop:false,act:false }, flags = ['lower','crowberry','scene:uppdragen'];
+      const idle = { x:0,y:0,hopHeld:false,hop:false,act:false }, flags = ['lower','haul','scene:uppdragen'];
       const chapter = { ...f.norrsken, spawn: { x:13.4,y:.01 } };
       let sim = new f.Sim(chapter, {}, { placed:['tragubbe'], flags });
       const view = f.createView(document.getElementById('game'), chapter, tier, true);
@@ -105,12 +105,13 @@ try {
         sim=new f.Sim({...f.norrsken,spawn:{x,y:.01}}, {}, {placed:['tragubbe'],flags}); advance(.2); draw(.1);
       }}; return snapshot();
     }, { tier });
-    check(`${name}: the rescued carving awaits eye painting and the ghost still holds the bag`, !before.eyes && !before.bag && before.stolen && before.word==='paintEyes');
-    const painted=await page.evaluate(()=>{const p=window.probe;p.act();p.advance(.2);p.draw(.1);return p.snapshot();});
-    check(`${name}: painting restores eyes and visibly offers the same striped bag`, painted.eyes && painted.bag && !painted.stolen && painted.flags.includes('eyes'));
-    const saved=await page.evaluate(()=>{const p=window.probe;p.restore(13.4,['lower','crowberry','eyes','bag','share:tragubbe','gift:tragubbe:skumbanan','share:spoket','gift:spoket:karamell','share:jay','gift:jay:lingon','taste']);return p.snapshot();});
+    // Olov, 13 November 2026: no eyes to paint in Norrskenet. The carving keeps its old ones; the ghost has gone ahead with the bag.
+    check(`${name}: the rescued carving keeps its old eyes and the ghost, ahead, still holds the bag`, before.eyes && !before.bag && before.stolen && before.word===null);
+    const painted=await page.evaluate(()=>{const p=window.probe;p.restore(17.8,['lower','haul','scene:uppdragen']);for(let i=0;i<12;i++)p.draw(.1);return p.snapshot();});
+    check(`${name}: come near, the ghost sets down and visibly offers the same striped bag`, painted.eyes && painted.bag && !painted.stolen && painted.word==='takeBag');
+    const saved=await page.evaluate(()=>{const p=window.probe;p.restore(13.4,['lower','haul','bag','share:tragubbe','gift:tragubbe:skumbanan','share:spoket','gift:spoket:karamell','share:jay','gift:jay:lingon','taste']);return p.snapshot();});
     check(`${name}: restored choices keep the repaired carving and returned bag state`, saved.eyes && !saved.bag && !saved.stolen);
-    const ride=await page.evaluate(()=>{const p=window.probe;p.restore(33,['lower','crowberry','eyes','bag','share:tragubbe','gift:tragubbe:skumbanan','share:spoket','gift:spoket:karamell','share:jay','gift:jay:lingon','taste','scene:aterfunna']);
+    const ride=await page.evaluate(()=>{const p=window.probe;p.restore(33,['lower','haul','bag','share:tragubbe','gift:tragubbe:skumbanan','share:spoket','gift:spoket:karamell','share:jay','gift:jay:lingon','taste','scene:aterfunna']);
       const beforeHome=p.snapshot(),word=beforeHome.word;p.act();p.advance(.6);for(let i=0;i<8;i++)p.draw(.1);return {beforeHome,word,...p.snapshot()};});
     check(`${name}: waiting relatives keep their shadows on the summit floor`, ride.beforeHome.relatives.every(({at})=>
       ride.beforeHome.shadows.some(([x,y,z])=>Math.abs(x-at[0])<.01 && Math.abs(z-at[2])<.01 && Math.abs(y-.018)<.01)));
@@ -145,7 +146,7 @@ try {
   await privatePage.goto(`${origin}/spokets-godisbus/private-family-probe`);
   const privateSupport=await privatePage.evaluate(async()=>{
     window.privateFamilyProof=true;const f=await import('/spokets-godisbus/finale-stage-fixture.js');
-    const sim=new f.Sim({...f.norrsken,spawn:{x:33,y:.01}},{},{placed:['tragubbe'],flags:['lower','crowberry','eyes','bag','share:tragubbe','share:spoket','share:jay']});
+    const sim=new f.Sim({...f.norrsken,spawn:{x:33,y:.01}},{},{placed:['tragubbe'],flags:['lower','haul','bag','share:tragubbe','share:spoket','share:jay']});
     const idle={x:0,y:0,hopHeld:false,hop:false,act:false},view=f.createView(document.getElementById('game'),f.norrsken,'high',false);
     await view.ready;await new Promise(resolve=>setTimeout(resolve,0));
     const advance=seconds=>{for(let i=0;i<Math.round(seconds*120);i++)sim.step(idle);};

@@ -2,7 +2,7 @@ import { souvenir } from './souvenir';
 import { owlTwig } from './owl-trap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
-  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, Sphere, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import { PLANK, barkDetail, barky } from './bark-detail';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
@@ -14,8 +14,11 @@ import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
 import { antColumn, antTrail, ladybird } from './critters';
+import { antRide } from './ant-ride';
 import { craneFlying, craneKneeling } from './crane';
+import { craneRigOf, kneel } from './crane-ride';
 import { wingbeat } from './wingbeat';
+import { HELPER_BEAT, jayRigOf, jayStandIn, stepFlyingJay, stepGroundJay } from './jay';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
 import { streetLeaf } from './village';
@@ -45,24 +48,6 @@ const glance = (t: number, seed: number) => {
   const n = Math.floor(w);
   return hashed(n - 1) + (hashed(n) - hashed(n - 1)) * smoothstep((w - n) / 0.07);
 };
-/**
- * The neck of the Blender jay (art/blender/jay.py): its head, beak and eyes are parts of their own, gathered once
- * under a pivot at the nape so that they turn together. Null for the stand-in.
- */
-function headOf(bird: Object3D): Object3D | null {
-  const rigged = bird.getObjectByName('jay-neck');
-  if (rigged) return rigged;
-  const head = bird.getObjectByName('head'), beak = bird.getObjectByName('beak'), eyes = bird.getObjectByName('eyes');
-  if (!head || !beak || !eyes || !head.parent) return null;
-  const neck = new Object3D();
-  neck.name = 'jay-neck';
-  neck.position.copy(head.position).add(new Vector3(-0.05, -0.07, 0));
-  head.parent.add(neck);
-  neck.updateMatrixWorld(true);
-  for (const part of [head, beak, eyes]) neck.attach(part);
-  return neck;
-}
-
 // --- things on rails -----------------------------------------------------------------------------------------
 
 /** A thing on a rail, as what it is. Its origin is the middle of its bottom, as the simulation's. Null: a plain box. */
@@ -274,13 +259,13 @@ export function moverProp(mover: Mover): Group | null {
       break;
     }
     case 'figure': {
-      // The pointed cap and crooked smile match the remembered first carving. Its restored eyes
-      // become visible only after Elof paints them; the collider keeps its existing saved meaning.
+      // The pointed cap, crooked smile and old painted eyes match the remembered first carving: he comes out of the
+      // crack with them, friendly as ever (Olov, 13 November 2026: no new eyes are painted on him any more).
       const old = solid('#8f8c7e', 1);
       const body = new Mesh(new CylinderGeometry(.13, .2, .48, 8), old);
       body.position.set(0, .24, 0); body.rotation.z = -.08;
       const cap = new Mesh(new ConeGeometry(.17, .34, 7), old); cap.position.set(.02, .84, 0); cap.rotation.z = -.1;
-      const dark = solid('#3d3932', .9), eyes = new Group(); eyes.name = 'first-carving-eyes'; eyes.visible = false;
+      const dark = solid('#3d3932', .9), eyes = new Group(); eyes.name = 'first-carving-eyes';
       for (const x of [-.075, .075]) eyes.add(ball(.023, dark, x, .61, .146));
       const smile = new Mesh(new TorusGeometry(.055, .009, 5, 12, Math.PI), dark);
       smile.position.set(0, .57, .146); smile.rotation.z = Math.PI;
@@ -288,10 +273,9 @@ export function moverProp(mover: Mover): Group | null {
         ball(.06, solid('#6f8a45', 1), -.13, .38, .08, [1, .5, 1]));
       group.name = 'first-carving';
       // The carving made in Blender takes its place where the private pack has it (./shared-models.ts), as big as
-      // it is in Äventyr 2. It is made with the crowberry eyes Elof gives it here, so they wait until he has.
+      // it is in Äventyr 2, with its own dark eyes on it all the way.
       group.userData.model = 'tragubbe';
       group.userData.fit = 0.72;
-      group.userData.onModelInstalled = crowberryEyesApart;
       break;
     }
     default:
@@ -300,58 +284,22 @@ export function moverProp(mover: Mover): Group | null {
   return group;
 }
 
-/**
- * The first trägubbe's model (the private pack's `tragubbe`) has Elof's crowberries for eyes. In Norrsken he has not
- * given them yet: they are drawn apart, as `first-carving-eyes`, which the view shows once he has painted them.
- * They are the only near-black, bluish parts of its face, and their glints the only bluish-white ones. The model's
- * own geometry is shared with every other copy, so both parts get geometries of their own over its attributes.
- */
-function crowberryEyesApart(model: Group): void {
-  const mesh = model.getObjectByProperty('isMesh', true) as Mesh | undefined;
-  const geometry = mesh?.geometry;
-  const colour = geometry?.getAttribute('color');
-  const position = geometry?.getAttribute('position');
-  const index = geometry?.getIndex();
-  if (!mesh || !geometry || !colour || !position || !index) return;
-  geometry.computeBoundingBox();
-  const box = geometry.boundingBox!;
-  // The head is the top part of the figure, its hat included.
-  const head = box.min.y + (box.max.y - box.min.y) * 0.45;
-  const face: number[] = [];
-  const eyes: number[] = [];
-  for (let i = 0; i < index.count; i += 3) {
-    let r = 0, g = 0, b = 0, y = 0;
-    for (let k = 0; k < 3; k++) {
-      const v = index.getX(i + k);
-      r += colour.getX(v) / 3; g += colour.getY(v) / 3; b += colour.getZ(v) / 3; y += position.getY(v) / 3;
-    }
-    const berry = Math.max(r, g, b) < 0.16 && b > r && b > g;
-    const glint = Math.min(r, g, b) > 0.6 && b > r + 0.03 && b > g + 0.03;
-    (y > head && (berry || glint) ? eyes : face).push(index.getX(i), index.getX(i + 1), index.getX(i + 2));
-  }
-  if (eyes.length === 0) return;
-  const part = (list: number[]) => {
-    const made = new BufferGeometry();
-    for (const [name, attribute] of Object.entries(geometry.attributes)) made.setAttribute(name, attribute);
-    made.setIndex(list);
-    made.computeBoundingBox();
-    made.computeBoundingSphere();
-    return made;
-  };
-  mesh.geometry = part(face);
-  const painted = new Mesh(part(eyes), mesh.material);
-  painted.name = 'first-carving-eyes';
-  painted.visible = false;
-  mesh.add(painted);
-}
-
 // --- things to use -------------------------------------------------------------------------------------------
 
 /** A thing at a spot: what it looks like, and how it answers to being used. */
 export interface SpotProp {
   group: Group;
-  /** `used`: its flag is set. `clock` and `dt` are in seconds. */
-  update(used: boolean, clock: number, dt: number, strike?: number): void;
+  /**
+   * `used`: its flag is set. `clock` and `dt` are in seconds. `world`, where the view gives it: where Elof is, and
+   * whether things should move less (the jay turns to him, ./jay.ts).
+   */
+  update(used: boolean, clock: number, dt: number, strike?: number, world?: SpotWorld): void;
+}
+
+/** What a thing at a help point may know of the world around it. */
+export interface SpotWorld {
+  elof: { x: number; y: number };
+  calm: boolean;
 }
 
 /** The colour of a person's sign: Moa's denim, Pappa's green, Bertil's cap, Mamma's mug. No likeness. */
@@ -377,6 +325,26 @@ function wispLight(): DataTexture {
       const core = Math.max(0, 1 - out / 0.12);
       tone.copy(rim).lerp(gold, Math.max(0, 1 - out / 0.4)).lerp(heart, core);
       data.set([tone.r * 255, tone.g * 255, tone.b * 255, 255 * Math.min(1, core + 0.85 * Math.max(0, 1 - out) ** 2)], (y * size + x) * 4);
+    }
+  }
+  const texture = new DataTexture(data, size, size);
+  texture.magFilter = texture.minFilter = LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+/**
+ * The lysklubba's light in the air round it, fading out to nothing: with a bright heart, for adding to what is behind it,
+ * or without one (`heart` 0) and wider, for laying over it.
+ */
+function lanternGlow(heart = 0.9, spread = 0.55, falloff = 2.2): DataTexture {
+  const size = 64;
+  const data = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const out = Math.min(1, Math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) / (size / 2));
+      const alpha = Math.min(1, heart * Math.max(0, 1 - out / 0.18) + spread * (1 - out) ** falloff);
+      data.set([255, 255, 255, Math.round(255 * alpha)], (y * size + x) * 4);
     }
   }
   const texture = new DataTexture(data, size, size);
@@ -529,30 +497,19 @@ export function spotProp(spot: Spot): SpotProp | null {
       } };
     }
     case 'jay': {
-      // Lavskrikan: grey-brown, with a dark cap and a rust-red tail. It hops when it gets its berry.
-      const bird = new Group();
-      // The view puts the jay modelled in Blender here, once it has arrived: it finds this group by its name.
-      bird.name = 'bird';
-      const grey = solid('#8c7f72', 0.9);
-      const tail = new Mesh(new BoxGeometry(0.42, 0.05, 0.16), solid('#b5622c', 0.8));
-      tail.position.set(-0.36, 0.3, 0);
-      tail.rotation.z = 0.35;
-      const beak = new Mesh(new ConeGeometry(0.04, 0.14, 8), solid('#2a2622', 0.5));
-      beak.rotation.z = -Math.PI / 2;
-      beak.position.set(0.38, 0.55, 0);
-      bird.add(
-        ball(1, grey, 0, 0.36, 0, [0.3, 0.22, 0.2]), ball(0.14, solid('#5a4c42', 0.9), 0.22, 0.55, 0), tail, beak,
-        ball(0.03, solid('#111111', 0.2), 0.3, 0.59, 0.1), ball(1, solid('#b5622c', 0.8), -0.05, 0.36, 0.19, [0.16, 0.1, 0.03]),
-      );
-      for (const z of [-0.07, 0.07]) {
-        const leg = rod(0.015, 0.2, solid('#3a3028'));
-        leg.position.set(0.02, 0.1, z);
-        bird.add(leg);
-      }
+      // Lavskrikan: grey-brown, with a dark cap and a rust-red tail. The view puts the rigged jay modelled in Blender
+      // in this group once it has arrived (./jay.ts), finding it by its name, 'bird': that one turns to him, takes his
+      // berry and swallows it. The stand-in hops when it gets its berry.
+      const bird = jayStandIn();
       group.add(bird);
       return {
         group,
-        update(used, clock, dt) {
+        update(used, clock, dt, _strike, world) {
+          const rig = jayRigOf(bird);
+          if (rig) {
+            stepGroundJay(bird, rig, { used, clock, dt, x: spot.at.x, ...(world ? { elof: world.elof } : {}), calm: world?.calm ?? false });
+            return;
+          }
           since = used ? since + dt : 0;
           // Given its berry it hops: three hops, each from a crouch, and lands with a give.
           let hop = 0, squat = 0;
@@ -563,14 +520,8 @@ export function spotProp(spot: Spot): SpotProp | null {
           }
           bird.position.y = hop - squat * 0.03;
           bird.scale.set(1, 1 - squat * 0.12 + Math.sin(clock * 2.2) * 0.008, 1);
-          // The Blender jay turns only its head, in quick snaps with holds, mostly towards him; the stand-in, which
-          // has no neck, turns its body a little.
-          const neck = headOf(bird);
-          const look = used ? -0.5 : 0.55 * glance(clock, 2.3) - 0.25;
-          if (neck) {
-            bird.rotation.y = 0;
-            neck.rotation.set(0.12 * glance(clock * 0.7, 5.1), look, 0.15 * glance(clock * 0.9, 8.7));
-          } else bird.rotation.y = look * 0.6;
+          // It has no neck: it turns its body a little, in quick snaps with holds, mostly towards him.
+          bird.rotation.y = (used ? -0.5 : 0.55 * glance(clock, 2.3) - 0.25) * 0.6;
         },
       };
     }
@@ -626,15 +577,56 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (used, _clock, dt) => { since = used ? since + dt : 0; plank.rotation.z = 0.14 - Math.min(1, since / 0.25) * 0.28; } };
     }
     case 'lollipop': {
-      const stick = rod(0.025, 0.9, solid('#fff6e0', 0.6));
-      stick.position.y = 0.45;
+      // The ghost's lysklubba, stuck in the moss for him (Myren). It has to read from the boardwalk as a lollipop that
+      // shines, and as the thing he takes (Olov, 13 November 2026): bigger than the candy on the trail, its light round
+      // it in the air and in a warm pool on the moss, breathing slowly, with a few sparks rising. Its light on the moss
+      // and on him is the mist's lamp, which stands here until it is taken (./view.ts buildMist).
+      const stick = rod(0.03, 1.05, solid('#fff6e0', 0.6, { emissive: '#ffe2a8', emissiveIntensity: 0.35 }));
+      stick.position.y = 0.52;
       // The kit's golden swirl, glowing; until it has come, a glowing ball.
       const sweet = sweetSocket(new Group().add(ball(0.22, solid('#ffd98a', 0.3, { emissive: '#ffb23c', emissiveIntensity: 0.9 }))),
-        { shape: 'lysklubba', glow: 0.95 });
-      sweet.position.y = 1;
-      group.add(stick, sweet);
+        { shape: 'lysklubba', glow: 1.2, scale: 1.3 });
+      sweet.position.y = 1.15;
+      const light = lanternGlow();
+      // A bright heart added to what is behind it, and round it a warm glow laid over it: added light alone is lost
+      // against the pale sky of the bog.
+      const halo = new Mesh(new PlaneGeometry(2.6, 2.6), new MeshBasicMaterial({ map: light, color: '#ffc870', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }));
+      halo.position.set(0, 1.15, -0.1);
+      const warmth = new Mesh(new PlaneGeometry(3, 3), new MeshBasicMaterial({ map: lanternGlow(0, 0.9, 1.5), color: '#ffa748', transparent: true, depthWrite: false, fog: false }));
+      warmth.position.set(0, 1.1, -0.25);
+      const pool = new Mesh(new PlaneGeometry(3.4, 2.2), new MeshBasicMaterial({ map: light, color: '#ffb85c', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }));
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(0, 0.06, 0.2);
+      const SPARKS = 7;
+      const sparks = new InstancedMesh(new OctahedronGeometry(1), new MeshBasicMaterial({ color: '#ffc24a', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }), SPARKS);
+      sparks.instanceMatrix.setUsage(DynamicDrawUsage);
+      // Where they drift, so that they are left out of the picture with the lollipop when it is not in it.
+      sparks.boundingSphere = new Sphere(new Vector3(0, 1.2, 0), 1.2);
+      const spark = new Object3D();
+      group.add(stick, sweet, warmth, halo, pool, sparks);
       group.position.z = -0.35;
-      return { group, update: (used, clock, dt) => { vanish(used, dt); group.rotation.z = Math.sin(clock * 1.2) * 0.04; } };
+      return { group, update: (used, clock, dt) => {
+        vanish(used, dt);
+        group.rotation.z = Math.sin(clock * 1.2) * 0.04;
+        // It breathes: a slow swell of its light, never a flicker.
+        const breath = 0.5 + 0.5 * Math.sin(clock * 2.1);
+        halo.scale.setScalar(0.92 + 0.14 * breath);
+        (halo.material as MeshBasicMaterial).opacity = 0.62 + 0.25 * breath;
+        warmth.scale.setScalar(0.95 + 0.1 * breath);
+        (warmth.material as MeshBasicMaterial).opacity = 0.5 + 0.2 * breath;
+        (pool.material as MeshBasicMaterial).opacity = 0.42 + 0.16 * breath;
+        // Sparks drift up round the swirl and fade at the top.
+        for (let i = 0; i < SPARKS; i++) {
+          const rise = (clock * 0.22 + i / SPARKS) % 1;
+          const turn = i * 2.4 + clock * 0.7;
+          spark.position.set(Math.cos(turn) * (0.32 + 0.12 * (i % 3)), 0.55 + rise * 1.35, Math.sin(turn) * 0.3);
+          spark.scale.setScalar(0.05 * Math.sin(Math.PI * rise));
+          spark.rotation.set(0, turn, 0.6);
+          spark.updateMatrix();
+          sparks.setMatrixAt(i, spark.matrix);
+        }
+        sparks.instanceMatrix.needsUpdate = true;
+      } };
     }
     case 'crane': {
       // A crane, kneeling for him to climb on (crane.ts). It breathes, its neck sways, and now and then it turns its
@@ -647,6 +639,10 @@ export function spotProp(spot: Spot): SpotProp | null {
       return {
         group,
         update: (used, clock, dt) => {
+          // The rigged crane (./crane-ride.ts) kneels on its shins in time with the clock; once he is on, the ride's
+          // crane, in the same pose, rises and takes off with him, so this one goes at once rather than shrinking.
+          const rig = craneRigOf(crane);
+          if (rig) { group.scale.setScalar(1); drawnWhile(group, !used); if (!used) kneel(rig, clock, dt); return; }
           vanish(used, dt);
           const torso = crane.getObjectByName('crane-torso'), neck = crane.getObjectByName('crane-neck'), head = crane.getObjectByName('crane-head');
           if (torso) torso.scale.y = 1 + Math.sin(clock * 1.3) * 0.012;
@@ -899,29 +895,6 @@ export function spotProp(spot: Spot): SpotProp | null {
 
 // --- the helper ----------------------------------------------------------------------------------------------
 
-/** A small bird, facing +x, with its feet at the origin: the jay's shape, used for the helper as well. */
-function bird(): Group {
-  const group = new Group();
-  group.name = 'bird';
-  const grey = solid('#8c7f72', 0.9);
-  const tail = new Mesh(new BoxGeometry(0.42, 0.05, 0.16), solid('#b5622c', 0.8));
-  tail.position.set(-0.36, 0.3, 0);
-  tail.rotation.z = 0.35;
-  const beak = new Mesh(new ConeGeometry(0.04, 0.14, 8), solid('#2a2622', 0.5));
-  beak.rotation.z = -Math.PI / 2;
-  beak.position.set(0.38, 0.55, 0);
-  group.add(ball(1, grey, 0, 0.36, 0, [0.3, 0.22, 0.2]), ball(0.14, solid('#5a4c42', 0.9), 0.22, 0.55, 0), tail, beak, ball(0.03, solid('#111111', 0.2), 0.3, 0.59, 0.1));
-  for (const side of [-1, 1]) {
-    const wing = new Mesh(new BoxGeometry(0.3, 0.03, 0.34), solid('#b5622c', 0.8));
-    wing.geometry.translate(0, 0, 0.17);
-    wing.position.set(-0.04, 0.44, side * 0.12);
-    wing.scale.z = side;
-    wing.name = side > 0 ? 'wingNear' : 'wingFar';
-    group.add(wing);
-  }
-  return group;
-}
-
 /** How far in front of the play plane the dotted Elof is drawn: 0.3 EL nearer than the nearest prop. */
 const DEMO_Z = 0.95;
 /** How high over what it shows the jay perches. */
@@ -938,7 +911,9 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
   group.name = 'helper';
   const flyer = new Group();
   flyer.name = 'helper-actor';
-  flyer.add(ghost ?? bird());
+  // The jay (./jay.ts): the stand-in, until the view puts the rigged one in its place.
+  const bird = ghost ? null : jayStandIn();
+  flyer.add(ghost ?? bird!);
   flyer.scale.setScalar(0);
   drawnWhile(flyer, false);
   const pale = () => new MeshStandardMaterial({ color: '#fff6dc', roughness: 1, transparent: true, opacity: 0, depthWrite: false, emissive: '#fff0c0', emissiveIntensity: 0.65 });
@@ -1028,7 +1003,7 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
     const targetX = ghost ? x + ahead : last.x - 0.1;
     const targetY = ghost ? Math.max(y + ahead, demoFloor(chapter, targetX) + 0.6) : last.y + BIRD_PERCH;
     // The jay beats in bursts, rising a little with each downstroke, and between them holds its wings out and sinks.
-    const wings = wingbeat(clock, 3.5, { every: 1.7, glide: 0.4, held: 0.1 });
+    const wings = wingbeat(clock, HELPER_BEAT.hz, HELPER_BEAT.rhythm);
     const bob = (wings.pitch / 0.03) * 0.04 - wings.glide * 0.05;
     const to = here ? { x: targetX + knock, y: targetY + (still ? 0 : ghost ? Math.sin(Math.PI * shown) * 0.35 : bob), z: 0.45 } : { x: flyer.position.x, y: flyer.position.y + dt * 4, z: 0.45 };
     const k = still ? 1 : 1 - Math.exp(-5 * dt);
@@ -1058,10 +1033,16 @@ export function helperProp(chapter: ChapterData, ghost?: Group) {
       drawnWhile(thought, thought.material.opacity > 0);
       thought.position.set(flyer.position.x + 0.15, flyer.position.y + 1.5, 0.65);
     }
-    const beat = still ? 0 : wings.lift * 0.9;
-    const near = flyer.getObjectByName('wingNear'), far = flyer.getObjectByName('wingFar');
-    if (near) near.rotation.x = -beat;
-    if (far) far.rotation.x = beat;
+    const rig = jayRigOf(bird);
+    if (rig && bird) {
+      // The rigged jay beats its wings by the same rhythm, and turns to him; leaving, to the way it goes.
+      if (shown > 0) stepFlyingJay(bird, rig, clock, dt, still, here ? x - flyer.position.x : 1);
+    } else {
+      const beat = still ? 0 : wings.lift * 0.9;
+      const near = flyer.getObjectByName('wingNear'), far = flyer.getObjectByName('wingFar');
+      if (near) near.rotation.x = -beat;
+      if (far) far.rotation.x = beat;
+    }
     const key = step >= 3 && at ? `${at.x},${at.y},${help.verb},${help.replay ?? 0}` : '';
     if (key !== demoKey) { demoKey = key; elapsed = 0; demonstration = demoFor(chapter, help, standY); }
     if (key) elapsed = Math.min(DEMO_SECONDS, elapsed + dt);
@@ -1144,11 +1125,9 @@ export function rideProp(look: RideLook): Object3D | null {
     case 'crane':
       group.add(craneFlying());
       break;
-    case 'ants': {
-      const dark = solid('#2a1e18', 0.5);
-      for (let i = 0; i < 5; i++) group.add(ball(0.07, dark, -0.5 + i * 0.25 - 0.11, -0.06, i % 2 ? 0.1 : -0.1), ball(0.06, dark, -0.5 + i * 0.25 + 0.03, -0.05, i % 2 ? 0.1 : -0.1));
-      break;
-    }
+    case 'ants':
+      // Real wood ants, walking him up the hill on their backs (./ant-ride.ts); the view steps their legs.
+      return antRide();
     default:
       return PACK.rides.get(look)?.(look) ?? null;
   }

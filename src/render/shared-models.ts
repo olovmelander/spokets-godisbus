@@ -5,6 +5,7 @@ import { firewood } from './firewood';
 import { forestKit } from './forest-kit';
 import { weathered } from './weathered';
 import { carGlass } from './car-glass';
+import { AMBIENT, attachAmbient, rigAmbient } from './ambient-animals';
 
 /** Authored models shared by both adventures. Only files actually used in this scene are fetched. */
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
@@ -26,6 +27,8 @@ const CREATURES = ['uggla', 'uggla-flyger', 'uggla-vinge-n', 'uggla-vinge-f', 'u
 const CARVINGS = ['tragubbe', 'lillgubbe', 'hylla-luva', 'hylla-kotte', 'hylla-svamp', 'hylla-gumma', 'hylla-fiskare', 'hylla-rock', 'hylla-keps', 'hylla-bjorn'];
 const FILES: Record<string, readonly [pack: string, file: string]> = {
   ...Object.fromEntries(CREATURES.map((name) => [name, ['aventyr2', 'creatures'] as const])),
+  // The small animals with bones of their own, each in a file of its own (./ambient-animals.ts): these win.
+  ...Object.fromEntries(Object.entries(AMBIENT).map(([name, { file }]) => [name, ['aventyr2', file] as const])),
   ...Object.fromEntries(CARVINGS.map((name) => [name, ['private', 'tragubbar'] as const])),
   ...Object.fromEntries(PROPS.map((name) => [name, ['aventyr2', 'props'] as const])),
   ...Object.fromEntries(STREET.map((name) => [name, ['aventyr2', 'street'] as const])),
@@ -112,6 +115,10 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
     const model = await load(...source);
     const made = model?.getObjectByName(name);
     if (!made) continue;
+    // A small animal with bones (./ambient-animals.ts) is a copy with a skeleton and clips of its own; one without
+    // them keeps its stand-in.
+    const rig = AMBIENT[name] ? rigAmbient(model!, name) : null;
+    if (AMBIENT[name] && !rig) continue;
     const kept = place.children.filter(child => typeof child.userData.keep === 'number');
     // Only holders that own their rehearsal resources opt in. Other scenery can share kit materials;
     // never dispose the loaded model's resources, which its instances deliberately share.
@@ -134,7 +141,8 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
     }
     // Packed-node transforms encode quantisation. Fit and placement belong to a wrapper around that node.
     const copy = new Group();
-    copy.add(made.clone());
+    copy.add(rig ? rig.level : made.clone());
+    if (rig) attachAmbient(place, rig);
     const fit = place.userData.fit as number | undefined;
     if (fit) copy.scale.setScalar(fit);
     if (typeof place.userData.turn === 'number') copy.rotation.y = place.userData.turn as number;

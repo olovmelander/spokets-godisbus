@@ -241,7 +241,9 @@ export function lifePlan(place: PlaceId, stages: readonly LifeStage[] = [], seed
         const x = lead + rank * role.size * 1.6 - role.size / 2;
         if (Math.abs(x) > reach + role.size) continue;
         const y = role.y + rank * role.size * (i > upper ? -0.5 : 0.38) + 0.12 * role.size * rank * Math.sin(t * 0.5 + rank * 0.7);
-        put(role.strip!, Math.floor(t * 5 + i * 1.37) % 4, x, y, role.size, role.size / 2, ink, solid, solid, 0, 1, true);
+        // Each bird its own place in the beat, one and a quarter beats a second, whatever its strip's cells.
+        const cells = role.strip![4];
+        put(role.strip!, Math.floor((t * 1.25 + i * 0.34) * cells) % cells, x, y, role.size, role.size / 2, ink, solid, solid, 0, 1, true);
       }
       if (t * speed >= on.far || t >= LONGEST) on = null;
     }

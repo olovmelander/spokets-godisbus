@@ -95,9 +95,10 @@ Nobody listening (the robot, and tests with no page) hears every line the moment
 - `tests/robot/dialogue.test.ts`: every chapter, played by the robot with the game's own bubbles listening. The robot
   runs flat out and presses every button the moment it is offered, which is the hardest case. It fails when a remark
   is said out of reach, an answer does not follow its line, a story line said at a place comes more than three
-  seconds late, a story line is lost, or he stands waiting for words for more than seven seconds. The three
-  exceptions (the family's promises along the deck in the two evenings at home, and the party's thanks) are named
-  there.
+  seconds late, a story line is lost, or he stands waiting for words for more than seven seconds. The two
+  exceptions (the family's promises along the deck on the evening of the storm, and the party's thanks) are named
+  there. In the prologue the same promises are read standing at the deck's edge, in its last scene, once the ghost
+  has leapt (13 November 2026).
 - To read a chapter as it is heard, line by line against what he does:
 
   ```

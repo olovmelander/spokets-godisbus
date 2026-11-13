@@ -136,16 +136,20 @@ describe('the current purpose follows Elof’s actual story progress', () => {
     expect(context('berget', ['lift'], at, { garden: ['memory'], granskog: ['memory'], myren: ['memory'] }).id).toBe('tall');
   });
 
-  it('returns the bag only after the figure is rescued and given eyes', () => {
+  it('returns the bag once the figure is out of the crack, with no eyes to paint (Olov, 13 November 2026)', () => {
     const history = { berget: ['lift', 'memory'] };
     const at = checkpoint(norrsken, 17.8);
     expect(context('norrsken', ['lower'], at, history).id).toBe('pull');
-    expect(context('norrsken', ['lower', 'placed:tragubbe'], at, history).id).toBe('eyes');
+    expect(context('norrsken', ['lower', 'nr:rope-ready', 'haul'], at, history).id).toBe('pull');
+    expect(context('norrsken', ['lower', 'haul', 'placed:tragubbe'], at, history).id).toBe('bag');
+    // A game saved at the old eyes step, or after it, goes on to the bag.
+    expect(context('norrsken', ['lower', 'placed:tragubbe', 'crowberry'], at, history).id).toBe('bag');
     expect(context('norrsken', ['lower', 'placed:tragubbe', 'crowberry', 'eyes'], at, history).id).toBe('bag');
+    expect(context('norrsken', ['lower', 'haul', 'placed:tragubbe', 'bag'], at, history).id).toBe('welcome');
     expect(context('norrsken', ['lower', 'placed:tragubbe', 'crowberry', 'eyes', 'bag'], at, history).id).toBe('welcome');
-    expect(context('norrsken', ['placed:tragubbe', 'eyes', 'bag', 'shared'], at, history).id).toBe('gold');
-    expect(context('norrsken', ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste'], checkpoint(norrsken, 30.4), history).id).toBe('reunion');
-    expect(context('norrsken', ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste', 'home'], checkpoint(norrsken, 30.4), history).id).toBe('home');
+    expect(context('norrsken', ['placed:tragubbe', 'bag', 'shared'], at, history).id).toBe('gold');
+    expect(context('norrsken', ['placed:tragubbe', 'bag', 'shared', 'taste'], checkpoint(norrsken, 30.4), history).id).toBe('reunion');
+    expect(context('norrsken', ['placed:tragubbe', 'bag', 'shared', 'taste', 'home'], checkpoint(norrsken, 30.4), history).id).toBe('home');
   });
 
   it('moves from the party to a new carving and bedtime without replaying completed tasks', () => {
@@ -170,7 +174,7 @@ describe('the current purpose follows Elof’s actual story progress', () => {
 describe('reminders survive checkpoints without inventing knowledge', () => {
   it('keeps the theft explanation visible from the actual returned bag through going home', () => {
     const history = { berget: ['memory'] };
-    const needed = ['placed:tragubbe', 'eyes', 'bag'];
+    const needed = ['placed:tragubbe', 'bag'];
     for (const later of [[], ['shared'], ['shared', 'taste'], ['shared', 'taste', 'home']]) {
       expect(context('norrsken', [...needed, ...later], position, history).reveal)
         .toBe(sv.storyContext.purposes.welcome.recap);
@@ -193,7 +197,7 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
     { chapter: myren, x: 139, flags: ['mamma', 'placed:pine', 'braid'], id: 'light' },
     { chapter: myren, x: 169.5, flags: ['mamma', 'braid', 'light', 'chick'], id: 'chick' },
     { chapter: berget, x: 138.4, flags: ['flight'], id: 'mountain' },
-    { chapter: norrsken, x: 17.8, flags: ['lower', 'placed:tragubbe'], id: 'eyes' },
+    { chapter: norrsken, x: 17.8, flags: ['lower', 'haul', 'placed:tragubbe', 'scene:uppdragen'], id: 'bag' },
     { chapter: epilog, x: 33, flags: ['partied', 'knife', 'cut3', 'dots'], id: 'shelf' },
     { chapter: epilog, x: 33, flags: ['partied', 'knife', 'cut3', 'dots', 'shelf'], id: 'teeth' },
   ])('$chapter.id checkpoint $x gives a useful next task', ({ chapter, x, flags, id }) => {
@@ -220,8 +224,8 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
     }
   });
 
-  it('requires the actual rescue, new eyes and returned bag, while the optional memory supplies identity', () => {
-    const rescued = ['placed:tragubbe', 'eyes', 'bag'];
+  it('requires the actual rescue and returned bag, while the optional memory supplies identity', () => {
+    const rescued = ['placed:tragubbe', 'bag'];
     const remembered = { berget: ['memory'] };
     expect(publicText(context('norrsken', rescued, position, remembered))).toMatch(motive);
     expect(publicText(context('norrsken', rescued, position, remembered))).toMatch(firstFigureIdentity);
@@ -247,8 +251,8 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
     expect(localMemory.reveal).toBe(genericWelcome);
     expect(publicText(localMemory)).not.toMatch(firstFigureIdentity);
     for (const flags of [
-      ['tragubbe', 'eyes', 'bag'],
-      ['placed:tragubbe', 'beat:painted', 'bag'],
+      ['tragubbe', 'bag'],
+      ['scene:uppdragen', 'haul', 'bag'],
       ['placed:tragubbe', 'eyes', 'beat:bag'],
       ['memory', 'goal', 'beat:fetch', 'beat:welcome'],
     ]) {
@@ -259,7 +263,7 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
   });
 
   it('retains the understood motive through the final sharing, reunion and walk home', () => {
-    const prerequisites = ['placed:tragubbe', 'eyes', 'bag'];
+    const prerequisites = ['placed:tragubbe', 'bag'];
     const stages = [
       { flags: ['shared'], id: 'gold' },
       { flags: ['shared', 'taste'], id: 'reunion' },
@@ -282,7 +286,7 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
   });
 
   it('carries the understood motive home from saved summit progress, not epilogue lookalike flags', () => {
-    const rescued = ['placed:tragubbe', 'eyes', 'bag'];
+    const rescued = ['placed:tragubbe', 'bag'];
     const history = { berget: ['memory'], norrsken: rescued };
     for (const flags of [[], ['partied', 'knife', 'cut3'], ['dots', 'teeth']]) {
       expect(context('epilog', flags, checkpoint(epilog, 33), history).recap).toMatch(motive);
@@ -295,6 +299,8 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
       expect(publicText(context('epilog', rescued, position, incompleteHistory)), missing).not.toMatch(motive);
       expect(publicText(context('epilog', rescued, position, { norrsken: rescued.filter((flag) => flag !== missing) })), missing).not.toMatch(motive);
     }
+    // A summit saved before the eyes were taken out, with them painted, is as complete.
+    expect(context('epilog', [], checkpoint(epilog, 33), { berget: ['memory'], norrsken: ['placed:tragubbe', 'crowberry', 'eyes', 'bag'] }).recap).toMatch(motive);
     expect(publicText(context('epilog', rescued, position))).not.toMatch(motive);
     expect(publicText(context('epilog', rescued, position, { berget: ['memory'] }))).not.toMatch(motive);
     // A fresh summit replay uses this visit's interaction state, not a previous completed visit.
@@ -303,14 +309,14 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
   });
 
   it('keeps a completed later save from revealing the motive on an earlier chapter or a fresh summit replay', () => {
-    const completedHistory = { berget: ['memory'], norrsken: ['placed:tragubbe', 'eyes', 'bag', 'shared', 'taste', 'home'] };
+    const completedHistory = { berget: ['memory'], norrsken: ['placed:tragubbe', 'bag', 'shared', 'taste', 'home'] };
     const visits = [
       context('prolog', ['star', 'pappa:done'], position, completedHistory),
       context('garden', ['memory'], { x: 148, y: 3.3 }, completedHistory),
       context('granskog', ['placed:rescue'], checkpoint(granskog, 194.6), completedHistory),
       context('myren', ['light', 'chick', 'home'], checkpoint(myren, 180), completedHistory),
       context('berget', ['lift'], checkpoint(berget, 149), completedHistory),
-      context('norrsken', ['placed:tragubbe', 'eyes'], position, completedHistory),
+      context('norrsken', ['placed:tragubbe', 'scene:uppdragen'], position, completedHistory),
     ];
     for (const visit of visits) {
       expect(publicText(visit), visit.id).not.toMatch(motive);
@@ -319,7 +325,7 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
   });
 
   it('only reads saved progress, even when consulted repeatedly on resume and pause', () => {
-    const flags = new Set(['lower', 'placed:tragubbe', 'eyes', 'bag']);
+    const flags = new Set(['lower', 'haul', 'placed:tragubbe', 'bag']);
     const before = [...flags];
     const history = Object.freeze({
       garden: Object.freeze(['memory', 'moa']),
@@ -387,8 +393,8 @@ describe('chapter handoffs state what really happened', () => {
 
   it('never claims a rescued carving or a returned bag from an unrelated goal receipt', () => {
     const completed = sv.storyContext.handoffs.norrsken;
-    expect(storyHandoff('norrsken', new Set(['placed:tragubbe', 'eyes', 'bag', 'home']))).toEqual(completed);
-    for (const flags of [[], ['goal'], ['tragubbe', 'eyes', 'bag'], ['placed:tragubbe', 'eyes']]) {
+    expect(storyHandoff('norrsken', new Set(['placed:tragubbe', 'bag', 'home']))).toEqual(completed);
+    for (const flags of [[], ['goal'], ['tragubbe', 'bag'], ['placed:tragubbe', 'eyes']]) {
       const fallback = storyHandoff('norrsken', new Set(flags));
       expect(fallback).not.toBeNull();
       expect(fallback).not.toEqual(completed);
@@ -397,7 +403,7 @@ describe('chapter handoffs state what really happened', () => {
   });
 
   it('keeps Pappa’s required origin explanation in the completed finale handoff without an optional memory', () => {
-    const actual = ['placed:tragubbe', 'eyes', 'bag', 'taste'];
+    const actual = ['placed:tragubbe', 'bag', 'taste'];
     const handoff = storyHandoff('norrsken', new Set(actual));
     expect(handoff).toEqual(sv.storyContext.handoffs.norrskenOrigin);
     expect(handoff!.text).toMatch(/Pappa täljde trägubben åt mig när jag var liten/);
@@ -411,7 +417,7 @@ describe('chapter handoffs state what really happened', () => {
   });
 
   it('requires each actual finale receipt before crediting Pappa’s origin explanation', () => {
-    const required = ['placed:tragubbe', 'eyes', 'bag', 'taste'];
+    const required = ['placed:tragubbe', 'bag', 'taste'];
     const dialogOnly = ['goal', 'home', 'memory', 'beat:first1', 'beat:first2', 'beat:first3', 'beat:first4'];
     for (const missing of required) {
       const flags = [...required.filter((flag) => flag !== missing), ...dialogOnly];
@@ -420,14 +426,14 @@ describe('chapter handoffs state what really happened', () => {
         ? sv.storyContext.handoffs.norrsken : sv.storyContext.handoffs.norrskenClue);
       expect(handoff!.text, missing).not.toMatch(/täljde.*åt mig|när jag var liten|tappade.*här.*berget/i);
     }
-    expect(storyHandoff('norrsken', new Set(['tragubbe', 'eyes', 'bag', 'taste', ...dialogOnly])))
+    expect(storyHandoff('norrsken', new Set(['tragubbe', 'bag', 'taste', ...dialogOnly])))
       .toEqual(sv.storyContext.handoffs.norrskenClue);
   });
 
   it('does not borrow a completed saved finale to fill a fresh visit’s missing handoff receipts', () => {
-    const completed = ['placed:tragubbe', 'eyes', 'bag', 'taste'];
+    const completed = ['placed:tragubbe', 'bag', 'taste'];
     const history = Object.freeze({ norrsken: Object.freeze([...completed]) });
-    for (const actual of [[], ['placed:tragubbe', 'eyes'], ['placed:tragubbe', 'eyes', 'bag']]) {
+    for (const actual of [[], ['placed:tragubbe'], ['placed:tragubbe', 'bag']]) {
       const flags = new Set(actual);
       const before = [...flags];
       storyContext('norrsken', flags, position, history);

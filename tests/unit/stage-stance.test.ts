@@ -69,7 +69,7 @@ describe('authored changes of stance', () => {
     }
   });
 
-  it.each([['handen', 7.8], ['titel', 4]] as const)('lets Bertil rise out of his crouch to cheer in %s', (id, seconds) => {
+  it.each([['handen', 7.8], ['titel', 6.2]] as const)('lets Bertil rise out of his crouch to cheer in %s', (id, seconds) => {
     const { stage, pose } = watch('bertil');
     show(stage, id, seconds);
     expect(pose().seat).toBeNull();
