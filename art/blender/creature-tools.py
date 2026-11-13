@@ -490,7 +490,12 @@ def bake(arm):
             arm.data.edit_bones.remove(arm.data.edit_bones[bone])
         bpy.ops.object.mode_set(mode='OBJECT')
     arm['controls'] = []
-    for name, end, loop, poses, scaled in baked:
+    # A bone that scales in one clip has its scale keyed in every clip, so that no clip leaves it as another made it.
+    scaled_any = set()
+    for _, _, _, _, scaled in baked:
+        scaled_any |= scaled
+    for name, end, loop, poses, _ in baked:
+        scaled = scaled_any
         act = bpy.data.actions.new(name)
         act.use_fake_user = True
         arm.animation_data.action = act

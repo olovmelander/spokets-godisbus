@@ -15,6 +15,7 @@ import { glowTexture } from '../../render/glow';
 import { windowCandle } from '../../render/window-candle';
 import { wingbeat } from '../../render/wingbeat';
 import { kitLife } from '../../render/kit-life';
+import { ambientOf, stepAmbient } from '../../render/ambient-animals';
 import { drawnWhile } from '../../render/idle';
 import { litLamp } from '../../render/stage';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
@@ -2356,8 +2357,18 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       group.add(model);
       const phase = spot.at.x * 1.7;
       // What is alive breathes, and what is afloat lifts on the water.
+      // The rigged ones live their own lives by their places, and know where he is (../../render/ambient-animals.ts).
+      const rigged = (clock: number) => {
+        if (!ambientOf(model)) return false;
+        model.position.set(0, 0, 0);
+        model.rotation.set(0, 0, 0);
+        model.scale.setScalar(1);
+        // A frog on its stone or log hops short, and the snail on his blocks stays on its step.
+        const range = spot.word === 'groda' ? 0.6 : spot.word === 'snigel' ? 0.25 : undefined;
+        return stepAmbient(model, { clock, still: elof.still, elof, ...(range ? { range } : {}) });
+      };
       if (spot.word === 'and' || spot.word === 'and-hona') {
-        return { group, update: (_, clock) => { model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
+        return { group, update: (_, clock) => { if (rigged(clock)) return; model.position.y = 0.05 * Math.sin(clock * 1.5 + phase); model.rotation.z = 0.04 * Math.sin(clock * 1.1 + phase); } };
       }
       // The beaver gnaws, looks at him, thumps its tail, goes into its lodge, comes out on its top, and swims out
       // over the lake (./beaver.ts).
@@ -2365,7 +2376,7 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       // The hedgehog snuffles, the frog hops on the spot, the snail creeps (../../render/kit-life.ts).
       if (spot.word === 'igelkott' || spot.word === 'groda' || spot.word === 'snigel') {
         const rest = { x: 0, y: 0, turn: 0, size: 1 };
-        return { group, update: (_, clock) => { kitLife(spot.word!, model, rest, clock, phase, elof.still); } };
+        return { group, update: (_, clock) => { if (!rigged(clock)) kitLife(spot.word!, model, rest, clock, phase, elof.still); } };
       }
       return { group, update: () => {} };
     },

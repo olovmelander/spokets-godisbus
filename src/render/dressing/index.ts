@@ -141,7 +141,7 @@ export interface Dressing {
    * `wind`: the gust that blows now, if one does, and whether everything is to stand still (reduced motion).
    * `quiet`: what the far scenery's life needs to know of him and of the lens; without it, it does not move.
    */
-  update(cameraX: number, groundY: number, clock: number, night?: number, wind?: { gust: Blow | null; still: boolean }, quiet?: Quiet): void;
+  update(cameraX: number, groundY: number, clock: number, night?: number, wind?: { gust: Blow | null; still: boolean }, quiet?: Quiet, elof?: { x: number; y: number }): void;
   /**
    * A place whose houses are put together from a kit modelled in Blender (the village) takes the kit here
    * once it has arrived. False where the kit has nothing the chapter asks for: its stand-ins stay.
@@ -258,9 +258,10 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
     background: backdrop(out ? GARDEN : look),
     wild,
     ...(houses ? { install: houses.install } : {}),
-    update(cameraX, groundY, clock, night = 0, wind, quiet) {
+    update(cameraX, groundY, clock, night = 0, wind, quiet, elof) {
       const still = wind?.still ?? false;
-      updateOutdoorModels(outdoor, clock, still);
+      // The small animals by the way know where he is (../ambient-animals.ts).
+      updateOutdoorModels(outdoor, clock, still, elof);
       door?.update(cameraX);
       // The wind first: what sways, what leans in front and what flies all go by it. Breaths of wind pass
       // through every place but the mountain, where the wind is the gusts'.

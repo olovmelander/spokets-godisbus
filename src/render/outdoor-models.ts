@@ -3,6 +3,7 @@ import type { ChapterData } from '../sim/types';
 import { heightAt, landscape } from './dressing/kit';
 import { granite } from './dressing/ground';
 import { kitLife } from './kit-life';
+import { ambientOf, stepAmbient } from './ambient-animals';
 
 /** Authored scenery, shared with Stormnatten's model library. None of these objects is a platform or a clue. */
 interface Planting {
@@ -131,6 +132,8 @@ export function outdoorModels(chapter: ChapterData): Group {
   const group = new Group();
   group.name = 'outdoor-models';
   const land = landscape(chapter);
+  // The ground the rigged animals walk on, as they wander from their places (./ambient-animals.ts).
+  group.userData.ground = (x: number) => heightAt(land, x);
   for (const item of OUTDOOR_MODELS[chapter.id] ?? []) {
     const holder = standIn(item.model);
     holder.name = `outdoor:${item.model}:${item.x}`;
@@ -139,17 +142,29 @@ export function outdoorModels(chapter: ChapterData): Group {
     holder.position.set(item.x, item.y ?? heightAt(land, item.x), item.z);
     holder.rotation.y = item.turn ?? 0;
     holder.scale.setScalar(item.size);
-    if (/^(snigel|igelkott|groda|and|and-hona)$/.test(item.model)) holder.userData.outdoorLife = { kind: item.model, x: item.x, y: holder.position.y, turn: item.turn ?? 0, size: item.size, phase: item.x * 1.7, water: item.model.startsWith('and') };
+    if (/^(snigel|igelkott|groda|and|and-hona)$/.test(item.model)) holder.userData.outdoorLife = { kind: item.model, x: item.x, y: holder.position.y, turn: item.turn ?? 0, size: item.size, phase: item.x * 1.7, water: item.model.startsWith('and'), level: item.y !== undefined };
     group.add(holder);
   }
   return group;
 }
 
-/** Small breaths and ripples, with no wandering across the trail (./kit-life.ts); reduced motion always restores the resting pose. */
-export function updateOutdoorModels(group: Group, clock: number, still: boolean): void {
+/**
+ * Small breaths and ripples, with no wandering across the trail (./kit-life.ts); reduced motion always restores the
+ * resting pose. Where a rigged animal has come (./ambient-animals.ts) it lives its own life by its place, and knows
+ * where Elof is; its holder stays where it was put.
+ */
+export function updateOutdoorModels(group: Group, clock: number, still: boolean, elof?: { x: number; y: number } | null): void {
   for (const holder of group.children) {
-    const life = holder.userData.outdoorLife as { kind: string; x: number; y: number; turn: number; size: number; phase: number; water: boolean } | undefined;
+    const life = holder.userData.outdoorLife as { kind: string; x: number; y: number; turn: number; size: number; phase: number; water: boolean; level: boolean } | undefined;
     if (!life) continue;
+    if (ambientOf(holder)) {
+      holder.position.set(life.x, life.y, holder.position.z);
+      holder.rotation.set(0, life.turn, 0);
+      holder.scale.setScalar(life.size);
+      // On water, or on a height of its own, it keeps that height; on the land it follows the ground.
+      stepAmbient(holder, { clock, still, elof, ...(life.water || life.level ? {} : { ground: group.userData.ground as (x: number) => number }) });
+      continue;
+    }
     if (kitLife(life.kind, holder, life, clock, life.phase, still)) continue;
     const breath = still ? 0 : Math.sin(clock * (life.water ? 1.5 : 1.8) + life.phase);
     holder.position.y = life.y + (life.water ? breath * 0.035 : 0);
