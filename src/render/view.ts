@@ -1607,7 +1607,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const tall = Math.max(s.height, s.width / camera.aspect);
       const away = tall / 2 / Math.tan(FOV * Math.PI / 360);
       const w = shotWeight * shotWeight * (3 - 2 * shotWeight);
-      playAim.set(camera.position.x, camera.position.y, 0);
+      // Where the play camera looks: over a brook or a pool its eye is raised and looks down (`overWater`), so not
+      // straight ahead of it. Taken as straight ahead, the shot's release over the eddy in Granskogen looked level from on
+      // high, and Elof sank to the picture's foot before it rose again.
+      playAim.copy(camAt);
       // A shot of something further back (`z`) looks at it from as far in front of it, and the lens focuses there.
       camera.position.set(lerp(camera.position.x, s.x, w), lerp(camera.position.y, s.y + s.eye, w), lerp(camera.position.z, s.z + away, w));
       camera.lookAt(lerp(playAim.x, s.x, w), lerp(playAim.y, s.y, w), s.z * w);
@@ -2173,7 +2176,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         }
       }
       // Thanked across the pool for his cap, Bertil cheers and waves back (./cap-thanks.ts).
-      if (capGift && one.who === 'bertil') bertilAnswer.update(words, dt, calmStory, one.rig.legs, posed);
+      if (capGift && one.who === 'bertil') bertilAnswer.update(words, lifeDt, calmStory, one.rig.legs, posed);
 
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.

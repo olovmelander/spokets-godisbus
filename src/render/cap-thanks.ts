@@ -19,7 +19,10 @@ export function createBertilAnswer() {
   /** Seconds since the words came up; below zero, not yet heard (or heard and answered). */
   let since = -1, heard = false;
   return {
-    /** Lays Bertil's answer over his standing pose (`posed`, changed in place). `dt` is 0 while the game is paused. */
+    /**
+     * Lays Bertil's answer over his standing pose (`posed`, changed in place). `dt` is the life clock's step, which runs on
+     * while the words are read and stops under Pause.
+     */
     update(words: TalkFrame | null | undefined, dt: number, calm: boolean, legs: Legs | undefined, posed: Pose): void {
       const hearing = words?.who === 'elof' && words.text === sv.lines[BERTIL_ANSWERS.line];
       if (hearing && !heard) { heard = true; since = words.seconds; } else if (since >= 0) since += dt;

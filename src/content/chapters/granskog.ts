@@ -115,12 +115,12 @@ export const granskog: ChapterData = {
     // (Olov, 13 November 2026: "Elof måste säga något till Bertil efter att han har fått åka i Bertils kepa över vattnet.
     // Något roligt och tack."). Told standing, as `tack-pappa`: the picture holds while the words are up. A game taken up
     // at the big candy after it has seen it.
-    id: 'tack-bertil', on: 'cap', from: CAP.to.x - 1, before: 178.9, seconds: 2.4, hold: true,
-    lines: [{ at: 1.9, who: 'elof', line: 'forestThanksBertil' }],
+    id: 'tack-bertil', on: 'cap', from: CAP.to.x - 1, before: 178.9, seconds: 2, hold: true,
+    lines: [{ at: 1.6, who: 'elof', line: 'forestThanksBertil' }],
     stage: {
       shots: [
         { at: 0, x: CAP.to.x - 1.5, y: -6.4, height: 4.4, width: 7, move: .6 },
-        { at: .7, x: (BERTIL.x + CAP.to.x) / 2 - 0.1, y: -5.6, height: 8, width: 25.5, move: 1.2 },
+        { at: .55, x: (BERTIL.x + CAP.to.x) / 2 - 0.1, y: -5.6, height: 8, width: 25.5, move: 1.05 },
       ],
       elof: [{ at: 0, face: .5, act: 'wave', aim: { x: BERTIL.x, y: -5, z: BERTIL.z } }],
     },
@@ -130,7 +130,7 @@ export const granskog: ChapterData = {
     // him on its leaf, it bows deep with a knock of wood, a glitter rises round it, and it gives two glad hops
     // (../../render/ghost-thanks.ts); then he says it. It waits on its leaf for this (its perch after the eddy's), and goes
     // on ahead once it is told. A game taken up beyond the stone has seen it.
-    id: 'tackar', on: 'placed:rescue', from: 182.5, before: 189, seconds: 2.9, hold: true,
+    id: 'tackar', on: 'placed:rescue', from: 182.5, before: 189, seconds: 2.65, hold: true,
     lines: [{ at: 2.35, who: 'elof', line: 'thanked', id: 'thanked' }],
     sounds: [{ at: .8, sound: 'blink' }],
     stage: {
