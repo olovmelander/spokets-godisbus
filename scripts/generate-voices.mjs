@@ -95,7 +95,6 @@ export const VOICE_LINES = [
   { key: 'sameSize', speaker: 'elof', situation: 'Looking at small ghost', tag: '[amazed small boy, slightly nervous laugh]', text: 'Jag är lika liten som spöket!' },
   { key: 'goldInBag', speaker: 'elof', situation: 'Remembering golden sweet', tag: '[hopeful little boy, pointing]', text: 'Det ligger kvar i spökets påse!' },
   { key: 'findBag', speaker: 'elof', situation: 'Ready for the adventure', tag: '[determined, brave 6-year-old child voice]', text: 'Jag följer godiset och hittar påsen!' },
-  { key: 'snuck', speaker: 'elof', situation: 'Ghost runs away with candy', tag: '[alert little boy, shouting to family]', text: 'Det smiter!' },
   { key: 'stolenBag', speaker: 'elof', situation: 'Calling for dad\'s help', tag: '[calling out loudly, urgent little boy]', text: 'Pappa! Spöket tog min godispåse!' },
   { key: 'named', speaker: 'elof', situation: 'Naming ghost at the end', tag: '[joyful, affectionate declaration from a little boy]', text: 'Du ska heta Klonk!' },
   { key: 'carved', speaker: 'elof', situation: 'Showing Pappa his completed first Lillgubben carving', tag: '[proud little boy, eager and beaming]', text: 'Titta, Pappa! Min egen Lillgubbe!' },

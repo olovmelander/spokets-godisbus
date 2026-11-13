@@ -1998,8 +1998,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       ghostPlace.scale.setScalar(ghostSize);
       // Its shadow lies where it stands. In a hop it is off the ground, and the shadow waits where it will land.
       if (!hopping) ghostGroundY = ghostState.y;
-      // 0 faces along the course; a half turn faces back at him.
-      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : (hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
+      // 0 faces along the course; a half turn faces back at him. Waiting at the deck's edge in the prologue, it faces the
+      // garden it will leap into, its bag held out over the edge and not to him at its side (../content/chapters/ends.ts).
+      const edge = !hopping && chapter.prologue?.edge !== undefined && perch?.at.x === chapter.prologue.edge.x;
+      const wanted = reaction?.kind === 'ghost' ? -Math.PI / 2 : (edge ? 0.8 : hopping || x > ghostState.x ? 0.4 : Math.PI - 0.4) + ghostLook;
       const ghostDelta = wanted - ghostTurn;
       ghostTurn += Math.atan2(Math.sin(ghostDelta), Math.cos(ghostDelta)) * ease(7, dt);
       const awake = !chapter.prologue || flags.has('blink');
