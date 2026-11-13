@@ -1,7 +1,7 @@
 import type { ChapterData } from '../../../sim/types';
 import type { Point, SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
-import { row } from '../kit';
+import { ELDER_BACK, row } from '../kit';
 import { DOLL_Z } from '../../../render/elof-coat';
 import { HOME_LAYOUT } from '../../home-layout';
 
@@ -40,13 +40,16 @@ const TABLE_TOP = 1.65;
  * the table's far end, by her thermos and lantern, between Bertil and Moa. She stood at its near front corner, in front of
  * the window: in the close picture of the new latch her face filled a third of it, and he hooked the latch and named Fjun
  * standing against her. Behind the table's near end she was hidden behind Mamma, and still in the latch's corner.
+ * Mormor's and morfar's are where their bodies stand, as everyone's are: a grandparent put by `z` stands `ELDER_BACK`
+ * behind it, and at 1.9 further back mormor stood in the sofa's left arm (Olov, 13 November 2026: "mormor står mitt i
+ * soffkanten").
  */
 const MAMMA = { x: 12.6, z: -3.45 };
 const BERTIL = { x: 14, z: -3.15 };
 const MOA = { x: TABLE.chairs.end.x - 0.395, z: TABLE.chairs.end.z };
 const PAPPA = { x: 18.4, z: -3 };
 const MORMOR = { x: 16.2, z: -3.3 };
-const MORFAR = { x: 20.2, z: -1.2 };
+const MORFAR = { x: 20.2, z: -3.1 };
 /** Pappa by the window when the latch is to be hooked, beside it, not in front of it. */
 const BY_WINDOW = { x: 7.1, z: -6.6 };
 /** The toy shelf in front of the sofa, as on the evening of the storm. */
@@ -461,8 +464,8 @@ export const morgonen: ChapterData = {
     { look: 'lillgubbe', word: 'home', at: { x: SECOND.x, y: SECOND.y }, z: SECOND.z, after: SMALL_UP },
     { look: 'tiny-cap', word: 'home', at: { x: SECOND.x, y: SECOND.y + 0.48 }, z: SECOND.z, after: SMALL_UP },
     // Mormor, by her thermos at the table, and morfar, who came home with them in the night for the Sunday breakfast.
-    { look: 'mormorHome', at: { x: MORMOR.x, y: 0 }, z: MORMOR.z },
-    { look: 'morfar', at: { x: MORFAR.x, y: 0 }, z: MORFAR.z },
+    { look: 'mormorHome', at: { x: MORMOR.x, y: 0 }, z: MORMOR.z + ELDER_BACK },
+    { look: 'morfar', at: { x: MORFAR.x, y: 0 }, z: MORFAR.z + ELDER_BACK },
     // The new latch on the window, until he hooks it hanging loose from its pin.
     { look: 'latch', at: { x: LATCH.x, y: LATCH.y }, z: LATCH.z },
   ],

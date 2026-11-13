@@ -109,6 +109,20 @@ describe('the actual furnished home has physical clearances', () => {
     expect(behind!.distance).toBeGreaterThan(.005);
   });
 
+  it('morgonen: mormor and morfar stand clear of the baked sofa', () => {
+    // Placed as the game places what only stands about (src/render/view.ts): the decor's z is its group's, and a
+    // grandparent's body stands behind that. Mormor stood in the sofa's left arm (Olov, 13 November 2026).
+    const sofa = bounds(rooms.get('morgonen')!.group.getObjectByName('soffa-filt')!);
+    const elders = (morgonen.decor ?? []).flatMap((decor, index) => decor.look === 'mormorHome' || decor.look === 'morfar' ? [{ decor, index }] : []);
+    expect(elders).toHaveLength(2);
+    for (const { decor, index } of elders) {
+      const piece = PACK.spots.get(decor.look)!({ ...decor, id: `decor:${index}`, verb: 'take' })!;
+      piece.group.position.z = decor.z!;
+      piece.group.updateMatrixWorld(true);
+      expect(bounds(piece.group).intersectsBox(sofa), `${decor.look} stands in the sofa`).toBe(false);
+    }
+  });
+
   it.each(chapters)('$id: keeps the projecting window sill behind the baked sofa back', chapter => {
     const { group, house, fallbackSofa } = rooms.get(chapter.id)!;
     const sofa = group.getObjectByName(chapter.id === 'morgonen' ? 'soffa-filt' : 'soffa')!;

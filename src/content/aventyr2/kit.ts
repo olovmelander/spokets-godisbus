@@ -12,6 +12,13 @@ export { timeCard } from '../chapters/cards';
 
 export const round = (n: number, places = 2): number => Math.round(n * 10 ** places) / 10 ** places;
 
+/**
+ * How far behind where it is put a grandparent's body stands (./grandparents.ts; not Morfar with his ladder). A chapter
+ * that puts Mormor or Morfar by `z` alone, as `decor`, puts the body this much further back: for a body at `z`, put it at
+ * `z + ELDER_BACK`. A `standsAt` is the body's own place.
+ */
+export const ELDER_BACK = 1.9;
+
 /** A row of candy over ground at one height, one every `every` EL. */
 export function row(from: number, to: number, ground: number, every = 2, after?: string): Candy[] {
   const out: Candy[] = [];

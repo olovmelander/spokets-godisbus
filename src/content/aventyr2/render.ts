@@ -34,7 +34,7 @@ import { footballGeometry, footballMaterial } from '../../render/football';
 import { box, building, paint, PANE, rock } from './buildings';
 import { pitchFibres } from './pitch';
 import { createGrandparent, type Going, type Grandparent } from './grandparents';
-import { afloat, flightAt, elderWalk } from './kit';
+import { ELDER_BACK, afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
 import { beaverLife } from './beaver';
@@ -1574,8 +1574,6 @@ function lantern(): { group: Group; light: Mesh } {
   return { group, light };
 }
 
-/** How far behind its group a grandparent's body stands (./grandparents.ts). */
-const RIG_BACK = 1.9;
 /**
  * At the door she walked to (Mormor's at the barn): where her hand goes on it from where she stands (on the sliding
  * door's handle, by the barn's corner beside her: ./barn-loft.ts), which way she turns meanwhile (a little towards him),
@@ -1595,7 +1593,7 @@ function figure(spot: Spot, who: Grandparent, lit = who === 'mormor'): SpotProp 
   const made = createGrandparent(who, carried?.group ?? null, spot.id.startsWith('decor:'));
   made.group.userData.dress = (model: Object3D) => made.dress(model);
   const home = spot.standsAt, to = spot.goesTo;
-  const put = (x: number, y: number, z: number) => made.group.position.set(x, y, z + RIG_BACK);
+  const put = (x: number, y: number, z: number) => made.group.position.set(x, y, z + ELDER_BACK);
   if (home) put(home.x, home.y, home.z); else made.group.position.set(spot.at.x, spot.at.y, -0.6);
   const going: Going = { gait: 0, pace: 0, stride: 0, heading: null, touch: null, weight: 0 };
   const touch = new Vector3();

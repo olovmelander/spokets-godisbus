@@ -11,6 +11,7 @@ import { JOINTS, STANDING, createModelRig, heightOf, type Pose, type Rig } from 
 import { lookAt as turnTo } from '../../render/look';
 import { createTalker, talk, type Free, type Look } from '../../render/talk';
 import { windAt } from '../../render/wind';
+import { ELDER_BACK } from './kit';
 
 /**
  * Mormor and Morfar (docs/aventyr-2.md): plain figures, no likeness of anyone: grey hair and the story's two things,
@@ -250,7 +251,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
   const group = new Group();
   group.name = `figure:${who}`;
   group.userData.grandparent = who;
-  rig.group.position.set(who === 'morfar' && !decor ? .35 : 0, 0, who === 'morfar' && !decor ? -0.7 : -1.9);
+  rig.group.position.set(who === 'morfar' && !decor ? .35 : 0, 0, who === 'morfar' && !decor ? -0.7 : -ELDER_BACK);
   group.add(rig.group);
   const carried = who === 'morfar' && !decor ? ladder() : null;
   if (carried) {
@@ -288,7 +289,7 @@ export function createGrandparent(who: Grandparent, lantern: Object3D | null, de
       dressed.scale.setScalar(3);
       group.remove(rig.group);
       rig = createModelRig(dressed, heightOf('mamma'));
-      rig.group.position.set(who === 'morfar' && !decor ? .35 : 0, 0, who === 'morfar' && !decor ? -0.7 : -1.9);
+      rig.group.position.set(who === 'morfar' && !decor ? .35 : 0, 0, who === 'morfar' && !decor ? -0.7 : -ELDER_BACK);
       group.add(rig.group);
       hand = dressed.getObjectByName('hand_r') ?? hand;
       if (lantern) {
