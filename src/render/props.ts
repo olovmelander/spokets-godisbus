@@ -15,6 +15,7 @@ import type { MountainSocket } from './mountain-kit';
 import { saturdayBag } from './saturday-bag';
 import { antColumn, antTrail, ladybird } from './critters';
 import { craneFlying, craneKneeling } from './crane';
+import { craneRigOf, kneel } from './crane-ride';
 import { wingbeat } from './wingbeat';
 import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
@@ -647,6 +648,10 @@ export function spotProp(spot: Spot): SpotProp | null {
       return {
         group,
         update: (used, clock, dt) => {
+          // The rigged crane (./crane-ride.ts) kneels on its shins in time with the clock; once he is on, the ride's
+          // crane, in the same pose, rises and takes off with him, so this one goes at once rather than shrinking.
+          const rig = craneRigOf(crane);
+          if (rig) { group.scale.setScalar(1); drawnWhile(group, !used); if (!used) kneel(rig, clock, dt); return; }
           vanish(used, dt);
           const torso = crane.getObjectByName('crane-torso'), neck = crane.getObjectByName('crane-neck'), head = crane.getObjectByName('crane-head');
           if (torso) torso.scale.y = 1 + Math.sin(clock * 1.3) * 0.012;

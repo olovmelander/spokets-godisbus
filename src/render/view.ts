@@ -99,6 +99,9 @@ import { photoCut } from './crop';
 import { wingbeat } from './wingbeat';
 import { createFootSplash } from './foot-splash';
 import { craneChick, stepChick, type Gait } from './crane';
+import { craneRigOf, rideCrane, rigCrane } from './crane-ride';
+import { rigChick, stepRiggedChick, type ChickRig } from './crane-chick';
+import { creatureClipsOf } from './creature-clips';
 import { lookAt } from './look';
 import { createTalker, talk, type Free, type Look, type TalkFrame, type Talker } from './talk';
 
@@ -565,6 +568,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     .then((manifest) => (manifest.packs.boot?.files['crane.glb'] ? assets.model('boot', 'crane') : null))
     .then((model) => {
       if (!model) return;
+      // The rigged crane, with bones and clips (./crane-ride.ts): kneeling where it waits, and carrying him.
+      if (creatureClipsOf(model, 'crane').length > 0) {
+        for (const crane of cranes) rigCrane(crane, model, crane.name === 'crane-flying');
+        models.push('boot/crane');
+        modelInstallations++;
+        return;
+      }
       const shapes = { crane: model.getObjectByName('crane-kneeling'), 'crane-flying': model.getObjectByName('crane-flying') };
       for (const crane of cranes) {
         const shape = shapes[crane.name as keyof typeof shapes];
@@ -573,6 +583,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         for (const part of shape.children) crane.add(part.clone(true));
       }
       models.push('boot/crane');
+      modelInstallations++;
+    }) : Promise.resolve();
+  // The crane chick, modelled, rigged and animated in Blender (art/blender/crane-chick.py), takes the place of the one
+  // built in code (./crane-chick.ts). A build without the file keeps that one.
+  const chickReady = chapter.follower ? assets
+    .manifest()
+    .then((manifest) => (manifest.packs.boot?.files['crane-chick.glb'] ? assets.model('boot', 'crane-chick') : null))
+    .then((model) => {
+      if (!model || !follower.install(model)) return;
+      models.push('boot/crane-chick');
       modelInstallations++;
     }) : Promise.resolve();
   // The small sweets, modelled in Blender (art/blender/candy.py), take the place of the ones built in code: the
@@ -674,7 +694,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const packReady = Promise.resolve().then(() => Promise.all(PACK.models.map((load) => load(assets, scene))))
     .then((arrived) => { if (arrived.includes(true)) modelInstallations++; })
     .catch((error) => console.error('A building could not be loaded; its stand-in stays.', error));
-  const parts = [candyReady, jayReady, craneReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, sharedReady, packReady];
+  const parts = [candyReady, jayReady, craneReady, chickReady, sweetsReady, forestReady, housesReady, bredbynReady, gardenReady, mountainReady, lifeReady, sharedReady, packReady];
   let arrived = 0;
   for (const part of parts) void part.then(() => { arrived++; }, () => {});
   const ready = Promise.all(parts).then(() => undefined);
@@ -714,6 +734,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let shoulderLift = 0, shoulderT = 0, airStretch = 1;
   let drawnMode: string | null = null, drawnX = 0, drawnY = 0;
   const rideFrom = new Vector3();
+  /** On the rigged crane (./crane-ride.ts): where its back is, how far from where the simulation has him, and how much he is on it. */
+  const craneSeat = new Vector3(), craneFrom = new Vector3(), craneOff = new Vector3();
+  let craneHeld = false, craneHold = 0;
   type NearShot = { w: number; pos: Vector3; at: Vector3 };
   const nearShot = (): NearShot => ({ w: 0, pos: new Vector3(), at: new Vector3() });
   const nearShots = { family: nearShot(), taste: nearShot(), shoulders: nearShot() };
@@ -1352,11 +1375,28 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // picture: flat on the ground it sank into the lawn under his boots, and only a sliver showed (12 November 2026).
     if (waitingPlane) { plane.position.y += 0.4; plane.position.z = -0.45; plane.rotation.z = 0.12; }
     plane.rotation.x = waitingPlane ? 0.5 : 0;
+    craneHeld = false;
     for (const c of carriers) {
       if (!c.prop) continue;
       if (c === carrier) { c.wasRidden = true; c.landed = 0; }
       else if (c.wasRidden) { c.wasRidden = false; c.landed = 0; c.setDown.copy(c.prop.position); }
       else c.landed += dt;
+      // The rigged crane (./crane-ride.ts) is posed, placed, shown and hidden by its ride, and gives the place on its back
+      // where he stands: it rises from where it knelt, takes off, flies, lands, and flies away behind him.
+      const craneRig = c.ride.look === 'crane' ? craneRigOf(c.prop.getObjectByName('crane-flying')) : undefined;
+      if (craneRig) {
+        const waits = things.find((thing) => thing.spot.ride === c.ride.id && thing.spot.look === 'crane')?.prop?.group.position;
+        const beat = wingbeat(clock, 1.1, { every: 6.5, glide: 1.8, held: -0.2 });
+        const held = rideCrane(craneRig, c.prop, {
+          ridden: c === carrier, t: curr.t, time: c.ride.time, x, y, heading, ground: (at) => heightOfGroundAt(chapter, at),
+          clock, dt, calm: calmStory, landed: c.wasRidden || c === carrier ? 0 : c.landed,
+          from: craneFrom.set(waits?.x ?? c.ride.from.x, waits?.y ?? c.ride.from.y, waits?.z ?? 0), beat: clock * 1.1, glide: beat.glide, pitch: beat.pitch,
+        });
+        c.prop.scale.setScalar(1);
+        drawnWhile(c.prop, held.shown);
+        if (held.seat) { craneSeat.copy(held.seat); craneHeld = true; }
+        continue;
+      }
       // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
       // Granskogen, and in the storm Bertil's boot on the flooded lawn ("Min stövel blir din båt. Kliv i!"), Moa's
       // umbrella on the wall, the raft and the birch leaves on the water.
@@ -1706,6 +1746,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     rideFrom.multiplyScalar(curr.mode === 'ride' ? Math.exp(-10 * dt) : 0);
     drawnMode = curr.mode; drawnX = x; drawnY = y;
     elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0) + rideFrom.x, y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + rideFrom.y, lift?.z ?? 0);
+    // On the rigged crane he stands on its back wherever it is (./crane-ride.ts): a hop up onto it as he boards, and one
+    // down from it when it has landed.
+    if (craneHeld) { craneHold = calmStory ? 1 : Math.min(1, craneHold + dt / 0.3); craneOff.set(craneSeat.x - x, craneSeat.y - y, craneSeat.z); }
+    else craneHold = calmStory ? 0 : Math.max(0, craneHold - dt / 0.35);
+    if (craneHold > 0) elof.group.position.addScaledVector(craneOff, smooth(craneHold)).y += craneHold < 1 ? 0.3 * Math.sin(Math.PI * craneHold) : 0;
     // On a mark in the place itself, such as Pappa's palm: wherever the run left him.
     if (scripted && scripted.ontoWeight > 0) {
       const on = scripted.ontoWeight;
@@ -2883,7 +2928,7 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
 function buildFollower(chapter: ChapterData) {
   const group = new Group();
   const def = chapter.follower;
-  if (!def) return { group, update: () => {} };
+  if (!def) return { group, update: () => {}, install: () => false };
   // The crane chick (crane.ts): it walks on its long legs, turns through facing the camera, and bobs its head.
   const chick = craneChick();
   const gait: Gait = { phase: 0, speed: 0, facing: 0 };
@@ -2901,7 +2946,8 @@ function buildFollower(chapter: ChapterData) {
     const from = chick.group.position.x;
     chick.group.position.x += (to.x - from) * ease(following ? 4 : 2.5, dt);
     chick.group.position.y += (to.y - chick.group.position.y) * ease(6, dt);
-    stepChick(chick, gait, chick.group.position.x - from, dt, clock);
+    if (rigged) stepRiggedChick(rigged, chick.group.position.x - from, dt, clock);
+    else stepChick(chick, gait, chick.group.position.x - from, dt, clock);
     for (const [i, ring] of rings.entries()) {
       const k = (clock * 0.45 + i / rings.length) % 1;
       ring.position.set(def!.home.x, def!.home.y + 0.6 + k * 3.2, 0);
@@ -2911,7 +2957,16 @@ function buildFollower(chapter: ChapterData) {
       drawnWhile(ring, opacity > 0);
     }
   }
-  return { group, update };
+  /** The chick modelled in Blender (./crane-chick.ts) takes the place of the one built in code, which it walks as. */
+  let rigged: ChickRig | null = null;
+  function install(model: Object3D): boolean {
+    rigged = rigChick(model);
+    if (!rigged) return false;
+    chick.group.remove(chick.turn);
+    chick.group.add(rigged.turn);
+    return true;
+  }
+  return { group, update, install };
 }
 
 /** The rolling cones of the avalanche (plan §4.7, E2): brown, long, turning as they go. One instanced mesh. */

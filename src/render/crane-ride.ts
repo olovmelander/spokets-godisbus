@@ -79,15 +79,12 @@ function measure(model: Object3D): { kneel: number; stand: number; rise: number[
   const rise = Array.from({ length: 25 }, (_, i) => seat('rise', i / 24));
   const kneel = seat('kneel', 0);
   const stand = seat('stand', 0);
+  probe.dispose();
+  // At rest: its back where it was bound, in the model as it came, before any clip.
   const rest = new Vector3();
-  const bone = probe.bone('saddle');
-  if (bone) {
-    // At rest: the bones as they were bound, before any clip.
-    probe.dispose();
-    const fresh = model.getObjectByName('saddle');
-    model.updateMatrixWorld(true);
-    if (fresh) rest.setFromMatrixPosition(fresh.matrixWorld).applyMatrix4(inverse.copy(model.matrixWorld).invert());
-  } else probe.dispose();
+  const bone = model.getObjectByName('saddle');
+  model.updateMatrixWorld(true);
+  if (bone) rest.setFromMatrixPosition(bone.matrixWorld).applyMatrix4(inverse.copy(model.matrixWorld).invert());
   return { kneel, stand, rise, rest };
 }
 
@@ -205,7 +202,9 @@ export function rideCrane(rig: CraneRig, prop: Object3D, f: CraneRideFrame): Cra
         clips.scrub('fly', f.beat, 1 - f.glide);
         if (f.glide > 0) clips.scrub('glide', 0.5 * f.glide, f.glide);
       }
-      turn = left < LAND ? f.heading * 0.6 * smooth((left - 0.6) / 0.6) : f.heading * 0.6 + f.pitch;
+      // It points the way it flies, a little: never steeper than a climb it can make, and only once it is flying.
+      const tilt = Math.max(-0.3, Math.min(0.3, f.heading * 0.6)) * smooth((since - 0.2) / 0.6);
+      turn = left < LAND ? tilt * smooth((left - 0.6) / 0.6) : tilt + f.pitch;
     }
   } else {
     // He is off. It stays on its shins while he steps down, rises, runs, takes off and flies away behind him.
