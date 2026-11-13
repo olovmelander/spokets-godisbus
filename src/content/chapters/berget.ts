@@ -117,6 +117,15 @@ const CAIRN = [
  * to the cliff passes in front of it; at 0.42 EL back he brushed through it (HANDOVER, known bugs).
  */
 const LIFT_GHOST = { x: 145.3, z: -0.85 };
+/**
+ * Where the ghost stands on top of the cliff while he climbs, holding the end of the lace it has let down to him, braced
+ * behind the stone it is tied round once he is up (Olov, 13 November 2026: "det måste vara tydligt visuellt att det är
+ * spöket som fixar så att Elof kan klättra upp"). Behind the path, past where he steps off the lace, so that he comes
+ * up beside it and not into it.
+ */
+const GHOST_HOLD = { x: 148, z: -0.55 };
+/** The lace's own scenes: the ghost lets it down in the lift, and lets go of it once he has thanked it. */
+const LACE = { lift: 'berget:lift', thanks: 'berget:tack', letGo: 'berget:let-go', down: 2.05 };
 
 const CAIRN_LACE = { x: 147.6, bottom: 32.4, top: 40.9, exit: -1 as const, needs: 'found:chokladpralin', look: 'lace' as const };
 
@@ -149,28 +158,56 @@ export const berget: ChapterData = {
     //
     // It waits on the ground at the cliff's foot, a little behind him, and never rises by itself (Olov, 12 November
     // 2026). Pressed, it waddles to his hands wherever he stands; then he lifts it, and it springs from them.
-    { id: 'berget:lift', on: 'lift', before: 146.5, seconds: 2.9, hold: true, stage: {
+    //
+    // On top it turns back to him at the edge and lets the lace down to him, leaning out over it, and backs away to
+    // stand braced behind a stone with the lace's end in its hands (Olov, 13 November 2026). He watches it up there, and
+    // the picture takes in the cliff's top and him: the lace comes from the ghost, not out of the air. The lace runs out
+    // at `LACE.down` (the climb's `heldBy`, below; src/render/ghost-lace.ts).
+    { id: LACE.lift, on: 'lift', before: 146.5, seconds: 3.9, hold: true, stage: {
       elof: [
         { at: 0, face: 0, act: 'stand' },
         { at: 0.45, act: 'lift', aimByElof: { x: 0.5, y: 1.15, z: 0 } },
-        { at: 1.75, act: null },
+        // He looks up after it, at the edge where it lets the lace down, and down the lace as it comes.
+        { at: 1.75, act: 'look', aim: { x: 146.2, y: 32, z: 0 } },
+        { at: 3.0, act: 'look', aim: { x: 145.7, y: 28.4, z: 0 } },
+        { at: 3.7, act: null },
       ],
       actors: { ghost: [
         { at: 0, x: LIFT_GHOST.x, y: 26.4, z: LIFT_GHOST.z, move: 0.01 },
         { at: 0.05, byElof: 0.5, z: 0, move: 0.4, act: 'waddle' },
         { at: 0.5, y: 27.5, move: 0.7, act: 'carved' },
         { at: 1.4, x: 146.3, y: 31.4, move: 0.45, act: 'hop' },
-        { at: 1.9, x: 151, move: 0.9 },
+        // At the edge it turns back to him, and lets the lace down hand over hand.
+        { at: 1.85, x: 146.3, z: -0.1, face: 0.5, move: 0.2, act: 'carved' },
+        // It backs away from the edge as the last of it runs out, to where it holds it while he climbs: where the
+        // simulation has it wait (the perch at GHOST_HOLD).
+        { at: 2.95, x: GHOST_HOLD.x, z: GHOST_HOLD.z, move: 0.6, act: 'waddle' },
+        { at: 3.55, act: 'carved' },
       ] },
+      // The cliff's top, the ghost on it and him at its foot, all in the picture; wider than the play camera there.
+      shots: [{ at: 1.1, x: 145.6, y: 29.9, height: 10, move: 0.8 }],
     } },
-    // Up the lace, he turns to the ghost waiting by the pine and thanks it, standing, as he thanks Pappa and Mamma in the
-    // chapters before. Said in passing, it was still being read when he touched the memory six EL on: the memory and
-    // "Spöket vill hämta hem min trägubbe!" waited behind it while he ran past the pine (HANDOVER, known bugs). The
-    // receipt keeps the old beat's id. The ghost takes off once he is within 4 EL of it, so the scene begins short of that.
-    { id: 'berget:tack', at: 146.5, needs: 'lift', before: 148.5, seconds: 1.4, hold: true,
+    // Up the lace, he turns to the ghost beside him, still holding the lace's end, and thanks it, standing, as he thanks
+    // Pappa and Mamma in the chapters before. Said in passing, it was still being read when he touched the memory six EL
+    // on: the memory and "Spöket vill hämta hem min trägubbe!" waited behind it while he ran past the pine (HANDOVER,
+    // known bugs). The receipt keeps the old beat's id. While he says it, the ghost bobs, glad; then it lets go of the
+    // lace, tied round its stone, and hops on to the pine as the simulation hops it (`LACE.letGo`).
+    { id: LACE.thanks, at: 146.5, needs: 'lift', before: 148.5, seconds: 1.95, hold: true,
       lines: [{ at: 0.2, who: 'elof', line: 'mountainThanks', id: 'mountain:thanks' }],
-      stage: { elof: [{ at: 0, face: 0.05, act: 'wave', aim: { x: 151, y: 32.2, z: 0 } }] } },
+      cues: [{ at: 1.25, flag: LACE.letGo }],
+      stage: {
+        elof: [{ at: 0, face: 0.05, act: 'wave', aim: { x: GHOST_HOLD.x, y: 32.1, z: GHOST_HOLD.z } }],
+        actors: { ghost: [
+          { at: 0, x: GHOST_HOLD.x, y: 31.4, z: GHOST_HOLD.z, face: 0.5, move: 0.01, act: 'carved' },
+          { at: 0.55, act: 'hop' },
+          { at: 1.05, act: 'carved' },
+          { at: 1.25, x: 151, z: 0, face: 0, move: 0.65, act: 'hop' },
+          { at: 1.9, act: 'carved' },
+        ] },
+      } },
   ],
+  // Once the thanks is over, or passed by, the ghost lets go of the lace and goes on (its perch at GHOST_HOLD).
+  sets: [{ flag: LACE.letGo, when: [`scene:${LACE.thanks}`] }],
   goalX: 157,
   ground: [
     { x: -3, y: 12 },
@@ -200,8 +237,10 @@ export const berget: ChapterData = {
     { x: 149, y: 31.4 },
   ],
   climbs: [
-    // The lace, lowered by the ghost from the top of the cliff.
-    { x: 145.7, bottom: 26.4, top: 31.4, exit: 1, needs: 'lift', look: 'lace' },
+    // The lace, lowered by the ghost from the top of the cliff: it holds the end while he climbs, and then ties it round a
+    // stone there (picture only).
+    { x: 145.7, bottom: 26.4, top: 31.4, exit: 1, needs: 'lift', look: 'lace',
+      heldBy: { scene: LACE.lift, at: LACE.down, seconds: 0.85, until: LACE.letGo, tied: { x: 146.95, y: 31.4, z: -0.4 } } },
     // The optional cairn loop reuses the same climbing/sliding skill, with no new Use step or reward flag.
     CAIRN_LACE,
   ],
@@ -243,7 +282,9 @@ export const berget: ChapterData = {
     // stuck below the cliff, with the bag too heavy: it doesn't run, and it doesn't rise either. It stands on the
     // ground a little behind the path, so that he walks up to it and past it in front of it.
     { at: { x: LIFT_GHOST.x, y: 26.4 }, z: LIFT_GHOST.z, until: 'lift', still: true, thought: { picture: 'lonely-figure', until: 'lift' } },
-    // up, it waits by the pine
+    // Up, it holds the end of the lace while he climbs it, and lets go once he has thanked it (the scene `berget:tack`).
+    { at: { x: GHOST_HOLD.x, y: 31.4 }, z: GHOST_HOLD.z, until: LACE.letGo, still: true },
+    // then it waits by the pine
     { at: { x: 151, y: 31.4 } },
     // and stays with him to the end, by the pine, a little behind the path (it vanished at x 155; PR #242's audit)
     { at: { x: 159, y: 31.4 }, z: -0.45, stays: true },

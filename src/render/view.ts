@@ -86,6 +86,7 @@ import { createHomeTrail } from './home-trail';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawnWhile } from './idle';
+import { buildGhostLace, letDown } from './ghost-lace';
 import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
 import { windAt, type Blow } from './wind';
@@ -467,6 +468,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const wetOutside = (chapter.storm?.rain ?? 0) > 0 && chapter.place !== 'home';
   if (wetOutside) scene.add(footSplash.mesh);
   const climbs = buildClimbs(chapter);
+  // Berget's lace, let down and held by the ghost (./ghost-lace.ts).
+  const ghostLace = buildGhostLace(chapter);
+  scene.add(ghostLace.group);
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
@@ -1355,7 +1359,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // all of it, so that the bog's water is lost in it as everything else is (./water.ts).
     water.setHaze(mist.thick());
     const gust = wind.update(gusts, clock);
-    climbs.update(flags, dt, clock, lessMotion());
+    climbs.update(flags, dt, clock, lessMotion(), sceneFrame ?? null);
     follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
@@ -2073,6 +2077,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (ghostPlace.visible && ghostSize > 0.5) talk.place('spoket', ghostPlace.position.x, ghostPlace.position.y + 0.75 * ghostPlace.scale.y, ghostPlace.position.z);
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
+    // Berget's lace in the ghost's hands, and how it leans to it (./ghost-lace.ts).
+    ghostLace.update({ flags, scene: sceneFrame ?? null, ghost: ghostState && !ghostState.gone ? ghost : null, facesModel: ghostFaces !== 0,
+      elof: { x, y, climbing: curr.mode === 'climb' }, clock, dt, calm: calmStory });
     if (chapter.prologue) {
       paintedEyes.forEach((eye, i) => { eye.visible = flags.has(i === 0 && paintedEyes.length > 1 ? 'eye' : 'paint'); });
     }
@@ -3226,16 +3233,19 @@ function buildClimbs(chapter: ChapterData) {
     group.add(hose);
     const ring = look === 'lace' ? new Mesh(ringGeometry, ringMaterial) : null;
     if (ring) { ring.position.set(climb.x, climb.top, -.12); group.add(ring); }
-    return [{ hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
+    return [{ hose, ring, climb, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
   });
   /** A hose that waits for something is let down when that has happened: the lichen, the braid, the lace. */
-  function update(flags: ReadonlySet<string>, dt: number, clock = 0, still = false): void {
+  function update(flags: ReadonlySet<string>, dt: number, clock = 0, still = false, scene: SceneFrame | null = null): void {
     for (const b of braids) {
       if (b.needs !== undefined) b.down = Math.min(1, Math.max(0, b.down + (flags.has(b.needs) ? dt : -dt) / 0.7));
       b.braid.update(b.down, clock, dt, still);
     }
     for (const h of hoses) {
-      if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
+      // Berget's lace runs out when the ghost lets it down in its scene (./ghost-lace.ts), not at the flag.
+      const held = letDown(h.climb, flags, scene);
+      if (held !== null) h.down = held;
+      else if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
       h.hose.scale.y = Math.max(0.001, h.down);
       if (h.ring) {
         h.ring.scale.setScalar(h.down);

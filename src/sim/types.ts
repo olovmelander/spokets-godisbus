@@ -28,6 +28,12 @@ export interface Climb {
   needs?: string;
   /** Keep a reused climbing rule recognizable as the story's actual tool. */
   look?: 'hose' | 'lace' | 'braid' | 'lichen' | 'root' | 'ladder';
+  /**
+   * Picture only: the ghost lets it down and holds it (Berget's lace; src/render/ghost-lace.ts). It runs out from the
+   * top `at` seconds into the scene `scene`, over `seconds`, and the ghost holds its end until `until` is set; after
+   * that its end is tied round the stone at `tied`.
+   */
+  heldBy?: { scene: string; at: number; seconds: number; until: string; tied: { x: number; y: number; z: number } };
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
