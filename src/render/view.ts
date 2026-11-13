@@ -101,6 +101,7 @@ import { createFootSplash } from './foot-splash';
 import { craneChick, stepChick, type Gait } from './crane';
 import { craneRigOf, rideCrane, rigCrane } from './crane-ride';
 import { rigChick, stepRiggedChick, type ChickRig } from './crane-chick';
+import { hasJayClips, rigJay } from './jay';
 import { creatureClipsOf } from './creature-clips';
 import { lookAt } from './look';
 import { createTalker, talk, type Free, type Look, type TalkFrame, type Talker } from './talk';
@@ -542,15 +543,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       });
     });
 
-  // The jay, modelled in Blender (art/blender/jay.py), takes the place of the bird built in code: the helper
-  // that comes when he asks, and the one he shares a berry with. Its wings are parts of their own, with the
-  // same names as the stand-in's, so they beat as before.
+  // The jay, modelled, rigged and animated in Blender (art/blender/jay.py), takes the place of the bird built in code
+  // (./jay.ts): the helper that comes when he asks, the one he gives a berry, and the one at the window, which works
+  // out every pose from the scene's seconds (its clips change at once). A model without its clips goes in as it is.
   const jayReady = birds.length > 0 ? assets
     .manifest()
     .then((manifest) => (manifest.packs.boot?.files['jay.glb'] ? assets.model('boot', 'jay') : null))
     .then((model) => {
       if (!model) return;
       for (const [i, bird] of birds.entries()) {
+        if (hasJayClips(model) && rigJay(bird, model, stage.birds.includes(bird) ? 0 : 0.25)) continue;
         bird.clear();
         bird.add(i === 0 ? model : model.clone());
       }
@@ -1456,7 +1458,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // The light counterweight tips the same board only during its safe bounce, then resets for another try.
       const trialTip = chapter.counterweight && thing.spot.id === chapter.counterweight.launch && riding
         && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial ?? chapter.counterweight.launch) && !flags.has(chapter.counterweight.launch);
-      thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id));
+      thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id), { elof: { x, y }, calm: calmStory });
       // The ghost's sweet on the vittra's doorstep, from when he sees it given away.
       if (thing.spot.look === 'vittra-door') { const sweet = thing.prop?.group.getObjectByName('vittra-candy'); if (sweet) sweet.visible = flags.has('beat:vittra'); }
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
