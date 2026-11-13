@@ -1,6 +1,7 @@
 import { Game } from '../../src/app/game';
 import { sv } from '../../src/content/sv';
 import { endsInScene, sceneBeats } from '../../src/sim/scene';
+import { walkedOff, walkOffOf } from '../../src/sim/walk-off';
 import type { ChapterData, SimOptions } from '../../src/sim/types';
 import { createHud, readingTime } from '../../src/ui/hud';
 import { decide } from './robot';
@@ -134,6 +135,8 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
   let frozen = 0;
   // The coda before the page (src/main.ts), where a scene is not the chapter's end and it is not the epilogue.
   const wait = !endsInScene(chapter) && !chapter.epilogue ? 4.6 : 1.4;
+  // And for a walk after the goal (Gården's into the forest), as the page does (src/sim/walk-off.ts).
+  const walkOff = walkOffOf(chapter);
   const due = new Map<string, { at: number; x: number }>();
   // How long nothing has been said or waited: the last page waits a moment for a line that goes on (src/main.ts).
   let quietFor = 0;
@@ -175,7 +178,7 @@ export function listenThrough(chapter: ChapterData, options: SimOptions = {}, fp
     }
     // The end card, as the page brings it: after a moment's quiet, so never in the middle of a conversation.
     quietFor = hud.reading() || hud.speaking() || game.sim.unsaid ? 0 : quietFor + dt;
-    if (endFor > wait && quietFor > 0.4) break;
+    if (endFor > wait && quietFor > 0.4 && walkedOff(walkOff, game.sim.flags, game.sim.sceneFrame)) break;
   }
   for (const one of showing) one.gone ??= clock;
   const shown = heard.filter((one) => one.shown !== null);

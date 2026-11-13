@@ -56,11 +56,11 @@ function row(from: number, to: number, ground: number, every = 2): Candy[] {
 }
 
 /**
- * The arch in the hedge at the garden's end, as src/render/dressing/hedge-gate.ts (`gateOf`) cuts it from the hedge marked
- * `gate` (212 to 214): the middle of its opening, and how far behind the path its hedge stands, front and back. Its
+ * The middle of the arch in the hedge at the garden's end, as src/render/dressing/hedge-gate.ts (`gateOf`) cuts it from the
+ * hedge marked `gate` (212 to 214): its opening is 210.6 to 213.3, and its hedge stands 4 to 6.6 EL behind the path. Its
  * trodden path runs straight back from the lawn to the arch, and bends a little to the right among the spruces beyond.
  */
-const ARCH = { x: 211.95, front: -4, back: -6.6 };
+const ARCH = { x: 211.95 };
 
 /** Where the plane is at `t` of its way, `offset` EL above the middle of its path: as the simulation flies it. */
 const PLANE = { from: { x: 166, y: 0 }, to: { x: 206, y: 0 }, rise: 8, time: 7 };
