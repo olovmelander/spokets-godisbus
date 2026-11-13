@@ -2046,7 +2046,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         ghostPlace.position.set(pose.x, pose.y, pose.z);
         ghostSize = pose.scale;
         ghostPlace.scale.setScalar(ghostSize);
-        ghost.rotation.set(0, ghostFaces + pose.turn, pose.tilt);
+        // The tilt about its own side, as for the hop above: the stand-in's z, the model's x (it faces its own +z), or the
+        // model rolled sideways and lay the other way round in Mamma's joke, in among the end chair's legs (13 November).
+        ghost.rotation.set(ghostFaces ? -pose.tilt : 0, ghostFaces + pose.turn, ghostFaces ? 0 : pose.tilt, 'YXZ');
         // Its bag goes with its front: running off along the deck it is not held out behind it.
         ghostTurn = pose.turn;
         ghostStaged = true;
