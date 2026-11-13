@@ -88,6 +88,7 @@ import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawOverFrame, overFrame } from './over-frame';
 import { drawnWhile } from './idle';
+import { buildGhostLace, letDown } from './ghost-lace';
 import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
 import { windAt, type Blow } from './wind';
@@ -469,6 +470,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const wetOutside = (chapter.storm?.rain ?? 0) > 0 && chapter.place !== 'home';
   if (wetOutside) scene.add(footSplash.mesh);
   const climbs = buildClimbs(chapter);
+  // Berget's lace, let down and held by the ghost (./ghost-lace.ts).
+  const ghostLace = buildGhostLace(chapter);
+  scene.add(ghostLace.group);
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
@@ -787,7 +791,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const laceHand = new Vector3(), laceAlong = new Vector3();
   /** Myren's lysklubba, held up in his right hand in the mist: where that hand is, from the frame before. */
   const lanternHand = new Vector3(), lanternLift = new Vector3();
-  let lanternHeld = false;
+  let lanternHeld = false, lanternRaise = 0;
   const playerMotion = createPlayerMotion();
   // What is said (./talk.ts): one picture at a time, and this is it. Elof's part in it, the ghost's (its klonks), where a head
   // looks, and a pose to draw it on without keeping it.
@@ -1362,7 +1366,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // all of it, so that the bog's water is lost in it as everything else is (./water.ts).
     water.setHaze(mist.thick());
     const gust = wind.update(gusts, clock);
-    climbs.update(flags, dt, clock, lessMotion());
+    climbs.update(flags, dt, clock, lessMotion(), sceneFrame ?? null);
     follower.update(flags, curr, clock, dt);
     // On a ride he sits on Moa's paper plane, which points the way it flies.
     const riding = curr.mode === 'ride';
@@ -1856,9 +1860,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     // In the mist he holds the lysklubba up before him, as a lantern (./view.ts buildMist).
     lanternHeld = !!chapter.mist && flags.has(chapter.mist.after) && !curr.hook && !!playerBody;
+    // As he takes it, he holds it up high for a moment, looking at it (the scene `mist.raise`; Olov, 13 November 2026).
+    const raising = !!chapter.mist?.raise && sceneFrame?.id === chapter.mist.raise;
+    lanternRaise = calmStory ? (raising ? 1 : 0) : lanternRaise + ((raising ? 1 : 0) - lanternRaise) * ease(raising ? 7 : 4, dt);
     if (lanternHeld && playerBody) {
       elof.group.updateWorldMatrix(true, false);
-      lanternLift.set(0.3, 0.98, 0.12).applyMatrix4(elof.group.matrixWorld);
+      lanternLift.set(0.3 - 0.08 * lanternRaise, 0.98 + 0.5 * lanternRaise, 0.12 + 0.05 * lanternRaise).applyMatrix4(elof.group.matrixWorld);
       playerBody.reach(1, lanternLift, 0.9);
       if (playerBody.grasp && playerBody.socket) {
         // Its stick upright in his fist, the sweet over his thumb (./fingers.ts).
@@ -2089,6 +2096,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (ghostPlace.visible && ghostSize > 0.5) talk.place('spoket', ghostPlace.position.x, ghostPlace.position.y + 0.75 * ghostPlace.scale.y, ghostPlace.position.z);
       looking.update(staged?.look ? ghostPlace.position : null, staged?.look ?? null, clock, dt);
     }
+    // Berget's lace in the ghost's hands, and how it leans to it (./ghost-lace.ts).
+    ghostLace.update({ flags, scene: sceneFrame ?? null, ghost: ghostState && !ghostState.gone ? ghost : null, facesModel: ghostFaces !== 0,
+      elof: { x, y, climbing: curr.mode === 'climb' }, clock, dt, calm: calmStory });
     if (chapter.prologue) {
       paintedEyes.forEach((eye, i) => { eye.visible = flags.has(i === 0 && paintedEyes.length > 1 ? 'eye' : 'paint'); });
     }
@@ -2880,15 +2890,19 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
   if (!chapter.mist) return { group, update: () => {}, thick: () => 0 };
   const after = chapter.mist.after;
   const light = new PointLight('#ffcf8a', 0, 9, 1.6);
-  // The lollipop, held up like a lantern: it glows through the mist.
+  // Before it is taken, its light is on the moss round the lysklubba where it stands (Olov, 13 November 2026: it has to
+  // read as a lollipop that shines). The same lamp: no light is added or taken out.
+  const source = chapter.spots?.find((spot) => spot.id === after)?.at;
+  // The lollipop, held up like a lantern: it glows through the mist. Big enough to be seen as a lollipop in his hand.
   const glow = new Group();
   const sweet = sweetSocket(new Group().add(new Mesh(new SphereGeometry(0.13, 14, 10), new MeshBasicMaterial({ color: '#ffe2a0', fog: false }))),
-    { shape: 'lysklubba', scale: 0.62, lantern: true });
-  const stick = new Mesh(new CylinderGeometry(0.018, 0.018, 0.4, 6), new MeshBasicMaterial({ color: '#fff6e0', fog: false }));
-  stick.position.y = -0.3;
+    { shape: 'lysklubba', scale: 0.85, lantern: true });
+  const stick = new Mesh(new CylinderGeometry(0.02, 0.02, 0.5, 6), new MeshBasicMaterial({ color: '#fff6e0', fog: false }));
+  stick.position.y = -0.36;
   glow.add(sweet, stick);
-  // Its light in the mist round it: a warm halo, brightest at the lantern (visual audit, myren rows 5 and 21).
-  const halo = new Mesh(new PlaneGeometry(3.2, 3.2), new MeshBasicMaterial({
+  // Its light in the mist round it: a warm halo, brightest at the lantern (visual audit, myren rows 5 and 21). Behind the
+  // lantern, so that it shines round his head and not over his face; and a wide glow further back, the mist lit by it.
+  const halo = new Mesh(new PlaneGeometry(2.4, 2.4), new MeshBasicMaterial({
     map: drawn(64, 64, (c) => {
       const round = c.createRadialGradient(32, 32, 0, 32, 32, 32);
       round.addColorStop(0, 'rgba(255,255,255,1)');
@@ -2912,29 +2926,54 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     lamp.position.set(at.x, at.y, -0.5);
     flame.position.set(at.x, at.y, -0.45);
   }
-  group.add(light, glow, halo, wall, ...(at ? [lamp, flame] : []));
-  // In the mist the sun goes pale and the air grey and cool, so that the lantern is the warmest thing there.
+  // The mist round him lit by the lysklubba: a wide, faint warmth further back than he is.
+  const aura = new Mesh(new PlaneGeometry(7, 7), (halo.material as MeshBasicMaterial).clone());
+  group.add(light, glow, halo, aura, wall, ...(at ? [lamp, flame] : []));
+  // In the mist the sun goes pale and the air grey-blue and cool, as a November afternoon at half past four is, so that
+  // the lantern is the warmest and brightest thing there: in a pale mist its light did not show (Olov, 13 November 2026).
   const clearDay = { sun: sun.intensity, sky: hemisphere.intensity, air: fog.color.clone() };
-  const grey = new Color('#c4c6bd');
-  let k = 0;
+  const grey = new Color('#7b868d');
+  /**
+   * The mist begins to rise as he comes down to the clearing where the lysklubba shines, this thick at most, and closes
+   * in once he has taken it: its light is seen in the mist before it is in his hand.
+   */
+  const RISING = 0.42;
+  /** The mist, from 0 to 1; whether the light is in his hand, from 0 to 1; and the clock its light breathes by. */
+  let k = 0, held = 0, life = 0;
   function update(flags: ReadonlySet<string>, x: number, y: number, facing: number, cameraZ: number, dt: number, hand: Vector3 | null = null): void {
-    k = Math.min(1, Math.max(0, k + (flags.has(after) ? dt : -dt) / 3));
+    life += dt;
+    const rising = source ? RISING * Math.min(1, Math.max(0, (x - (source.x - 9)) / 6)) : 0;
+    const thick = flags.has(after) ? 1 : rising;
+    k = k < thick ? Math.min(thick, k + dt / 3) : Math.max(thick, k - dt / 3);
+    // In his hand at once as he takes it, while the one in the moss shrinks away (./props.ts); the mist takes longer.
+    held = Math.min(1, Math.max(0, held + (flags.has(after) ? dt : -dt) / 0.25));
+    const breath = 0.5 + 0.5 * Math.sin(life * 2.1);
     // The mist begins just behind the plane he walks in: he, the candy and what is near him stay clear, what is
     // further back goes pale, and 16 behind it is all mist. Before it comes, the air is the place's own.
     const clear = haze ? { near: cameraZ + haze.near, far: cameraZ + haze.far } : greybox;
     fog.near = lerp(clear.near, cameraZ + 0.5, k);
     fog.far = lerp(clear.far, cameraZ + 16, k);
-    sun.intensity = clearDay.sun * (1 - 0.45 * k);
-    hemisphere.intensity = clearDay.sky * (1 - 0.2 * k);
-    fog.color.copy(clearDay.air).lerp(grey, 0.5 * k);
-    light.intensity = 7 * k;
-    light.position.set(x + facing * 0.3, y + 1.4, 1);
+    sun.intensity = clearDay.sun * (1 - 0.65 * k);
+    hemisphere.intensity = clearDay.sky * (1 - 0.45 * k);
+    fog.color.copy(clearDay.air).lerp(grey, 0.75 * k);
+    if (held > 0 || !source) {
+      light.intensity = Math.max(4.5 * k, 3.5 * held);
+      light.position.set(x + facing * 0.3, y + 1.6, 0.8);
+    } else {
+      // Still in the moss: its light on the moss and the sedge round it, breathing with its halo.
+      light.intensity = 3 + 1.2 * breath;
+      light.position.set(source.x, source.y + 0.7, 0.6);
+    }
     // Held up in his hand like a lantern, its stick in his fist ("Följ mitt ljus hem till din familj.").
     if (hand) glow.position.set(hand.x, hand.y + 0.26, hand.z + 0.04);
     else glow.position.set(x + facing * 0.32, y + 1.42, 0.25);
-    glow.scale.setScalar(k);
-    halo.position.set(glow.position.x, glow.position.y, glow.position.z + 0.05);
-    (halo.material as MeshBasicMaterial).opacity = 0.85 * k;
+    glow.scale.setScalar(held);
+    // Its halo breathes as it did in the moss, and grows stronger as the mist closes in round it.
+    halo.position.set(glow.position.x, glow.position.y, glow.position.z - 0.3);
+    halo.scale.setScalar(0.95 + 0.1 * breath);
+    (halo.material as MeshBasicMaterial).opacity = (0.5 + 0.4 * k) * held * (0.85 + 0.15 * breath);
+    aura.position.set(glow.position.x, glow.position.y - 0.3, glow.position.z - 1.4);
+    (aura.material as MeshBasicMaterial).opacity = 0.45 * k * held;
     wall.position.set(x, level, -20);
     (wall.material as MeshBasicMaterial).color.copy(fog.color);
     (wall.material as MeshBasicMaterial).opacity = 0.92 * k;
@@ -2942,7 +2981,9 @@ function buildMist(chapter: ChapterData, fog: Fog, haze: { near: number; far: nu
     flame.scale.setScalar(k);
     // Only the lollipop, the halos, the lamp's flame and the wall go out of the picture. The light stays, dark:
     // taking a light out compiles every shader anew.
-    for (const one of [glow, halo, wall, lamp, flame]) drawnWhile(one, k > 0);
+    for (const one of [glow, halo]) drawnWhile(one, held > 0);
+    drawnWhile(aura, k * held > 0);
+    for (const one of [wall, lamp, flame]) drawnWhile(one, k > 0);
   }
   /** How far the mist has come in: 0 clear, 1 thick. */
   return { group, update, thick: () => k };
@@ -3249,16 +3290,19 @@ function buildClimbs(chapter: ChapterData) {
     group.add(hose);
     const ring = look === 'lace' ? new Mesh(ringGeometry, ringMaterial) : null;
     if (ring) { ring.position.set(climb.x, climb.top, -.12); group.add(ring); }
-    return [{ hose, ring, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
+    return [{ hose, ring, climb, needs: climb.needs, down: climb.needs === undefined ? 1 : 0 }];
   });
   /** A hose that waits for something is let down when that has happened: the lichen, the braid, the lace. */
-  function update(flags: ReadonlySet<string>, dt: number, clock = 0, still = false): void {
+  function update(flags: ReadonlySet<string>, dt: number, clock = 0, still = false, scene: SceneFrame | null = null): void {
     for (const b of braids) {
       if (b.needs !== undefined) b.down = Math.min(1, Math.max(0, b.down + (flags.has(b.needs) ? dt : -dt) / 0.7));
       b.braid.update(b.down, clock, dt, still);
     }
     for (const h of hoses) {
-      if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
+      // Berget's lace runs out when the ghost lets it down in its scene (./ghost-lace.ts), not at the flag.
+      const held = letDown(h.climb, flags, scene);
+      if (held !== null) h.down = held;
+      else if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
       h.hose.scale.y = Math.max(0.001, h.down);
       if (h.ring) {
         h.ring.scale.setScalar(h.down);

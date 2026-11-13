@@ -2,7 +2,7 @@ import { souvenir } from './souvenir';
 import { owlTwig } from './owl-trap';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {
-  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
+  AdditiveBlending, BoxGeometry, BufferGeometry, CanvasTexture, Color, ConeGeometry, DataTexture, Float32BufferAttribute, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, LatheGeometry, LinearFilter, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, Shape, ShapeGeometry, Sphere, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
 } from 'three';
 import { PLANK, barkDetail, barky } from './bark-detail';
 import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types';
@@ -333,6 +333,26 @@ function wispLight(): DataTexture {
   return texture;
 }
 
+/**
+ * The lysklubba's light in the air round it, fading out to nothing: with a bright heart, for adding to what is behind it,
+ * or without one (`heart` 0) and wider, for laying over it.
+ */
+function lanternGlow(heart = 0.9, spread = 0.55, falloff = 2.2): DataTexture {
+  const size = 64;
+  const data = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const out = Math.min(1, Math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) / (size / 2));
+      const alpha = Math.min(1, heart * Math.max(0, 1 - out / 0.18) + spread * (1 - out) ** falloff);
+      data.set([255, 255, 255, Math.round(255 * alpha)], (y * size + x) * 4);
+    }
+  }
+  const texture = new DataTexture(data, size, size);
+  texture.magFilter = texture.minFilter = LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 export function spotProp(spot: Spot): SpotProp | null {
   const group = new Group();
   group.position.set(spot.at.x, spot.at.y, -0.6);
@@ -557,15 +577,56 @@ export function spotProp(spot: Spot): SpotProp | null {
       return { group, update: (used, _clock, dt) => { since = used ? since + dt : 0; plank.rotation.z = 0.14 - Math.min(1, since / 0.25) * 0.28; } };
     }
     case 'lollipop': {
-      const stick = rod(0.025, 0.9, solid('#fff6e0', 0.6));
-      stick.position.y = 0.45;
+      // The ghost's lysklubba, stuck in the moss for him (Myren). It has to read from the boardwalk as a lollipop that
+      // shines, and as the thing he takes (Olov, 13 November 2026): bigger than the candy on the trail, its light round
+      // it in the air and in a warm pool on the moss, breathing slowly, with a few sparks rising. Its light on the moss
+      // and on him is the mist's lamp, which stands here until it is taken (./view.ts buildMist).
+      const stick = rod(0.03, 1.05, solid('#fff6e0', 0.6, { emissive: '#ffe2a8', emissiveIntensity: 0.35 }));
+      stick.position.y = 0.52;
       // The kit's golden swirl, glowing; until it has come, a glowing ball.
       const sweet = sweetSocket(new Group().add(ball(0.22, solid('#ffd98a', 0.3, { emissive: '#ffb23c', emissiveIntensity: 0.9 }))),
-        { shape: 'lysklubba', glow: 0.95 });
-      sweet.position.y = 1;
-      group.add(stick, sweet);
+        { shape: 'lysklubba', glow: 1.2, scale: 1.3 });
+      sweet.position.y = 1.15;
+      const light = lanternGlow();
+      // A bright heart added to what is behind it, and round it a warm glow laid over it: added light alone is lost
+      // against the pale sky of the bog.
+      const halo = new Mesh(new PlaneGeometry(2.6, 2.6), new MeshBasicMaterial({ map: light, color: '#ffc870', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }));
+      halo.position.set(0, 1.15, -0.1);
+      const warmth = new Mesh(new PlaneGeometry(3, 3), new MeshBasicMaterial({ map: lanternGlow(0, 0.9, 1.5), color: '#ffa748', transparent: true, depthWrite: false, fog: false }));
+      warmth.position.set(0, 1.1, -0.25);
+      const pool = new Mesh(new PlaneGeometry(3.4, 2.2), new MeshBasicMaterial({ map: light, color: '#ffb85c', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }));
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(0, 0.06, 0.2);
+      const SPARKS = 7;
+      const sparks = new InstancedMesh(new OctahedronGeometry(1), new MeshBasicMaterial({ color: '#ffc24a', transparent: true, depthWrite: false, blending: AdditiveBlending, fog: false }), SPARKS);
+      sparks.instanceMatrix.setUsage(DynamicDrawUsage);
+      // Where they drift, so that they are left out of the picture with the lollipop when it is not in it.
+      sparks.boundingSphere = new Sphere(new Vector3(0, 1.2, 0), 1.2);
+      const spark = new Object3D();
+      group.add(stick, sweet, warmth, halo, pool, sparks);
       group.position.z = -0.35;
-      return { group, update: (used, clock, dt) => { vanish(used, dt); group.rotation.z = Math.sin(clock * 1.2) * 0.04; } };
+      return { group, update: (used, clock, dt) => {
+        vanish(used, dt);
+        group.rotation.z = Math.sin(clock * 1.2) * 0.04;
+        // It breathes: a slow swell of its light, never a flicker.
+        const breath = 0.5 + 0.5 * Math.sin(clock * 2.1);
+        halo.scale.setScalar(0.92 + 0.14 * breath);
+        (halo.material as MeshBasicMaterial).opacity = 0.62 + 0.25 * breath;
+        warmth.scale.setScalar(0.95 + 0.1 * breath);
+        (warmth.material as MeshBasicMaterial).opacity = 0.5 + 0.2 * breath;
+        (pool.material as MeshBasicMaterial).opacity = 0.42 + 0.16 * breath;
+        // Sparks drift up round the swirl and fade at the top.
+        for (let i = 0; i < SPARKS; i++) {
+          const rise = (clock * 0.22 + i / SPARKS) % 1;
+          const turn = i * 2.4 + clock * 0.7;
+          spark.position.set(Math.cos(turn) * (0.32 + 0.12 * (i % 3)), 0.55 + rise * 1.35, Math.sin(turn) * 0.3);
+          spark.scale.setScalar(0.05 * Math.sin(Math.PI * rise));
+          spark.rotation.set(0, turn, 0.6);
+          spark.updateMatrix();
+          sparks.setMatrixAt(i, spark.matrix);
+        }
+        sparks.instanceMatrix.needsUpdate = true;
+      } };
     }
     case 'crane': {
       // A crane, kneeling for him to climb on (crane.ts). It breathes, its neck sways, and now and then it turns its

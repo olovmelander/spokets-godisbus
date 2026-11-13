@@ -196,7 +196,7 @@ try {
   {
     const { page, state, finish } = await open('granskog-card', {}, '?dev&debug&standin&course=granskog&tier=low');
     await until(state, (s) => s.scene?.id === 'card' && s.scene.seconds > 0.9, 'the time card', 30000);
-    check('granskog: the card says where and when', await page.locator('#sceneCaption').textContent() === 'Granskogen · halv tolv');
+    check('granskog: the card says where and when', await page.locator('#sceneCaption').textContent() === 'Granskogen · klockan halv tolv');
     check('granskog: the card does not hold him', !(await state()).held);
     const x = (await state()).x;
     await page.keyboard.down('ArrowRight');
@@ -228,7 +228,7 @@ try {
     // Not a debug session: the public game, where every load used to open on the title.
     await page.goto(`${origin}${BASE}?dev&standin&course=granskog&tier=low`);
     await page.waitForFunction(() => document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
-    await page.waitForFunction(() => document.getElementById('sceneCaption')?.textContent === 'Granskogen · halv tolv', null, { timeout: 30000 });
+    await page.waitForFunction(() => document.getElementById('sceneCaption')?.textContent === 'Granskogen · klockan halv tolv', null, { timeout: 30000 });
     check('onward: Granskogen opens on its card', true);
     check('onward: no title between the chapters', await page.locator('#title').isHidden());
     await page.reload();

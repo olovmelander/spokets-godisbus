@@ -328,8 +328,8 @@ export const sv = {
     morning: 'Lördagsmorgon',
     // Each chapter's time card: where, and the time of day (plan §4.9).
     garden: 'Gården · klockan tio',
-    granskog: 'Granskogen · halv tolv',
-    myren: 'Myren · halv fem',
+    granskog: 'Granskogen · klockan halv tolv',
+    myren: 'Myren · klockan halv fem',
     berget: 'Berget · klockan sex',
     norrsken: 'Norrskenet · i skymningen',
     epilog: 'Godiskalaset · klockan nio',
@@ -407,13 +407,15 @@ export const sv = {
     heja: 'Heja, lillebror!',
     thanked: 'Spöket tackade mig!',
     spangen: 'På myren går vi på spången.',
+    // Holding the lysklubba up as the mist rolls in (Olov, 13 November 2026).
+    bogLightMist: 'Oj, vad dimmigt! Tur att klubban lyser.',
     bogChickLight: 'Följ mitt ljus hem till din familj.',
     bogFamilyHome: 'Tranungen är hemma! Får jag åka med dig?',
     bogBridgeReady: 'Spången är klar! Gå över när du vill.',
     bogLightReturn: 'Nu går spången åt båda hållen!',
     mountainThanks: 'Tack för hjälpen! Nu är jag uppe.',
     fetch: 'Spöket vill hämta hem min trägubbe!',
-    mountainLoop: 'Snöret runt röset. En väg ner!',
+    mountainLoop: 'Ett snöre här uppe! Nu kan jag åka ner.',
     // Pappa on the summit: one thing said, in four bubbles.
     first1: 'Min allra första trägubbe …',
     first2: 'Den täljde jag till dig',

@@ -38,6 +38,9 @@ import type { Candy, ChapterData, Hook, Jump, Ledge, Tussock, Vec } from '../../
  * the cranes' dance, the jay.
  */
 
+/** The held moment as he takes the lysklubba: he holds it up high while the mist rolls in (`mist.raise`). */
+const LANTERN_SCENE = 'lysklubba';
+
 /** Open water is a pit this deep to the simulation, and its surface is here. */
 const DEEP = -6;
 const WATER = -0.6;
@@ -285,6 +288,21 @@ export const myren: ChapterData = {
       { at: .9, who: 'mamma', line: 'spangen', id: 'spangen' },
     ],
     stage: { elof: [{ at: 0, face: .5, act: 'wave', aim: { x: 102.2, y: 5.6, z: -1.35 } }] },
+  }, {
+    // He takes the ghost's lysklubba and holds it up high, glowing, while the mist rolls in round him; then he says what
+    // it is for (Olov, 13 November 2026: "Det måste vara tydligare när man tar klubban som lyser att den lyser i dimman och
+    // vad det är man tar. Elof kanske kan säga något kring vad bra att ha en lysande klubba nu när det är så dimmigt").
+    // The mist takes three seconds to close in (src/render/view.ts buildMist): his words come once it is in the picture,
+    // and "Följ ljuset genom dimman." is his next step. A game taken up with the light in his hand has seen it.
+    id: LANTERN_SCENE, on: 'light', live: true, before: 147, seconds: 1.8, hold: true,
+    lines: [{ at: 1.3, who: 'elof', line: 'bogLightMist', id: 'bog:light-mist' }],
+    stage: { elof: [
+      { at: 0, act: 'look', aimByElof: { x: 0.25, y: 1.65, z: 0.15 } },
+      // Then out into the mist ahead, where the light shows the way.
+      { at: 1.2, act: 'look', aimByElof: { x: 4, y: 1.1, z: 0 } },
+    ],
+    // A little closer on him and the light in his hand, with the mist closing in behind; he takes it within reach of 142.
+    shots: [{ at: 0.1, x: 142.4, y: 1.7, height: 6.2, move: 1.2 }] },
   }],
   goalX: 197,
   ground: [
@@ -420,8 +438,9 @@ export const myren: ChapterData = {
   ],
   rides: [{ id: 'crane', look: 'crane', ...CRANE }, { id: 'toss', look: 'none', ...TOSS }],
   jumps: [...hops(OUT), ...hops(HOME)],
-  // Mamma's lamp on the boardwalk is a warm point in the mist behind him.
-  mist: { after: 'light', lamp: { x: 127, y: 6.1 } },
+  // Mamma's lamp on the boardwalk is a warm point in the mist behind him. Before he takes it, the lysklubba's light glows
+  // on the moss round it; as he takes it, he holds it up high (the scene `lysklubba`).
+  mist: { after: 'light', lamp: { x: 127, y: 6.1 }, raise: LANTERN_SCENE },
   // For the picture only (content/life.ts): what happens far off, where the trail is calm. A moose walks out of
   // the mist on the far shore while he crosses the wide firm tussocks after the second big candy: open water
   // before it, and nothing to use anywhere in the picture. Cranes cross the sky where he comes down from the
