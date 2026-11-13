@@ -62,6 +62,25 @@ describe('a palm supported on the knee', () => {
       expect(reads).toHaveBeenCalledTimes(3); // no distant face or full-mesh scan while posing
     }
   });
+
+  it('finds the cap of a knee bent through its half bone, on a model scaled to its height after it was bound', () => {
+    // As the family's models are put on their rigs (src/render/rig.ts): bound as exported, scaled up, and the knee's half
+    // bone bound in (./joints.ts) without the mesh's attached bind inverse being brought up to date. The cap is the half
+    // bone's; before, it was never cached and the palm went to the shin under the knee, through it (13 November 2026).
+    const model = new Group(), knee = new Bone(), half = new Bone();
+    knee.name = 'calf_r'; half.name = 'calf_r_half'; model.add(knee, half);
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new Float32BufferAttribute([-.1, .1, -.1, .1, .1, -.1, 0, .1, .1, -.1, -.25, -.1, .1, -.25, -.1, 0, -.25, .1], 3));
+    geometry.setAttribute('skinIndex', new Uint16BufferAttribute([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 4));
+    geometry.setAttribute('skinWeight', new Float32BufferAttribute(Array.from({ length: 24 }, (_, i) => i % 4 === 0 ? 1 : 0), 4));
+    const mesh = new SkinnedMesh(geometry, new MeshBasicMaterial()); model.add(mesh);
+    model.updateMatrixWorld(true); mesh.bind(new Skeleton([knee, half]));
+    model.scale.setScalar(3); model.updateWorldMatrix(true, true);
+    mesh.bind(new Skeleton([knee, half], mesh.skeleton.boneInverses.map(m => m.clone())), mesh.bindMatrix);
+    const contact = kneeSupport(model, knee, 'r', 6)(v());
+    expect(contact.y).toBeCloseTo(.3, 6);
+    expect(contact.x).toBeCloseTo(0, 6); expect(contact.z).toBeCloseTo(0, 6);
+  });
 });
 
 // The scene owns the support weight; a held reading frame or Pause must not advance its acquisition.

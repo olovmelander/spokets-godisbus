@@ -440,7 +440,10 @@ export const PROLOG_SCENES: SceneDef[] = [
         moa: [
           { at: 1.8, act: 'stand' },
           { at: 2.2, act: 'show', holds: 'drawing' },
-          { at: 8.0, act: 'crouch', holds: null, aim: { x: 44.4, y: -0.4, z: 0 } },
+          // Pappa reads the hope in her drawing out, and Elof looks at it: a little shy, she lowers it, looks down and
+          // sways (Olov, 13 November 2026: "Sen skäms Moa litegrann av pappa och Elof"), until Elof sees the ghost.
+          { at: 7.1, act: 'shy' },
+          { at: 8.3, act: 'crouch', holds: null, aim: { x: 44.4, y: -0.4, z: 0 } },
         ],
         bertil: [
           { at: 0.6, act: 'look', aim: { x: PALM.x, y: PALM.y + 0.6, z: PALM.z } },
@@ -453,6 +456,8 @@ export const PROLOG_SCENES: SceneDef[] = [
         { at: 0, rides: 'pappa', move: 0.5, act: 'watch', aim: { x: 43.1, y: 2.6, z: -1.4 } },
         { at: 2.6, act: 'watch', aim: { x: 40.8, y: 3.2, z: -2.4 } },
         { at: 6.3, act: 'watch', aim: { x: 43.1, y: 2.6, z: -1.4 } },
+        // And back to Moa's drawing, as Pappa reads it: it makes her a little shy.
+        { at: 6.8, act: 'watch', aim: { x: 40.8, y: 1.8, z: -2.2 } },
         { at: 8.2, act: 'point', aim: { x: 44.4, y: -0.4, z: 0 } },
         // Set down on the planks again, he steps off.
         { at: 9.7, rides: null, move: 0.5, act: null },

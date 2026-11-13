@@ -99,6 +99,8 @@ export type Act =
   | 'startle' | 'stomp' | 'hands' | 'watch' | 'paint' | 'eat'
   // the family's own: putting on the raincoat and the boots (src/render/rain-gear.ts), standing
   | 'dress'
+  // a little shy, holding what was shown (Moa's drawing in the prologue, src/render/drawing-hold.ts)
+  | 'shy'
   // the ghost: a wooden toy that has come alive, and never bends
   | 'carved' | 'wake' | 'waddle' | 'grab' | 'run' | 'freeze' | 'tilt' | 'hop' | 'peek';
 
