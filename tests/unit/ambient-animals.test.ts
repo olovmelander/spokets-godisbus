@@ -112,7 +112,7 @@ describe('their lives in the game (src/render/ambient-animals.ts)', () => {
     for (const [kind, shown] of [['and', 'and'], ['and-hona', 'and-hona']] as const) {
       const rig = rigAmbient(ducks, kind)!;
       expect(rig).not.toBeNull();
-      expect(rig.clips.names.sort()).toEqual(['dabble', 'flap', 'look', 'paddle', 'preen', 'quack']);
+      expect([...rig.clips.names].sort()).toEqual(['dabble', 'flap', 'look', 'paddle', 'preen', 'quack']);
       const visible: string[] = [];
       rig.level.traverse((node) => {
         const mesh = node as SkinnedMesh;
