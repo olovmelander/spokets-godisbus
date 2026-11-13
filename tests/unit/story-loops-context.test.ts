@@ -146,7 +146,7 @@ describe('the mountain candy has a local way back to the ordinary path', () => {
 
 describe('optional-route reminders only inspect progress', () => {
   it('keeps optional clues mysterious even if later chapters have saved memories', () => {
-    const history = { berget: ['memory'], norrsken: ['placed:tragubbe', 'eyes', 'bag'] };
+    const history = { berget: ['memory'], norrsken: ['placed:tragubbe', 'bag'] };
     const visits = [
       reminder('garden', gardenOpened, atSurface, history),
       reminder('garden', gardenOpened, atPocket, history),

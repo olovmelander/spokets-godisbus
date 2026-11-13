@@ -107,7 +107,7 @@ describe('explicit chapter choices start a fresh playthrough', () => {
 
   it.each([
     { chapter: epilog, flags: ['goal', 'beat:named', 'partied', 'knife', 'cut1', 'cut2', 'cut3', 'dots', 'teeth', 'bedtime', 'scene:bathroom'] },
-    { chapter: norrsken, flags: ['goal', 'lower', 'nr:rope-ready', 'placed:tragubbe', 'eyes', 'bag', 'shared', 'taste', 'scene:aterfunna'] },
+    { chapter: norrsken, flags: ['goal', 'lower', 'nr:rope-ready', 'haul', 'placed:tragubbe', 'bag', 'shared', 'taste', 'scene:aterfunna'] },
     { chapter: morgonen, flags: ['goal', 'shelf:old', 'shelf:small', 'latch', 'cocoa', 'a2slut', 'scene:frukost', 'scene:slut'] },
   ])('$chapter.id: a completed story starts at its actual spawn instead of resuming a late tableau', ({ chapter, flags }) => {
     const save = { ...newSave(1, chapter.id), checkpoint: chapter.checkpoints!.length - 1,
