@@ -108,7 +108,7 @@ describe('the jay on the ground (src/render/jay.ts)', () => {
     expect(['idle', 'peck']).toContain(rig.playing);
   });
 
-  it('takes his berry, holds it in its beak, swallows it and hops for joy', () => {
+  it('takes his berry, holds it in its beak, swallows it, calls and hops for joy', () => {
     const bird = new Group();
     const rig = rigJay(bird, model)!;
     frame(bird, false, 36, 1);
@@ -120,8 +120,11 @@ describe('the jay on the ground (src/render/jay.ts)', () => {
     frame(bird, true, 36, EAT.swallowed + 0.1, false, 0.5);
     expect(rig.berry.visible).toBe(false);
     frame(bird, true, 36, EAT.seconds + 0.3, false, EAT.swallowed + 0.1);
-    expect(rig.playing).toBe('hop');
-    frame(bird, true, 36, EAT.seconds + 2.5, false, EAT.seconds + 0.3);
+    expect(rig.playing).toBe('call');
+    frame(bird, true, 36, EAT.seconds + EAT.call + 0.3, false, EAT.seconds + 0.3);
+    expect(rig.playing).toBe('glad');
+    expect(rig.clips.showing().some((clip) => clip.name === 'hop')).toBe(true);
+    frame(bird, true, 36, EAT.seconds + EAT.call + 2.5, false, EAT.seconds + EAT.call + 0.3);
     expect(rig.playing).toBe('look');
   });
 

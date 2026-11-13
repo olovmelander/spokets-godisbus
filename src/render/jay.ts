@@ -102,7 +102,7 @@ export function hasJayClips(model: Object3D): boolean {
   return creatureClipsOf(model, 'jay').length > 0;
 }
 
-const CLIPS = ['idle', 'look', 'hop', 'eat', 'fly', 'glide', 'land', 'perch', 'takeoff'];
+const CLIPS = ['idle', 'look', 'hop', 'peck', 'eat', 'call', 'fly', 'glide', 'land', 'perch', 'takeoff'];
 
 /**
  * Puts a copy of the rigged jay in `bird` in the place of the stand-in's parts. `fade` 0: its clips change at once,
@@ -125,15 +125,19 @@ export function rigJay(bird: Object3D, model: Object3D, fade = 0.25): JayRig | n
   return rig;
 }
 
-function play(rig: JayRig, name: string, options: { once?: boolean; restart?: boolean; speed?: number } = {}): void {
+/** Plays a clip on its own clock; `as` names what it is doing, where one clip serves two (a hop round, hops for joy). */
+function play(rig: JayRig, name: string, options: { once?: boolean; restart?: boolean; speed?: number } = {}, as = name): void {
   rig.clips.play(name, options);
-  rig.playing = name;
+  rig.playing = as;
 }
 
 // --- on the ground, where he gives it a berry --------------------------------------------------------------------------
 
-/** How long it eats its berry, then hops for joy; when the berry is in its beak (as the clip `eat` is made). */
-export const EAT = { seconds: 56 / 24, from: 0.3, swallowed: 27 / 24, hops: 3 } as const;
+/**
+ * How long it eats its berry; when the berry is in its beak (as the clip `eat` is made); then it calls (the clip `call`)
+ * and hops for joy.
+ */
+export const EAT = { seconds: 56 / 24, from: 0.3, swallowed: 27 / 24, call: 32 / 24, hops: 3 } as const;
 /** A hop on the spot, and the part of it in the air, as shares of it (the clip `hop`: frames 4 to 9 of 12). */
 const HOP = { seconds: 0.5, from: 0.3, to: 0.75 } as const;
 /** Within this far of it, it looks at him. */
@@ -152,8 +156,8 @@ export interface GroundFrame {
 
 /**
  * The jay where he gives it a lingonberry, for one frame: it looks about and pecks while he is away, turns to him (a
- * hop round) and cocks its head at him when he comes near, and given its berry it reaches out, takes it, swallows it
- * and hops for joy. With less motion it holds still, turned to him.
+ * hop round) and cocks its head at him when he comes near, and given its berry it reaches out, takes it, swallows it,
+ * calls and hops for joy. With less motion it holds still, turned to him.
  */
 export function stepGroundJay(bird: Object3D, rig: JayRig, f: GroundFrame): void {
   const dx = f.elof ? f.elof.x - f.x : Infinity;
@@ -164,7 +168,9 @@ export function stepGroundJay(bird: Object3D, rig: JayRig, f: GroundFrame): void
   else if (f.used) rig.since = rig.since < 0 ? 0 : rig.since + f.dt;
   else rig.since = -1;
   const eating = rig.since >= 0 && rig.since < EAT.seconds;
-  const glad = rig.since >= EAT.seconds && rig.since < EAT.seconds + EAT.hops * HOP.seconds;
+  const after = rig.since - EAT.seconds;
+  const calling = after >= 0 && after < EAT.call;
+  const glad = after >= EAT.call && after < EAT.call + EAT.hops * HOP.seconds;
   rig.berry.visible = !f.calm && rig.since >= EAT.from && rig.since < EAT.swallowed;
   if (f.calm) {
     rig.turn = null;
@@ -179,7 +185,7 @@ export function stepGroundJay(bird: Object3D, rig: JayRig, f: GroundFrame): void
     const k = smooth((rig.turn.t / HOP.seconds - HOP.from) / (HOP.to - HOP.from));
     rig.heading = rig.turn.from + (rig.turn.to - rig.turn.from) * k;
     if (rig.turn.t >= HOP.seconds) { rig.heading = rig.turn.to; rig.turn = null; }
-  } else if (want !== Math.sign(rig.heading) && !eating) {
+  } else if (want !== Math.sign(rig.heading) && !eating && !calling) {
     // It hops round to face him.
     rig.turn = { from: rig.heading, to: want, t: 0 };
     play(rig, 'hop', { once: true, restart: true });
@@ -187,7 +193,8 @@ export function stepGroundJay(bird: Object3D, rig: JayRig, f: GroundFrame): void
   face(bird, rig.heading);
   if (!rig.turn) {
     if (eating) { if (rig.playing !== 'eat') play(rig, 'eat', { once: true, restart: true }); }
-    else if (glad) { if (rig.playing !== 'hop') play(rig, 'hop', { restart: true }); }
+    else if (calling) { if (rig.playing !== 'call') play(rig, 'call', { once: true, restart: true }); }
+    else if (glad) { if (rig.playing !== 'glad') play(rig, 'hop', { restart: true }, 'glad'); }
     else if (near || f.used) play(rig, 'look');
     // Away from him it looks about, and now and then pecks at the ground.
     else play(rig, (f.clock + f.x * 1.7) % 11 > 8.4 ? 'peck' : 'idle');
