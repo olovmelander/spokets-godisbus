@@ -371,7 +371,7 @@ for (const [course, tier, far] of [['look-forest', 'low', 16], ['look-forest', '
   await page.keyboard.down('ArrowRight');
   // The chapter's coda plays before its last page (docs/narrative-audit/threads.md §5.4). Gården's coda is now his walk
   // through the arch into the forest (about 7.6 s after the goal, was 5): CI's software rendering needs more than 60 s.
-  await page.waitForSelector('#endCard:not([hidden])', { timeout: 150000 });
+  await page.waitForSelector('#endCard:not([hidden])', { timeout: 240000 });
   await page.keyboard.up('ArrowRight');
   check("the card shows the next chapter's code", (await page.locator('#endCode').isVisible()) && (await page.locator('#endCodeWords').textContent()) === 'GRAN KOTTE MOSSA', await page.locator('#endCodeWords').textContent());
   await finish();

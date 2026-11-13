@@ -104,7 +104,9 @@ try {
     const reached = Date.now();
     await page.keyboard.up('ArrowRight');
     check(`${name}: no card at the goal itself: the coda plays first`, await page.locator('#endCard').isHidden());
-    await page.waitForSelector('#endCard:not([hidden])', { timeout: 90000 });
+    // The page waits for his walk into the forest (about 7.6 s of frame time after the goal); under CI's software
+    // rendering that is two minutes or more.
+    await page.waitForSelector('#endCard:not([hidden])', { timeout: 240000 });
     // The coda's seconds are counted in frame time, which never runs ahead of the clock.
     check(`${name}: the page comes after the coda`, Date.now() - reached >= 4000);
     check(`${name}: the coda's last picture is glued into the page`, await page.locator('#endPicture canvas').count() === 1

@@ -57,7 +57,8 @@ try {
 
   page = await open(context, 'course=garden&at=208.5,0.01&flags=dewsong');
   await page.keyboard.down('ArrowRight');
-  await page.waitForSelector('#endCard:not([hidden])', { timeout: 60000 });
+  // The page waits for his walk into the forest (about 7.6 s after the goal): more than 60 s under CI's software rendering.
+  await page.waitForSelector('#endCard:not([hidden])', { timeout: 240000 });
   await page.keyboard.up('ArrowRight');
   check('a public end card offers the next chapter', await page.locator('#endOnward').isVisible());
   await Promise.all([page.waitForURL((url) => url.searchParams.get('course') === 'granskog'), page.click('#endOnward')]);
