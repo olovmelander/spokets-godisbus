@@ -110,7 +110,7 @@ try {
     }
     const summit = await until(state, (s) => s.flags.includes('found:chokladpralin'), `${name}: summit reward`);
     check(`${name}: reward opens return without another Use flag`, summit.said.includes('cairn-loop') && summit.checkpoint === 4 && !summit.flags.includes('goal'));
-    await until(() => page.locator('#bubbleLine').innerText(), (line) => line === 'Snöret runt röset. En väg ner!', `${name}: visible return objective`);
+    await until(() => page.locator('#bubbleLine').innerText(), (line) => line === 'Ett snöre här uppe! Nu kan jag åka ner.', `${name}: visible return objective`);
     check(`${name}: optional return objective is visible beside the earned route`, await page.locator('#bubble').isVisible());
     await picture(page, join(shots, `${name}-summit.png`));
     await page.keyboard.press('Escape');
