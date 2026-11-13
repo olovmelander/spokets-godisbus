@@ -174,7 +174,7 @@ export interface RideFrame {
 }
 
 /** How long it takes to rise from where it stood and take him up. */
-export const BOARD = 0.7;
+export const BOARD = 0.55;
 /** How much of the way is left when it starts to brake, its talons forward. */
 const BRAKE = 0.14;
 const SEAT = new Vector3(0, 0.05, 0);
@@ -198,7 +198,7 @@ export function ride(rig: OwlRig, prop: Object3D, f: RideFrame): void {
   turn.scale.set(1, 1, 1);
   const lift = f.still ? 1 : smooth(f.since / BOARD);
   if (lift < 1) {
-    clips.scrub('takeoff', 0.15 + 0.85 * f.since / BOARD);
+    clips.scrub('takeoff', 0.3 + 0.7 * f.since / BOARD);
     turn.rotation.set(0, FACING_CAMERA * (1 - smooth(f.since / (BOARD * 0.8))), 0);
   } else {
     turn.rotation.set(0, 0, 0);
