@@ -22,7 +22,7 @@ import { CLOSE_DETAIL } from './ground-detail';
  */
 
 /** Half a needle card's width, and where along its shoot it begins and ends, in the shoot's lengths (`CARD` in the kit). */
-export const NEEDLE_CARD = { half: 0.34, from: -0.03, to: 1.22 } as const;
+export const NEEDLE_CARD = { half: 0.42, from: -0.03, to: 1.38 } as const;
 
 const BARK = /* glsl */ `
   float pineHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -67,22 +67,23 @@ export function pineBark(material: MeshStandardMaterial): MeshStandardMaterial {
 
         // The old plates: broad and long up the stem, on ridges that wander, part and meet, with deep furrows
         // between them and here and there a break across.
-        vec3 plate = pinePlates(at, vec2(0.3, 0.5), 0.6);
-        float rim = plate.x + 0.05 * (pineNoise(at * vec2(18.0, 6.0)) - 0.5);
-        float furrow = smoothstep(0.03 + 0.06 * plate.z, 0.17 + 0.07 * plate.z, rim);
-        float breakAcross = mix(1.0, smoothstep(0.01, 0.05, plate.y), step(0.2, pineHash(vec2(plate.z, 3.0))));
-        // Its face rounds over into the furrow, and lies in thin layers.
-        float plateHigh = furrow * mix(0.6, 1.0, breakAcross) * (0.88 + 0.12 * smoothstep(0.1, 0.4, rim));
-        vec3 plates = base * (0.86 + 0.28 * plate.z) * (0.95 + 0.08 * pineNoise(vec2(at.x * 24.0, at.y * 70.0)));
+        vec3 plate = pinePlates(at, vec2(0.22, 0.42), 0.6);
+        float rim = plate.x + 0.06 * (pineNoise(at * vec2(18.0, 6.0)) - 0.5);
+        float furrow = smoothstep(0.02 + 0.05 * plate.z, 0.24 + 0.06 * plate.z, rim);
+        float breakAcross = mix(1.0, smoothstep(0.0, 0.07, plate.y), step(0.2, pineHash(vec2(plate.z, 3.0))));
+        // Its face rounds over into the furrow, and is rough with thin layers and flakes coming off.
+        float layers = pineNoise(vec2(at.x * 16.0, at.y * 46.0));
+        float plateHigh = furrow * mix(0.55, 1.0, breakAcross);
+        vec3 plates = base * (0.84 + 0.3 * plate.z) * (0.86 + 0.24 * layers);
         // Weathered grey on the faces of some plates.
-        plates = mix(plates, vec3(dot(plates, vec3(0.33, 0.38, 0.29))) * 1.08, 0.45 * smoothstep(0.5, 0.8, pineNoise(at * vec2(3.5, 1.2) + 8.0)));
+        plates = mix(plates, vec3(dot(plates, vec3(0.33, 0.38, 0.29))) * 1.1, 0.45 * smoothstep(0.5, 0.8, pineNoise(at * vec2(3.5, 1.2) + 8.0)));
         // The furrow's walls are the red-brown of the bark under the plates, its floor dark.
-        vec3 furrowColour = mix(base * vec3(0.56, 0.42, 0.34), base * 0.3, smoothstep(0.02, 0.0, rim - 0.015));
+        vec3 furrowColour = mix(base * vec3(0.5, 0.36, 0.28), base * 0.22, 1.0 - smoothstep(0.0, 0.05, rim));
         plates = mix(furrowColour, plates, plateHigh);
         // Crust lichen in grey-green patches on the plates.
         float lichen = smoothstep(0.7, 0.82, pineNoise(at * vec2(3.0, 1.6) + 31.0) * 0.75 + pineNoise(at * 26.0) * 0.25) * plateHigh;
         plates = mix(plates, vec3(0.42, 0.46, 0.36) * (0.8 + 0.4 * pineNoise(at * 70.0)), 0.5 * lichen * fine);
-        float plateRelief = 0.05 * plateHigh;
+        float plateRelief = 0.034 * plateHigh + 0.006 * layers * furrow;
 
         // The thin bark: small papery flakes, each its own shade, some fresh and red, with pale curled edges.
         vec3 flake = pinePlates(at + vec2(0.0, 0.31), vec2(0.09, 0.07), 0.5);
@@ -139,8 +140,8 @@ export function pineNeedles(): MeshStandardMaterial {
         float pixel = length(fwidth(vec2(s, offTwig)));
         // The needles leave the twig every SPACING, at their angle, and reach their length: nearly as long all along
         // the shoot, and leaning further forward towards its tip, where they close into a brush.
-        const float SPACING = 0.075;
-        float lean = mix(0.95, 0.5, clamp(s, 0.0, 1.0));
+        const float SPACING = 0.085;
+        float lean = mix(1.0, 0.45, clamp(s, 0.0, 1.0));
         float guess = (s - y / tan(lean)) / SPACING;
         float cover = 0.0;
         float tone = 0.5;
@@ -151,27 +152,27 @@ export function pineNeedles(): MeshStandardMaterial {
           float from = (k + 0.35 * (own - 0.5)) * SPACING;
           if (from < 0.03 || from > 1.0) continue;
           // Each needle points its own way round the shoot as well, and is seen shorter as it turns towards him.
-          float angle = mix(0.95, 0.5, from) + 0.45 * (pineHash(vec2(k, side + 11.0)) - 0.5);
-          float reach = (0.25 + 0.07 * sin(3.14159 * min(1.0, from * 1.1))) * mix(0.5, 1.08, pineHash(vec2(k, side + 23.0)));
+          float angle = mix(1.0, 0.45, from) + 0.45 * (pineHash(vec2(k, side + 11.0)) - 0.5);
+          float reach = (0.33 + 0.07 * sin(3.14159 * min(1.0, from * 1.1))) * mix(0.5, 1.0, pineHash(vec2(k, side + 23.0)));
           vec2 way = vec2(cos(angle), sin(angle));
           vec2 there = vec2(s - from, y);
           float t = clamp(dot(there, way), 0.0, reach);
           float far = length(there - way * t);
-          float wide = max(mix(0.014, 0.005, t / reach), pixel * 0.55);
+          float wide = max(mix(0.013, 0.004, t / reach), pixel * 0.55);
           float c = 1.0 - smoothstep(wide - pixel * 0.5, wide + pixel * 0.5, far);
           if (c > cover) { cover = c; tone = own; tip = t / reach; }
         }
         // The twig in the middle.
         float twig = (1.0 - smoothstep(0.012, 0.012 + pixel, y)) * step(0.0, s) * step(s, 1.0);
         // From far off, the shoot's outline: a brush, rounded at its tip.
-        float outline = (0.25 + 0.07 * sin(3.14159 * clamp(s * 1.1, 0.0, 1.0))) * sin(lean) * 0.8;
+        float outline = (0.33 + 0.07 * sin(3.14159 * clamp(s * 1.1, 0.0, 1.0))) * sin(lean) * 0.75;
         float shape = (1.0 - smoothstep(outline - pixel, outline + pixel, y)) * step(0.02, s) * (1.0 - smoothstep(1.08, 1.16, s));
         float distant = smoothstep(0.35, 0.9, pixel / SPACING);
         cover = mix(cover, shape, distant);
         tone = mix(tone, 0.5, distant);
         // Each needle a little lighter or bluer than the next, and lighter towards its end.
         vec3 needle = diffuseColor.rgb * (0.78 + 0.42 * tone) * mix(0.82, 1.18, tip);
-        needle = mix(needle, needle * vec3(0.88, 1.0, 1.14) + 0.012, step(0.7, tone) * 0.7);
+        needle = mix(needle, needle * vec3(0.92, 1.0, 1.08) + 0.012, step(0.7, tone) * 0.7);
         vec3 brown = vec3(0.16, 0.1, 0.06);
         float wood = twig * (1.0 - cover);
         diffuseColor.rgb = mix(needle, brown, wood);

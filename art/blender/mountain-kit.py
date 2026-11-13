@@ -703,7 +703,7 @@ def worn(name, key, radii, cuts, top, pits, crust, levels):
     for vert in bm.verts:
         d = vert.co.normalized()
         p = Vector((d[0] * radii[0], d[1] * radii[1], d[2] * radii[2]))
-        p = p * (1.0 + 0.1 * (noise(d + Vector((key, 0.0, 0.0)), 1.2) - 0.5) + 0.035 * (noise(d, 3.4) - 0.5))
+        p = p * (1.0 + 0.18 * (noise(d + Vector((key, 0.0, 0.0)), 1.2) - 0.5) + 0.05 * (noise(d, 3.4) - 0.5))
         for plane in planes:
             past = p.dot(plane[0]) - plane[1]
             p = p - plane[0] * ((past + math.sqrt(past * past + plane[2] * plane[2])) * 0.5)
@@ -1165,7 +1165,7 @@ for row in (('skott-grov', 7, 0.11, 65),):
 # +Z, and its cards reach a little past its end, where the needles of its tip do. CARD says how far: half a card's
 # width, and where along the shoot it begins and ends (old-pine.ts has the same numbers). Its corners are lit as a
 # round tuft is: forward at its end, out at its sides, back at its foot.
-CARD = (0.34, -0.03, 1.22)
+CARD = (0.42, -0.03, 1.38)
 # The old pine's needles: a grey, blue-green, darker where a shoot comes out of its twig.
 PINE_NEEDLE = (tone('#1e3027'), tone('#36503f'), tone('#5b7556'))
 
@@ -1367,13 +1367,13 @@ if wanted('tall'):
             at = path[min(len(path) - 1, int(plate[2] * (len(path) - 1)))]
             hub = Vector(plate[0])
             limb(part, [at, (at + hub) / 2.0 + Vector((0.14, 0.0, -0.1)), hub], [0.12, 0.09, 0.06], 6, 'limb', 0.0, False, number * 3.7 + plate[2])
-            tufts(part, plate[0], plate[1], 40 + number * 10 + int(plate[2] * 7.0), int(6.0 + 5.5 * plate[1][0] * plate[1][1]), 0.44, -1.0)
+            tufts(part, plate[0], plate[1], 40 + number * 10 + int(plate[2] * 7.0), int(6.0 + 5.5 * plate[1][0] * plate[1][1]), 0.4, -1.0)
     # The leader carries the crown's top, well over the rest.
     for plate in (((-0.85, 1.1, 5.1), (1.3, 1.15, 0.6), 0.74), ((-2.1, 1.4, 5.85), (1.5, 1.2, 0.62), 0.9), ((-3.35, 1.6, 6.0), (1.2, 1.05, 0.52), 1.0)):
         at = spine[min(len(spine) - 1, int(plate[2] * (len(spine) - 1)))]
         hub = Vector(plate[0])
         limb(part, [at, (at + hub) / 2.0 + Vector((0.1, 0.0, -0.1)), hub], [0.12, 0.09, 0.06], 6, 'limb', 0.0, False, 20.0 + plate[2])
-        tufts(part, plate[0], plate[1], 90 + int(plate[2] * 9.0), int(6.0 + 5.5 * plate[1][0] * plate[1][1]), 0.44, -1.0)
+        tufts(part, plate[0], plate[1], 90 + int(plate[2] * 9.0), int(6.0 + 5.5 * plate[1][0] * plate[1][1]), 0.4, -1.0)
 
     # The dead limb: silver, bare, crooked, with the stubs of its twigs.
     dead = smooth([(0.15, -0.2, 1.72), (0.9, -0.42, 2.1), (1.6, -0.6, 2.45), (2.6, -0.85, 2.62), (3.35, -0.65, 3.2), (3.8, -0.5, 4.0)], 5, 0.09, 8.0)

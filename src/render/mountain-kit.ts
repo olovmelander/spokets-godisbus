@@ -270,10 +270,10 @@ const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math
 
 /**
  * Stones as one shape: each is one of `shapes`, turned every way and sunk into the ground, with lichen on the
- * side that ends up facing the sky and the damp dark where it meets the rock. Shapes that are `painted` lie as
- * they were built, with their own lichen (the worn stones by the old pine): those get only the damp.
+ * side that ends up facing the sky and the damp dark where it meets the rock. The shapes from `painted` on have
+ * their own lichen (the worn stones by the old pine): those get only the damp.
  */
-export function stones(places: readonly StonePlace[], shapes: readonly Shape[], painted = false): BufferGeometry {
+export function stones(places: readonly StonePlace[], shapes: readonly Shape[], painted = Infinity): BufferGeometry {
   const made = build();
   const matrix = new Matrix4();
   const turn = new Quaternion();
@@ -282,7 +282,7 @@ export function stones(places: readonly StonePlace[], shapes: readonly Shape[], 
     matrix.compose(point.set(place.x, place.y, place.z), turn.setFromEuler(new Euler(...place.turn)), size.setScalar(place.size));
     put(made, shapes[place.shape % shapes.length]!, matrix, (colour, where, towards) => {
       colour.multiplyScalar(place.tone);
-      if (!painted) colour.lerp(CRUST, smooth(0.35, 0.95, towards.y) * (0.25 + 0.5 * noise(where.x * 2.1 + 3, where.z * 2.1)));
+      if (place.shape % shapes.length < painted) colour.lerp(CRUST, smooth(0.35, 0.95, towards.y) * (0.25 + 0.5 * noise(where.x * 2.1 + 3, where.z * 2.1)));
       colour.multiplyScalar(0.62 + 0.38 * smooth(0, 0.3 * place.size + 0.08, where.y - place.foot));
     });
   }
@@ -447,6 +447,17 @@ export const WORN = ['sten-rund-a', 'sten-rund-b', 'sten-rund-c'] as const;
 /** How far under a worn stone's middle the ground meets it, in its size (`STONE_GROUND` in the kit). */
 const WORN_GROUND = 0.28;
 
+/** How far from the old pine the stones of the scatter are worn ones: on the summit where the story ends. */
+const WORN_REACH = 9;
+/** Which worn stone takes the place of each of the scatter's three (`sten-a`, `-b`, `-c`): a round one, or the low one for the slab. */
+const WORN_FOR = [1, 1, 2] as const;
+
+/** A stone of the scatter near the old pine, as the worn one it is there (shape counted after the scatter's three); others as they are. */
+export function wornNearPine(chapter: ChapterData, place: StonePlace): StonePlace {
+  if (!chapter.pine || Math.abs(place.x - chapter.pine.x) >= WORN_REACH) return place;
+  return { ...place, shape: 3 + WORN_FOR[place.shape % 3]!, turn: [0, place.turn[1], 0], y: place.foot + place.size * WORN_GROUND };
+}
+
 /** The stones by the old pine as they lie, where its stem is and with the way it is turned (`side`: -1 mirrored). */
 export function byThePine(pineX: number, foot: number, side: number): StonePlace[] {
   return BY_THE_PINE.map(([dx, dz, size, shape, turn]): StonePlace => ({ x: pineX + dx * side, y: foot + size * WORN_GROUND, z: PINE_DEPTH + dz, size, turn: [0, turn, 0], shape, tone: 1, foot }));
@@ -468,6 +479,8 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
     const kit = mountainKit(model);
     const loose = ['sten-a', 'sten-b', 'sten-c'].flatMap((name) => kit.get(name) ?? []);
     if (loose.length === 0) return false;
+    // The worn stones by the old pine, all three or none.
+    const worn = WORN.flatMap((name) => kit.get(name) ?? []);
 
     // What he stands on: each rock of the chapter that the kit has a part for.
     const rocks = outcrops(chapter);
@@ -530,7 +543,10 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
         }
       } else if ('stones' in socket) {
         mesh.geometry.dispose();
-        mesh.geometry = barky(stones(socket.stones, loose), STONE);
+        // Round the old pine the stones are the worn ones, as by its foot.
+        const round = worn.length === WORN.length && loose.length === 3;
+        const placed = round ? socket.stones.map((place) => wornNearPine(chapter, place)) : socket.stones;
+        mesh.geometry = barky(stones(placed, round ? [...loose, ...worn] : loose, loose.length), STONE);
       } else if (socket.standIn === 'shelters' ? sheltered : socket.standIn === 'step' ? stepped.has(node.userData.mover as string) : cairn.index.length > 0) {
         gone.push(node);
       } else return;
@@ -544,13 +560,12 @@ export function createMountain(chapter: ChapterData, ledges: { install(carved: (
     // The old pine, with the stones at its foot. Mirrored, it is swept the other way. Its wood and its needles are
     // two draws, each with what draws its bark or its needles (./old-pine.ts).
     const tree = chapter.pine ? oldPine(kit, at(chapter.pine.x, heightAt(chapter, chapter.pine.x) - 0.04, PINE_DEPTH, chapter.pine.flip === true)) : null;
-    const worn = WORN.flatMap((name) => kit.get(name) ?? []);
     if (chapter.pine && tree && worn.length === WORN.length) {
       const wood = new Mesh(tree.wood, pineBark(new MeshStandardMaterial({ vertexColors: true, roughness: 0.9 })));
       wood.name = 'old-pine';
       const needles = new Mesh(tree.needles, pineNeedles());
       needles.name = 'old-pine-needles';
-      const beside = new Mesh(barky(stones(byThePine(chapter.pine.x, heightAt(chapter, chapter.pine.x), chapter.pine.flip ? -1 : 1), worn, true), STONE), rock);
+      const beside = new Mesh(barky(stones(byThePine(chapter.pine.x, heightAt(chapter, chapter.pine.x), chapter.pine.flip ? -1 : 1), worn, 0), STONE), rock);
       beside.name = 'old-pine-stones';
       group.add(wood, needles, beside);
     }
