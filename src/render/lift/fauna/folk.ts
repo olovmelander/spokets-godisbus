@@ -101,6 +101,15 @@ const PQ = new Quaternion();
 const TQ = new Quaternion();
 const AX = new Vector3();
 
+/** Whether the page was asked to show something at once (`?fox`, `?eat`), to look at it. */
+function asked(name: string): boolean {
+  try {
+    return new URLSearchParams(globalThis.location?.search ?? '').has(name);
+  } catch {
+    return false;
+  }
+}
+
 /** Turns a bone about a way in the world (its parents' pose as it is now), on top of what its clips posed. */
 function turnBone(bone: Object3D | undefined, axis: Vector3, angle: number): void {
   if (!bone?.parent || Math.abs(angle) < 1e-5) return;
@@ -124,6 +133,9 @@ function rigs(kind: Folk, count: number, holder: Group, wants: FolkWant[]): Rigs
       if (fauna && !holder.parent) fauna.add(holder);
       for (const rig of list) {
         rig.root.name = `fauna-rigged:${kind}`;
+        // For a session's pictures and the browser tests: what it shows (CreatureClips.showing), out of its userData, which
+        // is copied as JSON when anything clones it.
+        Object.defineProperty(rig.root, 'creatureClips', { value: rig });
         holder.add(rig.root);
         // What only Mid and High draw (../../rich.ts): laid here too, in case it comes after the view has laid its own.
         rig.root.traverse((part) => part.layers.set(RICH_LAYER));
@@ -140,14 +152,15 @@ const shown = (rig: CreatureClips, on: boolean) => { if (rig.root.visible !== on
 
 /**
  * The forest folk of a chapter's plan: their kinds, in the order the fauna updates them, and what each asks of the
- * loader. The rigged copies go in a group of their own in `fauna`; the code-built shapes are made by `add`.
+ * loader. The rigged copies go in a group of their own in `fauna`; the code-built shapes are made by `add`. `sweets`
+ * are the chapter's candy, which nothing of them sits behind.
  */
-export function forestFolk(plan: Plan, add: FolkAdd, fauna: Object3D): { kinds: FolkKind[]; wants: FolkWant[] } {
+export function forestFolk(plan: Plan, add: FolkAdd, fauna: Object3D, sweets: readonly Sweet[] = []): { kinds: FolkKind[]; wants: FolkWant[] } {
   const wants: FolkWant[] = [];
   const holder = new Group();
   holder.name = 'fauna-rigged';
   holder.userData.fauna = fauna;
-  const kinds = [squirrels(plan, add, holder, wants), foxes(plan, add, holder, wants), beings(plan, add, holder, wants)]
+  const kinds = [squirrels(plan, add, holder, wants, sweets), foxes(plan, add, holder, wants), beings(plan, add, holder, wants)]
     .filter((kind): kind is FolkKind => kind !== null);
   return { kinds, wants };
 }
@@ -192,7 +205,10 @@ export async function installForestFolk(assets: Assets, scene: Object3D): Promis
 
 // --- the squirrels: up and round their trunks, and now and then down to eat a cone at its foot -------------------------
 
-function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): FolkKind | null {
+/** A candy of the chapter, where it is along the path and how high. */
+export interface Sweet { x: number; y: number }
+
+function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], sweets: readonly Sweet[]): FolkKind | null {
   if (!plan.squirrels.length) return null;
   const crowd = add(squirrel(), plan.squirrels.length, undefined, 'squirrels');
   const rigged = rigs('squirrel', plan.squirrels.length, holder, wants);
@@ -205,16 +221,21 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): 
     ...s, a0: s.a, h0: s.h, a1: s.a, h1: s.h, k: 1, run: 0.5, long: 1, wait: next() * 2, fa: 0, fh: 1, flick: next() * 2,
     where: 'trunk' as Where, down: false, air: 0, eat: 0, flickT: 9, bounds: 0, look: 0, side: 1,
     from: new Matrix4(), to: new Matrix4(), place: new Matrix4(),
+    // The sides of its trunk where it may sit on the ground: those where, seen from the path, no candy stands in front.
+    sides: [-1, 1].filter((side) => {
+      const x = s.tree.x + side * (girth(s.tree, 0.1) + 0.5);
+      return sweets.every((c) => Math.abs(c.x - x) > 1.4 || c.y < s.tree.y - 1.5 || c.y > s.tree.y + 4);
+    }),
   }));
   type One = (typeof all)[number];
-  /** Where it sits at the foot of its tree: in front of the trunk, a little to one side, facing across the picture. */
+  /** Where it sits at the foot of its tree: beside the trunk, a little in front, facing out across the picture. */
   const groundOf = (q: One, out: Matrix4) => {
     const tree = q.tree;
     const r = girth(tree, 0.1);
-    F.set(q.side, 0, 0.45).normalize();
+    F.set(q.side, 0, 0.5).normalize();
     U.set(0, 1, 0);
     W.crossVectors(F, U);
-    return out.makeBasis(F, U, W).setPosition(tree.x + q.side * r * 0.35, tree.y, tree.z + r + 0.55);
+    return out.makeBasis(F, U, W).setPosition(tree.x + q.side * (r + 0.5), tree.y, tree.z + r * 0.4);
   };
   /** Where it is on the bark: at angle a round the trunk and height h, running along (fa, fh), belly to it. */
   const barkOf = (q: One, a: number, h: number, fa: number, fh: number, out: Matrix4, lift = 0) => {
@@ -234,6 +255,8 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): 
     return out.compose(P, Q, S.set(1, 1, 1));
   };
   const leapLong = 0.42;
+  // `?eat` sends each down to eat as soon as it can, to look at it.
+  const hungry = asked('eat');
 
   return (now) => {
     const list = rigged.list;
@@ -252,19 +275,19 @@ function squirrels(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): 
       let phase = 0;
       if (q.where === 'trunk') {
         if (q.k < 1) q.k = Math.min(1, q.k + dt / q.run);
-        else if (!now.still && q.down && !near && !tree.snag) {
+        else if (!now.still && q.down && !near) {
           // At the foot of the trunk, on its way down: it jumps off onto the ground in front.
           q.down = false;
           q.where = 'leap-off';
           q.air = 0;
-          q.side = chance() < 0.5 ? -1 : 1;
+          q.side = q.sides[Math.floor(chance() * q.sides.length)] ?? 1;
           q.from.copy(q.place);
           groundOf(q, q.to);
         } else if (!now.still && ((q.wait -= dt) <= 0 || (near && q.h < 6.5))) {
           q.a0 = q.a;
           q.h0 = q.h;
           // Now and then, low on its trunk and with him far off, it runs down head first to the moss.
-          q.down = !near && !tree.snag && q.h < 4 && chance() < 0.35;
+          q.down = !near && !tree.snag && q.sides.length > 0 && q.h < 4 && (chance() < 0.35 || hungry);
           q.h1 = q.down ? 0.42 : near ? 7.2 + next() * 2.5 : Math.min(6, Math.max(1.3, q.h + (next() - 0.45) * 3.6));
           q.a1 = q.down ? (next() - 0.5) * 0.8 : Math.min(2.5, Math.max(-2.5, q.a + (next() - 0.5) * 2.8));
           const across = (q.a1 - q.a0) * girth(tree, (q.h0 + q.h1) / 2);
@@ -374,12 +397,15 @@ function foxes(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Folk
   const crowd = add(fox(), 1, undefined, 'fox');
   const rigged = rigs('fox', 1, holder, wants);
   const next = sequence(23);
+  const first = 18 + next() * 20;
   const fx = {
-    on: false, wait: 18 + next() * 20, x: 0, z: 0, dir: 1, yaw: 0, act: 'out' as FoxAct, time: 0, long: 0, walked: 0,
+    // `?fox` brings it out at once, to look at it (as `?soar` does the birds high over the place).
+    on: false, wait: asked('fox') ? 1 : first, x: 0, z: 0, dir: 1, yaw: 0, act: 'out' as FoxAct, time: 0, long: 0, walked: 0,
     speed: 0, walk: 0, trot: 0, leaving: false, acts: 0, sat: 0, look: 0, startled: false,
   };
   const shoulder = new Matrix4();
-  const flat = (x: number, dir: number) => [0, 3, 6, 9, 12, 15].every((d) => Math.abs(plan.ground(x + dir * d) - plan.ground(x)) < 0.4);
+  /** Level ground for it to do its things on, ahead of x: it goes by the path's ground, far back as it is. */
+  const flat = (x: number, dir: number) => [0, 2, 4, 6, 8, 10].every((d) => Math.abs(plan.ground(x + dir * d) - plan.ground(x)) < 0.4);
   const begin = (act: FoxAct) => {
     fx.act = act;
     fx.time = 0;
@@ -394,10 +420,15 @@ function foxes(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Folk
       crowd.hide(0);
       if (rig) shown(rig, false);
       if ((fx.wait -= now.dt) > 0 || now.day < 0.5 || now.still) return;
-      // It steps out from behind a trunk that is in the picture, on the side away from him.
-      const tree = plan.trees.find((t) => !t.snag && t.z < -7 && t.z > -18 && Math.abs(t.x - now.cx) < (now.cz - t.z) * now.slope * 0.6);
-      const dir = tree ? Math.sign(tree.x - now.x) || 1 : 1;
-      if (!tree || !flat(tree.x, dir)) { fx.wait = 3; return; }
+      // It steps out from behind a trunk that is in the picture, a little way off to one side of him, and goes on away
+      // from him: of those trunks, the nearest to him with level ground for it to trot on, so that it has the picture's
+      // width to do its things in before it is out of it.
+      const away = (t: { x: number }) => Math.sign(t.x - now.x) || 1;
+      const tree = plan.trees
+        .filter((t) => !t.snag && t.z < -7 && t.z > -18 && Math.abs(t.x - now.x) > 3 && Math.abs(t.x - now.cx) < (now.cz - t.z) * now.slope * 0.7 && flat(t.x, away(t)))
+        .sort((a, b) => Math.abs(a.x - now.x) - Math.abs(b.x - now.x))[0];
+      if (!tree) { fx.wait = 3; return; }
+      const dir = away(tree);
       Object.assign(fx, {
         on: true, x: tree.x, z: Math.max(-24, Math.min(-12, tree.z - 3 - next() * 4)), dir, yaw: dir > 0 ? 0 : Math.PI, walked: 0,
         speed: 0, leaving: false, acts: 0, sat: 0, look: 0, startled: false,
@@ -408,8 +439,8 @@ function foxes(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Folk
     const away = Math.abs(now.x - fx.x);
     // Never towards him: if he is ahead of it, it turns and trots the other way.
     if (!now.still && Math.sign(now.x - fx.x) === fx.dir && away > 1.5 && away < 30 && !sitting(fx.act) && fx.act !== 'pounce') fx.dir = -fx.dir;
-    // He comes near: it stops what it does, looks at him a moment, and trots off, away.
-    if (!now.still && !fx.startled && away < 7 && fx.act !== 'pounce') {
+    // He comes near (along the path; it is far back): it stops what it does, looks at him a moment, and trots off, away.
+    if (!now.still && !fx.startled && away < 2.5 && fx.act !== 'pounce') {
       fx.startled = true;
       fx.leaving = true;
       fx.dir = Math.sign(fx.x - now.x) || fx.dir;
@@ -419,13 +450,14 @@ function foxes(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Folk
     fx.time += dt;
     if (fx.act !== 'trot' && fx.time >= fx.long) {
       // Seen enough, or done enough: it trots off, out of the picture.
-      if (fx.acts > 6 || fx.leaving) { fx.leaving = true; begin('trot'); fx.walked = 0; }
+      // Near the edge of the picture, it goes on out of it rather than do more there.
+      if (fx.acts > 7 || fx.leaving || !seen(now, fx.x + fx.dir * 3, fx.z, -2)) { fx.leaving = true; begin('trot'); fx.walked = 0; }
       else {
         const options = FOX_NEXT[fx.act].filter((a) => a !== 'pounce' || Math.sign(now.x - fx.x) !== fx.dir);
         begin(options[Math.floor(next() * options.length)] ?? 'trot');
         if ((fx.act as FoxAct) === 'trot') fx.walked = 0;
       }
-    } else if (fx.act === 'trot' && !fx.leaving && fx.walked > 4 + (fx.acts > 2 ? 2 : 0)) {
+    } else if (fx.act === 'trot' && !fx.leaving && (fx.walked > (fx.acts > 2 ? 3 : 1.6) || !seen(now, fx.x, fx.z, -4) || Math.abs(plan.ground(fx.x + fx.dir * 3) - plan.ground(fx.x)) > 0.4)) {
       begin(FOX_NEXT.trot[Math.floor(next() * FOX_NEXT.trot.length)]!);
     }
     // Which way it faces: along its way, or, sitting, three quarters towards the picture.
@@ -450,8 +482,10 @@ function foxes(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Folk
       fx.x += fx.dir * LEAP * FOX_SIZE * (air(k) - air((fx.time - dt) / fx.long));
       hop = Math.sin(Math.PI * Math.min(1, Math.max(0, (k - 10 / 48) / (17 / 48))));
     }
-    // Gone once it is out of the picture on its way off, or wandered far out of it; it comes again after a while.
-    if (fx.act !== 'out' && (fx.leaving && fx.walked > 1 ? !seen(now, fx.x, fx.z, 4) : !seen(now, fx.x, fx.z, 12))) {
+    // Gone once it is out of the picture on its way off, or wandered far out of it, or where the ground ahead steps up or
+    // down (into the trees there); it comes again after a while.
+    const step = Math.abs(plan.ground(fx.x + fx.dir * 0.8) - plan.ground(fx.x)) > 0.4;
+    if (fx.act !== 'out' && (fx.leaving && fx.walked > 1 ? !seen(now, fx.x, fx.z, 4) || step : !seen(now, fx.x, fx.z, 12))) {
       fx.on = false;
       fx.wait = 40 + next() * 40;
       crowd.hide(0);
@@ -516,6 +550,8 @@ function beings(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Fol
   const next = sequence(61);
   // What a being chooses to do while it is out, apart from its ducking and blinking: so that those are as they were.
   const chance = sequence(67);
+  // `?wave` has them wave whenever he is near enough, to look at it.
+  const friendly = asked('wave');
   const all = plan.beings.map((b) => ({
     ...b, out: 1, wait: 0, blink: 1 + next() * 3, act: 'peek' as BeingAct, actFor: 2 + chance() * 3, waved: false,
     w: { peek: 1, blink: 0, wave: 0 } as Record<BeingAct, number>, clock: chance() * 10,
@@ -541,7 +577,7 @@ function beings(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Fol
         if ((b.actFor -= now.dt) <= 0) {
           const watching = Math.abs(now.x - b.at[0]) < 10;
           const r = chance();
-          b.act = watching && !b.waved && r < 0.4 && b.out > 0.9 ? 'wave' : watching && r < 0.75 ? 'blink' : 'peek';
+          b.act = watching && (!b.waved || friendly) && (r < 0.4 || friendly) && b.out > 0.9 ? 'wave' : watching && r < 0.75 ? 'blink' : 'peek';
           if (b.act === 'wave') b.waved = true;
           if (!watching) b.waved = false;
           b.actFor = b.act === 'wave' ? 3 : b.act === 'blink' ? 1.5 * (1 + Math.floor(chance() * 2)) : 2.5 + chance() * 3;
