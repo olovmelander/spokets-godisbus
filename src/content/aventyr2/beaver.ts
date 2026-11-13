@@ -1,7 +1,9 @@
 import { AdditiveBlending, Color, Group, InstancedMesh, type Mesh, MeshBasicMaterial, type MeshStandardMaterial, Object3D, PlaneGeometry } from 'three';
 import type { ChapterData, Spot } from '../../sim/types';
+import type { CreatureClips } from '../../render/creature-clips';
 import { glowTexture } from '../../render/glow';
 import type { BuildingDef } from './buildings';
+import { lookWith, nodBone, riggedHolder, rigOf, showRigOnly } from './river-creatures';
 
 /**
  * The beaver at its lodge in Älven (art/blender/a2-creatures.py, `baver`), and its life. It sits on the far bank by
@@ -13,9 +15,22 @@ import type { BuildingDef } from './buildings';
  * the lake it goes back in, out of its lodge under the water, and swims out over the lake, low in the water with a
  * wake behind it, slaps the water with its tail and dives. If he goes back along the bank, it is sitting there again.
  *
- * Its head turns on its neck (the kit's `kit-head`), its tail lifts and slaps on its hinge (`baver-svans`), and its stick
- * turns in its paws (`baver-pinne`). It is all the picture's business: nothing here touches the simulation.
+ * The beaver modelled, rigged and animated in Blender (art/blender/beaver.py, ./river-creatures.ts) plays its clips for
+ * each of these: `gnaw`, `look` (its head turned to him on top of it), `thump`, `waddle` (by how far it has gone), `rise`,
+ * `swim`, `slap` and `dive`, and takes its stick home in its teeth. Until it has come, or without its file, the kit's old
+ * beaver moves as it did: its head turns on its neck (the kit's `kit-head`), its tail lifts and slaps on its hinge
+ * (`baver-svans`), and its stick turns in its paws (`baver-pinne`). It is all the picture's business: nothing here
+ * touches the simulation.
  */
+
+/** When its tail hits the ground in `thump`, and the water in `slap`, in seconds into the clip (art/blender/beaver.py). */
+export const THUMP_HIT = 12 / 24;
+export const SLAP_HIT = 8 / 24;
+/** How far one stride of `waddle` carries it (art/blender/beaver.py, WADDLE_STRIDE). */
+export const WADDLE_STRIDE = 0.8;
+/** When, after the slap, it dives; and how far behind it its tail slaps the water. */
+const DIVE_AT = 0.4;
+const TAIL_BACK = 1.5;
 
 /** Where Elof is, and whether the picture keeps still: the storm's own, set every frame (./render.ts). */
 interface Watcher { x: number; still: boolean }
@@ -84,6 +99,115 @@ export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () 
   // Facing: in its own frame its front is +z, towards us; turned, its front looks left along the bank, towards him.
   const SITS = -1.0;
   let facing = SITS;
+  // The rigged beaver, once it has come (./river-creatures.ts): the phase its clips were last begun for, and whether it
+  // has thumped on its lodge's top and dived out on the lake this time.
+  const holder = riggedHolder(model, 'beaver');
+  let shown: Phase | null = null;
+  let thumped = false;
+  let dived = false;
+
+  /** The rigged beaver's frame: the clips for what it is doing, where its life puts it (as the old one's below). */
+  function poseRigged(rig: CreatureClips, clock: number, dt: number, onTop: { x: number; y: number; z: number } | null, towardHim: number) {
+    const began = shown !== phase;
+    shown = phase;
+    if (began) { thumped = false; dived = false; }
+    const x0 = group.position.x;
+    const z0 = group.position.z;
+    const toward = Math.atan2(elof.x - home.x, -z0) - facing;
+    if (elof.still) {
+      // With less motion it sits still, gnawing or looking, and stands still on its lodge's top.
+      model.visible = phase === 'gnaw' || phase === 'look' || ((phase === 'rise' || phase === 'top') && !!onTop);
+      if (!model.visible) return;
+      if ((phase === 'rise' || phase === 'top') && onTop) {
+        model.position.set(onTop.x, onTop.y, onTop.z);
+        model.rotation.y = towardHim;
+        rig.scrub('rise', 1);
+      } else {
+        model.rotation.y = SITS;
+        rig.scrub(phase === 'look' ? 'look' : 'gnaw', 0.15);
+      }
+      rig.update(dt);
+      return;
+    }
+    if (!model.visible) return;
+    if (phase === 'gnaw' || phase === 'look') {
+      facing = SITS;
+      model.rotation.y = facing;
+      rig.play(phase);
+      if (phase === 'gnaw') { rig.update(dt); return; }
+      // It has seen him: up it sits, and its head comes round to him, and holds there.
+      const k = smooth(since / 0.45);
+      const lean = Math.max(-0.25, Math.min(0.25, toward)) * k;
+      model.rotation.y = facing + lean;
+      rig.update(dt);
+      lookWith(rig, Math.max(-1, Math.min(1, toward * k - lean)));
+    } else if (phase === 'slap') {
+      // Up goes the tail, and down, thump, still looking at him: a little splash of wet earth and leaves behind it.
+      if (began) rig.play('thump', { once: true, restart: true, fade: 0.15 });
+      const lean = Math.max(-0.25, Math.min(0.25, toward));
+      model.rotation.y = facing + lean;
+      rig.update(dt);
+      lookWith(rig, Math.max(-1, Math.min(1, toward - lean)));
+      if (since > THUMP_HIT) effects.burst(-1.6 * Math.sin(facing), 0.05, -1.6 * Math.cos(facing), since - THUMP_HIT, false);
+    } else if (phase === 'go') {
+      // It turns, dropping onto all fours, picks its stick up in its teeth and waddles off into its lodge, its steps
+      // as long as the way it goes.
+      const way = Math.atan2(BEHIND.x, BEHIND.z);
+      const turned = smooth(since / TURN);
+      facing = SITS + (way - SITS) * turned;
+      const k = smooth((since - TURN) / WADDLE);
+      model.position.set(BEHIND.x * k, 0, BEHIND.z * k);
+      model.rotation.set(0, facing, 0);
+      const gone = Math.hypot(BEHIND.x, BEHIND.z) * k + 0.5 * turned;
+      rig.scrub('look', 0, 1 - turned);
+      rig.scrub('waddle', gone / WADDLE_STRIDE, turned);
+      rig.update(dt);
+    } else if ((phase === 'rise' || phase === 'top' || phase === 'duck') && onTop) {
+      // On the very top of its lodge, facing out over the roof towards him: up out of the sticks, nose first, and up on
+      // its hind feet, sniffing; it sits and thumps the roof with its tail, looks at him, and goes back in.
+      facing = towardHim;
+      const up = phase === 'rise' ? smooth(since / RISE) : phase === 'top' ? 1 : 1 - smooth(since / DUCK);
+      model.position.set(onTop.x, onTop.y - 1.15 * (1 - up), onTop.z);
+      model.rotation.set(0, facing, 0);
+      if (phase === 'rise' && began) rig.play('rise', { once: true, restart: true, fade: 0 });
+      if (phase === 'duck') rig.scrub('rise', 1 - smooth(since / DUCK));
+      const t = since - THUMP;
+      if (phase === 'top' && t > 0 && !thumped) { thumped = true; rig.play('thump', { once: true, restart: true, fade: 0.25 }); }
+      if (phase === 'top' && t > rig.duration('thump')) rig.play('look', { fade: 0.4 });
+      rig.update(dt);
+      // Standing up there, it sniffs the air at him.
+      if (phase === 'top' && t < 0) nodBone(rig.bone('head'), 0.06 * Math.sin(clock * 9) * (Math.sin(clock * 0.7) > 0.3 ? 1 : 0));
+      // Bits of dry mud off the sticks where its tail lands.
+      if (phase === 'top' && t > THUMP_HIT) effects.burst(onTop.x - 1.6 * Math.sin(facing), onTop.y + 0.05, onTop.z - 1.6 * Math.cos(facing), t - THUMP_HIT, false);
+    } else if ((phase === 'swim' || phase === 'under') && swimFrom && swimTo && lake) {
+      // Out over the lake, its origin at the water's surface: low in it, its head up, paddling, a wake opening behind.
+      const k = phase === 'swim' ? since / SWIM : 1;
+      const ease = smooth(k * 1.08 - 0.04);
+      const x = swimFrom.x + (swimTo.x - swimFrom.x) * ease;
+      const z = swimFrom.z + (swimTo.z - swimFrom.z) * ease;
+      const surface = lake.y - home.y;
+      facing = Math.atan2(swimTo.x - swimFrom.x, swimTo.z - swimFrom.z);
+      // It comes up from its way out under the water, a ring spreading where it does.
+      let sink = phase === 'swim' ? 1.2 * (1 - smooth(since / SURFACE)) : 0;
+      if (phase === 'swim') {
+        if (began) rig.play('swim', { fade: 0 });
+        if (since < SURFACE + 0.9) effects.burst(x - x0, surface, z - z0, since * 0.6, true, false);
+      } else {
+        // Out on the lake: the tail up and down flat on the water, a slap and a splash, and it dives.
+        if (began) rig.play('slap', { once: true, restart: true, fade: 0.15 });
+        if (since > DIVE_AT && !dived) { dived = true; rig.play('dive', { once: true, restart: true, fade: 0.12 }); }
+        if (since > SLAP_HIT) {
+          sink = 1.6 * smooth((since - 0.45) / 0.8);
+          effects.burst(x - x0 - TAIL_BACK * Math.sin(facing), surface, z - z0 - TAIL_BACK * Math.cos(facing), since - SLAP_HIT, true);
+        }
+      }
+      model.position.set(x - x0, surface - sink + 0.03 * Math.sin(clock * 2.2), z - z0);
+      model.rotation.set(0, facing, 0.04 * Math.sin(clock * 1.7));
+      rig.update(dt);
+      if (phase === 'swim' && since > SURFACE) effects.wake(x0, z0, surface, swimFrom, swimTo, since, SWIM);
+    }
+  }
+
   return {
     group,
     update(_used, clock, dt) {
@@ -131,6 +255,13 @@ export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () 
       /** Where the lodge's top is from the group, and the way that faces him there. */
       const onTop = lodge ? { x: lodge.top.x - x0, y: lodge.top.y - home.y, z: lodge.top.z - z0 } : null;
       const towardHim = lodge ? Math.atan2(near - lodge.top.x, -lodge.top.z) : 0;
+      const rig = rigOf(holder);
+      if (rig) {
+        showRigOnly(model, holder);
+        poseRigged(rig, clock, dt, onTop, towardHim);
+        effects.done();
+        return;
+      }
       if (elof.still) {
         // With less motion it sits and gnaws without moving; it still goes as he comes, and is on its lodge's top
         // while he is on the roof, sitting still there.
