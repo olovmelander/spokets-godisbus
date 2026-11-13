@@ -1,6 +1,6 @@
 import type { SceneDef } from '../../sim/scene';
 import { HOME_LAYOUT } from '../home-layout';
-import { MAMMA_SEEN, MAMMA_TIME } from '../../sim/prologue';
+import { MAMMA_LANDS, MAMMA_SEEN, MAMMA_TIME } from '../../sim/prologue';
 
 /**
  * The prologue as it is told now (docs/narrative-audit.md, "the intro"): a Saturday morning at home, the ghost
@@ -241,6 +241,8 @@ export const PROLOG_SCENES: SceneDef[] = [
     id: 'prologue:mamma',
     by: { done: 'mamma:passed' },
     seconds: MAMMA_TIME,
+    // It lands on the floorboards with a wooden knock.
+    sounds: [{ at: MAMMA_LANDS, sound: 'clatter' }],
     stage: {
       shots: [
         // The ghost on the floor, the family at the window and Elof between them: all in the one picture.
