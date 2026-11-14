@@ -18,6 +18,8 @@ export const words: ChapterWords = {
     sbMoaHold: 'Håll i paraplyet, så svävar du!',
     sbFloat: 'Jag svävar som ett maskrosfrö!',
     sbMoaLanded: 'Där landade mitt lilla maskrosfrö!',
+    // Down on the far side he turns and thanks her, as he thanks Bertil for his cap in Granskogen.
+    sbThanksMoa: 'Tack, Moa! Ditt paraply kan flyga!',
     // The swinging sign, and the little one's cap in the gutter.
     sbCap: 'Lillgubbens mössa! Jag tar med den.',
     sbToLake: 'Godisspåret går mot fotbollsplanen!',

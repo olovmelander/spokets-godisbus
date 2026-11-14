@@ -294,7 +294,10 @@ export function waterShape(pools: readonly { from: number; to: number; y: number
   // Far shores first, then each pool from its face to its surface: the mesh is drawn in this order, and nothing
   // of it is in front of what comes later.
   if (kind.bed > 0) for (const w of pools) {
-    const up = street ? Math.max(street(w.from - 0.2), street(w.to + 0.2)) : w.y + 0.3;
+    // The far shore lies at the street's height: where one end of the water is a wall's foot (the flooded crossing
+    // under Moa's wall in Byn i stormen), the street is the lower of the two. At the wall's height it stood as a dark
+    // bank five EL high behind the flood, before the church's walls.
+    const up = street ? Math.min(street(w.from - 0.2), street(w.to + 0.2)) : w.y + 0.3;
     sheet(w.y, [w.from, w.to], () => [
       { z: kind.back + 0.4, which: 2 }, { z: kind.back - 0.5, y: up, which: 2 }, { z: kind.shore, y: up, which: 2 },
     ]);

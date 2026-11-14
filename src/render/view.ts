@@ -12,6 +12,7 @@ import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } 
 import { createPaddle, type Paddle } from './paddle';
 import { createScarves } from './scarf';
 import { createHoldingOut, createUmbrellaCarry, handsOn, heldUp, holdAt, holdingOut, UMBRELLA } from './umbrella-hold';
+import { createMoaAnswer } from './umbrella-thanks';
 import { swayingBoughs } from './swaying-boughs';
 import { rootHollow } from './root-hollow';
 import { rainGearFor } from './rain-gear';
@@ -48,6 +49,7 @@ import { buildHooks } from './rings';
 import type { TextureOwnershipInfo } from './texture-ownership';
 import { captureFrame } from './capture';
 import { observeGpu, type GpuMemory } from './gpu-memory';
+import { BREDBYN_CHURCH, churchAt } from '../content/bredbyn';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
@@ -91,6 +93,7 @@ import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawOverFrame, overFrame } from './over-frame';
 import { drawnWhile } from './idle';
+import { familyShot } from './family-shot';
 import { buildGhostLace, letDown } from './ghost-lace';
 import { broughtDown, buildJayLichen } from './jay-lichen';
 import { buildVerbMarks } from './verb-marks';
@@ -658,9 +661,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (landmarks) {
         // In Stormbyn the river's yard is narrow: the church's belfry was buried inside the sweet shop.
         // Its wider crossing has room for the same church and separate wooden belfry side by side.
-        const stormStreet = chapter.id === 'stormbyn';
-        landmarks.position.set(chapter.id === 'look-street' ? 13 : stormStreet ? 97.8 : 46, 2.3, -29);
-        landmarks.scale.setScalar(0.53);
+        // Where it stands in this chapter: in Byn i stormen over the flooded crossing, clear of Moa's wall (../content/bredbyn.ts).
+        const at = churchAt(chapter.id);
+        landmarks.position.set(at.x, at.y, BREDBYN_CHURCH.z);
+        landmarks.scale.setScalar(BREDBYN_CHURCH.scale);
       }
       scene.add(model);
       models.push('boot/bredbyn');
@@ -856,8 +860,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.warn(`The private/${who}-wardrobe could not be loaded; the rain gear is drawn from the body.`, error));
   };
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen, vista: thing.spot.vista })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined, vista: undefined })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   // One Mamma lays the pine and walks to the braid; the second call is only an interaction.
   if (chapter.id === 'myren') for (let i = stands.length - 1; i >= 0; i--) {
@@ -1071,6 +1075,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const capGift = chapter.id === 'granskog' ? carriers.find(carrier => carrier.ride.id === 'cap') : undefined;
   // Bertil's answer to Elof's thanks across the pool (./cap-thanks.ts).
   const bertilAnswer = createBertilAnswer();
+  const moaAnswer = createMoaAnswer();
   const capTime = chapter.later?.find(wait => wait.flag === 'family:cap-ready')?.seconds ?? 2.4;
   let capSince = -1;
   const capFrom = new Vector3(), capAt = new Vector3();
@@ -1599,11 +1604,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camAt.lerp(shot.at, k);
     };
     {
-      const centreX = nearbyFamily ? (nearbyFamily.prop!.group.position.x + x) / 2 : 0;
-      const familyY = nearbyFamily ? nearbyFamily.prop!.group.position.y : 0;
-      const shotHeight = Math.max(viewHeight * look.zoom, 7.8 + Math.abs(familyY - y), 8.8 / camera.aspect);
-      const bothY = (familyY + y) / 2 + 2.2;
-      shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, centreX, bothY, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), centreX, bothY);
+      // He and whoever he has come up to, and where the spot says so what lies beyond them (./family-shot.ts).
+      const both = familyShot({ x, y }, nearbyFamily ? nearbyFamily.prop!.group.position : { x: 0, y: 0 }, viewHeight * look.zoom, camera.aspect, nearbyFamily?.vista);
+      shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, both.x, both.y, both.height / 2 / Math.tan(FOV * Math.PI / 360), both.x, both.y);
     }
     {
       const shotHeight = Math.max(8.4, 10.2 / camera.aspect);
@@ -2222,6 +2225,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       // Thanked across the pool for his cap, Bertil cheers and waves back (./cap-thanks.ts).
       if (capGift && one.who === 'bertil') bertilAnswer.update(words, lifeDt, calmStory, one.rig.legs, posed);
+      // And Moa, thanked across the flood for her umbrella (./umbrella-thanks.ts).
+      if (umbrellaRide && one.who === 'moa') moaAnswer.update(words, lifeDt, calmStory, one.rig.legs, posed);
 
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.

@@ -182,6 +182,12 @@ export interface Spot {
    * the carving once Elof has taken the knife.
    */
   goesWhen?: string;
+  /**
+   * For the picture: what lies beyond whoever of the family is shown here belongs in the picture of the two of them
+   * (src/render/family-shot.ts): it looks `lead` EL further along once he has come up to them, and shows at least
+   * `width` across. Moa at the wall's edge in Byn i stormen, with the flooded crossing and the church beyond her.
+   */
+  vista?: { lead: number; width: number };
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
@@ -652,6 +658,12 @@ export interface ChapterData {
   street?: StreetPart[];
   /** For the picture: where the street's lamp posts stand, on the far pavement across the crossing. */
   lampPosts?: number[];
+  /**
+   * For the picture: the passer-by on the road behind the street (src/render/village.ts) does not walk in beyond
+   * `from` while he is between the two x of `while`: nothing crosses the picture he has from there (Moa's wall in Byn
+   * i stormen, with the church over the crossing). One already past `from` walks on out of it.
+   */
+  streetClear?: { from: number; while: readonly [number, number] };
   /** For the picture: an open shop door leading into a room beside the street, at the path's height. */
   shop?: { door: number; to: number; floor: number };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */

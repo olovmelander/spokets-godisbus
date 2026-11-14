@@ -26,7 +26,7 @@ import { idle, jump, run, runPast, walkTo } from '../sim/drive';
 /** Everything the robot says on the way, in order. */
 const SAID = [
   'sbDark', 'sbKlonkHere', 'sbAwning', 'sbCandle', 'sbRiver', 'family:moa', 'family:umbrella',
-  'sbFloat', 'sbLanded', 'sbCandleTwo', 'sbCap', 'sbToLake', 'sbKlonkCap', 'sbCandleThree', 'sbShore',
+  'sbFloat', 'sbThanksMoa', 'sbLanded', 'sbCandleTwo', 'sbCap', 'sbToLake', 'sbKlonkCap', 'sbCandleThree', 'sbShore',
 ];
 
 /** Where the street ends: with its ground. */
