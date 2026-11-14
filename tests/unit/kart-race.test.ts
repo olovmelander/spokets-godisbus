@@ -342,11 +342,13 @@ describe('items', () => {
   it('gives the leader things to defend with and the last kart things to catch up with', () => {
     const tally = (behind: number, gentle = false) => { const random = seededRandom(5), seen: Record<string, number> = {}; for (let i = 0; i < 4000; i++) { const item = rollItem(behind, random, gentle); seen[item] = (seen[item] ?? 0) + 1; } return seen; };
     const first = tally(0), last = tally(1), middle = tally(.5);
-    for (const item of ['rainbow', 'cloud', 'sweets3']) expect(first[item]).toBeUndefined();
+    for (const item of ['rainbow', 'cloud', 'sweets3', 'cones3', 'rocket']) expect(first[item]).toBeUndefined();
     expect(first.gum!).toBeGreaterThan(last.gum! * 4); expect(first.floss!).toBeGreaterThan(last.floss! * 2);
     expect(last.rainbow!).toBeGreaterThan(middle.rainbow! * 2); expect(last.sweets3!).toBeGreaterThan(middle.sweets3!);
-    expect(Object.keys(middle)).toHaveLength(8);
-    const calm = tally(.5, true); expect(calm.cone! + calm.bee! + calm.cloud!).toBeLessThan((middle.cone! + middle.bee! + middle.cloud!) * .6);
+    expect(Object.keys(middle)).toHaveLength(14);
+    expect(last.rocket!).toBeGreaterThan(middle.rocket! * 3); expect(first.horn!).toBeGreaterThan(last.horn! * 2); expect(first.magnet!).toBeGreaterThan(last.magnet! * 3);
+    const thrown = (seen: Record<string, number>) => seen.cone! + seen.cones3! + seen.bee! + seen.cracker! + seen.cloud!;
+    const calm = tally(.5, true); expect(thrown(calm)).toBeLessThan(thrown(middle) * .6);
     expect(tally(.5)).toEqual(middle);
   });
   it('takes a bag where the kart really crosses it, spins the roulette, and uses the item on a new press only', () => {
@@ -437,6 +439,94 @@ describe('items', () => {
     const rich = Object.assign(fresh(), { candies: MAX_CANDIES }), poor = fresh(); drive(rich, strip(), 3); drive(poor, strip(), 3);
     expect(rich.speed / poor.speed).toBeGreaterThan(1.05); expect(rich.speed / poor.speed).toBeLessThan(1.1);
     const high = race.state.candies.find(spot => spot.lift > 1.6)!; pose(race, high.at - 1, 20, high.lane); run(race, .2, gas); expect(high.active).toBe(true);   // out of reach from the ground
+  });
+  it('throws three pine cones, one for each press', () => {
+    const race = started(), player = Object.assign(pose(race, 250, 20), { item: 'cones3' as const, itemCount: 3 });
+    for (let thrown = 1; thrown <= 3; thrown++) {
+      race.tick(gas, RACE_STEP); race.tick({ ...gas, item: true }, RACE_STEP);
+      expect(race.state.shots.filter(shot => shot.kind === 'cone')).toHaveLength(thrown); expect(player.itemCount).toBe(thrown < 3 ? 3 - thrown : 0);
+    }
+    expect(player.item).toBe(null); expect(count(race.takeEvents(), 'use')).toBe(3);
+  });
+  it('lobs a cracker over the karts in its way, and tumbles everyone where it comes down', () => {
+    const race = started({ track: 'garden', seed: 7 }), player = Object.assign(pose(race, 60, 20), { item: 'cracker' as const, itemCount: 1 }), [fox, hare, owl] = race.state.karts.slice(1);
+    Object.assign(fox!, { distance: 72, lane: 0, held: true }); Object.assign(hare!, { distance: 101, lane: 1.5, held: true }); Object.assign(owl!, { distance: 112, lane: 0, held: true });
+    race.tick(gas, RACE_STEP); race.tick({ ...gas, item: true }, RACE_STEP);
+    const cracker = race.state.shots[0]!; expect(cracker.kind).toBe('cracker');
+    run(race, .6, gas); expect(race.state.shots).toContain(cracker); expect(fox!.spin).toBe(0);            // still in the air, and past the fox
+    run(race, .5, gas);
+    const events = race.takeEvents();
+    expect(events.filter(e => e.type === 'burst')).toHaveLength(1); expect(race.state.shots).toHaveLength(0);
+    expect(events.filter(e => e.type === 'hit')).toEqual([{ type: 'hit', kart: 2, kind: 'cracker', by: 0 }]);
+    expect(fox!.spin).toBe(0); expect(owl!.spin).toBe(0); expect(player.spin).toBe(0);
+    const burst = events.find(e => e.type === 'burst'); expect(burst && burst.type === 'burst' && Math.abs(burst.distance - 101)).toBeLessThan(4);
+  });
+  it('blows a birch-bark horn that tumbles everyone close by and clears what has been thrown near the kart', () => {
+    const race = started(), karts = race.state.karts, player = Object.assign(pose(race, 250, 20), { item: 'horn' as const, itemCount: 1 });
+    Object.assign(karts[1]!, { distance: 255, lane: 2, held: true }); Object.assign(karts[2]!, { distance: 244.5, lane: -2, held: true }); Object.assign(karts[3]!, { distance: 262, lane: 0, held: true });
+    const shot = (kind: 'gum' | 'cone', distance: number) => ({ id: 90 + race.state.shots.length, kind, owner: 4, distance, lane: 0, angle: 0, speed: 0, life: 20, bounces: 3, target: -1, safe: 0 });
+    race.state.shots.push(shot('gum', 257), shot('cone', 244), shot('gum', 275));
+    race.tick(gas, RACE_STEP); race.tick({ ...gas, item: true }, RACE_STEP);
+    const events = race.takeEvents();
+    expect(events.filter(e => e.type === 'hit').map(e => e.type === 'hit' && [e.kart, e.kind, e.by])).toEqual([[1, 'horn', 0], [2, 'horn', 0]]);
+    expect(karts[3]!.spin).toBe(0); expect(player.spin).toBe(0); expect(count(events, 'horn')).toBe(1);
+    expect(race.state.shots.map(left => left.distance)).toEqual([275]);
+  });
+  it('bounces high on a mushroom: over the gum on the road, and down with a trick\'s boost', () => {
+    const race = started(), player = Object.assign(pose(race, 250, 24), { item: 'spring' as const, itemCount: 1 });
+    race.state.shots.push({ id: 99, kind: 'gum', owner: 3, distance: 262, lane: 0, angle: 0, speed: 0, life: 20, bounces: 0, target: -1, safe: 0 });
+    race.tick(gas, RACE_STEP); race.tick({ ...gas, item: true }, RACE_STEP);
+    expect(player.airborne).toBe(true); expect(player.item).toBe(null);
+    let top = 0; for (let i = 0; i < 150 && player.airborne; i++) { race.tick(gas, RACE_STEP); top = Math.max(top, player.y); }
+    const events = race.takeEvents();
+    expect(top).toBeGreaterThan(1.8); expect(player.spin).toBe(0); expect(race.state.shots).toHaveLength(1); expect(player.distance).toBeGreaterThan(264);
+    expect(count(events, 'jump')).toBe(1); expect(count(events, 'trick')).toBe(1); expect(events.filter(e => e.type === 'boost')).toEqual([{ type: 'boost', kart: 0, kind: 'trick' }]);
+    // In the air there is nothing to bounce on: the mushroom is kept.
+    Object.assign(pose(race, 250, 24), { item: 'spring' as const, itemCount: 1, airborne: true, y: 2, vy: 2 });
+    race.tick(gas, RACE_STEP); race.tick({ ...gas, item: true }, RACE_STEP); expect(player.item).toBe('spring');
+  });
+  it('rides a fizzy rocket that drives itself round a hairpin, cannot be stopped, and knocks over what it meets', () => {
+    const race = started(), player = Object.assign(pose(race, 272, 24), { item: 'rocket' as const, itemCount: 1 }), fox = race.state.karts[1]!;
+    race.tick(gas, RACE_STEP); race.tick({ ...gas, item: true }, RACE_STEP); race.takeEvents();
+    expect(player.rocket).toBeGreaterThan(3);
+    let fastest = 0, offRoad = 0;
+    for (let i = 0; i < 2.6 / RACE_STEP; i++) {
+      race.tick({ ...idle, steer: 1, brake: 1, drift: true }, RACE_STEP);          // whatever the driver does
+      fastest = Math.max(fastest, player.speed); if (player.surface !== 'road' && player.surface !== 'planks') offRoad++;
+    }
+    const events = race.takeEvents();
+    expect(fastest).toBeGreaterThan(TOP_SPEED * 1.3); expect(player.distance).toBeGreaterThan(272 + 85);      // through the hairpin at 287–334
+    expect(offRoad).toBe(0); expect(count(events, 'wall')).toBe(0); expect(player.drift).toBe(0);
+    expect(hitKart(player, 'cone', 2, [])).toBe(false);
+    Object.assign(fox, { distance: player.distance + 5, lane: player.lane, speed: 8, held: false });
+    run(race, .4, gas); expect(race.takeEvents().find(e => e.type === 'hit')).toEqual({ type: 'hit', kart: 1, kind: 'rocket', by: 0 }); expect(player.spin).toBe(0);
+    run(race, 1, gas); expect(player.rocket).toBe(0);
+    run(race, 1.5, gas); expect(player.speed).toBeLessThan(TOP_SPEED * 1.12);
+  });
+  it('pulls sweets and bags in with a magnet, from the side and out of the air', () => {
+    const race = started(), track = getTrack(), player = Object.assign(pose(race, 232, 20, 3.2), { item: 'magnet' as const, itemCount: 1 });
+    const air = race.state.candies.filter(candy => candy.at > 234 && candy.at < 258);                      // the trail over the forest jump, at lane 0
+    expect(air.length).toBeGreaterThanOrEqual(4); expect(air.some(candy => candy.lift > 1.6)).toBe(true);
+    run(race, .5, { throttle: 0 }); expect(player.candies).toBe(0);                                         // beside them and under them: none taken
+    pose(race, 232, 20, 3.2); race.tick(gas, RACE_STEP); race.tick({ ...gas, item: true }, RACE_STEP); expect(player.magnet).toBeGreaterThan(7);
+    run(race, 1.2, { throttle: .4 }); expect(player.candies).toBeGreaterThanOrEqual(4); expect(air.every(candy => !candy.active)).toBe(true);
+    Object.assign(player, { candies: MAX_CANDIES }); const next = race.state.candies.find(candy => candy.active && candy.at > 290)!;
+    pose(race, next.at - 2, 20, next.lane + 3); run(race, .3, gas); expect(next.active).toBe(true);        // full: the sweets are left for others
+    const box = race.state.boxes.find(spot => spot.at === 350 && spot.lane === 0)!, edge = Math.min(3.4, track.roadLeft(350) - 1);
+    Object.assign(pose(race, 348, 20, edge), { magnet: 5, item: null, roulette: 0 }); run(race, .3, gas); expect(box.active).toBe(false); expect(player.roulette).toBeGreaterThan(0);
+  });
+  it('the rivals get, and use, every kind of thing over a few races', () => {
+    const used = new Set<string>(), got = new Set<string>();
+    for (const seed of [11, 12, 13]) {
+      const race = started({ seed }); Object.assign(race.state.player, { distance: -400 });
+      for (let i = 0; i < 100 / RACE_STEP; i++) {
+        race.tick(idle, RACE_STEP);
+        for (const event of race.takeEvents()) { if (event.type === 'use') used.add(event.item); if (event.type === 'item') got.add(event.item); }
+      }
+      expect(race.state.karts.every(finite)).toBe(true);
+    }
+    expect([...got].sort()).toEqual(['bee', 'cloud', 'cone', 'cones3', 'cracker', 'floss', 'gum', 'horn', 'magnet', 'rainbow', 'rocket', 'spring', 'sweet', 'sweets3']);
+    expect([...used].sort()).toEqual([...got].sort());
   });
 });
 

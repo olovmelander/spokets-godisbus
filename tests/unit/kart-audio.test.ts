@@ -57,7 +57,7 @@ const racing: KartSoundState = {
 };
 const still: KartSoundState = { ...racing, speed: 0, throttle: 0, phase: 'finished' };
 const EVENTS: KartSoundEvent[] = ['countdown', 'go', 'startBoost', 'hop', 'land', 'trick', 'turbo1', 'turbo2', 'turbo3', 'tier', 'pad', 'boost', 'draft',
-  'box', 'roulette', 'itemReady', 'throw', 'drop', 'shield', 'shieldPop', 'cloud', 'star', 'hit', 'spin', 'bump', 'wall', 'splash', 'candy', 'candyLost',
+  'box', 'roulette', 'itemReady', 'throw', 'drop', 'shield', 'shieldPop', 'cloud', 'star', 'bang', 'horn', 'spring', 'rocket', 'magnet', 'hit', 'spin', 'bump', 'wall', 'splash', 'candy', 'candyLost',
   'passUp', 'passDown', 'lap', 'finalLap', 'finish', 'win'];
 const EFFECT_VOICES = 22, MUSIC_VOICES = 20, FADING_VOICES = 6, STEP = 15 / 136;
 

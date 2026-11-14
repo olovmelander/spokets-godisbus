@@ -53,20 +53,26 @@ Every lap is 960 m, and a race is three laps (`src/kart/sim/courses.ts` holds ea
 - **More ways to go faster.** Boost strips on the road, a trick (the drift button on a ramp) that lands with a boost,
   a rocket start (the drift button pressed inside the last second of the countdown and held), and the pull of the
   air behind another kart. Sweets on the road count to ten; each adds a little top speed, and a hit drops three.
-- **Item bags** (`src/kart/sim/race.ts`). Six rows of striped bags a lap; a roulette picks one of eight items, and the
-  item button uses it (a press during the roulette stops it early):
+- **Item bags** (`src/kart/sim/race.ts`). Six rows of striped bags a lap; a roulette picks one of fourteen items, and
+  the item button uses it (a press during the roulette stops it early):
 
   | Item | What it does |
   | --- | --- |
   | Guldgodis, Tre guldgodis | A boost; three of them |
-  | Kotte | Thrown straight ahead; bounces off the barriers; tumbles the kart it reaches |
+  | Kotte, Tre kottar | Thrown straight ahead; bounces off the barriers; tumbles the kart it reaches. Three of them |
   | Humla | Follows the road to the kart ahead and tumbles it |
   | Tuggummi | Laid behind the kart; whoever drives over it spins. A jumping kart passes over |
+  | Smällkaramell | Lobbed in a high arc over the karts in its way; goes off where it comes down, and everyone within about five metres tumbles, its thrower too |
+  | Näverlur | A blast of sound: everyone within eight metres tumbles, and whatever has been thrown near the kart is blown away |
   | Sockervadd | Takes the next hit |
+  | Studssvamp | A high bounce over whatever lies on the road, landing with a trick's boost |
+  | Godismagnet | Eight seconds of pulling in every sweet near the kart, on the road or in the air, and item bags from further to the side |
   | Regnbågsklubba | Seven seconds untouchable and quick; karts it bumps tumble |
+  | Brusraket | About three seconds of a rocket that drives the kart by itself along the racing line, faster than any boost; it cannot be stopped and knocks over what it meets |
   | Regnmoln | Rain over every kart ahead: they slow for three seconds |
 
-  The leader mostly gets things to defend with, the last kart things to catch up with.
+  The leader mostly gets things to defend with (gum, candy floss, the horn, the mushroom, the magnet), the last
+  kart things to catch up with (three sweets, the rainbow lollipop, the rocket, the rain cloud).
 - **The rivals** (`src/kart/sim/ai.ts`) drive the player's own kart model through the same controls: a racing line,
   real drifts for real turbos, tricks, bags and items. A small elastic keeps the field together.
 - **Places.** A course passes through one or more of five kinds of place from Elof's adventure, each with its own

@@ -5,7 +5,7 @@
 - **Olov:** asked for the TV's kart game to feel like an arcade kart racer ("more like Mario Cart or Crash team
   racing"): a varied track, things to pick up to boost or attack with, the right feeling when driving, "audit this",
   "a varied, fun and stunning game". While it was being built he added: "4a olika banor med olika teman", "en cup som
-  i mariokart", and a choice of "CC och svårighetsgrad".
+  i mariokart", a choice of "CC och svårighetsgrad", and "fler saker man kan få i godispåsarna".
 - **The audit** of the game as it was on `main`, driven on its own (the new `dev/kart.html`):
   - *Driving:* a rental kart's tyre model at 67 km/h. The drift only loosened the rear: no hop, nothing to see on
     the kart, two small boosts. A barrier stopped the kart.
@@ -20,8 +20,11 @@
     another kart. Grass, snow, mud and water slow the kart unless it is boosting. Top speed 108 km/h at 150 cc.
   - *Eight karts:* Elof's crown kart and seven wooden animals that drive the same kart model through the same
     controls, drift for real turbos and use what they pick up (`sim/ai.ts`).
-  - *Eight items* from striped bags with a roulette (`sim/race.ts`): Guldgodis, Tre guldgodis, Kotte, Humla, Tuggummi,
-    Sockervadd, Regnbågsklubba, Regnmoln. Sweets on the road count to ten and add a little top speed.
+  - *Fourteen items* from striped bags with a roulette (`sim/race.ts`): Guldgodis, Tre guldgodis, Kotte, Tre kottar,
+    Humla, Tuggummi, Smällkaramell, Näverlur, Sockervadd, Studssvamp, Godismagnet, Regnbågsklubba, Brusraket and
+    Regnmoln. Tre kottar, Smällkaramell, Näverlur, Studssvamp, Godismagnet and Brusraket came with his third request,
+    "fler saker man kan få i godispåsarna".
+    Sweets on the road count to ten and add a little top speed.
   - *Four courses*, each a 960 m lap (`sim/courses.ts`, `sim/track.ts`): Gårdsvarvet (village and forest edge, no
     hairpin), Myrspången (a boardwalk over the bog at dusk, three hairpins, puddles), Kristallberget (a mountain at
     night, a switchback, a crystal cave, a long jump down) and Varggropen (the real outline, through all five kinds of
@@ -42,7 +45,7 @@
   The trace, the racing-line optimiser, the batching helper, the steering ramp and the engine's clutch remain
   (`LICENSES.md`). Varggropen is now 960 m round, not the circuit's 665 m. Race records start again
   (`godisbus.kart.v3.*`).
-- **Guards:** `tests/unit/kart-race.test.ts` (75 tests: every course's barriers, places and features; handling;
+- **Guards:** `tests/unit/kart-race.test.ts` (82 tests: every course's barriers, places and features; handling;
   each item; race rules; the cup; a rival lapping every course; whole races in two difficulties), `kart-audio`,
   `kart-controls`, `kart-records`, and three new checks in `tests/browser/home-console.mjs`.
 - **Not checked, and it matters:**
@@ -51,20 +54,23 @@
     thing for Olov to judge.
   - **Nobody has heard the sound.** Its levels were measured (about −24 dBFS RMS in a race) and its lifecycle is
     tested; whether the tune and the effects are pleasant is not known.
-  - **Phones:** 60 pictures a second on this computer's graphics card at the High tier (about 300,000–480,000
-    triangles, 90–130 draw calls). The Low tier draws about 180,000 triangles with no cast shadows; its speed on a
-    real phone is not measured. Only Chromium was run.
+  - **Phones:** 56–60 pictures a second on this computer's graphics card on every tier (High: about 300,000–480,000
+    triangles and 90–130 draw calls). The Low tier draws 170,000–255,000 triangles with no cast shadows (Myrspången
+    is the heaviest); its speed on a real phone is not measured. Only Chromium was run.
   - The balance below is from bots, not people.
 - **Balance, measured with bots over five to eight races each** (place out of eight; the winner's time is about
   1:25–1:35 at 150 cc and 1:45–1:55 at 50 cc):
   - *Äventyr, 150 cc:* a driver who drifts every bend averages 1st–2nd; one who never drifts averages 2nd on
-    Gårdsvarvet and Kristallberget, 3rd on Myrspången and 4th–5th on Varggropen.
+    Gårdsvarvet and Kristallberget, 3rd on Myrspången and 5th–6th on Varggropen. (Myrspången and Kristallberget
+    were measured before the last six items were added; the other two after.)
   - *Mästare, 150 cc:* the driver who drifts every bend averages 2nd–4th; one who never drifts 4th–7th.
   - *Lugnt, 50 cc:* every bot won every race, the one that steers like a small child included.
   - In Äventyr the player is hit about one to three times a race.
-- **Validation:** typecheck; all 3,093 tests; the build and its size gates (706.2 KB gzipped JS; the game's own
-  chunk is 51.8 KB of 160); the privacy check; `tests/browser/home-console.mjs` (51 checks, in the built site, from
-  the house and back).
+- **Validation:** typecheck; all 3,100 tests; the build and its size gates (706.4 KB gzipped JS; the game's own
+  chunk is 53.8 KB of 160); the privacy check; `tests/browser/home-console.mjs` (51 checks, in the built site, from
+  the house and back). On the game's own page: every course on the Low, Mid and High tiers and in reduced motion
+  with no errors, and one whole cup driven in real time by the autopilot at the keys (Lugnt, 150 cc: it won all four
+  races), with the renderer's memory level from the first course to the last.
 - **Next:** Olov drives it, on the computer and on a phone, listens to it, and says what to change (the questions
   are below). Needs no Blender and no particular computer. `npm run dev`, then
   `/spokets-godisbus/dev/kart.html` is the game without the house; `?auto` drives it by itself.
@@ -6650,7 +6656,7 @@ The older list, still true where it is not struck:
 | Bertil's slippers (11 Nov, late evening) | Add a slipper wish before the Thailand trip | One text-only cloud continuation | — / 1 request | Existing dialogue receipt and reading hold retained; future recording metadata aligned. |
 | Family at the opening window (11 Nov, evening) | Let the family walk over to the arriving jay in the redesigned home | One cloud continuation with staging and independent native review | — / 1 request | Separate furniture-clear routes, visible shared attention and a continuous return to the chase; original story receipts retained. |
 | Responsive interface (11 Nov) | Improve mobile/desktop UX, HUD and dialogue composition | One cloud continuation with parallel dialogue, HUD, menus, native review and regression worktrees | — / 1 request | Unified speech card, retained readable text/targets, quieter HUD, navigable collections and responsive menus; actual-scene and safe-area checks. |
-| Godisracet as an arcade racer (14 Nov) | Make the TV kart game feel like an arcade kart racer; then four themed courses, a cup, speed classes and difficulty | One session on Olov's computer, with one parallel builder for the sound | — / 2 requests | New handling, eight karts, eight items, four courses over five kinds of place, a cup, speed classes and difficulty; the port's tyre model replaced. Tuned on bots; not yet driven by hand or heard. |
+| Godisracet as an arcade racer (14 Nov) | Make the TV kart game feel like an arcade kart racer; then four themed courses, a cup, speed classes and difficulty | One session on Olov's computer, with one parallel builder for the sound | — / 3 requests | New handling, eight karts, fourteen items, four courses over five kinds of place, a cup, speed classes and difficulty; the port's tyre model replaced. Tuned on bots; not yet driven by hand or heard. |
 | TV console / Godisracet (11 Nov) | Port Varggropen and add an optional TV kart race with improved handling and story-linked visuals | One cloud continuation with parallel core, renderer, controls, host and browser review | — / 1 request | Original trace and physics, drift/sweet boosts, wooden toys, shared-home entry and exact return; local player records and mobile controls. |
 | Shared home composition (11 Nov) | Separate TV and sofa, integrate the bathroom and align the interior across home chapters | One cloud continuation with parallel public modelling, staging, geometry and native visual review | — / 1 request | One shared layout, complete bathroom and clear furniture; adapted scenes, saved-progress checks and phone composition review. |
 | Flärken's flickering shore (11 Nov) | Stabilise the near outlet bank while the carving floats downstream | One focused cloud continuation with geometry work and independent source/temporal review | — / 1 report | A submerged mouth replaces the water-level shelf; the regression measures real mesh area against the animated swell. |

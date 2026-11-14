@@ -6,9 +6,9 @@
 import type { Surface, Track } from './track';
 
 export type RacerId = 'player' | 'fox' | 'owl' | 'hare' | 'squirrel' | 'hedgehog' | 'moose' | 'bear';
-export type ItemId = 'sweet' | 'sweets3' | 'cone' | 'bee' | 'gum' | 'floss' | 'rainbow' | 'cloud';
+export type ItemId = 'sweet' | 'sweets3' | 'cone' | 'cones3' | 'bee' | 'gum' | 'cracker' | 'horn' | 'floss' | 'spring' | 'magnet' | 'rainbow' | 'rocket' | 'cloud';
 export type BoostKind = 'start' | 'turbo1' | 'turbo2' | 'turbo3' | 'pad' | 'sweet' | 'trick' | 'draft';
-export type HitKind = 'cone' | 'bee' | 'gum' | 'star';
+export type HitKind = 'cone' | 'bee' | 'gum' | 'star' | 'cracker' | 'horn' | 'rocket';
 export interface KartControls {
   /** +1 left, −1 right. */
   steer: number;
@@ -34,7 +34,9 @@ export type KartEvent =
   | { type: 'cloud'; kart: number; by: number }
   | { type: 'candy'; kart: number; candy: number }
   | { type: 'candyLost'; kart: number; count: number }
-  | { type: 'shotEnd'; id: number; kind: 'cone' | 'bee' | 'gum'; distance: number; lane: number }
+  | { type: 'shotEnd'; id: number; kind: 'cone' | 'bee' | 'gum' | 'cracker'; distance: number; lane: number }
+  | { type: 'burst'; distance: number; lane: number; by: number }
+  | { type: 'horn'; kart: number }
   | { type: 'lap'; kart: number; lap: number }
   | { type: 'finish'; kart: number; place: number };
 
@@ -76,6 +78,9 @@ export interface Kart {
   shield: number;
   star: number;
   cloud: number;
+  /** Seconds left of a fizzy rocket that drives the kart by itself, and of a magnet that pulls sweets in. */
+  rocket: number;
+  magnet: number;
   candies: number;
   item: ItemId | null;
   itemCount: number;
@@ -119,7 +124,10 @@ export const BOOSTS: Readonly<Record<BoostKind, { time: number; power: number }>
 const ACCEL = 17, COAST = 6, BRAKE = 30, REVERSE_TOP = 7, GRAVITY = 24;
 const DRIFT_TURN = 1.3, DRIFT_RANGE = 1.1, DRIFT_MIN_SPEED = .45 * TOP_SPEED;
 const HOP_TIME = .24, CANDY_SPEED = .007, GUARD = 1.5;
-const SPIN_TIME: Readonly<Record<HitKind, number>> = { cone: 1.2, bee: 1.2, gum: .95, star: 1.3 };
+const SPIN_TIME: Readonly<Record<HitKind, number>> = { cone: 1.2, bee: 1.2, gum: .95, star: 1.3, cracker: 1.25, horn: 1, rocket: 1.3 };
+/** How fast a fizzy rocket can turn its kart: enough for any hairpin at its speed. */
+export const ROCKET_TURN = 7;
+const ROCKET_SPEED = 1.38;
 const ROUGH: Readonly<Record<Surface, number>> = { road: 1, planks: 1, mud: .7, rough: .6, snow: .6, water: .5 };
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * dt);
@@ -128,7 +136,7 @@ export function newKart(index: number, id: RacerId, color: number, distance: num
   return {
     index, id, color, distance, lane, heading: 0, speed: 0, slide: 0, steer: 0, y: 0, vy: 0, climb: 0, airborne: false, airTime: 0,
     trick: false, hop: 0, drift: 0, driftCharge: 0, driftTier: 0, driftHeld: false, slip: 0, boostTime: 0, boostPower: 0,
-    boostKind: null, spin: 0, spinTotal: 0, spinKind: null, guard: 0, shield: 0, star: 0, cloud: 0, candies: 0, item: null,
+    boostKind: null, spin: 0, spinTotal: 0, spinKind: null, guard: 0, shield: 0, star: 0, cloud: 0, rocket: 0, magnet: 0, candies: 0, item: null,
     itemCount: 0, roulette: 0, rolling: null, surface: 'road', atWall: false, wallHit: 0, bumped: 0, padded: 0, draft: 0, wrongWay: 0, held: true,
     pace: 1, cc: 1, assist: false, topSpeed: TOP_SPEED, lap: 1, completedLaps: 0, lapTimes: [], finishTime: null, place: index + 1,
   };
@@ -154,7 +162,7 @@ export function giveBoost(kart: Kart, kind: BoostKind, events: KartEvent[]): voi
 
 /** A hit: the candy floss takes one, the rainbow lollipop shrugs it off, otherwise the kart tumbles and drops sweets. */
 export function hitKart(kart: Kart, kind: HitKind, by: number, events: KartEvent[]): boolean {
-  if (kart.star > 0 || kart.guard > 0 || kart.spin > 0 || kart.finishTime !== null) return false;
+  if (kart.star > 0 || kart.rocket > 0 || kart.guard > 0 || kart.spin > 0 || kart.finishTime !== null) return false;
   if (kart.shield > 0) { kart.shield = 0; kart.guard = .6; events.push({ type: 'shieldPop', kart: kart.index }); return false; }
   kart.spin = kart.spinTotal = SPIN_TIME[kind]; kart.spinKind = kind;
   kart.drift = 0; kart.driftCharge = 0; kart.driftTier = 0; kart.boostTime = 0; kart.boostPower = 0; kart.boostKind = null; kart.draft = 0;
@@ -167,7 +175,7 @@ export function hitKart(kart: Kart, kind: HitKind, by: number, events: KartEvent
 
 export function stepKart(kart: Kart, controls: Readonly<KartControls>, track: Track, dt: number, events: KartEvent[]): void {
   const k = kart;
-  for (const timer of ['boostTime', 'guard', 'shield', 'star', 'cloud', 'hop', 'wallHit', 'bumped', 'padded'] as const) k[timer] = Math.max(0, k[timer] - dt);
+  for (const timer of ['boostTime', 'guard', 'shield', 'star', 'cloud', 'rocket', 'magnet', 'hop', 'wallHit', 'bumped', 'padded'] as const) k[timer] = Math.max(0, k[timer] - dt);
   if (!k.boostTime) { k.boostPower = 0; k.boostKind = null; }
   if (k.spin > 0) {
     k.spin = Math.max(0, k.spin - dt);
@@ -191,11 +199,11 @@ export function stepKart(kart: Kart, controls: Readonly<KartControls>, track: Tr
   // What the ground allows.
   if (!k.airborne) k.surface = track.surface(k.distance, k.lane);
   // The class and the kart's own pace scale everything, boosts included: a slower kart's turbo is a slower turbo.
-  const boosted = k.boostTime > 0, free = boosted || k.star > 0, top = TOP_SPEED * k.cc * k.pace;
+  const rocket = k.rocket > 0, boosted = k.boostTime > 0 || rocket, free = boosted || k.star > 0, top = TOP_SPEED * k.cc * k.pace;
   let limit = top * (1 + CANDY_SPEED * k.candies);
   if (k.star > 0) limit *= 1.15;
   if (!free) limit *= ROUGH[k.surface];
-  if (boosted) limit = Math.max(limit, top * (1 + k.boostPower));
+  if (boosted) limit = Math.max(limit, top * (rocket ? ROCKET_SPEED : 1 + k.boostPower));
   if (k.cloud > 0) limit *= .62;
   k.topSpeed = limit;
 
@@ -220,7 +228,7 @@ export function stepKart(kart: Kart, controls: Readonly<KartControls>, track: Tr
     k.drift = 0; k.driftCharge = 0; k.driftTier = 0;
   }
   if (k.drift && (v < DRIFT_MIN_SPEED * k.cc * .8 || brake > 0)) { k.drift = 0; k.driftCharge = 0; k.driftTier = 0; }
-  if (!k.drift && controls.drift && grounded && !spinning && brake === 0 && v > DRIFT_MIN_SPEED * k.cc && Math.abs(k.steer) > .25) {
+  if (!k.drift && controls.drift && grounded && !spinning && !rocket && brake === 0 && v > DRIFT_MIN_SPEED * k.cc && Math.abs(k.steer) > .25) {
     k.drift = Math.sign(k.steer); k.driftCharge = 0; k.driftTier = 0;
     events.push({ type: 'driftStart', kart: k.index });
   }
@@ -232,6 +240,10 @@ export function stepKart(kart: Kart, controls: Readonly<KartControls>, track: Tr
     const tier = DRIFT_TIERS.filter(need => k.driftCharge >= need).length;
     if (tier > k.driftTier) { k.driftTier = tier; events.push({ type: 'tier', kart: k.index, tier }); }
     k.slip += (k.drift * (.44 + .2 * inward) - k.slip) * ease(9, dt);
+  } else if (rocket) {
+    // The rocket steers for itself (the race hands it the wheel), and turns as hard as the road asks.
+    omega = steerIn * ROCKET_TURN;
+    k.slip += (0 - k.slip) * ease(7, dt);
   } else {
     omega = k.steer * turnRate(Math.abs(v), k.assist) * (v >= 0 ? 1 : -1);
     k.slip += (k.steer * .1 * clamp(v / TOP_SPEED, 0, 1) - k.slip) * ease(7, dt);

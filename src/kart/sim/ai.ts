@@ -135,6 +135,14 @@ export interface RivalWorld {
 
 const NEUTRAL: KartControls = { steer: 0, throttle: 0, brake: 0, drift: false, item: false };
 
+/** The wheel that follows the racing line for a kart whose rocket is driving: −1..1 of `rate` radians a second. */
+export function pilotSteer(kart: Kart, track: Track, line: RacingLine, rate: number): number {
+  // A short look ahead: at a rocket's speed a long one would cut straight across the inside of a hairpin.
+  const v = Math.max(kart.speed, 4), look = 3.5 + v * .15, bend = track.curvature(kart.distance + look * .4);
+  const wanted = Math.atan2(line.laneAt(kart.distance + look) - kart.lane, look);
+  return clamp(v * (bend / Math.max(.3, 1 - bend * kart.lane) + 2 * Math.sin(wanted - kart.heading) / look) / rate, -1, 1);
+}
+
 /** One rival's controls for this step. */
 export function rivalControls(kart: Kart, brain: Brain, world: RivalWorld): KartControls {
   const { track, line, dt } = world, v = Math.max(0, kart.speed), s = kart.distance;
@@ -230,7 +238,11 @@ export function rivalControls(kart: Kart, brain: Brain, world: RivalWorld): Kart
       });
       const patience = brain.itemClock < -7;
       if (kart.item === 'sweet' || kart.item === 'sweets3') item = straight && kart.boostTime <= 0 && !kart.drift;
-      else if (kart.item === 'cone') item = (near(4, 30, 1.6) && Math.abs(kart.heading) < .2) || patience;
+      else if (kart.item === 'cone' || kart.item === 'cones3') item = (near(4, 30, 1.6) && Math.abs(kart.heading) < .2) || patience;
+      else if (kart.item === 'cracker') item = near(12, 32, 3.4) || patience;
+      else if (kart.item === 'horn') item = near(-7, 7, 6) || patience;
+      // Over the gum on a bouncing mushroom, or off a straight for the boost it lands with.
+      else if (kart.item === 'spring') item = !kart.airborne && (world.gums.some(gum => { const gap = trackGap(s, gum.distance); return gap > 3 && gap < 14 && Math.abs(gum.lane - kart.lane) < 1.6; }) || (straight && brain.itemClock < -1.5));
       else if (kart.item === 'gum') item = near(-16, -3, 3) || patience;
       else if (kart.item === 'bee' || kart.item === 'cloud') item = kart.place > 1 || patience;
       else item = true;

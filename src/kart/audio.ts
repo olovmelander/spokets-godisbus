@@ -23,6 +23,7 @@ export type KartSoundEvent =
   | 'pad' | 'boost' | 'draft'
   | 'box' | 'roulette' | 'itemReady'
   | 'throw' | 'drop' | 'shield' | 'shieldPop' | 'cloud' | 'star'
+  | 'bang' | 'horn' | 'spring' | 'rocket' | 'magnet'
   | 'hit' | 'spin' | 'bump' | 'wall' | 'splash'
   | 'candy' | 'candyLost'
   | 'passUp' | 'passDown'
@@ -390,6 +391,23 @@ export function createKartAudio(settings: KartAudioSettings, env: KartAudioEnv =
       for (let i = 0; i < 3; i++) { const f = 1500 + rand() * 900; blip('sine', f, .06, .04, .3 + i * .2 + rand() * .1, { to: f * .6 }); }
     },
     star() { run('bell', [74, 78, 81, 86, 90, 93, 98, 102], .045, .6, .085); puff('highpass', 7000, .5, .025, .1, { attack: .2 }); },
+    // A cracker going off: a soft thump, a crackle of paper and three falling bells.
+    bang() {
+      blip('sine', 190, .26, .26, 0, { to: 52, glide: .16 }); puff('lowpass', 420, .3, .24, 0, { to: 110 });
+      for (let i = 0; i < 5; i++) puff('highpass', 2600 + rand() * 2600, .035, .07, .03 + i * .045 + rand() * .02);
+      run('bell', [98, 93, 90], .05, .4, .06, .04);
+    },
+    // The birch-bark horn: two long open notes, a fifth apart.
+    horn() {
+      ping('reed', 62, .55, .15, 0, { attack: .04, hold: .32 }); ping('reed', 69, .7, .14, .16, { attack: .04, hold: .42 });
+      puff('bandpass', 520, .8, .06, 0, { to: 1300, q: .8, attack: .06, hold: .45 });
+    },
+    spring() { blip('triangle', 196, .42, .18, 0, { to: 880, glide: .3, wobble: .12, rate: 16 }); ping('wood', 67, .12, .14); },
+    rocket() {
+      puff('highpass', 2600, 1.3, .1, 0, { attack: .05, hold: .9 }); blip('sawtooth', 110, 1.1, .09, 0, { to: 700, glide: .8, hold: .7 });
+      run('bell', [86, 90, 93, 98], .06, .4, .06, .05);
+    },
+    magnet() { run('bell', [93, 90, 86, 83, 86, 90, 93, 98], .045, .32, .06); blip('sine', 98, .7, .1, 0, { to: 147, attack: .1, hold: .4 }); },
     hit() { puff('bandpass', 900, .09, .14); blip('triangle', 700, .6, .15, 0, { to: 150, wobble: .09, rate: 13, hold: .3 }); },
     spin() {
       blip('sine', 540, .7, .11, 0, { to: 300, wobble: .22, rate: 5.5, hold: .45 });

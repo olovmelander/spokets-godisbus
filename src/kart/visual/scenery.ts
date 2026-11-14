@@ -21,7 +21,7 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
   const rock = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .95, flatShading: true, side: THREE.DoubleSide });
   const box = new THREE.BoxGeometry(1, 1, 1), cyl = new THREE.CylinderGeometry(.5, .5, 1, 10), taper = new THREE.CylinderGeometry(.32, .5, 1, 8);
   const cone = new THREE.ConeGeometry(.5, 1, 9), ball = new THREE.SphereGeometry(.5, 12, 8), bead = new THREE.SphereGeometry(.5, 7, 5), blob = new THREE.IcosahedronGeometry(.5, 1), dome = new THREE.SphereGeometry(.5, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2);
-  const gem = new THREE.OctahedronGeometry(.5), disc = new THREE.CylinderGeometry(.5, .5, 1, 20), roof = new THREE.CylinderGeometry(1, 1, 1, 3, 1, false, Math.PI / 2).rotateZ(Math.PI / 2);
+  const stalk = new THREE.CylinderGeometry(.5, .5, 1, 4, 1, true), gem = new THREE.OctahedronGeometry(.5), disc = new THREE.CylinderGeometry(.5, .5, 1, 20), roof = new THREE.CylinderGeometry(1, 1, 1, 3, 1, false, Math.PI / 2).rotateZ(Math.PI / 2);
   const flag = new THREE.BufferGeometry();
   flag.setAttribute('position', new THREE.Float32BufferAttribute([-.5, 0, 0, .5, 0, 0, 0, -1, 0], 3)); flag.setIndex([0, 1, 2, 2, 1, 0]); flag.computeVertexNormals();
   const batch = createBatch(), point = track.point(0), weights = [0, 0, 0, 0, 0];
@@ -117,10 +117,10 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
       const wet = { ...s, y: Math.max(s.y, -2.6) }, kind = random();
       if (kind < .5) for (let i = 0; i < 5; i++) {       // reeds, with their brown heads
         const x = (random() - .5) * 1.2, z = (random() - .5) * 1.2, h = 1.5 + random() * 1.4;
-        part(cyl, solid, wet, [x, h / 2, z], [.06, h, .06], 0x7f9a4e, [(random() - .5) * .2, 0, (random() - .5) * .2]); part(cyl, solid, wet, [x, h, z], [.14, .42, .14], 0x6b4a2e);
+        part(stalk, solid, wet, [x, h / 2, z], [.06, h, .06], 0x7f9a4e, [(random() - .5) * .2, 0, (random() - .5) * .2]); part(stalk, solid, wet, [x, h, z], [.14, .42, .14], 0x6b4a2e);
       } else if (kind < .72) for (let i = 0; i < 4; i++) { // cotton grass
         const x = (random() - .5), z = (random() - .5), h = .7 + random() * .5;
-        part(cyl, solid, wet, [x, h / 2, z], [.03, h, .03], 0x8fa85c); part(bead, solid, wet, [x, h, z], .2, 0xfdfdf6);
+        part(stalk, solid, wet, [x, h / 2, z], [.03, h, .03], 0x8fa85c); part(bead, solid, wet, [x, h, z], .2, 0xfdfdf6);
       } else if (kind < .86) part(disc, solid, { ...s, y: -1.93 }, [0, 0, 0], [1.2 + random(), .03, 1.2 + random()], 0x5f9e4f, [0, random() * 6, 0]);
       else stone(wet, .8 + random() * 1.2, 0x7b8478, 0x5f8a4a);
     }
@@ -315,7 +315,7 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
   }
 
   batch.build(group, { name: 'scenery' });
-  for (const geometry of [box, cyl, taper, cone, ball, bead, blob, dome, gem, disc, roof, flag]) geometry.dispose();
+  for (const geometry of [box, cyl, stalk, taper, cone, ball, bead, blob, dome, gem, disc, roof, flag]) geometry.dispose();
   // Lamps and crystals shine as soft points; they grow as the light goes.
   const lampGeometry = new THREE.BufferGeometry();
   lampGeometry.setAttribute('position', new THREE.Float32BufferAttribute(lamps, 3)); lampGeometry.setAttribute('color', new THREE.Float32BufferAttribute(lampColors, 3));

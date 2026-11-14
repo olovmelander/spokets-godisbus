@@ -108,9 +108,9 @@ export function createKartView(canvas: HTMLCanvasElement, { calm, tier }: KartVi
         toy.root.rotation.set(point.pitch + nose, point.angle + kart.heading + kart.slip + whirl, flip, 'YXZ');
         toy.root.visible = calm || kart.guard <= 0 || Math.sin(time * 42) < .35;
         // A rival that comes between the camera and the player thins out instead of filling the picture.
-        const near = i === 0 || mode !== 'race' ? 1 : THREE.MathUtils.smoothstep(camera.position.distanceTo(toy.root.position), 2.4, 4.6);
+        const near = i === 0 || mode !== 'race' ? 1 : THREE.MathUtils.smoothstep(camera.position.distanceTo(toy.root.position), 3, 5.6);
         toy.material.transparent = near < 1; toy.material.opacity = near;
-        if (near < .3) toy.root.visible = false;
+        if (near < .25) toy.root.visible = false;
         toy.update(kart, step, time, calm);
         toy.root.updateMatrix();
         rolling[i] = rolling[i]! + kart.speed * step / .34;

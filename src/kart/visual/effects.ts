@@ -82,6 +82,10 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
     for (const z of [-.22, .22]) add(ball, [0, 0, z], [1, .9, .22], 0x3b2c1c);
     for (const side of [-1, 1]) { add(ball, [side * .55, .5, 0], [.9, .1, .5], 0xeaf6ff, [0, 0, side * .5]); add(ball, [side * .2, .1, .6], .16, 0x2b2118); }
   });
+  const crackerGeometry = model(add => {
+    for (let i = 0; i < 5; i++) add(ball, [0, 0, (i - 2) * .2], [.62, .62, .26], i % 2 ? 0xfff6e6 : 0xe5484d);
+    for (const end of [-1, 1]) add(cone, [0, 0, end * .7], [.7, .5, .7], 0xffd23f, [end * Math.PI / 2, 0, 0]);
+  });
   const gumGeometry = model(add => { add(ball, [0, .12, 0], [2, .34, 2], 0xff7fb2); add(ball, [.15, .55, -.1], .85, 0xffb7d6); add(ball, [-.5, .3, .35], .45, 0xff9cc6); });
   const cloudGeometry = model(add => { add(ball, [0, 0, 0], [1.9, 1, 1.3], 0x9aa6bb); add(ball, [-.75, -.1, .1], [1.2, .8, 1], 0x8794ab); add(ball, [.8, -.05, -.1], [1.3, .85, 1], 0xa8b3c6); add(ball, [.1, .35, 0], [1.1, .8, .9], 0xb8c2d3); });
   for (const geometry of [box, ball, cone]) geometry.dispose();
@@ -89,10 +93,10 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
     const mesh = new THREE.InstancedMesh(geometry, solid, count); mesh.name = name; mesh.frustumCulled = false; mesh.castShadow = !low; mesh.count = 0; group.add(mesh); return mesh;
   };
   const bags = instanced(bagGeometry, track.boxes.length, 'item-bags'), sweets = instanced(sweetGeometry, track.candies.length, 'sweets');
-  const cones = instanced(coneGeometry, 24, 'pine-cones'), bees = instanced(beeGeometry, 12, 'bumblebees'), gums = instanced(gumGeometry, 16, 'gum'), clouds = instanced(cloudGeometry, 8, 'rain-clouds');
+  const cones = instanced(coneGeometry, 24, 'pine-cones'), bees = instanced(beeGeometry, 12, 'bumblebees'), gums = instanced(gumGeometry, 16, 'gum'), clouds = instanced(cloudGeometry, 8, 'rain-clouds'), crackers = instanced(crackerGeometry, 8, 'crackers');
   const tint = new THREE.Color();
   track.candies.forEach((_, i) => sweets.setColorAt(i, tint.set(SWEETS[i % SWEETS.length]!)));
-  for (const mesh of [bags, cones, bees, gums, clouds]) for (let i = 0; i < mesh.instanceMatrix.count; i++) mesh.setColorAt(i, tint.set(0xffffff));
+  for (const mesh of [bags, cones, bees, gums, clouds, crackers]) for (let i = 0; i < mesh.instanceMatrix.count; i++) mesh.setColorAt(i, tint.set(0xffffff));
 
   const sparks = createParticles(low ? 320 : 700, true), paint = createParticles(low ? 240 : 520, false);
   group.add(paint.points, sparks.points);
@@ -131,9 +135,15 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
       });
       bags.count = state.boxes.length; sweets.count = state.candies.length;
       /* What has been thrown. */
-      let c = 0, b = 0, g = 0;
+      let c = 0, b = 0, g = 0, k = 0;
       for (const shot of state.shots) {
         track.point(shot.distance, shot.lane, point);
+        if (shot.kind === 'cracker' && k < 8) {
+          // Lobbed in a high arc, tumbling end over end, with a fuse of sparks.
+          const high = Math.sin(Math.PI * Math.min(1, Math.max(0, 1 - shot.life / .9))) * 3.6 + .7;
+          dummy.position.set(point.x, point.y + high, point.z); dummy.rotation.set(time * 9, point.angle + shot.angle, time * 5, 'YXZ'); dummy.scale.setScalar(1.25); dummy.updateMatrix(); crackers.setMatrixAt(k++, dummy.matrix);
+          if (!calm) sparks.emit(point.x, point.y + high, point.z, rnd(1.2), 1 + random(), rnd(1.2), random() < .5 ? 0xffe066 : 0xffffff, 1, .4, .05, .3, 5);
+        }
         if (shot.kind === 'cone' && c < 24) {
           dummy.position.set(point.x, point.y + .55, point.z); dummy.rotation.set(time * 14, point.angle + shot.angle, 0, 'YXZ'); dummy.scale.setScalar(1.05); dummy.updateMatrix(); cones.setMatrixAt(c++, dummy.matrix);
           if (!calm) paint.emit(point.x, point.y + .5, point.z, rnd(.4), .4, rnd(.4), 0xe8d9c0, .5, .5, 1.1, .3);
@@ -145,7 +155,7 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
           dummy.position.set(point.x, point.y + .08, point.z); dummy.rotation.set(point.pitch, point.angle + shot.id, 0, 'YXZ'); dummy.scale.set(.62 * wobble, .62 / wobble, .62 * wobble); dummy.updateMatrix(); gums.setMatrixAt(g++, dummy.matrix);
         }
       }
-      cones.count = c; bees.count = b; gums.count = g;
+      cones.count = c; bees.count = b; gums.count = g; crackers.count = k;
       /* Around each kart. */
       let rain = 0;
       state.karts.forEach((kart, i) => {
@@ -177,6 +187,9 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
           }
           if (kart.spin > 0 && random() < .6) paint.emit(at.x + rnd(.8), at.y + .3, at.z + rnd(.8), rnd(1), 1, rnd(1), 0xf4f4f4, .45, .6, 1.8, .5);
           if (kart.star > 0) sparks.emit(at.x + rnd(1.3), at.y + .4 + random() * 1.4, at.z + rnd(1.3), rnd(.5), 1.2, rnd(.5), CONFETTI[Math.floor(random() * 5)]!, 1, .5, .05, .5);
+          // A fizzy rocket leaves a tail of pink and white fizz; a magnet draws little lights in towards the kart.
+          if (kart.rocket > 0) for (let n = 0; n < 2; n++) sparks.emit(at.x - forward.x * 1.6 + rnd(.5), at.y + .7 + rnd(.4), at.z - forward.z * 1.6 + rnd(.5), -forward.x * 7 + rnd(2), rnd(2), -forward.z * 7 + rnd(2), random() < .5 ? 0xff8fc8 : 0xffffff, 1, .6, .08, .45);
+          if (kart.magnet > 0 && random() < .5) { const a = random() * Math.PI * 2; sparks.emit(at.x + Math.sin(a) * 4, at.y + .5 + random() * 1.5, at.z + Math.cos(a) * 4, -Math.sin(a) * 9, 0, -Math.cos(a) * 9, random() < .5 ? 0x9fd0ff : 0xff9fb8, .9, .3, .12, .4); }
         }
         // The first instant of a boost: a ring of light thrown back from the kart.
         if (kart.boostTime > 0 && !wasBoosting[i]) for (let n = 0; n < (mine ? 16 : 8); n++) {
@@ -189,7 +202,16 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
       /* One-off moments. */
       if (!calm) for (const event of events) {
         if (event.type === 'go') continue;
+        if (event.type === 'burst') {
+          // A cracker goes off: a flash, a ring of smoke along the ground and a shower of paper.
+          track.point(event.distance, event.lane, point);
+          burst(sparks, point.x, point.y + 1, point.z, [0xffffff, 0xffe066, 0xff8fb8], 34, 11, .9, .5, 8);
+          burst(paint, point.x, point.y + 1.2, point.z, CONFETTI, 30, 8, .34, .9, 13);
+          for (let n = 0; n < 18; n++) { const a = n / 18 * Math.PI * 2; paint.emit(point.x, point.y + .3, point.z, Math.sin(a) * 7, .8, Math.cos(a) * 7, 0xf4f4f4, .55, .8, 2.4, .6); }
+          continue;
+        }
         if (event.type === 'shotEnd') {
+          if (event.kind === 'cracker') continue;
           track.point(event.distance, event.lane, point);
           burst(paint, point.x, point.y + .6, point.z, event.kind === 'gum' ? [0xff9cc6, 0xffd3e6] : event.kind === 'bee' ? [0xffe07a, 0xffffff] : [0xb98a5e, 0xe8d9c0], 9, 3, .5, .45, 6);
           continue;
@@ -207,6 +229,12 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
         else if (event.type === 'bump') burst(sparks, at.x, at.y + .7, at.z, [0xffffff, 0xffe066], 6, 3, .35, .25);
         else if (event.type === 'tier') burst(sparks, at.x - forward.x, at.y + .4, at.z - forward.z, [SPARK[event.tier]!], 10, 4, .45, .3, 5);
         else if (event.type === 'use' && event.item === 'rainbow') burst(sparks, at.x, at.y + 1, at.z, CONFETTI, 26, 7, .6, .6);
+        else if (event.type === 'use' && event.item === 'spring') burst(paint, at.x, at.y + .3, at.z, [0xe5383b, 0xfffaf0], 14, 4, .5, .5, 9);
+        // The horn's call: two rings of sound running out along the ground.
+        else if (event.type === 'horn') for (let ring = 0; ring < 2; ring++) for (let n = 0; n < 26; n++) {
+          const a = n / 26 * Math.PI * 2, out = 13 - ring * 5;
+          sparks.emit(at.x, at.y + .8, at.z, Math.sin(a) * out, .3, Math.cos(a) * out, ring ? 0xfff0a8 : 0x9fd0ff, 1, .7, .15, .55);
+        }
         else if (event.type === 'finish' && event.kart === 0) party = 6;
       }
       /* The air of each place, near the camera: something small is always drifting by. */
@@ -229,7 +257,7 @@ export function createEffects(track: Track, parent: THREE.Object3D, { low, calm 
         }
       }
       sparks.update(dt); paint.update(dt);
-      for (const mesh of [bags, sweets, cones, bees, gums, clouds]) mesh.instanceMatrix.needsUpdate = true;
+      for (const mesh of [bags, sweets, cones, bees, gums, clouds, crackers]) mesh.instanceMatrix.needsUpdate = true;
     },
   };
 }

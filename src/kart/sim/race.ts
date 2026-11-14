@@ -2,15 +2,15 @@
  * the karts. Fixed steps, a seeded stream and no clock of its own, so a race is the same at any frame rate.
  * No three and no DOM: the view and the sound read `state` and the event queue.
  */
-import { buildRacingLine, createBrain, elastic, rivalControls, RIVALS, seededRandom, type Brain, type RacingLine } from './ai';
+import { buildRacingLine, createBrain, elastic, pilotSteer, rivalControls, RIVALS, seededRandom, type Brain, type RacingLine } from './ai';
 
 export { TRACK_IDS, type TrackId } from './track';
-import { giveBoost, hitKart, KART_RADIUS, MAX_CANDIES, newKart, stepKart, TOP_SPEED, type ItemId, type Kart, type KartControls, type KartEvent, type RacerId } from './kart';
+import { giveBoost, hitKart, KART_RADIUS, MAX_CANDIES, newKart, ROCKET_TURN, stepKart, TOP_SPEED, type ItemId, type Kart, type KartControls, type KartEvent, type RacerId } from './kart';
 import { getTrack, LAP, LAPS, trackGap, type Track, type TrackId } from './track';
 
 export type { ItemId, Kart, KartControls, KartEvent, RacerId } from './kart';
-export type ShotKind = 'cone' | 'bee' | 'gum';
-/** Something loose on the course: a thrown pine cone, a bumblebee on its way, or gum on the road. */
+export type ShotKind = 'cone' | 'bee' | 'gum' | 'cracker';
+/** Something loose on the course: a thrown pine cone, a bumblebee on its way, gum on the road, or a cracker in the air. */
 export interface Shot { id: number; kind: ShotKind; owner: number; distance: number; lane: number; angle: number; speed: number; life: number; bounces: number; target: number; safe: number }
 export interface BoxState { at: number; lane: number; active: boolean; respawn: number }
 export interface CandyState { at: number; lane: number; lift: number; active: boolean; respawn: number }
@@ -62,9 +62,13 @@ export const LEVELS: Readonly<Record<Difficulty, { pace: number; wait: number; c
 };
 /** How likely each item is for the leader, the middle of the field and the last kart. */
 const WEIGHTS: Readonly<Record<ItemId, readonly [number, number, number]>> = {
-  sweet: [22, 20, 8], sweets3: [0, 12, 26], cone: [18, 20, 10], bee: [2, 16, 18],
-  gum: [30, 10, 2], floss: [28, 12, 6], rainbow: [0, 4, 18], cloud: [0, 6, 12],
+  sweet: [22, 20, 8], sweets3: [0, 12, 26], cone: [18, 20, 10], cones3: [0, 10, 12], bee: [2, 16, 18],
+  gum: [30, 10, 2], cracker: [6, 14, 10], horn: [16, 8, 4], floss: [28, 12, 6], spring: [14, 10, 6],
+  magnet: [16, 8, 2], rainbow: [0, 4, 18], rocket: [0, 2, 16], cloud: [0, 6, 12],
 };
+/** What a rival is given less of in Lugnt: the things that are thrown at someone. */
+const THROWN: readonly ItemId[] = ['cone', 'cones3', 'bee', 'cracker', 'cloud'];
+const CRACKER_FUSE = .9, CRACKER_REACH = 5.2, HORN_REACH = 8, MAGNET_REACH = 9;
 const ITEMS = Object.keys(WEIGHTS) as ItemId[];
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
@@ -73,7 +77,7 @@ export function rollItem(behind: number, random: () => number, gentle = false): 
   const t = clamp(behind, 0, 1) * 2, i = t >= 1 ? 1 : 0, f = t - i;
   const weights = ITEMS.map(item => {
     const w = WEIGHTS[item], weight = w[i]! + (w[i + 1]! - w[i]!) * f;
-    return gentle && (item === 'cone' || item === 'bee' || item === 'cloud') ? weight * .2 : weight;
+    return gentle && THROWN.includes(item) ? weight * .2 : weight;
   });
   let pick = random() * weights.reduce((a, b) => a + b, 0);
   for (let k = 0; k < ITEMS.length; k++) { pick -= weights[k]!; if (pick <= 0) return ITEMS[k]!; }
@@ -140,10 +144,25 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
 
   function useItem(kart: Kart): void {
     const item = kart.item;
-    if (!item) return;
+    // A bouncing mushroom is kept for the ground: there is nothing to bounce on in the air.
+    if (!item || (item === 'spring' && kart.airborne)) return;
+    const reach = (other: { distance: number; lane: number }, radius: number) => Math.hypot(trackGap(kart.distance, other.distance) * metric(kart.distance, kart.lane), other.lane - kart.lane) < radius;
     const shoot = (kind: ShotKind, values: Partial<Shot>) => state.shots.push({ id: nextShot++, kind, owner: kart.index, distance: kart.distance, lane: kart.lane, angle: 0, speed: 0, life: 8, bounces: 0, target: -1, safe: .5, ...values });
     if (item === 'sweet' || item === 'sweets3') giveBoost(kart, 'sweet', state.events);
-    else if (item === 'cone') shoot('cone', { distance: kart.distance + 2.4, angle: clamp(kart.heading, -.5, .5), speed: Math.max(kart.speed + 16, 42), life: 7, bounces: 5 });
+    else if (item === 'cone' || item === 'cones3') shoot('cone', { distance: kart.distance + 2.4, angle: clamp(kart.heading, -.5, .5), speed: Math.max(kart.speed + 16, 42), life: 7, bounces: 5 });
+    // A cracker is lobbed well ahead and goes off where it comes down: far enough that its thrower is clear of it.
+    else if (item === 'cracker') shoot('cracker', { distance: kart.distance + 2.4, angle: clamp(kart.heading, -.5, .5), speed: Math.max(kart.speed + 22, 44), life: CRACKER_FUSE, bounces: 9 });
+    else if (item === 'horn') {
+      // The birch-bark horn: everyone close by tumbles, and whatever has been thrown near the kart is blown away.
+      for (const other of karts) if (other !== kart && other.finishTime === null && reach(other, HORN_REACH)) hitKart(other, 'horn', kart.index, state.events);
+      for (const shot of [...state.shots]) if (reach(shot, HORN_REACH + 2)) endShot(shot);
+      emit({ type: 'horn', kart: kart.index });
+    } else if (item === 'spring') {
+      // A bouncing mushroom: high over whatever lies on the road, with a trick's boost on landing.
+      Object.assign(kart, { airborne: true, airTime: 0, vy: 10.5, trick: true, drift: 0, driftCharge: 0, driftTier: 0 });
+      emit({ type: 'jump', kart: kart.index }); emit({ type: 'trick', kart: kart.index });
+    } else if (item === 'rocket') Object.assign(kart, { rocket: 3.2, cloud: 0, drift: 0, driftCharge: 0, driftTier: 0 });
+    else if (item === 'magnet') kart.magnet = 8;
     else if (item === 'bee') {
       const ahead = karts.find(other => other.place === kart.place - 1 && other.finishTime === null);
       shoot('bee', { distance: kart.distance + 2.2, speed: 44, life: 12, target: ahead ? ahead.index : -1 });
@@ -160,7 +179,7 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
       other.cloud = 3.2; emit({ type: 'cloud', kart: other.index, by: kart.index });
     }
     emit({ type: 'use', kart: kart.index, item });
-    if (item === 'sweets3' && --kart.itemCount > 0) return;
+    if ((item === 'sweets3' || item === 'cones3') && --kart.itemCount > 0) return;
     kart.item = null; kart.itemCount = 0;
   }
 
@@ -168,13 +187,13 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
     for (const shot of [...state.shots]) {
       if (!state.shots.includes(shot)) continue; // a cone has already knocked this gum away
       shot.life -= RACE_STEP; shot.safe -= RACE_STEP;
-      if (shot.kind === 'cone') {
+      if (shot.kind === 'cone' || shot.kind === 'cracker') {
         // A straight throw in the world, so it curls across the road in a bend, and bounces off the barriers.
         const kappa = track.curvature(shot.distance), ds = shot.speed * Math.cos(shot.angle) / metric(shot.distance, shot.lane);
         shot.distance += ds * RACE_STEP; shot.lane += shot.speed * Math.sin(shot.angle) * RACE_STEP; shot.angle -= kappa * ds * RACE_STEP;
         const left = track.wallLeft(shot.distance) - .4, right = track.wallRight(shot.distance) - .4;
         if (shot.lane > left || shot.lane < -right) { shot.lane = clamp(shot.lane, -right, left); shot.angle = -shot.angle; shot.bounces--; }
-        const gum = state.shots.find(other => other.kind === 'gum' && Math.abs(trackGap(shot.distance, other.distance)) < 1.3 && Math.abs(other.lane - shot.lane) < 1.2);
+        const gum = shot.kind === 'cone' && state.shots.find(other => other.kind === 'gum' && Math.abs(trackGap(shot.distance, other.distance)) < 1.3 && Math.abs(other.lane - shot.lane) < 1.2);
         if (gum) { endShot(gum); shot.bounces = -1; }
       } else if (shot.kind === 'bee') {
         // The bee follows the road to the kart it was sent after, then swings across to it.
@@ -185,6 +204,16 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
         shot.speed = Math.max(44, (target?.speed ?? 0) + 12);
         shot.distance += shot.speed * RACE_STEP / metric(shot.distance, shot.lane);
         shot.lane += clamp(aim - shot.lane, -10 * RACE_STEP, 10 * RACE_STEP);
+      }
+      if (shot.kind === 'cracker') {
+        // In the air it touches nobody; where it comes down, everyone within reach tumbles, its thrower too.
+        if (shot.life > 0) continue;
+        for (const kart of karts) {
+          if (kart.finishTime === null && Math.hypot(trackGap(shot.distance, kart.distance) * metric(kart.distance, kart.lane), kart.lane - shot.lane) < CRACKER_REACH) hitKart(kart, 'cracker', shot.owner, state.events);
+        }
+        emit({ type: 'burst', distance: shot.distance, lane: shot.lane, by: shot.owner });
+        endShot(shot);
+        continue;
       }
       if (shot.life <= 0 || shot.bounces < 0) { endShot(shot); continue; }
       for (const kart of karts) {
@@ -208,7 +237,9 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
       if (overlap <= 0) continue;
       const nx = apart > 1e-6 ? along / apart : 0, nn = apart > 1e-6 ? across / apart : a.index < b.index ? 1 : -1;
       a.distance -= nx * overlap / 2 / scale; a.lane -= nn * overlap / 2; b.distance += nx * overlap / 2 / scale; b.lane += nn * overlap / 2;
-      if (a.star > 0 !== b.star > 0) { hitKart(a.star > 0 ? b : a, 'star', a.star > 0 ? a.index : b.index, state.events); continue; }
+      // A rainbow kart or a rocket knocks over whoever it touches, unless that one is a rainbow or a rocket too.
+      const ramA = a.star > 0 || a.rocket > 0, ramB = b.star > 0 || b.rocket > 0;
+      if (ramA !== ramB) { const ram = ramA ? a : b; hitKart(ramA ? b : a, ram.rocket > 0 ? 'rocket' : 'star', ram.index, state.events); continue; }
       const closing = (a.speed * Math.cos(a.heading) - b.speed * Math.cos(b.heading)) * nx + (a.speed * Math.sin(a.heading) + a.slide - b.speed * Math.sin(b.heading) - b.slide) * nn;
       if (closing <= 0) continue;
       const knock = closing * .6;
@@ -245,6 +276,8 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
       Object.assign(controls[i]!, rivalControls(kart, brain, world));
     });
     itemPressed = false;
+    // A fizzy rocket takes the wheel and the pedal from whoever is in the kart.
+    karts.forEach((kart, i) => { if (kart.rocket > 0) Object.assign(controls[i]!, { steer: pilotSteer(kart, track, line, ROCKET_TURN), throttle: 1, brake: 0, drift: false }); });
     karts.forEach((kart, i) => stepKart(kart, controls[i]!, track, RACE_STEP, state.events));
     contacts();
     for (const [i, kart] of karts.entries()) {
@@ -261,13 +294,13 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
         kart.roulette = Math.max(0, kart.roulette - RACE_STEP);
         if (controls[i]!.item && kart.roulette < ROULETTE_SECONDS - .4) kart.roulette = 0;
         if (!kart.roulette && kart.rolling) {
-          kart.item = kart.rolling; kart.itemCount = kart.rolling === 'sweets3' ? 3 : 1; kart.rolling = null;
+          kart.item = kart.rolling; kart.itemCount = kart.rolling === 'sweets3' || kart.rolling === 'cones3' ? 3 : 1; kart.rolling = null;
           emit({ type: 'item', kart: kart.index, item: kart.item });
         }
       } else if (controls[i]!.item && kart.item && kart.spin <= 0) useItem(kart);
       // Boxes and sweets are taken where the kart really crosses them.
       for (const [index, box] of state.boxes.entries()) {
-        if (!box.active || Math.abs(kart.lane - box.lane) > 1.4 || kart.y > 1.6 || !crossed(before[i]!, kart.distance, box.at)) continue;
+        if (!box.active || Math.abs(kart.lane - box.lane) > (kart.magnet > 0 ? 4.5 : 1.4) || kart.y > 1.6 || !crossed(before[i]!, kart.distance, box.at)) continue;
         box.active = false; box.respawn = BOX_RESPAWN;
         emit({ type: 'box', kart: kart.index, box: index });
         if (kart.item || kart.roulette > 0) continue;
@@ -276,7 +309,9 @@ export function createRace({ track: course = 'varggropen', difficulty = 'normal'
         kart.roulette = i === 0 ? ROULETTE_SECONDS : 1.1;
       }
       for (const [index, candy] of state.candies.entries()) {
-        if (!candy.active || Math.abs(kart.lane - candy.lane) > 1.3 || Math.abs(kart.y - candy.lift) > 1.5 || !crossed(before[i]!, kart.distance, candy.at)) continue;
+        // A magnet pulls in every sweet near the kart, on the road or in the air; otherwise the kart must drive through it.
+        if (!candy.active || (kart.magnet > 0 ? Math.abs(trackGap(kart.distance, candy.at)) > MAGNET_REACH || kart.candies >= MAX_CANDIES
+          : Math.abs(kart.lane - candy.lane) > 1.3 || Math.abs(kart.y - candy.lift) > 1.5 || !crossed(before[i]!, kart.distance, candy.at))) continue;
         candy.active = false; candy.respawn = CANDY_RESPAWN;
         kart.candies = Math.min(MAX_CANDIES, kart.candies + 1);
         emit({ type: 'candy', kart: kart.index, candy: index });

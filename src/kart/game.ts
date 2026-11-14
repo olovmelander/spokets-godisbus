@@ -265,6 +265,8 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     for (const event of events) {
       if (event.type === 'go') { sound?.event('go'); continue; }
       if (event.type === 'shotEnd') continue;
+      // A cracker goes off somewhere on the road: it is heard by how far away that is.
+      if (event.type === 'burst') { sound?.event('bang', Math.max(0, 1 - Math.abs(trackGap(player.distance, event.distance)) / EARSHOT)); continue; }
       const mine = event.kart === 0, kart = race.state.karts[event.kart]!;
       const near = mine ? 1 : Math.max(0, 1 - Math.abs(trackGap(player.distance, kart.distance)) / EARSHOT) * .7;
       const play = (name: KartSoundEvent, gain = 1) => { if (near > .02) sound?.event(name, near * gain); };
@@ -285,8 +287,9 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
         case 'box': play('box'); break;
         case 'item': if (mine) { play('itemReady'); notice(`${words.items[event.item]} – ${words.itemTips[event.item]}`, 2, 2.4); el.announcement.textContent = words.items[event.item]; } break;
         case 'use':
-          if (event.item === 'cone' || event.item === 'bee') play('throw'); else if (event.item === 'gum') play('drop');
+          if (event.item === 'cone' || event.item === 'cones3' || event.item === 'bee' || event.item === 'cracker') play('throw'); else if (event.item === 'gum') play('drop');
           else if (event.item === 'floss') play('shield'); else if (event.item === 'rainbow') play('star'); else if (event.item === 'cloud') sound?.event('cloud', mine ? 1 : .6);
+          else if (event.item === 'horn' || event.item === 'spring' || event.item === 'rocket' || event.item === 'magnet') play(event.item);
           break;
         case 'hit':
           play(mine ? 'hit' : 'spin');
@@ -474,7 +477,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
         distance: player.distance, lane: player.lane, speed: player.speed, heading: player.heading,
         position: state.position, lap: player.lap, drift: player.drift, driftCharge: player.driftCharge, driftTier: player.driftTier,
         boostTime: player.boostTime, boostKind: player.boostKind, item: player.item, roulette: player.roulette, candies: player.candies,
-        airborne: player.airborne, surface: player.surface, spin: player.spin, shots: state.shots.length,
+        airborne: player.airborne, surface: player.surface, spin: player.spin, shots: state.shots.length, rocket: player.rocket, magnet: player.magnet,
         result: state.result, autoGas: input?.autoGas, device: input?.device, render: view?.stats(),
         karts: state.karts.map(({ id, distance, lane, heading, speed, place, item, finishTime }) => ({ id, distance, lane, heading, speed, place, item, finishTime })),
       };

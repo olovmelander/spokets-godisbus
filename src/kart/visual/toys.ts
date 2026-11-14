@@ -120,7 +120,7 @@ export function toyKart(id: RacerId, colour: number, shared: THREE.MeshStandardM
     root, material,
     /** The body's own little motions; the view places and turns the root. */
     update(kart: Kart, dt: number, time: number, calm: boolean) {
-      const fast = Math.min(1.4, Math.abs(kart.speed) / TOP_SPEED), boosting = kart.boostTime > 0;
+      const fast = Math.min(1.4, Math.abs(kart.speed) / TOP_SPEED), boosting = kart.boostTime > 0 || kart.rocket > 0;
       if (wasAir && !kart.airborne) squash = 1;
       wasAir = kart.airborne; squash = Math.max(0, squash - dt * 4.5);
       // Lean into the bend, and hard into a drift; settle after a landing; stretch a little under a boost.
@@ -133,9 +133,9 @@ export function toyKart(id: RacerId, colour: number, shared: THREE.MeshStandardM
       puppet.rotation.x = calm ? 0 : (boosting ? -.14 : 0) + (kart.spin > 0 ? Math.sin(time * 18) * .15 : 0);
       flames.visible = boosting;
       if (boosting) {
-        const length = (.9 + kart.boostPower * 3.4) * (calm ? 1 : .8 + .35 * Math.sin(time * 47 + kart.index));
+        const length = (.9 + (kart.rocket > 0 ? .5 : kart.boostPower) * 3.4) * (calm ? 1 : .8 + .35 * Math.sin(time * 47 + kart.index));
         flames.children.forEach(flame => flame.scale.set(1, 1, length));
-        fire.color.setHSL(kart.boostKind === 'turbo3' ? .92 : kart.boostKind === 'turbo1' ? .55 : .09, 1, .62);
+        fire.color.setHSL(kart.rocket > 0 || kart.boostKind === 'turbo3' ? .92 : kart.boostKind === 'turbo1' ? .55 : .09, 1, .62);
       }
       floss.visible = kart.shield > 0;
       if (floss.visible) { floss.rotation.y = calm ? 0 : time * .9; floss.scale.setScalar(kart.shield < 2 && !calm ? .9 + .1 * Math.sin(time * 14) : 1); }
