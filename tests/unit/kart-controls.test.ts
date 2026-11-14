@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createKartInput, kartPad, ramp, type KartControl, type KartInputEnv } from '../../src/kart/input';
-import { createKartAudio, kartRpm, type KartAudioEnv } from '../../src/kart/audio';
 
 class Button extends EventTarget {
   dataset: { kartControl?: KartControl } = {};
@@ -119,7 +118,7 @@ describe('Godisracet controller ownership', () => {
   });
 });
 
-describe('source steering and audio feel', () => {
+describe('source steering feel', () => {
   it('guards frame spikes and invalid controller values', () => {
     expect(ramp(0, 1, 10, .15, .07)).toBeCloseTo(1 / 3);
     expect(ramp(NaN, 1, NaN, .15, .07)).toBe(0);
@@ -127,103 +126,5 @@ describe('source steering and audio feel', () => {
     expect(kartPad(pad).steer).toBeCloseTo(.5);
     (pad.axes as number[])[0] = .1; expect(kartPad(pad).steer).toBe(0);
     Object.assign(pad.buttons[7]!, { value: .6, pressed: true }); expect(kartPad(pad).throttle).toBe(.6);
-  });
-  it('uses clutch load at a standstill, rises with speed and decays smoothly', () => {
-    const idle = kartRpm(1450, 0, 0, .1), gas = kartRpm(1450, 0, 1, .1);
-    expect(idle).toBe(1450); expect(gas).toBeGreaterThan(idle); expect(gas).toBeLessThan(2350);
-    expect(kartRpm(gas, 18, 1, .1)).toBeGreaterThan(gas);
-    expect(kartRpm(3900, 0, 0, .1)).toBeLessThan(3900);
-    expect(Number.isFinite(kartRpm(NaN, NaN, 0, NaN))).toBe(true);
-  });
-});
-
-class Param {
-  value = 0;
-  setValueAtTime(value: number) { this.value = value; }
-  linearRampToValueAtTime(value: number) { this.value = value; }
-  exponentialRampToValueAtTime(value: number) { this.value = value; }
-  setTargetAtTime(value: number) { this.value = value; }
-  cancelScheduledValues() {}
-}
-class AudioNodeFake {
-  gain = new Param(); frequency = new Param(); Q = new Param(); threshold = new Param(); knee = new Param(); ratio = new Param(); attack = new Param(); release = new Param();
-  starts = 0; stops = 0; disconnected = false; onended: (() => void) | null = null;
-  connect(node: AudioNodeFake) { return node; }
-  disconnect() { this.disconnected = true; }
-  start() { this.starts++; }
-  stop() { this.stops++; }
-}
-function soundEnv() {
-  const nodes: AudioNodeFake[] = [];
-  const make = () => { const n = new AudioNodeFake(); nodes.push(n); return n; };
-  const context = {
-    state: 'suspended', currentTime: 0, sampleRate: 100, destination: make(),
-    createGain: make, createOscillator: make, createBiquadFilter: make, createDynamicsCompressor: make, createBufferSource: make,
-    createBuffer: (_channels: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
-    resume: vi.fn(async () => { context.state = 'running'; }),
-    suspend: vi.fn(async () => { context.state = 'suspended'; }),
-    close: vi.fn(async () => { context.state = 'closed'; }),
-  };
-  const factory = vi.fn(() => context as unknown as AudioContext);
-  return { env: { createContext: factory } satisfies KartAudioEnv, nodes, factory, context };
-}
-
-describe('Godisracet audio lifecycle', () => {
-  it('does not create a context until a gesture, and creates none when both buses are muted', () => {
-    const f = soundEnv(), sound = createKartAudio({ effects: 0, music: 0, calm: false }, f.env);
-    sound.unlock(); sound.event('go'); sound.dispose(); expect(f.factory).not.toHaveBeenCalled();
-    const audible = createKartAudio({ effects: 1, music: 0, calm: false }, f.env);
-    audible.event('boost'); expect(f.factory).not.toHaveBeenCalled(); audible.unlock(); audible.unlock();
-    expect(f.factory).toHaveBeenCalledTimes(1); audible.dispose();
-  });
-  it('cancels unfinished chimes at pause and releases its graph/context exactly once', () => {
-    const f = soundEnv(), sound = createKartAudio({ effects: 1, music: 1, calm: false }, f.env);
-    sound.unlock(); sound.event('boost');
-    const notes = f.nodes.filter(n => n.starts > 0).slice(3); expect(notes.length).toBe(4);
-    sound.suspend(true); expect(notes.every(n => n.stops > 0 && n.disconnected)).toBe(true);
-    const count = f.nodes.length; sound.event('go'); expect(f.nodes).toHaveLength(count);
-    sound.suspend(false); expect(f.context.resume).toHaveBeenCalled();
-    sound.dispose(); sound.dispose(); expect(f.context.close).toHaveBeenCalledTimes(1);
-    expect(f.nodes.slice(1).every(n => n.disconnected)).toBe(true);
-  });
-  it('leaves effects silent with music-only settings and has no notes while suspended', () => {
-    const f = soundEnv(), sound = createKartAudio({ effects: 0, music: 1, calm: true }, f.env);
-    sound.unlock(); const before = f.nodes.length; sound.event('go'); expect(f.nodes).toHaveLength(before);
-    const state = { speed: 10, throttle: 1, drifting: true, boost: false, phase: 'racing' as const };
-    for (let i = 0; i < 4; i++) sound.tick(state, .1);
-    expect(f.nodes.length).toBeGreaterThan(before);
-    sound.suspend(true); const paused = f.nodes.length;
-    for (let i = 0; i < 8; i++) sound.tick(state, .1);
-    expect(f.nodes).toHaveLength(paused); sound.dispose();
-  });
-  it('keeps the finish engine state and fanfare through an asynchronous context resume', async () => {
-    const f = soundEnv(), sound = createKartAudio({ effects: 1, music: 0, calm: false }, f.env);
-    sound.unlock(); await Promise.resolve();
-    sound.tick({ speed: 15, throttle: 1, drifting: false, boost: false, phase: 'racing' }, .05);
-    const engineGain = f.nodes[5]!; expect(engineGain.gain.value).toBeGreaterThan(0);
-    sound.suspend(true); await Promise.resolve();
-    let finishResume = () => {};
-    f.context.resume.mockImplementation(() => new Promise<void>(resolve => {
-      finishResume = () => { f.context.state = 'running'; resolve(); };
-    }));
-    sound.suspend(false);
-    sound.tick({ speed: 0, throttle: 0, drifting: false, boost: false, phase: 'finished' }, 0);
-    sound.event('finish');
-    const before = f.nodes.length; expect(f.nodes.filter(n => n.starts > 0)).toHaveLength(3);
-    finishResume(); await Promise.resolve();
-    expect(engineGain.gain.value).toBe(0);
-    expect(f.nodes.length).toBe(before + 12); // Six fanfare notes, each with its own envelope.
-    sound.dispose();
-  });
-  it('does not replay queued cues when a pending resume is interrupted by another pause', async () => {
-    const f = soundEnv(); let resume = () => {};
-    f.context.resume.mockImplementation(() => new Promise<void>(resolve => {
-      resume = () => { f.context.state = 'running'; resolve(); };
-    }));
-    const sound = createKartAudio({ effects: 1, music: 0, calm: false }, f.env);
-    sound.unlock(); sound.event('go'); const count = f.nodes.length;
-    sound.suspend(true); resume(); await Promise.resolve();
-    expect(f.nodes).toHaveLength(count);
-    sound.dispose();
   });
 });

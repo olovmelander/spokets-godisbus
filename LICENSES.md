@@ -39,22 +39,25 @@ the files made with it). three's Basis transcoder (Apache-2.0) is served with th
 
 - `src/input/input.ts` is ported from *Sköldhästen*'s `skoldhast/src/input.mjs` (`olovmelander/alva-10-birthday`
   at `5438e23`), which is Olov's own.
-- `src/kart/ported/{route,physics,ai,kit,surfaces,camera}.js` and the adapted road geometry, steering ramp and
-  engine-RPM functions in `src/kart/visual/road.ts`, `src/kart/input.ts` and `src/kart/audio.ts` come from
+- Godisracet (`src/kart/`) began as a port of the kart game in
   [Pekkas Pokal](https://github.com/olovmelander/pekkas-pokal/tree/776236004403fb18423cc078ba4a82a6324bde14/src/games/kart),
-  Olov's own project, copied at `776236004403fb18423cc078ba4a82a6324bde14` at his explicit request.
-  Its package declares MIT. The Varggropen centreline is the source game's authored trace of the circuit
-  described by [VKRC](https://vkrc.se/klubben/banan/), scaled to 665 m. No aerial photograph, real participant
-  identity, advert, third-party model, recording or remote script is copied into Elof's game.
-  Typed interfaces and the console race rules, drift/boost extension, UI and original toy-world dressing
-  are adaptations made for this game. The trace is retained; terrain heights and decorative surroundings
-  are artistic interpretations, not a surveyed reconstruction.
+  Olov's own project, copied at `776236004403fb18423cc078ba4a82a6324bde14` at his explicit request. Its package
+  declares MIT. Since 14 November 2026 these parts of it remain: the Varggropen centreline in
+  `src/kart/sim/trace.ts` (the source game's authored trace of the circuit described by
+  [VKRC](https://vkrc.se/klubben/banan/)), the racing line's optimiser in `src/kart/sim/ai.ts`, the geometry
+  batching helper in `src/kart/visual/kit.ts`, the steering ramp and pointer ownership in `src/kart/input.ts` and
+  the engine's clutch (`kartRpm`) in `src/kart/audio.ts`. The source's tyre model, contact solver, rival driving,
+  surfaces and camera were replaced that day by an arcade kart model, items, rivals, course and camera written for
+  this game. No aerial photograph, real participant identity, advert, third-party model, recording or remote script
+  is copied into Elof's game. The trace's 77 points are retained; the lap's length (960 m, not the circuit's 665 m),
+  its width, hills, ramps and surroundings are made up for the game, not a surveyed reconstruction. The other three
+  courses (Gårdsvarvet, Myrspången and Kristallberget) are outlines drawn for this game.
 
 ## Files
 
 | File | What it is | Source and licence |
 | --- | --- | --- |
-| `src/render/home-console-model.ts`, `src/kart/visual/{forest,toys,festival}.ts`, `src/kart/render.ts`, `src/kart/game.ts`, `src/kart/kart.css`, `src/kart/audio.ts` | TV console and controller; original wooden racers, forest, festival decorations, magic effects, UI emblems and synthetic music/sound | Original procedural geometry, canvas textures, vector shapes, styling and synthesis made for this game. Ported portions are credited above. No new family likeness or external imagery/audio. |
+| `src/render/home-console-model.ts`, `src/kart/sim/{courses,track,kart,race,ai,cup}.ts`, `src/kart/visual/{world,scenery,sky,toys,effects,camera}.ts`, `src/kart/render.ts`, `src/kart/game.ts`, `src/kart/icons.ts`, `src/kart/kart.css`, `src/kart/audio.ts` | TV console and controller; Godisracet's kart handling, items, rivals, four courses and cup; its eight wooden racers, the five kinds of place, effects, UI emblems and synthetic music/sound | Original rules, procedural geometry, canvas textures, vector shapes, styling and synthesis made for this game: a kart racer of its genre, with nothing taken from another game's characters, items, courses, artwork or music. Ported portions are credited above. No new family likeness or external imagery/audio. |
 | `art/blender/garden-fallback.py`, `art/baked/boot/garden-fallback.glb` | Three generic garden buildings for checkouts without the private home pack | **Made by the family, with consent:** original simple Blender geometry for this game, without photograph textures or reconstruction of the family's buildings. |
 | Private `tragubbar/tragubbar.py`, `baked/private/tragubbar.glb` | Pappa's first trägubbe, Elof's little one and the figures on Pappa's shelf, modelled in code in the way of his own carving, from pictures Olov gave | **Made by the family, with consent** |
 | Private `garden/lekstuga.py`, `baked/private/lekstuga.glb` | The family's playhouse for Stormgård: `home-playhouse` without its porch, a low porch and his wooden blocks | **Made by the family, with consent** |
