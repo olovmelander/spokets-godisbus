@@ -500,6 +500,15 @@ export const stormgard: ChapterData = {
     { id: 'sg:flash', on: 'sg:flight', who: 'elof', line: 'sgFlash' },
     { id: 'sg:forest', at: 180.2, who: 'elof', line: 'sgForest' },
     { id: 'sg:end-klonk', on: 'beat:sg:forest', who: 'spoket', line: 'sgKlonkKlonk', aside: true },
+    // Sickan, the family's cat (`SICKAN`, below): what he says the first time he sees her, sitting ahead of him on the
+    // veranda, and as he steps onto the lid towards her on the ditch's far bank, as big as a horse to him. Remarks
+    // both, said to a child who looks about. Each has room to be read before the story's next line at a run: the first
+    // is let go by one who runs the deck while Moa is still speaking (begun later, it kept the gusts' warning waiting),
+    // and is then said where he next comes upon her with nobody speaking, down between the flowerpots; the second is
+    // short, and begun on the lid, so that it is done before Bertil calls.
+    { id: 'sg:sickan', at: 8.6, who: 'elof', line: 'sgSickan', aside: 4.4 },
+    { id: 'sg:sickan-pots', at: round(POTS[3]! - 0.8), until: 'beat:sg:sickan', who: 'elof', line: 'sgSickan', aside: 7 },
+    { id: 'sg:sickan-big', at: DITCH.from + 0.4, who: 'elof', line: 'sgSickanBig', aside: true },
   ],
   cameras: [
     // Up on the sills: wider, looking down at the deck and its drops.
@@ -626,3 +635,81 @@ export const context: Chooser = (has, player) => {
   if (at < STEPS[0]!.x) return ['sgVeranda', 'sgMoa', 'house'];
   return ['sgTrail', 'sgFamily'];
 };
+
+/**
+ * Sickan, the family's black cat (Olov, 14 November 2026: "den ska gå runt på passande ställen på stormgården"). Where
+ * she keeps out of the storm and waits for him, one place after another, and the way she pads on ahead of him between
+ * them (../sickan-life.ts; she is picture only: ../sickan.ts). Every place is behind his path, never on it:
+ *
+ * 1. on the veranda, in the dry place between the gutter's two runs of drops;
+ * 2. at the foot of the steps, by the pumpkin lantern's light;
+ * 3. on the lawn, down in the lee between two flowerpots while the gusts go over;
+ * 4. on the ditch's near bank, which she leaps as he comes to the barrel, to sit on the far bank and watch the water,
+ *    and him over the flooded lawn;
+ * 5. on the lawn below the playhouse, where he comes down off its roof;
+ * 6. on the birch root, from where she sees him off to the hedge.
+ */
+/** Facing the way he comes from, and a little towards the camera. */
+const CAT_FACE = Math.PI + 0.62;
+/** How far behind the path she keeps: near enough to be sharp in the picture. */
+const CAT_Z = -2.8;
+export const SICKAN: readonly import('../sickan-life').SickanPlace[] = [
+  {
+    // She is up as he comes, three steps before he reaches her: at his run she is down the steps before him.
+    id: 'veranda', x: 15.2, y: DECK, z: CAT_Z, pose: 'sit', face: CAT_FACE, go: 12.2,
+    // Along the deck behind him, and down the steps in three bounds: every other tread, and the lawn.
+    path: [
+      { x: 22.9, y: DECK, z: -2.9, gait: 'trot' },
+      { x: 27.5, y: STEPS[2]!.y, z: CAT_Z, gait: 'leap' },
+      { x: 32.6, y: STEPS[4]!.y, z: -2.75, gait: 'leap' },
+      { x: 35.3, y: 0, z: -2.6, gait: 'leap' },
+    ],
+  },
+  {
+    id: 'lantern', x: 35.3, z: -2.6, pose: 'sit', face: CAT_FACE, go: 33.4, shake: true, wash: true,
+    // Round behind Mamma's flower bed, and along behind the flowerpots.
+    path: [
+      { x: 36.8, z: -4.6, gait: 'trot' },
+      { x: 39, z: -6.5, gait: 'trot' },
+      { x: 42.4, z: -6.4, gait: 'trot' },
+      { x: 44.6, z: -4, gait: 'trot' },
+      { x: 60.4, z: -3.9, gait: 'trot' },
+    ],
+  },
+  {
+    id: 'pots', x: round((POTS[3]! + POTS[4]!) / 2 + 0.3), z: -3, pose: 'crouch', face: CAT_FACE, go: round((POTS[3]! + POTS[4]!) / 2 - 1.2),
+    path: [
+      { x: POTS[4]! + 0.4, z: -3.9, gait: 'trot' },
+      { x: BARREL.from - 1, z: -3.8, gait: 'trot' },
+    ],
+  },
+  {
+    // At the ditch's edge, past the can, she waits only until he is at the barrel's foot, where the picture looks on
+    // to the ditch: she leaps it as he says it is too wide.
+    id: 'bank', x: DITCH.from - 0.9, z: -3.4, pose: 'stand', face: -0.45, go: 77, passing: true,
+    path: [
+      { x: DITCH.to + 1.2, z: -3.5, gait: 'leap' },
+      { x: DITCH.to + 4.6, z: -3, gait: 'walk' },
+    ],
+  },
+  {
+    // Past the big candy on the bank, so that she does not sit behind it.
+    id: 'far-bank', x: DITCH.to + 4.6, z: -3, pose: 'sit', face: CAT_FACE, go: DITCH.to + 7, wash: true,
+    // While the tap's water runs and the lid comes up, that is what she watches.
+    watch: { on: 'sg:pour', until: 'scene:kranen', x: LID.x, y: -0.6, z: -1 },
+    // No way on: she cannot go over the flooded lawn, and stays to see him off in Bertil's boot. She has gone round it,
+    // unseen, by the time he is over (beside Bertil, who is drawn smaller than life, she would be the size of a dog).
+  },
+  {
+    // On the lawn below the playhouse's far eaves, far enough on to be in the picture as he lands: under the eaves the
+    // picture, which is up on the roof with him, does not reach down to her.
+    id: 'playhouse', x: PLAYHOUSE.to + 5.8, z: -3, pose: 'sit', face: CAT_FACE, go: PLAYHOUSE.to + 4.4, wash: true,
+    // On over the lawn, over the rut's puddle in a leap, and up the birch root.
+    path: [
+      { x: RUT.from - 0.9, z: -3.3, gait: 'trot' },
+      { x: RUT.to + 0.9, z: -3.3, gait: 'leap' },
+      { x: ROOT.from, z: -3.2, gait: 'trot' },
+    ],
+  },
+  { id: 'root', x: ROOT.end - 0.2, y: ROOT.y, z: -3, pose: 'sit', face: CAT_FACE, go: Infinity },
+];
