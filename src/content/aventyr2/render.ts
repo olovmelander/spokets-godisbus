@@ -21,7 +21,7 @@ import { lessMotion } from '../../platform/motion';
 import { kitLife } from '../../render/kit-life';
 import { ambientOf, stepAmbient } from '../../render/ambient-animals';
 import { drawnWhile } from '../../render/idle';
-import { litLamp } from '../../render/stage';
+import { flashlight, lampColour, litLamp } from '../../render/flashlight';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
 import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
@@ -667,7 +667,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
   // A lamp shining on him from somewhere: Moa's from the window ("Jag lyser för dig från fönstret!").
   const beams = (storm?.beams ?? []).map((def) => {
-    const lamp = litLamp();
+    const lamp = litLamp(lampColour('moa'));
     lamp.scale.setScalar(1.8);
     lamp.position.set(def.at.x, def.at.y, def.z);
     lamp.visible = false;
@@ -2124,16 +2124,13 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     flashlight: (spot) => {
       // Stormkvällen's flashlight, lying switched off on the table: Pappa can't find it in the dark ("Var är ficklampan?
       // Jag ser ingenting!"), and Elof lights it as he takes it (../../render/view.ts, `carriedLamp`). It lay there
-      // shining a long beam across the room, before the power cut too. Its red body and pale glass catch the candle.
+      // shining a long beam across the room, before the power cut too. Its red body and pale glass catch the candle: the
+      // same lamp that he then carries and Pappa holds (../../render/flashlight.ts), lying on its side.
       const group = new Group();
-      const body = new Mesh(new CylinderGeometry(0.09, 0.09, 0.6, 10), solid('#c8372a', 0.5));
-      body.rotation.z = Math.PI / 2;
-      const head = new Mesh(new CylinderGeometry(0.15, 0.1, 0.18, 12), solid('#2a2a2a', 0.4));
-      head.rotation.z = Math.PI / 2;
-      head.position.x = 0.38;
-      const glass = new Mesh(new CircleGeometry(0.13, 14).rotateY(Math.PI / 2), new MeshStandardMaterial({ color: '#dfe6ea', roughness: 0.15, metalness: 0.3 }));
-      glass.position.x = 0.475;
-      group.add(body, head, glass);
+      const lamp = flashlight(lampColour('pappa'));
+      lamp.rotation.y = Math.PI / 2;
+      lamp.position.y = 0.075;
+      group.add(lamp);
       return standing(spot, group);
     },
     'tiny-cap': (spot) => {
@@ -2366,15 +2363,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return standing(spot, group, (clock) => { (light.material as MeshBasicMaterial).opacity = 0.6 + 0.1 * Math.sin(clock * 7); });
     },
     deadLamp: (spot) => {
-      // A flashlight the storm has put out, set down on the boards: a dull body and a pale, dark glass.
+      // A flashlight the storm has put out, set down on the boards, its glass dark: its owner's own, as they then hold it
+      // lit (../../render/flashlight.ts; the chapter says whose it is, in `word`).
       const group = new Group();
-      const body = new Mesh(new CylinderGeometry(0.1, 0.1, 0.62, 10).rotateZ(Math.PI / 2), solid('#3c4048', 0.5));
-      const head = new Mesh(new CylinderGeometry(0.17, 0.11, 0.2, 12).rotateZ(-Math.PI / 2), solid('#50565e', 0.45));
-      head.position.x = 0.4;
-      const glass = new Mesh(new CircleGeometry(0.15, 12).rotateY(Math.PI / 2), solid('#aab4c0', 0.2));
-      glass.position.x = 0.505;
-      group.add(body, head, glass);
-      group.position.y = 0.17;
+      const lamp = flashlight(lampColour(spot.word));
+      lamp.rotation.y = Math.PI / 2;
+      lamp.scale.setScalar(1.25);
+      group.add(lamp);
+      group.position.y = 0.14 * 1.25;
       return standing(spot, group, () => {});
     },
     owlLanding: (spot) => {

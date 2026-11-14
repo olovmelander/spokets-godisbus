@@ -1,12 +1,12 @@
 import { BoxGeometry, Color, Euler, Group, InstancedMesh, Matrix4, Mesh, MeshLambertMaterial, Object3D, Quaternion, SkinnedMesh, Vector3 } from 'three';
 import type { ChapterData } from '../sim/types';
 import { kneeSupport } from './knee-support';
-import { createArmContact, createHandGrip, createHandHold, type GripTurn } from './arm-contact';
+import { createArmContact, createHandGrip, createHandHold, type ElbowGuide, type GripTurn } from './arm-contact';
 import { faceOf } from './face';
 import { copyShape, fingersOf, mixShape, REST, type Grip } from './fingers';
 import { COAT_ORDER, SOCK, bodyOf, buildShells, fitWardrobe, wearShells, wearWardrobe, type RainGear, type Wardrobe } from './rain-gear';
 import { bendSoftly, followLimbs } from './joints';
-import { sleevesWithArms } from './sleeves';
+import { sleevesWithArms, weightsOf } from './sleeves';
 
 /**
  * A body's pose, as a scene's acting asks for it (src/render/acting.ts). Angles are in radians. The body faces
@@ -214,8 +214,9 @@ export interface Rig {
   /**
    * Place a hand on a world-space contact after posing, without stretching the arm. `most`: how much of the arm's
    * length it may use (1, all of it, as pointing does; less keeps the elbow bent, as holding something out does).
+   * `elbow`: a direction in the world from the shoulder towards where the elbow belongs (a carried lamp's arm).
    */
-  reach(side: 0 | 1, target: Vector3, weight?: number, most?: number): void;
+  reach(side: 0 | 1, target: Vector3, weight?: number, most?: number, elbow?: Vector3): void;
   /** Place and aim the palm around a held thing; returns its actual centre after clamping the reach.
    * A supporting palm can also give its surface normal and an outward elbow direction, blended by the same weight. */
   grip(side: 0 | 1, target: Vector3, fingerDirection: Vector3, out: Vector3, weight?: number, palmNormal?: Vector3, elbowDirection?: Vector3): Vector3;
@@ -227,9 +228,16 @@ export interface Rig {
   /**
    * Holds a thing after posing: the hand goes where its grip's socket comes to `target`, with the thing's axis along
    * `axis`, and the fingers close round it as the hand arrives (`weight`). Returns the socket where it is (a reach too far
-   * is clamped), and the thing's axis as held in `axisOut`. An optional `fingerDirection` also defines a tool's palm roll.
+   * is clamped), and the thing's axis as held in `axisOut`. An optional `fingerDirection` also defines a tool's palm roll,
+   * and `elbow` (a direction in the world from the shoulder) where the elbow belongs meanwhile.
    */
-  grasp?(side: 0 | 1, grip: Grip, target: Vector3, axis: Vector3, out: Vector3, weight?: number, axisOut?: Vector3, fingerDirection?: Vector3, gripTurn?: GripTurn): Vector3;
+  grasp?(side: 0 | 1, grip: Grip, target: Vector3, axis: Vector3, out: Vector3, weight?: number, axisOut?: Vector3, fingerDirection?: Vector3, gripTurn?: GripTurn, elbow?: Vector3): Vector3;
+  /**
+   * A grip's socket in the hand's own frame, for working out where a hand must be to hold a thing a given way: where the
+   * held thing's middle is from the wrist (in the world's units), its axis, and the way the fingers run from the wrist
+   * (both unit). False where the hand has no fingers.
+   */
+  socketIn?(side: 0 | 1, grip: Grip, at: Vector3, axis: Vector3, along: Vector3): boolean;
   /** Where a grip's socket is in the world now, and the held thing's axis: for a thing held wherever the hand is. */
   socket?(side: 0 | 1, grip: Grip, out: Vector3, axisOut?: Vector3): Vector3;
   /**
@@ -239,6 +247,12 @@ export interface Rig {
   breeze?(wind: number, dt: number, still: boolean, ruffle?: number): void;
   /** How tall the body stands, in EL. */
   readonly height: number;
+  /**
+   * The trunk's round, between the hips and the shoulders: its half width and its half depth before the body, as shares of
+   * half the way from shoulder to shoulder (in its raincoat, while it wears one). What a thing carried beside the body
+   * must keep out of (./lamp-hold.ts).
+   */
+  readonly trunk?: { readonly wide: number; readonly deep: number };
   /** Its legs' measures, as shares of its height: the stride is fitted to them (./gait.ts). */
   readonly legs: Legs;
   /**
@@ -329,6 +343,8 @@ const geometry = new BoxGeometry(1, 1, 1);
 const X = new Vector3(1, 0, 0);
 const Y = new Vector3(0, 1, 0);
 const Z = new Vector3(0, 0, 1);
+/** Where a reaching arm's elbow belongs, when its holder says (Rig.reach, Rig.grasp). */
+const elbowGuide: ElbowGuide = { direction: new Vector3(), weight: 0 };
 
 /**
  * The rehearsal figure, posable: never a likeness or a substitute for an approved model (CLAUDE.md). Its parts
@@ -525,6 +541,8 @@ export function createRehearsalRig(who: Role): Rig {
     },
     height: ADULT * s,
     legs: REHEARSAL_LEGS,
+    // Its trunk is a box, 1.3 wide and 0.7 deep, between shoulders 2 × SHOULDER_X apart.
+    trunk: { wide: 0.65 / SHOULDER_X, deep: 0.35 / SHOULDER_X },
     pose,
     dress(gear) {
       // The coat over the body and arms; boots over the shins and shoes; a sock where a boot is off. Being put on, each
@@ -589,8 +607,9 @@ export function createRehearsalRig(who: Role): Rig {
       writePart(4);
       mesh.instanceMatrix.needsUpdate = true;
     },
-    reach(side, target, weight = 1, most = 1) {
-      contacts[side].solve(target, weight, most);
+    reach(side, target, weight = 1, most = 1, elbow) {
+      if (elbow) { elbowGuide.direction.copy(elbow); elbowGuide.weight = weight; contacts[side].solve(target, 1, most, elbowGuide); }
+      else contacts[side].solve(target, weight, most);
       contactParts(side);
     },
     grip(side, target, direction, out, weight = 1, palmNormal, elbowDirection) {
@@ -599,6 +618,48 @@ export function createRehearsalRig(who: Role): Rig {
       return out;
     },
   };
+}
+
+/** How much rounder a raincoat makes the trunk it is worn over. */
+const RAINCOAT_ROUND = 1.12;
+
+/**
+ * The trunk's round as a model rests: its half width and its half depth before the body, between the hips and the
+ * shoulders, as shares of half the way from shoulder to shoulder; from the model's own corners that the arms and hands do
+ * not move. Null for a model without shoulders.
+ */
+function trunkOf(model: Object3D, group: Group, armL?: Object3D, armR?: Object3D, hip?: Object3D): { wide: number; deep: number } | null {
+  if (!armL || !armR) return null;
+  group.updateWorldMatrix(true, true);
+  const toGroup = new Matrix4().copy(group.matrixWorld).invert();
+  const left = armL.getWorldPosition(new Vector3()).applyMatrix4(toGroup), right = armR.getWorldPosition(new Vector3()).applyMatrix4(toGroup);
+  // The body's own left and ahead, from its shoulders: a model may face another way in its group (Elof's).
+  const across = left.clone().sub(right).setY(0), half = across.length() / 2;
+  if (half < 1e-6) return null;
+  across.normalize();
+  const ahead = new Vector3(-across.z, 0, across.x), middle = left.clone().add(right).multiplyScalar(0.5);
+  const top = Math.min(left.y, right.y) - 0.15 * half;
+  const bottom = hip ? hip.getWorldPosition(new Vector3()).applyMatrix4(toGroup).y : top - 2.4 * half;
+  const p = new Vector3(), toBody = new Matrix4();
+  let wide = 0, deep = 0;
+  model.traverse((node) => {
+    const mesh = node as SkinnedMesh;
+    if (!mesh.isSkinnedMesh || !mesh.skeleton) return;
+    const limb = mesh.skeleton.bones.map((bone) => /arm|hand/.test(bone.name));
+    const position = mesh.geometry.getAttribute('position');
+    toBody.multiplyMatrices(toGroup, mesh.matrixWorld);
+    for (let i = 0; i < position.count; i += 2) {
+      p.fromBufferAttribute(position, i).applyMatrix4(toBody);
+      if (p.y < bottom || p.y > top) continue;
+      let moved = 0;
+      for (const [bone, weight] of weightsOf(mesh, i)) if (limb[bone]) moved += weight;
+      if (moved > 0.3) continue;
+      p.sub(middle);
+      wide = Math.max(wide, Math.abs(p.dot(across)));
+      deep = Math.max(deep, p.dot(ahead));
+    }
+  });
+  return wide > 0 && deep > 0 ? { wide: wide / half, deep: deep / half } : null;
 }
 
 /** One bone, the turn it rests in, and which way round its x it bends a joint forward. */
@@ -919,10 +980,18 @@ export function createModelRig(model: Object3D, height: number): Rig {
   // The rain gear's shells, made the first time it is worn (./rain-gear.ts), and the wardrobe made in Blender.
   let shells: ReturnType<typeof buildShells> | undefined;
   let wardrobe: Wardrobe | null = null, worn: RainGear | null = null, headBare = false;
+  // The trunk's round as the model rests (./lamp-hold.ts keeps a carried lamp out of it), and with a raincoat over it.
+  const trunkBare = trunkOf(model, group, bones.armL?.node, bones.armR?.node, bones.legL?.node), trunkNow = { wide: 0, deep: 0 };
   const made: Rig = {
     group,
     height,
     legs,
+    get trunk() {
+      if (!trunkBare) return undefined;
+      const coat = worn?.coat ? RAINCOAT_ROUND : 1;
+      trunkNow.wide = trunkBare.wide * coat; trunkNow.deep = trunkBare.deep * coat;
+      return trunkNow;
+    },
     dress(gear, ready = false) {
       worn = gear;
       // The wardrobe made in Blender, once it has come; until then (or without one) shells of the body itself.
@@ -962,7 +1031,10 @@ export function createModelRig(model: Object3D, height: number): Rig {
     breeze(wind, dt, still, ruffle = 0) { if (dt > 0) soft(sway.step(wind, dt, still), still ? 0 : ruffle); },
     face(open, round, lids) { face?.set(open, round, lids); },
     mouth(out) { return bones.head ? bones.head.node.localToWorld(out.copy(mouth)) : group.localToWorld(out.set(0, height * .89, height * .075)); },
-    reach(side, target, weight = 1, most = 1) { contacts[side]?.(target, weight, most); },
+    reach(side, target, weight = 1, most = 1, elbow) {
+      if (elbow) { elbowGuide.direction.copy(elbow); elbowGuide.weight = weight; contacts[side]?.(target, 1, most, elbowGuide); }
+      else contacts[side]?.(target, weight, most);
+    },
     hold(side, grip, weight = 1) {
       const hand = fingered[side], made = gripIn(side, grip);
       if (!hand || !made) return;
@@ -975,14 +1047,20 @@ export function createModelRig(model: Object3D, height: number): Rig {
       if (axisOut) axisOut.copy(made.socket.axis).transformDirection(bone.matrixWorld);
       return bone.localToWorld(out.copy(made.socket.at));
     },
-    grasp(side, grip, target, axis, out, weight = 1, axisOut, fingerDirection, gripTurn) {
+    socketIn(side, grip, at, axis, along) {
+      const made = gripIn(side, grip), hand = fingered[side];
+      if (!made || !hand) return false;
+      at.copy(made.socket.at).multiplyScalar(handScale.x); axis.copy(made.socket.axis); along.copy(hand.layout.along);
+      return true;
+    },
+    grasp(side, grip, target, axis, out, weight = 1, axisOut, fingerDirection, gripTurn, elbow) {
       const made = gripIn(side, grip), hold = holds[side];
       if (!made || !hold) {
-        this.reach(side, target, weight);
+        this.reach(side, target, weight, 1, elbow);
         if (axisOut) axisOut.copy(axis);
         return this.hand(side, out);
       }
-      hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, fingerDirection, gripTurn);
+      hold(made.socket.at, made.socket.axis, target, axis, out, weight, axisOut, fingerDirection, gripTurn, elbow);
       // The fingers close as the hand comes, the last of the way, and only on what the hand gets to: an arm that falls
       // short of it leaves the hand open, not closed on the air.
       const hand = fingered[side]!, length = hand.layout.size * 0.112 * handScale.x;
@@ -1096,7 +1174,7 @@ export function createModelRig(model: Object3D, height: number): Rig {
     },
   };
   // A body without the family's hands (a figure built in code) holds as it did: at its hand, the hand as it is.
-  if (!fingered[0] && !fingered[1]) { delete made.hold; delete made.grasp; delete made.socket; }
+  if (!fingered[0] && !fingered[1]) { delete made.hold; delete made.grasp; delete made.socket; delete made.socketIn; }
   // And one without the family's painted face keeps the face it has.
   if (!face) delete made.face;
   return made;

@@ -507,7 +507,7 @@ export const stormoga: ChapterData = {
     // Mormor and morfar at the head of the jetty, her lantern the only light left; the family's dead lamps at their feet.
     { look: 'mormor', at: { x: -0.6, y: 0 }, z: -1.2, until: 'owl' },
     { look: 'morfar', at: { x: -2.2, y: 0 }, z: -1.6, until: 'owl' },
-    ...LIT.map((who) => ({ look: 'deadLamp' as const, at: { x: LAMP[who], y: 0 }, z: -0.5, until: `so:${who}` })),
+    ...LIT.map((who) => ({ look: 'deadLamp' as const, at: { x: LAMP[who], y: 0 }, z: -0.5, until: `so:${who}`, word: who })),
     // The two trägubbar on the stone, the old one holding the little one; he carries them once he is big.
     { look: 'tragubbe', at: { x: FIGURES, y: 0.6 }, z: -0.5, until: 'taste', word: 'lifted' },
     { look: 'lillgubbe', word: 'lifted', at: { x: FIGURES + 0.32, y: 0.6 }, z: -0.3, until: 'taste' },

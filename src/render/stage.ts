@@ -1,10 +1,11 @@
-import { flashlightCarryTarget, holdFlashlight, quietLampArm } from './lamp-hold';
+import { flashlightHandover, holdFlashlight, quietLampArm } from './lamp-hold';
+import { lampColour, litLamp } from './flashlight';
 import { createLampSpot } from './lamp-spot';
 import { HOME_LAYOUT } from '../content/home-layout';
 import { lampHandTransfer } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
-  AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
+  AdditiveBlending, BoxGeometry, CanvasTexture, CylinderGeometry, DynamicDrawUsage, Group, InstancedMesh, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, SphereGeometry, SRGBColorSpace,
   TorusGeometry, Vector3,
 } from 'three';
@@ -41,16 +42,16 @@ const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
 /** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
 const OFFER_REACH = 0.82;
 /**
- * How each thing is held (./fingers.ts): the hand closes round the knife's haft, a lamp's body and the brush's stick, the
- * thumb over the fist; two fingers go through the mug's handle, the thumb on it; Moa pinches her crayon between her thumb
- * and her first finger near its tip, and the drawing at its edges. The size is the radius, in EL, of what the fingers
- * close round.
+ * How each thing is held (./fingers.ts): the hand closes round the knife's haft and the brush's stick, the thumb over the
+ * fist; a lamp lies slanting across the palm, the thumb along it (./lamp-hold.ts); two fingers go through the mug's
+ * handle, the thumb on it; Moa pinches her crayon between her thumb and her first finger near its tip, and the drawing
+ * at its edges. The size is the radius, in EL, of what the fingers close round.
  */
 export const GRIPS: Record<Thing, Grip> = {
   knife: { kind: 'power', size: 0.05 }, brush: { kind: 'power', size: 0.025 }, mug: { kind: 'loop', size: 0.024 },
   crayon: { kind: 'pinch', size: 0.035 }, drawing: { kind: 'pinch', size: 0.006 },
-  'lamp-mamma': { kind: 'power', size: 0.075 }, 'lamp-pappa': { kind: 'power', size: 0.075 },
-  'lamp-moa': { kind: 'power', size: 0.075 }, 'lamp-bertil': { kind: 'power', size: 0.075 },
+  'lamp-mamma': { kind: 'torch', size: 0.075 }, 'lamp-pappa': { kind: 'torch', size: 0.075 },
+  'lamp-moa': { kind: 'torch', size: 0.075 }, 'lamp-bertil': { kind: 'torch', size: 0.075 },
 };
 /** A hand laid on something: the wood it steadies, the paper; and one that points. */
 const FLAT: Grip = { kind: 'flat' }, POINTING: Grip = { kind: 'point' };
@@ -364,24 +365,8 @@ const WALKING_HANDS: Partial<Record<Act, Free>> = {
   point: HANDS_FREE[1]!, shine: HANDS_FREE[1]!, offer: HANDS_FREE[1]!, wave: HANDS_FREE[1]!, paint: HANDS_FREE[1]!,
 };
 
-/**
- * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
- * the night, so what is black in it is nothing: it fades away from the lamp and has no end to see.
- */
-export function litLamp(): Mesh {
-  const body = new Mesh(new CylinderGeometry(0.075, 0.075, 0.42, 10).rotateX(Math.PI / 2), new MeshStandardMaterial({ color: '#3c4048', roughness: 0.5 }));
-  const head = new Mesh(new CylinderGeometry(0.13, 0.085, 0.16, 12).rotateX(Math.PI / 2).translate(0, 0, 0.27), new MeshStandardMaterial({ color: '#50565e', roughness: 0.45 }));
-  const LONG = 16;
-  const cone = new ConeGeometry(1.7, LONG, 18, 5, true).rotateX(-Math.PI / 2).translate(0, 0, LONG / 2 + 0.3);
-  const at = cone.getAttribute('position');
-  const fade = new Float32Array(at.count * 3);
-  for (let i = 0; i < at.count; i++) fade.fill(Math.max(0, 1 - (at.getZ(i) - 0.3) / LONG) ** 1.6, i * 3, i * 3 + 3);
-  cone.setAttribute('color', new BufferAttribute(fade, 3));
-  const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
-  beam.name = 'lamp-beam';
-  body.add(head, beam);
-  return body;
-}
+// The family's flashlights are built in ./flashlight.ts; kept here for those who take one from the stage.
+export { litLamp };
 
 /** A thing the family holds: built small and plain, in the colours of what it is. */
 function thing(kind: Thing, drawing: CanvasTexture): Mesh {
@@ -390,7 +375,7 @@ function thing(kind: Thing, drawing: CanvasTexture): Mesh {
     case 'lamp-pappa':
     case 'lamp-moa':
     case 'lamp-bertil':
-      return litLamp();
+      return litLamp(lampColour(kind.slice(5)));
     case 'knife': {
       const handle = new Mesh(new BoxGeometry(0.09, 0.32, 0.09), new MeshStandardMaterial({ color: '#963c30', roughness: 0.7 }));
       const blade = new Mesh(new BoxGeometry(0.03, 0.24, 0.07), new MeshStandardMaterial({ color: '#cfd6d9', roughness: 0.25, metalness: 0.6 }));
@@ -697,7 +682,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
 
   const place = new Object3D();
   const hand = new Vector3(), lampAim = new Vector3(), lampBefore = new Vector3(), kneeAt = new Vector3();
-  const lampMeeting = new Vector3(), lampOther = new Vector3();
+  const lampMeeting = new Vector3(), lampShown = new Vector3();
+  /** What Pappa was looking at when Elof gave him the flashlight (Stormkvällen): unknown until he has it. */
+  let staleAim: Point | null | undefined;
   const kneeOutside = new Vector3(), kneeNormal = new Vector3(0, -1, 0);
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
@@ -852,6 +839,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           state = { ...state };
           state.holds = transfer > 0 ? 'lamp-pappa' : null;
           state.holdsLeft = transfer < 1 ? 'lamp-pappa' : null;
+          // Between the scenes that stage him he lights Elof's way with it, as the family do out in the storm, unless a
+          // scene left his beam on something. And what he was looking at when he was given it (the lamp over the table,
+          // which went out) is not what he lights with it: until a scene turns him to something else, Elof.
+          if (staleAim === undefined) staleAim = state.aim;
+          if (state.beam == null && (!(scene && keys) || state.aim === staleAim)) state.beam = { x: elof.x, y: elof.y + .4, z: 0 };
         }
         const was = live.get(who);
         let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
@@ -1237,12 +1229,16 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         talker.pose(pose);
         // A carrying hand cannot also wave or point underneath its torch solve: that moving palm would roll the
         // wrist around a steady beam. Keep this arm's base quiet, sharing the acquisition blend with the held prop.
+        // Shown to the others ("Ropa på mig när du behöver ljus."), it is the lamp that is held up, its light on the ceiling.
+        const showing = state.act === 'show' ? calm ? 1 : smooth(elapsed / .45) : state.before?.act === 'show' ? 1 - smooth(elapsed / .45) : 0;
         for (const side of [0, 1] as const) {
           const held = side === 0 ? state.holdsLeft : state.holds;
           if (!held?.startsWith('lamp-')) continue;
           const weight = calm || persistentLamp || !state.before || state.before.held[side] === held ? 1 : smooth(elapsed / .45);
           const support = persistentLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
           quietLampArm(pose, side, weight * support);
+          // And the other hand, which has nothing to show, is not raised empty beside it.
+          if (showing > 0 && !(side === 0 ? state.holds : state.holdsLeft)) quietLampArm(pose, side === 0 ? 1 : 0, showing * weight * support);
         }
         // Support begins with a relaxed, outward elbow. Carrying a raised gesture's roll into the knee solve can
         // turn the elbow through the torso during acquisition even though the final contact is correct.
@@ -1416,17 +1412,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const releasingMug = state.before && elapsed < .45 ? state.before.mug : null;
         const handingLamp = persistentLamp && transfer > 0 && transfer < 1;
         if (handingLamp) {
-          // Both hands meet at a reachable point ahead of the waist. Raw sleeve-gesture sockets can lie outside
-          // the other arm's reach. The receiving hand arrives before the giving hand lets go, so changing the
-          // fully supporting socket cannot jump the torch. The free arm keeps the authored sleeve movement.
-          // Each hand's carry follows the beam's way (./lamp-hold.ts), so the meeting point is worked out for it too.
+          // Both hands meet at a reachable point before the belly (./lamp-hold.ts flashlightHandover). Raw sleeve-gesture
+          // sockets can lie outside the other arm's reach. The receiving hand arrives before the giving hand lets go, so
+          // changing the fully supporting socket cannot jump the torch. The free arm keeps the authored sleeve movement.
           const beam = beamOf(state), from = state.glance ? state.glance.from : beamBefore(state);
           lampAim.set(beam?.x ?? elof.x, beam?.y ?? elof.y + .4, beam?.z ?? 0);
           lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
           const aimWeight = calm ? 1 : state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
-          flashlightCarryTarget(rig, 0, lampMeeting, lampAim, lampBefore, aimWeight);
-          flashlightCarryTarget(rig, 1, lampOther, lampAim, lampBefore, aimWeight);
-          lampMeeting.lerp(lampOther, transfer);
+          flashlightHandover(rig, lampMeeting, transfer, lampAim, lampBefore, aimWeight);
         }
         const heldHands = handingLamp && transfer > .5 ? [[0, state.holdsLeft], [1, state.holds]] as const
           : [[1, state.holds], [0, state.holdsLeft]] as const;
@@ -1452,12 +1445,18 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             const from = state.glance ? state.glance.from : beamBefore(state);
             const aimWeight = state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
             lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
+            if (showing > 0) {
+              // Held up before the chest, pointing up past the face.
+              rig.mouth(lampShown).addScaledVector(forward, .45 * rig.height).addScaledVector(up, .3 * rig.height);
+              lampAim.lerp(lampShown, showing); lampBefore.lerp(lampShown, showing);
+            }
             // Newly taking a torch must follow the same event-time blend as the authored arms.
             // Pappa's persistent indoor torch is already in hand across every later act.
             const taking = calm || persistentLamp || had === current || !state.before ? 1 : smooth(elapsed / .45);
             const support = handingLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
             holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), true, taking * support,
-              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused), handingLamp ? lampMeeting : undefined);
+              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused), handingLamp ? lampMeeting : undefined,
+              chapter.place === 'home' && chapter.house ? HOME_LAYOUT.wall.z + .2 : undefined);
             continue;
           }
           const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);

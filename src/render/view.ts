@@ -1,7 +1,8 @@
 import { capArms, capHands, capHandoff } from './cap-handoff';
 import { createBertilAnswer } from './cap-thanks';
 import { ghostThanks } from './ghost-thanks';
-import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from './lamp-hold';
+import { familyLampSide, holdFlashlight, lampCarryWeight, lightAhead, quietLampArm, type LampHolder } from './lamp-hold';
+import { lampColour } from './flashlight';
 import { stormSweet } from './storm-sweet';
 import { createEddy } from './eddy';
 import { createRainBarrel } from './rain-barrel';
@@ -790,7 +791,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Elof, modelled in Blender after his sheets and photos. He too is only here where the private pack is;
   // everywhere else the stand-in built in code plays his part.
   const elof = createPlayerStandIn();
-  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze' | 'dress' | 'hold' | 'grasp' | 'socket' | 'face'> = elof;
+  let playerBody: Pick<Rig, 'pose' | 'hand' | 'mouth' | 'reach' | 'breeze' | 'dress' | 'hold' | 'grasp' | 'socket' | 'face'> & LampHolder = elof;
   let playerHips = ['left', 'right'].map(side => elof.group.getObjectByName(`player-hip-${side}`));
   let playerFeet = ['left', 'right'].map(side => elof.group.getObjectByName(`player-boot-${side}`));
   const shoulderPose: Pose = { ...STANDING }, seat = new Vector3(), boot = new Vector3(), palm = new Vector3();
@@ -1089,7 +1090,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Granskogen's seesaw board, which Pappa holds (props.ts); found the first time it is wanted. */
   let seesawPlank: Object3D | null | undefined;
   const gestureOf = (who: string) => { let g = gestures.get(who); if (!g) gestures.set(who, g = { pull: 0, reach: 0, lift: 0, liftFor: 0, hold: 0, stoop: 0 }); return g; };
-  const lampTo = new Vector3(), lampAim = new Vector3(), lampHand = new Vector3(), lampLocal = new Vector3();
+  const lampTo = new Vector3(), lampAim = new Vector3(), lampLocal = new Vector3();
   const lampHeld = new Vector3(), upright = new Vector3(0, 1, 0);
   const LAMP_POINTS = new Vector3(0, 0, 1);
   /** A berry or a sweet between his thumb and his finger, and a sheet's corner (./fingers.ts). */
@@ -1161,20 +1162,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   /** Stormkvällen's flashlight: Elof carries it from the table, and Pappa has it from then on. */
   let carriedLamp: Mesh | null = null;
   const pappasLampBeam = chapter.id === 'stormkvall' ? stage.group.getObjectByName('stage-thing:lamp-pappa')?.getObjectByName('lamp-beam') : undefined;
-  const holdLamp = (lamp: Mesh, rig: Pick<Rig, 'hand' | 'grasp' | 'socket'>, side: 0 | 1, facing: number, size: number) => {
-    lampAim.set(Math.sin(facing), -0.3, Math.cos(facing)).normalize();
-    if (rig.grasp && rig.socket) {
-      // Closed round the lamp's body, the hand turned with its light, out past the thumb (./fingers.ts).
-      const grip = { kind: 'power' as const, size: 0.075 * size };
-      rig.grasp(side, grip, rig.socket(side, grip, lampHand), lampAim, lampHand, 1, lampHeld);
-      lamp.position.copy(lampHand).addScaledVector(lampHeld, -0.06 * size);
-      lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampHeld);
-    } else {
-      rig.hand(side, lampHand);
-      lamp.position.copy(lampHand);
-      lamp.quaternion.setFromUnitVectors(LAMP_POINTS, lampAim);
-    }
-    lamp.scale.setScalar(size);
+  /**
+   * He holds it as the family hold theirs (./lamp-hold.ts), in his `side` hand, and lights the floor a few steps ahead of
+   * him the way he faces (`facing`: his turn, 0 along the course): `at` is where he stands, `big` how big he is drawn.
+   */
+  const holdLamp = (lamp: Mesh, rig: LampHolder, side: 0 | 1, facing: number, size: number, at: { x: number; y: number }, big: number, time: number | undefined) => {
+    holdFlashlight(rig, lamp, side, lightAhead(lampAim, at.x, at.y, facing, big), size, true, 1, null, 1, time);
     lamp.getObjectByName('lamp-beam')!.visible = tier !== 'low';
   };
   // The ledge that is Klonk frozen in Pappa's beam (Stormskogen), which his lamp is held on.
@@ -2003,10 +1996,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // "Var är ficklampan? Jag ser ingenting!": Elof carries the lit flashlight from the table to Pappa in his right
     // hand, lighting the floor ahead; once given, Pappa has it in his left (Stormkvällen).
     const carries = chapter.id === 'stormkvall' && flags.has('lamp:take') && !flags.has('lamp:give') && !curr.hook && !!playerBody;
-    if (carries && !carriedLamp) { carriedLamp = litLamp(); scene.add(carriedLamp); }
+    if (carries && !carriedLamp) { carriedLamp = litLamp(lampColour('pappa')); scene.add(carriedLamp); }
     if (carriedLamp) {
       carriedLamp.visible = carries;
-      if (carries && playerBody) holdLamp(carriedLamp, playerBody, 1, turn, 1.6 * tall / 5.2);
+      if (carries && playerBody) holdLamp(carriedLamp, playerBody, 1, turn, 1.6 * tall / 5.2, { x, y }, tall, calmStory ? undefined : clock);
     }
     if (pappasLampBeam) pappasLampBeam.visible = tier !== 'low';
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
@@ -2434,7 +2427,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // Out in the storm the family search with their lamps ("Regnrockar på! Vi går ut med lampor."): each holds a
       // lit flashlight in the left hand, the arm a little out, and lights the way to him. In Stormkvällen Pappa has
       // the one Elof brought him; in Stormskogen he holds Klonk in its beam until Elof is over.
-      if (lit && !one.lamp) { one.lamp = litLamp(); one.lamp.name = 'family-lamp'; scene.add(one.lamp); }
+      if (lit && !one.lamp) { one.lamp = litLamp(lampColour(one.who)); one.lamp.name = 'family-lamp'; scene.add(one.lamp); }
       if (one.lamp) {
         one.lamp.visible = lit;
         if (lit && setDown) {
