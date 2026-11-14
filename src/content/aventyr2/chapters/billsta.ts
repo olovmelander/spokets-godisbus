@@ -644,7 +644,7 @@ export const billsta: ChapterData = {
     { look: 'kit', word: 'gren-a', at: { x: 176.6, y: 3.2 }, z: -1.7, turn: 0.2 },
     { look: 'kit', word: 'stubbe-sagad', at: { x: 181.2, y: 3.2 }, z: -2.4, turn: 0.5 },
     { look: 'kit', word: 'gren-b', at: { x: 190.2, y: 6.4 }, z: -1.5, turn: 1.2 },
-    { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -2.6, turn: 2.9 },
+    { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -3.2, turn: 2.9 },
     // The hazel shelves on Billaberget's face.
     ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
     // Mormor, come up the path behind him with her lantern as the owl hoots, and there when the picture comes back from

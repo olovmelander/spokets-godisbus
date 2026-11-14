@@ -1,9 +1,10 @@
-import { Box3, Group, Mesh, Quaternion, Vector3, type Object3D } from 'three';
+import { Group, Mesh, Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { stormskog } from '../../src/content/aventyr2/chapters/stormskog';
 import { heightAt } from '../../src/render/dressing/kit';
-import { ROOT_HOLLOW, rootHollow } from '../../src/render/root-hollow';
 import { swayingBoughs } from '../../src/render/swaying-boughs';
+
+// The dark hollow's root plate is the nature kit's now: tests/unit/nature-old-wood.test.ts.
 
 /** The movers as the view builds them: a group at the mover's place, holding its prop. */
 function movers() {
@@ -53,29 +54,3 @@ describe('Stormskogen: what holds the swaying boughs', () => {
   });
 });
 
-describe('Stormskogen: the dark hollow under the roots', () => {
-  const hollow = stormskog.spots!.find((spot) => spot.id === 'ss:hollow')!;
-  const group = rootHollow(stormskog)!;
-  group.updateMatrixWorld(true);
-  const box = (object: Object3D) => new Box3().setFromObject(object);
-
-  it('stands a felled spruce’s root plate behind the hollow, wider than him and over his head', () => {
-    expect(group.position.x).toBe(hollow.at.x);
-    const plate = box(group.getObjectByName('root-plate')!);
-    expect(plate.min.x).toBeLessThan(hollow.at.x - 2);
-    expect(plate.max.x).toBeGreaterThan(hollow.at.x + 2);
-    expect(plate.max.y).toBeGreaterThan(hollow.at.y + 3);
-  });
-
-  it('keeps all of it behind the plane he moves in, so it covers neither him, Klonk nor the candy', () => {
-    for (const name of ['root-plate', 'root-plate-roots']) expect(box(group.getObjectByName(name)!).max.z, name).toBeLessThan(-0.3);
-    // The arching roots come down on the hollow's rims, not over the trail's sweets or the floor he walks.
-    const roots = box(group.getObjectByName('root-plate-roots')!);
-    expect(roots.max.x - hollow.at.x).toBeLessThan(ROOT_HOLLOW.reach + 0.6);
-    expect(hollow.at.x - roots.min.x).toBeLessThan(ROOT_HOLLOW.reach + 0.6);
-  });
-
-  it('is built only where the chapter has the hollow', () => {
-    expect(rootHollow({ ...stormskog, spots: [] })).toBeNull();
-  });
-});
