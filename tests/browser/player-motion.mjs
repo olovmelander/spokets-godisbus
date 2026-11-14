@@ -163,7 +163,8 @@ try {
         let acc=0, crossings=0, ahead=0, onScreen=[]; const from=p.sim.curr.x;
         for(let i=0;i<3*hz;i++) {
           acc+=1/hz; let steps=0;
-          while(acc>=f.STEP-1e-9) { Object.assign(p.sim.prev,p.sim.curr); p.sim.curr.vx=1.2; p.sim.curr.x+=1.2*f.STEP; acc-=f.STEP; steps++; }
+          // (The step before is a copy of its own, as the simulation keeps it: the two may start as one object.)
+          while(acc>=f.STEP-1e-9) { p.sim.prev={...p.sim.curr}; p.sim.curr.vx=1.2; p.sim.curr.x+=1.2*f.STEP; acc-=f.STEP; steps++; }
           p.frame(Math.min(1,Math.max(0,acc/f.STEP)),1/hz,steps*f.STEP);
           const shot=f.player(), parts=shot.parts, now=Math.sign(parts['player-hip-left'].rotation[2]-parts['player-hip-right'].rotation[2]);
           if(now!==0&&now!==ahead) { if(ahead!==0)crossings++; ahead=now; }
