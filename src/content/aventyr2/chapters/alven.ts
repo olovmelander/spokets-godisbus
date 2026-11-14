@@ -142,6 +142,14 @@ const STICK = { x: 119.5, bottom: STUMP2.y, top: LODGE.y, exit: 1 as const, look
  * step each stands on (tests/unit/alven-beaver-place.test.ts).
  */
 const GNAWED = { z: -2, sunk: 0.3, turn: 0.36, scale: 0.85 };
+/**
+ * Where the frog sits on the far bank: on the moss between the sawn stump and the first step, between two of the
+ * trail's sweets and just behind the path, where nothing stands in front of it and it is in the picture's focus. It
+ * hops at most 0.6 EL to either side when he comes (../render.ts, `kit`): from here both ways land on open moss, clear
+ * of the stump, the sweets and the step. (In front of the path it hid his boots and was out of focus; left of the stump
+ * the felled branch, the grass and the lollipop stand round it.)
+ */
+const FROG = { x: 114.7, z: -0.7 };
 
 // 5. The lake: its shore, the owl, the otter's stone out in the shallows, and the far shore.
 const SHORE: Stone = { from: SLOPE_END, to: 137.4, y: 0 };
@@ -194,6 +202,14 @@ const KIDS = {
   /** Where Elof stands as the trail runs out, for them to look at. */
   elof: { x: 181.6, y: ON.y + 0.9, z: 0 },
 };
+/**
+ * The family's car on the road by the river, its tail towards where he comes from and its nose towards Billsta, and the
+ * birch that stands by the road behind it. The car is 29 EL long (../buildings.ts, `FAMILY_CAR`), so its tail is at
+ * x 180.5: the birch stands clear of it, on Moälven's bank across the stream that joins the river (`MOALVEN`), not in
+ * the stream's own water (`CREEK_WAY`), where the forest's own trees begin (`treeGaps`).
+ */
+const CAR = { x: 195, z: -17 };
+const BIRCH_BY_ROAD = { x: 169.6, z: -19 };
 /** Where the old one is seen on his log: on the bank after the eddies, the stones and their logs ahead. */
 const OLD_SEEN = 50.4;
 /**
@@ -469,16 +485,20 @@ export const alven: ChapterData = {
       { kind: 'birch', x: 86, z: -15 },
       // The beaver's lodge, a heap of sticks behind the stumps and the slope he climbs.
       { kind: 'lodge', x: 122.4, z: -7, y: CURRENT, width: 18, height: 7.4 },
-      { kind: 'birch', x: 181, z: -18 },
+      // A birch by the road, well behind the car's tail: at x 181 it stood up through the boot (Olov, 14 November 2026:
+      // "I slutet står bilen så att bakluckan hamnar mitt i trädet"; tests/unit/alven-car-place.test.ts).
+      { kind: 'birch', x: BIRCH_BY_ROAD.x, z: BIRCH_BY_ROAD.z },
       // The road along the river, where the family's car stops for him at the end.
-      { kind: 'car', x: 195, z: -17, lit: 'beat:al:billsta' },
+      { kind: 'car', x: CAR.x, z: CAR.z, lit: 'beat:al:billsta' },
     ],
   },
   // Far across the lake a moose may come down to the water.
   life: [{ kind: 'moose', from: 128, to: 137 }],
   decor: [
-    // A frog on the bank, by the reeds: between two of the trail's sweets, where one does not hide it.
-    { look: 'kit', word: 'groda', at: { x: 112.6, y: 0 }, z: -1.3, turn: 0.5, scale: 0.8 },
+    // A frog on the bank's moss, just behind the path, between two of the trail's sweets and past the sawn stump: seen
+    // whole. It sat at the stump's own x, a step in front of the stump's middle, so that it stood in the stump (Olov,
+    // 14 November 2026: "står en groda mitt inne i stubben"; `FROG`, tests/unit/alven-frog-place.test.ts).
+    { look: 'kit', word: 'groda', at: { x: FROG.x, y: 0 }, z: FROG.z, turn: 0.5, scale: 0.8 },
     // The beaver itself, on the bank by its stumps, gnawing a stick: it looks at Elof, thumps its tail and goes into its
     // lodge at its foot; it comes out at the very top of the lodge as he comes up onto the roof, and swims out over the
     // lake once he is down by it (../beaver.ts).
