@@ -77,6 +77,8 @@ export function direction(line) {
   if (/…|\.\.\./.test(t)) add('hesitant');
   if (/^(nu |jag ska|jag hämtar|vi måste|vi går|jag följer|jag klarar)/i.test(t)) add('determined');
   if (/^(du ska heta|hurra|vi klarade)/i.test(t)) add('joyful');
+  // Sickan is the family's own cat: meeting her in the storm is a glad surprise, never an alarm.
+  if (/\bsickan\b/i.test(t)) { add('affectionate'); add('surprised'); }
   if (/\b(blåsten|stormen|blixten)\b/i.test(t) && t.includes('!')) add('alarmed');
   if (line.speaker === 'elof' && /\bklonk\b/i.test(t) && /\b(du|dig|vi)\b/i.test(t)) add('affectionate');
   if (line.speaker === 'spoket') add('playful');

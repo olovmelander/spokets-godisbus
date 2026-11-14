@@ -3801,5 +3801,32 @@
     "model": "eleven_v4",
     "stability": 0.35,
     "generatedAt": "2026-11-13T14:59:09.148Z"
+  },
+  "sgSickanBig": {
+    "speaker": "elof",
+    "text": "Vad stor du är, Sickan!",
+    "tag": "[affectionate, surprised]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:23:58.561Z"
+  },
+  "sgSickan": {
+    "speaker": "elof",
+    "text": "Sickan! Är du också ute i stormen?",
+    "tag": "[affectionate, surprised]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:23:58.816Z"
+  },
+  "sbThanksMoa": {
+    "speaker": "elof",
+    "text": "Tack, Moa! Ditt paraply kan flyga!",
+    "tag": "[grateful]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:23:58.820Z"
   }
 }

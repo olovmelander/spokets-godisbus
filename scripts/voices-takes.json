@@ -4457,5 +4457,38 @@
     "tagHeard": false,
     "takes": 1,
     "ok": true
+  },
+  "sgSickanBig": {
+    "key": "sgSickanBig",
+    "speaker": "elof",
+    "text": "Vad stor du är, Sickan!",
+    "tag": "[affectionate, surprised]",
+    "heard": "Vad stor du är, Sickan!",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "sgSickan": {
+    "key": "sgSickan",
+    "speaker": "elof",
+    "text": "Sickan! Är du också ute i stormen?",
+    "tag": "[affectionate, surprised]",
+    "heard": "Sickan, är du också ute i stormen?",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "sbThanksMoa": {
+    "key": "sbThanksMoa",
+    "speaker": "elof",
+    "text": "Tack, Moa! Ditt paraply kan flyga!",
+    "tag": "[grateful]",
+    "heard": "Tack Moa! Ditt paraply kan flyga",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
   }
 }
