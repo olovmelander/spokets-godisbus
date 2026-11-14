@@ -1605,7 +1605,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     };
     {
       // He and whoever he has come up to, and where the spot says so what lies beyond them (./family-shot.ts).
-      const both = familyShot({ x, y }, nearbyFamily ? nearbyFamily.prop!.group.position : { x: 0, y: 0 }, viewHeight * look.zoom, camera.aspect, nearbyFamily?.vista);
+      const both = familyShot({ x, y }, nearbyFamily ? nearbyFamily.prop!.group.position : { x: 0, y: 0 }, viewHeight * look.zoom, camera.aspect, nearbyFamily?.vista, nearbyFamily?.at);
       shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, both.x, both.y, both.height / 2 / Math.tan(FOV * Math.PI / 360), both.x, both.y);
     }
     {

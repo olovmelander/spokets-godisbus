@@ -37,7 +37,7 @@ export interface Climb {
   /**
    * Picture only: the jay he gave a berry brings it down (Stormskogen's beard lichen; src/render/jay-lichen.ts). It hangs
    * bundled on a snag at its top. In the scene `scene` the jay at the spot `jay` flies up to it and tugs it loose `at`
-   * seconds in, and it unrolls down the face over `seconds`. Its `needs` is the flag set once that scene is over.
+   * seconds in, and it unrolls down the face over `seconds`. Its `needs` is a flag that scene sets as it reaches the ground.
    */
   broughtBy?: { scene: string; jay: string; at: number; seconds: number };
 }

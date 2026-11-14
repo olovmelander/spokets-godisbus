@@ -40,7 +40,7 @@ describe('Byn i stormen: the church behind Moa and her umbrella (point 19)', () 
     const aspect = width / height;
     const view = Math.max(height / Math.min(140, Math.max(75, height * 0.2)), 6 / aspect);
     const zone = cameraIntent({ x: elofX, y: WALL, facing: 1, mode: 'free', groundY: WALL, standY: WALL, hook: null, vy: 0 } as unknown as PlayerState, stormbyn.cameras);
-    const shot = familyShot({ x: elofX, y: WALL }, { x: moaX, y: WALL }, view * zone.zoom, aspect, call.vista);
+    const shot = familyShot({ x: elofX, y: WALL }, { x: moaX, y: WALL }, view * zone.zoom, aspect, call.vista, call.at.x);
     const away = shot.height / 2 / TAN;
     return {
       shot,
@@ -105,6 +105,18 @@ describe('Byn i stormen: the church behind Moa and her umbrella (point 19)', () 
         expect(at < nave.from || shadow(post - 1.2, LAMP_POST.z, BREDBYN_CHURCH.z) > belfry.eave, `${name}: the post at ${post}`).toBe(true);
       }
     }
+  });
+
+  it('opens the picture as he comes up to where he calls her, and keeps it open while she walks to the edge', () => {
+    const shot = (elofX: number, moaX: number) => familyShot({ x: elofX, y: WALL }, { x: moaX, y: WALL }, 9.5, 844 / 390, call.vista, call.at.x);
+    // Three EL short of her it is the picture of the two of them, as beside anyone of the family.
+    expect(shot(call.at.x - 3, call.at.x).x).toBeCloseTo(call.at.x - 1.5, 5);
+    // Beside her it looks on over the crossing; and no less while she walks on to the edge and he stands.
+    expect(shot(call.at.x, call.at.x).x).toBeCloseTo(call.at.x + call.vista!.lead, 5);
+    for (let moa = call.at.x; moa <= call.goesTo!.x; moa += 0.1) expect(shot(call.at.x, moa).x).toBeGreaterThanOrEqual(call.at.x + call.vista!.lead);
+    // Someone with no vista is framed as before: between the two.
+    expect(familyShot({ x: 10, y: 0 }, { x: 12, y: 0 }, 6.4, 2).x).toBe(11);
+    expect(familyShot({ x: 10, y: 0 }, { x: 12, y: 0 }, 6.4, 2).height).toBe(7.8);
   });
 
   it('is whole before he calls her too, from beside her on the wall, on a screen held sideways', () => {
