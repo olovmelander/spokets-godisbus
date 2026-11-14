@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { getTrack } from './sim/track';
 import type { KartEvent, KartRace } from './sim/race';
+import type { Track } from './sim/track';
 import { createWorld } from './visual/world';
 import { createAtmosphere } from './visual/sky';
 import { createScenery } from './visual/scenery';
@@ -12,7 +12,26 @@ export interface KartViewOptions { calm: boolean; tier: 'low' | 'mid' | 'high' }
 export type KartViewMode = CameraMode;
 const HOP_TIME = .24;
 
-/** A self-contained view for the toy console. The host owns input, clock and RAF; closing releases this context. */
+/** Frees everything drawn under an object: its geometries, materials and their textures. */
+function release(root: THREE.Object3D): void {
+  const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
+  root.traverse(object => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.geometry || !mesh.material) return;
+    geometries.add(mesh.geometry);
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      materials.add(material);
+      for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
+      const uniforms = (material as THREE.ShaderMaterial).uniforms;
+      if (uniforms) for (const uniform of Object.values(uniforms)) if (uniform.value instanceof THREE.Texture) textures.add(uniform.value);
+    }
+    if (object instanceof THREE.InstancedMesh) object.dispose();
+  });
+  textures.forEach(texture => texture.dispose()); materials.forEach(material => material.dispose()); geometries.forEach(geometry => geometry.dispose());
+}
+
+/** A self-contained view for the toy console. The host owns input, clock and RAF; closing releases this context.
+ * The karts stay for the whole visit; the course they stand on is built when a race on a new course is first drawn. */
 export function createKartView(canvas: HTMLCanvasElement, { calm, tier }: KartViewOptions) {
   const low = tier === 'low';
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !low, alpha: false, powerPreference: 'high-performance' });
@@ -21,12 +40,20 @@ export function createKartView(canvas: HTMLCanvasElement, { calm, tier }: KartVi
   renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1;
   renderer.shadowMap.enabled = !low;
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(62, 1, .15, 1400);
-  const track = getTrack(), anisotropy = Math.min(low ? 2 : 8, renderer.capabilities.getMaxAnisotropy());
-  const world = createWorld(track, { low, anisotropy }); scene.add(world.group);
-  const air = createAtmosphere(scene, track, { calm, shadows: low ? 0 : tier === 'mid' ? 1024 : 2048 });
-  const scenery = createScenery(track, world, { low, calm }); scene.add(scenery.group);
-  const effects = createEffects(track, scene, { low, calm });
-  const chase = createChaseCamera(camera, track, { calm });
+  const anisotropy = Math.min(low ? 2 : 8, renderer.capabilities.getMaxAnisotropy());
+  function build(track: Track) {
+    const group = new THREE.Group(); group.name = `course:${track.id}`; scene.add(group);
+    const world = createWorld(track, { low, anisotropy }); group.add(world.group);
+    const air = createAtmosphere(scene, group, track, { calm, shadows: low ? 0 : tier === 'mid' ? 1024 : 2048 });
+    const scenery = createScenery(track, world, { low, calm }); group.add(scenery.group);
+    return { track, group, world, air, scenery, effects: createEffects(track, group, { low, calm }), chase: createChaseCamera(camera, track, { calm }), point: track.point(0) };
+  }
+  let stage: ReturnType<typeof build> | null = null;
+  function unload(): void {
+    if (!stage) return;
+    stage.air.dispose(); stage.world.dispose(); release(stage.group); scene.remove(stage.group); stage = null;
+    renderer.renderLists.dispose();
+  }
 
   const wood = toyMaterial(), toys: ReturnType<typeof toyKart>[] = [], rolling: number[] = [];
   const wheels = new THREE.InstancedMesh(wheelGeometry(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .6, metalness: .08 }), 32);
@@ -43,7 +70,7 @@ export function createKartView(canvas: HTMLCanvasElement, { calm, tier }: KartVi
   }), 8);
   blobs.name = 'contact-shadows'; blobs.frustumCulled = false; blobs.visible = low; blobs.count = 0; scene.add(blobs);
 
-  const point = track.point(0), dummy = new THREE.Object3D(), local = new THREE.Matrix4(), matrix = new THREE.Matrix4(), tint = new THREE.Color(), focus = new THREE.Vector3();
+  const dummy = new THREE.Object3D(), local = new THREE.Matrix4(), matrix = new THREE.Matrix4(), tint = new THREE.Color(), focus = new THREE.Vector3();
   const NONE: readonly KartEvent[] = [];
   let time = 0, previousElapsed = 0, previousRace: KartRace | null = null, disposed = false;
   function resize(width = canvas.clientWidth, height = canvas.clientHeight) {
@@ -56,6 +83,8 @@ export function createKartView(canvas: HTMLCanvasElement, { calm, tier }: KartVi
     resize,
     render(race: KartRace, dt: number, mode: KartViewMode = 'race', events: readonly KartEvent[] = NONE) {
       if (disposed) return;
+      if (stage?.track !== race.track) { unload(); stage = build(race.track); }
+      const { track, world, air, scenery, effects, chase, point } = stage;
       const step = Number.isFinite(dt) ? THREE.MathUtils.clamp(dt, 0, .1) : 0, state = race.state;
       if (previousRace !== race || state.elapsed < previousElapsed) { chase.reset(); effects.reset(); }
       previousRace = race; previousElapsed = state.elapsed; time += step;
@@ -113,24 +142,13 @@ export function createKartView(canvas: HTMLCanvasElement, { calm, tier }: KartVi
       renderer.render(scene, camera);
     },
     /** Small read-only counters for mobile validation, without retaining a second renderer or RAF. */
-    stats() { return { calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries }; },
+    stats() { return { course: stage?.track.id, calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, textures: renderer.info.memory.textures, geometries: renderer.info.memory.geometries }; },
     dispose() {
       if (disposed) return; disposed = true;
-      const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
-      scene.traverse(object => {
-        const mesh = object as THREE.Mesh;
-        if (!mesh.geometry || !mesh.material) return;
-        geometries.add(mesh.geometry);
-        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
-          materials.add(material);
-          for (const value of Object.values(material)) if (value instanceof THREE.Texture) textures.add(value);
-        }
-        if (object instanceof THREE.InstancedMesh) object.dispose();
-      });
-      materials.add(wood); if (wood.map) textures.add(wood.map);
+      unload();
       toys.forEach(toy => toy.dispose());
-      textures.forEach(texture => texture.dispose()); materials.forEach(material => material.dispose()); geometries.forEach(geometry => geometry.dispose());
-      air.sun.shadow.map?.dispose();
+      release(scene);
+      wood.map?.dispose(); wood.dispose();
       scene.clear(); toys.length = 0; renderer.renderLists.dispose(); renderer.dispose(); renderer.forceContextLoss();
     },
   };

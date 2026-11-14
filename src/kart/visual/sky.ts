@@ -3,8 +3,7 @@
  * lights ease from one to the next as the player drives through; the cave has its own crystal dark.
  */
 import * as THREE from 'three';
-import { CAVE, within, type Track } from '../sim/track';
-import { zoneWeights } from './world';
+import type { Track } from '../sim/track';
 
 interface Air { top: number; horizon: number; fog: number; density: number; sun: number; power: number; sky: number; ground: number; hemi: number; stars: number; aurora: number; cloud: number; exposure: number }
 const AIR: readonly Air[] = [
@@ -21,7 +20,7 @@ const palette = (air: Air) => Object.fromEntries(COLOURS.map(key => [key, new TH
 const PALETTES = AIR.map(palette), CAVE_PALETTE = palette(CAVE_AIR);
 export const SUN_DIRECTION = new THREE.Vector3(-.5, .74, -.46).normalize();
 
-export function createAtmosphere(scene: THREE.Scene, track: Track, { calm, shadows }: { calm: boolean; shadows: 0 | 1024 | 2048 }) {
+export function createAtmosphere(scene: THREE.Scene, parent: THREE.Object3D, track: Track, { calm, shadows }: { calm: boolean; shadows: 0 | 1024 | 2048 }) {
   const material = new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
     uniforms: { top: { value: new THREE.Color() }, horizon: { value: new THREE.Color() }, sunColor: { value: new THREE.Color() }, sun: { value: SUN_DIRECTION },
@@ -54,10 +53,10 @@ export function createAtmosphere(scene: THREE.Scene, track: Track, { calm, shado
       }`,
   });
   const dome = new THREE.Mesh(new THREE.SphereGeometry(500, 32, 16), material);
-  dome.name = 'sky'; dome.renderOrder = -10; dome.frustumCulled = false; scene.add(dome);
+  dome.name = 'sky'; dome.renderOrder = -10; dome.frustumCulled = false; parent.add(dome);
   const fog = new THREE.FogExp2(0xffffff, .005); scene.fog = fog;
-  const hemisphere = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.4); scene.add(hemisphere);
-  const sun = new THREE.DirectionalLight(0xffffff, 3); scene.add(sun, sun.target);
+  const hemisphere = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.4); parent.add(hemisphere);
+  const sun = new THREE.DirectionalLight(0xffffff, 3); parent.add(sun, sun.target);
   if (shadows) {
     const reach = shadows === 2048 ? 46 : 32;
     sun.castShadow = true; sun.shadow.mapSize.set(shadows, shadows);
@@ -65,10 +64,11 @@ export function createAtmosphere(scene: THREE.Scene, track: Track, { calm, shado
     sun.shadow.bias = -.0006; sun.shadow.normalBias = .05;
   }
   // Layered far hills close the world; the fog paints them in each place's own colour.
-  const hills = new THREE.Group(); hills.name = 'far-hills'; scene.add(hills);
+  const hills = new THREE.Group(); hills.name = 'far-hills'; parent.add(hills);
+  const { minX, maxX, minZ, maxZ } = track.bounds, rim = Math.hypot(Math.max(-minX, maxX), Math.max(-minZ, maxZ)) + 150;
   const hillMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
   for (let layer = 0; layer < 3; layer++) {
-    const vertices: number[] = [], colors: number[] = [], indices: number[] = [], radius = 300 + layer * 46, shade = new THREE.Color([0x5f8a6a, 0x6f93a0, 0x8aa6c0][layer]!);
+    const vertices: number[] = [], colors: number[] = [], indices: number[] = [], radius = rim + layer * 46, shade = new THREE.Color([0x5f8a6a, 0x6f93a0, 0x8aa6c0][layer]!);
     for (let i = 0; i <= 120; i++) {
       const angle = i / 120 * Math.PI * 2, high = 26 + layer * 16 + Math.sin(angle * 3 + layer * 1.7) * 11 + Math.sin(angle * 7 - layer) * 6 + Math.sin(angle * 13 + layer * 3) * 3;
       vertices.push(Math.sin(angle) * radius, -12, Math.cos(angle) * radius, Math.sin(angle) * radius, high, Math.cos(angle) * radius);
@@ -89,8 +89,8 @@ export function createAtmosphere(scene: THREE.Scene, track: Track, { calm, shado
     get dusk() { return Math.min(1, (now.stars as number) + cave); },
     get exposure() { return now.exposure as number; },
     update(distance: number, focus: THREE.Vector3, camera: THREE.Camera, dt: number, time: number) {
-      zoneWeights(track, distance, weights);
-      const inside = within(distance, CAVE.from + 4, CAVE.to - 2) ? 1 : 0;
+      track.mix(distance, weights);
+      const inside = track.inCave(distance, -3) ? 1 : 0;
       cave = first ? inside : cave + (inside - cave) * (1 - Math.exp(-3.2 * dt));
       const rate = first ? 1 : 1 - Math.exp(-1.7 * dt); first = false;
       for (const key of COLOURS) {
@@ -115,7 +115,8 @@ export function createAtmosphere(scene: THREE.Scene, track: Track, { calm, shado
       // The shadow box follows the player in whole metres, so shadow edges do not crawl.
       sun.target.position.set(Math.round(focus.x), Math.round(focus.y), Math.round(focus.z));
       sun.position.copy(sun.target.position).addScaledVector(SUN_DIRECTION, 130);
-      dome.position.copy(camera.position); hills.position.y = 0;
+      dome.position.copy(camera.position);
     },
+    dispose() { sun.shadow.map?.dispose(); if (scene.fog === fog) scene.fog = null; },
   };
 }

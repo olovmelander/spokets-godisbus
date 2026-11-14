@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { createRace, COUNTDOWN_SECONDS, RACE_STEP, ROULETTE_SECONDS, rollItem, type KartControls, type KartEvent, type KartRace, type RaceOptions } from '../../src/kart/sim/race';
+import { CLASS_SPEED, createRace, COUNTDOWN_SECONDS, LEVELS, RACE_STEP, racingLine, ROULETTE_SECONDS, rollItem, type KartControls, type KartEvent, type KartRace, type RaceOptions } from '../../src/kart/sim/race';
 import { BOOSTS, DRIFT_TIERS, giveBoost, hitKart, MAX_CANDIES, newKart, stepKart, TOP_SPEED, turnRate, type Kart } from '../../src/kart/sim/kart';
 import { buildRacingLine, createBrain, elastic, rivalControls, RIVALS, seededRandom, type RivalProfile } from '../../src/kart/sim/ai';
-import { CAVE, getTrack, LAP, LAPS, trackGap, ZONES, type Surface, type Track } from '../../src/kart/sim/track';
+import { getTrack, LAP, LAPS, PLACES, TRACK_IDS, trackGap, type Surface, type Track } from '../../src/kart/sim/track';
+import { createCup, CUP_POINTS, cupTable, cupTrack, nextRace, scoreRace } from '../../src/kart/sim/cup';
 import { TRACK_PLAN } from '../../src/kart/sim/trace';
 
 const idle: KartControls = { steer: 0, throttle: 0, brake: 0, drift: false, item: false };
@@ -33,28 +34,21 @@ function drive(kart: Kart, track: Track, seconds: number, controls: Partial<Kart
   return events;
 }
 const fresh = (speed = TOP_SPEED): Kart => Object.assign(newKart(0, 'player', 0, 0, 0), { held: false, speed });
+/** Degrees the lap turns in all: 360 to the left, −360 to the right. */
+const turning = (track: Track) => { let total = 0; for (let d = 0; d < LAP; d += .5) total += track.curvature(d) * .5; return total * 180 / Math.PI; };
 
-describe('the course built on Varggropen\'s outline', () => {
-  const track = getTrack();
-  it('keeps all 77 source coordinates and closes one 960 m lap from the same starting point', () => {
-    // Digest of the trace in Pekkas Pokal 7762360: the outline is that circuit's, not a new one.
-    expect(TRACK_PLAN).toHaveLength(77);
-    expect(createHash('sha256').update(JSON.stringify(TRACK_PLAN)).digest('hex')).toBe('3cdf8efddc9f24e64d4842ec2b7f91fb8d0804a59c200ff306b2289258c0a209');
-    expect(track.length).toBe(960);
+describe.each(TRACK_IDS)('the course %s', id => {
+  const track = getTrack(id);
+  it('closes one 960 m lap, with positive lanes on the driver\'s left', () => {
+    expect(track.id).toBe(id); expect(track.length).toBe(960);
     const start = track.point(0), end = track.point(LAP - .001);
     expect(Math.hypot(start.x - end.x, start.z - end.z)).toBeLessThan(.01);
-    expect(start.x / start.z).toBeCloseTo((440 - 470) / (294 - 364), 3);
-    const ratio = (track.bounds.maxX - track.bounds.minX) / (track.bounds.maxZ - track.bounds.minZ);
-    expect(ratio).toBeGreaterThan(1.4); expect(ratio).toBeLessThan(1.6);
-  });
-  it('has its three hairpins where the outline has them, and positive lanes on the driver\'s left', () => {
-    expect(track.curvature(310)).toBeLessThan(-.08);      // right-hand hairpin into the bog
-    expect(track.curvature(505)).toBeGreaterThan(.06);    // left-hand hairpin up the mountain
-    expect(track.curvature(604)).toBeLessThan(-.06);      // right-hand hairpin through the cave
+    expect(Math.abs(Math.abs(turning(track)) - 360)).toBeLessThan(3);
     const centre = track.point(505, 0), left = track.point(505, 3), ahead = track.point(506, 0);
     const cross = (ahead.x - centre.x) * (left.z - centre.z) - (ahead.z - centre.z) * (left.x - centre.x);
     expect(cross).toBeLessThan(0);                        // +lane is to the left of the direction of travel (y up)
     expect(Math.hypot(left.x - centre.x, left.z - centre.z)).toBeCloseTo(3, 5);
+    for (let d = 0; d < LAP; d += 2) expect(Math.abs(track.height(d + 1) - track.height(d))).toBeLessThan(.2);   // no slope steeper than one in five
   });
   it('keeps every barrier on its own side of a bend\'s centre, and clear of every other part of the course', () => {
     const centres = Array.from({ length: LAP / 4 }, (_, i) => track.point(i * 4));
@@ -72,41 +66,148 @@ describe('the course built on Varggropen\'s outline', () => {
       }
     }
   });
-  it('passes through the five places in order, each with its own road and rough', () => {
-    expect(ZONES.map(zone => zone.id)).toEqual(['garden', 'forest', 'bog', 'mountain', 'candy']);
-    for (const [i, zone] of ZONES.entries()) {
-      expect(zone.to).toBe(ZONES[(i + 1) % ZONES.length]!.from);
-      const middle = zone.from + (((zone.to - zone.from) % LAP + LAP) % LAP) / 2;
-      expect(track.zone(middle)).toBe(i);
-      expect(track.surface(middle, 0)).toBe(zone.road);
-      expect(track.surface(middle, track.roadLeft(middle) + .3)).toBe(zone.rough);
-      expect(track.surface(middle, -track.roadRight(middle) - .3)).toBe(zone.rough);
+  it('passes through its places in order, each with its own road and rough, and its caves on the mountain', () => {
+    expect(track.zones.length).toBeGreaterThan(0);
+    for (const [i, zone] of track.zones.entries()) {
+      expect(zone.to).toBe(track.zones[(i + 1) % track.zones.length]!.from);
+      const length = ((zone.to - zone.from) % LAP + LAP) % LAP || LAP, middle = zone.from + length / 2, place = PLACES[zone.kind]!;
+      expect(length).toBeGreaterThan(100);
+      expect(track.zone(middle)).toBe(zone.kind);
+      expect(track.mix(middle)[zone.kind]).toBe(1);
+      expect(track.surface(middle, track.roadLeft(middle) + .3)).toBe(place.rough);
+      expect(track.surface(middle, -track.roadRight(middle) - .3)).toBe(place.rough);
+      // Across a border the two places share the road, and the shares always add up to one.
+      const border = track.mix(zone.to), next = track.zones[(i + 1) % track.zones.length]!;
+      if (next.kind !== zone.kind) { expect(border[zone.kind]).toBeCloseTo(.5, 1); expect(border[next.kind]).toBeCloseTo(.5, 1); }
+      for (let d = zone.from; d < zone.from + length; d += 7) expect(track.mix(d).reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
     }
-    expect(track.surface(400, 0)).toBe('planks');
-    expect(track.zone(CAVE.from)).toBe(3); expect(track.zone(CAVE.to)).toBe(3);
+    for (const cave of track.caves) {
+      expect(track.zone(cave.from)).toBe(3); expect(track.zone(cave.to)).toBe(3);
+      expect(track.inCave((cave.from + cave.to) / 2)).toBe(true); expect(track.inCave(cave.from - 5)).toBe(false); expect(track.inCave(cave.from - 5, 6)).toBe(true);
+    }
   });
-  it('puts every strip, ramp, puddle, bag and sweet on the road, and every ramp on a straight run', () => {
+  it('puts every strip, ramp, puddle, bag and sweet on the road, and every ramp on a straight run clear of the rest', () => {
     const onRoad = (d: number, lane: number, room = 0) => expect(lane + room < track.roadLeft(d) && -lane + room < track.roadRight(d), `${d} ${lane}`).toBe(true);
+    expect(track.pads.length).toBeGreaterThanOrEqual(5);
     for (const pad of track.pads) { onRoad(pad.from, pad.lane, pad.half); onRoad(pad.to, pad.lane, pad.half); expect(track.pad((pad.from + pad.to) / 2, pad.lane)).toBe(true); expect(track.pad(pad.from - 1, pad.lane)).toBe(false); }
+    expect(track.ramps.length).toBeGreaterThanOrEqual(1);
     for (const ramp of track.ramps) {
       onRoad(ramp.from, ramp.lane, ramp.half); onRoad(ramp.to, ramp.lane, ramp.half);
       for (let d = ramp.from - 14; d < ramp.to + 30; d += 4) expect(Math.abs(track.curvature(d)), `${d}`).toBeLessThan(.03);
       expect(track.bump(ramp.from, ramp.lane)).toBe(0); expect(track.bump(ramp.to, ramp.lane)).toBeCloseTo(ramp.height, 5);
       expect(track.bump(ramp.to + .1, ramp.lane)).toBe(0); expect(track.bump(ramp.to - 1, ramp.lane + ramp.half + .2)).toBe(0);
+      // Nothing stands on a ramp or where a kart comes down from it, and no cave roof hangs over the jump.
+      for (const pad of track.pads) expect(pad.to < ramp.from - 4 || pad.from > ramp.to + 26, `strip at ${pad.from}`).toBe(true);
+      for (const box of track.boxes) expect(box.at < ramp.from - 4 || box.at > ramp.to + 26, `bags at ${box.at}`).toBe(true);
+      for (const puddle of track.mud) expect(puddle.at < ramp.from - 6 || puddle.at > ramp.to + 26, `puddle at ${puddle.at}`).toBe(true);
+      expect(track.inCave(ramp.to + 12, 4)).toBe(false);
     }
     for (const puddle of track.mud) { onRoad(puddle.at, puddle.lane, puddle.wide); expect(track.surface(puddle.at, puddle.lane)).toBe('mud'); expect(track.zone(puddle.at)).toBe(2); }
     expect(track.boxes).toHaveLength(30);
-    for (const box of track.boxes) onRoad(box.at, box.lane, .9);
+    for (const box of track.boxes) { onRoad(box.at, box.lane, .9); expect(track.pad(box.at, box.lane)).toBe(false); }
     expect(track.candies.length).toBeGreaterThan(50);
-    for (const candy of track.candies) { onRoad(candy.at, candy.lane, .5); expect(candy.lift).toBeGreaterThanOrEqual(0); }
+    for (const candy of track.candies) { onRoad(candy.at, candy.lane, .5); expect(candy.lift).toBeGreaterThanOrEqual(0); expect(candy.lift > 1 ? track.ramps.some(ramp => candy.at > ramp.to && candy.at < ramp.to + 40) : true, `sweet in the air at ${candy.at}`).toBe(true); }
     expect(track.grid).toHaveLength(8);
     for (const slot of track.grid) { onRoad(slot.distance, slot.lane, 1); expect(slot.distance).toBeLessThan(0); }
+    for (let d = -30; d < 12; d += 3) expect(Math.abs(track.curvature(d)), `grid at ${d}`).toBeLessThan(.03);
+    for (const mark of track.landmarks) expect(Number.isFinite(mark.at)).toBe(true);
   });
   it('finds a world point\'s place on the course again', () => {
     for (const [d, lane] of [[12, 2], [310, -3], [505, 4], [700, -1.5], [955, 0]] as const) {
       const p = track.point(d, lane), found = track.nearest(p.x, p.z);
       expect(Math.abs(trackGap(found.distance, d))).toBeLessThan(.6); expect(found.lane).toBeCloseTo(lane, 0);
     }
+  });
+  it('has a racing line on the road that a rival laps cleanly at full speed', () => {
+    const line = racingLine(id);
+    for (let d = 0; d < LAP; d += 3) {
+      const lane = line.laneAt(d);
+      expect(lane).toBeLessThan(track.roadLeft(d) - 1); expect(-lane).toBeLessThan(track.roadRight(d) - 1);
+      expect(line.speedAt(d)).toBeGreaterThan(15);
+    }
+    const kart = Object.assign(newKart(1, 'fox', 0, -3, 2.4), { held: false }), brain = createBrain({ id: 'fox', color: 0, pace: 1, skill: 1, bold: .5 }, 5), events: KartEvent[] = [];
+    let steps = 0, rough = 0, walls = 0;
+    while (kart.distance < LAP * 2 && steps++ < 120 / RACE_STEP) {
+      stepKart(kart, rivalControls(kart, brain, { track, line, karts: [kart], gums: [], boxes: [], dt: RACE_STEP }), track, RACE_STEP, events);
+      if (kart.distance > LAP && kart.surface !== 'road' && kart.surface !== 'planks' && kart.surface !== 'mud') rough++;
+    }
+    for (const event of events) if (event.type === 'wall') walls++;
+    const lap = steps * RACE_STEP / 2;
+    expect(kart.distance).toBeGreaterThanOrEqual(LAP * 2); expect(finite(kart)).toBe(true);
+    expect(lap).toBeGreaterThan(22); expect(lap).toBeLessThan(36);
+    expect(rough * RACE_STEP).toBeLessThan(1.5); expect(walls).toBeLessThanOrEqual(2);
+    expect(events.some(event => event.type === 'jump')).toBe(true);
+  });
+});
+
+describe('the four courses', () => {
+  it('are four different laps: three to the right and one to the left, each with its own shape and places', () => {
+    expect(TRACK_IDS).toEqual(['garden', 'bog', 'mountain', 'varggropen']);
+    const tracks = TRACK_IDS.map(id => getTrack(id));
+    expect(tracks.map(track => Math.sign(turning(track)))).toEqual([-1, -1, 1, -1]);
+    const tightest = (track: Track) => { let k = 0; for (let d = 0; d < LAP; d += 1) k = Math.max(k, Math.abs(track.curvature(d))); return 1 / k; };
+    // A hairpin: one bend that turns the kart at least 160 degrees.
+    const hairpins = (track: Track) => {
+      let n = 0, turn = 0, sign = 0;
+      for (let d = 400; d < LAP + 400; d += .5) {
+        const k = track.curvature(d), s = Math.abs(k) > .012 ? Math.sign(k) : 0;
+        if (s !== sign) { if (Math.abs(turn) > 160) n++; turn = 0; sign = s; }
+        turn += k * .5 * 180 / Math.PI;
+      }
+      return n;
+    };
+    expect(tightest(tracks[0]!)).toBeGreaterThan(20);                 // Gårdsvarvet has no hairpin at all
+    expect(tracks.map(hairpins)).toEqual([0, 3, 2, 3]);
+    const climb = (track: Track) => { let lo = Infinity, hi = -Infinity; for (let d = 0; d < LAP; d += 2) { lo = Math.min(lo, track.height(d)); hi = Math.max(hi, track.height(d)); } return hi - lo; };
+    expect(climb(tracks[1]!)).toBeLessThan(4.5);                      // Myrspången lies low over the water
+    expect(climb(tracks[2]!)).toBeGreaterThan(16);                    // Kristallberget climbs a mountain
+    expect(tracks.map(track => [...new Set(track.zones.map(zone => PLACES[zone.kind]!.id))].sort())).toEqual([['forest', 'garden'], ['bog', 'forest'], ['forest', 'mountain'], ['bog', 'candy', 'forest', 'garden', 'mountain']]);
+    expect(tracks.map(track => track.caves.length)).toEqual([0, 0, 1, 1]);
+    expect(tracks.map(track => track.mud.length > 0)).toEqual([false, true, false, true]);
+    expect(new Set(tracks.map(track => `${Math.round(track.bounds.maxX - track.bounds.minX)}x${Math.round(track.bounds.maxZ - track.bounds.minZ)}`)).size).toBe(4);
+    expect(getTrack('bog')).toBe(tracks[1]); expect(getTrack()).toBe(tracks[3]);
+  });
+  it('keep Varggropen\'s 77 source coordinates and its three hairpins', () => {
+    // Digest of the trace in Pekkas Pokal 7762360: the outline is that circuit's, not a new one.
+    expect(TRACK_PLAN).toHaveLength(77);
+    expect(createHash('sha256').update(JSON.stringify(TRACK_PLAN)).digest('hex')).toBe('3cdf8efddc9f24e64d4842ec2b7f91fb8d0804a59c200ff306b2289258c0a209');
+    const track = getTrack('varggropen'), start = track.point(0);
+    expect(start.x / start.z).toBeCloseTo((440 - 470) / (294 - 364), 3);
+    const ratio = (track.bounds.maxX - track.bounds.minX) / (track.bounds.maxZ - track.bounds.minZ);
+    expect(ratio).toBeGreaterThan(1.4); expect(ratio).toBeLessThan(1.6);
+    expect(track.curvature(310)).toBeLessThan(-.08);      // right-hand hairpin into the bog
+    expect(track.curvature(505)).toBeGreaterThan(.06);    // left-hand hairpin up the mountain
+    expect(track.curvature(604)).toBeLessThan(-.06);      // right-hand hairpin through the cave
+    expect(track.zones.map(zone => PLACES[zone.kind]!.id)).toEqual(['forest', 'bog', 'mountain', 'candy', 'garden']);
+    expect(track.surface(400, 0)).toBe('planks');
+  });
+});
+
+describe('the cup', () => {
+  it('runs the four courses in order and gives ten points down to one', () => {
+    const cup = createCup(), ids = ['player', ...RIVALS.map(rival => rival.id)] as const;
+    expect(CUP_POINTS).toEqual([10, 8, 6, 5, 4, 3, 2, 1]);
+    const driven: string[] = [];
+    for (let round = 0; round < 4; round++) {
+      driven.push(cupTrack(cup));
+      // The player wins the first and comes last in the rest; the fox is second every time.
+      const order = round === 0 ? ids.map(id => ({ id })) : [...ids.slice(1), ids[0]].map(id => ({ id }));
+      scoreRace(cup, order);
+      expect(cup.over).toBe(round === 3); expect(nextRace(cup)).toBe(round < 3);
+    }
+    expect(driven).toEqual(TRACK_IDS); expect(cup.index).toBe(3);
+    expect(cup.points.player).toBe(10 + 1 + 1 + 1); expect(cup.points.fox).toBe(8 + 10 + 10 + 10);
+    const table = cupTable(cup);
+    expect(table).toHaveLength(8); expect(table[0]).toEqual({ id: 'fox', points: 38 });
+    expect(table.map(entry => entry.points)).toEqual([...table.map(entry => entry.points)].sort((a, b) => b - a));
+    expect(table.reduce((sum, entry) => sum + entry.points, 0)).toBe(4 * 39);
+    scoreRace(cup, ids.map(id => ({ id }))); expect(cup.points.player).toBe(13);     // a finished cup takes no more races
+  });
+  it('puts the better place in the last race ahead when two are level on points', () => {
+    const cup = createCup();
+    scoreRace(cup, [{ id: 'player' }, { id: 'fox' }]); nextRace(cup); scoreRace(cup, [{ id: 'fox' }, { id: 'player' }]);
+    expect(cup.points.player).toBe(18); expect(cup.points.fox).toBe(18);
+    expect(cupTable(cup).map(entry => entry.id)).toEqual(['fox', 'player']);
   });
 });
 
@@ -455,15 +556,34 @@ describe('race rules', () => {
     expect(RIVALS.map(rival => rival.pace)).toEqual([...RIVALS.map(rival => rival.pace)].sort((a, b) => b - a));
     expect(new Set(RIVALS.map(rival => rival.color)).size).toBe(7);
   });
-  it('builds a racing line that stays on the road and uses its width in the bends', () => {
-    const track = getTrack(), line = buildRacingLine(track);
+  it('builds a racing line that uses the width of the road and takes the inside of each hairpin', () => {
+    const line = buildRacingLine(getTrack());
     let widest = 0;
-    for (let d = 0; d < LAP; d += 3) {
-      const lane = line.laneAt(d); widest = Math.max(widest, Math.abs(lane));
-      expect(lane).toBeLessThan(track.roadLeft(d) - 1); expect(-lane).toBeLessThan(track.roadRight(d) - 1);
-      expect(line.speedAt(d)).toBeGreaterThan(15);
-    }
+    for (let d = 0; d < LAP; d += 3) widest = Math.max(widest, Math.abs(line.laneAt(d)));
     expect(widest).toBeGreaterThan(2.5);
-    expect(line.laneAt(310)).toBeLessThan(-1.5); expect(line.laneAt(505)).toBeGreaterThan(1.5);   // the inside of each hairpin
+    expect(line.laneAt(310)).toBeLessThan(-1.5); expect(line.laneAt(505)).toBeGreaterThan(1.5);
+    expect(racingLine('varggropen')).toBe(racingLine('varggropen'));
+  });
+  it('races on the course, in the speed class and at the difficulty it is asked for', () => {
+    expect(createRace({ track: 'bog' }).track).toBe(getTrack('bog')); expect(createRace().track.id).toBe('varggropen');
+    expect(CLASS_SPEED).toEqual({ 50: .78, 100: .9, 150: 1 });
+    for (const cc of [50, 100, 150] as const) {
+      const race = started({ track: 'garden', cc, seed: 4 });
+      expect(race.state.karts.every(kart => kart.cc === CLASS_SPEED[cc])).toBe(true);
+      const slow = Object.assign(fresh(0), { cc: CLASS_SPEED[cc] }); drive(slow, strip(), 4);
+      expect(slow.speed / TOP_SPEED).toBeGreaterThan(CLASS_SPEED[cc] * .97); expect(slow.speed / TOP_SPEED).toBeLessThanOrEqual(CLASS_SPEED[cc]);
+      // A boost is a share on top of the class's own speed, never the full-speed kart's boost.
+      const kart = Object.assign(fresh(TOP_SPEED * CLASS_SPEED[cc]), { cc: CLASS_SPEED[cc] }); giveBoost(kart, 'sweet', []); drive(kart, strip(), .8);
+      expect(kart.speed / (TOP_SPEED * CLASS_SPEED[cc])).toBeGreaterThan(1.25); expect(kart.speed / (TOP_SPEED * CLASS_SPEED[cc])).toBeLessThan(1.4);
+    }
+    expect(LEVELS.easy.pace).toBeLessThan(LEVELS.normal.pace); expect(LEVELS.normal.pace).toBeLessThan(LEVELS.hard.pace); expect(LEVELS.hard.pace).toBe(1);
+    for (const level of ['easy', 'normal', 'hard'] as const) {
+      const race = started({ difficulty: level, seed: 4 }); run(race, 1, gas);
+      expect(race.state.player.assist).toBe(level === 'easy'); expect(race.state.player.pace).toBe(1);
+      // Side by side with the player, a rival's pace is its own share of the level's.
+      const fox = race.state.karts[1]!; fox.distance = race.state.player.distance; race.tick(gas, RACE_STEP);
+      expect(fox.pace).toBeCloseTo(RIVALS[0]!.pace * LEVELS[level].pace, 9);
+    }
+    expect(createRace({ difficulty: 'hard' }).state.position).toBe(8);
   });
 });

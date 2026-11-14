@@ -110,7 +110,7 @@ export function toyKart(id: RacerId, colour: number, shared: THREE.MeshStandardM
   const flames = new THREE.Group(), flameGeometry = new THREE.ConeGeometry(.16, 1, 8).rotateX(-Math.PI / 2).translate(0, 0, -.5);
   for (const side of [-1, 1]) { const flame = new THREE.Mesh(flameGeometry, fire); flame.position.set(side * .36, .7, -1.5); flames.add(flame); }
   flames.visible = false; root.add(flames);
-  const floss = new THREE.Mesh(new THREE.IcosahedronGeometry(1.75, 2), new THREE.MeshStandardMaterial({ color: 0xffb3d4, transparent: true, opacity: .42, roughness: 1, depthWrite: false, flatShading: true }));
+  const floss = new THREE.Mesh(new THREE.IcosahedronGeometry(1.75, 2), new THREE.MeshBasicMaterial({ color: 0xff9cc8, transparent: true, opacity: .34, depthWrite: false }));
   floss.position.y = .8; floss.visible = false; root.add(floss);
   for (const geometry of [rounded, sphere, cylinder, cone]) geometry.dispose();
   mesh.castShadow = figure.castShadow = true;

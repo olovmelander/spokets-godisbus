@@ -26,11 +26,11 @@ export const TRACK_PLAN: readonly (readonly [number, number])[] = [
 /** The picture's centre, which becomes the world's origin. */
 export const PLAN_CENTRE: readonly [number, number] = [470, 364];
 
-/** A closed centripetal Catmull–Rom spline through the plan, as a dense polyline in picture units.
- * The same curve the source game drew with three's CatmullRomCurve3('centripetal'). */
-export function tracePolyline(perSegment = 48): { x: Float64Array; z: Float64Array } {
-  const n = TRACK_PLAN.length, x = new Float64Array(n * perSegment), z = new Float64Array(n * perSegment);
-  const at = (i: number) => TRACK_PLAN[((i % n) + n) % n]!;
+/** A closed centripetal Catmull–Rom spline through an outline's points, as a dense polyline in the outline's own
+ * units. For Varggropen it is the same curve the source game drew with three's CatmullRomCurve3('centripetal'). */
+export function splinePolyline(plan: readonly (readonly [number, number])[], perSegment = 48): { x: Float64Array; z: Float64Array } {
+  const n = plan.length, x = new Float64Array(n * perSegment), z = new Float64Array(n * perSegment);
+  const at = (i: number) => plan[((i % n) + n) % n]!;
   const knot = (a: readonly [number, number], b: readonly [number, number]) => Math.max(1e-4, Math.hypot(b[0] - a[0], b[1] - a[1]) ** .5);
   for (let i = 0; i < n; i++) {
     const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);

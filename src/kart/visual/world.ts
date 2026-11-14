@@ -3,7 +3,7 @@
  * All of it is built once from the course in sim/track.ts; nothing here decides how a kart drives.
  */
 import * as THREE from 'three';
-import { CAVE, LAP, ZONES, trackGap, within, type Track } from '../sim/track';
+import { LAP, type Track } from '../sim/track';
 import { canvasTexture, createBatch, randomFrom, ribbon } from './kit';
 
 /** The colours of each place: garden, forest, bog, mountain, candy meadow. */
@@ -16,19 +16,8 @@ export const ZONE_LOOK = [
 ] as const;
 /** The bog's water lies a little under its lowest planks. */
 export const WATER_LEVEL = -1.95;
-const BLEND = 16;
 const smooth = (a: number, b: number, x: number) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-
-/** How much of each place a spot on the lap is: one place, or two across the stretch where they meet. */
-export function zoneWeights(track: Track, distance: number, out: number[] = [0, 0, 0, 0, 0]): number[] {
-  const a = track.zone(distance), zone = ZONES[a]!;
-  out.fill(0);
-  const ahead = trackGap(distance, zone.to), behind = trackGap(zone.from, distance);
-  if (ahead < BLEND) { const t = .5 * (1 - ahead / BLEND); out[a] = 1 - t; out[(a + 1) % ZONES.length] = t; }
-  else if (behind < BLEND) { const t = .5 * (1 - behind / BLEND); out[a] = 1 - t; out[(a + ZONES.length - 1) % ZONES.length] = t; }
-  else out[a] = 1;
-  return out;
-}
+const zoneWeights = (track: Track, distance: number, out: number[]) => track.mix(distance, out);
 
 export interface World {
   group: THREE.Group;
@@ -39,6 +28,7 @@ export interface World {
   /** Metres from the nearest part of the road's centreline. */
   roadDistance(x: number, z: number): number;
   update(time: number): void;
+  dispose(): void;
 }
 
 const ROAD_GLSL = `
@@ -244,11 +234,17 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
         #include <fog_fragment>
       }`,
   });
-  // The pond covers the bog and a little more; everywhere else the terrain lies above it.
+  // The pond covers the bog and a little more; everywhere else the terrain lies above it. No bog, no pond.
   let wx0 = Infinity, wx1 = -Infinity, wz0 = Infinity, wz1 = -Infinity;
-  for (let d = ZONES[2]!.from - 40; d < ZONES[2]!.to + 40; d += 4) { track.point(d, 0, point); wx0 = Math.min(wx0, point.x); wx1 = Math.max(wx1, point.x); wz0 = Math.min(wz0, point.z); wz1 = Math.max(wz1, point.z); }
-  const pond = new THREE.Mesh(new THREE.PlaneGeometry(wx1 - wx0 + 110, wz1 - wz0 + 110).rotateX(-Math.PI / 2), water);
-  pond.position.set((wx0 + wx1) / 2, WATER_LEVEL, (wz0 + wz1) / 2); pond.name = 'bog-water'; pond.renderOrder = 1; group.add(pond);
+  for (const span of track.zones) {
+    if (span.kind !== 2) continue;
+    const length = ((span.to - span.from) % LAP + LAP) % LAP || LAP;
+    for (let d = -40; d < length + 40; d += 4) { track.point(span.from + d, 0, point); wx0 = Math.min(wx0, point.x); wx1 = Math.max(wx1, point.x); wz0 = Math.min(wz0, point.z); wz1 = Math.max(wz1, point.z); }
+  }
+  if (wx1 > wx0) {
+    const pond = new THREE.Mesh(new THREE.PlaneGeometry(wx1 - wx0 + 110, wz1 - wz0 + 110).rotateX(-Math.PI / 2), water);
+    pond.position.set((wx0 + wx1) / 2, WATER_LEVEL, (wz0 + wz1) / 2); pond.name = 'bog-water'; pond.renderOrder = 1; group.add(pond);
+  }
 
   /* ---------------------------------------------------------------- paint, kerbs, strips, ramps, puddles */
   const flat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
@@ -267,7 +263,7 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
   for (const side of [1, -1]) {
     let start: number | null = null;
     for (let d = 0; d <= LAP + 2; d += 2) {
-      const k = track.curvature(d) * side, bend = d <= LAP && (k > .028 || track.curvature(d - 14) * side < -.04) && track.zone(d) !== 2 && !within(d, CAVE.from, CAVE.to);
+      const k = track.curvature(d) * side, bend = d <= LAP && (k > .028 || track.curvature(d - 14) * side < -.04) && track.zone(d) !== 2 && !track.inCave(d);
       if (bend && start === null) start = d;
       if (!bend && start !== null) {
         for (let at = start; at < d; at += 2) {
@@ -351,13 +347,13 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
     for (let d = 0; d <= LAP; d += 2.4) {
       const lane = side * ((side > 0 ? track.wallLeft(d) : track.wallRight(d)) + .22), zone = track.zone(d), look = ZONE_LOOK[zone]!, key = `${Math.floor(d / 80) % 12}`;
       track.point(d, lane, point); here.set(point.x, point.y + (zone === 2 ? -.3 : 0), point.z);
-      const inCave = within(d, CAVE.from - 1, CAVE.to + 1);
+      const inCave = track.inCave(d, 1);
       if (!inCave) {
         const tall = zone === 4 ? 1.25 : zone === 2 ? 1.2 : .95, post = Math.round(d / 2.4);
         if (zone === 4) for (let i = 0; i < 5; i++) wood.add(round, solid, [here.x, here.y + .125 + i * .25, here.z], [0, 0, 0], [.22, .25, .22], (i + post) % 2 ? 0xfdfdfd : 0xff5d8f, null, key);
         else wood.add(zone === 0 ? box : round, solid, [here.x, here.y + tall / 2, here.z], [0, point.angle, 0], [.17, tall, .17], look.post, null, key);
         if (zone === 4) wood.add(ball, solid, [here.x, here.y + 1.4, here.z], [0, 0, 0], .42, [0x7ad7f0, 0xffd166, 0xa0e77d, 0xc8a2ff][post % 4]!, null, key);
-        if (!first && !within(d - 2.4, CAVE.from - 1, CAVE.to + 1)) {
+        if (!first && !track.inCave(d - 2.4, 1)) {
           middle.copy(previous).add(here).multiplyScalar(.5);
           const length = previous.distanceTo(here), yaw = Math.atan2(here.x - previous.x, here.z - previous.z), pitch = -Math.asin((here.y - previous.y) / length);
           for (const [height, thick] of zone === 0 ? [[.78, .1], [.42, .1]] : zone === 1 ? [[.7, .2]] : zone === 2 ? [[.95, .07]] : zone === 3 ? [[.55, .34]] : [[.95, .14]]) {
@@ -375,5 +371,7 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
   return {
     group, groundAt, zonesAt, roadDistance,
     update(time) { water.uniforms.clock!.value = time; strip.uniforms.clock!.value = time; },
+    /** Materials that no mesh may be using on a course without water or strips still belong to this world. */
+    dispose() { water.dispose(); strip.dispose(); },
   };
 }

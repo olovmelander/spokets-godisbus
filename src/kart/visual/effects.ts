@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import type { Kart, KartEvent, KartState } from '../sim/race';
 import { TOP_SPEED } from '../sim/kart';
-import { CAVE, within, type Track } from '../sim/track';
+import type { Track } from '../sim/track';
 import type { CameraMode } from './camera';
 import { createBatch, randomFrom } from './kit';
 
@@ -59,8 +59,8 @@ function createParticles(capacity: number, glow: boolean) {
   };
 }
 
-export function createEffects(track: Track, scene: THREE.Scene, { low, calm }: { low: boolean; calm: boolean }) {
-  const group = new THREE.Group(); group.name = 'race-things'; scene.add(group);
+export function createEffects(track: Track, parent: THREE.Object3D, { low, calm }: { low: boolean; calm: boolean }) {
+  const group = new THREE.Group(); group.name = 'race-things'; parent.add(group);
   const solid = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .5, metalness: .02 });
   const box = new THREE.BoxGeometry(1, 1, 1), ball = new THREE.SphereGeometry(.5, 12, 9), cone = new THREE.ConeGeometry(.5, 1, 8), holder = new THREE.Group();
   const model = (build: (add: (geometry: THREE.BufferGeometry, at: number[], size: number[] | number, color: number, rotation?: number[]) => void) => void) => {
@@ -211,7 +211,7 @@ export function createEffects(track: Track, scene: THREE.Scene, { low, calm }: {
       }
       /* The air of each place, near the camera: something small is always drifting by. */
       if (!calm && dt > 0) {
-        const where = mode === 'menu' ? null : state.player, zone = where ? track.zone(where.distance) : -1, cave = !!where && within(where.distance, CAVE.from, CAVE.to);
+        const where = mode === 'menu' ? null : state.player, zone = where ? track.zone(where.distance) : -1, cave = !!where && track.inCave(where.distance);
         ambient += dt * (low ? 8 : 20);
         while (ambient >= 1) {
           ambient--;

@@ -1,7 +1,8 @@
 import { sv } from '../content/sv';
-import { createRace, ROULETTE_SECONDS, type ItemId, type KartEvent } from './sim/race';
+import { createRace, ROULETTE_SECONDS, TRACK_IDS, type Difficulty, type ItemId, type KartEvent, type SpeedClass, type TrackId } from './sim/race';
 import { DRIFT_TIERS, MAX_CANDIES } from './sim/kart';
-import { LAPS, trackGap } from './sim/track';
+import { createCup, CUP_POINTS, cupTable, cupTrack, nextRace, scoreRace, type Cup } from './sim/cup';
+import { getTrack, LAP, LAPS, trackGap } from './sim/track';
 import { createKartView } from './render';
 import { createKartInput } from './input';
 import { createKartAudio, type KartSoundEvent } from './audio';
@@ -15,6 +16,17 @@ const words = sv.kart;
 const hex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
 /** How far away a rival's bang or pop can still be heard, in metres along the road. */
 const EARSHOT = 70;
+const CLASSES: readonly SpeedClass[] = [50, 100, 150];
+/** Where each course's name may break on a narrow button: Gårds-varvet, Kristall-berget. */
+const BREAKS: Readonly<Record<TrackId | 'cup', number>> = { cup: 5, garden: 5, bog: 3, mountain: 8, varggropen: 4 };
+const label = (id: TrackId | 'cup', name: string) => `${name.slice(0, BREAKS[id])}&shy;${name.slice(BREAKS[id])}`;
+const LEVELS: readonly Difficulty[] = ['easy', 'normal', 'hard'];
+/** A course's outline as a little drawing for its button. */
+function outlineArt(id: TrackId): string {
+  const track = getTrack(id), { minX, maxX, minZ, maxZ } = track.bounds, scale = 52 / Math.max(maxX - minX, maxZ - minZ);
+  const path = Array.from({ length: 96 }, (_, i) => { const p = track.point(LAP * i / 96); return `${(32 + (p.x - (minX + maxX) / 2) * scale).toFixed(1)} ${(32 + (p.z - (minZ + maxZ) / 2) * scale).toFixed(1)}`; }).join('L');
+  return `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M${path}Z" fill="none" stroke="#10222d" stroke-width="9" stroke-linejoin="round"/><path d="M${path}Z" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round"/></svg>`;
+}
 
 /** The television's self-contained game. The house remains owned and frozen by main.ts. */
 export async function openKart(options: KartOptions): Promise<KartSession> {
@@ -22,7 +34,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
   root.className = 'kart-game'; root.dataset.mode = 'intro'; root.dataset.device = matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', words.title);
   root.innerHTML = `
-    <canvas class="kart-canvas" tabindex="0" aria-label="${words.title} – ${words.place}"></canvas>
+    <canvas class="kart-canvas" tabindex="0" aria-label="${words.title}"></canvas>
     <div class="kart-speedlines" aria-hidden="true"></div>
     <div class="kart-vignette" aria-hidden="true"></div>
     <div class="kart-race-ui" hidden>
@@ -49,21 +61,24 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
       <p class="kart-key-hint"></p>
     </div>
     <div class="kart-menu kart-intro">
-      <div class="kart-title"><span class="kart-kicker">${words.subtitle}</span><div>${CROWN}<h1>${words.title}</h1></div><p>${words.place}</p><div class="kart-title-actions"><button class="kart-primary" data-action="start">${words.start}<span>→</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
-      <div class="kart-start-card"><p class="kart-lore">${words.story}</p>
+      <div class="kart-title"><span class="kart-kicker">${words.subtitle}</span><div>${CROWN}<h1>${words.title}</h1></div><p class="kart-course"></p><p class="kart-lore">${words.story}</p><div class="kart-title-actions"><button class="kart-primary" data-action="start"><b>${words.startCup}</b><span>→</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
+      <div class="kart-start-card">
+        <fieldset class="kart-tracks"><legend>${words.trackLabel}</legend><button type="button" data-track="cup" aria-pressed="true"><span>${CROWN}</span>${label('cup', words.cup)}</button>${TRACK_IDS.map(id => `<button type="button" data-track="${id}" aria-pressed="false"><span>${outlineArt(id)}</span>${label(id, words.tracks[id])}</button>`).join('')}</fieldset>
+        <p class="kart-track-tip">${words.cupTip}</p>
+        <fieldset class="kart-classes"><legend>${words.classLabel}</legend>${CLASSES.map(cc => `<button type="button" data-cc="${cc}" aria-pressed="${cc === 100}">${words.classes[cc]}</button>`).join('')}</fieldset>
+        <fieldset class="kart-modes"><legend>${words.modeLabel}</legend>${LEVELS.map(level => `<button type="button" data-action="${level}" aria-pressed="${level === 'normal'}">${words[level]}</button>`).join('')}</fieldset>
+        <p class="kart-mode-tip"></p>
         <div class="kart-lessons" aria-label="${words.controlsLabel}"><div><b>↔</b><strong>${words.steer}</strong><span>${words.steerTip}</span></div><div><b>↝</b><strong>${words.drift}</strong><span>${words.driftTip}</span></div><div><b class="kart-lesson-art">${BAG}</b><strong>${words.item}</strong><span>${words.itemTip}</span></div></div>
         <p class="kart-more">${words.moreTips}</p>
         <p class="kart-instructions"></p>
-        <fieldset class="kart-modes"><legend>${words.modeLabel}</legend><button type="button" data-action="normal" aria-pressed="true">${words.normal}</button><button type="button" data-action="easy" aria-pressed="false">${words.easy}</button></fieldset>
-        <p class="kart-mode-tip">${words.normalTip}</p>
         <label class="kart-autogas"><input type="checkbox" checked> ${words.autoGas}<span>${words.autoGasTip}</span></label>
-        <p class="kart-record">${words.noRecord}</p>
-        <button class="kart-primary" data-action="start">${words.start}<span>→</span></button>
+        <p class="kart-record">${words.noCup}</p>
+        <button class="kart-primary" data-action="start"><b>${words.startCup}</b><span>→</span></button>
         <button class="kart-back" data-action="exit">${words.back}</button>
       </div>
     </div>
-    <div class="kart-menu kart-paused" hidden><div class="kart-paper"><span class="kart-kicker">${words.title}</span><h2>${words.paused}</h2><p>${words.pauseHint}</p><button class="kart-primary" data-action="resume">${words.resume}<span>→</span></button><button data-action="restart">${words.again}</button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
-    <div class="kart-menu kart-results" hidden><div class="kart-paper">${CROWN}<span class="kart-kicker">${words.finish}</span><h2></h2><p class="kart-result-place"></p><div class="kart-result-time"></div><ol class="kart-result-order" aria-label="${words.standings}"></ol><ol class="kart-result-laps"></ol><p class="kart-result-record"></p><p class="kart-result-storage"></p><button class="kart-primary" data-action="restart">${words.again}<span>→</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
+    <div class="kart-menu kart-paused" hidden><div class="kart-paper"><span class="kart-kicker">${words.title}</span><h2>${words.paused}</h2><p>${words.pauseHint}</p><button class="kart-primary" data-action="resume">${words.resume}<span>→</span></button><button data-action="restart" data-value="again">${words.again}</button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
+    <div class="kart-menu kart-results" hidden><div class="kart-paper">${CROWN}<span class="kart-kicker">${words.finish}</span><h2></h2><p class="kart-result-place"></p><div class="kart-result-time"></div><ol class="kart-result-order" aria-label="${words.standings}"></ol><ol class="kart-result-laps"></ol><p class="kart-result-record"></p><p class="kart-result-storage"></p><button class="kart-primary" data-action="next" hidden>${words.nextRace}<span>→</span></button><button class="kart-primary" data-action="restart"><b>${words.again}</b><span>→</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
     <div class="kart-menu kart-error" hidden><div class="kart-paper"><h2>${words.paused}</h2><p>${words.pictureLost}</p><button class="kart-primary" data-action="exit">${words.back}</button></div></div>
     <span class="kart-announcement" aria-live="polite" aria-atomic="true"></span>`;
   const query = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;
@@ -78,7 +93,11 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     countdown: query('.kart-countdown'), announcement: query('.kart-announcement'),
   };
   const recordStore = createKartRecords(options.storage, options.playerId);
-  let easy = false, race = createRace({ difficulty: 'normal' }), disposed = false, suspended = false, mode: 'intro' | 'race' | 'paused' | 'result' | 'error' = 'intro';
+  // What is chosen on the title page: the whole cup or one course, a speed class and a difficulty.
+  let choice: TrackId | 'cup' = 'cup', cc: SpeedClass = 100, difficulty: Difficulty = 'normal';
+  /** A cup under way: which of its four races is on, and every kart's points so far. */
+  let cup: Cup | null = null;
+  let race = createRace({ track: TRACK_IDS[0]!, difficulty, cc }), disposed = false, suspended = false, mode: 'intro' | 'race' | 'paused' | 'result' | 'error' = 'intro';
   let raf = 0, previous = 0, frames = 0, lastTenth = -1, lastCountdown = -1, noticeUntil = 0, noticeRank = 0;
   let shownPlace = 0, placeClock = 0, shownItem = '', rouletteTick = -1, shownTier = -1, shownFill = -1, shownCandies = -1, shownRanks = '', hitUntil = 0, visited = 1;
   let padSelect = false, padBack = false, padDirection = 0, throttle = 0;
@@ -88,22 +107,23 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
   let resize: ResizeObserver | undefined;
   const abort = new AbortController(), listeners = { signal: abort.signal };
   const NO_EVENTS: KartEvent[] = [];
-  const outline = Array.from({ length: 321 }, (_, i) => race.track.point(race.track.length * i / 320));
-  const { minX, maxX, minZ, maxZ } = race.track.bounds;
-  const mapScale = 204 / Math.max(maxX - minX, maxZ - minZ), mx = (minX + maxX) / 2, mz = (minZ + maxZ) / 2;
-  // The course is drawn once; only the eight dots move.
+  // The course is drawn once for each race; only the eight dots move.
   const mapBase = document.createElement('canvas'); mapBase.width = mapBase.height = 240;
-  {
-    const c = mapBase.getContext('2d');
-    if (c) {
-      const path = () => { c.beginPath(); outline.forEach((p, i) => { const x = 120 + (p.x - mx) * mapScale, y = 120 + (p.z - mz) * mapScale; if (i) c.lineTo(x, y); else c.moveTo(x, y); }); c.closePath(); };
-      c.lineJoin = 'round';
-      path(); c.strokeStyle = '#10222d'; c.lineWidth = 15; c.stroke();
-      path(); c.strokeStyle = '#fff4d6'; c.lineWidth = 7; c.stroke();
-      const start = outline[0]!; c.fillStyle = '#10222d'; c.fillRect(120 + (start.x - mx) * mapScale - 2, 120 + (start.z - mz) * mapScale - 7, 4, 14);
-    }
-  }
   const mapPoint = race.track.point(0);
+  let mapScale = 1, mx = 0, mz = 0, mapTrack: TrackId | null = null;
+  function prepareMap(): void {
+    if (mapTrack === race.track.id) return;
+    mapTrack = race.track.id;
+    const { minX, maxX, minZ, maxZ } = race.track.bounds, c = mapBase.getContext('2d');
+    mapScale = 204 / Math.max(maxX - minX, maxZ - minZ); mx = (minX + maxX) / 2; mz = (minZ + maxZ) / 2;
+    if (!c) return;
+    const outline = Array.from({ length: 321 }, (_, i) => race.track.point(LAP * i / 320));
+    const path = () => { c.beginPath(); outline.forEach((p, i) => { const x = 120 + (p.x - mx) * mapScale, y = 120 + (p.z - mz) * mapScale; if (i) c.lineTo(x, y); else c.moveTo(x, y); }); c.closePath(); };
+    c.clearRect(0, 0, 240, 240); c.lineJoin = 'round';
+    path(); c.strokeStyle = '#10222d'; c.lineWidth = 15; c.stroke();
+    path(); c.strokeStyle = '#fff4d6'; c.lineWidth = 7; c.stroke();
+    const start = outline[0]!; c.fillStyle = '#10222d'; c.beginPath(); c.arc(120 + (start.x - mx) * mapScale, 120 + (start.z - mz) * mapScale, 4.5, 0, Math.PI * 2); c.fill();
+  }
   function drawMap(): void {
     if (!map) return;
     map.clearRect(0, 0, 240, 240); map.drawImage(mapBase, 0, 0);
@@ -123,8 +143,8 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     }
     intro.hidden = next !== 'intro'; pausedPanel.hidden = next !== 'paused'; results.hidden = next !== 'result'; errorPanel.hidden = next !== 'error'; raceUi.hidden = next !== 'race';
     input?.setEnabled(next === 'race' && !suspended); sound?.suspend(next !== 'race' || suspended);
-    if (next === 'race') canvas.focus(); else focusAction(next === 'intro' ? 'start' : next === 'paused' ? 'resume' : next === 'result' ? 'restart' : 'exit');
-    if (next !== 'race') root.classList.remove('kart-boosting', 'kart-hit');
+    if (next === 'race') canvas.focus(); else focusAction(next === 'intro' ? 'start' : next === 'paused' ? 'resume' : next === 'result' ? (cup && !cup.over ? 'next' : 'restart') : 'exit');
+    if (next !== 'race') root.classList.remove('kart-boosting', 'kart-hit', 'kart-star');
     previous = 0;
   }
   function updateInstructions(): void {
@@ -132,16 +152,41 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     const text = device === 'touch' ? words.touch : device === 'pad' ? words.pad : words.keys;
     query('.kart-instructions').textContent = text; query('.kart-key-hint').textContent = text;
   }
-  function updateRecord(): void {
-    const best = recordStore.best(easy);
-    query('.kart-record').textContent = best ? `${words.bestRace}: ${kartTime(best.race)} · ${words.bestLap}: ${kartTime(best.lap)}` : words.noRecord;
+  /** The title page shows what is chosen, and flies its camera round that course. */
+  function updateChoice(): void {
+    root.querySelectorAll<HTMLElement>('[data-track]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.track === choice)));
+    root.querySelectorAll<HTMLElement>('[data-cc]').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.cc) === cc)));
+    root.querySelectorAll<HTMLElement>('.kart-modes button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.action === difficulty)));
+    query('.kart-course').textContent = choice === 'cup' ? words.cup : words.tracks[choice];
+    query('.kart-track-tip').textContent = choice === 'cup' ? words.cupTip : words.trackTips[choice];
+    query('.kart-mode-tip').textContent = `${words.classTips[cc]} ${difficulty === 'easy' ? words.easyTip : difficulty === 'hard' ? words.hardTip : words.normalTip}`;
+    root.querySelectorAll<HTMLElement>('.kart-intro [data-action="start"] b').forEach(label => { label.textContent = choice === 'cup' ? words.startCup : words.start; });
+    if (choice === 'cup') {
+      const best = recordStore.bestCup(cc, difficulty);
+      query('.kart-record').textContent = best ? words.bestCup.replace('{place}', String(best)) : words.noCup;
+    } else {
+      const best = recordStore.best(choice, cc, difficulty);
+      query('.kart-record').textContent = best ? `${words.bestRace}: ${kartTime(best.race)} · ${words.bestLap}: ${kartTime(best.lap)}` : words.noRecord;
+    }
+    const course = choice === 'cup' ? TRACK_IDS[0]! : choice;
+    if (mode === 'intro' && race.track.id !== course) race = createRace({ track: course, difficulty, cc });
   }
-  function startRace(): void {
+  /** Starts the chosen race. In a cup, `onward` keeps the cup that is under way; otherwise a cup starts afresh. */
+  function startRace(onward = false): void {
     if (suspended || mode === 'error') return;
-    race = createRace({ difficulty: easy ? 'easy' : 'normal' });
-    lastCountdown = -1; lastTenth = -1; noticeUntil = noticeRank = 0; shownPlace = 0; placeClock = 0; shownItem = ''; rouletteTick = -1; shownTier = shownFill = shownCandies = -1; shownRanks = ''; hitUntil = 0; visited = 1;
+    if (choice !== 'cup') cup = null;
+    else if (!onward || !cup || cup.over) cup = createCup();
+    const course = cup ? cupTrack(cup) : choice as TrackId;
+    race = createRace({ track: course, difficulty, cc, seed: 2012 + (cup ? cup.index * 17 : 0) });
+    prepareMap();
+    lastCountdown = -1; lastTenth = -1; noticeUntil = noticeRank = 0; shownPlace = 0; placeClock = 0; shownItem = ''; rouletteTick = -1; shownTier = shownFill = shownCandies = -1; shownRanks = ''; hitUntil = 0;
+    visited = 1 << race.track.zone(0);
     el.notice.textContent = ''; el.announcement.textContent = '';
+    query('.kart-paused [data-value="again"]').textContent = cup ? words.restartRace : words.again;
     sound?.unlock(); show('race'); drawHud(true);
+    // The course's name over the grid, and which race of the cup it is.
+    notice(cup ? `${words.raceOf.replace('{n}', String(cup.index + 1))} · ${words.tracks[course]}` : words.tracks[course], 2, 2.2);
+    el.announcement.textContent = el.notice.textContent;
   }
   function pauseRace(): void {
     if (disposed || suspended) return;
@@ -155,28 +200,56 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     el.notice.textContent = text; el.notice.dataset.rank = String(rank); noticeUntil = race.state.elapsed + seconds; noticeRank = rank;
     el.notice.classList.remove('kart-pop'); void el.notice.offsetWidth; el.notice.classList.add('kart-pop');
   }
+  const row = (color: number, text: string, value: string, me: boolean) => {
+    const li = document.createElement('li'), dot = document.createElement('i'), name = document.createElement('span'), end = document.createElement('b');
+    if (me) li.className = 'is-me';
+    dot.style.background = hex(color); name.textContent = text; end.textContent = value; li.append(dot, name, end);
+    return li;
+  };
   function finishRace(): void {
     const result = race.state.result;
     if (!result) return;
-    const saved = recordStore.finish(easy, { race: result.elapsed, lap: result.bestLap });
-    results.querySelector('h2')!.textContent = result.place === 1 ? words.winner : result.place <= 3 ? words.podium : words.finishHint;
-    query('.kart-result-place').textContent = words.result.replace('{place}', String(result.place));
-    query('.kart-result-time').textContent = kartTime(result.elapsed);
-    query('.kart-result-order').replaceChildren(...result.order.map((entry, i) => {
-      const li = document.createElement('li'), dot = document.createElement('i'), name = document.createElement('span'), time = document.createElement('b');
-      const kart = race.state.karts.find(k => k.id === entry.id)!;
-      if (entry.id === 'player') li.className = 'is-me';
-      dot.style.background = hex(kart.color); name.textContent = `${words.ordinals[i]} ${words.racers[entry.id]}`; time.textContent = kartTime(entry.time);
-      li.append(dot, name, time); return li;
-    }));
-    query('.kart-result-laps').replaceChildren(...result.lapTimes.map((time, i) => { const li = document.createElement('li'); li.textContent = `${words.lap} ${i + 1} `; const b = document.createElement('b'); b.textContent = kartTime(time); li.append(b); return li; }));
-    query('.kart-result-record').textContent = saved.improved ? words.newRecord : `${words.bestLap}: ${kartTime(result.bestLap)}`;
-    query('.kart-result-storage').textContent = saved.saved ? words.recordLocal : words.recordUnavailable;
+    const karts = race.state.karts, kartOf = (id: string) => karts.find(kart => kart.id === id)!;
+    const saved = recordStore.finish(race.track.id, cc, difficulty, { race: result.elapsed, lap: result.bestLap });
+    let storedCup = saved;
+    if (cup) scoreRace(cup, result.order);
+    const final = !!cup?.over;
+    const heading = results.querySelector('h2')!, place = query('.kart-result-place'), big = query('.kart-result-time'), order = query('.kart-result-order'), laps = query('.kart-result-laps');
+    query('.kart-results .kart-kicker').textContent = cup ? `${words.raceOf.replace('{n}', String(cup.index + 1))} · ${words.tracks[race.track.id]}` : `${words.finish} ${words.tracks[race.track.id]}`;
+    let rank = result.place;
+    if (cup && final) {
+      // The cup is decided on points; level on points, the better place in the last race wins.
+      const table = cupTable(cup);
+      rank = table.findIndex(entry => entry.id === 'player') + 1;
+      storedCup = recordStore.finishCup(cc, difficulty, rank);
+      heading.textContent = rank === 1 ? words.cupWon : rank <= 3 ? words.cupPodium : words.cupDone;
+      place.textContent = words.cupResult.replace('{place}', String(rank));
+      big.textContent = words.points.replace('{points}', String(cup.points.player ?? 0));
+      order.setAttribute('aria-label', words.cupTable);
+      order.replaceChildren(...table.map((entry, i) => row(kartOf(entry.id).color, `${words.ordinals[i]} ${words.racers[entry.id]}`, words.points.replace('{points}', String(entry.points)), entry.id === 'player')));
+      laps.replaceChildren();
+      query('.kart-result-record').textContent = storedCup.improved ? words.newCupRecord : words.bestCup.replace('{place}', String(recordStore.bestCup(cc, difficulty) ?? rank));
+    } else {
+      heading.textContent = result.place === 1 ? words.winner : result.place <= 3 ? words.podium : words.finishHint;
+      place.textContent = words.result.replace('{place}', String(result.place));
+      big.textContent = kartTime(result.elapsed);
+      order.setAttribute('aria-label', words.standings);
+      // In a cup each line ends with the kart's points so far; in a single race, with its time.
+      order.replaceChildren(...result.order.map((entry, i) => row(kartOf(entry.id).color, `${words.ordinals[i]} ${words.racers[entry.id]}`,
+        cup ? `+${CUP_POINTS[i]} · ${words.points.replace('{points}', String(cup.points[entry.id] ?? 0))}` : kartTime(entry.time), entry.id === 'player')));
+      laps.replaceChildren(...result.lapTimes.map((time, i) => { const li = document.createElement('li'); li.textContent = `${words.lap} ${i + 1} `; const b = document.createElement('b'); b.textContent = kartTime(time); li.append(b); return li; }));
+      query('.kart-result-record').textContent = saved.improved ? words.newRecord : `${words.bestLap}: ${kartTime(result.bestLap)}`;
+    }
+    query('.kart-result-storage').textContent = storedCup.saved ? words.recordLocal : words.recordUnavailable;
+    // After a cup race the way on is the next race; after the last one, or a single race, it is to drive again.
+    const onward = !!cup && !final;
+    query('.kart-results [data-action="next"]').hidden = !onward; query('.kart-results [data-action="restart"]').hidden = onward;
+    query('.kart-results [data-action="restart"] b').textContent = cup ? words.cupAgain : words.again;
     show('result');
     // The finish cue is allowed through while the result is first shown, then silence again.
     sound?.suspend(false);
     sound?.tick(soundState(), 0);
-    sound?.event(result.place <= 3 ? 'win' : 'finish');
+    sound?.event(rank <= 3 ? 'win' : 'finish');
   }
   function soundState() {
     const player = race.state.player, phase = mode === 'race' ? race.state.phase : mode === 'result' ? 'finished' as const : 'menu' as const;
@@ -245,9 +318,10 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     }
     // The spark meter and the item slot follow every frame, but touch the page only when they change.
     const tier = player.driftTier, charge = player.drift ? Math.min(1, player.driftCharge / DRIFT_TIERS[2]) : 0, fill = Math.round(charge * 50);
-    if (tier !== shownTier || player.boostTime > 0 !== (shownTier === 9)) {
-      shownTier = player.boostTime > 0 && !player.drift ? 9 : tier;
-      el.meter.dataset.tier = String(tier); el.drift.textContent = shownTier === 9 ? words.boostActive : words.sparks[tier]!;
+    const meter = player.boostTime > 0 && !player.drift ? 9 : tier;
+    if (meter !== shownTier) {
+      shownTier = meter;
+      el.meter.dataset.tier = String(tier); el.drift.textContent = meter === 9 ? words.boostActive : words.sparks[tier]!;
     }
     if (fill !== shownFill) { shownFill = fill; el.fill.style.width = `${fill * 2}%`; }
     const spinning = player.roulette > 0, flick = spinning ? Math.floor((ROULETTE_SECONDS - player.roulette) * 12) : -1;
@@ -351,17 +425,19 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     input = createKartInput(root, { pause: pauseRace, action: () => sound?.unlock(), device(device) { root.dataset.device = device; updateInstructions(); } });
     input.setAutoGas(true); input.setEnabled(false); sound.suspend(true);
     root.addEventListener('click', event => {
-      const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-action]') : null;
+      const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-action],[data-track],[data-cc]') : null;
       if (!target) return;
       const action = target.dataset.action;
       if (action === 'exit') { options.onClose(); return; }
       if (suspended) return;
-      if (action === 'start' || action === 'restart') startRace();
+      if (target.dataset.track) { choice = target.dataset.track as TrackId | 'cup'; updateChoice(); }
+      else if (target.dataset.cc) { cc = Number(target.dataset.cc) as SpeedClass; updateChoice(); }
+      else if (action === 'start') startRace();
+      // From Pause, "again" drives the race in hand again; after a cup's last race it starts a new cup.
+      else if (action === 'restart') startRace(mode === 'paused');
+      else if (action === 'next' && mode === 'result' && cup && nextRace(cup)) startRace(true);
       else if (action === 'pause' || action === 'resume') pauseRace();
-      else if (action === 'easy' || action === 'normal') {
-        easy = action === 'easy'; root.querySelectorAll<HTMLElement>('.kart-modes button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.action === action)));
-        query('.kart-mode-tip').textContent = easy ? words.easyTip : words.normalTip; updateRecord();
-      }
+      else if (action === 'easy' || action === 'normal' || action === 'hard') { difficulty = action; updateChoice(); }
     }, listeners);
     query<HTMLInputElement>('.kart-autogas input').addEventListener('change', event => {
       const enabled = (event.target as HTMLInputElement).checked; input?.setAutoGas(enabled); query('.kart-gas').hidden = enabled;
@@ -376,7 +452,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'race') show('paused'); previous = 0; }, listeners);
     resize = new ResizeObserver(() => { if (!disposed) { view?.resize(root.clientWidth, root.clientHeight); if (mode === 'paused') view?.render(race, 0); } });
     resize.observe(root); view.resize(root.clientWidth, root.clientHeight); view.render(race, 0, 'menu');
-    updateInstructions(); updateRecord(); show('intro'); raf = requestAnimationFrame(frame);
+    prepareMap(); updateInstructions(); updateChoice(); show('intro'); raf = requestAnimationFrame(frame);
   } catch (error) { cleanup(); throw error; }
   return {
     element: root,
@@ -394,6 +470,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
       const state = race.state, player = state.player;
       return {
         mode, suspended, frames, phase: state.phase, elapsed: state.elapsed, countdown: state.countdown,
+        track: race.track.id, choice, cc, difficulty, cup: cup ? { index: cup.index, points: { ...cup.points }, over: cup.over } : null,
         distance: player.distance, lane: player.lane, speed: player.speed, heading: player.heading,
         position: state.position, lap: player.lap, drift: player.drift, driftCharge: player.driftCharge, driftTier: player.driftTier,
         boostTime: player.boostTime, boostKind: player.boostKind, item: player.item, roulette: player.roulette, candies: player.candies,

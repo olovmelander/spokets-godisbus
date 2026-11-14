@@ -3,8 +3,10 @@
  * No three and no DOM: the view and the sound read `state` and the event queue.
  */
 import { buildRacingLine, createBrain, elastic, rivalControls, RIVALS, seededRandom, type Brain, type RacingLine } from './ai';
+
+export { TRACK_IDS, type TrackId } from './track';
 import { giveBoost, hitKart, KART_RADIUS, MAX_CANDIES, newKart, stepKart, TOP_SPEED, type ItemId, type Kart, type KartControls, type KartEvent, type RacerId } from './kart';
-import { getTrack, LAP, LAPS, trackGap, type Track } from './track';
+import { getTrack, LAP, LAPS, trackGap, type Track, type TrackId } from './track';
 
 export type { ItemId, Kart, KartControls, KartEvent, RacerId } from './kart';
 export type ShotKind = 'cone' | 'bee' | 'gum';
@@ -78,9 +80,16 @@ export function rollItem(behind: number, random: () => number, gentle = false): 
   return 'sweet';
 }
 
-export interface RaceOptions { difficulty?: Difficulty; cc?: SpeedClass; seed?: number }
-export function createRace({ difficulty = 'normal', cc = 150, seed = 2012 }: RaceOptions = {}): KartRace {
-  const track = getTrack(), line = buildRacingLine(track), level = LEVELS[difficulty], speed = CLASS_SPEED[cc];
+export interface RaceOptions { track?: TrackId; difficulty?: Difficulty; cc?: SpeedClass; seed?: number }
+const lines = new Map<TrackId, RacingLine>();
+/** A course's racing line takes a moment to work out, and is the same every time: once is enough. */
+export function racingLine(id: TrackId): RacingLine {
+  let line = lines.get(id);
+  if (!line) lines.set(id, line = buildRacingLine(getTrack(id)));
+  return line;
+}
+export function createRace({ track: course = 'varggropen', difficulty = 'normal', cc = 150, seed = 2012 }: RaceOptions = {}): KartRace {
+  const track = getTrack(course), line = racingLine(course), level = LEVELS[difficulty], speed = CLASS_SPEED[cc];
   // The rivals line up fastest first. The player starts last, or in the middle of the field in Lugnt.
   const playerSlot = level.slot;
   const karts: Kart[] = [];

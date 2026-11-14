@@ -33,26 +33,37 @@
 .kart-title>div{display:flex;align-items:center;gap:16px}
 .kart-title svg{width:86px;flex-shrink:0;filter:drop-shadow(0 5px 0 #071e2488)}
 .kart-title h1{font-family:'Playpen Sans',cursive;font-size:clamp(2.6rem,5.6vw,6rem);line-height:1.1;letter-spacing:-.04em;margin:14px 0 6px;color:#fff3b8;-webkit-text-stroke:2px #7a4a12;paint-order:stroke fill}
-.kart-title>p{font-family:'Playpen Sans',cursive;margin:10px 0 0 104px;font-size:1.6rem}
-.kart-start-card,.kart-paper{background:linear-gradient(150deg,#22505ef7,#143541f7);border:3px solid #ffe9a8aa;border-radius:26px;box-shadow:0 22px 80px #04161c99,inset 0 0 0 5px #ffffff0d;padding:24px;max-width:470px;width:100%;text-align:center;flex-shrink:0}
-.kart-lore{font-size:.92rem;line-height:1.5;margin:0 0 14px}
+.kart-course{font-family:'Playpen Sans',cursive;margin:10px 0 0 104px;font-size:1.6rem}
+.kart-title .kart-lore{margin:16px 0 0 104px;max-width:440px;font-size:.98rem;line-height:1.5}
+.kart-start-card,.kart-paper{background:linear-gradient(150deg,#22505ef7,#143541f7);border:3px solid #ffe9a8aa;border-radius:26px;box-shadow:0 22px 80px #04161c99,inset 0 0 0 5px #ffffff0d;padding:18px 22px;max-width:470px;width:100%;text-align:center;flex-shrink:0}
+/* The course picker: the cup and the four courses, each with its outline. */
+.kart-tracks,.kart-classes{border:0;padding:0;margin:0;display:grid;gap:6px}
+.kart-tracks{grid-template-columns:repeat(5,1fr)}
+.kart-tracks legend,.kart-classes legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.kart-game .kart-tracks button{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;padding:6px 1px 5px;min-height:0;min-width:0;font-size:.6rem;line-height:1.15;border-color:#7fa9a6;border-radius:14px;hyphens:manual}
+.kart-tracks button span{display:block;width:40px;height:40px;color:#fff4d6}
+.kart-tracks svg{width:100%;height:100%}
+.kart-game .kart-tracks button[aria-pressed=true],.kart-game .kart-classes button[aria-pressed=true]{background:#fff0c2;color:#17303b;border-color:#fff7dd;box-shadow:0 3px 0 #a38a4d;font-weight:bold}
+.kart-track-tip{font-size:.74rem;line-height:1.35;margin:8px 0 10px;min-height:2.7em;color:#ffe9a8}
+.kart-classes{grid-template-columns:repeat(3,1fr)}
+.kart-game .kart-classes button{min-height:38px;font-size:.88rem;padding:6px 4px;border-color:#7fa9a6}
 .kart-lessons{display:flex;gap:12px}
 .kart-lessons>div{display:flex;flex:1;flex-direction:column;align-items:center;gap:3px;min-width:0}
-.kart-lessons b{font-family:serif;font-size:2.3rem;font-weight:normal;line-height:1.1;color:var(--kart-gold);height:44px;display:flex;align-items:center}
-.kart-lessons b svg{width:40px;height:40px}
+.kart-lessons b{font-family:serif;font-size:2rem;font-weight:normal;line-height:1.1;color:var(--kart-gold);height:36px;display:flex;align-items:center}
+.kart-lessons b svg{width:34px;height:34px}
 .kart-lessons strong{font-size:.88rem}
 .kart-lessons span{font-size:.72rem;line-height:1.3;opacity:.9}
-.kart-more{font-size:.72rem;line-height:1.4;margin:12px 0 0;color:#ffe9a8}
-.kart-instructions{font-size:.66rem;line-height:1.55;color:#d6e6e2;margin:10px 0}
-.kart-modes{border:0;padding:0;display:flex;justify-content:center;gap:8px;margin:10px 0 0}
+.kart-more{font-size:.7rem;line-height:1.35;margin:8px 0 0;color:#ffe9a8}
+.kart-instructions{font-size:.66rem;line-height:1.45;color:#d6e6e2;margin:6px 0 8px}
+.kart-modes{border:0;padding:0;display:flex;justify-content:center;gap:6px;margin:6px 0 0}
 .kart-modes legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-.kart-game .kart-modes button{flex:1;min-height:38px;font-size:.88rem;padding:6px 10px;border-color:#7fa9a6}
+.kart-game .kart-modes button{flex:1;min-height:38px;font-size:.88rem;padding:6px 4px;border-color:#7fa9a6}
 .kart-game .kart-modes button[aria-pressed=true]{background:#fff0c2;color:#17303b;border-color:#fff7dd;box-shadow:0 3px 0 #a38a4d;font-weight:bold}
-.kart-mode-tip{font-size:.7rem;line-height:1.3;min-height:18px;margin:8px 0 10px;color:#d6e6e2}
+.kart-mode-tip{font-size:.7rem;line-height:1.3;min-height:2.6em;margin:8px 0 10px;color:#d6e6e2}
 .kart-autogas{display:block;font-size:.88rem;font-weight:bold;cursor:pointer}
 .kart-autogas input{accent-color:#ffd24a;width:18px;height:18px;vertical-align:middle}
 .kart-autogas span{display:block;font-size:.68rem;font-weight:normal;opacity:.85;margin:3px}
-.kart-record{font-size:.74rem;color:#ffe08a;margin:10px 0}
+.kart-record{font-size:.74rem;color:#ffe08a;margin:6px 0 8px}
 .kart-start-card>.kart-back{margin-top:8px}
 .kart-paper{max-width:420px;max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y}
 .kart-paper>svg{width:56px;display:block;margin:0 auto 4px}
@@ -153,10 +164,10 @@
   .kart-title>div{gap:8px;justify-content:center}
   .kart-title svg{width:50px}
   .kart-title h1{font-size:2.7rem;margin:8px 0 0}
-  .kart-title>p{font-size:1.15rem;margin:2px 0 0}
+  .kart-course{font-size:1.15rem;margin:2px 0 0}
+  .kart-title .kart-lore{display:none}
   .kart-kicker{font-size:.6rem;letter-spacing:.12em}
   .kart-start-card{padding:18px;max-width:430px;border-radius:22px}
-  .kart-lore{font-size:.82rem;margin-bottom:12px}
   .kart-lessons{gap:8px}
   .kart-lessons span{font-size:.66rem}
   .kart-lessons strong{font-size:.78rem}
@@ -194,10 +205,12 @@
   .kart-title>div{gap:8px}
   .kart-title svg{width:54px}
   .kart-title h1{font-size:2.7rem}
-  .kart-title>p{font-size:1.2rem;margin-left:65px}
+  .kart-course{font-size:1.2rem;margin-left:65px}
+  .kart-title .kart-lore{display:none}
+  .kart-tracks button span{width:30px;height:30px}
+  .kart-track-tip{font-size:.64rem;margin:5px 0 6px;min-height:0}
   .kart-kicker{font-size:.62rem}
   .kart-start-card{max-width:380px;padding:14px 18px;max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y}
-  .kart-lore{font-size:.74rem;margin:0 0 8px}
   .kart-lessons span,.kart-more{display:none}
   .kart-lessons b{font-size:1.6rem;height:32px}
   .kart-lessons b svg{width:30px;height:30px}
@@ -245,7 +258,7 @@
 /* Small artwork can have generous hit areas; every touch target remains at least 64 CSS pixels. */
 @media(pointer:coarse){
   .kart-game button{min-width:64px;min-height:64px}
-  .kart-game .kart-modes button,.kart-game .kart-back,.kart-game .kart-primary{min-height:64px}
+  .kart-game .kart-modes button,.kart-game .kart-classes button,.kart-game .kart-tracks button,.kart-game .kart-back,.kart-game .kart-primary{min-height:64px}
   .kart-game .kart-pause{width:64px;height:64px;min-height:64px}
   .kart-map{top:calc(max(12px,env(safe-area-inset-top)) + 74px)}
   .kart-game .kart-brake{min-height:64px;width:100%;font-size:.78rem}
@@ -258,7 +271,7 @@
   .kart-title>.kart-title-actions{margin-top:14px}
   .kart-title{max-width:40%}
   .kart-title h1{font-size:2.4rem}
-  .kart-title>p{margin-left:0;text-align:center}
+  .kart-course{margin-left:0;text-align:center}
   .kart-title .kart-kicker{font-size:.57rem}
   .kart-start-card{max-width:350px}
   .kart-title>.kart-title-actions>.kart-back{min-height:64px}
