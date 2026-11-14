@@ -34,6 +34,12 @@ export interface Climb {
    * that its end is tied round the stone at `tied`.
    */
   heldBy?: { scene: string; at: number; seconds: number; until: string; tied: { x: number; y: number; z: number } };
+  /**
+   * Picture only: the jay he gave a berry brings it down (Stormskogen's beard lichen; src/render/jay-lichen.ts). It hangs
+   * bundled on a snag at its top. In the scene `scene` the jay at the spot `jay` flies up to it and tugs it loose `at`
+   * seconds in, and it unrolls down the face over `seconds`. Its `needs` is the flag set once that scene is over.
+   */
+  broughtBy?: { scene: string; jay: string; at: number; seconds: number };
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
