@@ -14,9 +14,11 @@ interface Planting {
   turn?: number;
   /** The land behind a pool, or below a distant tree, does not follow its playable pit. */
   y?: number;
+  /** How far from its place an animal goes, in EL, where its own way is too far (a duck in a narrow channel). */
+  range?: number;
 }
 
-const at = (model: string, x: number, z: number, size = 1, turn = 0, y?: number): Planting => ({ model, x, z, size, turn, y });
+const at = (model: string, x: number, z: number, size = 1, turn = 0, y?: number, range?: number): Planting => ({ model, x, z, size, turn, y, range });
 
 /**
  * Broad silhouettes establish each place, with smaller things beside its route. Trees are behind the existing
@@ -50,7 +52,10 @@ export const OUTDOOR_MODELS: Readonly<Record<string, readonly Planting[]>> = {
     at('vass-a', 154, -6.2, 0.52, 0.8, -0.6), at('vass-b', 166, -7.5, 0.55, -0.2, -0.6),
     at('block-b', 65, -6.4, 0.65, 0.4, -0.2), at('lag-mossig', 105, -6.9, 0.65, -0.2, -0.25),
     at('block-d', 142, -7.1, 0.65, 0.5), at('lag-mossig', 190, -7.4, 0.58, 0.15, 0),
-    at('groda', 137, -3.3, 0.75, -0.3), at('and', 45, -5.1, 0.8, 0.3, -0.6), at('and-hona', 47.3, -6, 0.8, -0.1, -0.6),
+    // The mallards swim in the channels he hops over, between the islands and just behind his way: behind the islands
+    // (they were at z -5.1 and -6) the banks hid the hen whole and the drake by half (Olov, 14 November 2026: "syns
+    // tydligt på de platser där de ska förekomma"). Each keeps to its channel.
+    at('groda', 137, -3.3, 0.75, -0.3), at('and', 44.7, -1.9, 0.85, 0.3, -0.6, 0.3), at('and-hona', 48.3, -2.3, 0.85, -0.1, -0.6, 0.3),
   ],
   berget: [
     // The tree line stays below the crane's flight and below the mountain shoulder.
@@ -142,7 +147,7 @@ export function outdoorModels(chapter: ChapterData): Group {
     holder.position.set(item.x, item.y ?? heightAt(land, item.x), item.z);
     holder.rotation.y = item.turn ?? 0;
     holder.scale.setScalar(item.size);
-    if (/^(snigel|igelkott|groda|and|and-hona)$/.test(item.model)) holder.userData.outdoorLife = { kind: item.model, x: item.x, y: holder.position.y, turn: item.turn ?? 0, size: item.size, phase: item.x * 1.7, water: item.model.startsWith('and'), level: item.y !== undefined };
+    if (/^(snigel|igelkott|groda|and|and-hona)$/.test(item.model)) holder.userData.outdoorLife = { kind: item.model, x: item.x, y: holder.position.y, turn: item.turn ?? 0, size: item.size, phase: item.x * 1.7, water: item.model.startsWith('and'), level: item.y !== undefined, range: item.range };
     group.add(holder);
   }
   return group;
@@ -155,14 +160,14 @@ export function outdoorModels(chapter: ChapterData): Group {
  */
 export function updateOutdoorModels(group: Group, clock: number, still: boolean, elof?: { x: number; y: number } | null): void {
   for (const holder of group.children) {
-    const life = holder.userData.outdoorLife as { kind: string; x: number; y: number; turn: number; size: number; phase: number; water: boolean; level: boolean } | undefined;
+    const life = holder.userData.outdoorLife as { kind: string; x: number; y: number; turn: number; size: number; phase: number; water: boolean; level: boolean; range?: number } | undefined;
     if (!life) continue;
     if (ambientOf(holder)) {
       holder.position.set(life.x, life.y, holder.position.z);
       holder.rotation.set(0, life.turn, 0);
       holder.scale.setScalar(life.size);
       // On water, or on a height of its own, it keeps that height; on the land it follows the ground.
-      stepAmbient(holder, { clock, still, elof, ...(life.water || life.level ? {} : { ground: group.userData.ground as (x: number) => number }) });
+      stepAmbient(holder, { clock, still, elof, ...(life.range ? { range: life.range } : {}), ...(life.water || life.level ? {} : { ground: group.userData.ground as (x: number) => number }) });
       continue;
     }
     if (kitLife(life.kind, holder, life, clock, life.phase, still)) continue;

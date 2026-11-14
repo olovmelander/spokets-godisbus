@@ -3,6 +3,7 @@ import { Group, type Object3D, type SkinnedMesh } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { AMBIENT, HEDGEHOG_STRIDE, HOP_DISTANCE, HOP_FRAMES, HOP_LAND, HOP_LIFT, ambientOf, attachAmbient, hopProgress, rigAmbient, stepAmbient, type AmbientRig } from '../../src/render/ambient-animals';
+import { myren } from '../../src/content/chapters/myren';
 import { OUTDOOR_MODELS } from '../../src/render/outdoor-models';
 
 /** The JSON of a GLB, as Blender wrote it (art/baked). */
@@ -70,13 +71,24 @@ describe('the small animals from Blender (art/blender/ambient-animals.py)', () =
     for (const kept of ['uggla', 'uggla-flyger', 'utter', 'baver']) expect(names).toContain(kept);
   });
 
-  it('their places are where they were', () => {
+  it('their places are where they were, but the mallards, who swim in the channels he hops over', () => {
     const find = (chapter: string, name: string) => OUTDOOR_MODELS[chapter]!.filter((item) => item.model === name).map(({ x, z, size, turn, y }) => [x, z, size, turn, y]);
     expect(find('garden', 'snigel')).toEqual([[70, -2.8, 0.65, -0.2, undefined]]);
     expect(find('garden', 'igelkott')).toEqual([[159, -3.5, 0.65, -0.2, undefined]]);
     expect(find('myren', 'groda')).toEqual([[137, -3.3, 0.75, -0.3, undefined]]);
-    expect(find('myren', 'and')).toEqual([[45, -5.1, 0.8, 0.3, -0.6]]);
-    expect(find('myren', 'and-hona')).toEqual([[47.3, -6, 0.8, -0.1, -0.6]]);
+    // Behind the bog's islands (z -5.1 and -6) their banks hid the hen whole and the drake by half (Olov, 14 November
+    // 2026: "syns tydligt på de platser där de ska förekomma"). Each now swims in a channel between two islands, just
+    // behind his way over it, and keeps to it: a channel is under two EL wide.
+    expect(find('myren', 'and')).toEqual([[44.7, -1.9, 0.85, 0.3, -0.6]]);
+    expect(find('myren', 'and-hona')).toEqual([[48.3, -2.3, 0.85, -0.1, -0.6]]);
+    const bed = (x: number) => myren.ground.find((p, i) => x >= p.x && x <= (myren.ground[i + 1]?.x ?? Infinity))!.y;
+    for (const duck of OUTDOOR_MODELS.myren!.filter((item) => item.model.startsWith('and'))) {
+      expect(duck.z).toBeGreaterThan(-2.5);
+      expect(duck.z).toBeLessThan(-1.2);
+      expect(duck.range).toBeLessThan(0.5);
+      // Over water all the way it swims, and half its own length more: the channel's bed, not an island's top.
+      for (const dx of [-duck.range! - 0.25, 0, duck.range! + 0.25]) expect(bed(duck.x + dx), `${duck.model} at ${duck.x + dx}`).toBeLessThan(-1);
+    }
   });
 });
 

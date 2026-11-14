@@ -5,8 +5,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ADVENTURE2, BONUS, COURSES, STORY, loadAdventure2 } from '../../src/content/chapters';
 import { PLACES, dress } from '../../src/render/dressing';
 import type { ExtraFrame, ViewExtra } from '../../src/render/extensions';
-import { createFauna } from '../../src/render/lift/fauna';
-import { faunaPlan, type Plan } from '../../src/render/lift/fauna/plan';
+import { SKY_TOP, createFauna } from '../../src/render/lift/fauna';
+import { OWL_BACK, faunaPlan, type Plan } from '../../src/render/lift/fauna/plan';
 import { BIRDS, squirrel } from '../../src/render/lift/fauna/shapes';
 import type { ChapterData } from '../../src/sim/types';
 
@@ -82,7 +82,10 @@ describe('the near life', () => {
     const plan = (id: string) => built.get(id)!.plan!;
     expect(plan('granskog').squirrels.length).toBe(3);
     expect(plan('granskog').fox).toBe(true);
-    expect(plan('granskog').flocks.length).toBeGreaterThan(2);
+    // Two flocks on the ground, and the tits and thrushes that come by themselves all along it (its third flock hopped at
+    // the bottom of the ravine he is thrown over, unseen, and finds no room among the candy where he walks).
+    expect(plan('granskog').flocks.length).toBe(2);
+    expect(plan('granskog').visitors.length).toBe(2);
     expect(plan('granskog').beings.length).toBeGreaterThan(0);
     expect(plan('granskog').carvings.length).toBeGreaterThan(0);
     expect(plan('granskog').dragonflies.length).toBeGreaterThan(0);
@@ -170,6 +173,9 @@ describe('the near life', () => {
           at.setFromMatrixPosition(m);
           seen++;
           expect(at.z, id).toBeLessThan(mesh.name.endsWith('bat') ? -3.5 : -10);
+          // And inside the picture: no higher in it than SKY_TOP of the way from its middle to its top edge. Berget's
+          // ravens flew along the very edge, and the dusk's bats over it (Olov, 14 November 2026).
+          expect(at.clone().project(camera).y, id).toBeLessThanOrEqual(SKY_TOP + 0.01);
         }
       }, id === 'norrsken' ? { darkness: 0.6 } : {});
       expect(seen, id).toBeGreaterThan(0);
@@ -201,7 +207,16 @@ describe('the near life', () => {
       expect(plan.butterflies, chapter.id).toEqual([]);
       expect(plan.dragonflies, chapter.id).toEqual([]);
       expect(plan.beings, chapter.id).toEqual([]);
-      for (const flock of plan.flocks) expect(flock.shelter && flock.perch, chapter.id).toBe(true);
+      for (const flock of plan.flocks) {
+        expect(flock.shelter && flock.perch, chapter.id).toBe(true);
+        // Near the path, where two small birds are seen: they sat up to seventeen EL back, a few soft pixels (Olov, 14
+        // November 2026: "syns tydligt på de platser där de ska förekomma"). And not beyond the chapter's goal.
+        for (const bird of flock.birds) {
+          expect(bird.at[2], `${chapter.id} at ${flock.x.toFixed(1)}`).toBeGreaterThan(-7.5);
+          expect(bird.at[2], `${chapter.id} at ${flock.x.toFixed(1)}`).toBeLessThan(-1.3);
+        }
+        expect(flock.x, chapter.id).toBeLessThan(chapter.goalX - 4);
+      }
       // Fireflies only where the storm's eye opens.
       expect(plan.fireflies > 0, chapter.id).toBe(!!chapter.storm!.calm);
     }
@@ -214,6 +229,20 @@ describe('the near life', () => {
     expect(plan.owls.some((owl) => onStone(owl.at[0]))).toBe(false);
     expect(plan.flocks.some((flock) => onStone(flock.x))).toBe(false);
     expect(plan.fireflies).toBeGreaterThan(0);
+  });
+
+  it('sits every owl near the path, where it is seen in the dark: on a near trunk or a stump just behind the path', () => {
+    // In Stormgården, Olympia, Älven and Stormens öga it sat seven to eleven EL back, a soft brown shape in the lens's blur
+    // (Olov, 14 November 2026: "syns tydligt på de platser där de ska förekomma").
+    let owls = 0;
+    for (const chapter of chapters) {
+      for (const owl of built.get(chapter.id)!.plan?.owls ?? []) {
+        expect(owl.at[2], `${chapter.id} owl at ${owl.at[0].toFixed(1)}`).toBeGreaterThan(OWL_BACK - 0.01);
+        expect(owl.at[2], `${chapter.id} owl at ${owl.at[0].toFixed(1)}`).toBeLessThan(-1.4);
+        owls++;
+      }
+    }
+    expect(owls).toBe(8);
   });
 
   it("never sits an owl where Äventyr 2's own owl is", () => {
@@ -264,11 +293,15 @@ describe('the near life', () => {
 
   it("has Pappa's hidden carvings in every chapter that hides one, each of its kind where it was found", () => {
     // [chapter, kind, x, depth]: Myren's is new, and Granskogen's nisse peeks out beside the nest tree (Olov, 12 November
-    // 2026); the others are where they have always been. A rule change that turns the bird into a hare fails here.
+    // 2026). Berget's hare stood in the valley far under the crane's flight, and Stormskogen's bird at the bottom of the
+    // gap the owl carries him over: both now stand where he walks (14 November 2026). The others are on the stones they
+    // have always been on, each now near the middle of its stone's top, where its plinth stands whole (it was further out
+    // and back, where the top falls away and one end of the plinth hung in the air). A rule change that turns the bird
+    // into a hare fails here.
     const CARVINGS: [string, string, number, number][] = [
-      ['garden', 'bird', 197.4, -3.35], ['granskog', 'bird', 29.0, -2.92], ['granskog', 'nisse', 138.0, -2.89], ['myren', 'bird', 144.3, -2.87],
-      ['berget', 'hare', 21.0, -2.91], ['stormskog', 'bird', 117.1, -3.16], ['flarken', 'hare', -8.75, -2.3], ['alven', 'hare', 201.9, -2.98],
-      ['billsta', 'nisse', -21.8, -3.52], ['look-forest', 'bird', 35.9, -2.87],
+      ['garden', 'bird', 197.5, -3.21], ['granskog', 'bird', 29.1, -2.78], ['granskog', 'nisse', 138.0, -2.89], ['myren', 'bird', 144.4, -2.75],
+      ['berget', 'hare', 132.4, -3.17], ['stormskog', 'bird', 91.2, -3.18], ['flarken', 'hare', -8.63, -2.15], ['alven', 'hare', 201.7, -2.85],
+      ['billsta', 'nisse', -21.9, -3.4], ['look-forest', 'bird', 36.0, -2.77],
     ];
     for (const chapter of chapters) {
       const want = CARVINGS.filter(([id]) => id === chapter.id);
@@ -276,6 +309,36 @@ describe('the near life', () => {
       expect((plan?.carvings ?? []).map((c) => [c.shape, +c.at[0].toFixed(1), +c.at[2].toFixed(2)]), chapter.id)
         .toEqual(want.map(([, shape, x, z]) => [shape, +x.toFixed(1), z]));
     }
+  });
+
+  it('hides nobody and leaves nothing where he is carried high over the ground and never walks', () => {
+    // Berget's valley under the crane's flight, the gap the owl carries him over in Stormskogen, Granskogen's ravine under
+    // the seesaw's throw: its beings, carvings and hopping birds stood there, where no picture finds them (Olov, 14
+    // November 2026: "syns tydligt på de platser där de ska förekomma").
+    const carried = (chapter: ChapterData, x: number, y: number) => (chapter.rides ?? []).some((r) => x > Math.min(r.from.x, r.to.x) + 1
+      && x < Math.max(r.from.x, r.to.x) - 1 && y < Math.min(r.from.y, r.to.y) - 3);
+    let checked = 0;
+    for (const chapter of chapters) {
+      const plan = built.get(chapter.id)!.plan;
+      if (!plan) continue;
+      for (const b of plan.beings) { expect(carried(chapter, b.at[0], b.at[1]), `${chapter.id} being at ${b.at[0].toFixed(1)}`).toBe(false); checked++; }
+      for (const c of plan.carvings) { expect(carried(chapter, c.at[0], c.at[1] - 1), `${chapter.id} carving at ${c.at[0].toFixed(1)}`).toBe(false); checked++; }
+      for (const f of plan.flocks.filter((f) => !f.perch)) {
+        for (const b of f.birds) { expect(carried(chapter, b.at[0], b.at[1]), `${chapter.id} ${f.species} at ${b.at[0].toFixed(1)}`).toBe(false); checked++; }
+      }
+    }
+    expect(checked).toBeGreaterThan(40);
+    // Berget's are up on the mountain, where he walks: the hare, and both beings.
+    const berget = built.get('berget')!.plan!;
+    expect(berget.beings.length).toBe(2);
+    for (const at of [...berget.beings.map((b) => b.at), ...berget.carvings.map((c) => c.at)]) {
+      expect(at[0]).toBeGreaterThan(64);
+      expect(at[1]).toBeGreaterThan(23);
+    }
+    // Granskogen keeps both its beings: the one of the ravine now peeks out by the path.
+    const granskog = built.get('granskog')!.plan!;
+    expect(granskog.beings.length).toBe(2);
+    for (const b of granskog.beings) expect(b.at[1]).toBeGreaterThan(-9);
   });
 
   it("stands Myren's carving on its dry ground, behind the path and by no big candy", () => {

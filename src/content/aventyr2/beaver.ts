@@ -213,8 +213,11 @@ export function beaverLife(spot: Spot, group: Group, model: Object3D, water: () 
     update(_used, clock, dt) {
       if (!lake) {
         lake = water().filter((w) => w.from > home.x).sort((a, b) => a.from - b.from)[0];
-        // From the shore by its lodge, where its way out under the water comes up, out over the open lake.
-        if (lake) { swimFrom = { x: lake.from + 0.9, z: -5.2 }; swimTo = { x: lake.from + 4.8, z: -9.5 }; }
+        // From the shore by its lodge, where its way out under the water comes up, out over the open lake: along it
+        // just behind his way, three to five EL back, where it is big enough and sharp enough to be known for
+        // a beaver. It swam from 5.2 to 9.5 EL back, into the lens's widest blur, a dark speck on dark water (Olov, 14
+        // November 2026: "syns tydligt på de platser där de ska förekomma").
+        if (lake) { swimFrom = { x: lake.from + 0.9, z: -3.2 }; swimTo = { x: lake.from + 6, z: -4.8 }; }
       }
       if (!lodge) {
         const def = lodgeOf();

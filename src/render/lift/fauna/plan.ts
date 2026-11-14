@@ -2,7 +2,7 @@ import { InstancedMesh, Matrix4, Quaternion, Vector3, type Object3D } from 'thre
 import type { ChapterData, PlaceId } from '../../../sim/types';
 import { standing } from '../../dressing/foreground';
 import { KIT, grows, heightAt, landscape, sequence, surfaceAt } from '../../dressing/kit';
-import { BIRDS, branch, reed, stone, stump, type Carving, type Part, type Species, type V3 } from './shapes';
+import { BIRDS, branch, reed, sapling, stone, stump, type Carving, type Part, type Species, type V3 } from './shapes';
 
 /**
  * Where the near life lives in a chapter (docs/visual-upgrade.md): read from the chapter's own data and from the
@@ -45,6 +45,8 @@ export interface Plan {
   carvings: Carved[];
   /** The stones, stumps and branches they hide behind and sit on, already where they stand. */
   props: Part[];
+  /** What the carvings stand on, apart from the rest: drawn with them on every tier (../fauna.ts). */
+  stands: Part[];
   /** The ground's height at x, as the dressing has it (the land under a landmark). */
   ground: (x: number) => number;
 }
@@ -78,9 +80,19 @@ const CARVED: Record<string, number> = { garden: 1, granskog: 2, myren: 1, berge
  * gap allow it there. Its kind is the plan's, and no draw of the plan's sequence changes, so every other carving keeps
  * its kind and place (tests/unit/lift-fauna.test.ts).
  */
-const PEEK: Partial<Record<string, readonly { found: number; x: number; z: number }[]>> = {
-  granskog: [{ found: 139.5, x: 138.2, z: -2.7 }],
+const PEEK: Partial<Record<string, readonly { found: number; x: number; z: number; being?: boolean }[]>> = {
+  // The being is Granskogen's second, which hid at the bottom of the ravine he is thrown over. The place the plan then
+  // finds for it where he walks is by the jay, in a shaft of light in front of a pale boulder and among the thrushes,
+  // where it was not to be seen: it peeks over its stone on the level moss before the seesaw instead (14 November 2026).
+  granskog: [{ found: 139.5, x: 138.08, z: -2.84 }, { found: 40.7, x: 105.6, z: -2.9, being: true }],
 };
+/**
+ * How far each carving stands turned from facing the picture, in radians: the hare and the bird far enough to show what
+ * they are from the side (the long back and the tucked tail; the bill and the tail), the nisse nearly facing it.
+ */
+const TURNED: Record<Carving, number> = { bird: 1.0, hare: 0.8, nisse: 0.45 };
+/** How far behind the path an owl sits at most, in EL. */
+export const OWL_BACK = -6.5;
 /** What shelters in the storm, by place. */
 const SHELTER: Partial<Record<PlaceId, Species>> = { forest: 'tit', garden: 'blue', bog: 'sparrow' };
 
@@ -138,6 +150,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
   const underSkerry = (x: number) => (source.landmarks ?? []).some((mark) => mark.look === 'skerry' && x >= mark.from - 2 && x <= mark.to + 2);
   const trees = treesOf(dressing).filter((tree) => !underSkerry(tree.x));
   const props: Part[] = [];
+  const stands: Part[] = [];
 
   // Nothing rests by a candy: the trail, the side candy, the hidden ones and the big ones.
   const sweets = [...source.candy, ...(source.side ?? []), ...(source.hidden ?? []), ...(source.checkpoints ?? [])];
@@ -173,6 +186,15 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     ...[...(source.spots ?? []), ...(source.decor ?? [])].filter((s) => s.look === 'owl').map((s) => s.at.x),
     ...(source.rides ?? []).filter((r) => r.look === 'owl').flatMap((r) => [r.from.x, r.to.x]),
   ];
+  /**
+   * Where he is carried high over the ground and never walks: the valley under the crane's flight on Berget, the
+   * windthrow's widest gap under the owl in Stormskogen, Granskogen's ravine under the seesaw's throw. Nobody hides,
+   * nothing is left and no bird hops there: Berget's hare and both its beings stood down in the valley, Stormskogen's
+   * bird at the bottom of the gap, and one of Granskogen's beings and three of its thrushes in the ravine, where no
+   * picture finds them (Olov, 14 November 2026: "syns tydligt på de platser där de ska förekomma").
+   */
+  const carried = (x: number) => (source.rides ?? []).some((r) => x > Math.min(r.from.x, r.to.x) + 1 && x < Math.max(r.from.x, r.to.x) - 1
+    && ground(x) < Math.min(r.from.y, r.to.y) - 3);
   /** The nearest x to x, within reach, where `ok` holds: tried every half EL outwards. */
   const nearest = (x: number, reach: number, ok: (x: number) => boolean) => {
     for (let d = 0; d <= reach; d += 0.5) for (const c of [x + d, x - d]) if (ok(c)) return c;
@@ -193,14 +215,14 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
    * A dead branch out of a tree at height h, towards the camera on one side, and never as far as the path: where
    * along it things can sit. Null where the trunk stands too close in front for one.
    */
-  const perchOn = (tree: Tree, h: number, side: number, want: number, rand = next): ((k: number) => V3) | null => {
+  const perchOn = (tree: Tree, h: number, side: number, want: number, rand = next, unbuilt = false): ((k: number) => V3) | null => {
     const a = side * (0.55 + rand() * 0.4);
     const r = girth(tree, h) * 0.92;
     const root: V3 = [tree.x + Math.sin(a) * r, tree.y + h, tree.z + Math.cos(a) * r];
     const long = Math.min(want, (-1.4 - root[2]) / Math.cos(a));
     if (long < want * 0.6) return null;
     const toward = Math.atan2(-Math.cos(a), Math.sin(a));
-    props.push(...placed(branch(long + r * 0.1, toward, tree.snag ? 0.05 : 0.07), root[0], root[1], root[2]));
+    if (!unbuilt) props.push(...placed(branch(long + r * 0.1, toward, tree.snag ? 0.05 : 0.07), root[0], root[1], root[2]));
     return (k) => [root[0] + Math.sin(a) * long * k, root[1] + long * k * 0.12 + 0.06, root[2] + Math.cos(a) * long * k];
   };
 
@@ -213,20 +235,52 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     // The nearest trunk towards the chapter's middle.
     const score = (t: Tree) => Math.abs(t.x - (from + to) * 0.45) / 25 + Math.abs(t.z + 5);
     const tree = trees.filter((t) => t.z > -14 && t.z < -3 && far(t.x, t.z)).sort((p, q) => score(p) - score(q))[0];
-    const sit = tree && perchOn(tree, (tree.snag ? 2 : 2.3) + next() * 0.5, next() < 0.5 ? -1 : 1, 1.3);
-    if (sit) owls.push({ at: sit(0.62), yaw: -Math.PI / 2 });
-    else {
+    /**
+     * A stump behind the path, four or five EL back, where it is in nobody's way, with the owl on it: on ground near the
+     * height he starts at (`startLevel`), or anywhere level he walks (Stormgården starts on the veranda, six EL up).
+     */
+    const onStump = (rand: () => number, startLevel = true) => {
       for (let k = 0; k < 40; k++) {
-        const x = from + 6 + next() * (source.goalX - from - 10);
-        const z = -4.2 - next() * 1.6;
-        // A stump stands on the ground, by the level where he plays; four EL back it is in nobody's way.
-        if (!far(x, z) || underSkerry(x) || !level(x) || !grows(bare, x) || Math.abs(ground(x) - ground(from + 4)) > 4 || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
-        const tall = 1.4 + next() * 0.5;
-        props.push(...placed(stump(tall, 0.32), x, ground(x) - 0.1, z, next() * 6));
-        owls.push({ at: [x, ground(x) + tall - 0.12, z], yaw: -Math.PI / 2 + (next() - 0.5) * 0.4 });
-        break;
+        const x = from + 6 + rand() * (source.goalX - from - 10);
+        const z = -4.2 - rand() * 1.6;
+        // A stump stands on the ground, by the level where he plays.
+        if (!far(x, z) || underSkerry(x) || !level(x) || !grows(bare, x) || (startLevel && Math.abs(ground(x) - ground(from + 4)) > 4) || (source.pine && Math.abs(x - source.pine.x) < 5.5) || !clear(x, ground(x) + 2, z, 3)) continue;
+        const tall = 1.4 + rand() * 0.5;
+        props.push(...placed(stump(tall, 0.32), x, ground(x) - 0.1, z, rand() * 6));
+        owls.push({ at: [x, ground(x) + tall - 0.12, z], yaw: -Math.PI / 2 + (rand() - 0.5) * 0.4 });
+        return true;
+      }
+      return false;
+    };
+    // The numbers drawn for the trunk are drawn as they always were, so that everything placed after the owl (the
+    // carvings) stays where it was. A trunk whose branch would sit the owl further back than `OWL_BACK` is not used: there
+    // it was a soft brown shape, eight to eleven EL behind the path in Stormgården, Olympia and Stormens öga (Olov, 14
+    // November 2026: "syns tydligt på de platser där de ska förekomma"). It sits on a nearer trunk instead, or on a stump
+    // just behind the path, placed by numbers of its own.
+    let sat = false;
+    if (tree) {
+      const h = (tree.snag ? 2 : 2.3) + next() * 0.5, side = next() < 0.5 ? -1 : 1, turn = next();
+      const where = perchOn(tree, h, side, 1.3, () => turn, true);
+      if (where && where(0.62)[2] > OWL_BACK) {
+        owls.push({ at: perchOn(tree, h, side, 1.3, () => turn)!(0.62), yaw: -Math.PI / 2 });
+        sat = true;
+      } else if (where) {
+        const own = sequence(seedOf(source.id) ^ 0x0b1e5);
+        const near = trees.filter((t) => t.z > -6 && t.z < -3 && far(t.x, t.z) && !underSkerry(t.x) && Math.abs(t.y - ground(t.x)) < 2).sort((p, q) => score(p) - score(q));
+        for (const t of near.slice(0, 4)) {
+          const sit = perchOn(t, (t.snag ? 2 : 2.3) + own() * 0.5, own() < 0.5 ? -1 : 1, 1.3, own);
+          if (!sit || sit(0.62)[2] <= OWL_BACK) continue;
+          owls.push({ at: sit(0.62), yaw: -Math.PI / 2 });
+          sat = true;
+          break;
+        }
+        if (!sat) sat = onStump(own, false);
+        // Nowhere nearer: on its trunk as it always was.
+        if (!sat) owls.push({ at: perchOn(tree, h, side, 1.3, () => turn)!(0.62), yaw: -Math.PI / 2 });
+        sat = true;
       }
     }
+    if (!sat) onStump(next);
   }
 
   // Small birds: in twos and threes, on the ground just behind the path, or on a low branch, every twenty or thirty EL.
@@ -245,25 +299,83 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     // Each its own step from the middle, depth and way it faces; the flock settles where all of them can.
     const spots = Array.from({ length: n }, (_, k) => [(k - (n - 1) / 2) * (0.7 + next() * 0.5), -1.9 + (back + 1.9) * next(), (next() < 0.5 ? 0 : Math.PI) + (next() - 0.5) * 1.2] as const);
     // Well clear of the candy, a hop either way included.
-    const c = nearest(x, 12, (c) => spots.every(([dx, z]) => (soil(c + dx) || (place === 'village' && paved(c + dx))) && clear(c + dx, ground(c + dx), z, 2.3)));
+    type Spots = readonly (readonly [number, number, number])[];
+    const settles = (c: number, at: Spots = spots) => at.every(([dx, z]) => (soil(c + dx) || (place === 'village' && paved(c + dx))) && clear(c + dx, ground(c + dx), z, 2.3));
+    const c = nearest(x, 12, settles);
     if (c === null) continue;
-    flocks.push({ x: c, y: ground(c), species, birds: spots.map(([dx, z, yaw]) => ({ at: [c + dx, ground(c + dx), z], yaw })), perch: false, shelter: false });
+    // Found where he is carried over the ground (the only stretch without candy), it settles where he walks instead: the
+    // nearest such place along the chapter, further back from the path, where the trail's candy leaves it room. The plan
+    // goes on from where it was found, so that everything placed after it stays where it was.
+    let seen: number | null = c, seats: Spots = spots;
+    if (spots.some(([dx]) => carried(c + dx))) {
+      const back: Spots = spots.map(([dx, z, yaw]) => [dx, Math.min(z, -2.7), yaw] as const);
+      seats = back;
+      seen = nearest(c, 60, (c) => settles(c, back) && back.every(([dx]) => !carried(c + dx)) && flocks.every((f) => Math.abs(f.x - c) > 12));
+    }
+    if (seen !== null) {
+      const here = seen;
+      flocks.push({ x: here, y: ground(here), species, birds: seats.map(([dx, z, yaw]) => ({ at: [here + dx, ground(here + dx), z], yaw })), perch: false, shelter: false });
+    }
     x = Math.max(x, c);
   }
   // In the storm: a few birds sit out the rain close together on low branches, and none flies.
   const shelter = storm ? SHELTER[place] : undefined;
   if (shelter) {
-    const used = new Set<Tree>();
+    // They sat in whichever trunk stood nearest the middle of each half of the chapter, however far back: eight to
+    // seventeen EL behind the path in Stormgården, Stormskogen, Billsta and Stormens öga, where a tit is a few soft pixels
+    // (Olov, 14 November 2026: "syns tydligt på de platser där de ska förekomma"). Now in a near trunk, three to seven
+    // and a half EL back, at about the height he walks at, and not behind one of the storm's buildings.
+    //
+    // The plan's own numbers are drawn here as they were when the birds sat far back, with nothing put up, so that
+    // everything placed after them (the carvings) stays where it was. Where the birds now sit is drawn from numbers of
+    // their own, once the carvings stand (`seatShelter`, below): a sapling keeps clear of a carving's stone.
+    const was = new Set<Tree>();
     spread(2, (a, b) => {
-      // Up in a tree, they are in nobody's way: only the chapter's ends are kept clear.
-      const tree = trees.filter((t) => !used.has(t) && t.z > -18 && t.x > from + 4 && t.x < to - 4 && owls.every((o) => Math.abs(o.at[0] - t.x) > 6) && [...used].every((u) => Math.abs(u.x - t.x) > 25))
-        .sort((p, q) => Math.abs(p.x - (a + b) / 2) - Math.abs(q.x - (a + b) / 2))[0];
-      const sit = tree && perchOn(tree, 1.8 + next() * 1.2, next() < 0.5 ? -1 : 1, 1.5);
-      if (!sit) return;
-      used.add(tree);
-      flocks.push({ x: tree.x, y: tree.y, species: shelter, birds: [0.5, 0.68].map((k) => ({ at: sit(k), yaw: (next() < 0.5 ? 0 : Math.PI) + (next() - 0.5) * 0.6 })), perch: true, shelter: true });
+      const middle = (p: Tree, q: Tree) => Math.abs(p.x - (a + b) / 2) - Math.abs(q.x - (a + b) / 2);
+      const far = trees.filter((t) => !was.has(t) && t.z > -18 && t.x > from + 4 && t.x < to - 4 && owls.every((o) => Math.abs(o.at[0] - t.x) > 6) && [...was].every((u) => Math.abs(u.x - t.x) > 25)).sort(middle)[0];
+      if (far && perchOn(far, 1.8 + next() * 1.2, next() < 0.5 ? -1 : 1, 1.5, next, true)) {
+        was.add(far);
+        for (let k = 0; k < 4; k++) next();
+      }
     });
   }
+  const seatShelter = (species: Species, carved: readonly number[]) => {
+    const used = new Set<Tree>();
+    const own = sequence(seedOf(source.id) ^ 0x5e17e4);
+    const open = (t: Tree) => (source.storm?.buildings ?? []).every((s) => s.z < t.z - 3 || Math.abs(s.x - t.x) > (s.width ?? 6) / 2 + 2);
+    // Where he can come: not in the land that lies beyond the chapter's goal.
+    const walked = (x: number) => x > from + 4 && x < Math.min(to, source.goalX) - 4;
+    spread(2, (a, b) => {
+      const middle = (p: Tree, q: Tree) => Math.abs(p.x - (a + b) / 2) - Math.abs(q.x - (a + b) / 2);
+      // Up in a tree, they are in nobody's way: only the chapter's ends are kept clear.
+      const near = trees.filter((t) => !used.has(t) && t.z > -7.5 && t.z < -3 && Math.abs(t.y - ground(t.x)) < 2.5 && open(t) && walked(t.x) && t.x > a - 10 && t.x < b + 10
+        && owls.every((o) => Math.abs(o.at[0] - t.x) > 6) && [...used].every((u) => Math.abs(u.x - t.x) > 25)).sort(middle);
+      const settle = (tree: Tree, sit: (k: number) => V3) => {
+        used.add(tree);
+        flocks.push({ x: tree.x, y: tree.y, species, birds: [0.5, 0.68].map((k) => ({ at: sit(k), yaw: (own() < 0.5 ? 0 : Math.PI) + (own() - 0.5) * 0.6 })), perch: true, shelter: true });
+      };
+      for (const tree of near.slice(0, 4)) {
+        const sit = perchOn(tree, 1.8 + own() * 1.2, own() < 0.5 ? -1 : 1, 1.5, own);
+        if (!sit) continue;
+        settle(tree, sit);
+        return;
+      }
+      // No trunk stands near enough there: a dead sapling does, bare, just behind the path, with a bough for them.
+      for (let k = 0; k < 40; k++) {
+        const x = a + 3 + own() * Math.max(1, b - a - 6);
+        const z = place === 'bog' ? -2.2 : -3.2 - own() * 1.1;
+        const tall = 2.2 + own() * 0.5;
+        const stem: Tree = { x, y: ground(x), z, r: 0.12, sy: 1, snag: true };
+        if (!walked(x) || !soil(x) || carried(x) || !clear(x, ground(x) + 1.9, z, 2.6) || !open(stem) || carved.some((c) => Math.abs(c - x) < 3.5)
+          || owls.some((o) => Math.abs(o.at[0] - x) < 6) || [...used].some((u) => Math.abs(u.x - x) < 25)) continue;
+        const sit = perchOn(stem, 1.75 + own() * 0.3, own() < 0.5 ? -1 : 1, 1.2, own);
+        if (!sit) continue;
+        props.push(...placed(sapling(tall), x, ground(x) - 0.1, z, own() * 6));
+        settle(stem, sit);
+        return;
+      }
+    });
+  };
 
   // Visitors: places on the ground behind the path every few EL, and a few dead boughs on the near trunks, where a bird
   // that comes by itself may come down. Clear of the candy (a hop either way included), of the story's things, and of
@@ -360,7 +472,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
       const x = from + 8 + next() * (to - from - 16);
       const z = place === 'bog' ? -2.1 : -2.5 - next() * 0.9;
       const y = ground(x);
-      if (!soil(x) || !clear(x, y + 0.4, z, 2.8)) continue;
+      if (!soil(x) || carried(x) || !clear(x, y + 0.4, z, 2.8)) continue;
       tried.push({ x, z, gap: gap(x, y) });
     }
     tried.sort((a, b) => b.gap - a.gap);
@@ -375,7 +487,7 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
       const room = (x: number) => Math.min(9, ...busy.map(([a, b]) => Math.max(a - x, x - b)));
       const found: { x: number; z: number; gap: number; room: number }[] = [];
       for (let x = Math.ceil(from + 8); x <= to - 8; x += 0.5) {
-        if (!soil(x) || !clear(x, ground(x) + 0.4, z, 2.8) || (source.checkpoints ?? []).some((c) => Math.abs(c.y - ground(x)) < 1.5 && Math.abs(c.x - x) < 2)) continue;
+        if (!soil(x) || carried(x) || !clear(x, ground(x) + 0.4, z, 2.8) || (source.checkpoints ?? []).some((c) => Math.abs(c.y - ground(x)) < 1.5 && Math.abs(c.x - x) < 2)) continue;
         found.push({ x, z, gap: gap(x, ground(x)), room: room(x) });
       }
       tried.push(...found.sort((a, b) => b.gap - a.gap || b.room - a.room));
@@ -383,31 +495,34 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     const out: Peek[] = [];
     for (const { x: found, z: back } of tried) {
       if (out.length >= n || !apart(found, out)) continue;
-      // A carving that the plan puts where a chapter's own things hide it peeks out beside them instead (`PEEK`).
-      const peek = carved ? PEEK[source.id]?.find((p) => Math.abs(p.found - found) < 1.5) : undefined;
+      // A carving or a being that the plan puts where a chapter's own things hide it peeks out elsewhere instead (`PEEK`).
+      const peek = PEEK[source.id]?.find((p) => !p.being === carved && Math.abs(p.found - found) < 1.5);
       const x = peek?.x ?? found, z = peek?.z ?? back;
       const y = ground(x);
       // As high as the moss and the ferns round it, or a little higher, so that what peeks over it is seen.
       const size = 1.25 + next() * 0.3;
       const stumpy = place === 'forest' && next() < 0.4;
       const yaw = next() * 6.28;
-      props.push(...placed(
-        stumpy ? stump(0.95, 0.42) : place === 'mountain' ? stone(size, '#9a9da4', '#c4c6b4') : place === 'bog' ? stone(size, '#7d8a36', '#9aa246') : place === 'garden' ? stone(size, '#8f918c', '#a4ab7a') : stone(size, '#8a877c', '#5f7a34'),
+      (carved ? stands : props).push(...placed(
+        stumpy ? stump(0.95, 0.42) : place === 'mountain' ? stone(size, '#9a9da4', '#c4c6b4') : place === 'bog' ? stone(size, '#8c8b7c', '#7d8a36') : place === 'garden' ? stone(size, '#8f918c', '#a4ab7a') : stone(size, '#8a877c', '#5f7a34'),
         x, y - 0.06, z, stumpy ? yaw : yaw * 0.1));
       out.push({ at: [x, y, z], top: y + (stumpy ? 0.97 : size * 0.68), deep: stumpy ? 0.45 : size * 0.45, wide: stumpy ? 0.44 : size * 0.55, side: next() < 0.5 ? -1 : 1, lichen: place !== 'forest' });
     }
     return out;
   };
   const beings = hideouts(cast.beings ?? 0, []);
-  const carvings = hideouts(CARVED[source.id] ?? 0, beings.map((b) => b.at[0]), true).map((h): Carved => ({
-    // Left on the top of its stone, a little back, as if someone had put it there.
-    at: [h.at[0] + h.side * h.wide * 0.25, h.top - 0.05, h.at[2] - h.deep * 0.3], yaw: -Math.PI / 2 + h.side * 0.5,
-    shape: (['bird', 'hare', 'nisse'] as const)[Math.floor(next() * 3)]!,
-  }));
+  const carvings = hideouts(CARVED[source.id] ?? 0, beings.map((b) => b.at[0]), true).map((h): Carved => {
+    const shape = (['bird', 'hare', 'nisse'] as const)[Math.floor(next() * 3)]!;
+    // Left on the top of its stone as if someone had put it there, turned from the picture by its kind. Near the
+    // middle of the top, its plinth a little into the moss: further out and back, where the stone's top falls away, one
+    // end of the plinth hung in the air.
+    return { at: [h.at[0] + h.side * h.wide * 0.1, h.top - 0.045, h.at[2] - h.deep * 0.08], yaw: -Math.PI / 2 + h.side * TURNED[shape], shape };
+  });
+  if (shelter) seatShelter(shelter, carvings.map((c) => c.at[0]));
 
   // Fireflies at dusk, and in the storm's eye once it is calm.
   const fireflies = place === 'dusk' || (storm && source.storm?.calm) ? 36 : 0;
-  const plan: Plan = { place, trees, squirrels, fox: !!cast.fox, owls, flocks, visitors, soarers, butterflies, dragonflies, reeds, fireflies, beings, carvings, props, ground };
+  const plan: Plan = { place, trees, squirrels, fox: !!cast.fox, owls, flocks, visitors, soarers, butterflies, dragonflies, reeds, fireflies, beings, carvings, props, stands, ground };
   const any = squirrels.length + owls.length + flocks.length + visitors.length + soarers.length + butterflies.length + dragonflies.length + fireflies + beings.length + carvings.length;
   return any > 0 || plan.fox ? plan : null;
 }

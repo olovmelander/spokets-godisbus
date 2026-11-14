@@ -577,8 +577,9 @@ export const flarken: ChapterData = {
     foam: [{ from: MOUTH, to: OUTLET.to, y: WATER, speed: 1.8, dense: 4 }],
   },
   decor: [
-    // A pair of mallards, sheltering behind the reeds.
-    { look: 'kit', word: 'and', at: { x: 93.9, y: -0.6 }, z: -3.4, turn: 1.1, scale: 1.2 },
+    // A pair of mallards, sheltering among the reeds. The drake swims behind the first mat, where he is seen over it:
+    // at x 93.9 the reeds between the mats hid him (Olov, 14 November 2026: "syns tydligt").
+    { look: 'kit', word: 'and', at: { x: 92.6, y: -0.6 }, z: -4.3, turn: 1.1, scale: 1.2 },
     { look: 'kit', word: 'and-hona', at: { x: 95.8, y: -0.6 }, z: -4.2, turn: 0.9, scale: 1.2 },
     // The rocks at the water, where he climbs.
     ...[68, 69.4, 72].map((x, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x, y: i === 0 ? 1.85 : 2.75 }, z: -0.5, scale: 0.55 })),

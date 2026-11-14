@@ -10,7 +10,7 @@ import type { CreatureClips } from '../../src/render/creature-clips';
 import { PLACES, dress } from '../../src/render/dressing';
 import type { ExtraFrame, ViewExtra } from '../../src/render/extensions';
 import { createFauna } from '../../src/render/lift/fauna';
-import { BEING, FOX_SIZE, HIDE, LEAP, STRIDE, TROT_STRIDE, WALK_STRIDE, installForestFolk } from '../../src/render/lift/fauna/folk';
+import { BEING, FOX_NEAR, FOX_SIZE, HIDE, LEAP, STRIDE, TROT_STRIDE, WALK_STRIDE, installForestFolk } from '../../src/render/lift/fauna/folk';
 import { faunaPlan, girth, type Plan } from '../../src/render/lift/fauna/plan';
 import { RICH_LAYER } from '../../src/render/rich';
 import type { ChapterData } from '../../src/sim/types';
@@ -234,7 +234,9 @@ describe('the forest folk in the near life (src/render/lift/fauna/folk.ts)', () 
       seen++;
       expect(crowd('granskog', 'fauna-fox').visible).toBe(false);
       expect(root.scale.x).toBeCloseTo(FOX_SIZE);
-      expect(root.position.z).toBeLessThanOrEqual(-12);
+      // Far back, and never in the middle distance, where the lens blurs it most (FOX_NEAR).
+      expect(root.position.z).toBeLessThanOrEqual(FOX_NEAR);
+      expect(FOX_NEAR).toBeLessThanOrEqual(-15);
       expect(root.position.z).toBeGreaterThanOrEqual(-30);
       for (const s of clipsOf(root).showing()) if (s.weight > 0.6) did.add(s.name);
       const at = root.position.x;
