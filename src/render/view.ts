@@ -964,7 +964,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   characterShadows.setTier(tier);
 
-  const camera = new PerspectiveCamera(FOV, 1, 0.1, 140);
+  // Over a brink (Billsta's brow) the camera sees far: the water far below, its far shore and the ridges beyond.
+  const camera = new PerspectiveCamera(FOV, 1, 0.1, chapter.brink ? 640 : 140);
   seeRich(camera, tier);
   let viewHeight = 5;
   let distance = 10;
@@ -1188,8 +1189,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     bared.set(rig, bare);
     rig.bareHead(bare);
   };
-  /** How far the eye has risen over water, 0 to 1. */
-  let overWater = 0;
+  /** How far the eye has risen over water, 0 to 1; and over a vista from a height, in EL (`CameraZone.eye`). */
+  let overWater = 0, vistaEye = 0;
   /**
    * The pools and brooks of the chapter, where the eye rises: still water, not the river, and not the street's
    * puddle, whose shot keeps the church and its belfry framed under the top edge (tests/browser/bredbyn.mjs).
@@ -1578,7 +1579,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const wantOverWater = !calmStory && pools.some((w) => look.x > w.from - 3 && look.x < w.to + 3 && Math.abs(look.y - w.y) < 4) ? 1 : 0;
     overWater += (wantOverWater - overWater) * ease(1.2, dt);
     if (calmStory) overWater = 0;
-    camera.position.set(look.x, centreY + (chapter.place === 'forest' ? BROOK_EYE : POOL_EYE) * overWater * look.zoom, distance * look.zoom);
+    // Over a vista from a height it rises further and looks down (Billsta's brow): the ground falls away in front of it.
+    vistaEye = calmStory ? (want.eye ?? 0) : vistaEye + ((want.eye ?? 0) - vistaEye) * ease(1.2, dt);
+    camera.position.set(look.x, centreY + (chapter.place === 'forest' ? BROOK_EYE : POOL_EYE) * overWater * look.zoom + vistaEye * look.zoom, distance * look.zoom);
     camera.lookAt(look.x, centreY, 0);
     const nearbyFamily = stands.find((stand) => stand.prop!.group.visible && Math.abs(stand.prop!.group.position.x - x) < 3.4 &&
       Math.abs(stand.prop!.group.position.y - y) < 3.5 && curr.mode !== 'ride' && curr.mode !== 'fly');
@@ -1669,8 +1672,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       skyPicture.material.color.setScalar(scene.backgroundIntensity);
       // The haze begins behind the play plane, however far the camera has pulled back.
       if (!chapter.mist) {
-        (scene.fog as Fog).near = camera.position.z + place.haze.near;
-        (scene.fog as Fog).far = camera.position.z + place.haze.far;
+        // Out over the water below a brink a shot looks at what is far back (Billsta's stone in the narrow): the haze
+        // begins behind what it looks at, as it does behind the play plane, not a hundred EL in front of the camera.
+        const back = chapter.brink ? focusBack : 0;
+        (scene.fog as Fog).near = camera.position.z + back + place.haze.near;
+        (scene.fog as Fog).far = camera.position.z + back + place.haze.far;
       }
     }
     // The visual upgrade's systems, after the dressing, so that this frame's wind is set (./lift/).

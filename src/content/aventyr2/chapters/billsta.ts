@@ -264,10 +264,11 @@ const LEE = [163.9, 169.1, 174.3, 179.5, 184.7];
 
 /** Up the last of the hill to its brow, where the narrow is seen far below. */
 const RISE = { from: 186.9, to: 191.3 };
-const BROW = { from: RISE.to, to: 210, y: 6.4 };
+/** The brow, bare granite, level out past the picture: from up here the view is wide (`cameras`), and the end of the world is well beyond it. */
+export const BROW = { from: RISE.to, to: 230, y: 6.4 };
 const rise = (x: number) => round(SLOPE + ((BROW.y - SLOPE) * (x - RISE.from)) / (RISE.to - RISE.from), 4);
 /** Where mormor stands when she has come up the path behind him, on the last of the rise, behind the path and Klonk. */
-const MORMOR_UP = { x: 190.4, z: -1.5 };
+const MORMOR_UP = { x: 190.4, z: -0.6 };
 
 /**
  * Up Billaberget's cliff, a second way (docs/level-design.md): three shelves of rock where the hazel grows, each a
@@ -321,13 +322,21 @@ export const NUT = {
 const NUT_SEEN = 2.1;
 
 /**
- * The narrow far below the brow, behind the forest, for the picture: from the brow, a dark band of water at the
- * horizon. The sheet lies a little over the brow's own ground, where the ground's bank behind the path does not
- * hide it, and starts in front of the garden's nearest far picture (32 behind the path), which covers whatever is
- * behind it. From lower down the hill it is above the camera, and not seen. The two figures sit on a stone in it.
+ * The narrow far below the brow, for the picture (Olov, 14 November 2026: "Kan vi få det att kännas som om sundet ligger
+ * längre ned? Vi står på Billaberget och tittar ned mot sundet, men nu känns det som att sundet ligger på samma höjd, och
+ * vattnet ser dessutom helt platt ut."). It was a flat dark sheet a little over the brow's own ground, at the horizon.
+ * Now the brow is bare granite with a brink of boulders behind the path, and beyond it Billaberget's steep end falls
+ * away to its wooded foot and the shore, far below; the narrow's water runs there, `y` under the brow, from the near
+ * shore (`near`) out to the far shore (`far`), and the picture looks down onto it from the brow (`cameras`). All of it is
+ * drawn by ../billsta-vista.ts: the simulation has none of it. The two figures sit on a big water-worn boulder out in
+ * the current (`STONE_OUT`: where its top is, under their feet; `STONE`: its own measures), the stone of the storm's eye
+ * in the next chapter.
  */
-const NARROW = { from: 182, to: 300, y: 6.75, near: -20 };
-const STONE_OUT = { x: 195, y: round(NARROW.y + 0.3), z: -27 };
+export const NARROW = { from: 60, to: 340, y: -26, near: -46, far: -300 };
+/** The brow's brink: the ground behind the path ends this far back and falls away (../billsta-vista.ts draws the fall). */
+export const BRINK = { from: 188, to: BROW.to + 6, z: -3.4 };
+export const STONE = { width: 7, depth: 4.6, over: 1.05, under: 1.2 };
+export const STONE_OUT = { x: 198, y: round(NARROW.y + STONE.over), z: -130 };
 /**
  * Seeing them there (Olov, 9 November 2026: "Bilden ska bli tydligare när lillgubben och gamla trägubben syns nere i
  * sundet"): far as they are, the two figures and their stone are drawn bigger than they would be, as a picture that wants
@@ -336,7 +345,7 @@ const STONE_OUT = { x: 195, y: round(NARROW.y + 0.3), z: -27 };
  * them while he says what he sees, and then gives him back.
  */
 const FAR_SIZE = 2.2;
-const SEEN = { x: STONE_OUT.x - 0.3, y: round(NARROW.y + 1.1), z: STONE_OUT.z, height: 4.4, width: 5, seconds: 7 };
+const SEEN = { x: STONE_OUT.x - 0.1, y: round(STONE_OUT.y + 0.6), z: STONE_OUT.z, height: 4.8, width: 6, eye: 2.4, seconds: 7 };
 
 /** A heart over a ledge, where he takes it standing there. */
 const over = (ledge: Ledge, dx = 0, lift = 0.55): Candy => ({ x: round(ledge.x + dx), y: round(ledge.y + lift) });
@@ -481,10 +490,12 @@ export const billsta: ChapterData = {
       dialogue: ['bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl'],
       // Frame the stone before making the first line available, even when earlier speech is still queued.
       cues: [{ at: 0.01, flag: 'bi:strait-seen' }],
-      stage: { shots: [{ at: 0, x: SEEN.x, y: SEEN.y, z: SEEN.z, height: SEEN.height, width: SEEN.width, eye: 1, move: 0.001 }] },
+      stage: { shots: [{ at: 0, x: SEEN.x, y: SEEN.y, z: SEEN.z, height: SEEN.height, width: SEEN.width, eye: SEEN.eye, move: 0.001 }] },
     },
   ],
   goalX: 194.6,
+  // Behind the brow the ground ends at a brink and falls away to the narrow far below (`BRINK`, ../billsta-vista.ts).
+  brink: BRINK,
   // The chapter's card waits until the flash's last word is said: the little one safe on the stone, the owl.
   goalNeeds: 'beat:bi:cheer',
   // Everyone answers in the coda: the family by the car, and mormor and morfar.
@@ -566,7 +577,9 @@ export const billsta: ChapterData = {
     // Billaberget: moss and thin forest up to the boulders, and all the way over them to the brow.
     { from: TOP.from, to: B1.from, kind: 'moss' },
     { from: B1.from, to: B3.to, kind: 'stone' },
-    { from: B3.to, to: BROW.to, kind: 'moss' },
+    { from: B3.to, to: RISE.from, kind: 'moss' },
+    // Up the last of it, the brow is bare granite (hällmark): no forest stands between him and the view.
+    { from: RISE.from, to: BROW.to, kind: 'stone' },
   ],
   // What the stones and the boulders are, for the picture only: granite of Billaberget's boulder field.
   landmarks: [
@@ -655,11 +668,14 @@ export const billsta: ChapterData = {
     lightning: 5.5,
     // On the barn's roof the lee is its brick ventilation chimneys (../barn-chimney.ts); on Billaberget its boulders.
     shelters: ['vents', 'rocks'],
-    // The narrow, far below the brow beyond the forest, where the two figures are.
-    lakes: [NARROW],
+    // The narrow far below the brow, where the two figures are, is the vista's own (../billsta-vista.ts).
     flybys: [
       // From the brow: a wave of wind tosses the little one away towards the narrow, onto the stone out in it.
-      { on: 'beat:bi:there', from: { x: 188.4, y: 12 }, to: { x: STONE_OUT.x + 1, y: 9 }, seconds: 1.6, who: 'lillgubbe' },
+      // Out of the dark over the narrow, down onto the stone in the picture that has gone out to it, lit as it comes.
+      {
+        on: 'beat:bi:there', from: { x: STONE_OUT.x - 5.5, y: round(STONE_OUT.y + 6) }, to: { x: round(STONE_OUT.x + 0.32 * FAR_SIZE), y: STONE_OUT.y },
+        z: STONE_OUT.z + 3, toZ: STONE_OUT.z, seconds: 1.6, who: 'lillgubbe', size: FAR_SIZE, rise: 1.2, lit: [0.15],
+      },
     ],
     // Mormor and morfar's place by the road near the forest: the white house with its lit window behind the yard,
     // the red barn beside it, whose windows glow once mormor has taken her lantern in; the woodshed, the rowing boat
@@ -717,7 +733,7 @@ export const billsta: ChapterData = {
       // Mormor, come up the path behind him with her lantern, as the owl hoots: its light, where she holds it low.
       { at: { x: MORMOR_UP.x + 0.9, y: round(rise(MORMOR_UP.x) + 2.1) }, z: MORMOR_UP.z + 0.4, size: 1.2, after: 'beat:bi:owl' },
       // A light on the water behind the two on their stone, from the moment the flash shows them: they stand out against it.
-      { at: { x: STONE_OUT.x + 0.4, y: round(NARROW.y + 1.1) }, z: STONE_OUT.z - 1.2, size: 6.5, after: 'beat:bi:there' },
+      { at: { x: STONE_OUT.x + 0.4, y: round(STONE_OUT.y + 0.8) }, z: STONE_OUT.z - 1.2, size: 6.5, after: 'beat:bi:there' },
     ],
   },
   decor: [
@@ -732,7 +748,8 @@ export const billsta: ChapterData = {
     { look: 'kit', word: 'gren-a', at: { x: 176.6, y: 3.2 }, z: -1.7, turn: 0.2 },
     { look: 'kit', word: 'stubbe-sagad', at: { x: 181.2, y: 3.2 }, z: -2.4, turn: 0.5 },
     { look: 'kit', word: 'gren-b', at: { x: 190.2, y: 6.4 }, z: -1.5, turn: 1.2 },
-    { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -2.6, turn: 2.9 },
+    // At the edge of the forest below the rise: up on the bare brow nothing lies between him and the view.
+    { look: 'kit', word: 'lag-mossig', at: { x: 184.6, y: 3.2 }, z: -2.6, turn: 2.9 },
     // The hazel shelves on Billaberget's face.
     ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
     // Mormor, come up the path behind him with her lantern as the owl hoots, and there when the picture comes back from
@@ -866,7 +883,7 @@ export const billsta: ChapterData = {
     { from: 162, to: 187, zoom: 1.35 },
     // Up on the brow the picture opens out over the forest towards the narrow far below. It looks little ahead: the
     // end of the world is well to the right, out of the picture.
-    { from: 187, to: 210, zoom: 1.6, lift: 2.6, lead: 1 },
+    { from: 187, to: BROW.to, zoom: 3, lift: 2, lead: 1, eye: 2.1 },
   ],
   candy: [
     // 1. along the road to the ditch

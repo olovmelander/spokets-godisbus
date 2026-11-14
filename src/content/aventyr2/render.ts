@@ -54,6 +54,7 @@ import { jettyWavesExtra } from '../../render/jetty-waves';
 import { teamBenchesExtra } from './team-benches';
 import { fieldBoulder } from './field-boulder';
 import { hazelExtra } from './hazel';
+import { vistaExtra } from './billsta-vista';
 import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
@@ -775,6 +776,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if ((d.look !== 'tragubbe' && d.look !== 'lillgubbe') || (d.z ?? 0) > -6) continue;
     const size = d.scale ?? 1;
     const rock = new Mesh(new SphereGeometry(1.4, 12, 8), solid('#3c4048', 0.9, { flatShading: true }));
+    // (Billsta's vista draws a stone of its own there, and puts this one away: ./billsta-vista.ts.)
+    rock.name = 'figure-stone';
     rock.scale.set(1.3 * size, 0.55 * size, size);
     rock.position.set(d.at.x, d.at.y - (size === 1 ? 0.45 : 0.72 * size), d.z ?? 0);
     group.add(rock);
@@ -3278,6 +3281,8 @@ export function installPictures(): void {
   if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
+  // The view from Billaberget's brow down over the narrow (./billsta-vista.ts).
+  if (!PACK.extras.includes(vistaExtra)) PACK.extras.push(vistaExtra);
   // Älven's beaver and otter with bones and clips, from Blender, where their lives wait for them (./river-creatures.ts).
   if (!PACK.models.includes(installRiverCreatures)) PACK.models.push(installRiverCreatures);
 }

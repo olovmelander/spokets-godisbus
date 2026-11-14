@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Game } from '../../src/app/game';
 import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
-import { billsta, context, HAZEL, NUT } from '../../src/content/aventyr2/chapters/billsta';
+import { billsta, context, HAZEL, NARROW, NUT, STONE, STONE_OUT } from '../../src/content/aventyr2/chapters/billsta';
 import { words } from '../../src/content/aventyr2/lines/billsta';
 import { nextAfter } from '../../src/content/chapters';
 import { storyContext } from '../../src/content/story-context';
@@ -735,16 +735,25 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const far = billsta.decor!.filter((d) => d.z !== undefined && d.z <= -25);
       expect(far.map((d) => d.look).sort()).toEqual(['lillgubbe', 'tragubbe']);
       for (const d of far) expect(['beat:bi:there', 'bi:landed']).toContain(d.after);
-      // They stand on their stone out on the narrow's water, in front of the far scenery (the garden's nearest far
-      // picture is 32 behind the path, and covers what is behind it).
-      const narrow = billsta.storm!.lakes![0]!;
+      // They stand on the top of their stone out on the narrow's water, far below the brow (Olov, 14 November 2026: "Kan vi
+      // få det att kännas som om sundet ligger längre ned?"), between its near shore and its far one
+      // (src/content/aventyr2/billsta-vista.ts draws it; the flat sheet a little over the brow's ground is gone).
+      expect(billsta.storm!.lakes).toBeUndefined();
+      expect(NARROW.y).toBeLessThan(heightAt(billsta, there.at!) - 25);
       for (const d of far) {
-        expect(d.at.x).toBeGreaterThan(narrow.from);
-        expect(d.at.y - narrow.y).toBeCloseTo(0.3, 5);
-        expect(d.z!).toBeLessThan(narrow.near!);
-        expect(d.z!).toBeGreaterThan(-32);
+        expect(d.at.x).toBeGreaterThan(NARROW.from);
+        expect(d.at.x).toBeLessThan(NARROW.to);
+        expect(d.at.y).toBeCloseTo(STONE_OUT.y, 5);
+        expect(STONE_OUT.y - NARROW.y).toBeCloseTo(STONE.over, 5);
+        expect(d.z!).toBeLessThan(NARROW.near);
+        expect(d.z!).toBeGreaterThan(NARROW.far);
       }
-      expect(billsta.storm!.flybys!.some((f) => f.on === 'beat:bi:there')).toBe(true);
+      // The little one comes to the stone through the air, into the picture that has gone out to it, and lands on its top.
+      const tossed = billsta.storm!.flybys!.find((f) => f.on === 'beat:bi:there')!;
+      expect(tossed.toZ).toBe(STONE_OUT.z);
+      expect(tossed.to.y).toBeCloseTo(STONE_OUT.y, 5);
+      expect(Math.abs(tossed.to.x - far.find((d) => d.look === 'lillgubbe')!.at.x)).toBeLessThan(0.05);
+      expect(tossed.lit?.length).toBeGreaterThan(0);
       // Olov: "Bilden ska bli tydligare när lillgubben och gamla trägubben syns nere i sundet." They are drawn bigger, warm
       // (found, as on the stone in the storm's eye), with a light on the water behind them; and the flash's moment is a
       // close look at the stone that holds them a few seconds.

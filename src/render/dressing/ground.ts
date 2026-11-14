@@ -1161,7 +1161,7 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
     const stretch = points.slice(start, Math.min(points.length, i + 1));
     const kind = points[start]!.kind;
     const front = frontFor(kind, own);
-    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : [], front.shore === 'ground' ? dampAt : undefined, feet) });
+    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : [], front.shore === 'ground' ? dampAt : undefined, feet, fallAt(chapter)) });
     start = i;
   }
   return shapes;
@@ -1171,7 +1171,19 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
  * One stretch, as columns of points across the profile. The top and a wall's face have a column each where
  * they meet, so that each keeps its own colour and its own lie of the picture, and the corner is a corner.
  */
-function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = [], dampAt?: (x: number) => number, feet?: (x: number, z: number) => number): BufferGeometry {
+/**
+ * How far the ground behind the path falls away at a brink (`ChapterData.brink`), at x and a depth: none in front of it,
+ * and beyond it, out of sight under what the chapter draws there. Eased in at its two ends.
+ */
+function fallAt(chapter: ChapterData): ((x: number, z: number) => number) | undefined {
+  const brink = chapter.brink;
+  if (!brink) return undefined;
+  return (x, z) => z >= brink.z ? 0 : BRINK_FALL * smooth(brink.from - 4, brink.from, x) * smooth(brink.to + 4, brink.to, x);
+}
+/** How far: deep enough to be under anything a chapter draws beyond a brink. */
+const BRINK_FALL = 80;
+
+function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = [], dampAt?: (x: number) => number, feet?: (x: number, z: number) => number, fall?: (x: number, z: number) => number): BufferGeometry {
   const look = GROUNDS[kind];
   const street = front === FRONTS.street && (road(kind) || kind === 'iron');
   const profile = street ? PROFILE_ROAD : kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
@@ -1225,6 +1237,8 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
         y = shut ? upper : Math.min(upper, lower) + (upper - Math.min(upper, lower)) * up;
         under = upper - y;
       }
+      // Beyond a brink the ground falls away (`fallAt`).
+      if (fall) y -= fall(p.x, z);
       // Deep fracture faces lean and taper. Their seams wander through the rock instead of forming an
       // upright grid. Keep the walk plane, every collision wall and its retracted corner exactly in place.
       const fracture = kind === 'granite' && !p.wall && !wall && row.z > EDGE

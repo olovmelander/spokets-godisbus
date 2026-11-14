@@ -33,6 +33,8 @@ export interface FieldBoulder {
   saddle?: { z: number; deep: number; wide: number };
   /** Standing in water: wet all over, dark and bare to this height over its foot, with no moss below it. */
   awash?: number;
+  /** How much moss grows on it, 0 to 1. Left out: 1. A stone in the current has little: the water keeps it bare. */
+  moss?: number;
   seed?: number;
 }
 
@@ -118,6 +120,7 @@ export function boulderShape(def: FieldBoulder): BufferGeometry {
     let grown = smooth((facing - 0.05) / 0.55) * (0.55 + 0.75 * noise(p.x * 2.6 + seed * 3, p.y * 2.6, p.z * 2.6));
     grown *= smooth((p.y - height * 0.12) / (height * 0.3));
     if (def.awash !== undefined) grown *= smooth((p.y - def.awash - 0.1) / 0.25);
+    grown *= def.moss ?? 1;
     moss.push(Math.min(1, grown));
     at.setXYZ(i, p.x, p.y, p.z);
   }
@@ -158,8 +161,10 @@ const SKIN = /* glsl */ `
     rock = mix(rock, stonePink, 0.5 * smoothstep(0.5, 0.78, stoneNoise(p * 3.6 + 3.7)));
     // (Round grains from fine noise: grains cut from a grid of cells were little squares.)
     float grain = stoneNoise(p * 34.0 + 9.0), grit = stoneNoise(p * 41.0 + 31.0);
-    rock = mix(rock, stoneMica, 0.75 * smoothstep(0.7, 0.78, grain) * near);
-    rock = mix(rock, stoneQuartz, 0.6 * smoothstep(0.72, 0.8, grit) * near);
+    // Worn by the water, the grains hardly show: its skin is smooth.
+    float speck = near * (1.0 - 0.7 * stoneWorn);
+    rock = mix(rock, stoneMica, 0.75 * smoothstep(0.7, 0.78, grain) * speck);
+    rock = mix(rock, stoneQuartz, 0.6 * smoothstep(0.72, 0.8, grit) * speck);
     rock *= 0.9 + 0.2 * fine;
     // A quartz vein across it, and a hairline crack.
     float vein = 1.0 - smoothstep(0.0, 0.02, abs(dot(p, vec3(0.5, 0.78, 0.37)) - 0.27 * size.y / 0.6 + 0.05 * stoneNoise(p * 5.0)));
@@ -184,6 +189,9 @@ const SKIN = /* glsl */ `
     float foot = 1.0 - smoothstep(0.0, 0.2 * size.y / 0.6 + stoneAwash, p.y + 0.04 * (mid - 0.5));
     rock *= 1.0 - 0.52 * foot;
     rough = mix(rough, 0.24, foot * (1.0 - moss));
+    // Water-worn, it is wet all over from the spray, darker, and glossy.
+    rock *= 1.0 - 0.28 * stoneWorn;
+    rough = mix(rough, 0.2, 0.7 * stoneWorn * (1.0 - moss));
     return vec4(rock, rough);
   }
 `;
@@ -196,16 +204,17 @@ export function boulderMaterial(def: FieldBoulder): MeshStandardMaterial {
     stoneLichen: '#9aa78c', stoneOrange: '#bd8a34', stoneCrust: '#c9cbbd', stoneMossDeep: '#33491c', stoneMossLight: '#7a9636',
   };
   const size = new Vector3(def.width, def.height, def.depth);
-  material.customProgramCacheKey = () => 'field-boulder-v4';
+  material.customProgramCacheKey = () => 'field-boulder-v5';
   material.onBeforeCompile = (shader) => {
     for (const [name, hex] of Object.entries(colours)) shader.uniforms[name] = { value: new Color(hex) };
     shader.uniforms.stoneSize = { value: size };
-    // In water there is no lichen low down, and the foot's dark reaches up to the water.
+    // In water there is no lichen low down, and the foot's dark reaches up to the water; the water has worn it smooth.
     shader.uniforms.stoneDry = { value: def.awash === undefined ? 1 : 0.55 };
     shader.uniforms.stoneAwash = { value: def.awash ?? 0 };
+    shader.uniforms.stoneWorn = { value: def.awash === undefined ? 0 : 1 };
     shader.vertexShader = 'attribute float moss;\nvarying vec3 stoneAt;\nvarying vec3 stoneOut;\nvarying float stoneGrown;\n' + shader.vertexShader.replace('#include <begin_vertex>',
       '#include <begin_vertex>\n  stoneAt = position;\n  stoneOut = normal;\n  stoneGrown = moss;');
-    shader.fragmentShader = `varying vec3 stoneAt;\nvarying vec3 stoneOut;\nvarying float stoneGrown;\nuniform vec3 stoneSize;\nuniform float stoneDry;\nuniform float stoneAwash;\n${Object.keys(colours).map((name) => `uniform vec3 ${name};`).join('\n')}\n${SKIN}\n` + shader.fragmentShader
+    shader.fragmentShader = `varying vec3 stoneAt;\nvarying vec3 stoneOut;\nvarying float stoneGrown;\nuniform vec3 stoneSize;\nuniform float stoneDry;\nuniform float stoneAwash;\nuniform float stoneWorn;\n${Object.keys(colours).map((name) => `uniform vec3 ${name};`).join('\n')}\n${SKIN}\n` + shader.fragmentShader
       .replace('#include <color_fragment>', '#include <color_fragment>\n  vec4 stoneSeen = stoneSkin(stoneAt, normalize(stoneOut), stoneGrown, stoneSize);\n  diffuseColor.rgb *= stoneSeen.rgb;')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n  roughnessFactor = stoneSeen.a;');
   };
