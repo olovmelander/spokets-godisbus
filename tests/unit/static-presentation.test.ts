@@ -5,14 +5,14 @@ import { shellHtml } from '../../src/ui/shell-html';
 
 type PresentationPlugin = {
   apply: string;
-  transformIndexHtml(html: string): string;
+  transformIndexHtml(html: string, ctx: { filename: string }): string;
   transform(code: string, id: string): string | null;
 };
 const plugin = () => staticPresentation(MEMORIES, shellHtml) as unknown as PresentationPlugin;
 
 describe('the production presentation templates', () => {
   it('preserves every illustrated scene and both complete helper interfaces in inert HTML', () => {
-    const page = plugin().transformIndexHtml('<html><body><main id="game"></main></body></html>');
+    const page = plugin().transformIndexHtml('<html><body><main id="game"></main></body></html>', { filename: '/workspace/game/index.html' });
     const memories = [...page.matchAll(/<template data-memory-art="([^"]+)">([\s\S]*?)<\/template>/g)];
     expect(memories.map((match) => match[1])).toEqual(Object.keys(MEMORIES));
     for (const [, chapter, markup] of memories) expect(markup).toBe(MEMORIES[chapter!]!.join(''));
@@ -23,6 +23,13 @@ describe('the production presentation templates', () => {
     expect(page.startsWith('<html><body><main id="game"></main>')).toBe(true);
     expect(page.endsWith('</body></html>')).toBe(true);
     expect(page.match(/<template/g)).toHaveLength(Object.keys(MEMORIES).length + 2);
+  });
+
+  it('puts them in the adventure\'s page only, including on Windows, and leaves Godisracet\'s own page alone', () => {
+    const html = '<html><body><section id="godisracet"></section></body></html>';
+    expect(plugin().transformIndexHtml(html, { filename: '/workspace/game/godisracet.html' })).toBe(html);
+    expect(plugin().transformIndexHtml(html, { filename: 'C:\\game\\godisracet.html' })).toBe(html);
+    expect(plugin().transformIndexHtml(html, { filename: 'C:\\game\\index.html' })).toContain('<template id="game-shell-ghost">');
   });
 
   it('replaces only the two source modules, including on Windows, leaving raw imports and previews alone', () => {
