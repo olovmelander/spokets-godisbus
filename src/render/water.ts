@@ -260,7 +260,7 @@ export interface WaterShape {
  * heights of `stretches` (the simulation's own, where `pools` were joined under what stands in them).
  */
 export function waterShape(pools: readonly { from: number; to: number; y: number }[], kind: WaterKind, span?: { from: number; to: number }, street?: (x: number) => number,
-  stretches?: readonly { from: number; to: number; y: number }[]): WaterShape {
+  stretches?: readonly { from: number; to: number; y: number }[], open?: OpenWater): WaterShape {
   const position: number[] = [];
   const part: number[] = [];
   const index: number[] = [];
@@ -304,6 +304,19 @@ export function waterShape(pools: readonly { from: number; to: number; y: number
   }
   for (const w of pools) {
     const inset = kind.corner < kind.front ? 1.2 : kind.bed > 0 ? 2 : kind.feather;
+    if (open?.pools.some((pool) => pool.from === w.from)) {
+      // A pool that runs on towards the camera (./dressing/natural.ts): it has no cut. In front of the path it lies
+      // down the ground's own fall, between its banks, and thins out where its bed has come up to its shore; and it
+      // reaches in under both banks, whose lines wander over it.
+      const by = Math.min(inset, (w.to - w.from) / 3);
+      const columns = [w.from - OPEN_UNDER, w.from + by, w.to - by, w.to + OPEN_UNDER];
+      const edge = (i: number) => i === 0 || i === columns.length - 1;
+      const front = [...open.rows].sort((a, b) => b - a).map((z) => ({ z, y: w.y - open.drop(z) }));
+      sheet(w.y, columns, (i) => [
+        ...front, { z: -15.5 }, { z: kind.thins - 2, there: edge(i) ? 0 : 1 }, { z: kind.back, there: 0 },
+      ]);
+      continue;
+    }
     const columns = columnsOf(w, inset);
     const front = columns.map((_, i) => (i === 0 || i === columns.length - 1 ? kind.corner : kind.front));
     const edge = (i: number) => i === 0 || i === columns.length - 1;
@@ -373,6 +386,14 @@ export function openWaterAt(chapter: ChapterData, x: number): number | null {
   return isOpenWater(chapter) ? levelOn(levelLine(chapter.water!), x) : null;
 }
 
+/**
+ * The pools that run on towards the camera, and how the ground lies in front of the path there: the depths of its rows,
+ * from the path's edge to past the pools' shore, and how far under the path it lies at each (./dressing/ground.ts).
+ */
+export interface OpenWater { pools: readonly { from: number; to: number; y: number }[]; rows: readonly number[]; drop: (z: number) => number }
+/** How far in under each of its banks an open pool's water reaches: further than a bank's line draws back. */
+export const OPEN_UNDER = 1.4;
+
 /** A pool's columns: its two ends, and one a little inside each. */
 function columnsOf(w: { from: number; to: number }, inset: number): number[] {
   const by = Math.min(inset, (w.to - w.from) / 3);
@@ -395,6 +416,8 @@ export interface WaterSetting {
    * lake is drawn under it, as one with the pools it meets, at their level; the simulation's water is not touched.
    */
   under?: readonly { from: number; to: number }[];
+  /** The pools that run on towards the camera between their banks (./dressing/natural.ts). */
+  open?: OpenWater;
 }
 
 /** The pools as drawn: the simulation's, and the water under a jetty as one with the pools it meets, at their level. */
@@ -601,7 +624,12 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     columnTint: { value: Array.from({ length: MIRRORED.trunks }, () => new Color()) },
     bankTop: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[0]) },
     bankFace: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[1]) },
-    bankFront: { value: open ? BANK_FRONT : 1e4 },
+    // (A pool that runs on towards the camera has banks whose lines wander in front of the path, and the eye looks
+    // down on its water there: the outline's straight bank is mirrored, and its wet band drawn, only beside the path.)
+    bankFront: { value: open ? BANK_FRONT : setting.open?.pools.length ? 0.9 : 1e4 },
+    // Where a bank's line begins to wander behind the path (./dressing/natural.ts): the wet band along its foot is
+    // drawn by the outline's straight line, and stops there.
+    bankBack: { value: setting.open?.pools.length ? -0.5 : -1e4 },
     viewProjection: { value: new Matrix4() },
     islands: { value: (islands?.map ?? nothingFar()) as Texture },
     // Where the islands' row begins and how wide it is (none: 0), where their fronts go under the water, and the height it counts from.
@@ -652,7 +680,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
       #include <fog_pars_vertex>
       void main() {
         // A pool that is still filling stands lower, all of it.
-        float under = position.x >= fill.x - 0.01 && position.x <= fill.y + 0.01 ? fill.z : 0.0;
+        float under = position.x >= fill.x - fill.w - 0.01 && position.x <= fill.y + fill.w + 0.01 ? fill.z : 0.0;
         vec4 world = modelMatrix * vec4(position.x, position.y - under, position.z, 1.0);
         waterWorld = world.xyz;
         // Its part, how much of it is there, how deep it is, and the height of its pool's surface.
@@ -665,7 +693,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     fragmentShader: /* glsl */ `
       uniform sampler2D flowMap, refraction, mirrorMap, islands;
       uniform vec3 waterColour, sunDirection, skyTop, skyMiddle, skyGlow, mirrorTint, faceTop, faceDeep, through, bedColour, shoreColour;
-      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze, bankFront;
+      uniform float time, details, opacity, refractOn, cameraFar, mirrorReach, nearOn, nearLevel, haze, bankFront, bankBack;
       uniform vec4 rings[${RINGS}];
       uniform vec2 life;
       uniform sampler2D nearMirror;
@@ -841,7 +869,8 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
           float near = 1e9;
           vec3 standing = vec3(0.0);
           // Open water goes on in front of a bank, where the bank's floor has gone down into it: no band there.
-          float alongBank = 1.0 - smoothstep(bankFront - 0.4, bankFront + 0.4, waterWorld.z);
+          float alongBank = (1.0 - smoothstep(bankFront - 0.4, bankFront + 0.4, waterWorld.z)) * smoothstep(bankBack - 0.8, bankBack, waterWorld.z)
+            * (1.0 - smoothstep(-bankBack - 0.2, -bankBack + 0.4, waterWorld.z));
           for (int i = 0; i < ${MIRRORED.banks}; i++) {
             vec4 b = banks[i];
             if (waterWorld.x < b.x - 0.05 || waterWorld.x > b.y + 0.05) continue;
@@ -852,7 +881,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
             float high = d.x < 0.0 ? left : right;
             float under = -d.y * t;
             float meets = waterWorld.z + d.z * t;
-            if (t > 0.0 && t < near && under < high && meets > -16.0 && meets < bankFront) {
+            if (t > 0.0 && t < near && under < high && meets > max(-16.0, bankBack - 2.5) && meets < bankFront) {
               near = t;
               standing = mix(bankFace, bankTop, smoothstep(high - 0.45, high - 0.1, under)) * (0.7 + 0.3 * smoothstep(0.0, 0.6, under));
             }
@@ -1027,6 +1056,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
             float lap = deep + 0.01 * sin(time * 1.5 + waterWorld.x * 1.9 + waterWorld.z * 0.7);
             float froth = textureLod(rippleMap, carried * 0.45 + vec2(time * 0.012, 0.0), 1.5).b;
             foam = smoothstep(0.003, 0.012, lap) * (1.0 - smoothstep(0.02, 0.05 + 0.08 * froth, lap)) * (0.35 + 0.65 * froth);
+            // Along the banks of a pool that runs on towards the camera the eye looks down into the water, and its
+            // thin edge is wide in the picture: the foam there would be a pale band along the whole bank.
+            foam *= 1.0 - 0.85 * step(-1000.0, bankBack) * smoothstep(0.6, 1.3, waterWorld.z);
             shoreFade = smoothstep(0.0, 0.01, deep);
             top *= 1.0 - 0.3 * (1.0 - smoothstep(0.02, 0.3, deep));
           }
@@ -1075,7 +1107,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   });
   const first = chapter.ground?.[0];
   const last = chapter.ground?.[chapter.ground.length - 1];
-  const shape = waterShape(pools, kind, first && last ? { from: first.x, to: last.x } : undefined, setting.street, stretches);
+  const shape = waterShape(pools, kind, first && last ? { from: first.x, to: last.x } : undefined, setting.street, stretches, setting.open);
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new Float32BufferAttribute(shape.position, 3));
   geometry.setAttribute('part', new Float32BufferAttribute(shape.part, 4));
@@ -1116,8 +1148,11 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   }
   // The water is drawn in the scene's own pass, after what stands in it. Just before it, High copies the
   // picture so far at half size, to see through the surface: only while water is in the picture at all.
-  // The banks: each pool's two ends, and how high the ground stands over them.
-  const banks = pools.map((w) => ({ w, left: setting.street?.(w.from - 0.4) ?? -1e6, right: setting.street?.(w.to + 0.4) ?? -1e6, d: 0 }));
+  // The banks: each pool's two ends, and how high the ground stands over them. A pool that runs on towards the camera
+  // has none here: its banks' lines wander (./dressing/natural.ts), and two upright walls along its ends, mirrored, were
+  // a straight band across its water at the path's edge. High mirrors its real banks from the picture itself.
+  const runsOn = (w: { from: number }) => setting.open?.pools.some((pool) => pool.from === w.from) ?? false;
+  const banks = pools.map((w) => ({ w, left: runsOn(w) ? -1e6 : setting.street?.(w.from - 0.4) ?? -1e6, right: runsOn(w) ? -1e6 : setting.street?.(w.to + 0.4) ?? -1e6, d: 0 }));
   // The trunks near the water, found in the scene the first time it is drawn.
   let trunks: { x: number; z: number; wide: number; top: number; tint: Color; d: number }[] | null = null;
   const findTrunks = (scene: Object3D) => {
@@ -1358,7 +1393,8 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
       if (i < 0) return;
       const pool = pools[i]!;
       under[i] = Math.max(0, pool.y - y);
-      uniforms.fill.value.set(pool.from, pool.to, under[i]!, 0);
+      // An open pool's water reaches in under its banks: all of it stands lower.
+      uniforms.fill.value.set(pool.from, pool.to, under[i]!, setting.open?.pools.some((w) => w.from === pool.from) ? OPEN_UNDER : 0);
       causticPools[i]?.setZ(pool.y - under[i]!);
     },
     /** Something touches the water at x, z: a ring spreads from there (Mid and High). `strength` 1 is a landing. */
