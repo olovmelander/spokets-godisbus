@@ -224,11 +224,12 @@ describe('Pappa\'s flashlight in Stormkvällen', () => {
     // Down at him: it went up to the ceiling.
     expect(beam().y).toBeLessThan(-0.3);
     expect(beam().angleTo(toElof())).toBeLessThan(0.05);
-    // And so on into the next scene, until that turns him to the shelf.
+    // And so on into the next scene, until the gust sends him to the window (at 2.3 s since the candy bowl's leap
+    // came into it, 14 November), his lamp out into the dark.
     flags.add('goodnight');
-    for (let t = 0; t <= 3; t += 1 / 30) draw({ id: 'fonstret', seconds: t });
+    for (let t = 0; t <= 2.2; t += 1 / 30) draw({ id: 'fonstret', seconds: t });
     expect(beam().y).toBeLessThan(-0.3);
-    for (let t = 3; t <= 9.6; t += 1 / 30) draw({ id: 'fonstret', seconds: t });
+    for (let t = 2.2; t <= 9.6; t += 1 / 30) draw({ id: 'fonstret', seconds: t });
     expect(beam().y).toBeGreaterThan(0);
   });
 

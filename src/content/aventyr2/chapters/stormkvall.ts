@@ -612,9 +612,11 @@ const SCENES: SceneDef[] = [
       // the door: a body setting off or turning is wider than one walking.
       actors: {
         pappa: [
-          { at: COME_OUT, x: FROM_HOUSE.pappa, y: 0, z: LANE, face: 0, move: 0.01, act: 'walk' },
+          // A tenth nearer the camera than the others' lane: the hand that carries his lamp out in front of him
+          // (render/lamp-hold.ts) passes the door's back post with room to spare.
+          { at: COME_OUT, x: FROM_HOUSE.pappa, y: 0, z: LANE + 0.1, face: 0, move: 0.01, act: 'walk' },
           // His lamp lights the deck ahead of him as he comes: out towards the garden, not back at the door.
-          { at: COME_OUT + 0.05, x: DECK.pappa.x - 0.5, y: -0.8, z: LANE, move: 2.85, beam: AHEAD },
+          { at: COME_OUT + 0.05, x: DECK.pappa.x - 0.5, y: -0.8, z: LANE + 0.1, move: 2.85, beam: AHEAD },
           { at: 3.0, x: DECK.pappa.x, y: -0.8, z: DECK.pappa.z, face: DECK.pappa.face, move: 0.6 },
           { at: 3.6, act: 'kneel', aim: { x: DECK.pappa.x, y: -0.3, z: 0 } },
         ],
