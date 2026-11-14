@@ -505,9 +505,9 @@ function createGather() {
     { flat: 0, pitch: 0, raise: 0, out: 0, carry: 0, planted: true, seconds: 0 },
     { flat: 0, pitch: 0, raise: 0, out: 0, carry: 0, planted: true, seconds: 0 },
   ];
-  let active = false, t = 0, first: 0 | 1 = 0, hips = 0, bounce = 0;
-  /** How long the hips and the soles take to come level, in seconds. */
-  const LEVEL = 0.14;
+  let active = false, t = 0, first: 0 | 1 = 0, hips = 0, bounce = 0, drawnHips = 0;
+  /** How long the hips and the soles take to come level, in seconds; and how quickly the hips rise, a second. */
+  const LEVEL = 0.14, RISE = 16;
   return {
     get active(): boolean { return active; },
     reset(): void { active = false; },
@@ -522,6 +522,7 @@ function createGather() {
       const over = ankles.map((ankle) => ankle.down + rolled(0, ankle.pitch, legs, rolling).y);
       const standing = [0, 1].filter((side) => down[side]);
       hips = standing.length > 0 ? standing.reduce((sum, side) => sum + over[side]!, 0) / standing.length : Math.max(over[0]!, over[1]!);
+      drawnHips = hips;
       for (const side of [0, 1] as const) {
         const ankle = ankles[side], foot = feet[side];
         foot.pitch = ankle.pitch; foot.out = ankle.out; foot.planted = down[side];
@@ -556,9 +557,13 @@ function createGather() {
         return { x: rolling.x, y: rolling.y + raise, pitch, out: foot.out * (1 - level), k, moving: k > 0 && k < 1 && foot.planted };
       });
       // The hips come up to standing as the feet come in under them: never higher than either leg reaches its foot from, in
-      // the air or on the ground, so that they rise as a foot comes home, and not in the frame it lifts.
-      let high = hips + (legs.hip - hips) * level;
-      for (const foot of placed) high = Math.min(high, foot.y + Math.sqrt(Math.max(0, most * most - foot.x * foot.x - foot.out * foot.out)));
+      // the air or on the ground, so that they rise as a foot comes home, and not in the frame it lifts. They rise softly,
+      // coming to rest as they get there: a knee near straight turns a lot for a little rise, and hips that rose as fast as
+      // a foot lifted, or stopped short at a leg's full length, snapped the other knee straight.
+      let want = hips + (legs.hip - hips) * level;
+      for (const foot of placed) want = Math.min(want, foot.y + Math.sqrt(Math.max(0, most * most - foot.x * foot.x - foot.out * foot.out)));
+      drawnHips = want < drawnHips ? want : drawnHips + (want - drawnHips) * (1 - Math.exp(-RISE * dt));
+      const high = drawnHips;
       placed.forEach((foot, side) => reachWith(foot.x, high - foot.y, foot.out, foot.pitch, legs, pose, side as 0 | 1));
       // The weight over the foot that stays while the other steps, and back to the middle as it comes down.
       for (const side of [0, 1] as const) {

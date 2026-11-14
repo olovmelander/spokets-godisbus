@@ -246,6 +246,22 @@ describe('Elof’s walk through the game’s own loop', () => {
     const { slid, frames } = slide(shots, 1, STAND_IN_LEGS);
     expect(slid / frames * (shots.length / (shots[shots.length - 1]!.x - shots[0]!.x))).toBeLessThan(0.05);
   });
+
+  it('stops without snapping a knee straight, wherever in a step he is stopped', () => {
+    // As his feet came home the hips rose as fast as a foot lifted, and stopped short at a leg's full length: the other
+    // knee snapped straight, at 40 to 50 radians a second at home where he strides at under 15.
+    for (const tall of [1, 3]) for (const push of [0.6, 1]) {
+      let stopping = 0;
+      for (const until of [1.8, 1.85, 1.9, 1.95, 2, 2.05, 2.1]) {
+        const shots = play(FLAT, (t) => ({ x: t > 0.3 && t < until ? push : 0 }), until + 1.2, 240, tall);
+        for (let i = 1; i < shots.length; i++) for (const joint of ['legL', 'legR', 'kneeL', 'kneeR'] as const) {
+          if (shots[i]!.t > until) stopping = Math.max(stopping, Math.abs(shots[i]!.pose[joint] - shots[i - 1]!.pose[joint]) / shots[i]!.dt);
+        }
+      }
+      // Radians a second, at 240 pictures a second: at home he walks with his knees turning at under 10, runs at under 15.
+      expect(stopping).toBeLessThan(tall === 3 ? 25 : 40);
+    }
+  });
 });
 
 describe('the follower under a stride', () => {
