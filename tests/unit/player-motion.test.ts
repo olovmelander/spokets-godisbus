@@ -100,6 +100,26 @@ describe('the player’s shared motion', () => {
     expect(runReach.elbowR).toBeGreaterThan(runReach.elbowL);
   });
 
+  it('leans well into a run with his head up, and keeps leaning the way he goes when he jumps on the run', () => {
+    // Olov, 14 November 2026: "Elof lutar så mycket bakåt när han springer". His legs reach far ahead with each step,
+    // so the trunk leans clearly forward: about twenty degrees, the head held up to look ahead.
+    const body = createPlayerStandIn(), at = (name: string) => body.group.getObjectByName(name)!.getWorldPosition(new Vector3());
+    for (let i = 0; i < 16; i++) {
+      const phase = i * Math.PI / 8, run = target(player(), phase, 1), walk = target(player(), phase, WALK_SPEED / RUN_SPEED);
+      expect(run.lean).toBeGreaterThan(0.3);
+      expect(run.lean).toBeGreaterThan(walk.lean + 0.25);
+      expect(run.lean + run.nod).toBeGreaterThan(0.1);
+      expect(run.lean + run.nod).toBeLessThan(0.25);
+      body.pose(run); body.group.updateWorldMatrix(true, true);
+      const head = at('player-head'), hips = at('player-hip-left').add(at('player-hip-right')).multiplyScalar(0.5);
+      expect(Math.atan2(head.x - hips.x, head.y - hips.y)).toBeGreaterThan(0.25);
+    }
+    for (const vy of [JUMP_SPEED * 0.6, 0, -JUMP_SPEED * 0.6]) {
+      const air = (carry: number) => playerPose(player({ grounded: false, vy }), 0, 0, 0, { ...STANDING }, undefined, { t: 1, pushed: true, carry });
+      expect(air(1).lean).toBeGreaterThan(air(0).lean + 0.1);
+    }
+  });
+
   it('paces the stride by how far the legs swing and by his size, so the planted foot holds still', () => {
     for (const pace of [WALK_SPEED / RUN_SPEED, 0.7, 1]) {
       // One step, half a turn of the stride, is as long as the ground the swinging leg covers.

@@ -1,5 +1,32 @@
 # Handover
 
+## State (14 November 2026): Elof leans into his run
+
+- **Olov:** "Vi måste fixa så att Elof inte lutar så mycket bakåt när han springer. Det ser konstigt ut."
+- **Cause:** at a full run his trunk leaned forward only 0.18 rad (about 10°), and his run has no moment with both feet
+  off the ground: a straight leg reaches far ahead with each step (on a body whose legs are a third of its height, as the
+  family's are, the thigh swings about ±55° and the foot comes down about 0.23 EL ahead of the hips). Just after each
+  foot came down, the line from that foot to his head leaned up to 15° backwards, and the near-upright trunk read as
+  leaning back.
+- **Fix** (`playerPose` and `airPose` in `src/render/player-motion.ts`): running, he leans 0.35 rad (about 20°; on a
+  model with three spine bones about 22°), and his head nods back by 0.18 to hold it up and look ahead (the head itself
+  ends about 9–12° forward). Jumping on the run, he keeps 0.14 rad more forward lean in the air, as far as he was
+  running. The walk is as it was. Measured on the stand-in and on a short-legged test skeleton with the family's bone
+  names: the trunk goes from about 10° to 20–22° forward, and the foot-to-head line from as much as −15° to −11° at worst
+  and from +3° to +7° on average.
+- **Guard:** `tests/unit/player-motion.test.ts`, "leans well into a run with his head up …" (it fails on the old numbers).
+- **Not checked on the real Elof:** the private repository could not be attached to this cloud session, so the change
+  was seen only on the public stand-in (in the game's own camera, before and after) and on test skeletons. The rig maps
+  the lean the same way on both (`rig.ts`, tested), but Olov should look at a run on a device.
+- **If it still looks wrong:** the larger fix is a run with a short moment in the air between steps, so the foot comes
+  down nearer under him with the knee bent (as the family's Blender gaits do, `src/render/gait.ts`). That rewrites Elof's
+  stride and its tests, and is best judged on the real model.
+- **Validation:** typecheck, all 3,012 tests, the build (705.2 KB gzipped JS) and the privacy check pass; the browser
+  smoke test passes; `tests/browser/player-motion.mjs` passes all 19 motion checks, and its console check failed only
+  on Vite's websocket, which the cloud's newer Chromium blocks (not from this change).
+- **Next:** Olov runs with Elof on a device and says whether the lean is right. Needs no Blender and no particular
+  computer.
+
 ## State (13 November 2026, evening): Mormor out of the sofa in Morgonen efter
 
 - **Olov, playing Äventyr 2 through:** "På morgonen i äventyr 2 så står mormor mitt i soffkanten, vi måste fixa det!"
@@ -6541,6 +6568,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Elof's run lean (14 Nov) | Elof leans back too much when he runs | One cloud session | — / 1 report | Twice the forward lean at a run, the head held up, a forward lean in running jumps; seen on the stand-in, not yet on the real Elof |
 | Mormor and the sofa (13 Nov, evening) | Mormor stands in the sofa's arm in Morgonen efter | One session on Olov's computer, while he played Äventyr 2 | — / 1 report | Grandparents' body offset in one constant; Mormor behind the table's far end; a sofa-clearance test |
 | Äventyr 1 round (13 Nov) | Olov's 18 points from playing Äventyr 1 | The same session: seven builders and the lead; Blender headless for the pine | — / 1 list (+1 correction) | Ghost on the floor and getting away, hands on knees, Moa's drawing and shyness, picture colours, the walk into the forest, thanks to Bertil and from the ghost, time cards, the lysklubba, the ghost's lace, the cairn line, the old pine and stones, one pull, no eye painting; 5 lines recorded |
 | Creature overhaul (13 Nov) | Every animal and creature designed and animated in Blender | One session on Olov's computer: a pilot, then seven builders; Blender headless | — / 2 requests | A rigging pipeline and a clip player; the crane, chick, jay, owl, fox, squirrel, vättar, beaver, otter, ducks, frog, hedgehog and snail rigged; insects, bats, ants, birds and far flocks remade |
