@@ -54,6 +54,13 @@ export interface ExtraFrame {
   darkness?: number;
   /** What each of the chapter's gusts is doing, in its order (the simulation's): blowing (0 to 1), or about to. */
   gusts?: readonly { blow: number; warn: number }[];
+  /** The chapter's bouncers, in its order: how flat each is after a bounce, from 1 to 0 (the simulation's). */
+  bouncers?: readonly { squash: number }[];
+  /**
+   * For the picture only: an extra adds here how far over the simulation's place he is to be drawn this frame, for
+   * what it draws under his feet that the simulation does not know (the trampoline's mat). 0 as each frame begins.
+   */
+  stand?: { lift: number };
 }
 
 export interface ViewExtra {

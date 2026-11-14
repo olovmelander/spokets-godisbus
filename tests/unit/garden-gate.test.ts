@@ -14,7 +14,7 @@ import type { ChapterData } from '../../src/sim/types';
  */
 
 let garden: ChapterData;
-let stormgard: ChapterData;
+let stormbyn: ChapterData;
 let gate: Gate;
 let dressing: Object3D;
 
@@ -25,7 +25,7 @@ beforeAll(async () => {
   vi.stubGlobal('window', { innerWidth: 1180, innerHeight: 820, devicePixelRatio: 1 });
   await loadAdventure2();
   garden = COURSES.garden!;
-  stormgard = ADVENTURE2.find((chapter) => chapter.id === 'stormgard')!;
+  stormbyn = ADVENTURE2.find((chapter) => chapter.id === 'stormbyn')!;
   gate = gateOf(garden)!;
   dressing = dress(garden, PLACES.garden).group;
   dressing.updateMatrixWorld(true);
@@ -41,7 +41,14 @@ function first(from: Vector3, to: Vector3, among: Object3D[]): { name: string; z
 
 describe("Gården's hedge, with its arch into the forest", () => {
   it('has the arch only where a hedge is marked, beside the goal, with the hedge\'s tall end on its right', () => {
-    expect(gateOf(stormgard)).toBeNull();
+    // Stormbyn's hedge is not marked, and has none (Stormgården's has its own: ./stormgard-gate.test.ts).
+    expect(stormbyn.surfaces!.some((surface) => surface.kind === 'hedge')).toBe(true);
+    expect(gateOf(stormbyn)).toBeNull();
+    // On the lawn, with no lip to walk on: the forest's floor is the lawn's, by day.
+    expect(gate.lip).toBe(false);
+    expect(gate.floor).toBe(gate.base);
+    expect(gate.storm).toBe(false);
+    expect([gate.front, gate.back, gate.open.from, gate.open.to, gate.open.spring]).toEqual([-4, -6.6, 210.6, 213.3, 2.2].map((v) => expect.closeTo(v, 6)));
     const end = garden.ground.at(-1)!.x;
     // Just before the end of the ground, and around where he stops at the goal and the big candy stands.
     expect(gate.open.from).toBeLessThan(garden.goalX + 0.9);
