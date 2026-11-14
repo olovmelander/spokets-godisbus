@@ -95,6 +95,8 @@ const KIT: Ledge = { x: 66.5, y: 1.1, width: 3.8, look: 'plank' };
  */
 const BALL: Mover = {
   id: 'ol-ball', look: 'football', width: AFLOAT.to - AFLOAT.from, height: BALL_HIGH, verb: 'push', word: 'olKick',
+  // A second for each kick: time to see it fly, bounce and roll (../big-ball.ts). In 0.6 it was nearly there in a blink.
+  seconds: 1,
   stops: [{ x: 66.9, y: KIT.y }, { x: 71.8, y: 0 }, { x: 73, y: 0 }, { x: round(BANK.to - BALL_HIGH / 2), y: 0 }, { x: round((AFLOAT.from + AFLOAT.to) / 2), y: AFLOAT.y - BALL_HIGH }],
 };
 const BALL_WAY: Stone[] = [BANK, AFLOAT, FAR];

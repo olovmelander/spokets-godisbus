@@ -54,6 +54,7 @@ import { jettyWavesExtra } from '../../render/jetty-waves';
 import { teamBenchesExtra } from './team-benches';
 import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
+import { bigBall, rollBalls } from './big-ball';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -880,6 +881,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       elof.y = y;
       elof.riding = riding;
       elof.scene = moment;
+      // The wind's balls turn as far as they roll (./big-ball.ts).
+      if (balls) rollBalls(balls);
       drift?.(dt, still);
       // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him. Its downstroke is
       // the slower, and between bursts it glides on wings held near level (a positive turn lowers its wings).
@@ -3214,7 +3217,8 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       }
       return group;
     },
-    football: (mover) => { const g = new Group(); g.add(football(Math.min(mover.width, mover.height) / 2)); return g; },
+    // Olympia's big ball: it rolls, flies, bounces and floats (./big-ball.ts).
+    football: (mover) => bigBall(mover, { chapter: () => playing.chapter, still: () => elof.still, splash: waterSplash(1) }),
     raft: (mover) => { const g = new Group(); g.add(raft(mover.width, mover.height)); return g; },
     buoy: (mover) => {
       // A swimming buoy: a white float with a red band, bobbing.
