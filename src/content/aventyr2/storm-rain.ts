@@ -15,6 +15,14 @@ export function rainStreakAlpha(uvY: number): number {
   const along = 1 - uvY;
   return Math.pow(along, 1.6) * (1 - Math.pow(along, 14));
 }
+/**
+ * Under a roof it does not rain. A stretch of the course that is roofed over while he is in under it (Billsta's loft,
+ * whose front is taken away while he is inside: ./barn-loft.ts) is named here by whoever draws the roof, each frame, and
+ * the storm's drops and their landings leave it out. `dry`, 0 to 1: how far the roof's front has gone. Whoever builds
+ * a chapter's storm clears it.
+ */
+export const UNDER_ROOF = { from: 0, to: 0, dry: 0 };
+export const underRoof = (x: number) => UNDER_ROOF.dry > 0.5 && x > UNDER_ROOF.from && x < UNDER_ROOF.to;
 export interface LandingSeed { x: number; z: number; phase: number; every: number }
 export interface LandingAnchor { cycle: number; x: number; z: number }
 /** A new impact chooses a point near the view once; its whole growing ring keeps that world position. */

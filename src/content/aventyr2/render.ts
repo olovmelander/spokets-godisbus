@@ -56,7 +56,7 @@ import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
-import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
+import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, UNDER_ROOF, underRoof, type LandingAnchor } from './storm-rain';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -537,6 +537,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const base = { hemisphere: hemisphere.intensity, sun: sun.intensity };
   // A home with a door out into the storm: the room's warm lamps stay behind him, and the night has the light.
   const doorway = rain > 0 ? chapter.outdoors : undefined;
+  UNDER_ROOF.dry = 0;
   const room = { sky: hemisphere.color.clone(), ground: hemisphere.groundColor.clone(), sun: sun.color.clone() };
   // The room's lamps on the evening of the storm, until the power goes (../../render/power-cut.ts).
   const powerCut = chapter.id === POWER_CHAPTER ? createPowerCut(chapter.id, PENDANT, scene) : null;
@@ -993,7 +994,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const at = rainDropAt(s, t, cx, cy);
           place.position.set(at.x, at.y, s.z + cz);
           // No rain falls indoors: only out of doors, beyond the house's corner.
-          const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
+          const out = (chapter.outdoors !== undefined && place.position.x < chapter.outdoors) || underRoof(place.position.x) ? 0 : 1;
           place.scale.set(out, out * s.long, out);
           place.updateMatrix();
           drops.setMatrixAt(i, place.matrix);
@@ -1011,7 +1012,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const at = rainLandingAt(s, i, t, cx, landingAnchors[i]);
           landingAnchors[i] = at;
           const { x, age: k } = at;
-          const out = chapter.outdoors !== undefined && x < chapter.outdoors;
+          const out = (chapter.outdoors !== undefined && x < chapter.outdoors) || underRoof(x);
           const ground = heightAt(chapter, x), water = openWaterAt(chapter, x);
           place.position.set(x, Math.max(ground, water ?? ground) + 0.02, at.z);
           place.rotation.set(0, 0, 0);
