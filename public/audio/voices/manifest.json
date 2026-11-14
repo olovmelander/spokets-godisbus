@@ -1425,12 +1425,12 @@
   },
   "skHandful": {
     "speaker": "moa",
-    "text": "Jag såg honom ta en näve ur skålen!",
+    "text": "Jag såg gamla trägubben ta en näve godis!",
     "tag": "[bright]",
     "voiceId": "tPrL2xYfkQnwJhHMMdRM",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:25.550Z"
+    "generatedAt": "2026-11-14T23:30:04.506Z"
   },
   "skTrail": {
     "speaker": "elof",
@@ -3273,12 +3273,12 @@
   },
   "soLastOne": {
     "speaker": "elof",
-    "text": "Ditt allra sista. Det sparade du åt mig.",
-    "tag": "[thoughtful]",
+    "text": "Tack, gamla trägubben! Ditt allra sista.",
+    "tag": "[grateful]",
     "voiceId": "pKEH83CenvGnvS9JlN8f",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:45:06.164Z"
+    "generatedAt": "2026-11-14T23:30:04.363Z"
   },
   "soGoldLine": {
     "speaker": "elof",
@@ -3819,5 +3819,32 @@
     "model": "eleven_v4",
     "stability": 0.35,
     "generatedAt": "2026-11-14T23:23:58.820Z"
+  },
+  "skBertilGreet": {
+    "speaker": "bertil",
+    "text": "Hälsa lillgubben att vi kommer!",
+    "tag": "[bright]",
+    "voiceId": "JsPUTLdHju8qRnxHL4lo",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:30:04.307Z"
+  },
+  "skMoaSmall": {
+    "speaker": "moa",
+    "text": "Små kan hitta små, lillebror!",
+    "tag": "[bright]",
+    "voiceId": "tPrL2xYfkQnwJhHMMdRM",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:30:04.325Z"
+  },
+  "soLightThem": {
+    "speaker": "elof",
+    "text": "Men lamporna når jag. Jag tänder dem!",
+    "tag": "[excited]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:30:05.893Z"
   }
 }
