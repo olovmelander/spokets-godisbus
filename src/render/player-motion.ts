@@ -10,10 +10,11 @@ import { GAITS, STANDS } from './motion-data';
  * in bigger boots. His boots are two thirds as long as his legs (the family's shoes are under half): rolled from heel to
  * toe as far as Bertil rolls his, and lifted as high, the ankle came up half his leg's length and the knee past a right
  * angle, as in a march. He rolls them less and lifts them less, so that the knee bends about as far as a walking child's;
- * and his leg, reaching for the ground at the end of a step, straightens softly instead of stopping straight in a frame.
+ * and his leg, reaching for the ground at the end of a step, straightens softly instead of stopping straight in a frame,
+ * the foot slowing as it comes down rather than swinging out past where it lands (`paw`).
  */
-const own = (gait: Gait, lift: number, clear: number, roll: number, soft: number, toes = 0): Gait => ({
-  ...gait, lift, clear, soft,
+const own = (gait: Gait, lift: number, clear: number, roll: number, soft: number, paw: number, toes = 0): Gait => ({
+  ...gait, lift, clear, soft, paw,
   // (Toes up as the heel comes down and for a moment each side of it: a raised cosine, cubed, as its Fourier series.)
   pitch: gait.pitch.map((value, i) => value * roll + toes * ([0.3125, 0.46875, 0, 0.1875, 0, 0.03125][i] ?? 0)),
 });
@@ -22,7 +23,7 @@ const own = (gait: Gait, lift: number, clear: number, roll: number, soft: number
  * the ground (./gait.ts): it comes in through the air with its toes up already. Level until it touched, it flicked up
  * in the frame it landed.
  */
-const BOY: Strider = { walk: own(GAITS.bertil.walk, 0.022, 0.13, 0.4, 0.06), run: own(GAITS.bertil.run, 0.05, 0.16, 0.5, 0.08, 0.3) };
+const BOY: Strider = { walk: own(GAITS.bertil.walk, 0.022, 0.13, 0.4, 0.06, 0.5), run: own(GAITS.bertil.run, 0.05, 0.16, 0.5, 0.08, 0.7, 0.3) };
 /**
  * Walked somewhere by a scene (its `walk` act, ./acting.ts), he takes his own steps on his own legs: at a trot, this many
  * of his heights a second, whatever way the scene moves him. (He strode as Pappa does, on the rehearsal figure's legs.)
@@ -548,7 +549,7 @@ function createGather() {
         // (It is over its place a little before it is down, and comes straight down onto it: it does not scuff the last of the way.)
         const j = Math.min(1, k / 0.85);
         const flat = (2 * j * j * j - 3 * j * j + 1) * foot.flat + (j * j * j - 2 * j * j + j) * foot.carry;
-        const hop = foot.planted && foot.seconds > 0 ? Math.min(0.035, 0.008 + 0.18 * Math.abs(foot.flat)) * Math.sin(Math.PI * k) ** 0.8 : 0;
+        const hop = foot.planted && foot.seconds > 0 ? Math.min(0.035, 0.008 + 0.18 * Math.abs(foot.flat)) * Math.sin(Math.PI * k) ** 2 : 0;
         const raise = foot.raise * (1 - e) + hop;
         const pitch = foot.pitch * (1 - (foot.planted ? Math.max(level, e) : e));
         rolled(flat, pitch, legs, rolling);

@@ -28,6 +28,12 @@ export interface Gait {
   /** The least a swinging foot is lifted, a share of the way it goes (left out: 0.22): however short the step, it is not dragged. */
   clear?: number;
   /**
+   * How fast a swinging foot is already going back under the hips as it comes down, a share of how fast the ground goes
+   * (left out: all of it). All of it, the foot swings out past where it lands and comes back onto it; on short legs that
+   * is past their reach, and the knee was flung straight at the end of every swing.
+   */
+  paw?: number;
+  /**
    * How far short of full stretch the legs are softened, a share of the leg (left out: none in a walk, 0.08 in a run):
    * past it the foot falls a little short and the knee goes on straightening smoothly, where it would stop in a frame.
    */
@@ -147,8 +153,8 @@ function foot(c: number, step: number, at: (pick: (g: Gait) => number) => number
   out.pitch = pitchAt(c);
   rolled(left ?? -step * stance + ahead, pitchAt(stance), legs, start);
   rolled(step * stance + ahead, pitchAt(1), legs, end);
-  const speed = -2 * step * (1 - stance), w2 = w * w, w3 = w2 * w;
-  out.x = (2 * w3 - 3 * w2 + 1) * start.x + (w3 - 2 * w2 + w) * speed + (-2 * w3 + 3 * w2) * end.x + (w3 - w2) * speed;
+  const speed = -2 * step * (1 - stance), w2 = w * w, w3 = w2 * w, coming = speed * at((g) => g.paw ?? 1);
+  out.x = (2 * w3 - 3 * w2 + 1) * start.x + (w3 - 2 * w2 + w) * speed + (-2 * w3 + 3 * w2) * end.x + (w3 - w2) * coming;
   const peak = clamp(at((g) => g.peak), 0.15, 0.85), bend = Math.log(0.5) / Math.log(peak);
   const rise = Math.sin(Math.PI * Math.pow(w, bend)) ** 2;
   // However short the step, the foot is lifted to make it, never dragged: a share of the way it goes, at least.
