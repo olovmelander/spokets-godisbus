@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
-import { Group, type Object3D, type SkinnedMesh } from 'three';
+import { Group, PerspectiveCamera, Quaternion, Scene, Vector3, type Object3D, type SkinnedMesh } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { describe, expect, it } from 'vitest';
 import { SICKAN, stormgard } from '../../src/content/aventyr2/chapters/stormgard';
 import { words } from '../../src/content/aventyr2/lines/stormgard';
-import { attachSickan, standInCat } from '../../src/content/aventyr2/sickan';
+import { attachSickan, sickan, sickanNow, standInCat } from '../../src/content/aventyr2/sickan';
 import {
-  FPS, FRAMES, JUMP, LID_OPEN, SICKAN_SIZE, TROT_SPEED, TROT_STRIDE, WALK_STRIDE, createSickan, leapSeconds, placeFor, stepSickan,
+  FPS, FRAMES, JUMP, LID_OPEN, SICKAN_SIZE, TROT_SPEED, TROT_STRIDE, TURN_STEP, WALK_STRIDE, createSickan, leapSeconds, placeFor, stepSickan,
   type SickanState,
 } from '../../src/content/aventyr2/sickan-life';
 import { heightAt, landscape } from '../../src/render/dressing/kit';
@@ -236,15 +236,16 @@ describe('Sickan\'s life (src/content/aventyr2/sickan-life.ts)', () => {
     }
   });
 
-  it('walks and trots without sliding: her stride is counted by how far she goes', () => {
+  it('walks and trots without sliding: her stride is counted by how far her feet go, along and round', () => {
     const { frames } = play(stormgard.spawn.x, 80, RUN_SPEED);
     let checked = 0;
     for (let i = 1; i < frames.length; i++) {
       const a = frames[i - 1]!.state, b = frames[i]!.state;
       if (a.mode !== 'go' || b.mode !== 'go' || a.gait !== b.gait || a.step !== b.step || a.place !== b.place) continue;
       const gone = Math.hypot(b.x - a.x, b.z - a.z);
+      const turned = Math.abs(Math.atan2(Math.sin(b.heading - a.heading), Math.cos(b.heading - a.heading)));
       const stride = (b.gait === 'walk' ? WALK_STRIDE : TROT_STRIDE) * SICKAN_SIZE;
-      expect(b.stride - a.stride).toBeCloseTo(gone / stride, 6);
+      expect(b.stride - a.stride).toBeCloseTo((gone + turned * TURN_STEP) / stride, 6);
       expect(b.show.clip).toBe(b.gait);
       checked++;
     }
@@ -312,5 +313,106 @@ describe('Sickan\'s life (src/content/aventyr2/sickan-life.ts)', () => {
     // wide picture before the one she left has gone from it; at the others he meets her as ever.
     expect(places.has('bank')).toBe(false);
     for (const id of ['veranda', 'pots', 'far-bank', 'playhouse', 'root']) expect(places.has(id), id).toBe(true);
+  });
+});
+
+describe('Sickan in the picture (src/content/aventyr2/sickan.ts)', () => {
+  /** Her picture with her model in it, a camera on him, and a way to play frames of it. */
+  async function picture() {
+    const scene = new Scene();
+    let sky = 1;
+    const extra = sickan(stormgard, SICKAN, scene, () => sky);
+    expect(attachSickan(scene.getObjectByName('sickan-fit')!, await model())).toBe(true);
+    const camera = new PerspectiveCamera(40, 16 / 9, 0.1, 400);
+    const frames = (seconds: number, x: number, y: number, more: { still?: boolean; gust?: number } = {}) => {
+      for (let t = 0; t < seconds; t += 1 / 60) {
+        camera.position.set(x + 2, y + 3, 14);
+        camera.lookAt(x + 2, y + 2, 0);
+        camera.updateMatrixWorld(true);
+        extra.update({ dt: 1 / 60, clock: t, flags: new Set(), x, y, camera, still: more.still ?? false, tier: 'high', riding: false, gusts: [{ blow: more.gust ?? 0, warn: 0 }] });
+      }
+      scene.updateMatrixWorld(true);
+    };
+    const bone = (name: string) => scene.getObjectByName(name)!;
+    /** The way her nose points, in the world. */
+    const nose = () => {
+      const head = bone('head');
+      const from = head.getWorldPosition(new Vector3());
+      // A bone's own Y runs along it: her head's, out along her muzzle.
+      return head.localToWorld(new Vector3(0, 1, 0)).sub(from).normalize();
+    };
+    return { scene, frames, bone, nose, light: (value: number) => { sky = value; } };
+  }
+
+  it('turns her head to him while she rests and he is near, and holds it there (nothing added frame upon frame)', async () => {
+    const { frames, nose, scene } = await picture();
+    const veranda = SICKAN[0]!;
+    // He stands a little before her, on the deck, in front of the path she sits behind: not so near that she gets up.
+    const elof = { x: veranda.x - 5, y: veranda.y! };
+    expect(elof.x).toBeLessThan(veranda.go);
+    frames(1.5, elof.x, elof.y);
+    expect(sickanNow()!.place).toBe(0);
+    expect(sickanNow()!.mode).toBe('rest');
+    /** The way from her head to his. */
+    const toHim = () => new Vector3(elof.x, elof.y + 0.55, 0).sub(scene.getObjectByName('head')!.getWorldPosition(new Vector3())).normalize();
+    expect(nose().dot(toHim())).toBeGreaterThan(0.9);
+    // Ten seconds on she still looks at him: her clips move her a little, the look itself does not wind on.
+    frames(10, elof.x, elof.y);
+    expect(nose().dot(toHim())).toBeGreaterThan(0.9);
+    // With him far off she looks the way she sits.
+    frames(3, veranda.x - 30, elof.y);
+    const ahead = new Vector3(Math.cos(veranda.face), 0, -Math.sin(veranda.face));
+    expect(nose().dot(ahead)).toBeGreaterThan(0.9);
+  });
+
+  it('is shown in a mirror where she faces left, so that her tail lies on the side of the camera', async () => {
+    const { frames, scene } = await picture();
+    frames(0.5, SICKAN[0]!.x - 20, SICKAN[0]!.y!);
+    const fit = scene.getObjectByName('sickan-fit')!;
+    expect(Math.cos(SICKAN[0]!.face)).toBeLessThan(0);
+    expect(fit.scale.z).toBeCloseTo(-SICKAN_SIZE, 5);
+    expect(fit.scale.x).toBeCloseTo(SICKAN_SIZE, 5);
+    // The tip of her tail is nearer the camera (+z) than her rump is.
+    const tip = scene.getObjectByName('tail6')!.getWorldPosition(new Vector3());
+    const rump = scene.getObjectByName('tail1')!.getWorldPosition(new Vector3());
+    expect(tip.z).toBeGreaterThan(rump.z + 0.3);
+  });
+
+  it('lays her ears back at a flash of lightning and in a gust, and is over it soon after', async () => {
+    const { frames, bone, light } = await picture();
+    const pots = SICKAN.find((place) => place.id === 'pots')!;
+    frames(1, pots.x - 12, 0);
+    expect(sickanNow()!.fright).toBe(0);
+    const ear = () => bone('earL').quaternion.clone();
+    const calm = ear();
+    // A flash: the sky's light doubles for a moment.
+    light(2.1);
+    frames(0.1, pots.x - 12, 0);
+    light(1);
+    frames(0.1, pots.x - 12, 0);
+    expect(sickanNow()!.fright).toBeGreaterThan(0.7);
+    expect(ear().angleTo(calm)).toBeGreaterThan(0.3);
+    frames(2.5, pots.x - 12, 0);
+    expect(sickanNow()!.fright).toBe(0);
+    // A gust over the lawn where she lies.
+    frames(0.5, pots.x - 12, 0, { gust: 1 });
+    expect(sickanNow()!.fright).toBe(1);
+    expect(ear().angleTo(calm)).toBeGreaterThan(0.3);
+    // On the veranda the lawn's gusts do not reach her.
+    const { frames: other } = await picture();
+    other(0.5, SICKAN[0]!.x - 12, SICKAN[0]!.y!, { gust: 1 });
+    expect(sickanNow()!.fright).toBe(0);
+  });
+
+  it('with less motion holds her first pose: no look, no blink, no flinch', async () => {
+    const { frames, bone, light } = await picture();
+    const veranda = SICKAN[0]!;
+    frames(0.5, veranda.x - 5, veranda.y!, { still: true });
+    const pose = ['neck', 'head', 'earL', 'lidL'].map((name) => bone(name).quaternion.clone());
+    light(2.1);
+    frames(3, veranda.x - 5, veranda.y!, { still: true });
+    expect(sickanNow()!.place).toBe(0);
+    expect(sickanNow()!.fright).toBe(0);
+    for (const [i, name] of ['neck', 'head', 'earL', 'lidL'].entries()) expect(bone(name).quaternion.angleTo(pose[i] as Quaternion), name).toBeLessThan(1e-4);
   });
 });

@@ -46,8 +46,9 @@ let live: (() => SickanNow) | null = null;
 /** Where she is and what she is doing in the chapter being played, or null where she is not. */
 export const sickanNow = (): SickanNow | null => live?.() ?? null;
 
-/** The rig in its holder, once her file has come (kept beside the scene: three copies userData as JSON). */
+/** The rig in its holder, once her file has come, and how its fur is made (kept beside the scene: three copies userData as JSON). */
 const RIGS = new WeakMap<Object3D, CreatureClips>();
+const FURS = new WeakMap<Object3D, (material: MeshStandardMaterial) => MeshStandardMaterial>();
 
 const spin = new Quaternion();
 const parentTurn = new Quaternion();
@@ -154,6 +155,7 @@ function inPicture(camera: Camera, x: number, y: number, z: number, margin = 0.4
 
 /** Stormgården's cat (registered by ./render.ts). Other chapters get nothing. */
 export function sickanExtra({ chapter, scene, hemisphere }: ExtraContext): ViewExtra | null {
+  live = null;
   if (chapter.id !== 'stormgard') return null;
   return sickan(chapter, SICKAN, scene, () => hemisphere.intensity);
 }
@@ -174,9 +176,9 @@ export function sickan(chapter: ChapterData, places: readonly SickanPlace[], sce
   tilt.add(fit);
   scene.add(holder);
   const uniforms = { sickanSheen: { value: SHEEN.rest }, sickanEyes: { value: EYES.rest }, sickanSky: { value: SHEEN.colour } };
-  fit.userData.fur = (material: MeshStandardMaterial) => furMaterial(material, uniforms);
+  FURS.set(fit, (material) => furMaterial(material, uniforms));
   const sitting = standInCat(true), standing = standInCat(false);
-  const standIn = new Mesh(sitting, furMaterial(new MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }), uniforms));
+  let standIn: Mesh | null = new Mesh(sitting, furMaterial(new MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }), uniforms));
   standIn.name = 'sickan-stand-in';
   fit.add(standIn);
 
@@ -191,7 +193,7 @@ export function sickan(chapter: ChapterData, places: readonly SickanPlace[], sce
   const OWN = ['neck', 'head', 'ear.L', 'ear.R', 'lid.L', 'lid.R'] as const;
   let own: { bone: Object3D; pose: Quaternion }[] | null = null;
   const gustStretch = chapter.gusts?.[0];
-  const right = new Vector3(), up = new Vector3(0, 1, 0);
+  const right = new Vector3(), up = new Vector3(0, 1, 0), eyes = new Vector3();
 
   live = () => ({ ...state, show: { ...state.show }, from: { ...state.from }, rigged: !!RIGS.get(fit), fright, look });
 
@@ -215,17 +217,24 @@ export function sickan(chapter: ChapterData, places: readonly SickanPlace[], sce
 
       const rig = RIGS.get(fit);
       if (!rig) {
-        standIn.geometry = state.mode === 'rest' && state.show.clip !== 'stand' ? sitting : standing;
+        if (standIn) standIn.geometry = state.mode === 'rest' && state.show.clip !== 'stand' ? sitting : standing;
         return;
       }
-      standIn.visible = false;
+      if (standIn) {
+        // Her own model has come: the stand-in has done its part.
+        standIn.removeFromParent();
+        (standIn.material as MeshStandardMaterial).dispose();
+        sitting.dispose();
+        standing.dispose();
+        standIn = null;
+      }
       const { clip, phase, once, fade } = state.show;
       if (phase !== undefined) rig.scrub(clip, phase);
       else rig.play(clip, { ...(fade !== undefined ? { fade } : {}), once: once ?? false, restart: clip !== shown && !!once });
       shown = phase === undefined ? clip : null;
       own ??= OWN.flatMap((name) => { const bone = rig.bone(name); return bone ? [{ bone, pose: bone.quaternion.clone() }] : []; });
       for (const { bone, pose } of own) bone.quaternion.copy(pose);
-      rig.update(still ? 0 : dt);
+      rig.update(dt);
       for (const { bone, pose } of own) pose.copy(bone.quaternion);
       if (still) return;
 
@@ -236,9 +245,12 @@ export function sickan(chapter: ChapterData, places: readonly SickanPlace[], sce
       const to = watching ?? { x, y: y + 0.55, z: 0 };
       const near = attentive && (watching !== null || Math.abs(x - state.x) < LOOK_RANGE);
       look += ((near ? 1 : 0) - look) * Math.min(1, dt * 4);
-      if (near) {
+      const neck = rig.bone('neck'), head = rig.bone('head');
+      if (near && head) {
         // Where he is from her head, in her own space: ahead, up, and to her right (the camera's side, facing +x).
-        const dx = to.x - state.x, dy = to.y - (state.y + 1.2 * SICKAN_SIZE), dz = to.z - state.z;
+        holder.updateWorldMatrix(true, true);
+        head.getWorldPosition(eyes);
+        const dx = to.x - eyes.x, dy = to.y - eyes.y, dz = to.z - eyes.z;
         const ahead = dx * Math.cos(state.heading) - dz * Math.sin(state.heading);
         const aside = (dx * Math.sin(state.heading) + dz * Math.cos(state.heading)) * (state.mirror ? -1 : 1);
         const wantYaw = Math.max(-LOOK.yaw, Math.min(LOOK.yaw, Math.atan2(aside, ahead)));
@@ -247,7 +259,6 @@ export function sickan(chapter: ChapterData, places: readonly SickanPlace[], sce
         pitch += (wantPitch - pitch) * Math.min(1, dt * LOOK.ease);
       }
       const turn = yaw * look, nod = (pitch * look) - 0.3 * fright;
-      const neck = rig.bone('neck'), head = rig.bone('head');
       // A turn to her right is a turn about her up the other way; her nose lifts about the line across her, turned with it.
       turnInRig(rig.root, neck, up, -turn * 0.42);
       turnInRig(rig.root, head, up, -turn * 0.58);
@@ -260,11 +271,11 @@ export function sickan(chapter: ChapterData, places: readonly SickanPlace[], sce
       turnOwn(rig.bone('ear.L'), back, out);
       turnOwn(rig.bone('ear.R'), back, -out);
 
-      // Her lids: a blink now and then, and half shut against the wind.
+      // Her lids: a blink now and then, and half shut against the wind. At a flash her eyes stay wide, and shine.
       blink -= dt;
       if (blink < -0.2) blink = 2.4 + 4 * ((Math.sin(state.x * 12.9898 + state.time * 78.233) * 43758.5453) % 1 + 1) / 2;
       const blinking = blink < 0 && clip !== 'greet' && clip !== 'wash' ? Math.sin((Math.PI * -blink) / 0.2) : 0;
-      lids += (Math.max(blinking, 0.45 * fright) - lids) * Math.min(1, dt * 30);
+      lids += (Math.max(blinking, 0.4 * blown) - lids) * Math.min(1, dt * 30);
       const shut = -(LID_OPEN * Math.PI / 180) * smooth(lids);
       turnOwn(rig.bone('lid.L'), shut);
       turnOwn(rig.bone('lid.R'), shut);
@@ -293,13 +304,12 @@ export function attachSickan(fit: Object3D, model: Object3D): boolean {
     clips?.dispose();
     return false;
   }
-  const fur = fit.userData.fur as ((material: MeshStandardMaterial) => MeshStandardMaterial) | undefined;
+  const fur = FURS.get(fit);
   clips.root.traverse((node) => {
     const mesh = node as SkinnedMesh;
     const material = mesh.material as MeshStandardMaterial | undefined;
     if (!mesh.isMesh || !material?.isMeshStandardMaterial) return;
     if (fur) mesh.material = fur(material);
-    mesh.castShadow = true;
   });
   fit.add(clips.root);
   fit.userData.sickan = 'here';

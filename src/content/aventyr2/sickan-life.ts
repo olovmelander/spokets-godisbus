@@ -68,6 +68,8 @@ const WASH_RANGE = 9.5;
 /** How far ahead of her he is before she is put at her next place, unseen. */
 const LEFT_BEHIND = 16;
 const TURN = 7;
+/** How far her feet go as she turns on the spot, in EL for each radian: they step round, and do not slide. */
+export const TURN_STEP = 0.75;
 
 export type SickanMode = 'rest' | 'rise' | 'go' | 'leap' | 'settle';
 
@@ -273,13 +275,16 @@ export function stepSickan(state: SickanState, places: readonly SickanPlace[], i
   if (state.mode === 'settle') {
     // Arrived: she turns to face the way she will sit, shakes the rain off where she does, and settles.
     state.pitch += (0 - state.pitch) * Math.min(1, dt * 8);
+    const before = state.heading;
     state.heading = toward(state.heading, place.face, TURN * dt);
     const faced = Math.abs(turnTo(state.heading, place.face)) < 0.04;
     if (state.doing === 'shake') {
       state.show = { clip: 'shake', once: true, fade: 0.2 };
       if (state.since < FRAMES.shake / FPS) return state;
     } else {
-      state.show = { clip: 'stand', fade: 0.25 };
+      // Stepping round until she faces the way she will sit; then still.
+      state.stride += (Math.abs(turnTo(before, state.heading)) * TURN_STEP) / (WALK_STRIDE * SICKAN_SIZE);
+      state.show = faced ? { clip: 'stand', fade: 0.25 } : { clip: 'walk', phase: state.stride - Math.floor(state.stride), fade: 0.2 };
       if (!faced || state.time < 0.2) return state;
       // The rain shaken off, where she has come in under something; not with him already upon her.
       if (place.shake && elof.x < place.go - 5) { state.doing = 'shake'; state.since = 0; return state; }
@@ -366,7 +371,9 @@ export function stepSickan(state: SickanState, places: readonly SickanPlace[], i
   const dx = to.x - state.x, dz = to.z - state.z;
   const far = Math.hypot(dx, dz);
   const want = Math.atan2(-dz, dx);
+  const before = state.heading;
   state.heading = toward(state.heading, want, TURN * dt);
+  const turned = Math.abs(turnTo(before, state.heading));
   const facing = Math.max(0, Math.cos(turnTo(state.heading, want)));
   state.gait = gait === 'walk' ? 'walk' : 'trot';
   const speed = (state.gait === 'walk' ? WALK_SPEED : TROT_SPEED) * (0.15 + 0.85 * facing * facing);
@@ -385,7 +392,8 @@ export function stepSickan(state: SickanState, places: readonly SickanPlace[], i
   const slope = pace > 1e-6 ? (y - state.y) / pace : 0;
   state.y = y;
   state.pitch += (Math.max(-0.45, Math.min(0.45, Math.atan(slope))) * Math.cos(turnTo(state.heading, want)) - state.pitch) * Math.min(1, dt * 7);
-  state.stride += pace / ((state.gait === 'walk' ? WALK_STRIDE : TROT_STRIDE) * SICKAN_SIZE);
+  // Her stride by how far her feet have gone: along her way, and round as she turns.
+  state.stride += (pace + turned * TURN_STEP) / ((state.gait === 'walk' ? WALK_STRIDE : TROT_STRIDE) * SICKAN_SIZE);
   state.show = { clip: state.gait, phase: state.stride - Math.floor(state.stride), fade: 0.22 };
   if (far - pace < 0.05) {
     if (!step) { arrive(); return state; }

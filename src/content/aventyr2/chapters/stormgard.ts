@@ -641,10 +641,10 @@ export const SICKAN: readonly import('../sickan-life').SickanPlace[] = [
     ],
   },
   {
-    // She waits here only until he is at the barrel's foot, where the picture looks on to the ditch: then she leaps it.
-    id: 'bank', x: CAN.to, z: -3.4, pose: 'stand', face: -0.2, go: 76.4, passing: true,
+    // At the ditch's edge, past the can, she waits only until he is at the barrel's foot, where the picture looks on
+    // to the ditch: she leaps it as he says it is too wide.
+    id: 'bank', x: DITCH.from - 0.9, z: -3.4, pose: 'stand', face: -0.45, go: 77, passing: true,
     path: [
-      { x: DITCH.from - 0.5, z: -3.5, gait: 'trot' },
       { x: DITCH.to + 1.2, z: -3.5, gait: 'leap' },
       { x: DITCH.to + 4.6, z: -3, gait: 'walk' },
     ],

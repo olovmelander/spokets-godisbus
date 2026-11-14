@@ -183,11 +183,10 @@ def _eye(side, look):
 
 EYE_L = _eye(1.0, EYE_DIR)
 # Her lower lids' rims slant up towards the outside of each eye, as a cat's do.
-EYE_SLANT = 0.0
 LOWER_SLANT = 20.0
 
 
-def eye_frame(side, slant_deg=EYE_SLANT):
+def eye_frame(side, slant_deg=0.0):
     """An eye's own directions: the way it looks, the line its lids turn about (towards her nose, and down by the
     slant), and up across that line."""
     look = V(EYE_DIR.x, EYE_DIR.y * side, EYE_DIR.z)
@@ -259,7 +258,8 @@ def loft(rows, count, paint, fluff=0.0, grain=30.0, first=None, last=None, squar
     """Rings along a path: each row (centre, half width, half height over the centre, half height under it), each ring
     square to the path (or, `upright`, standing straight up across her), and coloured by paint(point, row, across, up)
     where across and up go from -1 to 1 round it. `fluff` pushes each point out or in a little, unevenly: fur.
-    `square` fills out the ring's corners (0: an ellipse). `bulges` swell her sides where her shoulders and haunches
+    `square` fills out the ring's upper corners and draws in its lower ones (0: an ellipse): her head is broad over her
+    eyes and narrow at her chin. `bulges` swell her sides where her shoulders and haunches
     are under her skin: each (x, half length, degrees over level, degrees wide, how much)."""
     rings = []
     colours = []
@@ -705,7 +705,6 @@ def sitting(extra=None, breathe=0.0, tip=None):
     return over(pose, extra or {})
 
 
-SLEEPY = 0.0
 clip(arm, 'sit', 192, [  # noqa: F821
     (0, sitting()),
     (24, sitting(breathe=1.0)),
@@ -875,7 +874,6 @@ def shaking(f):
 clip(arm, 'shake', SHAKE, [(0, stood())] + [(f, shaking(f - 2)) for f in range(3, 30)] + [(SHAKE, stood())], loop=False)  # noqa: F821
 
 # --- the leap: a crouch, the push, the flight with her fore legs reaching, and the landing ----------------------------
-FK = {'con': 0.0}
 
 
 def fly_legs(fore_dirs, hind_dirs):
