@@ -131,6 +131,12 @@ export interface ActorKey {
   face?: number;
   /** How long getting there takes, in seconds. Left out: 0.6. */
   move?: number;
+  /**
+   * Picture only: the way there bends through these points on the ground, in order (a run round a house's end). It is
+   * one smooth curve from where they stood through each point to (`x`, `z`), run at an even pace: quickly up to speed,
+   * and slowing only where it ends. `move` is the whole way's time.
+   */
+  via?: readonly { x: number; z: number }[];
   /** What they do from this moment. Left out: what they did. */
   act?: Act;
   /** What the act is aimed at: what they look at, point to, reach for or offer to. */

@@ -1449,6 +1449,13 @@
     "text": "Ladudörren är öppen! Tack, mormor!"
   },
   {
+    "key": "biWelcome",
+    "speaker": "mormor",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[warm, kind grandmother]",
+    "text": "Varsågod, lilla Elof. Kliv in!"
+  },
+  {
     "key": "biLookout",
     "speaker": "mormor",
     "situation": "Äventyr 2, billsta",
