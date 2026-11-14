@@ -1,5 +1,62 @@
 # Handover
 
+## State (14 November 2026, evening): Olov's second Äventyr 2 list, stopped half-way for the night
+
+**Not finished and not merged.** Olov played Äventyr 2 through and wrote about fifty points (his list is quoted, point by
+point, in the builders' briefs; the common brief is `C:\Users\olovm\repos\godisbus-work\A2-14NOV-BRIEF-COMMON.md`).
+Thirteen builders worked in parallel worktrees under `godisbus-work`, each on a branch `a2-14nov-<name>` cut from `main` at
+`f342178`. Olov asked for the computer to be shut down, so all thirteen were stopped mid-work. **None has reported, none has
+run the whole suite, the build or the browser suites, and nothing is merged into this branch** (`a2-genomspelning-14nov`,
+worktree `godisbus-work/a2-14nov`) except the narrator's voice. Work that was not committed is left as it was in each
+worktree: look at `git status` there before anything else.
+
+- **Done on this branch (points 1, 6, 14):** the narrator said "storm" in "Stormkvällen", "Stormgården" and "Stormskogen" as
+  "stor" (measured: first formant about 320 Hz against about 400 Hz in "Byn i stormen"; new takes of the same spelling were
+  heard as "Stornatten", "Stomgården"). Sent spelled by sound ("Stårm…", `scripts/voices-spoken.json`, read by
+  `record-voices.mjs`; the manifest keeps the line's own words) every take is heard as "Storm…". New takes of
+  `scene_stormkvall`, `scene_stormgard`, `scene_stormskog` and `scene_a2title` ("Stormnatten", same fault, not on Olov's
+  list), levelled. Not heard by a person. Guard: `tests/unit/voice-recordings.test.ts`.
+- **Where each builder stopped** (commits on its branch; "open" = uncommitted files in its worktree):
+  - `marken` (9, 10, 12, 15, 16, the ground everywhere): two commits (edges wander, lean and round over; pools run on towards
+    the camera; weathered tall walls; sloping pool banks). Open: `dressing/ground.ts`, `water.ts` and its test.
+  - `gang` (51, Elof's walk): one commit (feet put down under him, the same at every display rate). Open: `player-motion.ts`,
+    `acting.ts`, `view.ts`, `dev/motion.ts`, the browser motion suite; it was about to run the unit suite.
+  - `lampor` (2, flashlight holds): nothing committed. Open: `lamp-hold.ts`, `fingers.ts`, `arm-contact.ts`, `rig.ts`, a new
+    `flashlight.ts`, tests; it also touched `stormoga.ts` and `aventyr2/render.ts`.
+  - `hemmet`: Stormkvällen committed (3 the bowl of sweets, 4 the family walks out, 5 Moa's and Bertil's words). Stormens öga
+    (48, 49) open: `stormoga.ts`, its lines, a new `gift-handover.ts`; it removed the recording `soMormorSecret.mp3`: check why.
+  - `stormgard`: three commits (8 terracotta pots, 11 the trampoline, 13 the arch in the hedge). Open: `a2-props.py`; it was
+    writing the gate's tests.
+  - `sickan` (7): one commit (the black cat waits at six places and pads on ahead). Open: the kit, `sickan.ts`,
+    `sickan-life.ts`, tests, and a stray `tests/unit/zz-debug.test.ts` to delete.
+  - `skog-by`: two commits (18 the jay flies up and tugs the beard lichen down; 19 the whole church; 20 Elof thanks Moa).
+    Open: `family-shot.ts`, `view.ts`, `sim/types.ts`, a robot test; it was writing the guards for 19 and 20.
+  - `olympia`: four commits (23 the ball; 24 a post behind the training goal; 25 the first target clear; 22 a gravel yard
+    under the buildings; 21 a hedge closes the way back). Open: `big-ball.ts`, `olympia.ts`, `olympia-yard.ts`, tests.
+  - `flarken`: two commits (30 the slide; 31 the net, 32 the sign, 33 the gungfly, 34 the little one's bark, 35 the bark raft).
+    Open: `docs/aventyr-2.md`; kit tests and the validation were next.
+  - `alven`: three commits (37 the frog, 39 the car, 38 the lodge, 36 the raft). Nothing open; it was still working on the raft.
+  - `billsta`: three commits (41, 42, 43 the hay, 44 the field stone). Open: `field-boulder.ts` and its test. **Not begun: 45
+    (the hazelnut) and 46 (the view down to the narrow).**
+  - `natur` (17 the root plate, 37 the stump, 47 and 50 the lying trees): nothing committed. Open: `a2-nature.py`, a rebaked
+    `nature.glb`, `root-hollow.ts`, a new `old-wood.ts`, tests; it touched `billsta.ts` and `stormoga.ts`.
+  - `djur` (29, 40 the carved hare; every animal seen): nothing committed. Open: a new carvings kit (`art/blender/carvings.py`,
+    `art/baked/boot/carvings.glb`, `carving-kit.ts`), the fauna plan and shapes, `beaver.ts`, `flarken.ts`, `life.ts`, tests.
+- **To go on:** in the session that started them, a message to a builder's agent id takes it up from its transcript (it worked
+  on 14 November after a usage-limit stop): marken `a652cabfc5da69cba`, gang `ac50dc031cd86a9bb`, lampor `a3f40ce350a22bdc0`,
+  hemmet `a937ae20ce54d53fb`, stormgard `a17377ef970734b1d`, sickan `ae4c5b370c7e74c04`, skog-by `aa9ee3165061df9a4`,
+  olympia `ab2b4680add010c25`, flarken `a38a64615ed3cb35a`, alven `a50f7ebfc662000ba`, billsta `a0acbf6915418b66d`,
+  natur `a6a829fac76db23db`, djur `aa761b5afd8186c6a`. Otherwise start a new builder per worktree with the common brief and
+  "go on from what this worktree holds". Their dev servers (ports 5311–5323) and any Blender run died with the shutdown: a
+  half-written `.glb` is rebaked. Each builder then validates, commits and reports; the lead merges the thirteen branches
+  here (expect conflicts in `aventyr2/render.ts`, `view.ts`, `stormoga.ts`, `billsta.ts`, `flarken.ts`, the voice catalog),
+  runs everything, looks at it on the family's real models, records the new and changed lines, and writes this entry properly.
+- **Olov's word on the merge (14 November):** "När du är klar med allt och känner dig nöjd, synka med main, fixa eventuella
+  konflikter och gör sedan en commit och merge till main!" So: when all of it is done and checked, sync with `main` and merge
+  through a pull request.
+- **Also:** another session had uncommitted kart work on branch `godisracet-arcade` in the main checkout; this work never
+  touched that folder. The Fable usage limit was reached during the day (three builders stopped and were taken up again).
+
 ## State (14 November 2026): Elof leans into his run
 
 - **Olov:** "Vi måste fixa så att Elof inte lutar så mycket bakåt när han springer. Det ser konstigt ut."
