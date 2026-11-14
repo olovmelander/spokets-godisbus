@@ -13,7 +13,13 @@ import { KIT, heightAt, noise, sequence } from './kit';
  * 2026: "Ja!" to "Ska häcken ha en öppning in mot skogen?"). The end of the ground is still the hedge's tall end, as
  * at Stormgården: just before it, beside the big candy, the hedge behind the path has a clipped round arch, a trodden
  * path runs from the lawn into it, and through it the forest is seen: dark spruce trunks on a floor of moss and needles,
- * the path going on between them. Only a hedge marked `gate` has one; Stormgården's and Stormbyn's ends are unchanged.
+ * the path going on between them. Only a hedge marked `gate` has one; Stormbyn's end is unchanged.
+ *
+ * Stormgården's hedge has the same arch (Olov, 14 November 2026: "ett hål i häcken som Elof går igenom när kapitlet
+ * avslutas, precis som i kapitlet ”Gården” i äventyr 1"). There the hedge has a low clipped lip that he walks on, and the
+ * tall hedge stands behind it: the arch is cut in the tall hedge, level with the lip, beside where he stops at the goal;
+ * the path is trodden over the lip's top into it, and the forest beyond is the storm's: dark, wet, no sun on the path.
+ * Its floor is a low bank, as high as the lip where the path goes in and down to the lawn's level to both sides.
  *
  * The arch's own hedge is built with the rest of the hedge (./hedge.ts); what is seen through it is built here.
  */
@@ -27,9 +33,24 @@ export interface Gate {
   back: number;
   /** The ground at its foot. */
   base: number;
+  /** What he walks on into the arch: the lawn at its foot, or the top of the hedge's low clipped lip. */
+  floor: number;
+  /** The arch is cut in the tall hedge behind a low lip that he walks on, and its floor is the lip's top. */
+  lip: boolean;
+  /** Past here its hedge has run into the hedge's tall end, and none of it is seen. */
+  end: number;
+  /** It stands in the storm, at night: the forest beyond is dark, and no sun falls on the path. */
+  storm: boolean;
   /** The opening: its two sides, the height where its round top springs, its middle and the round top's radius. */
   open: { from: number; to: number; spring: number; middle: number; radius: number };
 }
+
+/**
+ * Where the tall hedge with the arch stands behind a low lip: far enough behind the path that Stormgården's little
+ * carving, lifted by the gust in front of it, is over its crown before he is as far back as its face (his flight ends
+ * 6 EL behind the path, three of him over the hedge: ../../content/aventyr2/chapters/stormgard.ts `FLIGHT`).
+ */
+const BEHIND_LIP = { front: -7.4, back: -9.7 };
 
 /** The arch's place, from the end of the ground (`to` of the hedge marked `gate`): the wall he cannot pass. */
 export function gateOf(chapter: ChapterData): Gate | null {
@@ -38,13 +59,28 @@ export function gateOf(chapter: ChapterData): Gate | null {
   const base = heightAt(chapter, plant.from - 0.01);
   const top = Math.max(base, ...chapter.ground.filter((point) => point.x >= plant.from && point.x <= plant.to).map((point) => point.y));
   const end = plant.to;
+  const storm = !!chapter.storm;
+  // A hedge with a low lip that he walks on: the arch is in the tall hedge behind the lip, all along it, and its
+  // opening is just past the goal, as far past it as Gården's is, and as wide and as high.
+  const low = heightAt(chapter, (plant.from + plant.to) / 2);
+  if (low - base > 0.3) {
+    const radius = 1.35, middle = chapter.goalX + 1.95;
+    return { from: plant.from + 0.15, to: end + 1.2, bottom: low - 0.35, top, ...BEHIND_LIP, base, floor: low, lip: true, end, storm,
+      open: { from: middle - radius, to: middle + radius, spring: low + 2.2, middle, radius } };
+  }
   // As wide as three of him and the big candy beside him; its round top a little over three of him high.
   const open = { from: end - 3.4, to: end - 0.7 };
   const radius = (open.to - open.from) / 2;
   // Four EL behind the path: out of the way of the birds that come down behind it (../lift/fauna/plan.ts), and its
   // right side runs into the hedge's tall end.
-  return { from: end - 6.4, to: end + 0.6, bottom: base - 0.6, top, front: -4, back: -6.6, base,
+  return { from: end - 6.4, to: end + 0.6, bottom: base - 0.6, top, front: -4, back: -6.6, base, floor: base, lip: false, end, storm,
     open: { ...open, spring: base + 2.2, middle: (open.from + open.to) / 2, radius } };
+}
+
+/** Whether a place is on the path trodden into the arch, in front of the hedge's face: `more` EL wider than it. */
+export function onGatePath(gate: Gate, x: number, z: number, more = 0): boolean {
+  const path = pathAt(gate, z);
+  return z < -0.3 && z > gate.front - 0.2 && Math.abs(x - path.x) < path.half + more;
 }
 
 /** The arch's hedge, where it stands: a tall clipped wall with a round-topped opening down to the ground, its edges rounded. */
@@ -118,17 +154,35 @@ const smooth = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
-/** Where the sun comes down through the spruces onto the path, further in: its depth, and how long and wide the patch is. */
-const SUNNY = { z: -15.5, long: 3.4, wide: 2.2 };
+/** Where the sun comes down through the spruces onto the path, further in: how far behind the hedge's face, and how long and wide the patch is. */
+const SUNNY = { in: 11.5, long: 3.4, wide: 2.2 };
 const LIT_PATH = new Color('#c4a874');
 const LIT_MOSS = new Color('#6f7a3a');
 
-/** The forest's floor seen through the arch, and the trodden path from the lawn into it, lying on the lawn. */
+/**
+ * The ground the path lies on and the forest stands on. Gården's is the lawn, on into the forest. Behind a lip
+ * (Stormgården) it is level with the lip's top over the hedge and through the arch, and beyond it a low bank: as high
+ * as the lip where the path goes in, rolling a little, and down to the lawn to both sides, where the forest is seen
+ * past the hedge's end.
+ */
+function groundAt(gate: Gate, line: readonly { x: number; y: number }[], x: number, z: number): number {
+  if (!gate.lip) return lawnAt(line, x, z);
+  if (z >= gate.back) return gate.floor;
+  const lawn = lawnAt(line, x, z);
+  const bank = 1 - smooth(2.8, 6.4, Math.abs(x - pathAt(gate, z).x));
+  return lawn + (gate.floor - lawn) * bank + smooth(gate.back, gate.back - 3, z) * bank * (noise(x * 0.9, z * 0.8 + 3) - 0.5) * 0.3;
+}
+
+/** The forest's floor seen through the arch, and the trodden path into it, lying on the lawn or on the lip's top. */
 function floorOf(gate: Gate, line: readonly { x: number; y: number }[]): Mesh {
-  const x0 = gate.from - 2.2, x1 = gate.to + 3.6, near = -0.5, far = -31;
+  const x0 = gate.lip ? gate.open.middle - 8.4 : gate.from - 2.2, x1 = gate.lip ? gate.open.middle + 9.6 : gate.to + 3.6, near = -0.5, far = gate.back - 24.4;
   const cols = Math.ceil((x1 - x0) / 0.2), rows = Math.ceil((near - far) / 0.25);
   const position: number[] = [], colour: number[] = [], index: number[] = [];
-  const moss = new Color('#26301d'), needles = new Color('#3b3322'), earth = new Color('#6f5b40'), deep = new Color('#4f4231');
+  // In the storm, at night: wet and dark, the path a paler wet earth that the flashes find.
+  const [moss, needles, earth, deep] = (gate.storm ? ['#161d15', '#1f1c16', '#4a4234', '#2e2820'] : ['#26301d', '#3b3322', '#6f5b40', '#4f4231']).map((hex) => new Color(hex));
+  // Over the lip's top the path is trodden in the clipped hedge: its twigs bare and dark.
+  const twigs = new Color('#33301c');
+  const sunAt = gate.front - SUNNY.in;
   const c = new Color(), trodden = new Color();
   for (let j = 0; j <= rows; j++) {
     const z = near + ((far - near) * j) / rows;
@@ -136,7 +190,7 @@ function floorOf(gate: Gate, line: readonly { x: number; y: number }[]): Mesh {
     for (let i = 0; i <= cols; i++) {
       const x = x0 + ((x1 - x0) * i) / cols;
       // A finger over the lawn, so that it lies on it and not in it: the ground's own triangles differ by a few hundredths.
-      position.push(x, lawnAt(line, x, z) + 0.06, z);
+      position.push(x, groundAt(gate, line, x, z) + 0.06, z);
       const edge = Math.abs(x - path.x) - path.half * (0.85 + 0.3 * noise(x * 2.3, z * 1.7));
       const onPath = 1 - smooth(-0.22, 0.18, edge);
       // Behind the hedge's face the forest's floor; in front of it only the path, coming in from the lawn.
@@ -145,9 +199,10 @@ function floorOf(gate: Gate, line: readonly { x: number; y: number }[]): Mesh {
       const alpha = Math.max(onPath * smooth(near, near - 1.1, z) * 0.92, forest) * sides;
       c.copy(moss).lerp(needles, noise(x * 0.9 + 4, z * 0.7) * 0.9);
       trodden.copy(earth).lerp(deep, smooth(gate.front, gate.front - 10, z) * 0.8 + noise(x * 3.1, z * 2.4) * 0.2);
+      if (gate.lip) trodden.lerp(twigs, 1 - smooth(gate.front + 0.6, gate.back, z));
       c.lerp(trodden, onPath);
-      // Further in, the forest's shade; and a patch of sun through the spruces where the path bends, to go on to.
-      const sun = Math.exp(-(((z - SUNNY.z) / SUNNY.long) ** 2) - ((x - path.x) / SUNNY.wide) ** 2) * (0.65 + 0.35 * noise(x * 1.7, z * 1.3));
+      // Further in, the forest's shade; and by day a patch of sun through the spruces where the path bends, to go on to.
+      const sun = gate.storm ? 0 : Math.exp(-(((z - sunAt) / SUNNY.long) ** 2) - ((x - path.x) / SUNNY.wide) ** 2) * (0.65 + 0.35 * noise(x * 1.7, z * 1.3));
       c.multiplyScalar(1 - 0.35 * smooth(gate.front, gate.front - 14, z)).lerp(onPath > 0.5 ? LIT_PATH : LIT_MOSS, sun * 0.85);
       colour.push(c.r, c.g, c.b, alpha);
       if (i < cols && j < rows) {
@@ -213,12 +268,28 @@ const YOUNG: readonly (readonly [number, number, number])[] = [
 const NEEDLES = ['#2c4636', '#34523a', '#283f30', '#3e5838'].map((hex) => new Color(hex));
 const FERNS = ['#3d5a2c', '#4a6630', '#36522a'].map((hex) => new Color(hex));
 
+/**
+ * More of the forest's edge along a hedge that is seen over (Stormgården's, where the picture follows the little
+ * carving up over its top): spruces on along the hedge to the right of the arch's own, and one to their left.
+ */
+const EDGE: readonly (readonly [number, number, number, number])[] = [
+  [6.3, -9.4, 0.62, 0.46], [8.7, -13.2, 0.56, 0.4], [11, -8.8, 0.6, 0.44], [13.4, -14.6, 0.52, 0.36], [16, -10.2, 0.58, 0.4], [-6.8, -10.6, 0.58, 0.42],
+];
+/** The spruces of a gate: the arch's own, and behind a lip the forest's edge along the hedge too. */
+const sprucesIn = (gate: Gate) => (gate.lip ? [...SPRUCES, ...EDGE] : SPRUCES);
+
+/** How far further back than Gården's the forest stands: as far as the hedge's back does (the tables are Gården's). */
+const further = (gate: Gate) => gate.back + 6.6;
+/** How dark the forest's trunks and needles are in the storm, at night, beside their colours by day. */
+const NIGHT = 0.55;
+
 function sprucesOf(gate: Gate, line: readonly { x: number; y: number }[]): Mesh {
   const shape = trunk();
-  const parts = SPRUCES.map(([along, z, r, dark], i) => {
+  const parts = sprucesIn(gate).map(([along, depth, r, shade], i) => {
     const one = shape.clone();
-    const x = gate.open.middle + along;
-    one.scale(r, 1, r).rotateY(i * 2.3).translate(x, lawnAt(line, x, z) - 0.5, z);
+    const x = gate.open.middle + along, z = depth + further(gate);
+    const dark = shade * (gate.storm ? NIGHT : 1);
+    one.scale(r, 1, r).rotateY(i * 2.3).translate(x, groundAt(gate, line, x, z) - 0.5, z);
     const colour = one.getAttribute('color');
     for (let k = 0; k < colour.count; k++) colour.setXYZ(k, colour.getX(k) * dark, colour.getY(k) * dark, colour.getZ(k) * dark);
     return one;
@@ -231,14 +302,15 @@ function sprucesOf(gate: Gate, line: readonly { x: number; y: number }[]): Mesh 
 }
 
 /** Tiers of spruce sprays round a stem from `from` to `to`, each as long as `reach` says at its height (as ../lift/flora/trees.ts). */
-function tiers(cards: Cards, next: () => number, x: number, y0: number, z: number, from: number, to: number, reach: (y: number) => number, out: number): void {
+function tiers(cards: Cards, next: () => number, x: number, y0: number, z: number, from: number, to: number, reach: (y: number) => number, out: number,
+  needles: readonly Color[]): void {
   for (let y = from; y < to; y += 0.75 * (0.8 + next() * 0.4)) {
     for (let k = 0; k < 3; k++) {
       const side = k === 0 ? -1 : k === 1 ? 1 : next() < 0.5 ? -1 : 1;
       const long = reach(y) * (0.75 + next() * 0.35) * (k === 2 ? 0.7 : 1);
       const angle = (side > 0 ? 0 : Math.PI) - side * (0.3 + next() * 0.3);
       cards.card([x + side * out, y0 + y + 0.3, z + (next() - 0.5) * (k === 2 ? 2.4 : 1.2)], angle, long, long * 0.55 + 0.4, 'spray',
-        NEEDLES[Math.floor(next() * NEEDLES.length)]!, (next() - 0.5) * (k === 2 ? 1.8 : 0.8), side * 0.35);
+        needles[Math.floor(next() * needles.length)]!, (next() - 0.5) * (k === 2 ? 1.8 : 0.8), side * 0.35);
     }
   }
 }
@@ -251,31 +323,33 @@ function tiers(cards: Cards, next: () => number, x: number, y0: number, z: numbe
 function greenOf(gate: Gate, line: readonly { x: number; y: number }[]): Mesh {
   const next = sequence(911);
   const shapes: BufferGeometry[] = [];
-  for (const [along, z, r] of SPRUCES) {
-    const x = gate.open.middle + along;
+  const back = further(gate);
+  const [needles, fronds] = [NEEDLES, FERNS].map((tints) => (gate.storm ? tints.map((tint) => tint.clone().multiplyScalar(NIGHT)) : tints));
+  for (const [along, depth, r] of sprucesIn(gate)) {
+    const x = gate.open.middle + along, z = depth + back;
     const top = TALL * (0.85 + r * 0.2);
     const cards = new Cards(new Vector3(x, top * 0.45, z), new Vector3(3.4, top * 0.5, 1.5));
     // Through the arch the trunks and the floor between them are seen under the boughs; further in and to the sides
     // the boughs come down to the moss, and close the forest's depth.
-    const near = z > -11, seen = Math.abs(along) < 3 && z > -21;
-    tiers(cards, next, x, lawnAt(line, x, z), z, near ? 3 : seen ? 2.3 : 0.9, top * 0.97, (y) => (1 - y / top) * (near ? 3 : 3.6) + 0.45, r * 0.9);
+    const near = depth > -11, seen = Math.abs(along) < 3 && depth > -21;
+    tiers(cards, next, x, groundAt(gate, line, x, z), z, near ? 3 : seen ? 2.3 : 0.9, top * 0.97, (y) => (1 - y / top) * (near ? 3 : 3.6) + 0.45, r * 0.9, needles!);
     shapes.push(cards.build());
   }
-  for (const [along, z, high] of YOUNG) {
-    const x = gate.open.middle + along;
+  for (const [along, depth, high] of YOUNG) {
+    const x = gate.open.middle + along, z = depth + back;
     const cards = new Cards(new Vector3(x, high * 0.45, z), new Vector3(2.6, high * 0.5, 1.3));
-    tiers(cards, next, x, lawnAt(line, x, z), z, 0.2, high * 0.94, (y) => (1 - y / high) * 2.8 + 0.35, 0.1);
+    tiers(cards, next, x, groundAt(gate, line, x, z), z, 0.2, high * 0.94, (y) => (1 - y / high) * 2.8 + 0.35, 0.1, needles!);
     shapes.push(cards.build());
   }
   // Ferns by the path, among the trunks: a few fronds each, arching up and out.
-  const ferns = new Cards(new Vector3(gate.open.middle, 0.4, -14), new Vector3(6, 1, 10));
+  const ferns = new Cards(new Vector3(gate.open.middle, gate.floor + 0.4, -14 + back), new Vector3(6, 1, 10));
   for (let k = 0; k < 18; k++) {
     const z = gate.back - 0.6 - next() * 15;
     const path = pathAt(gate, z);
     const side = k % 2 === 0 ? -1 : 1;
     const x = path.x + side * (path.half + 0.35 + next() * 1.4);
-    const y = lawnAt(line, x, z);
-    const tint = FERNS[Math.floor(next() * FERNS.length)]!;
+    const y = groundAt(gate, line, x, z);
+    const tint = fronds![Math.floor(next() * fronds!.length)]!;
     for (let f = 0; f < 5; f++) {
       const angle = Math.PI / 2 + (f - 2) * 0.45 + (next() - 0.5) * 0.2;
       ferns.card([x, y, z + (next() - 0.5) * 0.4], angle, 0.8 + next() * 0.4, 0.55, 'fern', tint, (next() - 0.5) * 1.2, (f - 2) * 0.25);
@@ -343,7 +417,8 @@ function tread(standing: Object3D, gate: Gate): void {
 export function hedgeGate(chapter: ChapterData, line: readonly { x: number; y: number }[], standing: Object3D): Group | null {
   const gate = gateOf(chapter);
   if (!gate || !KIT) return null;
-  tread(standing, gate);
+  // Over a lip the path is trodden in the hedge's top (./hedge.ts leaves its leaves off it): no lawn's grass grows there.
+  if (!gate.lip) tread(standing, gate);
   const group = new Group();
   group.name = 'hedge-gate';
   group.add(floorOf(gate, line), sprucesOf(gate, line), greenOf(gate, line));

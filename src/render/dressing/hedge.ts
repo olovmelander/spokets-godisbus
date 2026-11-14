@@ -6,7 +6,7 @@ import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferG
 import type { ChapterData } from '../../sim/types';
 import { Cards, leafAtlas, leafy } from '../lift/flora/light';
 import { sway } from '../wind';
-import { archShape, gateOf, type Gate } from './hedge-gate';
+import { archShape, gateOf, onGatePath, type Gate } from './hedge-gate';
 import { heightAt, noise, sequence } from './kit';
 
 interface Hedge {
@@ -87,6 +87,8 @@ export function hedge(chapter: ChapterData): Group | null {
   const cores = [];
   const leaves: Leaf[] = [];
   const next = sequence(873);
+  // The hedge's arch into the forest, where it has one (./hedge-gate.ts).
+  const gate = gateOf(chapter);
 
   for (const volume of volumes) {
     const wide = volume.to - volume.from, high = volume.top - volume.bottom, deep = volume.front - volume.back;
@@ -109,6 +111,8 @@ export function hedge(chapter: ChapterData): Group | null {
         point.copy(inside).addScaledVector(normal, radius + .055).add(centre);
         // Keep the top of the playable strip bare at boot height. The foliage behind it can crest gently.
         if (axis === 1 && point.z > -.7 && plantWalksHere(point.x, plants)) continue;
+        // Nor where the path is trodden over the lip's top into the arch, and he walks in on it.
+        if (axis === 1 && gate?.lip && Math.abs(point.y - gate.floor) < .3 && onGatePath(gate, point.x, point.z, .3)) continue;
         if (axis === 1) {
           // A clipped crown still has leaf tips at different heights and angles. Flat coplanar sprays
           // fight for depth and look like slats from the plane; gentle uneven growth keeps the leaf drawing.
@@ -130,9 +134,9 @@ export function hedge(chapter: ChapterData): Group | null {
     face(1, 1, 0, 2);
   }
 
-  // Gården's tall end has its arch into the forest (./hedge-gate.ts): a clipped wall with a round-topped opening, its
-  // leaves sown over all of it that the camera sees, and the inside of the arch in the hedge's own shade.
-  const gate = gateOf(chapter);
+  // Gården's tall end has its arch into the forest, and Stormgården's tall hedge behind its lip (./hedge-gate.ts): a
+  // clipped wall with a round-topped opening, its leaves sown over all of it that the camera sees, and the inside of
+  // the arch in the hedge's own shade.
   if (gate) {
     const shape = archShape(gate);
     sow(shape, gate, next, leaves);
@@ -229,7 +233,7 @@ function sow(shape: BufferGeometry, gate: Gate, next: () => number, leaves: Leaf
   const position = shape.getAttribute('position');
   const index = shape.index;
   const corner = (k: number) => new Vector3().fromBufferAttribute(position, index ? index.getX(k) : k);
-  const end = gate.to - .6;
+  const end = gate.end;
   for (let k = 0; k + 2 < (index ? index.count : position.count); k += 3) {
     const a = corner(k), ab = corner(k + 1).sub(a), ac = corner(k + 2).sub(a);
     const normal = new Vector3().crossVectors(ab, ac);
@@ -237,7 +241,7 @@ function sow(shape: BufferGeometry, gate: Gate, next: () => number, leaves: Leaf
     if (area < 1e-5) continue;
     normal.normalize();
     const middle = a.clone().addScaledVector(ab, 1 / 3).addScaledVector(ac, 1 / 3);
-    if (normal.z < -.5 || (normal.y < -.5 && middle.y < gate.base + .5) || middle.x > end + .05) continue;
+    if (normal.z < -.5 || (normal.y < -.5 && middle.y < gate.floor + .5) || middle.x > end + .05) continue;
     const crown = normal.y > .7;
     for (let more = area / (crown ? .36 : .48) ** 2; more > 0; more--) {
       if (more < 1 && next() > more) break;
