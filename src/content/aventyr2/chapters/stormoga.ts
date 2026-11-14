@@ -2,6 +2,7 @@ import type { ChapterData } from '../../../sim/types';
 import type { SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
 import { alongAll, timeCard, walkedAll } from '../kit';
+import { GIFT_OFFERS, GIFT_OUT, GIFT_SCENE, GIFT_SPOT, GIFT_TAKEN, HELD_OUT, OLD_STANDS, REACHES, STEPS_UP, TAKEN_AT, TAKES_FROM } from '../../../render/gift-handover';
 
 /**
  * Äventyr 2, Finalen: Stormens öga (docs/aventyr-2.md). Units: EL. In the narrow at Billsta, at midnight, where
@@ -9,17 +10,22 @@ import { alongAll, timeCard, walkedAll } from '../kit';
  *
  * 1. **Bryggan nedanför Billaberget:** down through the forest from mormor and morfar's house by the road, a jetty
  *    in the narrow. The storm has put out the family's lamps, and they stand in the dark calling for him over the
- *    water, and never see him, small as he is, at their feet. Only mormor knows. He lights their lamps, one by one,
- *    and each of them feels that he is near: this is what the night has been for, Moa says it aloud. The row of
- *    light reaches out over the water, the stone is too far out to jump to, and *Ropa på ugglan*: the owl from
- *    Stormskogen has seen the light, and flies him out over the waves.
+ *    water, and never see or hear him, small as he is, at their feet. Nobody tells him what to do, and nobody says
+ *    he is there (Olov, 14 November 2026: mormor spoke to him of the lamps before the family wondered who lit them):
+ *    he sees the lamps lying there and says it himself. He lights them, one by one, and each of the family wonders
+ *    who did, and feels that he is near: this is what the night has been for, Moa says it aloud. The row of light
+ *    reaches out over the water, the stone is too far out to jump to, and *Ropa på ugglan*: the owl from Stormskogen
+ *    has seen the light, and flies him out over the waves.
  * 2. **Stormens öga:** as he lands on the stone the wind drops, the rain stops, the clouds part: stars, and the
  *    moon on the water.
  * 3. **Mötet** (a held scene, when he has gone up to them): the old trägubbe holds the little one. It did not wait, all
- *    night, because it knows how long one night alone in the dark is. Then it holds out what it saved for him.
+ *    night, because it knows how long one night alone in the dark is. Then it steps out to him and holds out, in its
+ *    two hands, what it saved for him.
  * 4. **Guldgodiset:** the old one gives him a geléhallon in gold paper it saved for him, the kind little Elof once
- *    shared with it. *Ta emot*: he holds it up, glittering, and *Smaka*: he tastes it, and in its glitter grows,
- *    standing on the stone with both figures in his hands, and the family's lamps, with mormor and morfar, reach the shore.
+ *    shared with it (../../../render/gift-handover.ts: it is the old one's to give, not Klonk's, and is seen to be).
+ *    *Ta emot*: he takes it from the old one's hands and thanks him by name, and *Smaka*: he tastes it, and in its
+ *    glitter grows, standing on the stone with both figures in his hands, and the family's lamps, with mormor and
+ *    morfar, reach the shore.
  * 5. **Hem:** *Gå hem*, all of them together: on his own feet, off the stone and through the shallows to the family on the
  *    shore, and on with them to the cars and home; mormor and morfar come along to the Sunday breakfast (Morgonen efter).
  */
@@ -42,9 +48,14 @@ const FIGURES = 47.2;
 const EYE = 42.2;
 /** How far towards them he comes before they meet: near enough to kneel to them, and to be in the picture with them. */
 const MEET = 44.4;
-/** Where the old one's golden sweet is taken, and where it is held out on its paper (../../../render/props.ts 'gold'). */
-const GIFT = FIGURES - 1;
-const SWEET = { x: GIFT + 0.55, y: 1.1, z: 0 };
+/**
+ * Where the old one's golden sweet is taken, and where he holds it out on its paper, a step out from beside the little
+ * one (../../../render/gift-handover.ts; ../../../render/props.ts 'gold').
+ */
+const GIFT = FIGURES - OLD_STANDS.x;
+const SWEET = { x: GIFT + HELD_OUT.x, y: 0.6 + HELD_OUT.y, z: HELD_OUT.z };
+/** Where he steps up to the old one to take it from his hands. */
+const TAKES = { x: GIFT + TAKES_FROM.x, y: 0.6, z: TAKES_FROM.z };
 /**
  * Where he tastes it: where he took it, before the old one, so that the two of them are seen beside him. Where Klonk
  * waits on the stone, past them and a little back, out of his way.
@@ -60,8 +71,6 @@ const LIT: Lit[] = ['mamma', 'pappa', 'moa', 'bertil'];
 /** They look out over the water, for him. */
 const OUT = { x: 40, y: 2, z: -2 };
 const AT_Z = { mamma: -1.3, pappa: -1.7, moa: -1.2, bertil: -1.6 } as const;
-/** Mormor's face at the head of the jetty, by her lantern: the one light left there. */
-const MORMOR_JETTY = { x: -0.6, y: 4.4, z: -1.2 };
 const standing = (who: Lit) => [{ at: 0, x: FAMILY[who], y: 0, z: AT_Z[who], face: 0, move: 0.01, act: 'look' as const, aim: OUT }];
 /** Where someone's lit lamp is, held out over the water: what the others turn to. */
 const lampHeld = (who: Lit) => ({ x: FAMILY[who] + 0.8, y: 3.2, z: AT_Z[who] + 0.6 });
@@ -116,20 +125,23 @@ const SCENES: SceneDef[] = [
     },
   },
   {
-    // 1. The jetty in the dark. Nobody sees him but mormor, who has come down with him. They look down at the lamps the
-    // wind knocked over, call out over the water, look out again, and turn to her when she speaks.
+    // 1. The jetty in the dark. Nobody sees him, and nobody hears him: mormor, who came down the path before him, stands
+    // by with her lantern and says nothing. They look down at the lamps the wind knocked over, call out over the water
+    // and look out again; he calls up to them from their feet, and they go on looking for him out there. Then he turns
+    // to the lamp lying by Mamma's boots, and says what he will do: nobody has told him (she used to, aloud, before the
+    // family wondered who lit them).
     id: 'bryggan',
     on: 'so:jetty',
-    seconds: 8.2,
+    seconds: 8.4,
     hold: true,
     lines: [
       { at: 0.4, who: 'pappa', line: 'soDark' },
       { at: 2.4, who: 'mamma', line: 'soCalling' },
       { at: 4.2, who: 'elof', line: 'soTooSmall' },
-      { at: 6.2, who: 'mormor', line: 'soMormorSecret' },
+      { at: 6.4, who: 'elof', line: 'soLightThem' },
     ],
     stage: {
-      // Mormor at the jetty's head too, all of her, as she speaks last: the picture had her half out of its edge.
+      // Mormor at the jetty's head too, all of her, with the one light left there.
       shots: [{ at: 0, x: 5.9, y: 3, height: 7.4, width: 14.6, move: 0.3 }],
       actors: {
         pappa: [
@@ -137,14 +149,14 @@ const SCENES: SceneDef[] = [
           { at: 2.0, act: 'look', aim: OUT },
           { at: 3.4, aim: { x: 30, y: 4, z: -9 } },
           { at: 4.8, x: FAMILY.pappa + 0.4, z: AT_Z.pappa + 0.2, move: 0.9, aim: { x: 44, y: 1, z: 1 } },
-          { at: 6.4, aim: MORMOR_JETTY },
+          { at: 6.6, aim: { x: 36, y: 3, z: -7 } },
         ],
         mamma: [
           { at: 1.0, aim: { x: LAMP.mamma, y: 0.1, z: -0.5 } },
           { at: 2.2, act: 'wave', aim: OUT },
           { at: 4.0, act: 'look', aim: OUT },
           { at: 4.6, x: FAMILY.mamma + 0.3, z: AT_Z.mamma + 0.3, move: 0.8 },
-          { at: 6.3, aim: MORMOR_JETTY },
+          { at: 6.5, aim: { x: 46, y: 3, z: -5 } },
         ],
         moa: [
           { at: 0.8, aim: { x: LAMP.moa, y: 0.1, z: -0.5 } },
@@ -152,7 +164,6 @@ const SCENES: SceneDef[] = [
           // As he calls from her feet she looks down along the jetty, nearly at him, and does not see him.
           { at: 4.5, aim: { x: 3.6, y: 0.5, z: 0 } },
           { at: 5.6, aim: OUT },
-          { at: 6.5, aim: MORMOR_JETTY },
         ],
         bertil: [
           { at: 0.6, aim: { x: 46, y: 4, z: -10 } },
@@ -160,10 +171,14 @@ const SCENES: SceneDef[] = [
           { at: 2.9, act: 'stomp' },
           { at: 3.7, act: 'look', aim: OUT },
           { at: 5.2, aim: { x: 18, y: 1, z: 2 } },
-          { at: 6.6, aim: MORMOR_JETTY },
+          { at: 6.8, aim: OUT },
         ],
       },
-      elof: [{ at: 3.8, act: 'wave', aim: { x: FAMILY.mamma, y: 4, z: -1.3 } }],
+      // He waves up at them; and then turns to the lamp at Mamma's feet, and points at it as he says it.
+      elof: [
+        { at: 3.8, act: 'wave', aim: { x: FAMILY.mamma, y: 4, z: -1.3 } },
+        { at: 5.9, face: 0.1, act: 'point', aim: { x: LAMP.mamma, y: 0.15, z: -0.5 } },
+      ],
     },
   },
   lit('mamma', 'soLampMamma', 2.6),
@@ -208,15 +223,16 @@ const SCENES: SceneDef[] = [
   },
   {
     // 3. The meeting, once he has gone up to them. The old one holds the little one; then they see him. When the cap is
-    // back on the little one's head, the old one has something for him: the golden sweet on its gold paper, held out to
-    // him in a glitter ('gift:out'). It is not there before.
+    // back on the little one's head, the old one has something for him: he steps out from beside the little one,
+    // towards Elof, turns to him and bows (`GIFT_OFFERS`), and the golden sweet comes out on its gold paper in his two
+    // hands, in a glitter (`GIFT_OUT`). It is not there before, and it is his: Klonk stands behind, and only looks.
     id: 'motet',
     on: 'scene:oga',
     from: MEET,
-    seconds: 16.5,
+    seconds: 17.2,
     hold: true,
-    cues: [{ at: 11.6, flag: 'so:cap-returned' }, { at: 14.6, flag: 'gift:out' }],
-    sounds: [{ at: 14.5, sound: 'blink' }],
+    cues: [{ at: 11.6, flag: 'so:cap-returned' }, { at: 13.5, flag: GIFT_OFFERS }, { at: 15.2, flag: GIFT_OUT }],
+    sounds: [{ at: 15.1, sound: 'blink' }],
     lines: [
       { at: 1.0, who: 'elof', line: 'soFound' },
       { at: 3.2, who: 'spoket', line: 'soKlonk' },
@@ -227,22 +243,22 @@ const SCENES: SceneDef[] = [
     stage: {
       shots: [
         { at: 0, x: FIGURES - 0.8, y: 1.3, height: 3.4, width: 7.2, move: 1.0 },
-        // The sweet, close: held out to him on its gold paper.
-        { at: 14.0, x: SWEET.x + 0.2, y: 1.05, height: 2.4, width: 4, move: 0.8 },
+        // Close on the two of them, as the old one steps out and holds it out to him on its gold paper.
+        { at: 14.2, x: SWEET.x - 0.8, y: 1.15, height: 2.6, width: 4.8, move: 0.8 },
       ],
       fx: [
-        { at: 14.5, kind: 'sparkle', from: SWEET, seconds: 2.0 },
-        { at: 14.6, kind: 'glow', from: SWEET, seconds: 2.0 },
+        { at: 15.1, kind: 'sparkle', from: SWEET, seconds: 2.0 },
+        { at: 15.2, kind: 'glow', from: SWEET, seconds: 2.0 },
       ],
       actors: {
-        // Klonk on the stone, a little behind them: a glad hop at its own "Klonk …", a tilt of its head, and at the gold.
+        // Klonk on the stone, a little behind them: a glad hop at its own "Klonk …", a tilt of its head, and it stands
+        // still and looks on as the old one gives what is his to give.
         ghost: [
           { at: 0, ...KLONK, face: 0.5, move: 0.01, act: 'stand' },
           { at: 3.0, act: 'hop' },
           { at: 4.2, act: 'tilt' },
           { at: 10.6, act: 'hop' },
           { at: 11.6, act: 'stand' },
-          { at: 12.5, act: 'tilt' },
         ],
       },
       elof: [
@@ -252,21 +268,30 @@ const SCENES: SceneDef[] = [
         { at: 8.8, lift: { x: 2.8, y: 0, z: -0.15 }, move: 1.3, act: 'walk', face: 0 },
         { at: 10.1, act: 'reach', aim: { x: FIGURES + 0.32, y: 1.18, z: -0.3 } },
         { at: 12.0, lift: { x: 0, y: 0, z: 0 }, move: 1.6, act: 'walk', face: 0.5 },
-        { at: 13.6, act: 'watch', face: 0, aim: SWEET },
+        { at: 13.7, act: 'watch', face: 0, aim: SWEET },
       ],
     },
   },
   {
-    // The gift, in his hand: what it is, that it was the old one's last, and what that means, the line both adventures
-    // lead to ("Förut delade jag. Nu delar du med mig."). He stands by the two of them while he says it: said on the
-    // run, it was said as he wandered about the stone waiting for the taste, or fell off it. Its clock waits for the
-    // words, so its last half second is the breath after them; a child who knows them goes on with Fortsätt.
-    id: 'gavan', on: 'gift', until: 'taste', seconds: 1.4, hold: true, dialogue: ['soGold', 'soLast', 'soShare', 'soMagic'],
-    // The first word waits until the picture has closed in on him and the two of them.
-    cues: [{ at: 0.9, flag: 'so:gift-held' }],
+    // The gift, from the old one's hands into his. He steps up to him, wherever he stood when he asked for it, and puts
+    // out his hand; the sweet is his when his hand is on it (`GIFT_TAKEN`), and he steps back with it. Then what it
+    // is, his thanks to the old one by name and that it was his last, and what that means, the line both adventures lead
+    // to ("Förut delade jag. Nu delar du med mig."). He stands by the two of them while he says it: said on the run, it
+    // was said as he wandered about the stone waiting for the taste, or fell off it. Its clock waits for the words, so
+    // its last half second is the breath after them; a child who knows them goes on with Fortsätt.
+    id: GIFT_SCENE, on: GIFT_SPOT, until: 'taste', seconds: 2.2, hold: true, dialogue: ['soGold', 'soLast', 'soShare', 'soMagic'],
+    // The first word waits until the sweet is in his hand and the picture has closed in on him and the two of them.
+    cues: [{ at: TAKEN_AT, flag: GIFT_TAKEN }, { at: 1.7, flag: 'so:gift-held' }],
     stage: {
       shots: [{ at: 0, x: FIGURES - 0.8, y: 1.3, height: 3.4, width: 7.2, move: 0.8 }],
-      elof: [{ at: 0, act: 'watch', aim: { x: FIGURES, y: 1.0, z: -0.4 } }],
+      // Up to the old one, facing him, his hand held out (it goes the rest of the way to the sweet: ../../../render/view.ts),
+      // and back a step with it.
+      elof: [
+        { at: 0, to: TAKES, move: STEPS_UP, act: 'walk' },
+        { at: REACHES, face: 0, act: 'offer', aim: SWEET },
+        { at: TAKEN_AT + 0.25, lift: { x: 0, y: 0, z: 0 }, move: 0.5, face: 0, act: 'hands' },
+        { at: 1.5, act: 'watch', aim: { x: FIGURES, y: 1.0, z: -0.4 } },
+      ],
     },
   },
   {

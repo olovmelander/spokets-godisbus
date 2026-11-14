@@ -115,7 +115,9 @@ cup of cocoa in Morgonen efter.
 3. **Fönstret slår upp** (held scene). The window by the shelf rattles on its hook all evening. A gust bursts it:
    its two halves fly outward, as Swedish windows open, and bang in the wind, the hook hanging loose (6 November
    2026; before, the window never moved). The little one is swept out into the dark, and the old one leaps after
-   it. Pappa sees only the open window and the empty places, and in the next scene he pulls it to. The morning
+   it by way of the glass bowl of Saturday sweets on the table (14 November 2026): down into it, up with his arms
+   full, and out through the window, sweets spilling. That fistful is his trail. The bowl is half empty after, and
+   stands so at the Sunday breakfast. Äventyr 1's home has no bowl: its Saturday sweets are in the bag. Pappa sees only the open window and the empty places, and in the next scene he pulls it to. The morning
    after, he and Elof mend its hook.
 4. **Klonk's star** (held scene). Pappa shuts the burst window and Mamma looks out after the figures, their backs
    to the room. With no grown-up looking, Klonk wakes on the shelf, hops down to Elof's feet and opens its carved
@@ -124,7 +126,10 @@ cup of cocoa in Morgonen efter.
    behind the grown-ups' backs. They turn at the sound, and Klonk is wood again while they look. Elof is small.
 5. **Vi letar tillsammans** (held scene): the family pull on raincoats and headlamps; each says what they will do.
    Only now is the old one's trail there: a big candy under the window where he landed, then sweets one at a time
-   to the veranda door. Out through the veranda door. Title: *Stormnatten*.
+   to the veranda door, and Moa says she saw him take a fistful. Out through the veranda door: Moa and Bertil go ahead
+   and wait by it, and when he has stepped out all four walk out after him, Pappa first with his lamp, and kneel and
+   crouch along the deck (14 November 2026). At its edge each says something to him, Moa and Bertil too, and he calls
+   out to the little one. Title: *Stormnatten*.
 
 ### Kapitel 1: Stormgården (garden at night)
 
@@ -246,14 +251,16 @@ Själevadsfjärden.
 ### Finalen: Stormens öga (in the narrow at Billsta, Själevadsfjärden beyond)
 
 1. On a jetty below Billaberget (not mormor and morfar's: their house is up by the road) the wind has knocked down the family's
-   lamps and they have gone out. They call for him over the water and cannot hear his voice at their feet; mormor points out
-   the lamps. He lights them
-   one by one, and each of them feels that he is near (Moa: "Det är Elof. Jag vet att det är Elof."). The row of light
+   lamps and they have gone out. They call for him over the water and cannot hear his voice at their feet. Nobody tells
+   him what to do (14 November 2026: mormor used to, before anyone had seen him): he says it himself. He lights them
+   one by one, each of them wonders who did, and feels that he is near (Moa: "Det är Elof. Jag vet att det är Elof."). The row of light
    goes out over the water, and the owl comes to it and flies Elof out over the waves. Far down the lake, Själevad's
    white church stands in the flashes.
 2. **The storm's eye:** the wind drops, the clouds part, stars and the moon. On the stone the old trägubbe holds
    the little one. They are cold and still, and then they see him.
-3. **The golden sweet:** only after the meeting does the old one reveal the geléhallon in gold paper it saved for him.
+3. **The golden sweet:** only after the meeting does the old one reveal the geléhallon in gold paper it saved for him:
+   he steps out to Elof and holds it out in his hands, Elof takes it from them and thanks him by name (14 November
+   2026: it is the old one's to give, not Klonk's).
    Elof recognises the glitter and remembers that this magic makes him big. *Smaka*: he grows,
    with both figures and the little one's returned cap carried in his hands through the walk home.
 4. The family's lamps, and mormor's lantern, on the shore. Morfar: "Vi följer med hem och äter frukost!" They all
@@ -356,7 +363,7 @@ The worlds were authored from this design and keep its beats, with these details
   church far down the lake; mormor and morfar's house is not on the shore. Mormor and morfar come down with
   everyone and welcome them ("Hemma hos oss finns det varm choklad."), and come to breakfast in Morgonen efter.
   (9 November 2026, Olov's play-through:) the meeting waits until Elof has gone up to the figures; at its end the old
-  one holds out the golden sweet on its paper in a glitter. He carries it up before him, looks at it in his hands,
+  one holds out the golden sweet on its paper, in his hands, in a glitter, and Elof takes it from them. He carries it up before him, looks at it in his hands,
   tastes it, and grows in its glitter. Bertil hopes the next adventure will be in slippers, then mentions the family's
   approaching trip to Thailand (Olov, 11 November 2026). *Gå hem* is walked:
   off the stone, through the shallows and up onto the shore, where the family come to meet him and walk on with him,

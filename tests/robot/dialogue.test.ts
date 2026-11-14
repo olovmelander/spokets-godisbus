@@ -28,14 +28,12 @@ const AFTER_ACTION = 6.5;
 const STANDS = 7;
 
 /**
- * The family's words along the deck on the evening of the storm: each kneels where he passes and says one thing, and
- * he stands at the deck's edge and listens until the last of them has spoken. They are a farewell said in turn, not
- * remarks about places he has left. In the prologue the same promises are read standing in its last scene, at the
- * edge, after the ghost has leapt (prolog-scenes.ts, `titel`; Olov, 13 November 2026).
+ * A chapter's lines said in turn at one place, where he stands and listens until the last has spoken. There is none
+ * now: the family's promises on the evening of the storm were said along the deck as he passed each of them, and are
+ * read standing in the chapter's last scene, at the deck's edge, with Moa's and Bertil's (Olov, 14 November 2026), as
+ * the same promises are in the prologue (prolog-scenes.ts, `titel`; Olov, 13 November 2026).
  */
-const IN_TURN: Record<string, { lines: readonly string[]; stands: number }> = {
-  stormkvall: { lines: ['skFollow'], stands: 8.5 },
-};
+const IN_TURN: Record<string, { lines: readonly string[]; stands: number }> = {};
 
 describe('every line is let finish, and none comes late', () => {
   for (const chapter of [...STORY, ...BONUS, ...AVENTYR2]) {

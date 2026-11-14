@@ -90,6 +90,7 @@ import { createSharedSweets } from './shared-sweets';
 import { createRescuedFigures } from './rescued-figures';
 import { goldSweet } from './gold-sweet';
 import { carryGold, GOLD_GRIP, GOLD_HAND, goldCarryWeight, tasteGrowingGold } from './gold-contact';
+import { GIFT_SCENE, GIFT_SPOT, giftTaken, HELD_OUT, takeReach } from './gift-handover';
 import { createHomeTrail } from './home-trail';
 import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
@@ -1131,6 +1132,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // The old trägubbe's golden geléhallon in Stormens öga ("Ett geléhallon i guldpapper!"): held up before him from when he
   // takes it until he tastes it, when the scene `stor` has it in his hand (./stage.ts).
   const carriedGift = chapter.id === 'stormoga' ? goldSweet() : null;
+  const giftAt = carriedGift ? chapter.spots?.find((spot) => spot.id === GIFT_SPOT)?.at : undefined;
   if (carriedGift) {
     carriedGift.name = 'carried-gift';
     drawnWhile(carriedGift, false);
@@ -1494,7 +1496,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       // The light counterweight tips the same board only during its safe bounce, then resets for another try.
       const trialTip = chapter.counterweight && thing.spot.id === chapter.counterweight.launch && riding
         && x < chapter.counterweight.to && flags.has(chapter.counterweight.trial ?? chapter.counterweight.launch) && !flags.has(chapter.counterweight.launch);
-      thing.prop?.update(flags.has(thing.spot.id) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id), { elof: { x, y }, calm: calmStory });
+      // (Stormens öga's golden sweet is taken when his hand is on it, not when he asks for it: ./gift-handover.ts.)
+      thing.prop?.update((thing.spot.id === GIFT_SPOT && carriedGift ? giftTaken(flags) : flags.has(thing.spot.id)) || !!trialTip, clock, dt, noteStrikes.get(thing.spot.id), { elof: { x, y }, calm: calmStory });
       // The ghost's sweet on the vittra's doorstep, from when he sees it given away.
       if (thing.spot.look === 'vittra-door') { const sweet = thing.prop?.group.getObjectByName('vittra-candy'); if (sweet) sweet.visible = flags.has('beat:vittra'); }
       thing.reactionTurn = reaction?.kind === 'spot' && reaction.index === i ? response * 0.14 : 0;
@@ -1756,7 +1759,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     }
     const elofOther = talk.lookAt('elof'), elofThere = elofOther ? talk.face(elofOther) : null;
     if (elofThere) playerBody.mouth(faceAt);
-    const giftHeld = !!carriedGift && flags.has('gift') && !flags.has('taste') && !curr.hook && elof.group.visible;
+    const giftHeld = !!carriedGift && giftTaken(flags) && !flags.has('taste') && !curr.hook && elof.group.visible;
     const elofHands = (scripted?.act && !HANDS_HANG.includes(scripted.act)) || curr.hook || lanternHeld ? NO_HANDS : giftHeld ? FREE_WITH_LAMP[GOLD_HAND]! : BOTH_HANDS;
     elofTalker.update(talk, elofThere ? lookAt(elof.group, faceAt, elofThere, heard, true) : null, lifeDt, calmStory, elofHands);
     elofTalker.pose(Object.assign(spokenPose, playerPose));
@@ -1829,6 +1832,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // grip by itself; dropping that grip here used to snap the left arm down and teleport the sweet to the right.
     const carryingGold = giftHeld ? 1 : chapter.id === 'stormoga' && sceneFrame?.id === 'stor' ? goldCarryWeight(sceneFrame.seconds) : 0;
     carryGold(playerBody, elof.group, clock, calmStory, carryingGold);
+    // Taking it: his hand goes out to the sweet in the old one's hands, and comes back with it (./gift-handover.ts).
+    const taking = carriedGift && giftAt && sceneFrame?.id === GIFT_SCENE ? takeReach(sceneFrame.seconds) : 0;
+    if (taking > 0) playerBody.reach(GOLD_HAND, boot.set(giftAt!.x + HELD_OUT.x, giftAt!.y + HELD_OUT.y, HELD_OUT.z), taking);
     stage.updateElof(playerBody, scripted, tall, calmStory);
     epilogueStage.updateElof(playerBody);
     homeRoutine?.updateElof(playerBody);

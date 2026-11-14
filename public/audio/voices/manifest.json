@@ -3352,15 +3352,6 @@
     "stability": 0.35,
     "generatedAt": "2026-11-12T21:45:09.663Z"
   },
-  "soMormorSecret": {
-    "speaker": "mormor",
-    "text": "Där ligger de. Tänd dem, lille vän.",
-    "tag": "[gentle]",
-    "voiceId": "TI58dCdnaz4gmYn5EbvK",
-    "model": "eleven_v4",
-    "stability": 0.35,
-    "generatedAt": "2026-11-12T21:45:09.878Z"
-  },
   "soLampMoa": {
     "speaker": "moa",
     "text": "Det är Elof. Jag vet att det är Elof.",

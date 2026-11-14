@@ -207,7 +207,7 @@
     "speaker": "moa",
     "situation": "Äventyr 2, stormkvall",
     "tag": "[warm big sister, lively]",
-    "text": "Jag såg honom ta en näve ur skålen!"
+    "text": "Jag såg gamla trägubben ta en näve godis!"
   },
   {
     "key": "skEnough",
@@ -222,6 +222,20 @@
     "situation": "Äventyr 2, stormkvall",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Den passar! Nu kan regnet komma."
+  },
+  {
+    "key": "skMoaSmall",
+    "speaker": "moa",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[warm big sister, lively]",
+    "text": "Små kan hitta små, lillebror!"
+  },
+  {
+    "key": "skBertilGreet",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Hälsa lillgubben att vi kommer!"
   },
   {
     "key": "skOut",
@@ -1684,7 +1698,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ditt allra sista. Det sparade du åt mig."
+    "text": "Tack, gamla trägubben! Ditt allra sista."
   },
   {
     "key": "soShareLine",
@@ -1722,11 +1736,11 @@
     "text": "Här nere! Ni hör mig inte i blåsten."
   },
   {
-    "key": "soMormorSecret",
-    "speaker": "mormor",
+    "key": "soLightThem",
+    "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
-    "tag": "[warm, kind grandmother]",
-    "text": "Där ligger de. Tänd dem, lille vän."
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Men lamporna når jag. Jag tänder dem!"
   },
   {
     "key": "soLampMamma",
