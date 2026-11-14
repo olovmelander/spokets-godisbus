@@ -621,7 +621,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
     columnTint: { value: Array.from({ length: MIRRORED.trunks }, () => new Color()) },
     bankTop: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[0]) },
     bankFace: { value: new Color((BANKS[setting.place ?? chapter.place!] ?? BANKS.forest!)[1]) },
-    bankFront: { value: open ? BANK_FRONT : 1e4 },
+    // (A pool that runs on towards the camera has banks whose lines wander in front of the path, and the eye looks
+    // down on its water there: the outline's straight bank is mirrored, and its wet band drawn, only beside the path.)
+    bankFront: { value: open ? BANK_FRONT : setting.open?.pools.length ? 0.9 : 1e4 },
     // Where a bank's line begins to wander behind the path (./dressing/natural.ts): the wet band along its foot is
     // drawn by the outline's straight line, and stops there.
     bankBack: { value: setting.open?.pools.length ? -0.5 : -1e4 },
@@ -876,7 +878,7 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
             float high = d.x < 0.0 ? left : right;
             float under = -d.y * t;
             float meets = waterWorld.z + d.z * t;
-            if (t > 0.0 && t < near && under < high && meets > -16.0 && meets < bankFront) {
+            if (t > 0.0 && t < near && under < high && meets > max(-16.0, bankBack - 2.5) && meets < bankFront) {
               near = t;
               standing = mix(bankFace, bankTop, smoothstep(high - 0.45, high - 0.1, under)) * (0.7 + 0.3 * smoothstep(0.0, 0.6, under));
             }

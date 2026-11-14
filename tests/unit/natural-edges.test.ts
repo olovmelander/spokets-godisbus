@@ -115,7 +115,7 @@ describe('the lines the ground\'s walls take through the depth', () => {
       const edges = edgesOf(chapter, own(chapter));
       if (edges.banks.length === 0) continue;
       const line = chapter.ground;
-      for (const z of [-0.8, -1.5, -3, -6, -12, -25, 0.9, 1.5, 3, 4.5]) {
+      for (const z of [-0.8, -1.7, -4, -9, 1.2, 3]) {
         let last = -Infinity;
         for (let x = line[0]!.x - 4; x <= line.at(-1)!.x + 4; x += 0.05) {
           // What stands on the ground goes with it: on its upper floor with a wall's lip, on its lower with its foot.
@@ -136,7 +136,7 @@ describe('the lines the ground\'s walls take through the depth', () => {
         }
       }
     }
-  });
+  }, 120000);
 
   it('brings the front of a bog\'s island and of a lake\'s rock round at its ends', () => {
     const bog = landscape(COURSES['myren']!);

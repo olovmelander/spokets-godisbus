@@ -154,8 +154,12 @@ function finer(rows: Row[], depths: readonly number[]): Row[] {
     }), row];
   });
 }
-/** The depths where grown ground has rows for its walls' lines: behind the path, and in front of it for a pool's banks. */
-const LINE_ROWS = [-26, -19, -13, -8.2, -7.5, -6.8, -6.1, -4.9, -4.4, -3.9, -3.4, -3, -2.2, -1.8, -1.3, -0.6, 1.2, 1.85, 2.6, 3.4, 4.2];
+/**
+ * The depths where grown ground has rows for its walls' lines, between its own: behind the path, closest together near
+ * it, where a line is seen best; and one in front, where an open pool comes to its shore. Each costs a corner at every
+ * point along the whole chapter, so there are no more of them than a line needs to be a curve.
+ */
+const LINE_ROWS = [-8.2, -6.6, -4.7, -3.9, -3.2, -1.8, -1.3, -0.6, 4.2];
 const ROWS_BEHIND = LINE_ROWS.filter((z) => z < 0);
 
 const PROFILE_ROWS: Row[] = [
@@ -915,7 +919,7 @@ const PUDDLE_BACK = waterKind('village').back;
 /** A lawn's or a forest's soil where a pool wets its bank. */
 const WET_BANK = new Color('#241c14');
 /** How deep a piece has broken out of rock's edge at x, in front of the path: none along most of it. */
-const rockChip = (x: number) => Math.max(0, noise(x * 1.1 + 7.7, 2.2) - 0.5) * 0.5;
+const rockChip = (x: number) => Math.max(0, noise(x * 0.9 + 7.7, 2.2) - 0.45) * 0.7;
 /** Wet peat at the waterline, and how far above and below it the wet reaches. */
 const WET = new Color('#1a130e');
 const WET_REACH = 0.25;
@@ -1212,7 +1216,7 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
     // A cut face is banded by its height, so a tall one needs points up it.
     // A grown wall's face slopes and bulges away from the path (./natural.ts): it needs points closer still.
     const pieces = Math.max(1, Math.ceil(Math.abs(dx) / 0.45), steep && front.cuts ? Math.ceil(Math.abs(b.y - a.y) / front.course) : 1,
-      steep && edges.bankAt((a.x + b.x) / 2) ? Math.min(16, Math.ceil(Math.abs(b.y - a.y) / 0.4)) : 1);
+      steep && edges.bankAt((a.x + b.x) / 2)?.weather ? Math.min(12, Math.ceil(Math.abs(b.y - a.y) / 0.5)) : 1);
     const length = Math.hypot(dx, b.y - a.y);
     const drained = steep ? drainAt(a.x) : undefined;
     const ends = front.cuts && steep ? (drained ? [1, 1] : [forwardAtCorner(fronts, a.x, a.y, front.over, front.least), forwardAtCorner(fronts, b.x, b.y, front.over, front.least)]) : null;
