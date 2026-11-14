@@ -66,8 +66,16 @@ const WHITE = '#dfe8e0';
 /** The near touchline, on the slope in front of the path: in the picture under him as he runs, not at its foot. */
 const TOUCHLINE = [2.45, 2.75];
 
-/** How far under the path the turf lies at a depth in front of it (world z); level behind. */
-const dropAt = (z: number) => (z <= EDGE ? 0 : slopeDrop(z));
+/**
+ * How far under the path the turf lies at a depth (world z): down the ground's slope in front of the path, and behind it
+ * up the ground's gentle rise, where it has one. Level all the way back, the turf lay under that rise from 7 EL behind
+ * the path to its far touchline: the ground's own turf, pale with distance and without stripes or lines, was what was
+ * seen there, a pale band between the pitch and what stands behind it (Olov, 14 November 2026: the buildings "ser ut
+ * att sväva i luften").
+ */
+const dropAt = (z: number) => (z <= EDGE ? Math.min(0, slopeDrop(z)) : slopeDrop(z));
+/** Where the ground's rise behind the path bends (ground.ts, the profile's rows): the turf is cut there, to lie on it. */
+const RISE_ROWS = [-5.5, -10, -16, -22];
 
 /** How far a hole's shore slopes in from the turf's cut, and down: past the water and into its murk. */
 const SHORE_IN = 0.75;
@@ -163,15 +171,15 @@ function rolling(z: number): [number, number, number] {
 }
 
 /** The turf behind a hole, from its box's back (`deepest`) forward to the hole's rounded edge, between `a` and `b`. */
-function turfTo(wet: Wet, a: number, b: number, y: number, colour: string): BufferGeometry {
+function turfTo(wet: Wet, a: number, b: number, y: number, colour: string, lie: (z: number) => number): BufferGeometry {
   const corners: number[] = [], colours: number[] = [];
   const edge = backAlong(wet, a, b);
   const back = deepest(wet);
   tint.set(colour);
   for (let i = 0; i < edge.length - 1; i++) {
     const [[x0, z0], [x1, z1]] = [edge[i]!, edge[i + 1]!];
-    // Wound to face up.
-    corners.push(x0, y, back, x0, y, z0, x1, y, back, x1, y, back, x0, y, z0, x1, y, z1);
+    // Wound to face up; each corner on the ground's rise, as the turf behind it is.
+    corners.push(x0, y + lie(back), back, x0, y + lie(z0), z0, x1, y + lie(back), back, x1, y + lie(back), back, x0, y + lie(z0), z0, x1, y + lie(z1), z1);
     for (let k = 0; k < 6; k++) colours.push(tint.r, tint.g, tint.b);
   }
   return coloured(corners, colours);
@@ -286,11 +294,24 @@ export function pitch(def: BuildingDef) {
   });
   const parts: BufferGeometry[] = [];
   const flat = (wide: number, long: number, x: number, z: number, y: number, colour: string) => box(wide, 0.04, long, x, y, z, colour);
-  /** A flat rectangle (`x0` to `x1`, `z0` to `z1`), with what lies over the holes (`cut`) cut out of it. */
+  /** A flat piece laid on the ground behind the path: each of its corners as much higher as the ground is there. */
+  const laid = (part: BufferGeometry) => {
+    const at = part.getAttribute('position');
+    for (let i = 0; i < at.count; i++) at.setY(i, at.getY(i) + lie(at.getZ(i)));
+    return part;
+  };
+  /**
+   * A flat rectangle (`x0` to `x1`, `z0` to `z1`), with what lies over the holes (`cut`) cut out of it, in pieces from
+   * one bend of the ground's rise to the next, each lying on it.
+   */
   const dry = (x0: number, x1: number, z0: number, z1: number, y: number, colour: string, cut = slices) => {
     if (z1 <= z0) return;
+    const bends = [z0, ...RISE_ROWS.map(own).filter((z) => z > z0 + 1e-6 && z < z1 - 1e-6).sort((a, b) => a - b), z1];
     for (const piece of cut.reduce((left, hole) => left.flatMap((r) => outside(r, hole)), [{ x0, x1, z0, z1 }])) {
-      parts.push(flat(piece.x1 - piece.x0, piece.z1 - piece.z0, (piece.x0 + piece.x1) / 2, (piece.z0 + piece.z1) / 2, y, colour));
+      for (let k = 0; k < bends.length - 1; k++) {
+        const [a, b] = [Math.max(piece.z0, bends[k]!), Math.min(piece.z1, bends[k + 1]!)];
+        if (b - a > 1e-6) parts.push(laid(flat(piece.x1 - piece.x0, b - a, (piece.x0 + piece.x1) / 2, (a + b) / 2, y, colour)));
+      }
     }
   };
   /** Where the turf in front of the path begins at x: the path's edge, or a hole's near edge. */
@@ -338,7 +359,7 @@ export function pitch(def: BuildingDef) {
     // Behind each hole, the turf comes forward again to its rounded edge.
     for (const wet of wets) {
       const [a, b] = [Math.max(x0, wet.x0), Math.min(x1, wet.x1)];
-      if (b > a) parts.push(turfTo(wet, a, b, TOP, colour));
+      if (b > a) parts.push(turfTo(wet, a, b, TOP, colour, lie));
     }
     // In front of the path, down the slope, darkening a little towards the camera as the ground does.
     const green = new Color(colour);
@@ -362,10 +383,10 @@ export function pitch(def: BuildingDef) {
     if (cz > level) continue;
     if (wets.some((wet) => cx > wet.x0 - 0.3 && cx < wet.x1 + 0.3
       && cz > wetEdge(wet, Math.min(wet.x1, Math.max(wet.x0, cx))) - 0.8 && cz < nearEdge(wet, Math.min(wet.x1, Math.max(wet.x0, cx))) + 0.8)) continue;
-    const seg = flat(0.4, (Math.PI * 2 * radius) / sides + 0.1, 0, 0, y + lie(cz), WHITE);
+    const seg = flat(0.4, (Math.PI * 2 * radius) / sides + 0.1, 0, 0, y, WHITE);
     seg.rotateY(-a);
     seg.translate(cx, 0, cz);
-    parts.push(seg);
+    parts.push(laid(seg));
   }
   if (box6) {
     dry(box6.x - box6.long, box6.x, -deep * 0.2 - 0.2, -deep * 0.2 + 0.2, y, WHITE);

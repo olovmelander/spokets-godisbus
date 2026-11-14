@@ -16,6 +16,11 @@ interface Hedge {
   low: number;
   top: number;
   terminal: boolean;
+  /**
+   * It stands at the chapter's start, across the way back, where the outline begins with a wall (Olympia's lane): a tall
+   * hedge from that wall on out of the picture to the left, in place of the block of earth the wall was drawn as.
+   */
+  start: boolean;
   /** Its tall end has an arch where the path goes on into the forest (./hedge-gate.ts), in place of the tall row behind. */
   gate: boolean;
 }
@@ -25,9 +30,11 @@ function hedges(chapter: ChapterData): Hedge[] {
   return (chapter.surfaces ?? []).filter(surface => surface.kind === 'hedge').map(({ from, to, gate }) => {
     const outline = chapter.ground.filter(point => point.x >= from && point.x <= to);
     const base = Math.min(heightAt(chapter, from - .01), ...outline.map(point => point.y));
-    const low = heightAt(chapter, (from + to) / 2);
+    // Before the outline's first point there is no ground to read: a hedge at the start stands on the wall's foot.
+    const start = chapter.ground[0]!.x === to;
+    const low = start ? base : heightAt(chapter, (from + to) / 2);
     const top = Math.max(low, ...outline.map(point => point.y));
-    return { from, to, base, low, top, terminal: chapter.ground.at(-1)!.x === to && top > low + 1, gate: !!gate };
+    return { from, to, base, low, top, terminal: chapter.ground.at(-1)!.x === to && top > low + 1, start: start && top > base + 1, gate: !!gate };
   });
 }
 
@@ -66,6 +73,9 @@ export function hedge(chapter: ChapterData): Group | null {
   const plants = hedges(chapter);
   if (!plants.length) return null;
   const volumes: Volume[] = plants.flatMap(plant => {
+    // At the chapter's start: one tall hedge whose end stands where he cannot pass, its face to the path, on out of the
+    // picture the way he came. The ground under and before it is the place's own (`hedgeGround`).
+    if (plant.start) return [{ from: plant.to - 12, to: plant.to - .05, bottom: plant.base - .25, top: plant.top, front: .36, back: -10 }];
     const low: Volume = { from: plant.from - .12, to: plant.to + .12, bottom: plant.base - .25,
       top: plant.low, front: plant.terminal ? .36 : 1.1, back: -8.8 };
     if (!plant.terminal) return [low];

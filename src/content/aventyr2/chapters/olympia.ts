@@ -187,8 +187,14 @@ const trailAt = (x: number) => round((TRAIL.y * (x - TRAIL.from)) / (TRAIL.to - 
  * Each was a dark shape across the sky in three seconds, the two at once, behind the words, and went into the forest's
  * edge where the ground ends (`EDGE`, 14 EL high). Now they go up and away from the path, clear of it.
  * They stay on the near side of the trees: retreating into the canopy hid the last half of the flight on a phone.
+ *
+ * The ground's end is out of every picture (Olov, 14 November 2026, of the wall at the chapter's start: it must stand on
+ * the ground; this one was a block of earth 12 EL high, 7 EL past the goal: at the right of the last scene's shots, and
+ * where a child who ran on at the goal stood against it while the tune closed). Past the goal the trail's level ground
+ * goes on into the forest, with the forest's trees on it, and the wall stands 47 EL on: further than he runs before the
+ * page turns, even with the last three lines still to be said.
  */
-const EDGE = { x: 186, y: 14 };
+const EDGE = { x: 226, y: 14 };
 const NORTH: Flyby = {
   on: 'beat:ol:gust', from: { x: 177.6, y: 2.4 }, to: { x: 182.6, y: 25 }, z: -0.6, toZ: -0.6, seconds: 6.4, rise: 2.4, size: 1.8,
   who: 'lillgubbe', lit: [2.2, 4.4],
@@ -295,7 +301,12 @@ export const olympia: ChapterData = {
     { from: FENCE.to, to: 158, kind: 'turf' },
     { from: 158, to: 166, kind: 'paving' },
     { from: 166, to: 174, kind: 'earth' },
-    { from: 174, to: 196, kind: 'moss' },
+    { from: 174, to: 244, kind: 'moss' },
+    // The way back along the lane is closed by a tall hedge, as Byn's street ends in one (src/render/dressing/hedge.ts): it
+    // stands where the outline's first wall is, on the ground (Olov, 14 November 2026: "ser det ut som om väggen, häcken
+    // eller vad det nu är som blockerar vägen svävar i luften utan kontakt med marken"). That wall was drawn as a block of
+    // earth seventeen lengths high whose front ended a length over the lane.
+    { from: -4.6, to: -3, kind: 'hedge' },
   ],
   // Each in the gap between two of the trail's sweets: under one, a sweet hid its head.
   checkpoints: [
@@ -499,7 +510,7 @@ export const olympia: ChapterData = {
     { from: 115, to: 153, zoom: 1.6, lift: 1.2 },
     { from: 154, to: 168, zoom: 1.25 },
     // The trail: the sky over the forest, where the little one flies.
-    { from: 168, to: 186, zoom: 1.5, lift: 1.4 },
+    { from: 168, to: EDGE.x, zoom: 1.5, lift: 1.4 },
   ],
   candy: [
     // 1. along the road, up the steps to the ground, along the path, up the fence's near side and down its far side
