@@ -139,6 +139,12 @@ try {
   const frozen = await enter(race, 'touch');
   await race.page.locator('[data-action="start"]:visible').first().tap();
   await until(race.state, s => s.homeConsole.mode === 'race' && s.homeConsole.frames > 8, 'Tävlingen börjar');
+  // The arcade race: eight karts on the grid with the player last, and the item slot, sweets and place on screen.
+  const grid = (await race.state()).homeConsole;
+  check('Åtta kartar står på startlinjen, spelaren sist', grid.karts.length === 8 && grid.position === 8 && grid.karts.every(kart => kart.distance < 0));
+  check('Godispåsen, godisräknaren och platsen syns under loppet', await race.page.locator('.kart-slot:visible, .kart-candies:visible, .kart-position:visible').count() === 3);
+  await until(race.state, s => s.homeConsole.phase === 'racing' && s.homeConsole.distance > grid.distance + 3, 'Karten kör i väg med automatisk gas', 120000);
+  check('Rivalerna kör i väg från start', (await race.state()).homeConsole.karts.slice(1).every((kart, i) => kart.distance > grid.karts[i + 1].distance));
   await race.page.locator('[data-action="pause"]').tap();
   const paused = await until(race.state, s => s.homeConsole.mode === 'paused', 'Pausa tävlingen');
   await frames(race.page, 8);

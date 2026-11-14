@@ -1,8 +1,9 @@
 /** Optional local race times. Never writes an adventure save or changes a collection. */
 export interface KartRecord { race: number; lap: number }
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
-interface Records { v: 1; generation: string; normal?: KartRecord; easy?: KartRecord }
-const keyFor = (id: string) => `godisbus.kart.v1.${id}`;
+interface Records { v: 2; generation: string; normal?: KartRecord; easy?: KartRecord }
+// v2: the course became a 960 m lap with eight karts, so times from the first course do not compare.
+const keyFor = (id: string) => `godisbus.kart.v2.${id}`;
 function generation(storage: Store | null, id: string): string | null {
   try {
     const index: unknown = JSON.parse(storage?.getItem('godisbus.v1.index') ?? 'null');
@@ -21,11 +22,11 @@ function record(value: unknown): KartRecord | undefined {
 export function createKartRecords(storage: Store | null, id: string) {
   const epoch = generation(storage, id);
   function read(): Records {
-    const empty: Records = { v: 1, generation: epoch ?? '' };
+    const empty: Records = { v: 2, generation: epoch ?? '' };
     if (epoch === null || generation(storage, id) !== epoch) return empty;
     try {
       const value: unknown = JSON.parse(storage?.getItem(keyFor(id)) ?? 'null');
-      if (!value || typeof value !== 'object' || !('v' in value) || value.v !== 1 || !('generation' in value) || value.generation !== epoch) return empty;
+      if (!value || typeof value !== 'object' || !('v' in value) || value.v !== 2 || !('generation' in value) || value.generation !== epoch) return empty;
       return { ...empty, normal: record('normal' in value ? value.normal : undefined), easy: record('easy' in value ? value.easy : undefined) };
     } catch { return empty; }
   }

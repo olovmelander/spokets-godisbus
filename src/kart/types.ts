@@ -16,4 +16,6 @@ export interface KartSession {
   suspend(blocked: boolean): void;
   dispose(): void;
   debug(): Record<string, unknown>;
+  /** Only with `debug`: sets values on the player's kart (a place on the lap, an item). */
+  poke?: (values: Record<string, unknown>) => void;
 }

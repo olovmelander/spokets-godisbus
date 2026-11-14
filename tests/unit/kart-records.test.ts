@@ -30,7 +30,7 @@ describe('optional console records', () => {
   });
   it('tolerates corrupt, missing and blocked storage', () => {
     const { storage } = store();
-    storage.setItem('godisbus.kart.v1.elof', '{');
+    storage.setItem('godisbus.kart.v2.elof', '{');
     expect(createKartRecords(storage, 'elof').best(false)).toBeUndefined();
     expect(createKartRecords(null, 'elof').finish(false, { race: 150, lap: 48 }).saved).toBe(false);
     const blocked = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('quota'); } };
