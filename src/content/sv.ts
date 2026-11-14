@@ -8,6 +8,8 @@ export const sv = {
     title: 'Godisracet', subtitle: 'Ett litet spel i Elofs stora äventyr',
     play: 'Spela på TV:n', playPrompt: 'Spela på TV:n', loading: 'Startar Godisracet…',
     loadFailed: 'Spelet kunde inte starta. Prova TV:n igen om en stund.', back: 'Tillbaka till huset',
+    // On Godisracet's own page (godisracet.html), where there is no television to try again.
+    pageFailed: 'Spelet kunde inte starta. Ladda om sidan om en stund.',
     story: 'Åtta träkartar kör ikapp på fyra banor ur äventyret: runt gården, över Myren, upp på Berget och genom hela Varggropen. Vem hinner först till godiskalaset?',
     start: 'Kör tre varv', again: 'Kör igen',
     // The four courses in the cup's order, and the cup itself: four races, most points wins.

@@ -11,6 +11,14 @@ camera, speech, input, automatic photos and collection/save receipts wait while 
 Leaving returns to the same place, with no race input carried into Elof's controls. The game is a lazy local
 bundle with its own disposable renderer, input listeners and sound graph. No network service is involved.
 
+## A page of its own
+
+`godisracet.html` (https://olovmelander.github.io/spokets-godisbus/godisracet.html) opens the same game straight
+away, without the house (`src/kart/page.ts`). It uses the current player's sound and motion settings and keeps the
+same race records. Without a graphics choice of the player's own, a phone or tablet starts on the Low tier (Mid on a
+strong one) and a computer on High; `?tier=low|mid|high` chooses for one visit. "Tillbaka till huset" goes to the
+adventure. The page is part of the built site and of the offline copy.
+
 ## What it is now (14 November 2026)
 
 Olov asked for the feel of an arcade kart racer: a varied track, things to pick up for boosting and attacking, and
@@ -126,4 +134,4 @@ or `poke({ item: 'bee' })` sets the player up for a picture.
 
 Tests: `tests/unit/kart-race.test.ts` (every course, handling, items, race rules, the cup, whole races),
 `kart-audio.test.ts`, `kart-controls.test.ts`, `kart-records.test.ts`, and `tests/browser/home-console.mjs` for
-entering from the house and returning to it.
+entering from the house and returning to it, and for the page of its own.

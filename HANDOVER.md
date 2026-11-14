@@ -38,6 +38,10 @@
     and the running order, and results for the whole field.
   - *Sound* (`src/kart/audio.ts`, written by a parallel builder): a synthesised tune that changes with the place and
     quickens on the last lap, and an effect for everything that happens.
+- **A page of its own** (Olov: "vilken url kan jag använda för att spela godisracet direkt?"):
+  https://olovmelander.github.io/spokets-godisbus/godisracet.html opens the game without the house (`godisracet.html`,
+  `src/kart/page.ts`; the build now has two pages). It uses the current player's settings and records; "Tillbaka till
+  huset" goes to the adventure.
 - **How "svårighetsgrad på bilen man kör" was read:** as how good the rivals are and how much help the player gets
   (three levels), not as karts with different handling to choose between. Asked below.
 - **What went from the port:** the rental-kart tyre model, its contacts, rival driving, surfaces and camera
@@ -47,7 +51,7 @@
   (`godisbus.kart.v3.*`).
 - **Guards:** `tests/unit/kart-race.test.ts` (82 tests: every course's barriers, places and features; handling;
   each item; race rules; the cup; a rival lapping every course; whole races in two difficulties), `kart-audio`,
-  `kart-controls`, `kart-records`, and three new checks in `tests/browser/home-console.mjs`.
+  `kart-controls`, `kart-records`, and seven new checks in `tests/browser/home-console.mjs`.
 - **Not checked, and it matters:**
   - **Nobody has driven it by hand.** The handling was tuned on driving bots in the simulation and on an autopilot
     pressing the real keys in the browser. How the wheel, the drift and the speed feel in the hands is the first
@@ -67,8 +71,8 @@
   - *Lugnt, 50 cc:* every bot won every race, the one that steers like a small child included.
   - In Äventyr the player is hit about one to three times a race.
 - **Validation:** typecheck; all 3,100 tests; the build and its size gates (706.4 KB gzipped JS; the game's own
-  chunk is 53.8 KB of 160); the privacy check; `tests/browser/home-console.mjs` (51 checks, in the built site, from
-  the house and back). On the game's own page: every course on the Low, Mid and High tiers and in reduced motion
+  chunk is 53.8 KB of 160); the privacy check; `tests/browser/home-console.mjs` (55 checks, in the built site, from
+  the house and back, and on the page of its own). On the game's own page: every course on the Low, Mid and High tiers and in reduced motion
   with no errors, and one whole cup driven in real time by the autopilot at the keys (Lugnt, 150 cc: it won all four
   races), with the renderer's memory level from the first course to the last.
 - **Next:** Olov drives it, on the computer and on a phone, listens to it, and says what to change (the questions

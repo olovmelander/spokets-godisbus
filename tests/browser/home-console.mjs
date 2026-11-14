@@ -22,7 +22,7 @@ const server = createServer((req, res) => {
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const cases = new Set((process.env.HOME_CONSOLE_CASES ?? 'homes,race,save,loading').split(','));
+const cases = new Set((process.env.HOME_CONSOLE_CASES ?? 'homes,race,save,loading,page').split(','));
 let browser, checks = 0;
 const check = (name, condition) => { assert.ok(condition, name); checks++; console.log(`  ok   ${name}`); };
 const FLAGS = {
@@ -209,6 +209,27 @@ try {
   const start = (await failed.state()).x;
   await failed.page.keyboard.down('ArrowRight'); await until(failed.state, s => s.x > start + .3, 'Rörelse fungerar efter nedladdningsfel'); await failed.page.keyboard.up('ArrowRight');
   await failed.finish();
+  }
+  if (cases.has('page')) {
+    // Godisracet on a page of its own (godisracet.html): the same game without the house, and the way to the adventure.
+    const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 844, height: 391 } });
+    const page = await context.newPage(), errors = [], external = [];
+    page.on('pageerror', error => errors.push(String(error)));
+    page.on('request', request => { const url = request.url(); if (!url.startsWith(origin) && !url.startsWith(`blob:${origin}`) && !url.startsWith('data:')) external.push(url); });
+    await page.goto(`${origin}${BASE}godisracet.html?debug&tier=low`);
+    await page.waitForFunction(() => window.__kart?.debug().mode === 'intro', null, { timeout: 120000 });
+    check('Godisracets egen sida: startsidan med en enda synlig startknapp och en duk', await page.locator('[data-action="start"]:visible').count() === 1 && await page.locator('.kart-canvas').count() === 1);
+    check('Godisracets egen sida: cupen och de fyra banorna går att välja', await page.locator('[data-track]').count() === 5);
+    await page.locator('[data-action="start"]:visible').first().click();
+    await page.waitForFunction(() => window.__kart.debug().mode === 'race' && window.__kart.debug().frames > 8, null, { timeout: 120000 });
+    check('Godisracets egen sida: loppet startar med åtta kartar', await page.evaluate(() => window.__kart.debug().karts.length) === 8);
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => window.__kart.debug().mode === 'paused', null, { timeout: 60000 });
+    await page.locator('.kart-paused [data-action="exit"]').click();
+    await page.waitForURL(url => url.pathname === BASE, { timeout: 120000 });
+    check('Godisracets egen sida: Tillbaka till huset leder till äventyret', new URL(page.url()).pathname === BASE);
+    assert.deepEqual(errors, [], 'Godisracets egen sida: körfel'); assert.deepEqual(external, [], 'Godisracets egen sida: externa anrop');
+    await context.close();
   }
   console.log(`TV-konsolen: ${checks} webbläsarkontroller godkända.`);
 } finally { if (browser) await browser.close(); await new Promise(done => server.close(done)); }
