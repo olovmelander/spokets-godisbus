@@ -128,5 +128,20 @@ describe("Olympia's goals", () => {
     // And the targets stand a lane apart, each clear of the next.
     const xs = targets.map((t) => t.at.x).sort((a, b) => a - b);
     for (let i = 1; i < xs.length; i++) expect(xs[i]! - xs[i - 1]!).toBeGreaterThanOrEqual(1.5);
+    // No floodlight mast is seen behind a target that is in the picture. Far behind the path, a mast by the range passed
+    // behind each target in turn as he went along it: a pale pole up out of the plate. (The camera is 12 EL from the
+    // play plane at the range, the targets 1.2 behind it: a thing further back is seen that share of the way from the
+    // picture's middle to where it stands. A target is in a 16:9 picture within 6 EL of its middle.)
+    const masts = olympia.storm!.buildings!.filter((b) => b.kind === 'floodlight');
+    expect(masts.length).toBe(4);
+    for (const mast of masts) {
+      const share = (12 + 1.2) / (12 - mast.z);
+      for (const x of xs) {
+        for (let camera = x - 6; camera <= x + 6; camera += 0.25) {
+          const seenAt = camera + (mast.x - camera) * share;
+          expect(Math.abs(seenAt - x), 'the mast at ' + mast.x + ' behind the target at ' + x + ', seen from ' + camera).toBeGreaterThan(0.9);
+        }
+      }
+    }
   });
 });

@@ -24,7 +24,7 @@ import type { ChapterData } from '../../sim/types';
  */
 
 /** Where the yard begins behind the path, and how far back and to each side it goes: past what any picture shows. */
-export const YARD = { front: -22.5, back: -124, left: -64, right: 262 } as const;
+export const YARD = { front: -22.5, back: -124, left: -64, right: 282 } as const;
 /** The hill's top, where the buildings stand; and how much higher the yard's front edge is, clear of the ground's own roll. */
 const TOP = 0;
 const LIP = 0.25;
@@ -39,8 +39,8 @@ export const FEET = {
   hall: { x0: 16, x1: 79, front: -59.2, back: -110, ramp: { x0: 24, x1: 59.2, front: -54.3 }, porch: 55.5 },
   /** The stand (art/blender/olympia.py): the low bank under its tiers. */
   stand: { x0: 77, x1: 159, front: -27.8, back: -44 },
-  /** The floodlight masts' concrete feet. */
-  masts: [[30, -36], [92, -30], [136, -38], [164, -28]] as const,
+  /** The floodlight masts' concrete feet: one on the yard by the store, three in a row behind the stand. */
+  masts: [[30, -36], [84, -47.5], [106, -47.5], [128, -47.5]] as const,
 } as const;
 
 const GRAVEL = new Color('#a39c8c');

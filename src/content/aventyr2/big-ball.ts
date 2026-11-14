@@ -22,7 +22,7 @@ import type { ChapterData, Mover } from '../../sim/types';
  * the squash and the splash's drops.
  */
 
-/** How it moves, in EL and seconds. One EL is 15 cm, so the earth's pull is 65; a wet artificial turf gives little back. */
+/** How it moves, in EL and seconds. One EL is 15 cm, so the earth's pull is about 65; a wet artificial turf gives half back. */
 export const BALL = {
   gravity: 62,
   /** How much of its speed it keeps in a bounce, and how hard it has to land to bounce at all. */

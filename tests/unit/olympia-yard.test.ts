@@ -76,9 +76,16 @@ describe("Olympia's yard, behind its pitch", () => {
     expect(FEET.stand.x0).toBeCloseTo(stand.x - 41, 5);
     expect(FEET.stand.front).toBeCloseTo(stand.z + 1.2, 5);
     expect(FEET.masts.map(([x, z]) => `${x},${z}`)).toEqual(masts.map((m) => `${m.x},${m.z}`));
-    // The store, the hall and most of the masts stand wholly behind where the place's ground ends: this is why the yard is there.
+    // The store, the hall and the masts stand wholly behind where the place's ground ends: this is why the yard is there.
     for (const front of [FEET.store.front, FEET.hall.ramp.front]) expect(front).toBeLessThanOrEqual(GROUND_BACK);
-    expect(masts.filter((m) => m.z <= GROUND_BACK).length).toBeGreaterThanOrEqual(3);
+    for (const mast of masts) expect(mast.z).toBeLessThanOrEqual(GROUND_BACK);
+    // No mast stands in the stand or in a building: each is clear of every foot by more than its own concrete.
+    for (const mast of masts) {
+      for (const foot of [FEET.store, FEET.hall, FEET.stand]) {
+        const inside = mast.x > foot.x0 - 1.5 && mast.x < foot.x1 + 1.5 && mast.z > foot.back - 1.5 && mast.z < foot.front + 1.5;
+        expect(inside, 'the mast at ' + mast.x + ', ' + mast.z).toBe(false);
+      }
+    }
   });
 
   it('begins under the pitch\'s far edge and over the ground, and goes on past everything a picture shows', () => {
@@ -180,8 +187,9 @@ describe("Olympia's two ends (Olov, 14 November 2026)", () => {
     expect(before.x).toBe(end.x);
     const top = olympia.ground.find((p) => p.x > 170 && p.y > 1)!;
     for (const p of olympia.ground.filter((q) => q.x >= top.x && q !== end)) expect(p.y).toBe(top.y);
-    // A child who runs on at the goal runs 3.5 EL a second while the tune closes (4.6 s) and the last lines are said.
-    expect(end.x - olympia.goalX).toBeGreaterThan(40);
+    // A child who runs on at the goal runs 3.5 EL a second while the last three lines are said and the tune closes (some
+    // nine seconds), and the picture, drawn back, shows 15 EL ahead of him.
+    expect(end.x - olympia.goalX).toBeGreaterThan(9 * 3.5 + 15);
     // The forest's floor, and so its trees, all that way; and the wide picture of the trail.
     expect(olympia.surfaces!.some((s) => s.kind === 'moss' && s.from <= top.x && s.to >= end.x + 12)).toBe(true);
     expect(olympia.cameras!.some((c) => c.from <= olympia.goalX && c.to >= end.x)).toBe(true);
