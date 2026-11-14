@@ -2901,6 +2901,8 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
     // tussock of the bog, not a bowl. Seen from both sides, so each blade is twice, once each way round.
     const shape = colour ? mergeGeometries([geometry, sedge(t.width, t.x)]) : geometry;
     const mesh = new Mesh(shape ?? geometry, moss);
+    // Named, for a chapter that draws its own in their place and follows these (Flärken's gungfly, content/aventyr2/gungfly.ts).
+    mesh.name = 'tussock';
     mesh.position.set(t.x, t.y, 0);
     return mesh;
   });

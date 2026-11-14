@@ -192,11 +192,24 @@ const PLATFORM: Ledge = { x: (TOWER.from + TOWER.to) / 2, y: TOWER.y, width: TOW
 /**
  * The lookout (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): halfway over the platform he points,
  * and the picture goes out over the lake with him to where it runs out into the river, beyond the jetty's end and
- * behind it. A flash, and there is the little one, caught on a stone in the current, pale, drawn half as big again for
- * the distance; the picture waits on it while he says so, and then comes back to him.
+ * behind it. A flash, and there is the little one, pale, on a piece of bark caught against a stone in the current, drawn
+ * nearly twice as big for the distance; the picture waits on it while he says so, and then comes back to him.
+ *
+ * It is one story with the end (Olov, 14 November 2026: at the lookout "sitter Lillgubben på något. När Lillgubben sedan
+ * syns igen i slutet flyter den däremot direkt på vattnet. Kan vi göra detta enhetligt?"): he stays there on his bark
+ * until Elof is at the jetty's end, and what the outlet takes is that bark with him on it, from that very place
+ * (`LITTLE`, and src/content/aventyr2/bark-boat.ts). He was on a stone here, gone once Elof had passed the tower, and
+ * at the end came floating by himself, on nothing.
  */
 const LOOKOUT_AT = 155.6;
-const SEEN = { x: 186.6, y: WATER, z: -5 };
+// In the middle of the outlet, where what it carries floats: the flight at the end begins from this very place.
+const SEEN = { x: 186.6, y: WATER, z: -4 };
+/**
+ * The little one on his bark: how big he is drawn, there and as he floats away, and how high his middle is over the
+ * water then, his feet on the bark's top (0.08 of it over the water and 0.26 from his feet to his middle, at his size:
+ * ../bark-boat.ts and ../render.ts; tests/unit/flarken-little-one.test.ts holds them together).
+ */
+const LITTLE = { size: 1.8, rides: round(WATER + (0.08 + 0.26) * 1.8) };
 /** Time to follow each carving along the outlet before it is lost beyond the bend. */
 const OUTLET_RUN = 7.2;
 /** The jetty beyond the tower, its far end pushed down into the water by the waves, and the bark lying on it. */
@@ -305,13 +318,15 @@ export const flarken: ChapterData = {
     // On the jetty, from a post's lee: the old one far out on the planks, seen and called to (../kit.ts, `sighting`).
     OLD_SEEN,
     // At the top of the diving tower he points out over the lake, and the picture goes with him: a flash, and the
-    // little one is there on its stone (`sightings`). The picture stays on him until the whole line has finished (`sjon:lookout`).
+    // little one is there on his bark (`sightings`). The picture stays on him until the whole line has finished (`sjon:lookout`).
     {
       id: 'sjon:utkik', at: LOOKOUT_AT, before: TOWER.to, seconds: 3.4, hold: true, quiet: true, dialogue: ['sjon:lookout'],
       cues: [{ at: 1.25, flag: 'sjon:seen' }],
       stage: {
         // A little to the left of him: centred on him, the big lollipop at the jetty's end filled a corner, out of focus.
-        shots: [{ at: 0.1, x: SEEN.x - 0.7, y: 0.4, z: SEEN.z, height: 4.8, width: 4.4, eye: 4.5, move: 1.1 }],
+        // From high enough that the jetty's last stretch is under the bark's waterline on a phone held upright, now
+        // that he is a step nearer it, in the outlet's own lane.
+        shots: [{ at: 0.1, x: SEEN.x - 0.7, y: 0.4, z: SEEN.z, height: 4.8, width: 4.4, eye: 5.4, move: 1.1 }],
         elof: [{ at: 0.2, act: 'point', aim: SEEN }, { at: 3.1, act: null }],
       },
     },
@@ -529,12 +544,13 @@ export const flarken: ChapterData = {
       // The old one, far out on the planks, leaps on into the dark when he comes.
       OLD_LEAP,
       // At the end: the outlet takes the little one, and the old one leaps after him onto a log.
-      { on: 'sjon:current', from: { x: SEEN.x, y: 0.2 }, to: { x: 206, y: -0.15 }, z: -4, seconds: OUTLET_RUN, size: 1.8, who: 'lillgubbe', lit: [] },
+      // On his bark, from where it was caught against its stone (`sightings`), and away down the å.
+      { on: 'sjon:current', from: { x: SEEN.x, y: LITTLE.rides }, to: { x: 206, y: LITTLE.rides }, z: SEEN.z, seconds: OUTLET_RUN, size: LITTLE.size, who: 'lillgubbe', lit: [] },
       { on: 'sjon:log-run', from: { x: END_POST.x, y: 0.25 }, to: { x: 206, y: 0.25 }, z: -4, seconds: OUTLET_RUN, size: 1.3, who: 'tragubbe', lit: [] },
     ],
     // From the top of the diving tower: the little one, far out where the lake runs out into the river, in the lookout's
-    // flash, until he has gone on past the tower and out of sight of it.
-    sightings: [{ on: 'sjon:seen', until: 'beat:sjon:gap', at: { x: SEEN.x, y: SEEN.y }, z: SEEN.z, who: 'lillgubbe', size: 1.5 }],
+    // flash, on his bark against a stone; and there he stays until the current takes the bark, at the jetty's end.
+    sightings: [{ on: 'sjon:seen', until: 'sjon:current', at: { x: SEEN.x, y: SEEN.y }, z: SEEN.z, who: 'lillgubbe', size: LITTLE.size }],
     // Mamma's lantern in the boat, once she has rowed up.
     // Mamma's boat, rowed in from out on the bay, and the lantern in its bow.
     boat: { spot: 'sjon:mamma', after: 'sjon:mamma', y: -0.6, from: { x: 150, z: -13 }, to: { x: (BREAK.from + BREAK.to) / 2, z: -1.1 } },
