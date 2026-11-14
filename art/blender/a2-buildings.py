@@ -331,173 +331,540 @@ if wanted('kyrka'):
 
 
 # --- the beaver's lodge on Alven's bank ----------------------------------------------------------------------------------
-# A heap of mud and gnawed sticks at the water's edge, behind the stumps he climbs and the slope he goes down (the chapter
-# draws the ground he walks on itself: src/content/aventyr2/chapters/alven.ts, LODGE). Its origin is the middle of its foot
-# at the current's water; the play plane is 7 in front of it (towards -Y). Its top where he walks is 5.2 up, from 2.6 to
-# the left of the middle to 1.2 to the right; the mound rises behind that to its crest and falls away behind it, steep on
-# the left over the stumps and long on the right down to the lake's shore. The mud is wet and dark at its foot and dries
-# paler up its crown, plastered over the sticks: many peeled pale by the beaver, some grey with age, some still in their
-# bark, a few birch white, each with its gnawed point or its cut end. 18 across, as the chapter has it.
+# A real beaver lodge (Olov, 14 November 2026: "Baverhyddan behover fa battre design och texturer"): a broad dome of
+# interlaced sticks and branches of many thicknesses, most of them peeled pale by the beaver and gnawed to a blunt point,
+# some grey with age, some still in their bark, a few birch white; packed with dark mud, wet at the water and drier up
+# the crown; wet leaves plastered on it, a few green sprigs the beaver has dragged home, and an apron of sticks down its
+# front into the water, where a few float. It was a mound of mud with long sharpened poles standing out of it.
+#
+# The chapter's own ground is what he walks on (src/content/aventyr2/chapters/alven.ts: the two steps, the lodge's top
+# and its far side down to the shore), a ridge that runs straight back from the path. The lodge is laid over that ridge:
+# behind the path a shelf where the gnawed trunks stand, and the dome rising from it to its crown; in front of the path
+# the ridge's own slope towards the camera, covered, and on down into the water. The strip he walks (LODGE_BAND) is left
+# to the ground, so that his shadow and the rain's rings are seen on it, and nothing of the lodge stands over it.
+#
+# Its origin is the middle of its foot at the current's water; the play plane is 7 in front of it (towards -Y). `d` is
+# how far towards the camera a place is from its middle, so the path is at d 7. 21 across at its foot, made for 18 as
+# the chapter has it (the fit is 1).
 
-LODGE_CREST = ((-9.6, 0.0), (-8.6, 0.6), (-7.2, 2.0), (-5.8, 4.4), (-4.4, 6.4), (-2.8, 7.5), (-1.0, 8.0), (0.6, 7.9),
-               (2.2, 7.3), (4.0, 6.0), (6.0, 4.0), (7.8, 2.0), (9.0, 0.7), (9.8, 0.0))
-LODGE_FRONT = ((-9.6, 0.0), (-8.6, 0.3), (-7.0, 0.9), (-5.6, 2.0), (-4.2, 3.6), (-2.8, 5.0), (-1.0, 5.15), (1.2, 5.15),
-               (3.0, 4.0), (5.0, 2.7), (7.0, 1.4), (8.6, 0.5), (9.8, 0.0))
-LODGE_D = {'front': 4.6, 'crest': -0.6, 'back': -7.0, 'end': 6.2}
+# SHARED with src/content/aventyr2/chapters/alven.ts (FAR_BANK, STUMP1, STUMP2, LODGE, SLOPE_END, SHORE, and the lodge
+# at x 122.4, y -0.4): where the ground he walks on is, from the lodge's middle, over its origin.
+LODGE_WALK = {'bank': 0.4, 'step1': (-6.0, 1.3), 'step2': (-4.4, 2.2), 'top': (-2.6, 1.2, 5.2), 'shore': 8.6}
+# SHARED with src/content/aventyr2/beaver.ts (SUMMIT): where the beaver comes out on top, (x, d, height). It is the
+# lodge's highest place, a little dished and bare, with nothing standing between it and the camera.
+LODGE_SUMMIT = (-0.25, -1.2, 7.85)
+# SHARED with src/render/dressing/ground.ts (PROFILE_FOREST, `slopeDrop`): how far under the path the ground lies in
+# front of it, by how far in front (tests/unit/aventyr2-lodge-kit.test.ts holds the two together).
+LODGE_FALL = ((0.45, 0.0), (0.5, 0.005), (0.9, 0.04), (1.5, 0.22), (2.2, 0.55), (3.0, 1.0), (3.8, 1.6), (4.6, 2.6), (5.0, 3.1))
+# SHARED with the same file (EDGE, DRAW_BACK, `forwardAt`): where the level ground ends in front of the path, and how far
+# from the top of a wall the ground's front is drawn back towards the path, so that what is at the wall's foot is seen.
+LODGE_EDGE = 0.45
+LODGE_DRAWN = 2.5
+# The strip left to the ground he walks on (d from, to): from 0.75 behind the path's line to 0.62 in front of it.
+LODGE_BAND = (6.25, 7.62)
+# Behind the path: the shelf ends and the dome begins here; over the banks at its two ends the dome begins further back,
+# where the beaver sits on the left and the reeds stand on the right. Its back, and how far in front it reaches.
+LODGE_D = {'shelf': 4.4, 'left': 3.0, 'right': 3.6, 'back': -7.4, 'front': 13.7}
+# Its crest along the path, as high as the dome is at each x: a broad round back, its crown at the summit.
+LODGE_CREST = ((-10.4, 0.3), (-9.4, 1.3), (-8.2, 2.6), (-6.8, 4.2), (-5.4, 5.6), (-4.0, 6.7), (-2.6, 7.4), (-1.2, 7.78),
+               (-0.25, 7.85), (1.0, 7.74), (2.4, 7.3), (3.8, 6.5), (5.2, 5.4), (6.6, 4.1), (8.0, 2.7), (9.2, 1.4), (10.4, 0.3))
+# The gnawed trunks that stand on the shelf by the steps (the nature kit's, placed by the chapter), and where the beaver
+# sits on the bank: nothing of the lodge's sticks lies there. (x, d, how far round.)
+LODGE_KEEP = ((-4.9, 5.0, 1.15), (-2.9, 5.0, 1.15), (-7.2, 4.4, 1.9))
+
+
+def eased(t):
+    t = max(0.0, min(1.0, t))
+    return t * t * (3.0 - 2.0 * t)
+
+
+def lodge_walk(x):
+    """How high over the lodge's origin the ground he walks on is at x: the bank, the two steps, the top, the far side."""
+    w = LODGE_WALK
+    if x < w['step1'][0]:
+        return w['bank']
+    if x < w['step2'][0]:
+        return w['step1'][1]
+    if x < w['top'][0]:
+        return w['step2'][1]
+    if x <= w['top'][1]:
+        return w['top'][2]
+    if x < w['shore']:
+        return w['top'][2] - (x - w['top'][1]) * (w['top'][2] - w['bank']) / (w['shore'] - w['top'][1])
+    return w['bank']
+
+
+def lodge_inside(x):
+    return LODGE_WALK['step1'][0] <= x <= LODGE_WALK['shore']
+
+
+def lodge_water(x):
+    """The river's surface at x, over the lodge's origin: it falls from the rapids to the lake (the chapter's `water`)."""
+    return 0.025 + 0.0083 * x
+
+
+def lodge_lumps(x, d, h, base):
+    """The dome's own unevenness, none at its foot: broad swells and smaller heaps."""
+    rough = (noise(x * 0.5, d * 0.5, 3.0) - 0.5) * 0.9 + (noise(x * 1.3, d * 1.3, 9.0) - 0.5) * 0.36 + (noise(x * 2.9, d * 2.9, 4.0) - 0.5) * 0.14
+    return rough * min(1.0, max(0.0, h - base) / 1.3)
+
+
+def lodge_back(x, d):
+    """The lodge behind the path at x and d: the shelf, the dome up to its crown, and down behind it. None where it has
+    not begun, over the banks at its two ends."""
+    walk = lodge_walk(x)
+    inside = lodge_inside(x)
+    begins = LODGE_D['shelf'] if inside else (LODGE_D['left'] if x < 0.0 else LODGE_D['right'])
+    if d > begins:
+        if not inside:
+            return None
+        # The shelf: from just under the path's edge up onto it, a hand over the ground.
+        k = eased((LODGE_BAND[0] - d) / 0.45)
+        return walk - 0.08 + 0.2 * k
+    base = walk + (0.12 if inside else -0.25)
+    crest = max(along(LODGE_CREST, x), base)
+    sx, sd, sh = LODGE_SUMMIT
+    if d >= sd:
+        t = (begins - d) / (begins - sd)
+        h = base + (crest - base) * (1.0 - (1.0 - t) ** 2.2)
+    else:
+        u = (sd - d) / (sd - LODGE_D['back'])
+        h = base + (crest - base) * max(0.0, 1.0 - u * u)
+    h += lodge_lumps(x, d, h, base)
+    # The crown: nothing is higher than the summit, and round it the dome is bare and a little dished.
+    far = math.hypot(x - sx, d - sd)
+    h = min(h, sh - 0.05 - 0.035 * far)
+    if far < 2.1:
+        dish = sh - 0.1 * max(0.0, far - 0.75)
+        h = dish + (min(h, dish) - dish) * eased((far - 0.75) / 1.35)
+    return max(h, base if inside else -0.6)
+
+
+def lodge_forward(x):
+    """How far forward the ground's front comes at x, from 0 to 1, and the height of the level below the wall that draws
+    it back (None where it comes all the way): the top of each step's wall is drawn back, for 2.5 to its right."""
+    w = LODGE_WALK
+    forward = 1.0
+    below = None
+    for wall, low in ((w['step1'][0], w['bank']), (w['step2'][0], w['step1'][1]), (w['top'][0], w['step2'][1])):
+        away = x - wall
+        if away >= 0.0 and away < LODGE_DRAWN and eased(away / LODGE_DRAWN) < forward:
+            forward = eased(away / LODGE_DRAWN)
+            below = low
+    return forward, below
+
+
+def lodge_front(x, z):
+    """What lies in front of the path at x, z in front of its line, for the lodge's sticks and leaves to lie on. Where
+    the ground's front comes all the way forward it is the lodge's own mud, laid a little over the ground's slope and on
+    down into the water (`lodge_covers`). Where the ground's front is drawn back at the top of a wall, it is the ground
+    itself as far as that reaches: that corner is the ground's own, kept open, and the lodge lays no mud there. None
+    beside the lodge, and none in front of a wall's top."""
+    if not lodge_inside(x):
+        return None
+    walk = lodge_walk(x)
+    forward, below = lodge_forward(x)
+    whole = LODGE_EDGE + (z - LODGE_EDGE) / max(forward, 0.04)
+    if forward < 0.999:
+        return walk - along(LODGE_FALL, whole) if forward > 0.45 and whole < 4.4 else None
+    # A little over the ground, more of it further out; none where it begins beside the drawn-back corner, and none
+    # where the far side has come down to the shore.
+    begins = eased((x - LODGE_WALK['top'][0] - LODGE_DRAWN) / 1.2) * min(1.0, (LODGE_WALK['shore'] - x) / 1.2)
+    over = 0.014 + (0.05 * eased((z - 0.62) / 1.0) + 0.13 * eased((z - 2.0) / 1.6)) * begins
+    h = walk - along(LODGE_FALL, min(z, 5.0)) + over
+    h += max(0.0, noise(x * 1.1, z * 1.1, 6.0) - 0.45) * 0.32 * eased((z - 1.6) / 1.4) * begins
+    if z > 5.0:
+        h += (-0.6 - h) * eased((z - 5.0) / 1.6)
+    return max(-0.6, h)
+
+
+def lodge_covers(x):
+    """Whether the lodge lays its own mud in front of the path at x: where the ground's front comes all the way forward."""
+    return lodge_inside(x) and lodge_forward(x)[0] >= 0.999
 
 
 def lodge_height(x, d):
-    """How high the lodge's mud is at x along the path and d towards the camera from its middle (d is -Y)."""
-    crest = along(LODGE_CREST, x)
-    front = along(LODGE_FRONT, x)
-    if d >= LODGE_D['front']:
-        h = front - (d - LODGE_D['front']) * 1.7
-    elif d >= LODGE_D['crest']:
-        t = (LODGE_D['front'] - d) / (LODGE_D['front'] - LODGE_D['crest'])
-        h = front + (crest - front) * (1.0 - (1.0 - t) ** 2)
-    else:
-        u = (LODGE_D['crest'] - d) / (LODGE_D['crest'] - LODGE_D['back'])
-        h = crest * max(0.0, 1.0 - u * u)
-    lumpy = (noise(x * 0.45, d * 0.45, 3.0) - 0.5) * 1.1 + (noise(x * 1.1, d * 1.1, 9.0) - 0.5) * 0.45 + (noise(x * 2.6, d * 2.6, 4.0) - 0.5) * 0.18
-    return max(0.0, h + lumpy * min(1.0, h / 1.5))
+    """How high the lodge is at x along the path and d towards the camera from its middle (d is -Y). None where there is
+    none of it: on the strip he walks, and beside it over the banks."""
+    if d > LODGE_BAND[0] and d < LODGE_BAND[1]:
+        return None
+    if d >= LODGE_BAND[1]:
+        return lodge_front(x, d - 7.0)
+    return lodge_back(x, d)
+
+
+def lodge_kept(x, d):
+    """Whether a place is one the lodge's sticks keep off: the gnawed trunks, the beaver's seat, the summit."""
+    for kx, kd, kr in LODGE_KEEP:
+        if math.hypot(x - kx, d - kd) < kr:
+            return True
+    return math.hypot(x - LODGE_SUMMIT[0], d - LODGE_SUMMIT[1]) < 1.35
 
 
 if wanted('baverhydda'):
     part = new_part()
-    MUD_WET = tone('#2a211a')
-    MUD = tone('#3f3226')
-    MUD_DRY = tone('#5a4a39')
-    MUD_PALE = tone('#6f604e')
-    PEELED = tone('#b9a37c')
-    PEELED_OLD = tone('#8d8476')
-    GREY = tone('#6c665c')
-    ALDER = tone('#4c3a2c')
-    WILLOW = tone('#69593c')
-    BIRCH = tone('#cdc7ba')
-    GNAWED = tone('#dcc89f')
-    # The mud: a grid over its foot, pulled down at its edge so that no gap shows under it.
-    XS = [-10.0 + 0.5 * i for i in range(41)]
-    DS = [LODGE_D['back'] - 0.4, -6.4, -5.4, -4.4, -3.4] + [-2.9 + 0.5 * j for j in range(int((LODGE_D['end'] + 2.9) / 0.5) + 1)]
-    rows = []
-    for j in range(len(DS)):
-        d = DS[j]
-        row = []
-        for i in range(len(XS)):
-            x = XS[i]
-            h = lodge_height(x, d)
-            edge = i == 0 or i == len(XS) - 1 or j == 0
-            z = -0.8 if edge else (h if h > 0.0 else -0.4)
-            wet = 1.0 - min(1.0, h / 1.6)
-            dry = min(1.0, max(0.0, (h - 3.0) / 4.5)) * (0.55 + 0.9 * noise(x * 0.8, d * 0.8, 5.0))
-            colour = blend(blend(MUD, MUD_WET, wet), MUD_DRY, dry)
-            colour = blend(colour, MUD_PALE, max(0.0, noise(x * 1.3, d * 1.3, 7.0) - 0.62) * 2.0 * min(1.0, h / 4.0))
-            row.append(put(part, Vector((x, -d, z)), colour))
-        rows.append(row)
+    MUD_WET = tone('#1c1611')
+    MUD = tone('#4b3a29')
+    MUD_DRY = tone('#665443')
+    MUD_PALE = tone('#78664f')
+    PEELED = tone('#cdbaa0')
+    PEELED_OLD = tone('#a89f92')
+    GREY = tone('#827d76')
+    ALDER = tone('#573d30')
+    WILLOW = tone('#6c5b47')
+    BIRCH = tone('#d4cfc3')
+    GNAWED = tone('#e8d6b4')
+    HEART = tone('#b89a64')
+    LEAVES = (tone('#c9a53a'), tone('#b9772b'), tone('#8a5a2c'), tone('#d4b84a'), tone('#6f4a2a'))
+    GREENS = (tone('#4f7d33'), tone('#6c9942'), tone('#3f6a2f'))
+    SX, SD, SH = LODGE_SUMMIT
+    WALLS = (LODGE_WALK['step1'][0], LODGE_WALK['step2'][0], LODGE_WALK['top'][0])
+
+    def mud_at(x, d, h):
+        """The mud's colour at a place: wet and near black at the water, drier and paler up the crown, in patches."""
+        water = lodge_water(x)
+        wet = 1.0 - min(1.0, max(0.0, h - water) / 1.5)
+        dry = min(1.0, max(0.0, (h - 3.2) / 4.2)) * (0.5 + 0.9 * noise(x * 0.8, d * 0.8, 5.0))
+        colour = blend(blend(MUD, MUD_WET, wet ** 0.7), MUD_DRY, dry)
+        colour = blend(colour, MUD_PALE, max(0.0, noise(x * 1.4, d * 1.4, 7.0) - 0.6) * 2.2 * min(1.0, h / 4.0))
+        # Darker in its hollows, where the wet stays.
+        return lit(colour, 0.82 + 0.3 * noise(x * 2.3, d * 2.3, 2.0))
+
+    def columns(x0, x1, step):
+        """The grid's columns from x0 to x1, with one on each side of every wall of the steps, so that each wall is a
+        face of its own."""
+        out = []
+        x = x0
+        while x < x1 - 0.001:
+            out.append(round(x, 3))
+            x += step
+        out.append(x1)
+        for wall in WALLS:
+            if x0 < wall < x1:
+                out = [v for v in out if abs(v - wall) > 0.12] + [wall - 0.004, wall + 0.004]
+        return sorted(out)
+
+    def sheet_of(xs, ds, covers=False):
+        """The mud over a grid of columns and rows: a face wherever all four of its corners are there. In front of the
+        path only where the lodge lays its own mud (`covers`)."""
+        rows = []
+        for d in ds:
+            row = []
+            for x in xs:
+                h = lodge_height(x, d) if not covers or lodge_covers(x) else None
+                row.append(None if h is None else put(part, Vector((x, -d, h)), mud_at(x, d, h)))
+            rows.append(row)
+        for j in range(len(ds) - 1):
+            for i in range(len(xs) - 1):
+                a, b, c, e = rows[j + 1][i], rows[j + 1][i + 1], rows[j][i + 1], rows[j][i]
+                if a is None or b is None or c is None or e is None:
+                    continue
+                # Wound so that it faces up: from in front, the row nearer the camera is j + 1.
+                face(part, (a, b, c, e))
+        return rows
+
+    # The mud behind the path: the shelf and the dome, cut finer where it rises fastest.
+    XS = columns(-10.6, 10.6, 0.42)
+    DS = [LODGE_D['back'], -6.6, -5.6, -4.6, -3.7, -2.9, -2.2, -1.6, -1.2, -0.8, -0.3, 0.3, 0.9, 1.5, 2.1, 2.6, 3.0, 3.3, 3.6, 3.9, 4.15,
+          4.4, 4.9, 5.4, 5.8, LODGE_BAND[0]]
+    back = sheet_of(XS, DS)
+    # Its hem behind and at its two ends, pulled down so that no gap shows under it.
+    for i in range(len(XS) - 1):
+        a, b = back[0][i], back[0][i + 1]
+        if a is not None and b is not None:
+            low = [put(part, Vector((v.co.x, v.co.y + 0.3, -0.8)), MUD_WET) for v in (a, b)]
+            face(part, (a, b, low[1], low[0]))
+    # Its left side over the bank, from where the dome begins there to the path: a wall of its own, the first step's.
+    first = XS.index(LODGE_WALK['step1'][0] + 0.004)
     for j in range(len(DS) - 1):
-        for i in range(len(XS) - 1):
-            # Wound so that it faces up: from in front, the row nearer the camera is j + 1.
-            face(part, (rows[j + 1][i], rows[j + 1][i + 1], rows[j][i + 1], rows[j][i]))
-    # The sticks, most laid down the slope and over each other, sunk into the mud by nearly half their thickness and
-    # bent over it where they are long, some sticking out; thicker and more of them at its front, where it is seen.
-    placed = 0
-    n = 0
-    while placed < 235 and n < 4000:
-        n += 1
-        x0 = -8.8 + 17.6 * rnd(n, 1.0)
-        d0 = LODGE_D['back'] + 1.2 + (LODGE_D['front'] - 0.1 - LODGE_D['back'] - 1.2) * (rnd(n, 2.0) ** 0.6)
+        a, b = back[j][first], back[j + 1][first]
+        if a is None or b is None or (back[j][first - 1] is not None and back[j + 1][first - 1] is not None):
+            continue
+        low = [put(part, Vector((v.co.x, v.co.y, LODGE_WALK['bank'] - 0.2)), MUD_WET) for v in (a, b)]
+        face(part, (b, a, low[0], low[1]))
+    # The mud in front of the path: over the ground's slope, and down under the water.
+    FX = columns(LODGE_WALK['top'][0] + LODGE_DRAWN, LODGE_WALK['shore'], 0.42)
+    FZ = [0.62, 0.8, 1.05, 1.35, 1.7, 2.1, 2.5, 2.9, 3.3, 3.7, 4.1, 4.5, 4.9, 5.25, 5.6, 5.95, 6.3, 6.7]
+    front = sheet_of(FX, [7.0 + z for z in FZ], covers=True)
+    # --- the sticks ---------------------------------------------------------------------------------------------------
+    # Each lies on the lodge the way it was pushed into it: most down its slope or a little across it, some right across,
+    # so that they lace over each other; sunk into the mud by a third of their thickness, long ones bent over it. One end
+    # is gnawed to a blunt point, pale; the other is gnawed too, or broken off, or runs out into a twig. Behind the path,
+    # where they are seen sharp, many are peeled and pale; in front of it, on the wet apron down to the water, they are
+    # dark with mud and water, so that nothing bright stands between him and the camera.
+    def rod(points, radii, tones, sides):
+        """A stick along its points, lighter on its top than under it: its roundness is in its colours."""
+        made = tube(part, points, radii, tones, sides, closed_ends=False)
+        for i in range(len(made)):
+            for vert in made[i]:
+                rise = (vert.co.z - points[i].z) / max(0.001, radii[i])
+                part['paint'][vert] = lit(part['paint'][vert], 0.74 + 0.3 * max(-1.0, min(1.0, rise)) * 0.5 + 0.15)
+        return made
+
+    def stick(n, x0, d0, long, thick, lift=0.0):
+        """One stick with its middle at (x0, d0). Gives False if it cannot lie there."""
         h0 = lodge_height(x0, d0)
-        if h0 < 0.4:
-            continue
-        if d0 < -1.5 and rnd(n, 3.0) < 0.75:
-            continue
-        gx = lodge_height(x0 + 0.3, d0) - lodge_height(x0 - 0.3, d0)
-        gd = lodge_height(x0, d0 + 0.3) - lodge_height(x0, d0 - 0.3)
-        down = math.atan2(-gd, -gx) if abs(gx) + abs(gd) > 0.01 else TAU * rnd(n, 4.0)
-        heading = down + (rnd(n, 5.0) - 0.5) * 2.2 if rnd(n, 6.0) < 0.45 else TAU * rnd(n, 7.0)
-        long = 1.2 + 4.4 * rnd(n, 8.0) ** 1.6
-        thick = min(0.06 + 0.2 * rnd(n, 9.0) ** 1.5, 0.04 + 0.045 * long)
+        if h0 is None:
+            return False
+        gx_a = lodge_height(x0 + 0.3, d0)
+        gx_b = lodge_height(x0 - 0.3, d0)
+        gd_a = lodge_height(x0, d0 + 0.3)
+        gd_b = lodge_height(x0, d0 - 0.3)
+        if gx_a is None or gx_b is None or gd_a is None or gd_b is None:
+            return False
+        gx = gx_a - gx_b
+        gd = gd_a - gd_b
+        down = math.atan2(-gd, -gx) if abs(gx) + abs(gd) > 0.02 else TAU * rnd(n, 4.0)
+        pick = rnd(n, 6.0)
+        if pick < 0.5:
+            heading = down + (rnd(n, 5.0) - 0.5) * 1.1
+        elif pick < 0.8:
+            heading = down + math.pi / 2.0 + (rnd(n, 5.0) - 0.5) * 1.3
+        else:
+            heading = TAU * rnd(n, 7.0)
         ux = math.cos(heading)
         ud = math.sin(heading)
-        ax = x0 - ux * long * 0.5
-        ad = d0 - ud * long * 0.5
-        bx = x0 + ux * long * 0.5
-        bd = d0 + ud * long * 0.5
-        # Nothing lies out over where he walks.
-        if ad > LODGE_D['front'] - 0.15 or bd > LODGE_D['front'] - 0.15 or abs(ax) > 9.5 or abs(bx) > 9.5:
-            continue
-        ha = lodge_height(ax, ad) - thick * 0.45
-        hb = lodge_height(bx, bd) - thick * 0.45
-        if rnd(n, 10.0) < (0.4 if h0 > 6.0 else 0.2):
-            hb += 0.5 + 1.5 * rnd(n, 11.0)
-        if min(ha, hb) < -0.2:
-            continue
-        pick = rnd(n, 12.0)
-        if pick < 0.25:
-            colour = blend(PEELED, PEELED_OLD, rnd(n, 13.0) * 0.7)
-        elif pick < 0.52:
+        places = []
+        count = 2 if long < 1.5 else 3 if long < 3.6 else 4
+        for k in range(count):
+            f = k / (count - 1.0) - 0.5
+            px = x0 + ux * long * f
+            pd = d0 + ud * long * f
+            ph = lodge_height(px, pd)
+            if ph is None or abs(px) > 10.3 or lodge_kept(px, pd):
+                return False
+            places.append((px, pd, ph))
+        # Never across the strip he walks, and by it only what lies low: nothing stands over his feet.
+        side = places[0][1] >= LODGE_BAND[1]
+        for px, pd, ph in places:
+            if (pd >= LODGE_BAND[1]) != side:
+                return False
+        near = min(abs(pd - 7.0) for px, pd, ph in places)
+        if side and thick > (0.075 if near < 2.4 else 0.11):
+            return False
+        if near < 1.5 and not side and thick > 0.1:
+            return False
+        # Round the summit and between it and the camera nothing rises: the beaver is seen whole there.
+        sight = False
+        for px, pd, ph in places:
+            if abs(px - SX) < 2.4 and pd > SD - 0.6 and pd < LODGE_D['shelf'] + 0.5:
+                sight = True
+                if ph + thick * 1.4 > SH - 0.06 - 0.03 * max(0.0, pd - SD):
+                    return False
+        sunk = thick * (0.45 if side else 0.3 if thick > 0.07 else 0.1)
+        path = []
+        for k in range(count):
+            px, pd, ph = places[k]
+            path.append(Vector((px, -pd, ph + thick - sunk)))
+        # Straight between its ends where the lodge falls away under it; never through the lodge.
+        a = path[0]
+        b = path[-1]
+        for k in range(1, count - 1):
+            f = k / (count - 1.0)
+            straight = a.z + (b.z - a.z) * f
+            path[k].z = max(path[k].z, straight - 0.03 * long * (1.0 - abs(f - 0.5) * 2.0))
+        # Some stand out of it at one end.
+        if lift > 0.0 and not sight and not side and near > 2.6 and min(math.hypot(px - SX, pd - SD) for px, pd, ph in places) > 3.4:
+            for k in range(count):
+                path[k].z += lift * (k / (count - 1.0)) ** 1.6
+        tint = rnd(n, 12.0)
+        if tint < 0.34:
+            colour = blend(PEELED, PEELED_OLD, rnd(n, 13.0) * 0.8)
+        elif tint < 0.6:
             colour = blend(PEELED_OLD, GREY, rnd(n, 14.0))
-        elif pick < 0.92:
+        elif tint < 0.93:
             colour = blend(ALDER, WILLOW, rnd(n, 15.0))
         else:
             colour = BIRCH
-        # Mud on it low down, where the beaver plastered it, and some on every one.
-        colour = blend(lit(colour, 0.6 + 0.4 * min(1.0, (ha + hb) / 2.0 / 4.5)), MUD, 0.15 + 0.3 * rnd(n, 18.0))
-        a = Vector((ax, -ad, ha))
-        b = Vector((bx, -bd, hb))
+        colour = lit(colour, 0.8 + 0.3 * rnd(n, 19.0))
+        gnawed = GNAWED
+        if side:
+            # On the apron: soaked, and plastered with mud.
+            colour = blend(lit(colour, 0.66), MUD, 0.38)
+            gnawed = blend(GNAWED, MUD, 0.72)
+        water = lodge_water(x0)
         way = b - a
         way.normalize()
-        tip = 0.2 + 0.3 * rnd(n, 16.0)
-        end = blend(GNAWED, PEELED_OLD, rnd(n, 17.0) * 0.7)
-        path = [a, a + way * 0.03]
-        radii = [thick * 0.6, thick]
-        colours = [end, colour]
-        if long > 3.2:
-            mx = (ax + bx) * 0.5
-            md = (ad + bd) * 0.5
-            mid = Vector((mx, -md, max((ha + hb) * 0.5 - 0.6, min((ha + hb) * 0.5 + 0.3, lodge_height(mx, md) - thick * 0.35))))
-            path.append(mid)
-            radii.append(thick * 0.97)
-            colours.append(lit(colour, 0.95))
-        path += [b, b + way * tip]
-        radii += [thick * 0.92, 0.015]
-        colours += [colour, GNAWED]
-        # Its cut end is closed; its gnawed point needs no cap.
-        made = tube(part, path, radii, colours, 5, closed_ends=False)
-        cap = put(part, a, end)
-        for j in range(5):
-            face(part, (made[0][(j + 1) % 5], made[0][j], cap))
-        placed += 1
-    # Lumps of mud plastered over them here and there.
-    for i in range(18):
-        x = -7.0 + 14.0 * rnd(i, 21.0)
-        d = -3.0 + 7.4 * rnd(i, 22.0)
-        h = lodge_height(x, d)
-        if h < 1.0:
+        points = [a - way * (thick * 1.5), a]
+        radii = [thick * 0.22, thick]
+        tones = [gnawed, blend(gnawed, colour, 0.4)]
+        for k in range(1, count - 1):
+            points.append(path[k])
+            radii.append(thick * (0.98 - 0.1 * k / count))
+            # Stained with mud where it lies deep, and dark where the water has it.
+            stain = 0.1 + 0.3 * rnd(n, 20.0 + k)
+            wet = 1.0 - min(1.0, max(0.0, path[k].z - water) / 0.5)
+            tones.append(blend(blend(colour, MUD, stain), MUD_WET, 0.75 * wet))
+        end = rnd(n, 16.0)
+        wet_b = 1.0 - min(1.0, max(0.0, b.z - water) / 0.5)
+        tail = blend(colour, MUD_WET, 0.75 * wet_b)
+        if end < 0.45:
+            # Gnawed at this end too.
+            points += [b, b + way * (thick * 1.5)]
+            radii += [thick * 0.86, thick * 0.2]
+            tones += [blend(gnawed, tail, 0.45), blend(gnawed, MUD_WET, 0.6 * wet_b)]
+        elif end < 0.75 or thick > 0.085:
+            # Broken off: its pale wood shows in its end.
+            points += [b, b + way * (thick * 0.25)]
+            radii += [thick * 0.84, thick * 0.08]
+            tones += [tail, blend(blend(HEART, MUD, 0.5 if side else 0.0), MUD_WET, 0.6 * wet_b)]
+        else:
+            # It runs out into a twig.
+            points += [b, b + way * (0.3 + long * 0.12) + Vector((0.0, 0.0, 0.06))]
+            radii += [thick * 0.6, thick * 0.12]
+            tones += [tail, tail]
+        rod(points, radii, tones, 6 if thick > 0.1 else 5 if thick > 0.062 else 4 if thick > 0.036 else 3)
+        return True
+
+    made = {'logs': 0, 'branches': 0, 'twigs': 0}
+    # Of each kind: how many, how long at least and how much longer at most, how thick at least and how much thicker.
+    wanted_sticks = (('logs', 44, 3.0, 3.4, 0.1, 0.075), ('branches', 250, 1.7, 2.9, 0.045, 0.042), ('twigs', 250, 0.8, 1.7, 0.02, 0.022))
+    for kind, count, short, more, thin, fatter in wanted_sticks:
+        n = 0
+        seed = {'logs': 100.0, 'branches': 300.0, 'twigs': 700.0}[kind]
+        while made[kind] < count and n < 9000:
+            n += 1
+            x0 = -10.0 + 20.0 * rnd(n, seed + 1.0)
+            # Most of them up the dome's face behind the path, where they are seen; fewer on the apron; few behind its crown.
+            share = rnd(n, seed + 2.0)
+            if share < 0.3:
+                d0 = LODGE_BAND[1] + 0.2 + (LODGE_D['front'] - LODGE_BAND[1] - 1.2) * rnd(n, seed + 3.0) ** 0.8
+            elif share < 0.93:
+                d0 = SD + (LODGE_BAND[0] - 0.2 - SD) * rnd(n, seed + 3.0)
+            else:
+                d0 = LODGE_D['back'] + 1.0 + (SD - LODGE_D['back'] - 1.0) * rnd(n, seed + 3.0)
+            long = short + more * rnd(n, seed + 8.0) ** 1.5
+            thick = thin + fatter * rnd(n, seed + 9.0) ** 1.4
+            lift = (0.2 + 0.7 * rnd(n, seed + 11.0)) if rnd(n, seed + 10.0) < 0.2 else 0.0
+            if stick(n + seed * 13.0, x0, d0, long, thick, lift):
+                made[kind] += 1
+
+    # The apron's foot: sticks out of the lodge's front down into the water, dark with it, and a few afloat before it.
+    apron = 0
+    n = 0
+    while apron < 26 and n < 600:
+        n += 1
+        x0 = LODGE_WALK['top'][0] + LODGE_DRAWN + 0.3 + (LODGE_WALK['shore'] - LODGE_WALK['top'][0] - LODGE_DRAWN - 0.9) * rnd(n, 41.0)
+        z0 = 3.9 + 1.5 * rnd(n, 42.0)
+        h0 = lodge_front(x0, z0)
+        if h0 is None or not lodge_covers(x0):
             continue
-        s = 0.5 + 0.8 * rnd(i, 23.0)
-        made = lump(part, Vector((x, -d, h - 0.08)), (s * 1.3, s, s * 0.32), 1, blend(MUD, MUD_DRY, 0.3 + 0.5 * rnd(i, 24.0)))
-        for vert in made:
-            vert.co.z += (noise(vert.co.x * 2.0, vert.co.y * 2.0, i) - 0.5) * 0.12
-    # Twigs and bits of bark the beaver dropped, over its front where he sees it close.
-    for i in range(90):
-        x = -8.0 + 16.0 * rnd(i, 41.0)
-        d = -1.5 + 6.0 * rnd(i, 42.0)
-        h = lodge_height(x, d)
-        if h < 0.5:
+        water = lodge_water(x0)
+        long = 1.5 + 1.7 * rnd(n, 43.0)
+        thick = 0.045 + 0.06 * rnd(n, 44.0) ** 1.5
+        lean = (rnd(n, 45.0) - 0.5) * 1.5
+        out = Vector((math.sin(lean), -math.cos(lean), 0.0))
+        a = Vector((x0, -(7.0 + z0), h0 + thick * 0.4))
+        b = a + out * long
+        if abs(b.x) > 9.6 or -b.y > 7.0 + 6.5:
             continue
-        heading = TAU * rnd(i, 43.0)
-        long = 0.5 + 1.1 * rnd(i, 44.0)
-        ax = x - math.cos(heading) * long * 0.5
-        ad = d - math.sin(heading) * long * 0.5
-        bx = x + math.cos(heading) * long * 0.5
-        bd = d + math.sin(heading) * long * 0.5
-        if max(ad, bd) > LODGE_D['front'] - 0.15:
+        b.z = min(a.z - 0.3, water - 0.2 - 0.4 * rnd(n, 46.0))
+        colour = blend(lit(blend(PEELED_OLD, GREY, rnd(n, 47.0)) if rnd(n, 48.0) < 0.5 else blend(ALDER, WILLOW, rnd(n, 47.0)), 0.6), MUD, 0.4)
+        way = b - a
+        way.normalize()
+        mid = a + (b - a) * 0.5
+        wet = blend(colour, MUD_WET, 0.8)
+        rod([a - way * (thick * 1.5), a, mid, b, b + way * (thick * 1.4)], [thick * 0.22, thick, thick * 0.95, thick * 0.85, thick * 0.2],
+            [blend(GNAWED, MUD, 0.72), colour, blend(colour, MUD_WET, 0.25 if mid.z > water + 0.3 else 0.75), wet, wet], 5 if thick > 0.062 else 4)
+        apron += 1
+    for i in range(6):
+        x0 = 0.6 + 6.4 * rnd(i, 51.0)
+        z0 = 6.05 + 0.5 * rnd(i, 52.0)
+        water = lodge_water(x0)
+        long = 1.0 + 1.3 * rnd(i, 53.0)
+        thick = 0.04 + 0.04 * rnd(i, 54.0)
+        turn = (rnd(i, 55.0) - 0.5) * 1.2
+        way = Vector((math.cos(turn), math.sin(turn), 0.0))
+        mid = Vector((x0, -(7.0 + z0), water - thick * 0.3))
+        colour = blend(lit(blend(PEELED_OLD, GREY, rnd(i, 56.0)), 0.6), MUD_WET, 0.45)
+        rod([mid - way * (long * 0.5 + thick * 1.4), mid - way * (long * 0.5), mid + way * (long * 0.5), mid + way * (long * 0.5 + thick * 1.4)],
+            [thick * 0.22, thick, thick * 0.9, thick * 0.2], [blend(GNAWED, MUD_WET, 0.5), colour, colour, blend(GNAWED, MUD_WET, 0.5)], 4)
+
+    # Mud the beaver has carried up in its paws and patted down over the sticks: dark lumps, wet.
+    pats = 0
+    n = 0
+    while pats < 46 and n < 900:
+        n += 1
+        x0 = -8.6 + 17.2 * rnd(n, 31.0)
+        d0 = SD - 2.0 + (LODGE_BAND[0] - 0.6 - SD + 2.0) * rnd(n, 32.0)
+        h0 = lodge_height(x0, d0)
+        if h0 is None or lodge_kept(x0, d0) or h0 < 1.0:
             continue
-        thin = 0.025 + 0.03 * rnd(i, 45.0)
-        colour = blend(lit(blend(PEELED_OLD, ALDER, rnd(i, 46.0)), 0.8), MUD, 0.25)
-        tube(part, [Vector((ax, -ad, lodge_height(ax, ad) + thin * 0.3)), Vector((bx, -bd, lodge_height(bx, bd) + thin * 0.3))], [thin, thin * 0.7],
-             [colour, colour], 3, closed_ends=False)
-    finish(part, 'baverhydda', sharp=80.0, strength=0.7, reach=1.1, floor=0.0, recalc=False)
+        if abs(x0 - SX) < 2.4 and d0 > SD - 0.6 and h0 + 0.2 > SH - 0.06 - 0.03 * max(0.0, d0 - SD):
+            continue
+        s = 0.32 + 0.5 * rnd(n, 33.0)
+        lumped = lump(part, Vector((x0, -d0, h0 + 0.02)), (s * (1.0 + 0.5 * rnd(n, 34.0)), s, s * 0.3), 1, lit(mud_at(x0, d0, h0), 0.85 + 0.25 * rnd(n, 35.0)))
+        for vert in lumped:
+            under = lodge_height(vert.co.x, -vert.co.y)
+            if under is not None:
+                vert.co.z = max(vert.co.z + (under - h0), under - 0.06) + (noise(vert.co.x * 3.0, vert.co.y * 3.0, n) - 0.5) * 0.08
+        pats += 1
+
+    # --- wet leaves plastered on it, and the green sprigs the beaver has brought ---------------------------------------
+    leaves = 0
+    n = 0
+    while leaves < 230 and n < 4000:
+        n += 1
+        x0 = -9.6 + 19.2 * rnd(n, 61.0)
+        d0 = LODGE_D['back'] + 2.0 + (LODGE_D['front'] - 2.2 - LODGE_D['back'] - 2.0) * rnd(n, 62.0)
+        h0 = lodge_height(x0, d0)
+        if h0 is None or h0 < lodge_water(x0) + 0.06:
+            continue
+        in_front = d0 >= LODGE_BAND[1]
+        size = 0.08 + 0.08 * rnd(n, 63.0)
+        turn = TAU * rnd(n, 64.0)
+        # Wet and dull, a few still yellow; darker on the apron.
+        colour = lit(blend(LEAVES[int(rnd(n, 65.0) * 4.999)], MUD, 0.25 + 0.4 * rnd(n, 67.0)), (0.5 if in_front else 0.8) + 0.25 * rnd(n, 66.0))
+        corners = []
+        ok = True
+        for along_it, across in ((1.0, 0.0), (0.45, 0.42), (-0.5, 0.36), (-1.0, 0.0), (-0.5, -0.36), (0.45, -0.42)):
+            px = x0 + (math.cos(turn) * along_it - math.sin(turn) * across) * size
+            pd = d0 + (math.sin(turn) * along_it + math.cos(turn) * across) * size
+            ph = lodge_height(px, pd)
+            if ph is None:
+                ok = False
+                break
+            corners.append(put(part, Vector((px, -pd, ph + 0.02)), colour))
+        if not ok:
+            continue
+        # Wound to face up: going round against the clock as seen from above, where d is -Y.
+        face(part, corners[::-1])
+        leaves += 1
+
+    sprigs = 0
+    n = 0
+    while sprigs < 16 and n < 900:
+        n += 1
+        x0 = -8.6 + 17.2 * rnd(n, 71.0)
+        d0 = -0.4 + 4.4 * rnd(n, 72.0)
+        h0 = lodge_height(x0, d0)
+        if h0 is None or lodge_kept(x0, d0) or (abs(x0 - SX) < 2.8 and d0 > SD - 0.6):
+            continue
+        lean = TAU * rnd(n, 74.0)
+        reach = 0.7 + 0.7 * rnd(n, 75.0)
+        root = Vector((x0, -d0, h0 - 0.05))
+        tip = root + Vector((math.cos(lean) * reach * 0.6, math.sin(lean) * reach * 0.6, reach * 0.55))
+        bend = root + (tip - root) * 0.5 + Vector((0.0, 0.0, reach * 0.08))
+        tube(part, [root, bend, tip], [0.028, 0.022, 0.012], [lit(WILLOW, 0.9), lit(WILLOW, 1.0), GREENS[0]], 3, closed_ends=False)
+        for k in range(6):
+            f = 0.3 + 0.7 * k / 5.0
+            at = root + (bend - root) * (f * 2.0) if f < 0.5 else bend + (tip - bend) * (f * 2.0 - 1.0)
+            turn = lean + (1.0 if k % 2 else -1.0) * (0.9 + 0.4 * rnd(n, 80.0 + k))
+            out = Vector((math.cos(turn), math.sin(turn), 0.25 - 0.3 * rnd(n, 90.0 + k)))
+            out.normalize()
+            side = out.cross(Vector((0.0, 0.0, 1.0)))
+            side.normalize()
+            long = 0.2 + 0.1 * rnd(n, 100.0 + k)
+            green = lit(GREENS[k % 3], 0.85 + 0.3 * rnd(n, 110.0 + k))
+            leaf = [at, at + out * (long * 0.45) + side * (long * 0.3), at + out * long, at + out * (long * 0.45) - side * (long * 0.3)]
+            front_side = [put(part, p, green) for p in leaf]
+            face(part, front_side)
+            back_side = [put(part, p - Vector((0.0, 0.0, 0.004)), lit(green, 0.7)) for p in leaf]
+            face(part, back_side[::-1])
+        sprigs += 1
+    print('  the lodge:', made, 'apron', apron, 'pats', pats, 'leaves', leaves, 'sprigs', sprigs)
+    # Smooth all round each stick, the thinnest too (three sides, 120 degrees between them): its points are shared.
+    finish(part, 'baverhydda', sharp=125.0, strength=0.75, reach=0.9, floor=0.0, recalc=False)
 
 
 def box_at(part, lo, hi, colour, faces=(0, 1, 2, 3, 4, 5)):
