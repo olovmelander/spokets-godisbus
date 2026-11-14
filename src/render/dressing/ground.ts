@@ -1212,7 +1212,7 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
     // A cut face is banded by its height, so a tall one needs points up it.
     // A grown wall's face slopes and bulges away from the path (./natural.ts): it needs points closer still.
     const pieces = Math.max(1, Math.ceil(Math.abs(dx) / 0.45), steep && front.cuts ? Math.ceil(Math.abs(b.y - a.y) / front.course) : 1,
-      steep && edges.bankAt((a.x + b.x) / 2) ? Math.min(10, Math.ceil(Math.abs(b.y - a.y) / 0.4)) : 1);
+      steep && edges.bankAt((a.x + b.x) / 2) ? Math.min(16, Math.ceil(Math.abs(b.y - a.y) / 0.4)) : 1);
     const length = Math.hypot(dx, b.y - a.y);
     const drained = steep ? drainAt(a.x) : undefined;
     const ends = front.cuts && steep ? (drained ? [1, 1] : [forwardAtCorner(fronts, a.x, a.y, front.over, front.least), forwardAtCorner(fronts, b.x, b.y, front.over, front.least)]) : null;
@@ -1340,7 +1340,10 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       const shut = p.drain !== undefined && (row.z > EDGE || row.z < DRAIN_BACK);
       // An open pool's bed goes on under its water in front of the path, and comes up as its shore far in front, along
       // a line that wanders: past the foot of a picture held sideways, and before the floor's own end.
-      const shored = p.open !== undefined && row.z >= OPEN_SHORE - 1e-6 ? Math.max(0, p.open + SHORE_OVER + 0.04 - p.y) : 0;
+      // Beside each of its banks the shore lies a row nearer the path: the pool's end comes round, as its banks do.
+      const mine = p.open !== undefined && row.z > 4.1 && row.z < OPEN_SHORE ? edges?.poolAt(p.x) : undefined;
+      const round = mine ? Math.min(p.x - mine.from, mine.to - p.x) < Math.min(1.1, (mine.to - mine.from) * 0.28) * (0.75 + 0.5 * noise(p.x * 1.9 + 3.3, 6.1)) : false;
+      const shored = p.open !== undefined && (row.z >= OPEN_SHORE - 1e-6 || round) ? Math.max(0, p.open + SHORE_OVER + 0.04 - p.y) : 0;
       const bed = p.y + shored;
       let y = (p.shore !== undefined && row.z > EDGE ? p.shore : shut ? p.drain! : bed) - drop + swell;
       let under = drop - front.lip * p.forward;
@@ -1457,7 +1460,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise + sink : 0) + (row.z >= DRAIN_BACK ? sink : 0) + shored) * tile);
       // A face lies in the depth and along the wall. A board there is a board on edge, its grain into the depth.
       else if (look.boards) uv.push((p.x * ux + y * uy) * tile, z * tile);
-      else uv.push((z + out) * tile, (p.x * ux + (y + fold) * uy) * tile);
+      else uv.push((z + out) * tile, (p.x * ux + (y + fold - sunk) * uy) * tile);
     }
     return first;
   };

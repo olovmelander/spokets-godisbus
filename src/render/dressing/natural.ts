@@ -12,14 +12,17 @@ import { hash, heightAt, landscape, noise, surfaceAt } from './kit';
  * side behind the path, leans, bulges and breaks back down its face, and its lip rounds over. A ditch's two walls wind
  * together.
  *
- * **On the plane he moves in nothing changes.** Between `STILL_BEHIND` and `STILL_FRONT` every point is drawn where the
- * outline has it, so that his soles stand on what is drawn and he stops at what is drawn. Away from it a point is drawn
- * `shift` further along the path and `sink` lower. Both are smooth fields of where a point is (x, its height, z), so
- * that everything laid out by them stays whole: the ground's mesh, the water under its banks, and what grows on a lip.
+ * **On the plane he moves in the ground is the simulation's.** Between `STILL_BEHIND` and `STILL_FRONT` every floor, and
+ * every wall's lip and foot, is drawn where the outline has it, so that his soles stand on what is drawn and he stops
+ * at what is drawn. Only a wall's face between its lip and its foot is weathered there: back into the wall by a few
+ * hundredths of a length at his own height and a tenth over his head, never out towards him, so that a tall wall is
+ * not ruled with a ruler beside him. Away from the plane a point is drawn `shift` further along the path and `sink`
+ * lower. Both are smooth fields of where a point is (x, its height, z), so that everything laid out by them stays
+ * whole: the ground's mesh, the water under its banks, and what grows on a lip.
  */
 
 /** Ground that has grown or weathered. What is built keeps its straight lines. */
-const GROWN: ReadonlySet<string> = new Set(['moss', 'lawn', 'sphagnum', 'shore', 'granite', 'earth', 'sand', 'wetRock']);
+const GROWN: ReadonlySet<string> = new Set(['moss', 'lawn', 'sphagnum', 'shore', 'granite', 'earth', 'sand', 'wetRock', 'shavings']);
 /** The places where a stretch marked stone is living rock, and not a kerb, a step or a bed's edging. */
 const ROCKY_PLACES: ReadonlySet<string> = new Set(['bog', 'forest', 'mountain', 'dusk']);
 /** The grounds that are rock: they break in blocks, and lean little. */
@@ -61,6 +64,8 @@ export interface Bank {
   rough: number;
   /** How far its lip rounds over, away from the plane he moves in. */
   round: number;
+  /** How much its face is weathered back into the wall: none on a bog's island, whose side has a shape of its own. */
+  weather: number;
   /** How far it moves the ground with it, on its upper side and on its lower. */
   reachUp: number;
   reachLow: number;
@@ -68,6 +73,8 @@ export interface Bank {
   front: number;
   /** It breaks in blocks, as rock does. */
   rock: boolean;
+  /** What its upper floor is: lawn has grass to hang over its lip, moss its cushions, a heap of shavings neither. */
+  kind: string;
   /** Its foot is in a pool that is open towards the camera: its line goes on in front of the path too. */
   open: boolean;
   seed: number;
@@ -171,10 +178,10 @@ function build(source: ChapterData, own: string): Edges {
     const closes = i === 0 || i === line.length - 2;
     walls.push({ x: (top.x + foot.x) / 2, top: top.y, foot: foot.y, side, grown: !closes && grown(chapter, upper) && grown(chapter, lower) });
   }
-  // Where something built begins: a deck, a kerb, a thing that stands on the ground. A line stops short of it.
+  // Where something built begins: a deck, a kerb, a street. A line stops short of it. (A thing that stands on the
+  // ground, a barrel or a boulder, has the place's own ground under it, and that goes with its walls as all of it does.)
   const built: number[] = [];
   for (const s of chapter.surfaces ?? []) if (!grown(chapter, s.kind)) built.push(s.from, s.to);
-  for (const mark of source.landmarks ?? []) built.push(mark.from, mark.to);
   /** How far it is from a wall to the next wall or built thing on one side. */
   const gap = (i: number, way: 1 | -1) => {
     const wall = walls[i]!;
@@ -183,7 +190,8 @@ function build(source: ChapterData, own: string): Edges {
     for (const x of built) if ((x - wall.x) * way > -1e-6) least = Math.min(least, Math.abs(x - wall.x));
     return least;
   };
-  const isOpen = (wall: { x: number; foot: number }) => pools.some((w) => wall.x >= w.from - 1e-6 && wall.x <= w.to + 1e-6 && wall.foot < w.y);
+  const poolOf = (wall: { x: number; foot: number }) => pools.find((w) => wall.x >= w.from - 1e-6 && wall.x <= w.to + 1e-6 && wall.foot < w.y);
+  const isOpen = (wall: { x: number; foot: number }) => poolOf(wall) !== undefined;
   const banks: Bank[] = [];
   for (const [i, wall] of walls.entries()) {
     if (!wall.grown) continue;
@@ -199,15 +207,17 @@ function build(source: ChapterData, own: string): Edges {
     // Soil slumps and leans, and its turf rounds over; rock stands, and breaks in blocks; a bog's island is soft and low.
     const like = rock ? { out: 0.7, back: 0.3, lean: Math.min(0.2 * tall, 0.55), rough: 0.16, round: 0.04 }
       : peat ? { out: 0.5, back: 0.25, lean: Math.min(0.3 * tall, 0.35), rough: 0.08, round: 0.1 }
-      : { out: 0.95, back: 0.3, lean: Math.min(0.45 * tall, 1.1), rough: 0.1, round: 0.16 };
+      : { out: 0.95, back: 0.3, lean: isOpen(wall) ? 0.34 : Math.min(0.45 * tall, 1.1), rough: 0.1, round: 0.16 };
     banks.push({
-      x: wall.x, top: wall.top, foot: wall.foot, side: wall.side, rock, open: isOpen(wall), seed,
+      // A pool's bank slopes from its lip to a little under its water: what is deeper is never seen.
+      x: wall.x, top: wall.top, foot: Math.max(wall.foot, (poolOf(wall)?.y ?? -Infinity) - 0.3), side: wall.side, rock, kind: upper, open: isOpen(wall), seed,
       // Out and lean together stay well inside the low side's reach, so that the ground there is never folded.
       out: Math.min(like.out * (0.7 + 0.3 * drawOf(seed, 1)), 0.26 * reachLow),
       lean: Math.min(like.lean * (0.6 + 0.4 * drawOf(seed, 2)), 0.1 * reachLow),
       back: Math.min(like.back, 0.25 * reachUp),
       rough: Math.min(like.rough, 0.1 * reachLow, 0.08 * tall + 0.03),
       round: Math.min(like.round, 0.3 * tall, 0.4 * reachUp),
+      weather: peat ? 0 : 1,
       front: FRONT_SHARE * 0.55 * Math.min(reachUp, reachLow),
       reachUp: Math.max(reachUp, 0.05), reachLow,
     });
@@ -246,7 +256,11 @@ function build(source: ChapterData, own: string): Edges {
   const outOf = (bank: Bank, up: number, y: number, z: number): number => {
     // In front of the path a wall's corner rounds off into its upper side, more at one height than at another: never
     // out into the low side, where it would stand in front of what is at the wall's foot.
-    if (z > STILL_FRONT && !bank.open) return -Math.min(0.5, FRONT_SHARE * Math.min(bank.reachUp, bank.reachLow)) * smooth(STILL_FRONT, 1.25, z) * (0.45 + 0.55 * noise(y * 1.1 + bank.seed, z * 0.8 + 3.7));
+    // (By its height on the wall: a floor that slopes away from the wall is not creased by it.)
+    if (z > STILL_FRONT && !bank.open) {
+      const high = Math.min(bank.top, Math.max(bank.foot, y));
+      return -Math.min(0.5, FRONT_SHARE * Math.min(bank.reachUp, bank.reachLow)) * smooth(STILL_FRONT, 1.25, z) * (0.45 + 0.55 * noise(high * 1.1 + bank.seed, z * 0.8 + 3.7));
+    }
     const far = away(bank.open, z);
     if (far === 0) return 0;
     const wander = Math.min(1, Math.max(-1, lineOf(bank, z)));
@@ -266,6 +280,20 @@ function build(source: ChapterData, own: string): Edges {
     return far * (lip + lean + bulge + shoulder);
   };
   const still = (z: number) => z >= STILL_BEHIND && z <= STILL_FRONT;
+  /**
+   * How far a wall's face is weathered back into the wall at a point of it: nothing at its lip and its foot, a few
+   * hundredths at his height over its foot, a tenth over his head. On the plane he moves in too, and nowhere out
+   * towards him. Not where the floor ends in its cut far in front, where a bank's face is one line.
+   */
+  const weathered = (bank: Bank, up: number, y: number, z: number): number => {
+    if (up <= 0 || up >= 1 || z > 4.5 || bank.weather === 0) return 0;
+    const tall = bank.top - bank.foot;
+    const [under, over] = [(1 - up) * tall, up * tall];
+    const much = (0.03 + 0.08 * smooth(1, 2.2, over)) * smooth(0.04, 0.3, under) * smooth(0.04, 0.3, over) * (1 - smooth(3.5, 4.5, z));
+    return much * (bank.rock
+      ? 0.25 + 0.75 * hash(Math.floor(y / 0.55 + bank.seed * 1.9), Math.floor(z / 0.9 + bank.seed * 5.3))
+      : 0.5 + 0.5 * Math.sin(y * 4.3 + bank.seed * 7 + 2.4 * noise(y * 1.7 + bank.seed, z * 1.1 + 4.1)));
+  };
   /** How far a ditch's winding moves a point at x and a depth: all of it between its walls, less beside it. */
   const windAt = (x: number, z: number): number => {
     let dx = 0;
@@ -280,15 +308,16 @@ function build(source: ChapterData, own: string): Edges {
     return dx;
   };
   const shiftBy = (x: number, z: number, upOf: (bank: Bank) => number, y: number): number => {
-    if (still(z)) return 0;
-    let dx = windAt(x, z);
+    const here = still(z);
+    let dx = here ? 0 : windAt(x, z);
     for (const bank of banks) {
       if (bank.x < x - REACH) continue;
       if (bank.x > x + REACH) break;
       const u = (x - bank.x) * bank.side;
       const d = Math.abs(u) / (u >= 0 ? bank.reachUp : bank.reachLow);
       if (d >= 1) continue;
-      dx -= bank.side * (1 - d * d) ** 2 * outOf(bank, upOf(bank), y, z);
+      const up = upOf(bank);
+      dx -= bank.side * (1 - d * d) ** 2 * ((here ? 0 : outOf(bank, up, y, z)) - weathered(bank, up, y, z));
     }
     return dx;
   };

@@ -1051,6 +1051,9 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
             float lap = deep + 0.01 * sin(time * 1.5 + waterWorld.x * 1.9 + waterWorld.z * 0.7);
             float froth = textureLod(rippleMap, carried * 0.45 + vec2(time * 0.012, 0.0), 1.5).b;
             foam = smoothstep(0.003, 0.012, lap) * (1.0 - smoothstep(0.02, 0.05 + 0.08 * froth, lap)) * (0.35 + 0.65 * froth);
+            // Along the banks of a pool that runs on towards the camera the eye looks down into the water, and its
+            // thin edge is wide in the picture: the foam there would be a pale band along the whole bank.
+            foam *= 1.0 - 0.85 * step(-1000.0, bankBack) * smoothstep(0.6, 1.3, waterWorld.z);
             shoreFade = smoothstep(0.0, 0.01, deep);
             top *= 1.0 - 0.3 * (1.0 - smoothstep(0.02, 0.3, deep));
           }

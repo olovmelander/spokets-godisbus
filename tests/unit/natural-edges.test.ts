@@ -12,7 +12,8 @@ import type { ChapterData } from '../../src/sim/types';
 // depth: every ditch a slot cut with a ruler, every ledge a box. These hold what src/render/dressing/natural.ts does
 // about it, and what it must leave alone: the plane he moves in, and everything that is built.
 
-beforeAll(async () => { await loadAdventure2(); });
+// (Long enough for a computer that is busy with other things: the pack is every chapter of the second adventure.)
+beforeAll(async () => { await loadAdventure2(); }, 60000);
 
 /** Every chapter of both adventures that is out of doors. */
 const outdoors = (): ChapterData[] => [...Object.values(COURSES), ...ADVENTURE2]
@@ -33,24 +34,41 @@ function faceCorners(chapter: ChapterData, x: number, foot: number, top: number)
 }
 
 describe('the lines the ground\'s walls take through the depth', () => {
-  it('leaves the plane he moves in exactly as the simulation has it, in every chapter', () => {
+  it('leaves the plane he moves in as the simulation has it, in every chapter: its floors, and the lip and the foot of each wall', () => {
     for (const chapter of outdoors()) {
       const edges = edgesOf(chapter, own(chapter));
       const line = chapter.ground;
+      // Every floor: where his soles stand, and where what he stands beside lies.
       for (let x = line[0]!.x; x <= line.at(-1)!.x; x += 0.37) {
         for (const z of [STILL_BEHIND, -0.2, 0, 0.3, STILL_FRONT]) {
-          for (const y of [heightAt(chapter, x), heightAt(chapter, x) - 1.3, heightAt(chapter, x) + 0.8]) {
-            expect(edges.shift(x, y, z), `${chapter.id} at ${x.toFixed(1)}, ${z}`).toBe(0);
-            expect(edges.sink(x, y, z), `${chapter.id} at ${x.toFixed(1)}, ${z}`).toBe(0);
+          expect(edges.shiftOn(x, z), `${chapter.id} at ${x.toFixed(1)}, ${z}`).toBe(0);
+          expect(edges.sink(x, heightAt(chapter, x), z), `${chapter.id} at ${x.toFixed(1)}, ${z}`).toBe(0);
+        }
+      }
+      // Every grown wall: its lip and its foot where the outline has them, and its face between them weathered back
+      // into the wall only, by a few hundredths at his height over its foot and a tenth over his head.
+      for (const bank of edges.banks) {
+        for (const z of [STILL_BEHIND, 0, STILL_FRONT]) {
+          for (const y of [bank.top, bank.foot, bank.top + 0.5, bank.foot - 0.5]) expect(edges.shift(bank.x, y, z), `${chapter.id} at ${bank.x}`).toBe(0);
+          for (let y = bank.foot; y <= bank.top; y += 0.07) {
+            const into = edges.shift(bank.x, y, z) * bank.side;
+            expect(into, `${chapter.id} at ${bank.x}, ${y.toFixed(2)}`).toBeGreaterThanOrEqual(0);
+            expect(into, `${chapter.id} at ${bank.x}, ${y.toFixed(2)}`).toBeLessThanOrEqual(y - bank.foot < 1 ? 0.0301 : 0.1101);
           }
         }
       }
     }
-    // And in the mesh: a wall's face stands where the outline has it there, to a hair.
+    // And in the mesh: a wall's face stands where the outline has it there, or a hand's breadth back in the wall.
     const forest = landscape(COURSES['granskog']!);
     const still = faceCorners(forest, 118, -15, -8).filter((corner) => corner.z >= STILL_BEHIND && corner.z <= 0.45 && corner.x < 120);
     expect(still.length).toBeGreaterThan(20);
-    for (const corner of still) expect(corner.x, `at y ${corner.y.toFixed(2)}, z ${corner.z.toFixed(2)}`).toBeCloseTo(118, 5);
+    for (const corner of still) {
+      expect(corner.x, `at y ${corner.y.toFixed(2)}, z ${corner.z.toFixed(2)}`).toBeLessThanOrEqual(118 + 1e-6);
+      expect(corner.x, `at y ${corner.y.toFixed(2)}, z ${corner.z.toFixed(2)}`).toBeGreaterThan(118 - 0.111);
+    }
+    // A tall wall beside him is not ruled with a ruler: it was one x from its foot to its lip.
+    const xs = still.map((corner) => corner.x);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(0.04);
   });
 
   it('gives every wall of grown ground a line of its own behind the path: none is the outline pulled straight', () => {
@@ -92,7 +110,7 @@ describe('the lines the ground\'s walls take through the depth', () => {
     for (const course of ['byn', 'stormbyn', 'prolog', 'epilog', 'stormkvall', 'morgonen', 'olympia']) expect(openPools(COURSES[course]!), course).toEqual([]);
   });
 
-  it('never folds the ground over itself, and in front of the path never pulls its picture by more than a third', () => {
+  it('never folds the ground over itself, and in front of the path never pulls its picture further than the ground allows', () => {
     for (const chapter of outdoors()) {
       const edges = edgesOf(chapter, own(chapter));
       if (edges.banks.length === 0) continue;
@@ -104,12 +122,14 @@ describe('the lines the ground\'s walls take through the depth', () => {
           const drawn = x + edges.shiftOn(x, z);
           if (last > -Infinity) {
             const step = drawn - last;
-            // A wall's lip and its foot are one x on the outline and two in the picture: the face between them. Not that.
-            const atWall = edges.banks.some((bank) => Math.abs(bank.x - x) < 0.051);
+            // A wall's lip and its foot are one x on the outline and two in the picture: the face between them. Not that,
+            // nor a wall that is a steep slope (Stormens öga's shore), which is all face.
+            const atWall = edges.banks.some((bank) => Math.abs(bank.x - x) < 0.051) || Math.abs(heightAt(chapter, x) - heightAt(chapter, x - 0.05)) > 0.065;
             if (!atWall) {
               expect(step, `${chapter.id} at ${x.toFixed(2)}, ${z}`).toBeGreaterThan(0);
-              if (z > 0) expect(step / 0.05, `${chapter.id} at ${x.toFixed(2)}, ${z}`).toBeGreaterThan(0.64);
-              if (z > 0) expect(step / 0.05, `${chapter.id} at ${x.toFixed(2)}, ${z}`).toBeLessThan(1.56);
+              // In front of the path the ground is seen from above: its picture is held to 0.6 and 1.6 (./ground.test.ts).
+              if (z > 0) expect(step / 0.05, `${chapter.id} at ${x.toFixed(2)}, ${z}`).toBeGreaterThan(0.6);
+              if (z > 0) expect(step / 0.05, `${chapter.id} at ${x.toFixed(2)}, ${z}`).toBeLessThan(1.6);
             }
           }
           last = drawn;

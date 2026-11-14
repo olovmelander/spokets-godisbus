@@ -29,9 +29,9 @@ export function fringeRoom(chapter: ChapterData, from: number, to: number): numb
   return lipsOf(chapter, from, to).reduce((sum, bank) => sum + Math.ceil(REACH_BEHIND * BEHIND) + (bank.open ? Math.ceil(REACH_FRONT * FRONT) : 0), 0);
 }
 
-/** The grown walls of soil whose lips lie in a stretch: rock has no turf to hang. */
+/** The walls whose lips lie in a stretch and have a lawn's turf to hang: not rock, sand or a heap of shavings. */
 function lipsOf(chapter: ChapterData, from: number, to: number): Bank[] {
-  return edgesOf(chapter).banks.filter((bank) => !bank.rock && bank.x >= from && bank.x < to && bank.top - bank.foot >= 0.3 && bank.reachUp >= 0.2);
+  return edgesOf(chapter).banks.filter((bank) => bank.kind === 'lawn' && bank.x >= from && bank.x < to && bank.top - bank.foot >= 0.3 && bank.reachUp >= 0.2);
 }
 
 /**

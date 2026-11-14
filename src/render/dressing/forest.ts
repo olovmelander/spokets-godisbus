@@ -78,7 +78,7 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   const shoreRoom = shoreWaters.reduce((sum, w) => sum + Math.ceil((Math.min(to, w.to + 0.6) - Math.max(from, w.from - 0.6)) / SHORE_STEP) + 1, 0);
   // And for the moss that rounds over the lip of each grown wall in the stretch: a step's, a pit's, a pool's bank
   // (./natural.ts). Behind the path, and along a pool's banks in front of it too.
-  const lips = edgesOf(chapter).banks.filter((bank) => !bank.rock && bank.x >= from && bank.x < to && bank.top - bank.foot >= 0.3);
+  const lips = edgesOf(chapter).banks.filter((bank) => bank.kind === 'moss' && bank.x >= from && bank.x < to && bank.top - bank.foot >= 0.3);
   const lipRoom = lips.length * (LIP_COUNT + LIP_FRONT);
   const cushions = new InstancedMesh(hummock ?? KIT.ball, hummock ? softMoss(kit!.material) : KIT.moss, cushionsBehind + Math.round(length * (hummock ? HUMMOCKS_IN_FRONT : FRONT.cushions)) + capping + shoreRoom + lipRoom);
   let n = 0;
