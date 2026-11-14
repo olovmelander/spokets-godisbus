@@ -184,7 +184,8 @@ the pitch. A football is one and a half Elofs high: the puzzles are football puz
 3. **Bollen i målet:** the goalmouth is flooded and too wide, and a small ball bobs in it. The answer is behind him: he
    ran under a table with a big football on it. He goes back, climbs up behind it, and kicks it down and on into the
    water, where it floats: a stepping stone.
-4. **The net and the crossbar:** climb the goal's net up to the crossbar and walk along it.
+4. **The net's post and the crossbar:** climb the post behind the goal's net up to the goal's top and walk along it to
+   the crossbar (Olov, 14 November 2026: nothing was seen to climb there; the back net lies across the path, on edge).
 5. **The corner flag** snapping in the gusts, and the benches' roofs dripping, with a dry way under them.
 6. **Bertil's free kick:** "Ropa på Bertil". He kicks the ball, and Elof rides it in a great arc into the far goal.
 7. **The biathlon range:** knock the targets white, one by one (optional), for side candy.
@@ -310,7 +311,7 @@ The worlds were authored from this design and keep its beats, with these details
 - **Olympia** (goal at 179 EL, 94 trail candies): up three stone steps from the road to the ground on its hill, and
   over the high fence by the ball-stop net; footballs bowled across the small pitch from behind; *Bollen i målet*, the big ball fetched from its table
   and kicked four times ("Sparka") into the flooded goalmouth, where it floats as a stepping stone ("Mål! Fast det var jag som gick in!");
-  a side way up the goal's net and along its white crossbar; the corner flag and the dripping benches; Bertil's
+  a side way up the post behind the goal's net and along its white crossbar; the corner flag and the dripping benches; Bertil's
   free kick over the centre circle, which is a lake, into the far goal; five biathlon targets turned white with
   pine cones (optional); the dark floodlit trail, where the strongest gust takes the little one north.
 - **Flärken** (reworked from "Sjön" into Flärkenbadet; goal at 188 EL, 111 trail candies): the playground's swings

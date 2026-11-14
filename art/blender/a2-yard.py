@@ -416,8 +416,8 @@ if wanted('gungor'):
 # --- the goals at Olympia ------------------------------------------------------------------------------------------------------------
 # White round posts and a crossbar, the mouth towards -X where he comes from, the frame going back along +X, and the net: white cord
 # in squares, hanging a little between its frame, slack at the bottom. 12 across (Y), as the stand-in was, so that the near post
-# stays behind the path. `fotbollsmal` is the training goal, a box goal 7 deep and 6 high that he walks through and on top of;
-# `fotbollsmal-stort` the big one, 10 deep, 16 high, that he walks through.
+# stays behind the path. `fotbollsmal` is the training goal, a box goal 7 deep and 6 high that he walks through and on top of,
+# with the net's post behind it, which he climbs; `fotbollsmal-stort` the big one, 7 deep, 16 high, that he walks through.
 
 
 def goal(name, depth, high, span=12.0, opening=None):
@@ -507,12 +507,18 @@ def goal(name, depth, high, span=12.0, opening=None):
     finish(part, name, sharp=50.0, strength=0.3, reach=0.5, floor=0.0, leaf=True)
 
 
-def box_goal(name, depth, high, span=12.0, opening=None, tear_base=1.45):
+def box_goal(name, depth, high, span=12.0, opening=None, tear_base=1.45, post=None):
     """Olympia's training goal, a box goal: as high at the back as at its mouth, its top level at the crossbar's height
     for him to walk on, in a frame of white tubes, and nets of the same cord as the big goal's. Its near side stands in
     front of the path: he walks in at its mouth, inside it, and out under its back net, torn loose where he goes through
-    (`opening`, across), from a ragged edge a little over his head; then he climbs the back net. Olov, 12 November 2026:
-    "Vi kan göra båda stora målen på samma sätt på Olympia?" (it was built in code, plainer than the big one)."""
+    (`opening`, across), from a ragged edge a little over his head. Olov, 12 November 2026: "Vi kan göra båda stora
+    målen på samma sätt på Olympia?" (it was built in code, plainer than the big one).
+
+    `post`: (behind the back, across) where the net's post stands, which he climbs to the goal's top (Olov, 14 November
+    2026: "När Elof klättrar upp på baksidan av målet syns ingen stång att klättra på ... lägga till en synlig stång?").
+    The back net is across the path and so seen on edge, a thin band: nothing was drawn where his hands were. The post is
+    a white steel tube as the goal's own, in a sleeve on a foot plate in the turf, a little taller than the goal, clamped
+    to the top bar at the back, with the net lashed to it and a stay cord from its top forward to the goal's top."""
     part = new_part()
     WHITE__ = tone('#f2f2ee')
     FRAME = lit(WHITE__, 0.9)
@@ -583,15 +589,43 @@ def box_goal(name, depth, high, span=12.0, opening=None, tear_base=1.45):
         for path in pieces:
             if len(path) > 1:
                 tube(part, path, [cord] * len(path), [NET] * len(path), 4, closed_ends=False)
+    if post is not None:
+        px, py = depth + post[0], post[1]
+        DARK = tone('#868b90')
+        tip = high + 0.55
+        # Its foot: a plate on the turf, bolted at its corners, and the sleeve the post stands in.
+        timber(part, (px - 0.34, py - 0.34, 0.0), (px + 0.34, py + 0.34, 0.07), DARK, 3.0, grain=0.1)
+        for bx in (-0.25, 0.25):
+            for by in (-0.25, 0.25):
+                lump(part, Vector((px + bx, py + by, 0.08)), (0.05, 0.05, 0.035), 1, lit(DARK, 1.5))
+        tube(part, [Vector((px, py, 0.05)), Vector((px, py, 0.46))], [0.19, 0.175], [lit(DARK, 0.8), DARK], 12)
+        # The post itself, in short lengths so that its shade can change along it, and its round cap.
+        rings = [0.4 + (tip - 0.4) * i / 14 for i in range(15)]
+        tube(part, [Vector((px, py, z)) for z in rings], [0.135] * 15, [lit(WHITE__, 0.94 + 0.06 * i / 14) for i in range(15)], 14)
+        lump(part, Vector((px, py, tip)), (0.17, 0.17, 0.13), 2, WHITE__)
+        # Clamped to the top bar at the back, by a short arm with a collar at each end.
+        tube(part, [Vector((px, py, top - 0.02)), Vector((depth - 0.02, py, top))], [0.085, 0.085], [FRAME] * 2, 8)
+        tube(part, [Vector((px, py, top - 0.14)), Vector((px, py, top + 0.1))], [0.16, 0.16], [DARK] * 2, 12)
+        # The net is lashed to it with its own cord, in a few turns at three heights, each with a cord across to the net.
+        for k, z in enumerate((2.25, 3.45, 4.65)):
+            turns = [Vector((px + 0.15 * math.cos(a), py + 0.15 * math.sin(a), z + 0.035 * a / math.pi)) for a in [i * math.pi / 5 for i in range(31)]]
+            tube(part, turns, [cord * 1.2] * len(turns), [NET] * len(turns), 4, closed_ends=False)
+            tube(part, [Vector((px - 0.14, py, z)), Vector((depth + 0.1, py + 0.25 * (k - 1), z - 0.08))], [cord] * 2, [NET] * 2, 4, closed_ends=False)
+        # The stay cord from under its cap forward to the goal's top, a little slack, where the top net's edge is tied.
+        stay = [Vector((px - 0.1, py, tip - 0.14)), Vector((depth - 0.6, py, top + 0.3)), Vector((depth - 1.5, py, high - 0.02))]
+        tube(part, stay, [cord * 1.1] * 3, [NET] * 3, 4, closed_ends=False)
     finish(part, name, sharp=50.0, strength=0.3, reach=0.5, floor=0.0, leaf=True)
 
 
 if wanted('fotbollsmal'):
-    # Olympia's training goal stands at z -4.5 (the chapter's GOAL), as high as its bar, 6, and 7 deep.
-    box_goal('fotbollsmal', 7.0, 6.0, opening=-4.5)
+    # Olympia's training goal stands at z -4.5 (the chapter's GOAL), as high as its bar, 6, and 7 deep. The net's post
+    # stands a quarter behind its back (the chapter's NET, the climb) and 0.78 behind the path, so that he walks out
+    # past it and climbs with it before him.
+    box_goal('fotbollsmal', 7.0, 6.0, opening=-4.5, post=(0.25, -4.5 + 0.78))
 if wanted('fotbollsmal-stort'):
-    # The path goes out through it 4.2 in front of its middle (Olympia's far goal stands at z -4.2; -Y is the front).
-    goal('fotbollsmal-stort', 10.0, 16.0, opening=-4.2)
+    # The path goes out through it 4.2 in front of its middle (Olympia's far goal stands at z -4.2; -Y is the front). It
+    # is 7 deep (it was 10): its back net stood 0.4 in front of the range's first target, which was seen through it.
+    goal('fotbollsmal-stort', 7.0, 16.0, opening=-4.2)
 
 
 # --- the club's kit table ---------------------------------------------------------------------------------------------------------

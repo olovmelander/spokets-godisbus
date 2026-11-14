@@ -109,9 +109,12 @@ const BALL_WAY: Stone[] = [BANK, AFLOAT, FAR];
  */
 const GOAL = { x: 80, depth: 7, bar: 6, z: -4.5 };
 /**
- * Nätet och ribban, a side way: the back of the net is climbed from a held jump (its foot is out of reach of his
- * feet as he walks past), and its top steps onto the bar along the goal's top, back to the crossbar. The net is the
- * goal's own, drawn with it (as a ladder is): no hose hangs there.
+ * Nätet och ribban, a side way: behind the goal's back net stands the net's post, a white steel tube as the goal's own,
+ * with the net lashed to it (art/blender/a2-yard.py, `box_goal`'s `post`). He climbs it from a held jump (the climb's
+ * foot is out of reach of his feet as he walks past), and from its top steps onto the bar along the goal's top, back to
+ * the crossbar. The post is the goal's own, drawn with it (as a ladder is): no hose hangs there. Olov, 14 November 2026:
+ * "När Elof klättrar upp på baksidan av målet syns ingen stång att klättra på". The back net lies across the path, so
+ * it is seen on edge, a thin band of cords: he climbed with nothing before his hands.
  */
 const NET: Climb = { x: round(GOAL.x + GOAL.depth + 0.25), bottom: 0.9, top: GOAL.bar, exit: -1, look: 'ladder' };
 const CROSSBAR: Ledge = { x: GOAL.x + GOAL.depth / 2, y: GOAL.bar, width: GOAL.depth, look: 'trestle' };
@@ -144,8 +147,13 @@ const OLD_SEEN = sighting('ol:gamla', 118.4, 121, 'ol:old-one', 'ol:old-seen', O
   { x: 122.6, y: 2.6, height: 7.6, width: 9 }, { x: 139.6, y: 2.8, height: 7.8, width: 10 });
 // He arrives on top of the ball, then steps down as it rolls farther into the net: never through the turf.
 const KICK = { from: { x: 123.4, y: 0 }, to: { x: 149.4, y: 1.7 }, rise: 5, time: 3, corridor: 0.4 };
-/** The far goal: a full one, as high as sixteen Elofs, its mouth towards him where the kick comes down. */
-const FAR_GOAL = { x: 147.8, depth: 10, height: 16 };
+/**
+ * The far goal: a full one, as high as sixteen Elofs, its mouth towards him where the kick comes down. It is 7 deep, so
+ * that its back net stands well clear of the range's first target (Olov, 14 November 2026: "Den första av de fem tavlor
+ * som man ska pricka står mitt i nätet."): 10 deep, its back net was 0.4 in front of that target, which was seen through
+ * it from the goal and against it from the range.
+ */
+const FAR_GOAL = { x: 147.8, depth: 7, height: 16 };
 /** Where Bertil stands at the circle's edge, with the ball laid ready (`ol:bertil`). */
 const BERTIL_AT = round(KICK.from.x - 0.8);
 /**
@@ -421,8 +429,8 @@ export const olympia: ChapterData = {
     { at: { x: 104.6, y: 0 } },
     { at: { x: 114, y: 0 } },
     { at: { x: 120.4, y: 0 } },
-    // over the circle, waiting in the far goal
-    { at: { x: 155, y: 0 } },
+    // over the circle, waiting just behind the far goal, clear of its back net and of the range's first target
+    { at: { x: 156.4, y: 0 } },
     { at: { x: 160.8, y: 0 } },
     { at: { x: 167.4, y: 0 } },
     { at: { x: 174, y: trailAt(174) } },
