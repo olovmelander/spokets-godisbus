@@ -95,6 +95,8 @@ const KIT: Ledge = { x: 66.5, y: 1.1, width: 3.8, look: 'plank' };
  */
 const BALL: Mover = {
   id: 'ol-ball', look: 'football', width: AFLOAT.to - AFLOAT.from, height: BALL_HIGH, verb: 'push', word: 'olKick',
+  // A second for each kick: time to see it fly, bounce and roll (../big-ball.ts). In 0.6 it was nearly there in a blink.
+  seconds: 1,
   stops: [{ x: 66.9, y: KIT.y }, { x: 71.8, y: 0 }, { x: 73, y: 0 }, { x: round(BANK.to - BALL_HIGH / 2), y: 0 }, { x: round((AFLOAT.from + AFLOAT.to) / 2), y: AFLOAT.y - BALL_HIGH }],
 };
 const BALL_WAY: Stone[] = [BANK, AFLOAT, FAR];
@@ -107,9 +109,12 @@ const BALL_WAY: Stone[] = [BANK, AFLOAT, FAR];
  */
 const GOAL = { x: 80, depth: 7, bar: 6, z: -4.5 };
 /**
- * Nätet och ribban, a side way: the back of the net is climbed from a held jump (its foot is out of reach of his
- * feet as he walks past), and its top steps onto the bar along the goal's top, back to the crossbar. The net is the
- * goal's own, drawn with it (as a ladder is): no hose hangs there.
+ * Nätet och ribban, a side way: behind the goal's back net stands the net's post, a white steel tube as the goal's own,
+ * with the net lashed to it (art/blender/a2-yard.py, `box_goal`'s `post`). He climbs it from a held jump (the climb's
+ * foot is out of reach of his feet as he walks past), and from its top steps onto the bar along the goal's top, back to
+ * the crossbar. The post is the goal's own, drawn with it (as a ladder is): no hose hangs there. Olov, 14 November 2026:
+ * "När Elof klättrar upp på baksidan av målet syns ingen stång att klättra på". The back net lies across the path, so
+ * it is seen on edge, a thin band of cords: he climbed with nothing before his hands.
  */
 const NET: Climb = { x: round(GOAL.x + GOAL.depth + 0.25), bottom: 0.9, top: GOAL.bar, exit: -1, look: 'ladder' };
 const CROSSBAR: Ledge = { x: GOAL.x + GOAL.depth / 2, y: GOAL.bar, width: GOAL.depth, look: 'trestle' };
@@ -142,8 +147,13 @@ const OLD_SEEN = sighting('ol:gamla', 118.4, 121, 'ol:old-one', 'ol:old-seen', O
   { x: 122.6, y: 2.6, height: 7.6, width: 9 }, { x: 139.6, y: 2.8, height: 7.8, width: 10 });
 // He arrives on top of the ball, then steps down as it rolls farther into the net: never through the turf.
 const KICK = { from: { x: 123.4, y: 0 }, to: { x: 149.4, y: 1.7 }, rise: 5, time: 3, corridor: 0.4 };
-/** The far goal: a full one, as high as sixteen Elofs, its mouth towards him where the kick comes down. */
-const FAR_GOAL = { x: 147.8, depth: 10, height: 16 };
+/**
+ * The far goal: a full one, as high as sixteen Elofs, its mouth towards him where the kick comes down. It is 7 deep, so
+ * that its back net stands well clear of the range's first target (Olov, 14 November 2026: "Den första av de fem tavlor
+ * som man ska pricka står mitt i nätet."): 10 deep, its back net was 0.4 in front of that target, which was seen through
+ * it from the goal and against it from the range.
+ */
+const FAR_GOAL = { x: 147.8, depth: 7, height: 16 };
 /** Where Bertil stands at the circle's edge, with the ball laid ready (`ol:bertil`). */
 const BERTIL_AT = round(KICK.from.x - 0.8);
 /**
@@ -177,8 +187,15 @@ const trailAt = (x: number) => round((TRAIL.y * (x - TRAIL.from)) / (TRAIL.to - 
  * Each was a dark shape across the sky in three seconds, the two at once, behind the words, and went into the forest's
  * edge where the ground ends (`EDGE`, 14 EL high). Now they go up and away from the path, clear of it.
  * They stay on the near side of the trees: retreating into the canopy hid the last half of the flight on a phone.
+ *
+ * The ground's end is out of every picture (Olov, 14 November 2026, of the wall at the chapter's start: it must stand on
+ * the ground; this one was a block of earth 12 EL high, 7 EL past the goal: at the right of the last scene's shots, and
+ * where a child who ran on at the goal stood against it while the tune closed). Past the goal the trail's level ground
+ * goes on into the forest, with the forest's trees on it, and the wall stands 61 EL on: further than he runs before the
+ * page turns, even with the last three lines still to be said (some 32 EL), and than the picture then shows as it draws
+ * back (15 EL more).
  */
-const EDGE = { x: 186, y: 14 };
+const EDGE = { x: 240, y: 14 };
 const NORTH: Flyby = {
   on: 'beat:ol:gust', from: { x: 177.6, y: 2.4 }, to: { x: 182.6, y: 25 }, z: -0.6, toZ: -0.6, seconds: 6.4, rise: 2.4, size: 1.8,
   who: 'lillgubbe', lit: [2.2, 4.4],
@@ -285,7 +302,12 @@ export const olympia: ChapterData = {
     { from: FENCE.to, to: 158, kind: 'turf' },
     { from: 158, to: 166, kind: 'paving' },
     { from: 166, to: 174, kind: 'earth' },
-    { from: 174, to: 196, kind: 'moss' },
+    { from: 174, to: 258, kind: 'moss' },
+    // The way back along the lane is closed by a tall hedge, as Byn's street ends in one (src/render/dressing/hedge.ts): it
+    // stands where the outline's first wall is, on the ground (Olov, 14 November 2026: "ser det ut som om väggen, häcken
+    // eller vad det nu är som blockerar vägen svävar i luften utan kontakt med marken"). That wall was drawn as a block of
+    // earth seventeen lengths high whose front ended a length over the lane.
+    { from: -4.6, to: -3, kind: 'hedge' },
   ],
   // Each in the gap between two of the trail's sweets: under one, a sweet hid its head.
   checkpoints: [
@@ -369,13 +391,18 @@ export const olympia: ChapterData = {
       // Its near side in front of the path, so that he is seen inside it through its net.
       { kind: 'goal', x: GOAL.x, z: GOAL.z, width: GOAL.depth, height: GOAL.bar, level: true },
       { kind: 'trestleTable', x: KIT.x, z: 0, width: KIT.width, height: KIT.y },
-      { kind: 'floodlight', x: 92, z: -30, height: 90 },
+      // The stand's three masts stand in a row behind it, on the yard, and rise over its roof (Olov, 14 November 2026: what
+      // stands behind the pitch is to stand on the ground). Two of them stood in the stand, up through its tiers and its roof.
+      { kind: 'floodlight', x: 84, z: -47.5, height: 90 },
       // The long timber stand on the far side, the forest straight behind it.
       { kind: 'stand', x: 118, z: -29, width: 44, model: 'olympia-stand' },
-      { kind: 'floodlight', x: 136, z: -38, height: 90 },
+      { kind: 'floodlight', x: 106, z: -47.5, height: 90 },
       // The kick runs on z=0. Put that path inside the twelve-EL mouth, rather than beside its near post.
       { kind: 'goal', x: FAR_GOAL.x, z: -4.2, width: FAR_GOAL.depth, height: FAR_GOAL.height },
-      { kind: 'floodlight', x: 164, z: -28, height: 70 },
+      // The third behind the stand, not at the ski stadium: there it stood 27 EL behind the range, and as he went along
+      // the targets it passed behind each in turn, a pale pole up out of the plate (Olov, 14 November 2026, of the first
+      // target in the net: each is to be seen whole and clear).
+      { kind: 'floodlight', x: 128, z: -47.5, height: 90 },
       { kind: 'birch', x: 174, z: -16, height: 60 },
       { kind: 'birch', x: 183, z: -24, height: 70 },
     ],
@@ -419,8 +446,8 @@ export const olympia: ChapterData = {
     { at: { x: 104.6, y: 0 } },
     { at: { x: 114, y: 0 } },
     { at: { x: 120.4, y: 0 } },
-    // over the circle, waiting in the far goal
-    { at: { x: 155, y: 0 } },
+    // over the circle, waiting just behind the far goal, clear of its back net and of the range's first target
+    { at: { x: 156.4, y: 0 } },
     { at: { x: 160.8, y: 0 } },
     { at: { x: 167.4, y: 0 } },
     { at: { x: 174, y: trailAt(174) } },
@@ -489,7 +516,7 @@ export const olympia: ChapterData = {
     { from: 115, to: 153, zoom: 1.6, lift: 1.2 },
     { from: 154, to: 168, zoom: 1.25 },
     // The trail: the sky over the forest, where the little one flies.
-    { from: 168, to: 186, zoom: 1.5, lift: 1.4 },
+    { from: 168, to: EDGE.x, zoom: 1.5, lift: 1.4 },
   ],
   candy: [
     // 1. along the road, up the steps to the ground, along the path, up the fence's near side and down its far side

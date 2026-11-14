@@ -9,7 +9,7 @@ import { storyContext } from '../../src/content/story-context';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import {
-  DROP_RADIUS, FALL_LIMIT, GHOST_CLEARANCE, JUMP_APEX, LEDGE_GIVE, LEDGE_REACH, ROLLER_REACH, RUN_SPEED, RUNNING_JUMP_REACH, STEP,
+  DROP_RADIUS, FALL_LIMIT, GHOST_CLEARANCE, JUMP_APEX, LEDGE_GIVE, LEDGE_REACH, MOVE_TIME, ROLLER_REACH, RUN_SPEED, RUNNING_JUMP_REACH, STEP,
 } from '../../src/sim/constants';
 import { Sim } from '../../src/sim/sim';
 import type { SimStart } from '../../src/sim/types';
@@ -41,6 +41,8 @@ const PUZZLES = ['placed:ol-ball', 'ol:bertil', 'ol:kick-ready', 'ol:kick', 'goa
 const where = (sim: Sim) => `he is at ${sim.curr.x.toFixed(2)}, ${sim.curr.y.toFixed(2)} (${sim.curr.mode})`;
 const ball = olympia.movers!.find((mover) => mover.id === 'ol-ball')!;
 const last = ball.stops[ball.stops.length - 1]!;
+/** How long one kick of the ball takes, and a moment more: it has a second to fly, bounce and roll (src/content/aventyr2/big-ball.ts). */
+const kickTime = (ball.seconds ?? MOVE_TIME) + 0.1;
 const [fenceDown, fenceUp, net] = olympia.climbs!;
 const crossbar = olympia.ledges![0]!;
 const kick = olympia.rides!.find((ride) => ride.id === 'kick')!;
@@ -362,7 +364,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       behindTheBall(sim);
       expect(sim.curr.verb, where(sim)).toBe('push');
       use(sim);
-      run(sim, 0.7);
+      run(sim, kickTime);
       expect(state().stop).toBe(1);
       for (let push = 2; push < ball.stops.length; push++) {
         runInto(sim, 1);
@@ -371,7 +373,7 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
         expect(sim.curr.verb, `kick ${push}`).toBe('push');
         expect(sim.curr.word, `kick ${push}`).toBe('olKick');
         use(sim);
-        run(sim, 0.7);
+        run(sim, kickTime);
         expect(state().stop).toBe(push);
       }
       expect(sim.flags.has(`placed:${ball.id}`)).toBe(true);
@@ -391,11 +393,11 @@ describe('Äventyr 2, Kapitel 4: Olympia', () => {
       run(sim, 0.2);
       behindTheBall(sim);
       use(sim);
-      run(sim, 0.7);
+      run(sim, kickTime);
       const state = () => sim.movers.find((m) => m.def.id === ball.id)!;
       expect(state().stop).toBe(1);
       expect(walkTo(sim, state().x - 11, 30)).toBe(true);
-      run(sim, 1);
+      run(sim, kickTime);
       expect(state().stop).toBe(0);
       expect(state().x).toBeCloseTo(ball.stops[0]!.x, 3);
     });

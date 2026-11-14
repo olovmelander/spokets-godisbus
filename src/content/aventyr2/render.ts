@@ -55,6 +55,7 @@ import { jettyWavesExtra } from '../../render/jetty-waves';
 import { teamBenchesExtra } from './team-benches';
 import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
+import { bigBall, rollBalls } from './big-ball';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -881,6 +882,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       elof.y = y;
       elof.riding = riding;
       elof.scene = moment;
+      // The wind's balls turn as far as they roll (./big-ball.ts).
+      if (balls) rollBalls(balls);
       drift?.(dt, still);
       // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him. Its downstroke is
       // the slower, and between bursts it glides on wings held near level (a positive turn lowers its wings).
@@ -2277,14 +2280,29 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       };
     },
     floatBall: (spot) => {
-      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings.
+      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings. When the big ball it waits for
+      // comes down into the water beside it (./big-ball.ts), the wave washes it away behind that one, out in the puddle: the big
+      // one came up through it, and then it was gone.
       const group = new Group();
       const small = football(0.36);
       small.position.y = 0.26;
       group.add(small);
-      return standing(spot, group, (clock) => {
-        group.position.y = Math.sin(clock * 1.6) * 0.05;
-        small.rotation.z = Math.sin(clock * 0.7) * 0.5;
+      let big: Object3D | null | undefined;
+      let washed = 0;
+      return standing(spot, group, (clock, dt) => {
+        if (big === undefined) {
+          // What it waits for is the thing whose placing takes it away (the chapter's decor, `until`).
+          const until = playing.chapter?.decor?.find((d) => d.look === 'floatBall' && d.at.x === spot.at.x && d.at.y === spot.at.y)?.until;
+          let top: Object3D = group;
+          while (top.parent) top = top.parent;
+          big = until?.startsWith('placed:') ? top.getObjectByName(`mover:${until.slice('placed:'.length)}`) ?? null : null;
+        }
+        // In the water, and within a length and a half of it.
+        const splashed = !!big && big.position.y < spot.at.y - 0.3 && Math.abs(big.position.x - spot.at.x) < 1.6;
+        washed = splashed ? Math.min(1, washed + dt / 0.8) : 0;
+        const away = smooth(washed);
+        group.position.set(0.5 * away, Math.sin(clock * 1.6) * 0.05 + 0.16 * Math.sin(washed * Math.PI * 2.5) * (1 - washed), -2.3 * away);
+        small.rotation.z = Math.sin(clock * 0.7) * 0.5 + away * 1.4;
         small.rotation.y = clock * 0.3;
       });
     },
@@ -3216,7 +3234,8 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       }
       return group;
     },
-    football: (mover) => { const g = new Group(); g.add(football(Math.min(mover.width, mover.height) / 2)); return g; },
+    // Olympia's big ball: it rolls, flies, bounces and floats (./big-ball.ts).
+    football: (mover) => bigBall(mover, { chapter: () => playing.chapter, still: () => elof.still, splash: waterSplash(1) }),
     raft: (mover) => { const g = new Group(); g.add(raft(mover.width, mover.height)); return g; },
     buoy: (mover) => {
       // A swimming buoy: a white float with a red band, bobbing.
@@ -3282,7 +3301,7 @@ export function installPictures(): void {
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
   // The waves over a jetty where its gusts blow (Flärken; ../../render/jetty-waves.ts).
   if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
-  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts).
+  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts), and the yard behind its pitch.
   if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
