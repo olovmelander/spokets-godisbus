@@ -4,6 +4,7 @@ import type { Chooser } from '../context';
 import { ELDER_BACK, row } from '../kit';
 import { DOLL_Z } from '../../../render/elof-coat';
 import { HOME_LAYOUT } from '../../home-layout';
+import { BOWL, LEFT } from '../bowl';
 
 /**
  * Äventyr 2, Epilog: Morgonen efter (docs/aventyr-2.md). Units: EL. Sunday morning at home, still and bright
@@ -468,6 +469,9 @@ export const morgonen: ChapterData = {
     { look: 'morfar', at: { x: MORFAR.x, y: 0 }, z: MORFAR.z + ELDER_BACK },
     // The new latch on the window, until he hooks it hanging loose from its pin.
     { look: 'latch', at: { x: LATCH.x, y: LATCH.y }, z: LATCH.z },
+    // The bowl of Saturday sweets where it stood on the evening of the storm, with what the old one left in it
+    // (../bowl.ts): beside the breakfast things, clear of them.
+    { look: 'candyBowl', word: LEFT, at: { x: BOWL.x, y: BOWL.y }, z: BOWL.z },
   ],
   ghost: [
     { at: { x: 2.4, y: 0 }, until: 'scene:frukost', near: 99 },

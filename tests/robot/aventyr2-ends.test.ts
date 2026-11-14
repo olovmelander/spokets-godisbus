@@ -77,37 +77,79 @@ describe('Äventyr 2: Stormkvällen', () => {
     expect(stormkvall.scenes!.find((scene) => scene.id === 'foljer')!.lines).toBeUndefined();
   });
 
-  it('has the whole family kneel and crouch along the deck where the promises are said, and he waves back to them', () => {
+  it('has the whole family walk out onto the deck after him, kneel and crouch along it, and each say something at its edge', () => {
     // Olov, 12 November 2026: "Moa och Bertil får gärna hänga med på altanen." Mamma, Moa, Bertil and Pappa, a place each.
+    // 14 November 2026: "Mamma och pappa måste promenera ut på trallen tillsammans med Moa och Bertil. Nu dyker de bara
+    // upp utomhus", and "Kan Moa och Bertil också säga något i slutet av kapitlet? Nu är det bara mamma och pappa".
+    const FAMILY = ['mamma', 'moa', 'bertil', 'pappa'] as const;
     const lofte = stormkvall.scenes!.find((scene) => scene.id === 'lofte')!;
-    const keys = (who: 'mamma' | 'pappa' | 'moa' | 'bertil') => lofte.stage!.actors![who]!;
-    const placed = (who: 'mamma' | 'pappa' | 'moa' | 'bertil') => keys(who).filter((key) => key.x !== undefined).at(-1)!;
-    for (const [who, beat] of [['mamma', 'skNear'], ['pappa', 'skFollow']] as const) {
-      const at = stormkvall.beats!.find((one) => one.id === beat)!.at!;
-      expect(Math.abs(placed(who).x! - at), who).toBeLessThan(1.5);
-      expect(keys(who).some((key) => key.act === 'kneel'), who).toBe(true);
-      // On the deck, out of the picture while he is at the door sill where they come out.
-      expect(keys(who)[0]!.y).toBe(-0.8);
-      expect(keys(who)[0]!.x! - lofte.from!).toBeGreaterThan(10);
-    }
-    // Moa and Bertil crouch between them, in the first adventure's order, and none of the four on the line he walks.
-    const along = (['mamma', 'moa', 'bertil', 'pappa'] as const).map((who) => placed(who).x!);
-    expect(along).toEqual([...along].sort((a, b) => a - b));
-    for (const who of ['moa', 'bertil'] as const) {
-      expect(keys(who).at(-1)!.act, who).toBe('crouch');
+    const keys = (who: typeof FAMILY[number]) => lofte.stage!.actors![who]!;
+    const placed = (who: typeof FAMILY[number]) => keys(who).filter((key) => key.x !== undefined).at(-1)!;
+    const door = stormkvall.outdoors!;
+    // He stands and watches them come out, once he is out himself; nothing is said while they walk.
+    expect(lofte.hold).toBe(true);
+    expect(lofte.from!).toBeGreaterThan(door);
+    expect(lofte.lines).toBeUndefined();
+    for (const who of FAMILY) {
+      // Each walks in it, from inside the door or beside it, out to a place on the deck behind the line he walks.
+      const walked = keys(who).filter((key) => key.x !== undefined);
+      expect(walked.length, who).toBeGreaterThanOrEqual(2);
+      expect(walked[0]!.x!, who).toBeLessThan(door);
+      expect(keys(who).some((key) => key.act === 'walk'), who).toBe(true);
       expect(placed(who).y, who).toBe(-0.8);
+      expect(placed(who).z!, who).toBeLessThan(-2);
+      expect(keys(who).at(-1)!.act, who).toBe(who === 'mamma' || who === 'pappa' ? 'kneel' : 'crouch');
+      // In their place before it is over.
+      expect(keys(who).at(-1)!.at, who).toBeLessThan(lofte.seconds);
     }
-    for (const who of ['mamma', 'pappa', 'moa', 'bertil'] as const) expect(placed(who).z!, who).toBeLessThan(-2);
-    // At the deck's edge he turns and waves to where they kneel and crouch.
-    const wave = stormkvall.scenes!.find((scene) => scene.id === 'stormtitel')!.stage!.elof!.find((key) => key.act === 'wave')!;
+    // Along the deck in the first adventure's order, Moa and Bertil between Mamma and Pappa.
+    const along = FAMILY.map((who) => placed(who).x!);
+    expect(along).toEqual([...along].sort((a, b) => a - b));
+    // Moa and Bertil have gone ahead to the door and wait there for Mamma and Pappa: out of the lane, inside.
+    const veranda = stormkvall.scenes!.find((scene) => scene.id === 'verandan')!;
+    expect(veranda.hold).toBeUndefined();
+    for (const who of ['moa', 'bertil'] as const) {
+      const waits = veranda.stage!.actors![who]!.at(-1)!;
+      expect(waits.x!, who).toBeLessThan(door - 0.8);
+      expect(waits.z!, who).toBeLessThan(-3);
+      expect(waits.follow ?? veranda.stage!.actors![who]![0]!.follow, who).toBeNull();
+    }
+
+    // At the deck's edge all four speak, in the order they kneel, and then he calls out: Mamma's and Pappa's promises
+    // keep the ids they had when they were said in passing, and are no longer said in passing.
+    const title = stormkvall.scenes!.find((scene) => scene.id === 'stormtitel')!;
+    expect(title.hold).toBe(true);
+    expect(title.lines!.map((line) => [line.who, line.line, line.id])).toEqual([
+      ['mamma', 'nearYou', 'skNear'], ['moa', 'skMoaSmall', 'skMoaSmall'], ['bertil', 'skBertilGreet', 'skBertilGreet'],
+      ['pappa', 'followTrail', 'skFollow'], ['elof', 'skOut', 'stormtitel:0'],
+    ]);
+    expect(stormkvall.beats!.filter((beat) => ['skNear', 'skFollow'].includes(beat.id))).toEqual([]);
+    // Each of them does something as they speak: a gesture begun within a second before the words.
+    for (const line of title.lines!.filter((one) => one.who !== 'elof')) {
+      const acts = title.stage!.actors![line.who as typeof FAMILY[number]]!;
+      expect(acts.some((key) => key.act !== undefined && key.act !== 'look' && key.at < line.at && key.at > line.at - 1), line.who).toBe(true);
+    }
+    // He turns and waves to where they kneel and crouch, and calls out to the little one after that, facing the garden.
+    const elof = title.stage!.elof!;
+    const wave = elof.find((key) => key.act === 'wave')!;
     expect(wave.aim!.x).toBeGreaterThan(placed('mamma').x!);
     expect(wave.aim!.x).toBeLessThan(placed('pappa').x!);
-    // A game taken up at the veranda's or the deck's big candy has them all there at once, and Moa and Bertil no
-    // longer walking after him across the room.
+    const call = title.lines!.at(-1)!;
+    expect(wave.at).toBeGreaterThan(title.lines!.at(-2)!.at);
+    expect(elof.filter((key) => key.at <= call.at && key.face !== undefined).at(-1)!.face).toBe(0);
+    // Played: said in that order, the trail's line before them.
+    const order = ['skTrail', 'skNear', 'skMoaSmall', 'skBertilGreet', 'skFollow', 'stormtitel:0'];
+    const result = playThrough(60, stormkvall, {}, 300);
+    expect(result.goal).toBe(true);
+    expect(result.said.filter((id) => order.includes(id))).toEqual(order);
+    expect(result.flags).toEqual(expect.arrayContaining(['scene:verandan', 'scene:lofte']));
+
+    // A game taken up at the veranda's big candy has Moa and Bertil waiting by the door, no longer walking after him;
+    // one taken up at the deck's, which has seen them come out, has them all in their places and nothing to play.
     const flags = ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans', 'scene:spar'];
-    for (const checkpoint of [2, 3]) {
-      const game = new Game(stormkvall, {}, { checkpoint, flags });
-      expect(game.sim.flags.has('scene:lofte'), `big candy ${checkpoint}`).toBe(true);
+    for (const [checkpoint, saved] of [[2, flags], [3, [...flags, 'scene:foljer', 'scene:verandan', 'scene:lofte']]] as const) {
+      const game = new Game(stormkvall, {}, { checkpoint, flags: [...saved] });
+      expect(game.sim.flags.has('scene:verandan'), `big candy ${checkpoint}`).toBe(true);
       expect(game.sim.flags.has('scene:foljer'), `big candy ${checkpoint}`).toBe(true);
       for (let frame = 0; frame < 60 * 2; frame++) game.frame(1 / 60, { x: 0, hopHeld: false }, { hop: false, act: false, helper: false });
       expect(game.sim.sceneFrame, `big candy ${checkpoint}`).toBeNull();
@@ -117,7 +159,24 @@ describe('Äventyr 2: Stormkvällen', () => {
     expect(table.sim.flags.has('scene:foljer')).toBe(false);
     for (let frame = 0; frame < 60 * 60 && !table.sim.flags.has('scene:lofte'); frame++) table.frame(1 / 60, { x: 1, hopHeld: true }, { hop: frame % 50 === 0, act: false, helper: false });
     expect(table.sim.flags.has('scene:foljer')).toBe(true);
+    expect(table.sim.flags.has('scene:verandan')).toBe(true);
     expect(table.sim.flags.has('scene:lofte')).toBe(true);
+  });
+
+  it('stops him for the family\'s coming out wherever on the deck he comes down, leaping or not', () => {
+    // A held scene begins when his feet are on the ground: leaping out of the door he is past where it is due before he
+    // lands, and he is still stopped for it.
+    const flags = ['scene:kvall', 'lamp:take', 'lamp:give', 'beat:skLampThanks', 'goodnight', 'gust', 'sk:leap', 'scene:fonstret', 'scene:klonkstar', 'star', 'scene:krymper', 'scene:upptackt', 'scene:tillsammans', 'scene:spar'];
+    for (const every of [20, 30, 40, 50, 70]) {
+      const game = new Game(stormkvall, {}, { checkpoint: 1, flags });
+      let stood = 0;
+      for (let frame = 0; frame < 60 * 60 && !game.sim.flags.has('scene:stormtitel'); frame++) {
+        game.frame(1 / 60, { x: 1, hopHeld: true }, { hop: frame % every === 0, act: false, helper: false });
+        if (game.sim.sceneFrame?.id === 'lofte') stood++;
+      }
+      const lofte = stormkvall.scenes!.find((scene) => scene.id === 'lofte')!;
+      expect(stood, `a hop every ${every} frames`).toBeGreaterThan(60 * lofte.seconds - 3);
+    }
   });
 
   it('resumes after the shrinking on the floor, small, and still has its trail', () => {

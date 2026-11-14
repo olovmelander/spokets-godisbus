@@ -207,7 +207,7 @@
     "speaker": "moa",
     "situation": "Äventyr 2, stormkvall",
     "tag": "[warm big sister, lively]",
-    "text": "Jag såg honom ta en näve ur skålen!"
+    "text": "Jag såg gamla trägubben ta en näve godis!"
   },
   {
     "key": "skEnough",
@@ -222,6 +222,20 @@
     "situation": "Äventyr 2, stormkvall",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
     "text": "Den passar! Nu kan regnet komma."
+  },
+  {
+    "key": "skMoaSmall",
+    "speaker": "moa",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[warm big sister, lively]",
+    "text": "Små kan hitta små, lillebror!"
+  },
+  {
+    "key": "skBertilGreet",
+    "speaker": "bertil",
+    "situation": "Äventyr 2, stormkvall",
+    "tag": "[cheerful older brother, excited]",
+    "text": "Hälsa lillgubben att vi kommer!"
   },
   {
     "key": "skOut",

@@ -54,6 +54,8 @@ import { jettyWavesExtra } from '../../render/jetty-waves';
 import { teamBenchesExtra } from './team-benches';
 import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
+import { GRABS, grabPlaces } from './bowl';
+import { candyBowl, WATCH_TURN } from './candy-bowl';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
@@ -1900,6 +1902,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       }
       // Where he boards a log (`boards`): his flight begins with the hop from here, so this figure goes at once.
       if (spot.word === 'boards') return standing(spot, figure, undefined, 'handed');
+      // On the shelf on the evening of the storm (`grabs`): he turns to the window the gust took the little one out of,
+      // and his leap from here, by way of the bowl of sweets, is the bowl's (./candy-bowl.ts): this figure goes at once.
+      if (spot.word === GRABS) {
+        return standing(spot, figure, (_clock, dt) => {
+          const gust = elof.flags?.has(WINDOW_BURST) ?? false;
+          figure.rotation.y = elof.still ? (gust ? WATCH_TURN : 0) : figure.rotation.y + ((gust ? WATCH_TURN : 0) - figure.rotation.y) * Math.min(1, dt * 5);
+        }, 'handed');
+      }
       return standing(spot, figure, met ? (clock, dt) => {
         figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
@@ -2071,6 +2081,10 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     // The rain barrel's tap, its outlet out over the can towards the ditch: its water is the pour's (render/rain-barrel.ts).
     tap: (spot) => barrelTap(spot),
+    // The bowl of Saturday sweets on the table, and the old one's leap by way of it (./candy-bowl.ts): lit from within
+    // as he leaps, as he is wherever he is seen in the storm's dark, so that he is seen in the room's.
+    candyBowl: (spot) => candyBowl(spot, elof, () => { const figure = oldFigure(); lightFromWithin(figure); return figure; },
+      () => (playing.chapter ? grabPlaces(playing.chapter) : null)),
     candle: (spot) => {
       // Mamma's candle on the evening of the storm: on the table from the start, its wick black, until it catches in the
       // dark after the power has gone (`CANDLES_LIT`, ../home-power.ts). Its flame grows up from the wick as it catches.

@@ -470,7 +470,7 @@ export type MoverLook = 'none' | 'owl-twig' | 'boulder' | 'riverLog' | 'plank' |
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
 export type SpotLook = 'souvenir' | 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'cocoa' | 'breakfast' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
+  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'candyBowl' | 'cocoa' | 'breakfast' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none' | 'boot' | 'umbrella' | 'owl' | 'football' | 'raft';
 

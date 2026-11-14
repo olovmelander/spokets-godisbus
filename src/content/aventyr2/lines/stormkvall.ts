@@ -20,7 +20,10 @@ export const words: ChapterWords = {
     skOneStar: 'Du sparade din sista stjärna!',
     skStarPlan: 'Blir jag liten kan jag hitta dem!',
     skSmall: 'Liten igen! Kom, Klonk. Vi hjälps åt.',
+    // Moa's and Bertil's own words at the deck's edge, between Mamma's and Pappa's promises (Olov, 14 November 2026).
+    // Bertil's is answered at once: "Vi kommer, lillgubben! Håll ut!"
     skMoaSmall: 'Små kan hitta små, lillebror!',
+    skBertilGreet: 'Hälsa lillgubben att vi kommer!',
     skWhereElof: 'Men var tog Elof vägen?',
     skBertilFound: 'Här nere! Elof, du är ju jätteliten igen!',
     skTinyAnswer: 'Här är jag! Jag kan leta i små skrymslen.',
@@ -31,7 +34,8 @@ export const words: ChapterWords = {
     skUmbrella: 'Och jag tar mitt paraply!',
     skOut: 'Vi kommer, lillgubben! Håll ut!',
     skTrail: 'Godis! Gamla trägubben lämnar spår!',
-    skHandful: 'Jag såg honom ta en näve ur skålen!',
+    // She names him: "honom" was read as Klonk (Olov, 14 November 2026). She points at the bowl as she says it.
+    skHandful: 'Jag såg gamla trägubben ta en näve godis!',
     skEnough: 'Räcker godiset hela vägen?',
     skKlonkHop: 'Klonk, klonk!',
     skRainLine: 'Brr! Dropparna är stora som bollar.',
@@ -55,6 +59,6 @@ export const words: ChapterWords = {
   },
   moments: {
     kvall: 'Stormkvällen', fonstret: 'Fönstret slår upp', klonkstar: 'Klonks stjärna', krymper: 'Stjärnans magi',
-    upptackt: 'Där är Elof!', tillsammans: 'Vi letar tillsammans', spar: 'Godisspåret', regnrock: 'Dockans regnrock', stormtitel: 'Äventyret börjar',
+    upptackt: 'Där är Elof!', tillsammans: 'Vi letar tillsammans', spar: 'Godisspåret', regnrock: 'Dockans regnrock', lofte: 'Ut i stormen', stormtitel: 'Äventyret börjar',
   },
 };
