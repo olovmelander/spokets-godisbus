@@ -13,7 +13,7 @@ import { alongAll, flightAt, hopCandy, jump, round, row, sighting, slopeRow, tim
  *    drops, read from their shadows, with a dry place between them. Moa lights him from the window.
  * 2. **The steps down,** and **the pumpkin lantern**: warm light, and the first big candy. "Gamla trägubben
  *    lämnar godis åt oss!"
- * 3. **Stormbyarna** (the exciting sequence): the open lawn, where gusts sweep across. Upturned flowerpots are
+ * 3. **Stormbyarna** (the exciting sequence): the open lawn, where gusts sweep across. The garden's flowerpots are
  *    the lee; one that catches him in the open takes him back to the last pot. Klonk is blown into one.
  * 4. **Regntunnan** (the puzzle): the ditch beyond the rain barrel is too wide to jump. Up the barrel's hose,
  *    *Vrid på kranen*: the water runs into the ditch and the floating lid rises into a bridge.
@@ -59,7 +59,7 @@ const LANTERN = { x: 30.6, y: STEPS[3]!.y, z: -0.9 };
 /** The stone edging of Mamma's flower bed, on the lawn below the steps: a held jump, or a pull-up. */
 const BED = { from: 37, to: 39, y: 0.8 };
 
-/** The open lawn and its upturned flowerpots, as far apart as Berget's boulders: the same beat of the dash. */
+/** The open lawn and its flowerpots (../flower-pots.ts), as far apart as Berget's boulders: the same beat of the dash. */
 const POTS = [44, 49.2, 54.4, 59.6, 64.8, 70];
 
 /**
@@ -396,9 +396,10 @@ export const stormgard: ChapterData = {
     { at: { x: 27.6, y: STEPS[2]!.y } },
     { at: { x: 32.4, y: STEPS[4]!.y } },
     { at: { x: 38, y: BED.y } },
-    // from pot to pot, and into one
+    // from pot to pot, and into one: the wide bowl with only its soil in it, where he stands on the soil, 1 EL over the
+    // lawn (../flower-pots.ts `BOWL_SOIL`; art/blender/a2-props.py `kruka-skal`)
     { at: { x: 46.6, y: 0 } },
-    { at: { x: POTS[2]!, y: 0.9 }, z: -1.3 },
+    { at: { x: POTS[2]!, y: 1 }, z: -1.3 },
     { at: { x: 62.2, y: 0 } },
     { at: { x: 68, y: 0 } },
     { at: { x: 74.6, y: 0 } },

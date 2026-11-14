@@ -56,6 +56,7 @@ import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
+import { flowerPot } from './flower-pots';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
@@ -778,12 +779,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     group.add(rock);
   }
 
-  // The gusts' shelters as what they are here: upturned flower pots on the lawn, or the jetty's posts.
+  // The gusts' shelters as what they are here: flower pots on the lawn (./flower-pots.ts), or the jetty's posts.
   // (The boulders they stand in for join the scene after this is built: they are put away on the first frame.)
   const shelterOf = (i: number) => (Array.isArray(storm?.shelters) ? storm.shelters[i] ?? 'stones' : storm?.shelters ?? 'stones');
   for (const [i, gust] of (chapter.gusts ?? []).entries()) {
     const kind = shelterOf(i);
-    if (kind !== 'stones') for (const x of gust.shelters) group.add(kind === 'pots' ? flowerPot(x, gust.y) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
+    if (kind !== 'stones') for (const [n, x] of gust.shelters.entries()) group.add(kind === 'pots' ? flowerPot(x, gust.y, n) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
   }
 
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
@@ -1216,21 +1217,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       drawnWhile(moon, calm > 0);
     },
   };
-}
-
-/** An upturned terracotta flower pot, a shelter from the wind as tall as two of him. */
-function flowerPot(x: number, y: number): Group {
-  const group = new Group();
-  const clay = solid('#b65f3a', 0.8);
-  const pot = new Mesh(new CylinderGeometry(0.62, 0.92, 1.7, 20), clay);
-  pot.position.y = 0.85;
-  const rim = new Mesh(new CylinderGeometry(1.0, 1.0, 0.28, 20), clay);
-  rim.position.y = 0.14;
-  group.add(pot, rim);
-  group.position.set(x, y, -1.3);
-  group.userData.model = 'kruka';
-  group.userData.turn = x * 1.7;
-  return group;
 }
 
 /** A boulder of the hillside, granite grey and faceted, as big as the lumps it stands in for. */
