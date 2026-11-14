@@ -41,6 +41,13 @@ const REACH = 4.5;
  * the ground is seen edge on, and a line may move it further.
  */
 const FRONT_SHARE = 0.2;
+/**
+ * The tallest wall that has a line of its own: a step, a ditch's bank, a pit's wall (Granskogen's are 8.8). A taller one
+ * is a mountain's cliff, which has its rock's relief (./ground.ts) and the mountain kit's shapes. The camera can stand past
+ * such a cliff, inside its rock below its top (Berget's, 38 tall), where the face turns its back to it and is not drawn:
+ * bent through the depth and weathered, its bends turned to the camera and stood beside him as a column of rock.
+ */
+const TALLEST = 9;
 
 const smooth = (from: number, to: number, v: number) => {
   const t = Math.min(1, Math.max(0, (v - from) / (to - from)));
@@ -49,7 +56,10 @@ const smooth = (from: number, to: number, v: number) => {
 
 /** A wall of grown ground, with the line it takes through the depth. */
 export interface Bank {
-  /** Where the outline has it, its top and its foot. */
+  /**
+   * Where the outline has it, and its top and its foot: a pool's bank's foot is a little under its water, which hides
+   * the rest, so that the bank slopes from its lip to the water and not to a bed nobody sees.
+   */
   x: number;
   top: number;
   foot: number;
@@ -194,7 +204,7 @@ function build(source: ChapterData, own: string): Edges {
   const isOpen = (wall: { x: number; foot: number }) => poolOf(wall) !== undefined;
   const banks: Bank[] = [];
   for (const [i, wall] of walls.entries()) {
-    if (!wall.grown) continue;
+    if (!wall.grown || wall.top - wall.foot > TALLEST) continue;
     // A line never crosses its neighbour's: it moves the ground with it for less than half the way there.
     const reachUp = Math.min(REACH, 0.48 * gap(i, wall.side));
     const reachLow = Math.min(REACH, 0.48 * gap(i, -wall.side as 1 | -1));
@@ -227,7 +237,7 @@ function build(source: ChapterData, own: string): Edges {
   const channels: Channel[] = [];
   for (let i = 0; i < walls.length - 1; i++) {
     const [left, right] = [walls[i]!, walls[i + 1]!];
-    if (!left.grown || !right.grown || left.side !== -1 || right.side !== 1 || right.x - left.x > 7) continue;
+    if (!left.grown || !right.grown || left.top - left.foot > TALLEST || right.top - right.foot > TALLEST || left.side !== -1 || right.side !== 1 || right.x - left.x > 7) continue;
     const reachLeft = Math.min(REACH, 0.48 * gap(i, -1));
     const reachRight = Math.min(REACH, 0.48 * gap(i + 1, 1));
     const seed = Math.round(left.x * 10) + 0.53;

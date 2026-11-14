@@ -69,13 +69,18 @@ describe('the lines the ground\'s walls take through the depth', () => {
     // A tall wall beside him is not ruled with a ruler: it was one x from its foot to its lip.
     const xs = still.map((corner) => corner.x);
     expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(0.04);
+    // A mountain's cliff keeps its face: the camera stands inside Berget's, 38 tall, below its top, and its face, bent
+    // and weathered, stood beside him as a column of rock up into the sky.
+    const berget = COURSES['berget']!;
+    expect(edgesOf(berget, own(berget)).bankAt(64)).toBeUndefined();
+    for (let y = -14; y <= 24; y += 0.5) for (const z of [-12, -4, STILL_BEHIND, 0, STILL_FRONT, 2]) expect(edgesOf(berget, own(berget)).shift(64, y, z)).toBe(0);
   });
 
   it('gives every wall of grown ground a line of its own behind the path: none is the outline pulled straight', () => {
     // Granskogen's pit, Stormskogen's dry ditch, Stormgården's ditch, a bank of Berget's rock, a bog's island.
     const walls: [course: string, x: number, foot: number, top: number][] = [
       ['granskog', 118, -15, -8], ['granskog', 126, -15, -8], ['stormskog', 103, -5, 0], ['stormskog', 104.6, -5, 0],
-      ['stormgard', 85, -3, 0], ['stormgard', 90, -3, 0], ['stormgard', 106, -5, 0], ['berget', 6, -14, 0], ['myren', 49, -6, 0],
+      ['stormgard', 85, -3, 0], ['stormgard', 90, -3, 0], ['stormgard', 106, -5, 0], ['berget', 146, 26.4, 31.4], ['myren', 49, -6, 0],
     ];
     for (const [course, x, foot, top] of walls) {
       const behind = faceCorners(landscape(COURSES[course]!), x, foot, top).filter((corner) => corner.z < -1 && corner.z > -9 && Math.abs(corner.x - x) < 1.6);
