@@ -372,9 +372,19 @@ export type Carving = keyof typeof CARVINGS;
 
 // --- what they hide behind and sit on -----------------------------------------------------------------------
 
-/** A stone with moss or lichen on its top, `size` across, its foot at the origin. */
+/**
+ * A stone with moss or lichen on its top, `size` across, its foot at the origin: a round back, a lower shoulder on its
+ * near side and a small one behind, so that it is a stone and not a ball (it was one ball under a cap; Olov, 14
+ * November 2026: "kaninen på stenen").
+ */
 export function stone(size: number, rock: string, top: string): Part[] {
-  return [['b', rock, [0, size * 0.3, 0], [size * 0.55, size * 0.42, size * 0.45], [0, 0.4, 0.05]], ['b', top, [0, size * 0.55, 0.02 * size], [size * 0.42, size * 0.16, size * 0.34], [0, 0.4, 0.05]]];
+  const dark = `#${new Color(rock).multiplyScalar(0.84).getHexString()}`;
+  return [
+    ['b', rock, [0, size * 0.3, 0], [size * 0.55, size * 0.42, size * 0.45], [0, 0.4, 0.05]],
+    ['f', dark, [size * 0.27, size * 0.15, size * 0.2], [size * 0.33, size * 0.24, size * 0.29], [0.15, 0.9, 0.12]],
+    ['f', dark, [-size * 0.33, size * 0.13, -size * 0.08], [size * 0.27, size * 0.2, size * 0.3], [0.1, -0.5, -0.1]],
+    ['b', top, [0, size * 0.55, 0.02 * size], [size * 0.42, size * 0.16, size * 0.34], [0, 0.4, 0.05]],
+  ];
 }
 
 /** A stump with its roots, `tall` high, broken at the top. */
@@ -384,6 +394,19 @@ export function stump(tall: number, wide: number): Part[] {
     ['f', '#a39784', [0, tall, 0], [wide * 0.82, wide * 0.3, wide * 0.82], [0, 0.5, 0.15]],
     ...[0.4, 2.3, 4.2].map((a): Part => ['b', '#665442', [Math.cos(a) * wide, wide * 0.25, Math.sin(a) * wide], [wide * 0.6, wide * 0.32, wide * 0.32], [0, -a, -0.3]]),
     ['e', '#5f7a34', [wide * 0.3, tall * 0.35, wide * 0.8], [wide * 0.4, tall * 0.2, wide * 0.2]],
+  ];
+}
+
+/**
+ * A dead sapling, `tall`, its foot at the origin: a thin grey stem, leaning a little, with a few bare twigs. Where no
+ * trunk stands near the path, the storm's small birds sit out the rain on a bough of one (./plan.ts).
+ */
+export function sapling(tall: number): Part[] {
+  return [
+    ['r', '#5e5042', [0, tall / 2, 0], [0.06, tall, 0.06], [0, 0, 0.04]],
+    ['r', '#5e5042', [0.13, tall * 0.84, 0.02], [0.022, tall * 0.34, 0.022], [0, 0.3, -0.5]],
+    ['r', '#5e5042', [-0.11, tall * 0.68, -0.03], [0.02, tall * 0.28, 0.02], [0, -0.4, 0.55]],
+    ['r', '#665442', [0.03, tall * 1.04, 0], [0.018, tall * 0.2, 0.018], [0, 0, 0.12]],
   ];
 }
 

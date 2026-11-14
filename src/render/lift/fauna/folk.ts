@@ -57,6 +57,8 @@ export interface FolkWant { kind: Folk; count: number; install(rigs: CreatureCli
 
 /** How big the fox is drawn: its kit and its code-built shape are 1 tall at the withers. */
 export const FOX_SIZE = 2.3;
+/** The nearest the fox comes to the path, in EL behind it: where the lens no longer blurs it most. */
+export const FOX_NEAR = -16;
 /** How far one stride of the fox's trot and of its walk carries it, in its own units (art/blender/fox.py). */
 export const TROT_STRIDE = 0.7;
 export const WALK_STRIDE = 0.42;
@@ -460,7 +462,9 @@ function foxes(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Folk
       if (!tree) { fx.wait = 3; return; }
       const dir = away(tree);
       Object.assign(fx, {
-        on: true, x: tree.x, z: Math.max(-24, Math.min(-12, tree.z - 3 - next() * 4)), dir, yaw: dir > 0 ? 0 : Math.PI, walked: 0,
+        // Sixteen EL back or more: nearer (it came as near as twelve) the lens blurs it most, for its blur thins again
+        // towards the far forest (../../depth-blur.ts), and at sixteen it is half as soft and nearly as big.
+        on: true, x: tree.x, z: Math.max(-24, Math.min(FOX_NEAR, tree.z - 3 - next() * 4)), dir, yaw: dir > 0 ? 0 : Math.PI, walked: 0,
         speed: 0, leaving: false, acts: 0, sat: 0, look: 0, startled: false,
       });
       begin('out');

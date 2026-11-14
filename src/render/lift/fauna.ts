@@ -8,6 +8,7 @@ import { drawnWhile } from '../idle';
 import { forestFolk, installForestFolk } from './fauna/folk';
 import { faunaPlan, type Landing, type Plan, type Soarer } from './fauna/plan';
 import { BIRD_TILT, birdMaterial, flockOf, type BirdKind } from './fauna/bird-kit';
+import { installCarvings } from './fauna/carving-kit';
 import {
   BIRDS, CARVINGS, creatureMaterial, glintMaterial, glints, herd, owl, plain,
   type Species, type V3,
@@ -23,13 +24,16 @@ import { OWL_TALL, type OwlRig } from '../owl';
  * (butterflies, dragonflies, bats, fireflies), modelled in Blender and posed in the vertex stage, ./fauna/small-kit.ts;
  * the birds, small and high, the same way, ./fauna/bird-kit.ts.
  *
- * All of it is drawn on Mid and High only (the rich layer), one draw call a kind, and only while some of a kind is
- * in the picture. With less motion asked for, everything holds still and the birds stay where they sit.
+ * All of it but the carvings is drawn on Mid and High only (the rich layer), one draw call a kind, and only while some
+ * of a kind is in the picture. The carvings and the stones they stand on are drawn on Low too. With less motion asked
+ * for, everything holds still and the birds stay where they sit.
  */
 export function installFauna(): void {
   PACK.lifts.push(createFauna);
   // The fox, the squirrels and the beings modelled, rigged and animated in Blender (./fauna/folk.ts).
   PACK.models.push(installForestFolk);
+  // Pappa's carvings as they are whittled in Blender (./fauna/carving-kit.ts).
+  PACK.models.push(installCarvings);
 }
 
 /** A visitor's coming and going: where it may come down, how long until it comes, and how long it stays. */
@@ -50,6 +54,9 @@ interface Now {
   cx: number;
   cz: number;
   slope: number;
+  /** How high the camera is, and how tall half the picture is for each EL away. */
+  cy: number;
+  rise: number;
   /** 1 by day, fading to 0 at night; in the storm 0. */
   day: number;
 }
@@ -149,21 +156,37 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
   // The fox, the squirrels and the beings (./fauna/folk.ts): drawn rigged once their models have come.
   const folk = forestFolk(plan, add, group, chapter.checkpoints ?? []);
   group.userData.forestFolk = folk.wants;
+  // Pappa's carvings and the stones they stand on are drawn on every tier (Olov, 14 November 2026: the hare's new
+  // design is to be on "alla dessa kaniner"): a group of their own beside the rich one, two or three small draws.
+  const still = new Group();
+  still.name = 'fauna-carvings';
+  const carved = carvings(plan, (shape, count, with_, name) => {
+    const made = add(shape, count, with_, name);
+    still.add(made.mesh);
+    return made;
+  });
   const kinds = [
     ...folk.kinds,
     owls(plan, add),
     birds(plan, addFlock),
     soarers(plan, add, addFlock),
     butterflies(plan, add),
-    carvings(plan, add),
+    carved,
     plan.dragonflies.length + plan.fireflies ? lights(plan, add, plan.fireflies ? adopt(glints(plan.fireflies, glint)) : null, glow, small) : null,
   ].filter((kind): kind is NonNullable<Kind> => kind !== null);
+  const rock = new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 });
   if (plan.props.length) {
-    const props = new Mesh(plain(plan.props), new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
+    const props = new Mesh(plain(plan.props), rock);
     props.name = 'fauna-props';
     group.add(props);
   }
+  if (plan.stands.length) {
+    const stands = new Mesh(plain(plan.stands), rock);
+    stands.name = 'fauna-stands';
+    still.add(stands);
+  }
   context.scene.add(group);
+  if (still.children.length) context.scene.add(still);
   // For a session's pictures: what of it is drawn (src/main.ts's ?debug has the draw calls). Not in a build.
   if (import.meta.env.DEV && typeof window !== 'undefined') (window as { __fauna?: Group }).__fauna = Object.assign(group, { plan });
 
@@ -173,10 +196,6 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
       const camera = frame.camera as PerspectiveCamera;
       // For a session's close pictures: the lens, to find a creature in the picture by. Not in a build.
       if (import.meta.env.DEV && typeof window !== 'undefined') (window as { __lens?: PerspectiveCamera }).__lens = camera;
-      if (frame.tier === 'low') {
-        for (const c of crowds) c.flush();
-        return;
-      }
       const dt = frame.still ? 0 : Math.min(0.1, frame.dt);
       clock += dt;
       time.value = clock;
@@ -184,9 +203,12 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
       const now: Now = {
         t: clock, dt, still: frame.still, share: frame.tier === 'high' ? 1 : 0.6, x: frame.x, y: frame.y,
         cx: camera.position.x, cz: camera.position.z, slope: Math.tan((camera.fov * Math.PI) / 360) * camera.aspect,
+        cy: camera.position.y, rise: Math.tan((camera.fov * Math.PI) / 360),
         day: storm?.rain || plan.place === 'dusk' ? 0 : 1 - smooth(((frame.darkness ?? 0) - 0.25) / 0.4),
       };
-      for (const kind of kinds) kind(now, calm);
+      // Low draws the carvings only: the rest of the near life is on the rich layer, which its camera does not see.
+      if (frame.tier === 'low') carved?.(now, calm);
+      else for (const kind of kinds) kind(now, calm);
       for (const c of crowds) c.flush();
     },
   };
@@ -560,6 +582,8 @@ export function batStroke(phase: number): [number, number] {
   const fold = Math.max(0, Math.cos(phase));
   return [0.12 + 0.8 * Math.sin(phase), fold * fold * (3 - 2 * fold) * 0.95];
 }
+/** How high in the picture they fly at most: this share of the way from its middle to its top edge. */
+export const SKY_TOP = 0.6;
 /** The window of the world, round the camera, where each keeps its place: it is put anew only when it wraps, out of sight. */
 const SKY_SPAN = { raven: 60, crow: 56, bat: 34 } as const;
 /** `?soar` brings them over the middle of the picture as the view starts, to look at them (as `?life=` does the far life). */
@@ -634,6 +658,10 @@ function soarers(plan: Plan, add: Add, addFlock: AddFlock): Kind {
           y = f.ground + one.up + 0.5 * Math.sin(a * 0.5 + one.phase);
           z = one.z - 0.45 * one.r * Math.sin(a);
         }
+        // Never over the top of the picture: no higher in it than `SKY_TOP` of the way from its middle to its top edge,
+        // where the way's name is written on a phone. Berget's ravens flew along the very edge, cut off by it, and the
+        // dusk's bats over it (Olov, 14 November 2026: "syns tydligt på de platser där de ska förekomma").
+        y = Math.min(y, now.cy + (now.cz - z) * now.rise * SKY_TOP);
         if (!seen(now, x, z, own.size * 1.5)) { crowd.hide(i); one.x = NaN; continue; }
         // It faces its way, turned smoothly, and noses up as it climbs: from where it was the frame before. Held
         // still, it keeps how it was turned.
@@ -768,14 +796,24 @@ function butterflies(plan: Plan, add: Add): Kind {
 
 // --- carved figures: they stand where they were left; one of them tips back as he goes by ------------------------
 
+/**
+ * The carvings' own warmth: a wood brown added to what the light gives them, a little by day and more in the storm and
+ * at dusk. Low enough that the materials' lift still takes them for carved wood (./materials/surface.ts).
+ */
+export const CARVING_WARMTH = { colour: '#7a5226', day: 0.12, night: 0.5 } as const;
+
 function carvings(plan: Plan, add: Add): Kind {
   if (!plan.carvings.length) return null;
-  // Oiled by hands that held them: a little sheen on the facets.
-  const wood = new MeshStandardMaterial({ vertexColors: true, roughness: 0.78, flatShading: true });
+  // Oiled by hands that held them: a little sheen on the facets. And a little warmth of its own, more where the light is
+  // the storm's or the dusk's blue: there pale wood went as grey as a stone (Olov, 14 November 2026).
+  const wood = new MeshStandardMaterial({ vertexColors: true, roughness: 0.78, flatShading: true, emissive: CARVING_WARMTH.colour, emissiveIntensity: CARVING_WARMTH.day });
   const shapes = [...new Set(plan.carvings.map((c) => c.shape))];
   const crowds = new Map(shapes.map((shape) => [shape, add(CARVINGS[shape]('#d6bf98'), plan.carvings.filter((c) => c.shape === shape).length, wood, `carving:${shape}`)]));
+  // The figure whittled in Blender takes the code-built one's place when it has come (./fauna/carving-kit.ts).
+  for (const [shape, made] of crowds) made.mesh.userData.carvingKit = shape;
   const all = plan.carvings.map((c, n) => ({ ...c, crowd: crowds.get(c.shape)!, i: plan.carvings.slice(0, n).filter((o) => o.shape === c.shape).length, tip: -1, armed: true }));
   return (now) => {
+    wood.emissiveIntensity = lerp(CARVING_WARMTH.night, CARVING_WARMTH.day, now.day);
     for (const [n, c] of all.entries()) {
       if (!seen(now, c.at[0], c.at[2], 2)) { c.crowd.hide(c.i); continue; }
       // The first rocks back on its foot when he passes, and settles.

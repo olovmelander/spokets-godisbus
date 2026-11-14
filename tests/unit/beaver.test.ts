@@ -112,6 +112,10 @@ describe('the beaver at its lodge in Älven', () => {
     const later = b.world();
     expect(later.x).toBeGreaterThan(start.x);
     expect(later.z).toBeLessThan(start.z);
+    // Never far out, where the lens blurs it most and it is a dark speck on dark water (Olov, 14 November 2026: "syns
+    // tydligt på de platser där de ska förekomma"): within five EL of his way, all the way to its dive.
+    expect(later.z).toBeGreaterThan(-5);
+    expect(later.x - start.x).toBeGreaterThan(2);
     // Out there it slaps the water and is gone.
     b.run(133, 5);
     expect(b.model.visible).toBe(false);
