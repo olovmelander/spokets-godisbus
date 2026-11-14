@@ -98,7 +98,9 @@ describe('the power cut on the evening of the storm (Olov, 12 November 2026)', (
         if (t < from) continue;
         rig.arm!(0, shoulder, elbow, wrist);
         const forearm = wrist.clone().sub(elbow).normalize(), beam = new Vector3(0, 0, 1).applyQuaternion(lamp.quaternion);
-        expect(forearm.angleTo(beam), `${id} at ${t.toFixed(2)}`).toBeLessThan(0.9);
+        // (Under the beam by what the grip's slant asks, src/render/lamp-hold.ts FOREARM_UNDER, and a moment more while the
+        // lamp swings up in the hand to be shown, before the arm has come up with it: not across it, as a handle is held.)
+        expect(forearm.angleTo(beam), `${id} at ${t.toFixed(2)}`).toBeLessThan(1.45);
         expect(lamp.position.y, `${id} at ${t.toFixed(2)}`).toBeLessThan(shoulder.y - 0.2);
       }
     }

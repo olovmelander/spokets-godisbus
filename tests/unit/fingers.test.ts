@@ -2,7 +2,10 @@ import { Bone, BufferAttribute, CylinderGeometry, Group, Matrix4, MeshBasicMater
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { describe, expect, it } from 'vitest';
 import { createArmContact, createHandHold } from '../../src/render/arm-contact';
-import { alongDigit, fingersOf, HOOK, mixShape, posedDigits, REST, REST_OWN, type Hand } from '../../src/render/fingers';
+import { alongDigit, fingersOf, HOOK, mixShape, posedDigits, REST, REST_OWN, TORCH_SLANT, type Hand } from '../../src/render/fingers';
+import { LAMP_BARREL, LAMP_HELD } from '../../src/render/flashlight';
+import { holdFlashlight, WRIST_GIVE } from '../../src/render/lamp-hold';
+import { createModelRig, STANDING } from '../../src/render/rig';
 import { bendSoftly } from '../../src/render/joints';
 import { sleevesWithArms } from '../../src/render/sleeves';
 
@@ -336,5 +339,90 @@ describe('a hand made with fingers of its own', () => {
     expect(fingers).toBeGreaterThan(500);
     // The elbow's half bone came, after the fingers' bones; no finger's corner moved to it.
     expect(h.mesh.skeleton.bones.some((bone) => bone.name === 'lowerarm_l_half')).toBe(true);
+  });
+});
+
+/**
+ * Olov, 14 November 2026: "Kan vi förbättra hur karaktärerna håller i sina ficklampor så att det ser snyggare och mer
+ * naturligt ut genom hela spelet?" Held as a handle is (the barrel straight across the palm), a lamp pointing where its
+ * holder lit had the wrist bent a quarter turn. It lies aslant in the hand, and the arm goes by that.
+ */
+describe('a flashlight in the hand', () => {
+  const sum = (curl: readonly number[]) => curl.reduce((a, b) => a + b, 0);
+  /** How far a point is from the barrel's own line, in the barrel's and the digit's radii: 1 touches. */
+  const off = (p: Vector3, socket: { at: Vector3; axis: Vector3 }, r: number, radius: number) => offLine(p, socket.at, socket.axis) / (r + radius);
+
+  it.each([['one block', hand, TORCH_SLANT.block], ['fingers of its own', ownHand, TORCH_SLANT.own]] as const)(
+    'lies aslant across a hand made with %s, every finger closed onto it and the thumb along it', (_made, make, slant) => {
+      const h = make();
+      const left = fingersOf(h.root)[0] as Hand;
+      const { along, thumbward, palmward, digits } = left.layout;
+      for (const r of [0.013, 0.017, 0.021]) {
+        const { shape, socket } = left.grip('torch', r);
+        // The lens points out past the thumb and the first finger: between straight across the hand and along it.
+        expect(socket.axis.dot(thumbward)).toBeCloseTo(Math.cos(slant), 5);
+        expect(socket.axis.dot(along)).toBeCloseTo(Math.sin(slant), 5);
+        expect(Math.abs(socket.axis.dot(palmward))).toBeLessThan(1e-6);
+        const posed = posedDigits(left.layout, left.axes, shape);
+        for (let f = 1; f < 5; f++) {
+          const radius = digits[f]!.radius, pad = posed[f]![2]!.clone().lerp(posed[f]![3]!, 0.7);
+          // Its pad is on the barrel: not standing off it, and not far into it. Nor is a knuckle in it.
+          expect(off(pad, socket, r, radius), `finger ${f} pad at ${r}`).toBeGreaterThan(0.75);
+          expect(off(pad, socket, r, radius), `finger ${f} pad at ${r}`).toBeLessThan(1.3);
+          for (const k of [1, 2]) expect(off(posed[f]![k]!, socket, r, radius), `finger ${f} joint ${k} at ${r}`).toBeGreaterThan(0.75);
+          // Closed, not lying open under it.
+          expect(sum(shape.fingers[f - 1]!), `finger ${f} at ${r}`).toBeGreaterThan(sum(REST.fingers[f - 1]!) + 0.2);
+        }
+        // The barrel lies deeper in the palm under each finger after the first: the little finger closes furthest at its root.
+        expect(shape.fingers[3]![0]!).toBeGreaterThan(shape.fingers[0]![0]! + 0.15);
+        // The thumb: none of it in the barrel, its pad against it, lying along it towards the lens.
+        const thumb = posed[0]!, radius = digits[0]!.radius;
+        for (const [k, t] of [[1, 0.5], [1, 1], [2, 0.5], [2, 1]] as const) {
+          expect(off(thumb[k]!.clone().lerp(thumb[k + 1]!, t), socket, r, radius), `thumb bone ${k} at ${t}, barrel ${r}`).toBeGreaterThan(0.8);
+        }
+        expect(off(thumb[2]!.clone().lerp(thumb[3]!, 0.45), socket, r, radius)).toBeLessThan(1.35);
+        expect(thumb[3]!.clone().sub(thumb[1]!).normalize().dot(socket.axis)).toBeGreaterThan(0.6);
+      }
+    });
+
+  it('keeps the wrist nearly straight: the arm is placed by the hand\'s own grip, the forearm under the beam', () => {
+    // A left arm with a hand of one block, as the family's models have: an upper arm, a forearm and the hand, in a line.
+    const h = hand();
+    const upper = new Bone(); upper.name = 'upperarm_l';
+    h.root.add(upper); upper.position.set(0, -0.5, 0);
+    upper.attach(h.forearm);
+    h.root.updateMatrixWorld(true);
+    const rig = createModelRig(h.root, 1.6), left = fingersOf(h.root)[0] as Hand;
+    expect(rig.grasp).toBeDefined();
+    const lamp = new Group(), size = 0.017 / LAMP_BARREL;
+    const at = (name: string) => h.root.getObjectByName(name)!.getWorldPosition(new Vector3());
+    const under = Math.acos(left.grip('torch', 0.017).socket.axis.dot(left.layout.along)) - WRIST_GIVE;
+    // The floor a few steps ahead, level ahead, out to its own side; up at a shelf, where the wrist cocks back to lift the
+    // light over the sill; and across the body, where the hand stays on its own side and the wrist gives what the arm cannot.
+    for (const [x, y, z, give] of [[0, -1, 1.2, 0.6], [0, -0.3, 3, 0.6], [0.2, 1, 2, 0.85], [2.5, -0.6, 1.5, 0.6], [-0.8, -0.8, 1.5, 0.95]] as const) {
+      rig.pose({ ...STANDING });
+      h.root.updateMatrixWorld(true);
+      const aim = at('upperarm_l').add(new Vector3(x, y, z));
+      holdFlashlight(rig, lamp, 0, aim, size);
+      h.root.updateMatrixWorld(true);
+      const shoulder = at('upperarm_l'), elbow = at('lowerarm_l'), wrist = at('hand_l');
+      const forearm = wrist.clone().sub(elbow).normalize();
+      const fingers = left.layout.along.clone().transformDirection(h.bone.matrixWorld);
+      const beam = new Vector3(0, 0, 1).applyQuaternion(lamp.quaternion);
+      const where = `aim ${x},${y},${z}`;
+      // The hand runs on from the forearm: held as a handle is, it stood a quarter turn off it.
+      expect(forearm.angleTo(fingers), where).toBeLessThan(give);
+      // The lamp is in the hand's grip, and shines at what it lights.
+      const socket = rig.socket!(0, { kind: 'torch', size: LAMP_BARREL * size }, new Vector3());
+      expect(lamp.position.clone().addScaledVector(beam, LAMP_HELD * size).distanceTo(socket), where).toBeLessThan(1e-6);
+      expect(beam.angleTo(aim.clone().sub(socket)), where).toBeLessThan(0.02);
+      // The forearm lies under the beam by what the grip's slant asks, give or take what the body lets it, and the
+      // elbow below the shoulder, the arm bent.
+      if (give < 0.8) expect(Math.abs(forearm.angleTo(beam) - under), where).toBeLessThan(0.45);
+      expect(elbow.y, where).toBeLessThan(shoulder.y - 0.1);
+      expect(wrist.distanceTo(shoulder), where).toBeLessThan(0.992 * (shoulder.distanceTo(elbow) + elbow.distanceTo(wrist)));
+      // And the fingers have closed round it.
+      expect(sum(left.shape.fingers.flat()), where).toBeGreaterThan(sum(REST.fingers.flat()) + 1.5);
+    }
   });
 });
