@@ -496,6 +496,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const eddy = createEddy(chapter);
   if (eddy) scene.add(eddy.group);
   let eddyLift = 0;
+  /** How far over the simulation's place he is drawn standing: an extra's, for what it draws under his feet (./extensions.ts). */
+  const stand = { lift: 0 };
   // Stormgården's rain barrel: the tap's water pours into the ditch, which fills under the lid (./rain-barrel.ts).
   const rainBarrel = createRainBarrel(chapter);
   if (rainBarrel) scene.add(rainBarrel.group);
@@ -1652,7 +1654,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     GROUND_WET.value = wetOutside ? 1 : 0;
     GROUND_SKY.value.copy(hemisphere.color).multiplyScalar(hemisphere.intensity);
     // The gusts too, for a pack's picture of them (the waves over Flärken's jetty, ./jetty-waves.ts).
-    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', revealPaused: sceneFrame?.waiting, scene: sceneFrame, gusts });
+    stand.lift = 0;
+    for (const extra of extras) extra.update({ dt, clock, flags, x, y, camera, still: calmStory, tier, riding: curr.mode === 'ride', revealPaused: sceneFrame?.waiting, scene: sceneFrame, gusts, bouncers: berries, stand });
     if (dressing && place) {
       // What lives far off begins nothing while he is busy, and needs the lens to know what is in the picture.
       dressing.update(camera.position.x, look.y, clock, darkness, { gust, still: calmStory }, {
@@ -1778,7 +1781,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (curr.mode === 'ride' && drawnMode !== 'ride' && drawnMode !== null && !calmStory && Math.hypot(drawnX - x, drawnY - y) < 2) rideFrom.set(drawnX - x, drawnY - y, 0);
     rideFrom.multiplyScalar(curr.mode === 'ride' ? Math.exp(-10 * dt) : 0);
     drawnMode = curr.mode; drawnX = x; drawnY = y;
-    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0) + rideFrom.x, y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + (lift?.y ?? 0) + rideFrom.y, lift?.z ?? 0);
+    elof.group.position.set(x - Math.sin(hang) * 0.5 + (lift?.x ?? 0) + rideFrom.x, y + 0.5 - Math.cos(hang) * 0.5 + shoulderLift + stand.lift + (lift?.y ?? 0) + rideFrom.y, lift?.z ?? 0);
     // On the rigged crane he stands on its back wherever it is (./crane-ride.ts): a hop up onto it as he boards, and one
     // down from it when it has landed.
     if (craneHeld) { craneHold = calmStory ? 1 : Math.min(1, craneHold + dt / 0.3); craneOff.set(craneSeat.x - x, craneSeat.y - y, craneSeat.z); }
@@ -1988,7 +1991,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     if (poff) glitter.update(0.5, x, y + tall * 0.4, clock);
 
     // On the bathroom's tiles his shadow lies on them, not under them.
-    playerGroundY = curr.groundY + (bathroom ? bathroom.position.y - y : 0);
+    playerGroundY = curr.groundY + Math.max(0, stand.lift) + (bathroom ? bathroom.position.y - y : 0);
 
     // A big candy turns slowly until it is reached. Then it gives a little jump, and turns fast.
     for (const [i, big] of bigCandies.entries()) {

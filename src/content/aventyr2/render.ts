@@ -57,6 +57,7 @@ import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
 import { flowerPot } from './flower-pots';
+import { createTrampoline, type Trampoline } from './trampoline';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
@@ -760,11 +761,17 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     balls.geometry = footballGeometry().scale(1, 1, 1 / 1.9);
     balls.material = footballMaterial();
   }
-  // The bouncers as what they are here: the garden's trampoline, or the striped flap of an awning.
+  // The bouncers as what they are here: the garden's trampoline (./trampoline.ts), or the striped flap of an awning.
+  const trampolines: Trampoline[] = [];
   if (storm?.bouncers) {
-    for (const holder of scene.children.filter((child) => child.name === 'bouncer')) {
+    for (const [i, holder] of scene.children.filter((child) => child.name === 'bouncer').entries()) {
       holder.clear();
-      holder.add(storm.bouncers === 'trampoline' ? trampoline() : storm.bouncers === 'net' ? saggingNet() : awningFlap());
+      if (storm.bouncers === 'trampoline') {
+        // In the place itself, not in the holder: the view squashes that whole, as it does a cranberry.
+        const made = createTrampoline(chapter.bouncers![i]!);
+        group.add(made.group);
+        trampolines.push(made);
+      } else holder.add(storm.bouncers === 'net' ? saggingNet() : awningFlap());
     }
   }
 
@@ -873,7 +880,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   let boardedAt = 0, landedAt = -1;
   const setDown = new Vector3(), owlStart = new Vector3();
   return {
-    update({ dt, clock, flags, x, y, camera, still, tier, riding, revealPaused, scene: moment }: ExtraFrame) {
+    update({ dt, clock, flags, x, y, camera, still, tier, riding, revealPaused, scene: moment, bouncers, stand }: ExtraFrame) {
+      // The trampoline's mat gives under him, and he is drawn on it where he crosses it (./trampoline.ts).
+      for (const [i, one] of trampolines.entries()) {
+        const lift = one.update(x, y, bouncers?.[i]?.squash ?? 0, dt, clock, still);
+        if (stand) stand.lift += lift;
+      }
       elof.x = x;
       elof.flags = flags;
       elof.still = still;
@@ -1246,24 +1258,6 @@ function jettyPost(x: number, y: number): Group {
   group.add(post, cap);
   group.position.set(x, y, -1.1);
   group.userData.model = 'bryggstolpe';
-  return group;
-}
-
-/** The garden's trampoline, as big as a table to him: a dark round mat on a green frame, its top at the bouncer's. */
-function trampoline(): Group {
-  const group = new Group();
-  const mat = new Mesh(new CylinderGeometry(1.5, 1.5, 0.06, 28), solid('#1e2226', 0.7));
-  mat.position.y = 0.5;
-  const rim = new Mesh(new TorusGeometry(1.6, 0.12, 8, 30), solid('#3c7a52', 0.6));
-  rim.rotation.x = Math.PI / 2;
-  rim.position.y = 0.52;
-  group.add(mat, rim);
-  for (const a of [0.4, 2.0, 3.6, 5.2]) {
-    const leg = new Mesh(new CylinderGeometry(0.05, 0.05, 1.4, 6), solid('#2c5a3c', 0.6));
-    leg.position.set(Math.cos(a) * 1.55, -0.2, Math.sin(a) * 1.55 - 0.3);
-    group.add(leg);
-  }
-  group.position.z = -0.3;
   return group;
 }
 
