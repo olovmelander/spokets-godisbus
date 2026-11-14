@@ -5,6 +5,7 @@ import { groundDetail } from '../ground-detail';
 import { stoneCourses } from '../stone-courses';
 import { waterKind } from '../water';
 import { MOSS, drawn, hash, heightAt, landscape, noise, sequence, surfaceAt } from './kit';
+import { edgesOf, isGrown, openPools, type Edges } from './natural';
 
 // --- L3: the ground ---------------------------------------------------------------------------------------
 
@@ -134,8 +135,30 @@ interface Row {
   under?: true;
   /** A section sample between two original rows: stay on their line even where the front draws back. */
   between?: readonly [Row, Row, number];
+  /** A row put in between two others (`finer`): it rolls as the line between them does, so that the ground lies as it lay. */
+  on?: readonly [Row, Row, number];
 }
-const PROFILE: Row[] = [
+/**
+ * A profile with more rows, each on the line between the two it falls between: the ground lies as it lay, and a
+ * wall's line can wander between them (./natural.ts).
+ */
+function finer(rows: Row[], depths: readonly number[]): Row[] {
+  return rows.flatMap((row, i): Row[] => {
+    const before = rows[i - 1];
+    if (!before || row.z <= before.z || before.cut || row.cut) return [row];
+    return [...depths.filter((z) => z > before.z + 0.05 && z < row.z - 0.05).map((z): Row => {
+      const k = (z - before.z) / (row.z - before.z);
+      const mix = (a = 0, b = 0) => a + (b - a) * k;
+      return { z, drop: mix(before.drop, row.drop), shade: mix(before.shade, row.shade), bump: mix(before.bump, row.bump),
+        ...(before.far !== undefined || row.far !== undefined ? { far: mix(before.far, row.far) } : {}), on: [before, row, k] };
+    }), row];
+  });
+}
+/** The depths where grown ground has rows for its walls' lines: behind the path, and in front of it for a pool's banks. */
+const LINE_ROWS = [-26, -19, -13, -8.2, -7.5, -6.8, -6.1, -4.9, -4.4, -3.9, -3.4, -3, -2.2, -1.8, -1.3, -0.6, 1.2, 1.85, 2.6, 3.4, 4.2];
+const ROWS_BEHIND = LINE_ROWS.filter((z) => z < 0);
+
+const PROFILE_ROWS: Row[] = [
   { z: -16, drop: -0.6, shade: 0.62, bump: 0.5 },
   { z: -10, drop: -0.25, shade: 0.72, bump: 0.4 },
   { z: -5.5, drop: 0, shade: 0.84, bump: 0.26 },
@@ -152,6 +175,7 @@ const PROFILE: Row[] = [
   { z: 2.9, drop: 9.5, shade: 0.27, bump: 0 },
   { z: 2.9, drop: 16, shade: 0.24, bump: 0 },
 ];
+const PROFILE: Row[] = finer(PROFILE_ROWS, ROWS_BEHIND);
 /** The shade is cool: what the sun doesn't reach is lit by the sky. */
 const SHADE = new Color('#27413f');
 
@@ -165,7 +189,7 @@ const SHORE = 0.5;
  * third of the picture is ground seen from above, with things lying on it. Behind, it runs on into the haze,
  * so that it has no far edge to be found.
  */
-const PROFILE_FOREST: Row[] = [
+const PROFILE_FOREST: Row[] = finer([
   { z: -30, drop: 0.3, shade: 0.8, bump: 0.1, far: 1 },
   { z: -22, drop: 0, shade: 0.76, bump: 0.2, far: 0.7 },
   { z: -16, drop: -0.25, shade: 0.72, bump: 0.25, far: 0.4 },
@@ -191,12 +215,13 @@ const PROFILE_FOREST: Row[] = [
   { z: 5.3, drop: 7.4, shade: 0.9, bump: 0, cut: 1 },
   { z: 5.3, drop: 10.5, shade: 0.9, bump: 0, cut: 1 },
   { z: 5.3, drop: 16, shade: 0.9, bump: 0, cut: 1 },
-];
+], LINE_ROWS);
 /** Extra samples for soft diagonal trunk shadows, only on moss; the garden shares the original profile. */
 const PROFILE_FOREST_SHADE = PROFILE_FOREST.flatMap((row, i): Row[] => {
   const before = PROFILE_FOREST[i - 1];
   if (!before) return [row];
-  const between = [-4.5, -3.5, -1.8, -1.3].filter((z) => z > before.z && z < row.z).map((z) => {
+  // (The floor's own rows for its walls' lines, LINE_ROWS, are close by most of them already.)
+  const between = [-4.5, -3.5, -1.8, -1.3].filter((z) => z > before.z + 0.3 && z < row.z - 0.3).map((z) => {
     const k = (z - before.z) / (row.z - before.z);
     return { z, drop: before.drop + (row.drop - before.drop) * k,
       shade: before.shade + (row.shade - before.shade) * k, bump: before.bump + (row.bump - before.bump) * k };
@@ -241,7 +266,7 @@ function cutAt(x: number, z: number, under: number, out: Color): Color {
  * Rock: the collision top remains flat, then fractured planes fall away towards the camera. The broad,
  * uneven shelves are tilted faces of one outcrop, rather than horizontal courses in a retaining wall.
  */
-const PROFILE_ROCK: Row[] = [
+const PROFILE_ROCK: Row[] = finer([
   { z: -16, drop: -0.3, shade: 0.72, bump: 0.5 },
   { z: -10, drop: -0.1, shade: 0.8, bump: 0.4 },
   { z: -5.5, drop: 0, shade: 0.9, bump: 0.26 },
@@ -261,7 +286,7 @@ const PROFILE_ROCK: Row[] = [
   { z: 3.7, drop: 7.6, shade: 0.48, bump: 0, cut: 1 },
   { z: 3.92, drop: 11, shade: 0.43, bump: 0, cut: 1 },
   { z: 4.0, drop: 16, shade: 0.4, bump: 0, cut: 1 },
-];
+], ROWS_BEHIND);
 const CAP = new Color('#d9d6c6');
 const ROCK_DEEP = new Color('#46527e');
 
@@ -578,6 +603,8 @@ interface Front {
   course: number;
   /** How tall a wall must be for the front to draw back at its top. */
   over: number;
+  /** How much of its way forward a front keeps at a wall's top: a grown floor's rolls over there as a bank (`LEAST`). */
+  least?: number;
   /** Whether it is broken into blocks along the path: see `blocksOf`. */
   jointed: boolean;
   /** What it goes into far behind the path: the place's haze, in the ground's own hue. */
@@ -626,12 +653,21 @@ function blocksOf(from: number, to: number): Block[] {
  */
 const SOFT = 0.6;
 const BUILT = SOFT;
+/**
+ * How much of its way forward a grown floor keeps at the top of a wall. Drawn back all the way, its front was a face cut
+ * straight down along the path's edge, with a ruler's corner where it met the wall (Olov, 14 November 2026: "Vissa
+ * avsatser har alldeles för raka kanter"). Now the floor rolls over its edge there as it does everywhere, only shorter:
+ * a bank. It stands out `CHEEK` at the most, a hand under his knee, so that it hides nothing at the wall's foot but
+ * what is within a hand of the wall at the picture's very edge; under that it goes straight down as before.
+ */
+const LEAST = 0.25;
+const CHEEK = 0.7;
 
 const FRONTS: Record<'plain' | 'forest' | 'lawn' | 'rock' | 'street', Front> = {
   plain: { rows: PROFILE, cuts: false, lip: 0, hang: 0, course: Infinity, over: SOFT, jointed: false, far: FAR, shore: false },
-  forest: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.7, course: 0.9, over: SOFT, jointed: false, far: FAR, shore: 'water' },
+  forest: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.7, course: 0.9, over: SOFT, least: LEAST, jointed: false, far: FAR, shore: 'water' },
   // The lawn has the forest's floor: grass grows down it towards the camera. Its turf hangs less far.
-  lawn: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.45, course: 0.9, over: SOFT, jointed: false, far: new Color('#b3cfa6'), shore: 'water' },
+  lawn: { rows: PROFILE_FOREST, cuts: true, lip: LIP - 0.5, hang: 0.45, course: 0.9, over: SOFT, least: LEAST, jointed: false, far: new Color('#b3cfa6'), shore: 'water' },
   rock: { rows: closer(PROFILE_ROCK, 0.98, 3.2, 0.3), cuts: true, lip: 0, hang: 0, course: 0.6, over: SOFT, jointed: true, far: FAR, shore: false, relief: 'rock' },
   // A street is a tilted plane in what it is built of. A puddle lies in it: its near shore is the street.
   street: { rows: PROFILE_STREET, cuts: true, lip: 0, hang: 0, course: 0.9, over: BUILT, jointed: false, far: FAR, shore: 'ground' },
@@ -642,6 +678,15 @@ const frontOf = (own: Ground): Front =>
 
 /** How far under the path's height a street lies at a depth: level behind, tilting away in front. */
 export const streetDrop = (z: number) => dropAt(PROFILE_STREET, z);
+
+/** How much the ground rolls at a row and x: a row put in between two others lies on the line between them. */
+function rollOf(row: Row, much: number, x: number): number {
+  if (row.on) {
+    const from = rollOf(row.on[0], much, x);
+    return from + (rollOf(row.on[1], much, x) - from) * row.on[2];
+  }
+  return row.bump * much * (noise(x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
+}
 
 /** How far under the outline a profile lies at a depth, between its rows. */
 function dropAt(rows: Row[], z: number): number {
@@ -657,6 +702,11 @@ function dropAt(rows: Row[], z: number): number {
 export function slopeDrop(z: number): number {
   return dropAt(PROFILE_FOREST, z);
 }
+/**
+ * The depths of the floor's rows in front of the path, from its edge to where an open pool has come to its shore
+ * (`OPEN_SHORE`): the pool's water lies down the floor's fall along the same rows (../water.ts, OpenWater).
+ */
+export const openRows = (): number[] => PROFILE_FOREST.filter((row) => row.z >= EDGE && row.z <= 4.6 && !row.cut).map((row) => row.z);
 
 /**
  * How far under the path the forest's floor lies at x and a depth in front of it, or null where there is no
@@ -664,18 +714,33 @@ export function slopeDrop(z: number): number {
  */
 export function floorDrop(chapter: ChapterData, x: number, z: number): number | null {
   if (z <= EDGE) return 0;
-  const forward = forwardAt(chapter, x);
-  if (forward < 0.05) return null;
+  const forward = forwardAt(chapter, x, SOFT, LEAST);
+  // At a wall's top the floor rolls over only so far (`CHEEK`): further out there is none.
+  if (forward < 0.05 || (forward < 1 && z - EDGE > cheekOf(forward))) return null;
   const whole = EDGE + (z - EDGE) / forward;
   return whole > FLOOR_ENDS ? null : slopeDrop(whole);
 }
 /** The height of a pool's near shore at x, where the outline there is a pool's bed. */
 export function shoreAt(chapter: ChapterData, x: number): number | null {
   const pool = (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && heightAt(chapter, x) < w.y);
-  return pool && !chapter.river ? pool.y + SHORE_OVER : null;
+  // A pool that runs on towards the camera has no near shore (./natural.ts): its water lies there.
+  return pool && !chapter.river && !openPools(chapter).some((w) => w.from === pool.from) ? pool.y + SHORE_OVER : null;
 }
 /** How far over its water a pool's near shore lies. */
 const SHORE_OVER = 0.06;
+/**
+ * Where a pool that runs on towards the camera comes to its shore in front (./natural.ts): about here, along a line
+ * that wanders. A picture held sideways ends at about 4.2 in front of the path, so there the water runs out of it; one
+ * held upright sees the floor to its end at 5, and finds a shore there and not a tank cut open.
+ */
+export const OPEN_SHORE = 4.6;
+/**
+ * How far nearer the path an open pool's shore lies at x than `OPEN_SHORE`: its line comes in and out. The floor's last
+ * row under the water (at 4.2) and the first of its shore (at 4.6) both come in by as much.
+ */
+export function openShoreIn(x: number): number {
+  return 0.3 * Math.min(1, Math.max(0, 0.5 + (noise(x * 0.7 + 3.1, 5.3) - 0.5) * 1.6 + (noise(x * 2.1 + 1.3, 8.7) - 0.5) * 0.6));
+}
 
 /** The depth where the forest's floor ends in front. */
 export const FLOOR_ENDS = 4.6;
@@ -688,9 +753,10 @@ const DRAW_BACK = 2.5;
  * front draws back, since a corner that stood out towards the camera would hide what is at the wall's foot:
  * a lace, a sweet, him.
  */
-export function forwardAt(chapter: ChapterData, x: number, over = SOFT): number {
+export function forwardAt(chapter: ChapterData, x: number, over = SOFT, least = 0): number {
   const line = chapter.ground;
   const here = heightAt(chapter, x);
+  const open = openPools(chapter);
   let forward = 1;
   for (let i = 0; i < line.length - 1; i++) {
     const a = line[i]!;
@@ -698,20 +764,22 @@ export function forwardAt(chapter: ChapterData, x: number, over = SOFT): number 
     if (Math.abs(b.y - a.y) <= Math.abs(b.x - a.x) * 1.3) continue;
     const top = a.y > b.y ? a : b;
     const foot = a.y > b.y ? b : a;
+    // A pool that runs on towards the camera has its banks beside it all the way: they do not draw back.
+    if (open.some((w) => foot.x >= w.from - 1e-6 && foot.x <= w.to + 1e-6 && foot.y < w.y)) continue;
     const away = Math.abs(x - top.x);
     // Only the upper side draws back, and only at a wall tall enough to hide something.
     if (away >= DRAW_BACK || top.y - foot.y < over - 1e-6 || here < top.y - (top.y - foot.y) * 0.5) continue;
     if (Math.abs(top.x - foot.x) > 0.01 && (x - top.x) * (top.x - foot.x) < 0) continue;
     const t = away / DRAW_BACK;
-    forward = Math.min(forward, t * t * (3 - 2 * t));
+    forward = Math.min(forward, least + (1 - least) * t * t * (3 - 2 * t));
   }
   return forward;
 }
 
 /** The same for a wall's own corner, which stands at the wall and at one of its two heights. */
-function forwardAtCorner(chapter: ChapterData, x: number, y: number, over = SOFT): number {
+function forwardAtCorner(chapter: ChapterData, x: number, y: number, over = SOFT, least = 0): number {
   let forward = 1;
-  for (const side of [-0.05, 0.05]) if (Math.abs(heightAt(chapter, x + side) - y) < 0.3) forward = Math.min(forward, forwardAt(chapter, x + side, over));
+  for (const side of [-0.05, 0.05]) if (Math.abs(heightAt(chapter, x + side) - y) < 0.3) forward = Math.min(forward, forwardAt(chapter, x + side, over, least));
   return forward;
 }
 
@@ -758,14 +826,19 @@ const PROFILE_FLOOR: Row[] = [
  */
 function lengthsDown(profile: Row[], forward = 1): number[] {
   const down = [0];
-  for (let j = 1; j < profile.length; j++) down.push(down[j - 1]! + Math.hypot(depthOf(profile[j]!, forward) - depthOf(profile[j - 1]!, forward), dropOf(profile, profile[j]!, forward) - dropOf(profile, profile[j - 1]!, forward)));
+  const banked = profile === PROFILE_FOREST || profile === PROFILE_FOREST_SHADE;
+  for (let j = 1; j < profile.length; j++) down.push(down[j - 1]! + Math.hypot(depthOf(profile[j]!, forward, banked) - depthOf(profile[j - 1]!, forward, banked), dropOf(profile, profile[j]!, forward) - dropOf(profile, profile[j - 1]!, forward)));
   const level = profile.findIndex((row) => row.z >= -0.3);
   return down.map((d) => d - down[level]! + profile[level]!.z);
 }
 
 /** A row's depth where the front has drawn back by so much. */
-function depthOf(row: Row, forward: number): number {
-  return row.z > EDGE ? EDGE + (row.z - EDGE) * forward : row.z;
+function depthOf(row: Row, forward: number, banked = false): number {
+  return row.z > EDGE ? EDGE + Math.min((row.z - EDGE) * forward, banked ? cheekOf(forward) : Infinity) : row.z;
+}
+/** How far out a front that has drawn back may stand: `CHEEK` at a wall's top, and any way where it is whole again. */
+function cheekOf(forward: number): number {
+  return forward >= 1 ? Infinity : CHEEK + 9 * smooth(LEAST, 1, forward);
 }
 
 /**
@@ -789,16 +862,48 @@ function dropOf(profile: Row[], row: Row, forward: number): number {
  */
 export function bankLip(chapter: ChapterData, x: number, row = 1.3): { y: number; z: number } {
   const wet = !!chapter.river || (chapter.water ?? []).some((w) => x >= w.from && x <= w.to);
-  return { y: heightAt(chapter, x) - dropAt(PROFILE_ISLAND, row), z: EDGE + (row - EDGE) * (wet ? IN_WATER : 1) };
+  return { y: heightAt(chapter, x) - dropAt(PROFILE_ISLAND, row), z: EDGE + (row - EDGE) * (wet ? IN_WATER : 1) * roundedFront(chapter, x) };
 }
 
 /** The bog's ground: as the bank in front, and sinking under the water behind the path. */
-const PROFILE_ISLAND = PROFILE.map((row, i) => (i < 3 ? { ...row, drop: [3.2, 1.7, 0.3][i]!, bump: row.bump * 0.6 } : row));
+const ISLAND_ROWS = PROFILE_ROWS.map((row, i) => (i < 3 ? { ...row, drop: [3.2, 1.7, 0.3][i]!, bump: row.bump * 0.6 } : row));
+const PROFILE_ISLAND = finer(ISLAND_ROWS, ROWS_BEHIND);
 /**
  * An island in the water rounds over into it soon in front, by 1.8, so that open water lies before it as far
  * as the peat water's front (water.ts): it is drawn back as a front is at a wall's top (`forwardAt`).
  */
 const IN_WATER = 0.62;
+
+/** The tops of a chapter's walls, for `roundedFront`: found once for each chapter. */
+const wallTops = new WeakMap<ChapterData, { x: number; y: number; side: number }[]>();
+/**
+ * How much of its way forward the front of grown ground that rolls over whole (a bog's island, a lake's rock: a front
+ * that is not cut) comes at x: all of it in the middle of a stretch, less towards the top of a wall, and in and out
+ * along the way. An island's front was one line from end to end, parallel to the path, with a square corner at each
+ * end (Olov, 14 November 2026); now it comes round at its ends, and wanders between them.
+ */
+export function roundedFront(chapter: ChapterData, x: number, y = heightAt(chapter, x)): number {
+  let tops = wallTops.get(chapter);
+  if (!tops) {
+    tops = [];
+    const line = chapter.ground;
+    for (let i = 0; i < line.length - 1; i++) {
+      const a = line[i]!;
+      const b = line[i + 1]!;
+      if (Math.abs(b.y - a.y) <= Math.abs(b.x - a.x) * 1.3 || Math.abs(b.y - a.y) < 0.3) continue;
+      tops.push(b.y > a.y ? { x: b.x, y: b.y, side: 1 } : { x: a.x, y: a.y, side: -1 });
+    }
+    wallTops.set(chapter, tops);
+  }
+  let near = Infinity;
+  // Only on a wall's upper side, its own face with it, and at its top's height: the floor at its foot goes on as it is.
+  for (const top of tops) {
+    const beyond = (x - top.x) * top.side;
+    if (beyond >= -1e-6 && (beyond < 1e-6 ? y <= top.y + 0.35 : Math.abs(y - top.y) < 0.35)) near = Math.min(near, Math.abs(x - top.x));
+  }
+  const along = 0.9 + 0.5 * (noise(x * 0.8 + 2.3, 4.4) - 0.5) + 0.2 * (noise(x * 2.3 + 7.1, 1.6) - 0.5);
+  return (0.34 + 0.66 * smooth(0, 1.1, near)) * along;
+}
 /**
  * Round a puddle in the street the road is wet (docs/visual-audit/byn.md row 8): darker and cooler, as far
  * as a step and a half out from the water, at its sides and behind it.
@@ -807,6 +912,10 @@ const DAMP = new Color(0.6, 0.64, 0.72);
 const DAMP_REACH = 1.5;
 const PUDDLE_BACK = waterKind('village').back;
 
+/** A lawn's or a forest's soil where a pool wets its bank. */
+const WET_BANK = new Color('#241c14');
+/** How deep a piece has broken out of rock's edge at x, in front of the path: none along most of it. */
+const rockChip = (x: number) => Math.max(0, noise(x * 1.1 + 7.7, 2.2) - 0.5) * 0.5;
 /** Wet peat at the waterline, and how far above and below it the wet reaches. */
 const WET = new Color('#1a130e');
 const WET_REACH = 0.25;
@@ -826,14 +935,14 @@ function islandSide(top: number, foot: number, wet: number): [number, number][] 
  * islands do, and in front it rounds off as the bank does (visual audit, myren row 7).
  */
 const PROFILE_RIDGE: Row[] = [
-  ...PROFILE_ISLAND.slice(0, 3),
+  ...ISLAND_ROWS.slice(0, 3),
   { z: -2.4, drop: 0.3, shade: 0.94, bump: 0.08 },
   { z: -1.3, drop: 0.36, shade: 0.8, bump: 0 },
   { z: -0.3, drop: 0.36, shade: 0.75, bump: 0 },
   { z: EDGE, drop: 0.36, shade: 0.75, bump: 0 },
   { z: 1.3, drop: 0.4, shade: 0.82, bump: 0 },
   { z: 1.7, drop: 0.62, shade: 0.8, bump: 0.08 },
-  ...PROFILE.slice(9),
+  ...PROFILE_ROWS.slice(9),
 ];
 
 /**
@@ -979,6 +1088,11 @@ interface BankPoint {
   wet?: number;
   /** In a drain: the height of its bars. In front of its grate and behind it, the road goes on at that height. */
   drain?: number;
+  /**
+   * Where the outline is the bed of a pool that runs on towards the camera (./natural.ts): the pool's level. Its bed goes
+   * on in front of the path under the water, and comes up as a shore far in front (`OPEN_SHORE`).
+   */
+  open?: number;
   /** How much of its front's relief it has: none at a wall's corner, all of it a length and a half away. */
   rough?: number;
   /** Where along the path its front's relief is read, where not at its own x: beside a joint, at the joint. */
@@ -1012,8 +1126,8 @@ interface Wall {
  * The ground of a chapter, as one mesh for each stretch of one kind of ground. `feet`: how much of its light the
  * ground keeps at (x, z), where houses stand on it (../village.ts `footShade`).
  */
-export function bank(chapter: ChapterData, own: Ground, feet?: (x: number, z: number) => number): Group {
-  const shapes = bankShapes(chapter, own, feet);
+export function bank(chapter: ChapterData, own: Ground, feet?: (x: number, z: number) => number, edges?: Edges): Group {
+  const shapes = bankShapes(chapter, own, feet, edges);
   // A picture is drawn only for a chapter that has ground of its kind.
   const has = (which: (look: GroundLook) => boolean) => shapes.some(({ kind }) => which(GROUNDS[kind]));
   const maps = {
@@ -1054,7 +1168,7 @@ export function jettiesOf(chapter: ChapterData, own: Ground): { from: number; to
 }
 
 /** The shapes of a chapter's ground, a stretch of one kind at a time. No picture is drawn for them here. */
-export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number, z: number) => number): { kind: Ground; shape: BufferGeometry }[] {
+export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number, z: number) => number, edges: Edges = edgesOf(chapter, own)): { kind: Ground; shape: BufferGeometry }[] {
   chapter = landscape(chapter);
   const line = chapter.ground;
   const first = line[0]!;
@@ -1071,7 +1185,10 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
   const shoreOf = (front: Front, pool: { from: number; to: number; y: number }) => (front.shore === 'ground'
     ? Math.max(pool.y + SHORE_OVER, Math.min(heightAt(chapter, pool.from - 0.6), heightAt(chapter, pool.to + 0.6)))
     : pool.y + SHORE_OVER);
-  const poolAt = (front: Front, x: number, y: number) => (front.shore === false || chapter.river ? undefined : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y));
+  // A pool that runs on towards the camera has no near shore: its banks go on beside it, and its bed under it.
+  const poolAt = (front: Front, x: number, y: number) => (front.shore === false || chapter.river ? undefined
+    : (chapter.water ?? []).find((w) => x >= w.from && x <= w.to && y < w.y && !edges.pools.some((open) => open.from === w.from)));
+  const openAt = (x: number, y: number) => edges.pools.find((w) => x >= w.from && x <= w.to && y < w.y);
   /** Round a puddle in the street: how wet the road is at x, 1 at the water and nothing a step and a half out. */
   const dampAt = (x: number) => Math.max(0, ...(chapter.water ?? []).map((w) => 1 - Math.max(w.from - x, x - w.to, 0) / DAMP_REACH));
   /** The level of the water a bog's island stands in at x, if it stands in any. */
@@ -1093,10 +1210,12 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
     // A wall is built as the ground it begins on is.
     const front = frontFor(kindAt(a.x), own);
     // A cut face is banded by its height, so a tall one needs points up it.
-    const pieces = Math.max(1, Math.ceil(Math.abs(dx) / 0.45), steep && front.cuts ? Math.ceil(Math.abs(b.y - a.y) / front.course) : 1);
+    // A grown wall's face slopes and bulges away from the path (./natural.ts): it needs points closer still.
+    const pieces = Math.max(1, Math.ceil(Math.abs(dx) / 0.45), steep && front.cuts ? Math.ceil(Math.abs(b.y - a.y) / front.course) : 1,
+      steep && edges.bankAt((a.x + b.x) / 2) ? Math.min(10, Math.ceil(Math.abs(b.y - a.y) / 0.4)) : 1);
     const length = Math.hypot(dx, b.y - a.y);
     const drained = steep ? drainAt(a.x) : undefined;
-    const ends = front.cuts && steep ? (drained ? [1, 1] : [forwardAtCorner(fronts, a.x, a.y, front.over), forwardAtCorner(fronts, b.x, b.y, front.over)]) : null;
+    const ends = front.cuts && steep ? (drained ? [1, 1] : [forwardAtCorner(fronts, a.x, a.y, front.over, front.least), forwardAtCorner(fronts, b.x, b.y, front.over, front.least)]) : null;
     let rises: Wall | undefined;
     if (ends) {
       const up = b.y > a.y;
@@ -1134,13 +1253,16 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
       const kind = kindAt(x - out);
       const mine = frontFor(kind, own);
       const here = wetAt(mine, x - out);
-      const forward = here !== undefined ? IN_WATER : !mine.cuts ? 1 : ends ? ends[0]! + ((ends[1]! - ends[0]!) * k) / pieces : corner ? forwardAtCorner(fronts, x, y, mine.over) : forwardAt(fronts, x, mine.over);
+      // A front that is not cut comes round at a stretch's ends and wanders along it, where its ground has grown.
+      const rounded = !mine.cuts && isGrown(chapter, kind) ? roundedFront(chapter, x - out, y) : 1;
+      const forward = here !== undefined ? IN_WATER * rounded : !mine.cuts ? Math.min(1, rounded) : ends ? ends[0]! + ((ends[1]! - ends[0]!) * k) / pieces : corner ? forwardAtCorner(fronts, x, y, mine.over, mine.least) : forwardAt(fronts, x, mine.over, mine.least);
       const pool = poolAt(mine, x, y);
       const drain = drainAt(x - out);
+      const open = openAt(x, y);
       points.push({
         x, y, wall: corner, face: steep, along: along + (length * k) / pieces, forward: pool || drain ? 1 : forward,
         ...(rises ? { rises } : {}), ...(pool ? { shore: shoreOf(mine, pool) } : {}), ...(here !== undefined ? { wet: here } : {}),
-        ...(drain ? { drain: drain.y } : {}), kind,
+        ...(drain ? { drain: drain.y } : {}), ...(open ? { open: open.y } : {}), kind,
       });
       before = steep;
     }
@@ -1161,7 +1283,7 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
     const stretch = points.slice(start, Math.min(points.length, i + 1));
     const kind = points[start]!.kind;
     const front = frontFor(kind, own);
-    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : [], front.shore === 'ground' ? dampAt : undefined, feet) });
+    if (stretch.length > 1) shapes.push({ kind, shape: stretchOfGround(stretch, kind, front, front.jointed ? blocks : [], front.shore === 'ground' ? dampAt : undefined, feet, edges) });
     start = i;
   }
   return shapes;
@@ -1171,7 +1293,7 @@ export function bankShapes(chapter: ChapterData, own: Ground, feet?: (x: number,
  * One stretch, as columns of points across the profile. The top and a wall's face have a column each where
  * they meet, so that each keeps its own colour and its own lie of the picture, and the corner is a corner.
  */
-function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = [], dampAt?: (x: number) => number, feet?: (x: number, z: number) => number): BufferGeometry {
+function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks: Block[] = [], dampAt?: (x: number) => number, feet?: (x: number, z: number) => number, edges?: Edges): BufferGeometry {
   const look = GROUNDS[kind];
   const street = front === FRONTS.street && (road(kind) || kind === 'iron');
   const profile = street ? PROFILE_ROAD : kind === 'moss' ? PROFILE_FOREST_SHADE : front.rows;
@@ -1209,13 +1331,18 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
     let drawnLast: readonly [number, number, number] | undefined;
     for (let j = 0; j < rows; j++) {
       const row = profile[j]!;
-      const z = depthOf(row, forward);
-      const swell = p.wall ? 0 : row.bump * look.bump * (noise(p.x * 1.15, row.z * 1.4 + 7) - 0.5) * 2;
+      // (An open pool's shore comes in and out along its way: `openShoreIn`.)
+      const z = depthOf(row, forward, front.least !== undefined) - (p.open !== undefined && row.z > 4 && row.z < 4.7 ? openShoreIn(p.x) : 0);
+      const swell = p.wall ? 0 : rollOf(row, look.bump, p.x);
       const lift = row.lift ?? (row.ledge === 1 ? [1, 0] : row.ledge === 2 ? [0, 1] : null);
       const drop = dropOf(profile, row, forward) + (block && lift ? block.ledges[0] * lift[0] + block.ledges[1] * lift[1] : 0);
       // A drain is only as deep, front to back, as its grate: in front of it and behind it the road is shut.
       const shut = p.drain !== undefined && (row.z > EDGE || row.z < DRAIN_BACK);
-      let y = (p.shore !== undefined && row.z > EDGE ? p.shore : shut ? p.drain! : p.y) - drop + swell;
+      // An open pool's bed goes on under its water in front of the path, and comes up as its shore far in front, along
+      // a line that wanders: past the foot of a picture held sideways, and before the floor's own end.
+      const shored = p.open !== undefined && row.z >= OPEN_SHORE - 1e-6 ? Math.max(0, p.open + SHORE_OVER + 0.04 - p.y) : 0;
+      const bed = p.y + shored;
+      let y = (p.shore !== undefined && row.z > EDGE ? p.shore : shut ? p.drain! : bed) - drop + swell;
       let under = drop - front.lip * p.forward;
       if (wall) {
         // The face stands on the lower floor as that lies at this depth, and goes up to the upper one.
@@ -1240,9 +1367,17 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       const bulge = close > 0 ? close * (front.relief === 'rock' ? rockRelief(rx, y) + ((block ?? blockAt(rx))?.out ?? 0) : peatRelief(rx, y, under)) : 0;
       // It never goes back past the edge of the top, and rock's lip under the edge stands out a hand at the most.
       const out = bulge === 0 ? 0 : Math.min(front.relief === 'rock' && drop - fold < 0.56 ? LIP_OUT - z : Infinity, Math.max(EDGE + 0.48 - z, bulge));
-      position.push(p.x + shear, y + fold, z + out);
-      if (drawnLast) drawnDown += Math.hypot(p.x + shear - drawnLast[0], y + fold - drawnLast[1], z + out - drawnLast[2]);
-      drawnLast = [p.x + shear, y + fold, z + out];
+      // A grown wall's own line through the depth: where it is drawn, away from the plane he moves in (./natural.ts).
+      const warp = edges ? edges.shift(p.x, p.y, z, y) : 0;
+      const sunk = edges ? edges.sink(p.x, p.y, z) : 0;
+      // A grown floor's bank at a wall's top is no smooth face: it bulges and breaks back a little, more further down.
+      const lumps = soil && cuts && row.z > EDGE && forward < 1 ? (1 - forward) * smooth(0.15, 1.1, drop) * (noise(p.x * 1.1 + 5.3, y * 1.4 + 1.9) - 0.5) * 0.4 : 0;
+      // Rock's edge in front of the path is chipped: here and there a piece has broken out of it, a hand deep. Not where
+      // he walks, a length nearer the path (tests/unit/rock-front.test.ts), and not at a wall, where the edge is the wall's.
+      const chip = front.relief === 'rock' && !p.wall && !wall && row.z > 0.93 && drop < 1 ? rockChip(p.x) * (p.rough ?? 1) * forward * (1 - drop) : 0;
+      position.push(p.x + shear + warp, y + fold - sunk - chip, z + out + lumps);
+      if (drawnLast) drawnDown += Math.hypot(p.x + shear - drawnLast[0], y + fold - chip - drawnLast[1], z + out - drawnLast[2]);
+      drawnLast = [p.x + shear, y + fold - chip, z + out];
       // Where the road goes on over a drain, it is the road's. In the well under the grate it is dark.
       const ironWork = p.drain !== undefined && !shut;
       toneAt(shut ? DRAIN_ROAD : kind, p.x, down[j]!, c);
@@ -1285,6 +1420,18 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       }
       // At the waterline an island is dark and wet, along its sides and its front; over the water its lip is moss.
       if (p.wet !== undefined) c.lerp(WET, 0.85 * Math.max(0, 1 - Math.abs(y - p.wet) / WET_REACH));
+      // A pool that runs on towards the camera wets its banks: dark soil from under the water to a hand over it, and
+      // the turf beside it soaked a step out from the edge. In front of the path the water lies down the ground's fall.
+      if (edges && edges.pools.length > 0 && soil) {
+        const pool = edges.poolAt(p.x);
+        const over = pool ? y + (row.z > EDGE ? drop : 0) - pool.y : Infinity;
+        if (over < 0.3) c.lerp(WET_BANK, 0.8 * (1 - smooth(-0.05, 0.3, over)));
+        else if (!face) {
+          let beside = Infinity;
+          for (const w of edges.pools) beside = Math.min(beside, Math.abs(p.x - w.from), Math.abs(p.x - w.to));
+          if (beside < 0.9) c.multiplyScalar(0.74 + 0.26 * smooth(0, 0.9, beside + (noise(p.x * 2.1, z * 1.7) - 0.5) * 0.5));
+        }
+      }
       // A rim board is one long board, not a board to each board of the deck: one tone, drifting along it.
       if (row.rim !== undefined && !face) c.copy(look.colours[1]!).lerp(look.colours[2]!, noise(p.x * 0.31 + 5, 3));
       // Where the road goes on over a drain, it goes into the road's own shade.
@@ -1307,7 +1454,7 @@ function stretchOfGround(points: BankPoint[], kind: Ground, front: Front, blocks
       // grain runs along.
       if (row.rim !== undefined && !face) uv.push(0.0125 + row.rim * 0.475, p.x * tile);
       else if (!face && (kind === 'granite' || front.relief)) uv.push((p.along + shear) * tile, drawnDown * tile);
-      else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise + sink : 0) + (row.z >= DRAIN_BACK ? sink : 0)) * tile);
+      else if (!face) uv.push((look.boards ? p.x : p.along) * tile, (down[j]! + (row.z > EDGE ? rise + sink : 0) + (row.z >= DRAIN_BACK ? sink : 0) + shored) * tile);
       // A face lies in the depth and along the wall. A board there is a board on edge, its grain into the depth.
       else if (look.boards) uv.push((p.x * ux + y * uy) * tile, z * tile);
       else uv.push((z + out) * tile, (p.x * ux + (y + fold) * uy) * tile);

@@ -3,6 +3,7 @@ import type { ChapterData } from '../../sim/types';
 import { floorDrop } from './ground';
 import { KIT, TALL_BLADES, grows, heightAt, sequence, tallGrass } from './kit';
 import { gardenViewGap } from '../garden-home';
+import { fringe, fringeRoom } from './fringe';
 
 // --- the garden ---------------------------------------------------------------------------------------------
 
@@ -24,7 +25,7 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
 
   const bladesBehind = Math.round(length * 36);
   const clumps = Math.round(length * 0.6);
-  const grass = new InstancedMesh(KIT.blade, KIT.lawn, bladesBehind + Math.round(length * FRONT.blades) + clumps * TALL_BLADES);
+  const grass = new InstancedMesh(KIT.blade, KIT.lawn, bladesBehind + Math.round(length * FRONT.blades) + clumps * TALL_BLADES + fringeRoom(chapter, from, to));
   let n = 0;
   for (let i = 0; i < bladesBehind; i++) {
     const x = from + next() * length;
@@ -192,6 +193,9 @@ export function lawn(chapter: ChapterData, from: number, to: number, seed: numbe
     dew.setMatrixAt(dew.count++, place.matrix);
   }
 
+  // Over the lip of every bank and step the turf's grass hangs out, ragged (./fringe.ts): before the tall grass, which
+  // is last in the mesh so that a tier can show less of it.
+  fringe(grass, chapter, from, to, seed, ['#6c914a', '#5f8344', '#7c9a52', '#a8ad67']);
   // Tall grass in the back rows and where the lawn ends, but not in the openings kept for the buildings.
   tallGrass(grass, chapter, from, to, seed, top, clumps, [2, 3.4], 0.12, ['#6e8e48', '#879c5a', '#a7a970'], (x) => !((chapter.id === 'garden' || chapter.id === 'stormgard') && gardenViewGap(x, chapter.id)));
 
