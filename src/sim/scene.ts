@@ -219,6 +219,11 @@ export interface SceneStage {
    * instead, that makes him big again (Stormens öga).
    */
   star?: boolean | 'gold';
+  /**
+   * Something he holds in both hands from the moment `from` of the scene until `until` (Billsta's hazelnut, which he
+   * picks up off the rock, looks at, holds up and lays down again). Picture only.
+   */
+  held?: { thing: 'hazelnut'; from: number; until: number };
 }
 
 /** One moment of Elof's part in a held scene. His place in the simulation never changes with it. */

@@ -302,6 +302,25 @@ export const HAZEL = {
 };
 
 /**
+ * The hazelnut he finds (Olov, 14 November 2026: "På berget vid hasselnötsbuskarna ska Elof hitta en hasselnöt och säga
+ * något om fyndet"). It has fallen from the two hazels at the back of the first boulder and lies on the boulder's top, a
+ * little in front of the path: coming up onto the boulder he stops, bends and picks it up in both hands (as big as his
+ * head, to him), looks at it, holds it up and says what it is, and lays it down again where it lay: it is too big to
+ * carry over the rocks, and a nut is the hazel's. A moment of its own, held (`bi:nut`), and nothing collected: no save
+ * changes. `at`: where the moment is, when he is there; `reach`: where the nut lies from his feet, ahead and towards us
+ * (where it rolls to, in a gust, if he has stopped a little short of it or beyond); `held`: when, in the moment, it is in
+ * his hands.
+ */
+const NUT_AT = 146;
+const NUT_REACH = { x: 0.45, y: 0.1, z: 0.3 };
+export const NUT = {
+  at: NUT_AT, reach: NUT_REACH, held: { from: 0.55, until: 3 },
+  x: round(NUT_AT + NUT_REACH.x), y: B1.y, z: NUT_REACH.z,
+};
+/** He says it as he holds it up, and looks at it. */
+const NUT_SEEN = 2.1;
+
+/**
  * The narrow far below the brow, behind the forest, for the picture: from the brow, a dark band of water at the
  * horizon. The sheet lies a little over the brow's own ground, where the ground's bank behind the path does not
  * hide it, and starts in front of the garden's nearest far picture (32 behind the path), which covers whatever is
@@ -431,6 +450,25 @@ export const billsta: ChapterData = {
       stage: {
         shots: [{ at: 0, ...MORMOR_THANKED.shot, move: 0.6 }],
         elof: [{ at: 0, face: MORMOR_THANKED.turned, act: 'wave', aim: MORMOR_THANKED.face }, { at: 0.8, act: 'look', aim: MORMOR_THANKED.face }],
+      },
+    },
+    // Up on the first boulder, the hazelnut (`NUT`): he bends and picks it up in both hands, looks at it, holds it up and
+    // says what it is, and lays it down again. The picture comes close to him, the nut and the hazels behind. A game taken
+    // up past the crack has had it.
+    {
+      id: 'bi:nut', at: NUT.at, before: round(CRACK.from - 0.4), seconds: 3.7, hold: true,
+      dialogue: ['bi:nut'], cues: [{ at: NUT_SEEN, flag: 'bi:nut-seen' }],
+      stage: {
+        shots: [{ at: 0, x: round(NUT.at + 0.4), y: round(B1.y + 1.05), height: 2.8, width: 3.8, move: 0.7 }],
+        elof: [
+          { at: 0, face: 0.1, act: 'reach', aimByElof: NUT.reach },
+          { at: 0.7, act: 'hands' },
+          // Up and out in front of him, to look at it, clear of his face.
+          { at: 1.45, act: 'lift', aimByElof: { x: 0.55, y: 0.84, z: 0.34 } },
+          { at: 2.35, act: 'reach', aimByElof: NUT.reach },
+          { at: 3.15, act: 'look', aimByElof: { x: 3, y: 1.6, z: -1 } },
+        ],
+        held: { thing: 'hazelnut', ...NUT.held },
       },
     },
     // "Där nere! På en sten i sundet!": the camera goes out to the stone far below, looking down onto it a little, and
@@ -737,7 +775,8 @@ export const billsta: ChapterData = {
     { at: HIGH_END, until: PIVOT_PLACED, near: 8, z: -0.34, still: true },
     { at: HIGH_ARM, until: 'bi:fling', near: 8, z: -0.34, still: true },
     { at: { x: 143, y: TOP.y } },
-    { at: { x: 146.3, y: B1.y } },
+    // At the first boulder's far end, past the hazelnut, while he finds it.
+    { at: { x: 147.55, y: B1.y } },
     { at: { x: 151.1, y: B2.y } },
     { at: { x: 154.9, y: SLOPE } },
     { at: { x: 159.7, y: B3.high } },
@@ -791,6 +830,8 @@ export const billsta: ChapterData = {
     { id: 'bi:fly', on: 'bi:fling', within: [FLING.from.x - 1, FLING.to.x + 1], who: 'elof', line: 'biFly', aside: 12 },
     { id: 'bi:thanks-klonk', at: 141, needs: 'bi:fling', who: 'elof', line: 'biThanksKlonk' },
     { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk', aside: true },
+    // The hazelnut on the first boulder, said as he holds it up (`bi:nut`, above).
+    { id: 'bi:nut', at: NUT.at, needs: 'bi:nut-seen', within: [B1.from, CRACK.from], who: 'elof', line: 'biNut' },
     { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel', aside: true },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
     // 6. the brow: a flash, both trägubbar on a stone in the narrow far below, and the owl far off
@@ -869,7 +910,8 @@ export const billsta: ChapterData = {
     { x: 141.8, y: round(TOP.y + 0.45) },
     // up the first boulder, over the crack, along the second, down, and up the big one
     ...hopUp(B1.from, B1.y),
-    { x: 146.8, y: round(B1.y + 0.45) },
+    // Past the hazelnut, not over it.
+    { x: 147.2, y: round(B1.y + 0.45) },
     hopCandy({ x: CRACK.from, y: B1.y }, { x: CRACK.to, y: B2.y }, 1.15),
     { x: 150.5, y: round(B2.y + 0.45) },
     { x: 152.3, y: round(B2.y + 0.45) },

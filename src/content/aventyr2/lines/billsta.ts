@@ -44,6 +44,8 @@ export const words: ChapterWords = {
     // What is seen there: shelves of rock up Billaberget's face, with sweets on them (the hazel beside them, with its
     // nuts, is the picture's: ../hazel.ts).
     biHazel: 'Hyllor i berget! Där uppe finns godis.',
+    // The hazelnut he finds on the first boulder and holds up in both hands: to him, it is as big as his head.
+    biNut: 'En hasselnöt! Lika stor som mitt huvud!',
     biWind: 'Blåsten! Jag gömmer mig bakom stenarna.',
     // 6. the brow: the flash, and the owl far off
     biThere: 'Där nere! På en sten i sundet!',

@@ -24,6 +24,7 @@ import { goldSweet } from './gold-sweet';
 import { goldMouthWeight } from './gold-contact';
 import type { Grip } from './fingers';
 import { lookAt } from './look';
+import { hazelnut } from './hazelnut';
 import { routeAt, routeThrough, runProgress, runRate, runTop, type Route } from './run-route';
 import { createTalker, talk, type Free, type Look, type Talker } from './talk';
 
@@ -668,6 +669,13 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   drawnWhile(raspberry, false);
   if (scenes.some(scene => scene.stage?.star === 'gold')) group.add(raspberry);
   let starOn: Group | null = null;
+  // What he holds in both hands in a scene that has him do so (`held`): Billsta's hazelnut. Picture only.
+  const nut = scenes.some((scene) => scene.stage?.held?.thing === 'hazelnut') ? hazelnut() : null;
+  if (nut) { nut.name = 'held-hazelnut'; drawnWhile(nut, false); group.add(nut); }
+  let nutHeld = false;
+  /** How far round the nut his fingers close, in EL for him small. */
+  const NUT_GRIP = 0.08;
+  const nutLeft = new Vector3(), nutRight = new Vector3();
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
   const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
   block.name = 'stage-block';
@@ -754,6 +762,19 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   return {
     group,
     updateElof(rig, direction, height, calm) {
+      if (nut) {
+        // In both his hands, between them, its point up and a little towards him.
+        drawnWhile(nut, nutHeld);
+        if (nutHeld) {
+          const grip: Grip = { kind: 'power', size: NUT_GRIP * height };
+          for (const side of [0, 1] as const) rig.hold?.(side, grip);
+          if (rig.socket) { rig.socket(0, grip, nutLeft); rig.socket(1, grip, nutRight); } else { rig.hand(0, nutLeft); rig.hand(1, nutRight); }
+          nut.position.copy(nutLeft).add(nutRight).multiplyScalar(0.5);
+          nut.position.y -= 0.1 * height;
+          nut.scale.setScalar(height);
+          nut.rotation.set(0.25, 0.6, -0.15);
+        }
+      }
       // The golden sweet is in his hands as he looks at it too, held before him (`hands`).
       const shown = !!starOn && (direction?.act === 'show' || direction?.act === 'eat' || (starOn === raspberry && direction?.act === 'hands'));
       const bite = eatingAt(direction?.actT ?? 0, calm);
@@ -812,6 +833,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
       starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
+      const held = scene?.stage?.held;
+      nutHeld = !!held && (frame?.seconds ?? 0) >= held.from && (frame?.seconds ?? 0) < held.until;
       const t = frame?.seconds ?? 0;
       const elofKeys = scene?.stage?.elof;
       const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t, elof) : null;

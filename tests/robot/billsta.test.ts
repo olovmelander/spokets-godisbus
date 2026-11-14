@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Game } from '../../src/app/game';
 import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
-import { billsta, context } from '../../src/content/aventyr2/chapters/billsta';
+import { billsta, context, HAZEL, NUT } from '../../src/content/aventyr2/chapters/billsta';
 import { words } from '../../src/content/aventyr2/lines/billsta';
 import { nextAfter } from '../../src/content/chapters';
 import { storyContext } from '../../src/content/story-context';
@@ -29,7 +29,7 @@ const SAID = [
   'bi:window', 'bi:new-trail',
   'bi:morfar-here', 'bi:ditch', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
   'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open', 'bi:welcome', 'bi:lookout', 'bi:way', 'bi:onward',
-  'bi:loft', 'bi:roof', 'bi:roof-klonk', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad', 'bi:hazel', 'bi:wind',
+  'bi:loft', 'bi:roof', 'bi:roof-klonk', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad', 'bi:nut', 'bi:hazel', 'bi:wind',
   'bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down', 'bi:cheer',
 ];
 /** The big candies by name: their places in billsta.checkpoints. */
@@ -672,6 +672,53 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const cliff = billsta.storm!.buildings!.find((b) => b.kind === 'cliff')!;
       for (const s of shelves) expect(Math.abs(s.x - cliff.x)).toBeLessThan((cliff.width ?? 16) / 2);
     });
+
+    it('up on the first boulder, by the hazels, Elof finds a hazelnut, holds it up and says what it is, standing', () => {
+      // Olov, 14 November 2026: "På berget vid hasselnötsbuskarna ska Elof hitta en hasselnöt och säga något om fyndet."
+      expect(words.lines.biNut).toBe('En hasselnöt! Lika stor som mitt huvud!');
+      const scene = billsta.scenes!.find((s) => s.id === 'bi:nut')!;
+      expect(scene.hold).toBe(true);
+      expect(scene.dialogue).toEqual(['bi:nut']);
+      const beat = billsta.beats!.find((b) => b.id === 'bi:nut')!;
+      expect(beat).toMatchObject({ who: 'elof', line: 'biNut', needs: 'bi:nut-seen' });
+      expect(beat.aside).toBeUndefined();
+      // On the first boulder's top, in front of the two hazels at its back, a little in front of the path.
+      const b1 = billsta.landmarks!.find((l) => l.look === 'stone' && l.from <= NUT.x && l.to >= NUT.x)!;
+      expect(heightAt(billsta, NUT.x)).toBeCloseTo(NUT.y, 6);
+      expect(heightAt(billsta, scene.at!)).toBeCloseTo(NUT.y, 6);
+      expect(b1.from).toBeLessThan(scene.at!);
+      const near = HAZEL.bushes.filter((bush) => Math.abs(bush.x - NUT.x) < 2.5);
+      expect(near.length).toBe(2);
+      expect(NUT.z).toBeGreaterThan(0.2);
+      expect(NUT.z).toBeLessThan(0.5);
+      // He picks it up, has it in his hands while he looks at it and says what it is, and lays it down again.
+      const held = scene.stage!.held!;
+      expect(held.thing).toBe('hazelnut');
+      const seen = scene.cues!.find((c) => c.flag === 'bi:nut-seen')!.at;
+      expect(held.from).toBeLessThan(seen);
+      expect(held.until).toBeGreaterThan(seen);
+      expect(held.until).toBeLessThan(scene.seconds);
+      const acts = scene.stage!.elof!.map((k) => k.act);
+      expect(acts[0]).toBe('reach');
+      expect(acts).toContain('hands');
+      // No sweet lies over it, and Klonk does not stand on it.
+      for (const c of billsta.candy) expect(Math.hypot(c.x - NUT.x, c.y - NUT.y), `the sweet at ${c.x}`).toBeGreaterThan(0.6);
+      for (const p of billsta.ghost!) expect(Math.abs(p.at.x - NUT.x) > 0.8 || Math.abs(p.at.y - NUT.y) > 0.5, `Klonk at ${p.at.x}`).toBe(true);
+      // Played from the hill's big candy: he stands for it on the boulder, the line is said there, and he goes on.
+      const sim = new Sim(billsta, {}, saveAt(CP.hill).start);
+      let stood: number | null = null;
+      for (let i = 0; i < 60 * 30 && !sim.flags.has(`scene:${scene.id}`); i++) {
+        sim.step({ x: 1, y: 0, hopHeld: false, hop: !sim.curr.grounded ? false : Math.abs(sim.curr.x - (b1.from - 0.2)) < 0.15, act: false });
+        if (sim.flags.has('beat:bi:nut') && stood === null) stood = sim.curr.x;
+      }
+      expect(sim.flags.has(`scene:${scene.id}`)).toBe(true);
+      expect(stood).not.toBeNull();
+      expect(stood!).toBeGreaterThan(b1.from);
+      expect(stood!).toBeLessThan(NUT.x + 1);
+      expect(sim.curr.y).toBeCloseTo(NUT.y, 1);
+      // Nothing is collected: it is a moment, and the nut stays the hazel's. A game taken up past it has had it.
+      expect(new Sim(billsta, {}, saveAt(CP.gusts).start).flags.has(`scene:${scene.id}`)).toBe(true);
+    });
   });
 
   describe('the brow', () => {
@@ -773,9 +820,9 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       // stands by the car; then they run ahead of him round the house to its back door. That run and mormor's walk
       // let him move; the arrival, his thanks to morfar over the ditch (Olov, 12 November 2026: "Elof måste tacka
       // morfar som lägger stegen över diket"), his thanks to mormor at the open door (14 November 2026) and the distant
-      // strait reveal are the four he stands for.
-      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-run', 'bi:tack-morfar', 'bi:ladan', 'bi:tack-mormor', 'bi:sundet']);
-      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['card', 'bi:tack-morfar', 'bi:tack-mormor', 'bi:sundet']);
+      // strait reveal are the four he stands for; and the hazelnut he finds on Billaberget (14 November 2026).
+      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-run', 'bi:tack-morfar', 'bi:ladan', 'bi:tack-mormor', 'bi:nut', 'bi:sundet']);
+      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['card', 'bi:tack-morfar', 'bi:tack-mormor', 'bi:nut', 'bi:sundet']);
       const run = billsta.scenes!.find((s) => s.id === 'bi:kids-run')!;
       const house = billsta.storm!.buildings!.find((b) => b.kind === 'villa')!;
       for (const who of ['moa', 'bertil'] as const) {
