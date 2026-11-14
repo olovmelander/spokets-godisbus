@@ -48,7 +48,7 @@ def turned(part, profile, sides, centre=(0.0, 0.0, 0.0)):
 # - `kruka`: upturned, as it was (and as it stands on Garden's and Byn's lawns);
 # - `kruka-ljung`: in its saucer, full of heather;
 # - `kruka-skal`: a wide bowl with only its soil and last summer's stalks: where Klonk is blown in;
-# - `kruka-valt`: blown over, its soil spilt and its plant half out;
+# - `kruka-valt`: blown over, its soil spilt out of its mouth and its plant lying in the soil;
 # - `kruka-hog`: a tall one on its feet, with a tuft of grass that the wind lays flat;
 # - `kruka-stapel`: two upturned, the small one on the big one.
 # The wind comes from +X, so what grows leans towards -X.
