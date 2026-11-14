@@ -1145,8 +1145,11 @@ export function createWater(chapter: ChapterData, look: { colour: string; opacit
   }
   // The water is drawn in the scene's own pass, after what stands in it. Just before it, High copies the
   // picture so far at half size, to see through the surface: only while water is in the picture at all.
-  // The banks: each pool's two ends, and how high the ground stands over them.
-  const banks = pools.map((w) => ({ w, left: setting.street?.(w.from - 0.4) ?? -1e6, right: setting.street?.(w.to + 0.4) ?? -1e6, d: 0 }));
+  // The banks: each pool's two ends, and how high the ground stands over them. A pool that runs on towards the camera
+  // has none here: its banks' lines wander (./dressing/natural.ts), and two upright walls along its ends, mirrored, were
+  // a straight band across its water at the path's edge. High mirrors its real banks from the picture itself.
+  const runsOn = (w: { from: number }) => setting.open?.pools.some((pool) => pool.from === w.from) ?? false;
+  const banks = pools.map((w) => ({ w, left: runsOn(w) ? -1e6 : setting.street?.(w.from - 0.4) ?? -1e6, right: runsOn(w) ? -1e6 : setting.street?.(w.to + 0.4) ?? -1e6, d: 0 }));
   // The trunks near the water, found in the scene the first time it is drawn.
   let trunks: { x: number; z: number; wide: number; top: number; tint: Color; d: number }[] | null = null;
   const findTrunks = (scene: Object3D) => {
