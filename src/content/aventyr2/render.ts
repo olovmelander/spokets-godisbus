@@ -62,12 +62,9 @@ import { ballBag } from './ball-bag';
 import { bigBall, rollBalls } from './big-ball';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
-<<<<<<< HEAD
 import { flowerPot } from './flower-pots';
 import { createTrampoline, type Trampoline } from './trampoline';
-=======
 import { installSickan, sickanExtra } from './sickan';
->>>>>>> a2-14nov-sickan
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
