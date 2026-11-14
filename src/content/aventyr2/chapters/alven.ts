@@ -520,7 +520,8 @@ export const alven: ChapterData = {
     // ground, and turned so that no root reaches out towards him (`GNAWED`).
     { look: 'kit', word: 'stubbe-gnagd', at: { x: 117.5, y: round(STUMP1.y - GNAWED.sunk) }, z: GNAWED.z, turn: GNAWED.turn, scale: GNAWED.scale },
     { look: 'kit', word: 'stubbe-gnagd', at: { x: 119.5, y: round(STUMP2.y - GNAWED.sunk) }, z: GNAWED.z, turn: round(GNAWED.turn + Math.PI / 2), scale: GNAWED.scale },
-    { look: 'kit', word: 'stubbe-sagad', at: { x: 112.6, y: 0 }, z: -2.2, turn: 0.8 },
+    // Its root buttresses (the nature kit's old wood, 14 November) reach 2 EL out: far enough left that none is behind the frog.
+    { look: 'kit', word: 'stubbe-sagad', at: { x: 112.2, y: 0 }, z: -2.2, turn: 0.8 },
     // The felled branches and the mossy log lie far enough behind the path that he never walks through an end of one
     // (the one by the outlet reached out in front of him), nor the owl comes down through one.
     { look: 'kit', word: 'gren-a', at: { x: 110.4, y: 0 }, z: -1.9, turn: 0.3 },
