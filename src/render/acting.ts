@@ -1,7 +1,7 @@
 import type { Act } from '../sim/scene';
 import { groundedHips, JOINTS, REHEARSAL_LEGS, STANDING, type Legs, type Pose, type Role } from './rig';
 import { carvingAt } from './carving-motion';
-import { breathing, crouchPose, kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing } from './gait';
+import { breathing, crouchPose, kneelPose, play, sample, seated, stand, stepOf, stride, type Clip, type Footing, type Strider } from './gait';
 import { CLIPS, GAITS, STANDS } from './motion-data';
 import { DRESSING } from './rain-gear';
 
@@ -37,6 +37,8 @@ export interface ActContext {
   role?: Role;
   /** The body's legs (`Rig.legs`): the stride is fitted to them. Left out: the rehearsal figure's. */
   legs?: Legs;
+  /** Whose walk and run it strides with. Left out: the role's own, or Pappa's for someone not of the family. */
+  strider?: Strider;
   /** Where the body walks in the world, with its footing (./gait.ts): each planted foot stays where it came down. */
   feet?: { footing: Footing; x: number; z: number; yaw: number; height: number; dt: number };
   /** A clock that runs on through acts, for the loop of how someone stands (./gait.ts stand). Left out: `t`. */
@@ -280,7 +282,7 @@ export function stepLength(gait: number, height: number, legs: Legs = REHEARSAL_
  */
 function walking(p: Pose, c: ActContext): Pose {
   const gait = c.gait ?? EASY_GAIT, legs = c.legs ?? REHEARSAL_LEGS;
-  const run = smooth((gait / legs.hip - 2.15) / 1.1), step = c.step ?? stepOf(gait, legs), strider = GAITS[c.role ?? 'pappa'];
+  const run = smooth((gait / legs.hip - 2.15) / 1.1), step = c.step ?? stepOf(gait, legs), strider = c.strider ?? GAITS[c.role ?? 'pappa'];
   return c.feet ? c.feet.footing.stride(p, c.stride * Math.PI, step, c.pace, run, strider, legs, c.calm, c.feet)
     : stride(p, c.stride * Math.PI, step, c.pace, run, strider, legs, c.calm);
 }

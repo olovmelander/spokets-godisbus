@@ -23,6 +23,11 @@ const own = (gait: Gait, lift: number, clear: number, roll: number, soft: number
  * in the frame it landed.
  */
 const BOY: Strider = { walk: own(GAITS.bertil.walk, 0.022, 0.13, 0.4, 0.06), run: own(GAITS.bertil.run, 0.05, 0.16, 0.5, 0.08, 0.3) };
+/**
+ * Walked somewhere by a scene (its `walk` act, ./acting.ts), he takes his own steps on his own legs: at a trot, this many
+ * of his heights a second, whatever way the scene moves him. (He strode as Pappa does, on the rehearsal figure's legs.)
+ */
+export const SCENE_WALK = { strider: BOY, gait: 1 } as const;
 /** What standing gives him while he waits: the legs on the ground, the hips over them, the trunk and head. */
 const STOOD = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll', 'bendSide', 'tilt'] as const;
 import { createArmContact } from './arm-contact';

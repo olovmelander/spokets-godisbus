@@ -77,7 +77,7 @@ import { createStage, litLamp } from './stage';
 import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
 import { handOnKnee, kneelOnOwnLegs } from './knee-hands';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING, type Pose, type Rig, type Role } from './rig';
-import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
+import { createPlayerMotion, createPlayerStandIn, createTurning, SCENE_WALK, STAND_IN_LEGS } from './player-motion';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
 import { createBootPull } from './boot-pull';
@@ -1707,8 +1707,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       elofStance = stanceOf(scripted.act, elofStance);
       // He goes on standing and breathing under it by the scene's clock, which runs on by itself while a line is read.
       const walking = scripted.act === 'walk';
+      // Walked somewhere, he takes his own steps on his own legs (./player-motion.ts SCENE_WALK).
+      const walkLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs ?? STAND_IN_LEGS;
       scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null,
-        stride: walking ? scripted.actT * 2 : 0, gait: walking ? 1.5 : 0, pace: walking ? 1 : 0, calm: calmStory, clock: scripted.life }, elofPose, elofStance);
+        stride: walking ? scripted.actT * SCENE_WALK.gait / stepLength(SCENE_WALK.gait, 1, walkLegs) : 0, gait: walking ? SCENE_WALK.gait : 0, pace: walking ? 1 : 0, calm: calmStory, clock: scripted.life,
+        ...(walking ? { legs: walkLegs, strider: SCENE_WALK.strider } : {}) }, elofPose, elofStance);
       // Putting on the doll's raincoat, or taking it off: his arms go into its sleeves and out (./elof-coat.ts).
       if (sceneFrame) coatPose(sceneFrame.id, sceneFrame.seconds, scriptedPose);
     } else elofStance = 'stand';
