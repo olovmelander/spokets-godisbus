@@ -213,7 +213,7 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       expect(leaper.bubbles).toBe(1);
     });
 
-    it("climbs the slide's ladder to a platform higher than a jump, and runs down its chute", () => {
+    it("climbs the slide's ladder to a platform higher than a jump, and goes down its chute", () => {
       const top = heightAt(flarken, ladder.x + 0.5);
       expect(top - heightAt(flarken, ladder.x - 0.5)).toBeGreaterThan(JUMP_APEX + LEDGE_REACH);
       expect(ladder.top).toBeCloseTo(top, 5);
@@ -224,6 +224,8 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const [a, b] = [rest[brink]!, rest[brink + 1]!];
       expect(b.y).toBe(0);
       expect((a.y - b.y) / (b.x - a.x)).toBeLessThanOrEqual(1);
+      // The chute he slides down is that stretch of the ground's outline, from its brink to its foot.
+      expect(flarken.chutes).toEqual([{ from: { x: a.x, y: a.y }, to: { x: b.x, y: b.y } }]);
       const sim = new Sim(flarken, {}, { checkpoint: CP.swings });
       run(sim, 0.2);
       runOn(sim, b.x + 1);
@@ -233,6 +235,172 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const slide = flarken.landmarks!.find((mark) => mark.look === 'slide')!;
       expect(slide.from).toBeCloseTo(ladder.x + 0.25, 5);
       expect(slide.to).toBeCloseTo(b.x, 5);
+    });
+
+    // Olov, 14 November 2026: "Kan vi göra så att Elof faktiskt åker nedför rutschkanan? Han ska fortfarande kunna gå
+    // uppför den, men när han tar sig nedför ska han åka."
+    describe('the slide', () => {
+      const chute = flarken.chutes![0]!;
+      const lineY = (x: number) => chute.from.y + ((chute.to.y - chute.from.y) * (x - chute.from.x)) / (chute.to.x - chute.from.x);
+      /** A game begun on the slide's platform, or at `x` on the ground. */
+      const from = (x = chute.from.x - 1.2, options = {}) => new Sim({ ...flarken, spawn: { x, y: heightAt(flarken, x) + 0.01 } }, options);
+      /** Steps with one input until he slides (or no longer does). False if it never came. */
+      const until = (sim: Sim, sliding: boolean, input: Partial<typeof idle>, seconds = 6) => {
+        for (let i = 0; i < seconds / STEP && (sim.curr.sliding === true) !== sliding; i++) sim.step({ ...idle, ...input });
+        return (sim.curr.sliding === true) === sliding;
+      };
+      const onTheChute = (flarken.candy as { x: number; y: number }[]).flatMap((c, i) => (c.x > chute.from.x && c.x < chute.to.x + 1 ? [i] : []));
+
+      it('heading down it he sits at its brink and slides, faster and faster, and comes off its foot onto his feet', () => {
+        const sim = from();
+        run(sim, 0.2);
+        expect(until(sim, true, { x: 1 }), where(sim)).toBe(true);
+        // He sits down at the brink, going no faster than he ran.
+        expect(sim.curr.x).toBeGreaterThanOrEqual(chute.from.x);
+        expect(sim.curr.x).toBeLessThan(chute.from.x + 0.15);
+        let speed = 0;
+        let steps = 0;
+        while (sim.curr.sliding) {
+          const p = sim.curr;
+          // To everything else he is on his feet on the ground, on the chute's own line, facing down it.
+          expect(p.mode).toBe('free');
+          expect(p.grounded).toBe(true);
+          expect(p.verb).toBeNull();
+          expect(p.facing).toBe(1);
+          expect(p.y).toBeCloseTo(lineY(p.x), 6);
+          const now = Math.hypot(p.vx, p.vy);
+          expect(now, where(sim)).toBeGreaterThanOrEqual(speed - 1e-9);
+          expect(p.vy).toBeLessThan(0);
+          speed = now;
+          sim.step({ ...idle, x: 1 });
+          expect(++steps).toBeLessThan(3 / STEP);
+        }
+        // It began slower than it ended, faster than he runs; and it is over in about a second.
+        expect(speed).toBeGreaterThan(RUN_SPEED * 1.4);
+        expect(steps * STEP).toBeGreaterThan(0.6);
+        expect(steps * STEP).toBeLessThan(1.4);
+        // Off its foot in a little hop, still going forward, and down on his feet on the sand short of the bench.
+        expect(sim.curr.x).toBeGreaterThanOrEqual(chute.to.x - 0.1);
+        expect(sim.curr.grounded).toBe(false);
+        expect(sim.curr.vy).toBeGreaterThan(0);
+        let top = 0;
+        for (let i = 0; i < 2 / STEP && !sim.curr.grounded; i++) { sim.step({ ...idle, x: 1 }); top = Math.max(top, sim.curr.y); }
+        expect(top).toBeGreaterThan(0.08);
+        expect(top).toBeLessThan(0.4);
+        expect(sim.curr.y, where(sim)).toBeCloseTo(0, 1);
+        expect(sim.curr.x).toBeLessThan(heightAt(flarken, 36.3) > 1 ? 36 : Infinity);
+        expect(sim.curr.sliding).toBeFalsy();
+        expect(sim.bubbles).toBe(0);
+        // Every sweet down the chute and at its foot is his.
+        expect(onTheChute.length).toBeGreaterThanOrEqual(3);
+        for (const i of onTheChute) expect(sim.collected[i], `the sweet at ${flarken.candy[i]!.x}`).toBe(true);
+      });
+
+      it('goes where it goes whatever the stick does, and Hoppa jumps off it', () => {
+        // Letting go of the stick, or pushing back up it: he slides on to its foot.
+        for (const x of [0, -1]) {
+          const sim = from();
+          run(sim, 0.2);
+          expect(until(sim, true, { x: 1 })).toBe(true);
+          run(sim, 0.2, { x });
+          expect(sim.curr.sliding, `the stick at ${x}: ${where(sim)}`).toBe(true);
+          expect(until(sim, false, { x })).toBe(true);
+          expect(sim.curr.x).toBeGreaterThanOrEqual(chute.to.x - 0.1);
+        }
+        // Hoppa: off it and up, with the slide's speed, onto the sand.
+        const sim = from();
+        run(sim, 0.2);
+        expect(until(sim, true, { x: 1 })).toBe(true);
+        run(sim, 0.25, { x: 1 });
+        const at = sim.curr.y;
+        sim.step({ ...idle, x: 1, hop: true, hopHeld: true });
+        expect(sim.curr.sliding).toBeFalsy();
+        expect(sim.curr.vy).toBeGreaterThan(4);
+        run(sim, 0.15, { x: 1, hopHeld: true });
+        expect(sim.curr.y).toBeGreaterThan(at);
+        for (let i = 0; i < 3 / STEP && !(sim.curr.grounded && sim.curr.y < 0.05); i++) sim.step({ ...idle, x: 1 });
+        expect(sim.curr.y, where(sim)).toBeCloseTo(0, 1);
+        expect(sim.bubbles).toBe(0);
+      });
+
+      it('is walked up, stood on, and slid down again from wherever he turns', () => {
+        // From the sand, up the chute on his feet to the platform: never sliding.
+        const sim = from(chute.to.x + 1.2);
+        run(sim, 0.2);
+        for (let i = 0; i < 8 / STEP && sim.curr.x > chute.from.x - 0.6; i++) {
+          sim.step({ ...idle, x: -1 });
+          expect(sim.curr.sliding, where(sim)).toBeFalsy();
+        }
+        expect(sim.curr.x, where(sim)).toBeLessThanOrEqual(chute.from.x - 0.6);
+        run(sim, 0.3);
+        expect(sim.curr.y, where(sim)).toBeCloseTo(chute.from.y, 2);
+        // Halfway up he stops and stands: no slide begins by itself.
+        const half = from(chute.to.x + 1.2);
+        run(half, 0.2);
+        const middle = (chute.from.x + chute.to.x) / 2;
+        for (let i = 0; i < 8 / STEP && half.curr.x > middle; i++) half.step({ ...idle, x: -1 });
+        run(half, 1);
+        expect(half.curr.sliding).toBeFalsy();
+        expect(half.curr.x).toBeCloseTo(middle, 0);
+        const stood = half.curr.x;
+        run(half, 1);
+        expect(half.curr.x).toBeCloseTo(stood, 3);
+        // He turns down it: he sits and slides from there to its foot.
+        half.step({ ...idle, x: 1 });
+        expect(half.curr.sliding, where(half)).toBe(true);
+        expect(until(half, false, { x: 1 })).toBe(true);
+        expect(half.curr.x).toBeGreaterThanOrEqual(chute.to.x - 0.1);
+        // At its very foot there is no room left to slide: he walks off it.
+        const foot = from(chute.to.x + 1.2);
+        run(foot, 0.2);
+        for (let i = 0; i < 8 / STEP && foot.curr.x > chute.to.x - 0.2; i++) foot.step({ ...idle, x: -0.4 });
+        run(foot, 0.3);
+        expect(foot.curr.x, where(foot)).toBeGreaterThan(chute.to.x - 0.4);
+        expect(foot.curr.x).toBeLessThan(chute.to.x - 0.1);
+        for (let i = 0; i < 1 / STEP; i++) {
+          foot.step({ ...idle, x: 1 });
+          expect(foot.curr.sliding, where(foot)).toBeFalsy();
+        }
+        expect(foot.curr.x).toBeGreaterThan(chute.to.x);
+      });
+
+      it('is the same slide at 30, 60 and 144 Hz and with every setting: as many steps, and off its foot at the same place', () => {
+        const slides: { name: string; steps: number; off: number; landed: number }[] = [];
+        const ride = (name: string, fps: number, options = {}) => {
+          const x = chute.from.x - 1.2;
+          const game = new Game({ ...flarken, spawn: { x, y: chute.from.y + 0.01 } }, options);
+          // A frame is several steps of the simulation: each step is watched, not each frame.
+          let steps = 0;
+          let off: number | null = null;
+          let landed: number | null = null;
+          const step = game.sim.step.bind(game.sim);
+          game.sim.step = (input) => {
+            step(input);
+            const p = game.sim.curr;
+            if (p.sliding) steps++;
+            else if (steps > 0 && off === null) off = p.x;
+            else if (off !== null && landed === null && p.grounded) landed = p.x;
+          };
+          for (let frame = 0; frame < fps * 8 && landed === null; frame++) game.frame(1 / fps, { x: 1, hopHeld: false }, { hop: false, act: false, helper: false });
+          expect(landed, `${name}: he never slid and landed (${where(game.sim)})`).not.toBeNull();
+          expect(game.sim.bubbles).toBe(0);
+          for (const i of onTheChute) expect(game.sim.collected[i], `${name}: the sweet at ${flarken.candy[i]!.x}`).toBe(true);
+          slides.push({ name, steps, off: off!, landed: landed! });
+        };
+        for (const fps of [30, 60, 144]) ride(`${fps} Hz`, fps);
+        ride('Lugnt', 60, simOptions(settingsFor('lugnt')));
+        ride('Lätta hopp', 60, { easyJumps: true, swingHelp: true });
+        // However the frames fall and whatever is set, it is the same slide to the step, and he lands at the same place.
+        const first = slides[0]!;
+        expect(first.steps * STEP).toBeGreaterThan(0.6);
+        for (const slide of slides) {
+          expect(slide.steps, `${slide.name}, against ${first.name}`).toBe(first.steps);
+          expect(slide.off, slide.name).toBeCloseTo(first.off, 9);
+          expect(slide.landed, slide.name).toBeCloseTo(first.landed, 9);
+          expect(slide.landed, slide.name).toBeGreaterThan(chute.to.x + 0.4);
+          expect(slide.landed, slide.name).toBeLessThan(chute.to.x + 2);
+        }
+      });
     });
   });
 

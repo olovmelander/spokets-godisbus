@@ -1,4 +1,4 @@
-import type { Candy, ChapterData, Flyby, Hook, Jump, Ledge, Mover, Tussock, Vec } from '../../../sim/types';
+import type { Candy, ChapterData, Chute, Flyby, Hook, Jump, Ledge, Mover, Tussock, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
 import { hopCandy, jump, round, row, sighting, slopeRow, timeCard } from '../kit';
 
@@ -67,11 +67,13 @@ const SWING_SET = { x: (SWINGS[0]!.x + SWINGS[1]!.x) / 2, width: (SWINGS[1]!.x -
 /** Wider than a running jump carries, and deep enough that a fall into it is the water's. */
 const PUDDLE = { from: 18.5, to: 22.9, bottom: -5 };
 /**
- * The slide: its ladder up the near side to a little platform higher than he jumps, and the chute down, a slope
- * he runs down (a little under 45°, so his feet keep to it).
+ * The slide: its ladder up the near side to a little platform higher than he jumps, and the chute down, a slope a
+ * little under 45°, so his feet keep to it going up. Going down it he sits and slides (`chutes`, src/sim/chute.ts;
+ * Olov, 14 November 2026: "när han tar sig nedför ska han åka").
  */
 const SLIDE = { ladder: 27.25, from: 27.5, top: 3.2, to: 30.5, foot: 33.9 };
 const chute = (x: number) => SLIDE.top - (SLIDE.top * (x - SLIDE.to)) / (SLIDE.foot - SLIDE.to);
+const CHUTE: Chute = { from: { x: SLIDE.to, y: SLIDE.top }, to: { x: SLIDE.foot, y: 0 } };
 
 // --- 2. the picnic table and the volleyball net ------------------------------------------------------------
 
@@ -496,6 +498,7 @@ export const flarken: ChapterData = {
   ],
   ledges: [TABLE, ...ROOFS, HUT_BENCH, ...SHELVES, REED_LEAF, GUNWALE, PLATFORM],
   bouncers: [NET],
+  chutes: [CHUTE],
   spots: [
     // At the broken end: Mamma rows up with the boat when he calls.
     { id: 'sjon:mamma', look: 'sign', at: { x: 142, y: DECK }, verb: 'call', word: 'callMamma', paddles: true },

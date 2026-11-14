@@ -78,6 +78,7 @@ import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
 import { handOnKnee, kneelOnOwnLegs } from './knee-hands';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING, type Pose, type Rig, type Role } from './rig';
 import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
+import { createChuteSlide } from './chute-slide';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
 import { createBootPull } from './boot-pull';
@@ -796,6 +797,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const lanternHand = new Vector3(), lanternLift = new Vector3();
   let lanternHeld = false, lanternRaise = 0;
   const playerMotion = createPlayerMotion();
+  const chuteSlide = createChuteSlide(chapter);
   // What is said (./talk.ts): one picture at a time, and this is it. Elof's part in it, the ghost's (its klonks), where a head
   // looks, and a pose to draw it on without keeping it.
   talk.reset();
@@ -1721,6 +1723,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Into the bathroom his steps are counted the way he faces: come from the right, the walk in read as a skid
     // backwards, and he glided in on still legs (Olov, 12 November 2026: "ser ut som att elof svävar in").
     const playerPose = playerMotion.update(moving, x + (bathroom ? bathroom.travel * curr.facing : 0), dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
+    // Down a slide's chute he sits, his legs out and his arms up (./chute-slide.ts).
+    chuteSlide.pose(playerPose, curr, dt, clock, calmStory);
 
     // What is said (./talk.ts): he looks at whoever speaks to him, from where his face was a moment ago, and speaks with his
     // mouth, his head and a free hand. It is drawn on a copy of his pose: his own motion never keeps it.

@@ -12,6 +12,8 @@ import { RISE_TIME, ROLLER_REACH, SINK_DEPTH, SINK_TIME, TOUCH_REACH, WATER_REAC
 import { GUST_SHELTER, GUST_SLOW, GUST_SPEED, GUST_WARNING } from './constants';
 import { GUIDE_AFTER, HELP_KEPT, HELP_TIME, REMIND_AFTER } from './constants';
 import { LEDGE_CORNER, LEDGE_GIVE, LEDGE_RISING, LEDGE_STAND, LEDGE_THICK } from './constants';
+import { CHUTE_HOP, CHUTE_OUT } from './constants';
+import { chutePoint, chuteStep, chuteUnder, chuteVelocity, chuteWay, type ChuteRun } from './chute';
 import { hintFor } from './help';
 import { rideY } from './ride-path';
 import { levelUnder } from './water-level';
@@ -63,6 +65,8 @@ type State =
   | { kind: 'ledge'; fromX: number; fromY: number; toX: number; toY: number; t: number }
   | { kind: 'climb'; climb: Climb }
   | { kind: 'slide'; climb: Climb; fromX: number; t: number }
+  /** Sitting down a slide's chute (./chute.ts): `s` EL down it, at `v` EL a second. */
+  | ({ kind: 'chute' } & ChuteRun)
   /** `angle` is from straight down, positive to the right; `speed` is its rate; `letGo` counts from Hoppa, or is -1. */
   | { kind: 'swing'; hook: Hook; length: number; to: number; angle: number; speed: number; letGo: number }
   | { kind: 'fly'; fromX: number; fromY: number; vx: number; vy: number; toX: number; toY: number; time: number; t: number }
@@ -548,6 +552,11 @@ export class Sim {
     // Free, he may take hold of something this step: a hose, a ledge, or the hose below him.
     if (this.state.kind === 'free') this.reach(input);
     if (this.story) { this.curr = this.read(this.standing()); return; }
+    // Heading down a slide's chute, he sits and slides (./chute.ts).
+    if (this.state.kind === 'free' && this.chapter.chutes && this.curr.grounded) {
+      const run = chuteUnder(this.chapter.chutes, this.curr.x, this.curr.y, Math.sign(input.x), this.curr.vx);
+      if (run) { this.carry(true); this.verb = null; this.word = null; this.state = { kind: 'chute', ...run }; }
+    }
 
     const state = this.state;
     if (state.kind === 'free') this.walk(input);
@@ -558,6 +567,7 @@ export class Sim {
     else if (state.kind === 'swing') this.swing(state, input);
     else if (state.kind === 'fly') this.fly(state);
     else if (state.kind === 'down') this.lie(state);
+    else if (state.kind === 'chute') this.glide(state, input);
     else this.ride(state, input);
     this.moveMovers();
     this.placeLedges();
@@ -578,7 +588,8 @@ export class Sim {
       this.remember();
       this.wade();
     } else {
-      this.curr = this.read(false);
+      // Down a chute he sits on the ground's own line: he is on it, to all that asks whether he stands.
+      this.curr = this.read(this.state.kind === 'chute');
     }
     // Use the position after physics and rides: a fast swing or return bubble must not get a frame's head start.
     if (!this.chapter.ghostMeet) this.haunt();
@@ -1687,6 +1698,26 @@ export class Sim {
     }
   }
 
+  /**
+   * One step down a slide's chute (./chute.ts). The stick does nothing: a slide goes where it goes. Hoppa jumps off it;
+   * at its foot he comes off at a run, in a little hop onto his feet.
+   */
+  private glide(run: ChuteRun, input: StepInput): void {
+    const way = chuteWay(run.chute);
+    this.facing = way;
+    const done = chuteStep(run);
+    const at = chutePoint(run.chute, run.s);
+    this.place(at.x, at.y);
+    if (!done && !input.hop) return;
+    const v = chuteVelocity(run.chute, run.v);
+    this.release(at.y);
+    this.leaving = true;
+    // He keeps the slide's speed through the air, as after a swing, unless he pushes against it.
+    this.thrown = true;
+    this.rising = !done;
+    this.body.setLinearVelocity(done ? new Vec2(way * CHUTE_OUT, Math.sqrt(2 * GRAVITY * CHUTE_HOP)) : new Vec2(v.x, JUMP_SPEED * 0.85));
+  }
+
   /** One step of sliding down a hose from its top, which takes SLIDE_TIME whatever its length (plan §4.2). */
   private slide(state: { climb: Climb; fromX: number; t: number }): void {
     const c = state.climb;
@@ -1907,15 +1938,18 @@ export class Sim {
     const state = this.state;
     // On the lace the body is carried, so its speed is the swing's own.
     const along = state.kind === 'swing' ? state.length * state.speed : 0;
-    const v = state.kind === 'swing' ? { x: along * Math.cos(state.angle), y: along * Math.sin(state.angle) } : this.body.getLinearVelocity();
-    const mode: Mode = state.kind;
-    const t = state.kind === 'free' || state.kind === 'climb' || state.kind === 'swing' ? 0 : state.t;
+    const v = state.kind === 'swing' ? { x: along * Math.cos(state.angle), y: along * Math.sin(state.angle) }
+      : state.kind === 'chute' ? chuteVelocity(state.chute, state.v) : this.body.getLinearVelocity();
+    // Down a chute he is on the ground, on his bottom: the picture's business (PlayerState.sliding).
+    const mode: Mode = state.kind === 'chute' ? 'free' : state.kind;
+    const t = state.kind === 'free' || state.kind === 'climb' || state.kind === 'swing' || state.kind === 'chute' ? 0 : state.t;
     return {
       x: p.x, y, vx: v.x, vy: v.y, facing: this.facing, grounded, groundY: this.groundBelow(p.x, y),
       standY: this.standY, atEdge: this.atEdge, bubble: state.kind === 'bubble' ? Math.max(t, Number.MIN_VALUE) : 0,
       mode, t, verb: mode === 'free' ? this.verb : null,
       hook: state.kind === 'swing' ? { x: state.hook.x, y: state.hook.y } : null,
       word: mode === 'free' ? this.word : null,
+      ...(state.kind === 'chute' ? { sliding: true } : {}),
     };
   }
 
