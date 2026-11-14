@@ -515,7 +515,7 @@ window.__motion = {
         soles[side] = best;
       }
     });
-    return { ankles: [at('foot_l'), at('foot_r')], soles, x: boy.x };
+    return { ankles: [at('foot_l'), at('foot_r')], soles, x: boy.x, legs: boy.rig.legs };
   },
   /** Each skinned mesh in the lab, and how many of its corners ../src/render/sleeves.ts gave to the arms. */
   skins() {
