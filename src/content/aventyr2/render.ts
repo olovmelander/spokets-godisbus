@@ -55,6 +55,7 @@ import { teamBenchesExtra } from './team-benches';
 import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
 import { GRABS, grabPlaces } from './bowl';
+import { offering, offerPose } from '../../render/gift-handover';
 import { candyBowl, WATCH_TURN } from './candy-bowl';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
@@ -1910,10 +1911,18 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
           figure.rotation.y = elof.still ? (gust ? WATCH_TURN : 0) : figure.rotation.y + ((gust ? WATCH_TURN : 0) - figure.rotation.y) * Math.min(1, dt * 5);
         }, 'handed');
       }
+      // And there he gives Elof the golden sweet (../../render/gift-handover.ts): a step out from beside the little
+      // one, towards him, turned to him and bowed, with it in his hands; and back when Elof's hand has it.
+      let out = 0;
+      if (met) figure.rotation.order = 'YXZ';
       return standing(spot, figure, met ? (clock, dt) => {
-        figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
+        out = offering(out, elof.flags, dt, elof.still);
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
-        figure.rotation.y += ((seen ? -0.9 : 0) - figure.rotation.y) * Math.min(1, dt * 1.6);
+        const pose = offerPose(out, clock, seen ? -0.9 : 0);
+        figure.position.set(pose.x, pose.y, pose.z);
+        figure.rotation.z = Math.sin(clock * 1.1) * 0.04 * pose.rock;
+        figure.rotation.y = elof.still ? pose.turn : figure.rotation.y + (pose.turn - figure.rotation.y) * Math.min(1, dt * (1.6 + 8 * (1 - pose.rock)));
+        figure.rotation.x = pose.bow;
       } : undefined, spot.id.startsWith('decor:') && !met ? 'leap' : 'shrink');
     },
     seesawLog: (spot) => {
@@ -2015,7 +2024,9 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         const k = smooth(gladFor / 0.4);
         const tremble = Math.sin(clock * 5.3) * 0.03 + Math.sin(clock * 8.1 + 1) * 0.012;
         figure.rotation.z = tremble * (1 - k) + Math.sin(gladFor * 1.7) * 0.06 * k;
-        figure.position.y = glad && !home ? gladHop(gladFor) * k : 0;
+        // On the clock, as its cap hops (`tiny-cap`, worn): counted from its own gladness, they were out of step and the
+        // cap hopped off its head. Its gladness growing in (`k`) keeps the first hop from starting halfway up.
+        figure.position.y = glad && !home ? gladHop(clock) * k : 0;
       }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
     },
     pumpkin: (spot) => {

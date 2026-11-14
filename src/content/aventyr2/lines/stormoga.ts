@@ -6,7 +6,8 @@ export const words: ChapterWords = {
     soDark: 'Vinden välte lamporna. De slocknade!',
     soCalling: 'Elof! Eloooof!',
     soTooSmall: 'Här nere! Ni hör mig inte i blåsten.',
-    soMormorSecret: 'Där ligger de. Tänd dem, lille vän.',
+    // His own idea, said to himself: nobody tells him, and nobody knows he is there until the lamps are lit.
+    soLightThem: 'Men lamporna når jag. Jag tänder dem!',
     soLampMamma: 'Men … vem tände min lampa?',
     soLampPappa: 'Min ficklampa! Är du där, Elof?',
     soLampMoa: 'Det är Elof. Jag vet att det är Elof.',
@@ -24,7 +25,8 @@ export const words: ChapterWords = {
     soKnow: 'Nu är ingen av er ensam.',
     soCapBack: 'Här är din mössa, Lillgubben.',
     soGoldLine: 'Ett geléhallon i guldpapper!',
-    soLastOne: 'Ditt allra sista. Det sparade du åt mig.',
+    // He thanks the old one by name: it is his to give, not Klonk's.
+    soLastOne: 'Tack, gamla trägubben! Ditt allra sista.',
     soShareLine: 'Förut delade jag. Nu delar du med mig.',
     soMagicLine: 'Det glittrar! Det kan göra mig stor igen.',
     soMamma: 'Elof! Där är du ju!',

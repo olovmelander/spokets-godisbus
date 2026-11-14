@@ -1677,7 +1677,7 @@
     "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
     "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
-    "text": "Ditt allra sista. Det sparade du åt mig."
+    "text": "Tack, gamla trägubben! Ditt allra sista."
   },
   {
     "key": "soShareLine",
@@ -1715,11 +1715,11 @@
     "text": "Här nere! Ni hör mig inte i blåsten."
   },
   {
-    "key": "soMormorSecret",
-    "speaker": "mormor",
+    "key": "soLightThem",
+    "speaker": "elof",
     "situation": "Äventyr 2, stormoga",
-    "tag": "[warm, kind grandmother]",
-    "text": "Där ligger de. Tänd dem, lille vän."
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "Men lamporna når jag. Jag tänder dem!"
   },
   {
     "key": "soLampMamma",
