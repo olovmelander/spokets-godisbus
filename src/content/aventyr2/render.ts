@@ -56,6 +56,7 @@ import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
+import { installSickan, sickanExtra } from './sickan';
 import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
 
 /**
@@ -3286,6 +3287,9 @@ export function installPictures(): void {
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
   // Älven's beaver and otter with bones and clips, from Blender, where their lives wait for them (./river-creatures.ts).
   if (!PACK.models.includes(installRiverCreatures)) PACK.models.push(installRiverCreatures);
+  // Sickan, the family's cat, out in Stormgården (./sickan.ts).
+  if (!PACK.extras.includes(sickanExtra)) PACK.extras.push(sickanExtra);
+  if (!PACK.models.includes(installSickan)) PACK.models.push(installSickan);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */
