@@ -81,7 +81,7 @@ import { createStage, litLamp } from './stage';
 import { actPose, sitting, stanceOf, stepLength, type Stance } from './acting';
 import { handOnKnee, kneelOnOwnLegs } from './knee-hands';
 import { createModelRig, createRehearsalRig, galeOf, heightOf, JOINTS, STANDING, type Pose, type Rig, type Role } from './rig';
-import { createPlayerMotion, createPlayerStandIn, createTurning } from './player-motion';
+import { createPlayerMotion, createPlayerStandIn, createTurning, SCENE_WALK, STAND_IN_LEGS } from './player-motion';
 import { createChuteSlide } from './chute-slide';
 import { createAurora } from './aurora';
 import { createFamilyMotion } from './family-motion';
@@ -107,7 +107,7 @@ import { windAt, type Blow } from './wind';
 import { layRich, seeRich } from './rich';
 import { droppedBag, prologuePose, type PrologueFrame } from '../sim/prologue';
 import { endsInScene, type Act, type SceneFrame } from '../sim/scene';
-import { BERRY_HALF, BERRY_HEIGHT, GHOST_CLEARANCE, JUMP_SPEED } from '../sim/constants';
+import { BERRY_HALF, BERRY_HEIGHT, GHOST_CLEARANCE, JUMP_SPEED, STEP } from '../sim/constants';
 import type { ChapterData, HelpState, PlayerState, Vec } from '../sim/types';
 import type { GhostState } from '../sim/sim';
 import { photoCut } from './crop';
@@ -763,6 +763,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   let hangLast = 0, hangWeight = 0;
   let shoulderLift = 0, shoulderT = 0, airStretch = 1;
   let drawnMode: string | null = null, drawnX = 0, drawnY = 0;
+  /** How far between two of the simulation's steps the last picture was drawn (`Frame.alpha`). */
+  let drawnAlpha = 0;
   const rideFrom = new Vector3();
   /** On the rigged crane (./crane-ride.ts): where its back is, how far from where the simulation has him, and how much he is on it. */
   const craneSeat = new Vector3(), craneFrom = new Vector3(), craneOff = new Vector3();
@@ -1307,6 +1309,12 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // A reading stop holds the visible event as well as the simulation: the flying carving, a lowered scarf,
     // a door and its walker must stay with the scene's shot. Breathing and speech have their own time below.
     dt = words?.reading ? 0 : eventDt ?? dt;
+    // He is drawn where the picture is between two steps (`alpha`), so his body is paced by the time that has passed
+    // there: the steps this frame ran, and how far on between two the picture has come. By the steps alone, a display that
+    // draws 144 or 240 pictures a second gave him frames in which no time passed and frames in which twice as much did:
+    // his stride counted half the ground he covered, and his feet slid over the rest.
+    const bodyDt = words?.reading ? 0 : eventDt === undefined ? dt : Math.max(0, eventDt + (alpha - drawnAlpha) * STEP);
+    drawnAlpha = alpha;
     lifeClock += lifeDt;
     homeRoutine?.update(flags, sceneFrame, lifeClock);
     inEndingShot = !!chapter.epilogue && ending !== null && ending !== undefined;
@@ -1595,7 +1603,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       want.y += 1.1 * breath;
     }
     look.zoom += (want.zoom - look.zoom) * ease(1.6, dt);
-    look.x += (want.x - look.x) * ease(3, dt);
+    // Along the course the picture follows him where he is drawn, in the time he is drawn in: following the last step
+    // instead, it went on in jerks under him wherever the display does not draw a whole number of steps a picture.
+    if (!curr.hook) want.x += x - curr.x;
+    look.x += (want.x - look.x) * ease(3, curr.hook ? dt : bodyDt);
     look.y += (want.y - look.y) * ease(2.5, dt);
     const centreY = look.y + viewHeight * look.zoom * (0.5 - GROUND_FROM_BOTTOM);
     // Over a brook or a pool the eye rises a little and looks down onto the water, so that its surface reads as
@@ -1711,7 +1722,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // In a held scene the scene may turn him: towards his family, or out over the garden.
     const scripted = directions.elof;
     const facingAngle = bathroom ? -bathroom.face * Math.PI * 2 : scripted?.face != null ? -scripted.face * Math.PI * 2 : onHose ? Math.PI / 2 : curr.facing > 0 ? -0.35 : Math.PI + 0.35;
-    turn = turning.update(facingAngle, dt);
+    turn = turning.update(facingAngle, bodyDt);
     // A held scene owns the pose. Otherwise actual travel drives the same articulated pose on both bodies.
     let scriptedPose: Pose | null = null;
     if (scripted?.act && curr.grounded) {
@@ -1721,8 +1732,11 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       elofStance = stanceOf(scripted.act, elofStance);
       // He goes on standing and breathing under it by the scene's clock, which runs on by itself while a line is read.
       const walking = scripted.act === 'walk';
+      // Walked somewhere, he takes his own steps on his own legs (./player-motion.ts SCENE_WALK).
+      const walkLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs ?? STAND_IN_LEGS;
       scriptedPose = actPose(scripted.act, { t: scripted.actT, aim: scripted.aim ? { ahead: (scripted.aim.x - x) * facing * unit, up: (scripted.aim.y - y) * unit } : null,
-        stride: walking ? scripted.actT * 2 : 0, gait: walking ? 1.5 : 0, pace: walking ? 1 : 0, calm: calmStory, clock: scripted.life }, elofPose, elofStance);
+        stride: walking ? scripted.actT * SCENE_WALK.gait / stepLength(SCENE_WALK.gait, 1, walkLegs) : 0, gait: walking ? SCENE_WALK.gait : 0, pace: walking ? 1 : 0, calm: calmStory, clock: scripted.life,
+        ...(walking ? { legs: walkLegs, strider: SCENE_WALK.strider } : {}) }, elofPose, elofStance);
       // Putting on the doll's raincoat, or taking it off: his arms go into its sleeves and out (./elof-coat.ts).
       if (sceneFrame) coatPose(sceneFrame.id, sceneFrame.seconds, scriptedPose);
     } else elofStance = 'stand';
@@ -1745,7 +1759,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const pullMover = pullIndex >= 0 ? movers[pullIndex]! : null;
     // Into the bathroom his steps are counted the way he faces: come from the right, the walk in read as a skid
     // backwards, and he glided in on still legs (Olov, 12 November 2026: "ser ut som att elof svävar in").
-    const playerPose = playerMotion.update(moving, x + (bathroom ? bathroom.travel * curr.facing : 0), dt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
+    // (The walk into the bathroom goes by the scene's own seconds, which are the steps'.)
+    const playerPose = playerMotion.update(moving, x + (bathroom ? bathroom.travel * curr.facing : 0), bathroom ? dt : bodyDt, scriptedPose, waving ? responseFor : 0, calmResponse || calmStory, breeze, tall, ownLegs);
     // Down a slide's chute he sits, his legs out and his arms up (./chute-slide.ts).
     chuteSlide.pose(playerPose, curr, dt, clock, calmStory);
 

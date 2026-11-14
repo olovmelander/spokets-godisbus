@@ -15,6 +15,7 @@ const server = await createServer({ root,
       export { createView } from ${JSON.stringify(join(root, 'src/render/view.ts'))};
       export { Sim } from ${JSON.stringify(join(root, 'src/sim/sim.ts'))};
       export { garden } from ${JSON.stringify(join(root, 'src/content/chapters/garden.ts'))};
+      export { STEP } from ${JSON.stringify(join(root, 'src/sim/constants.ts'))};
       let scene, camera; const before = Scene.prototype.onBeforeRender;
       Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) { scene = this; camera = args[2]; } before.apply(this, args); };
       export function player() {
@@ -67,7 +68,13 @@ try {
       await view.ready;
       Object.assign(sim.curr,{y:0,vx:0,vy:0,grounded:true,groundY:0,standY:0}); Object.assign(sim.prev,sim.curr);
       for(let i=0;i<12;i++)draw(1/60);
-      window.motionProbe = { step, snapshot, draw, view, sim, story: value => { scene=value; } };
+      // One picture as the game's loop hands it over: drawn `alpha` of the way between the last two steps, `eventDt` the
+      // time of the steps this frame ran.
+      const frame = (alpha, dt, eventDt) => view.render({ prev:sim.prev, curr:sim.curr, alpha, dt, eventDt, atGoal:false,
+        collected:sim.collected, checkpoint:sim.checkpoint, movers:sim.movers, drips:sim.drips,
+        flags:sim.flags, ghost:sim.ghost, rollers:sim.rollers, tussocks:sim.tussocks, gusts:sim.gusts,
+        help:sim.help, berries:sim.berries, scene });
+      window.motionProbe = { f, step, snapshot, draw, frame, view, sim, story: value => { scene=value; } };
       return snapshot();
     }, tier);
     check(`${name}: public player has separate knees and elbows`, ['player-knee-left','player-knee-right','player-elbow-left','player-elbow-right'].every(part => idle.parts[part]));
@@ -147,6 +154,33 @@ try {
     const alignment=arm.reduce((n,v,i)=>n+v*aim[i],0)/(Math.hypot(...arm)*Math.hypot(...aim));
     check(`${name}: scripted pointing follows the target's actual depth`, alignment>1-1e-8);
     assert.deepEqual(point.paused.parts,point.aimed.parts,`${name}: paused three-dimensional point`);
+    const paced = await page.evaluate(() => {
+      const p=window.motionProbe, f=p.f;
+      // Three seconds' walk, the simulation stepped and the picture drawn as the game's loop does it at `hz` pictures a
+      // second: at 240, every other picture runs no step. The legs cross once a step.
+      const walk = hz => {
+        p.step({x:114,y:0,vx:0,vy:0,grounded:true,mode:'free',facing:1,hook:null},40);
+        let acc=0, crossings=0, ahead=0, onScreen=[]; const from=p.sim.curr.x;
+        for(let i=0;i<3*hz;i++) {
+          acc+=1/hz; let steps=0;
+          // (The step before is a copy of its own, as the simulation keeps it: the two may start as one object.)
+          while(acc>=f.STEP-1e-9) { p.sim.prev={...p.sim.curr}; p.sim.curr.vx=1.2; p.sim.curr.x+=1.2*f.STEP; acc-=f.STEP; steps++; }
+          p.frame(Math.min(1,Math.max(0,acc/f.STEP)),1/hz,steps*f.STEP);
+          const shot=f.player(), parts=shot.parts, now=Math.sign(parts['player-hip-left'].rotation[2]-parts['player-hip-right'].rotation[2]);
+          if(now!==0&&now!==ahead) { if(ahead!==0)crossings++; ahead=now; }
+          if(i>hz) onScreen.push(shot.corners.reduce((sum,corner)=>sum+corner[0],0)/shot.corners.length);
+        }
+        // How unevenly he goes across the picture from one frame to the next, as a share of how far he goes in one.
+        const moves=onScreen.slice(1).map((x,i)=>x-onScreen[i]), mean=moves.reduce((a,b)=>a+b,0)/moves.length;
+        const uneven=Math.max(...moves.map(m=>Math.abs(m-mean)))/Math.max(1e-9,(p.sim.curr.x-from)/(3*hz));
+        return {crossings,went:p.sim.curr.x-from,uneven};
+      };
+      const sixty=walk(60), odd=walk(144), fast=walk(240);
+      p.step({x:114,vx:0},36);
+      return {sixty,odd,fast};
+    });
+    check(`${name}: he takes as many steps over the same ground at 60, 144 and 240 pictures a second`,
+      paced.sixty.crossings>=5 && Math.abs(paced.odd.crossings-paced.sixty.crossings)<=1 && Math.abs(paced.fast.crossings-paced.sixty.crossings)<=1);
     const restored = await page.evaluate(async () => {
       const p=window.motionProbe;p.step({vx:0},36);
       const before=p.snapshot();await p.view.restore();
