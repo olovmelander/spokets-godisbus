@@ -2279,14 +2279,29 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       };
     },
     floatBall: (spot) => {
-      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings.
+      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings. When the big ball it waits for
+      // comes down into the water beside it (./big-ball.ts), the wave washes it away behind that one, out in the puddle: the big
+      // one came up through it, and then it was gone.
       const group = new Group();
       const small = football(0.36);
       small.position.y = 0.26;
       group.add(small);
-      return standing(spot, group, (clock) => {
-        group.position.y = Math.sin(clock * 1.6) * 0.05;
-        small.rotation.z = Math.sin(clock * 0.7) * 0.5;
+      let big: Object3D | null | undefined;
+      let washed = 0;
+      return standing(spot, group, (clock, dt) => {
+        if (big === undefined) {
+          // What it waits for is the thing whose placing takes it away (the chapter's decor, `until`).
+          const until = playing.chapter?.decor?.find((d) => d.look === 'floatBall' && d.at.x === spot.at.x && d.at.y === spot.at.y)?.until;
+          let top: Object3D = group;
+          while (top.parent) top = top.parent;
+          big = until?.startsWith('placed:') ? top.getObjectByName(`mover:${until.slice('placed:'.length)}`) ?? null : null;
+        }
+        // In the water, and within a length and a half of it.
+        const splashed = !!big && big.position.y < spot.at.y - 0.3 && Math.abs(big.position.x - spot.at.x) < 1.6;
+        washed = splashed ? Math.min(1, washed + dt / 0.8) : 0;
+        const away = smooth(washed);
+        group.position.set(0.5 * away, Math.sin(clock * 1.6) * 0.05 + 0.16 * Math.sin(washed * Math.PI * 2.5) * (1 - washed), -2.3 * away);
+        small.rotation.z = Math.sin(clock * 0.7) * 0.5 + away * 1.4;
         small.rotation.y = clock * 0.3;
       });
     },
@@ -3284,7 +3299,7 @@ export function installPictures(): void {
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
   // The waves over a jetty where its gusts blow (Flärken; ../../render/jetty-waves.ts).
   if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
-  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts).
+  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts), and the yard behind its pitch.
   if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
