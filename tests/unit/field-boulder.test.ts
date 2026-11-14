@@ -56,18 +56,22 @@ describe('the stone under the seesaw', () => {
     let down = 0;
     for (let i = 0; i < at.count; i++) if (normal.getY(i) < -0.35 && at.getY(i) > 0.05) down++;
     expect(down / at.count).toBeLessThan(0.04);
-    // Flats: a good part of its skin lies in a few planes (corners whose normals agree within a few degrees).
-    const facing = new Vector3(), other = new Vector3();
-    const seen: Vector3[] = [];
+    // Flats: a good part of its skin lies in a few planes (corners whose normals agree within a few degrees with two
+    // dozen others). A plain egg of the same measures has none.
+    const normals = Array.from({ length: normal.count }, (_, i) => new Vector3().fromBufferAttribute(normal, i));
+    const flats: Vector3[] = [];
     let onFlat = 0;
-    for (let i = 0; i < at.count; i += 3) {
-      facing.fromBufferAttribute(normal, i);
+    for (const n of normals) {
+      if (n.y < -0.9) continue; // its buried foot
       let agree = 0;
-      for (let j = 1; j < at.count; j += 17) if (other.fromBufferAttribute(normal, j).dot(facing) > 0.995) agree++;
-      if (agree > 4) { onFlat++; if (!seen.some((n) => n.dot(facing) > 0.97)) seen.push(facing.clone()); }
+      for (const other of normals) if (other.dot(n) > 0.996) agree++;
+      if (agree < 25) continue;
+      onFlat++;
+      if (!flats.some((f) => f.dot(n) > 0.97)) flats.push(n.clone());
     }
-    expect(onFlat).toBeGreaterThan(40);
-    expect(seen.length).toBeGreaterThanOrEqual(3);
+    expect(onFlat / normals.length).toBeGreaterThan(0.12);
+    // Its level top, and at least three worn into its sides.
+    expect(flats.filter((f) => f.y < 0.95).length).toBeGreaterThanOrEqual(3);
   });
 
   it('has a trough across its top where the seesaw\'s trunk lies, behind the plane he walks in', () => {

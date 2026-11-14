@@ -79,7 +79,7 @@ export function boulderShape(def: FieldBoulder): BufferGeometry {
     const n = new Vector3(random() * 2 - 1, i < 2 ? 0.9 + random() * 0.3 : Math.max(0.03, random() * 1.15 - 0.1), random() * 2 - 1).normalize();
     // How far out the egg reaches that way, and how much of it the flat takes off.
     const reach = Math.hypot(n.x * radius.x, n.y * radius.y, n.z * radius.z);
-    return { n, far: reach * (i < 2 ? 0.93 : 0.8 + random() * 0.14) };
+    return { n, far: reach * (i < 2 ? 0.93 : 0.76 + random() * 0.14) };
   });
   const soft = 0.045 * Math.min(width, depth);
   const p = new Vector3(), moss: number[] = [];
