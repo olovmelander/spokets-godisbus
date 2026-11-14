@@ -56,6 +56,84 @@ worktree: look at `git status` there before anything else.
   through a pull request.
 - **Also:** another session had uncommitted kart work on branch `godisracet-arcade` in the main checkout; this work never
   touched that folder. The Fable usage limit was reached during the day (three builders stopped and were taken up again).
+## State (14 November 2026, later): Godisracet is an arcade kart racer with four courses and a cup
+
+- **Olov:** asked for the TV's kart game to feel like an arcade kart racer ("more like Mario Cart or Crash team
+  racing"): a varied track, things to pick up to boost or attack with, the right feeling when driving, "audit this",
+  "a varied, fun and stunning game". While it was being built he added: "4a olika banor med olika teman", "en cup som
+  i mariokart", a choice of "CC och svårighetsgrad", and "fler saker man kan få i godispåsarna".
+- **The audit** of the game as it was on `main`, driven on its own (the new `dev/kart.html`):
+  - *Driving:* a rental kart's tyre model at 67 km/h. The drift only loosened the rear: no hop, nothing to see on
+    the kart, two small boosts. A barrier stopped the kart.
+  - *Things to pick up:* one (a boost), three of them a lap, no roulette, nothing to throw, and rivals that never
+    used anything.
+  - *The track:* one flat forest, one grey road, one fence all the way round; no strips, ramps or hazards.
+  - *The field and the picture:* four karts, a low close camera with little sense of speed, muted colours, no cast
+    shadows, and a small HUD that showed only the player's own place.
+- **What it is now** (all of it in `docs/tv-console.md`):
+  - *Driving* (`src/kart/sim/kart.ts`): the drift button hops; held through a bend it drifts and charges blue, gold
+    and pink sparks, spent as a turbo on release. Boost strips, tricks off ramps, a rocket start, the pull behind
+    another kart. Grass, snow, mud and water slow the kart unless it is boosting. Top speed 108 km/h at 150 cc.
+  - *Eight karts:* Elof's crown kart and seven wooden animals that drive the same kart model through the same
+    controls, drift for real turbos and use what they pick up (`sim/ai.ts`).
+  - *Fourteen items* from striped bags with a roulette (`sim/race.ts`): Guldgodis, Tre guldgodis, Kotte, Tre kottar,
+    Humla, Tuggummi, Smällkaramell, Näverlur, Sockervadd, Studssvamp, Godismagnet, Regnbågsklubba, Brusraket and
+    Regnmoln. Tre kottar, Smällkaramell, Näverlur, Studssvamp, Godismagnet and Brusraket came with his third request,
+    "fler saker man kan få i godispåsarna".
+    Sweets on the road count to ten and add a little top speed.
+  - *Four courses*, each a 960 m lap (`sim/courses.ts`, `sim/track.ts`): Gårdsvarvet (village and forest edge, no
+    hairpin), Myrspången (a boardwalk over the bog at dusk, three hairpins, puddles), Kristallberget (a mountain at
+    night, a switchback, a crystal cave, a long jump down) and Varggropen (the real outline, through all five kinds of
+    place and out over Godisängen).
+  - *Godiscupen* (`sim/cup.ts`): the four in that order, 10–8–6–5–4–3–2–1 points a race.
+  - *Speed class* 50, 100 or 150 cc and *difficulty* Lugnt, Äventyr or Mästare, chosen on the title page with the
+    course. It opens on the cup, 100 cc, Äventyr.
+  - *The picture* (`src/kart/visual/`): terrain that follows the road over its hills, five road surfaces, water,
+    cast shadows, a sky and light of its own for each kind of place, a chase camera that widens under a boost,
+    particles for sparks, flames, dust and splashes, speed lines, a HUD with place, lap, sweets, item slot, map
+    and the running order, and results for the whole field.
+  - *Sound* (`src/kart/audio.ts`, written by a parallel builder): a synthesised tune that changes with the place and
+    quickens on the last lap, and an effect for everything that happens.
+- **A page of its own** (Olov: "vilken url kan jag använda för att spela godisracet direkt?"):
+  https://olovmelander.github.io/spokets-godisbus/godisracet.html opens the game without the house (`godisracet.html`,
+  `src/kart/page.ts`; the build now has two pages). It uses the current player's settings and records; "Tillbaka till
+  huset" goes to the adventure.
+- **How "svårighetsgrad på bilen man kör" was read:** as how good the rivals are and how much help the player gets
+  (three levels), not as karts with different handling to choose between. Asked below.
+- **What went from the port:** the rental-kart tyre model, its contacts, rival driving, surfaces and camera
+  (`src/kart/ported/`) are replaced, because they model a real kart and that is not the feel that was asked for.
+  The trace, the racing-line optimiser, the batching helper, the steering ramp and the engine's clutch remain
+  (`LICENSES.md`). Varggropen is now 960 m round, not the circuit's 665 m. Race records start again
+  (`godisbus.kart.v3.*`).
+- **Guards:** `tests/unit/kart-race.test.ts` (82 tests: every course's barriers, places and features; handling;
+  each item; race rules; the cup; a rival lapping every course; whole races in two difficulties), `kart-audio`,
+  `kart-controls`, `kart-records`, and seven new checks in `tests/browser/home-console.mjs`.
+- **Not checked, and it matters:**
+  - **Nobody has driven it by hand.** The handling was tuned on driving bots in the simulation and on an autopilot
+    pressing the real keys in the browser. How the wheel, the drift and the speed feel in the hands is the first
+    thing for Olov to judge.
+  - **Nobody has heard the sound.** Its levels were measured (about −24 dBFS RMS in a race) and its lifecycle is
+    tested; whether the tune and the effects are pleasant is not known.
+  - **Phones:** 56–60 pictures a second on this computer's graphics card on every tier (High: about 300,000–480,000
+    triangles and 90–130 draw calls). The Low tier draws 170,000–255,000 triangles with no cast shadows (Myrspången
+    is the heaviest); its speed on a real phone is not measured. Only Chromium was run.
+  - The balance below is from bots, not people.
+- **Balance, measured with bots over five to eight races each** (place out of eight; the winner's time is about
+  1:25–1:35 at 150 cc and 1:45–1:55 at 50 cc):
+  - *Äventyr, 150 cc:* a driver who drifts every bend averages 1st–2nd; one who never drifts averages 2nd on
+    Gårdsvarvet and Kristallberget, 3rd on Myrspången and 5th–6th on Varggropen. (Myrspången and Kristallberget
+    were measured before the last six items were added; the other two after.)
+  - *Mästare, 150 cc:* the driver who drifts every bend averages 2nd–4th; one who never drifts 4th–7th.
+  - *Lugnt, 50 cc:* every bot won every race, the one that steers like a small child included.
+  - In Äventyr the player is hit about one to three times a race.
+- **Validation:** typecheck; all 3,100 tests; the build and its size gates (706.4 KB gzipped JS; the game's own
+  chunk is 53.8 KB of 160); the privacy check; `tests/browser/home-console.mjs` (55 checks, in the built site, from
+  the house and back, and on the page of its own). On the game's own page: every course on the Low, Mid and High tiers and in reduced motion
+  with no errors, and one whole cup driven in real time by the autopilot at the keys (Lugnt, 150 cc: it won all four
+  races), with the renderer's memory level from the first course to the last.
+- **Next:** Olov drives it, on the computer and on a phone, listens to it, and says what to change (the questions
+  are below). Needs no Blender and no particular computer. `npm run dev`, then
+  `/spokets-godisbus/dev/kart.html` is the game without the house; `?auto` drives it by itself.
 
 ## State (14 November 2026): Elof leans into his run
 
@@ -6638,6 +6716,7 @@ The older list, still true where it is not struck:
 | Bertil's slippers (11 Nov, late evening) | Add a slipper wish before the Thailand trip | One text-only cloud continuation | — / 1 request | Existing dialogue receipt and reading hold retained; future recording metadata aligned. |
 | Family at the opening window (11 Nov, evening) | Let the family walk over to the arriving jay in the redesigned home | One cloud continuation with staging and independent native review | — / 1 request | Separate furniture-clear routes, visible shared attention and a continuous return to the chase; original story receipts retained. |
 | Responsive interface (11 Nov) | Improve mobile/desktop UX, HUD and dialogue composition | One cloud continuation with parallel dialogue, HUD, menus, native review and regression worktrees | — / 1 request | Unified speech card, retained readable text/targets, quieter HUD, navigable collections and responsive menus; actual-scene and safe-area checks. |
+| Godisracet as an arcade racer (14 Nov) | Make the TV kart game feel like an arcade kart racer; then four themed courses, a cup, speed classes and difficulty | One session on Olov's computer, with one parallel builder for the sound | — / 3 requests | New handling, eight karts, fourteen items, four courses over five kinds of place, a cup, speed classes and difficulty; the port's tyre model replaced. Tuned on bots; not yet driven by hand or heard. |
 | TV console / Godisracet (11 Nov) | Port Varggropen and add an optional TV kart race with improved handling and story-linked visuals | One cloud continuation with parallel core, renderer, controls, host and browser review | — / 1 request | Original trace and physics, drift/sweet boosts, wooden toys, shared-home entry and exact return; local player records and mobile controls. |
 | Shared home composition (11 Nov) | Separate TV and sofa, integrate the bathroom and align the interior across home chapters | One cloud continuation with parallel public modelling, staging, geometry and native visual review | — / 1 request | One shared layout, complete bathroom and clear furniture; adapted scenes, saved-progress checks and phone composition review. |
 | Flärken's flickering shore (11 Nov) | Stabilise the near outlet bank while the carving floats downstream | One focused cloud continuation with geometry work and independent source/temporal review | — / 1 report | A submerged mouth replaces the water-level shelf; the regression measures real mesh area against the animated swell. |
@@ -6957,6 +7036,9 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- From Godisracet (14 November): karts or drivers to choose between; a course of Godisängen alone; moving
+  hazards; a shortcut across an infield; skid marks on the road; a ghost of the best lap to race against; two
+  players on one screen. A new course is one entry in `src/kart/sim/courses.ts`.
 - From Olov's Äventyr 1 round (13 November): in Pappa's quick freeze joke his free left hand clips his thigh for about
   0.2 s as he lunges down; Pappa's kneel at Granskogen's seesaw still uses fixed angles (its comment says the other hand
   is on his knee, the code does not); the stage's `staged.tilt` (view.ts) still tilts the ghost model about z, as the
@@ -6987,6 +7069,8 @@ The older list, still true where it is not struck:
 - The 11 November responsive UI/HUD and dialogue presentation request is implemented in this continuation.
 
 - The requested TV console and Varggropen kart game are implemented in this continuation; no part is deferred to a later chapter.
+- The 14 November requests for an arcade feel in Godisracet, four themed courses, a cup, and a choice of speed class and
+  difficulty are implemented; choosing between karts, and the other wishes that came up, are under Senare.
 
 - The 11 November request for a coherent home, separate TV and integrated bathroom is addressed in this continuation.
 - The 11 November report of Flärken's flickering near river bank is addressed in this continuation.
@@ -7017,6 +7101,18 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Godisracet den 14 november (allt är byggt; inget hindrar):
+
+- Känns farten, styrningen och sladden rätt? Jag har bara kunnat köra med en robot vid tangenterna, så körkänslan
+  är det första du behöver känna på. Toppfarten är 108 km/h i 150 cc.
+- Ingen har hört musiken och ljuden än. Hur låter de? Är något för högt, för gällt eller tjatigt?
+- Jag läste "svårighetsgrad på bilen man kör" som hur duktiga vännerna är och hur mycket hjälp man får (Lugnt,
+  Äventyr, Mästare). Menade du i stället olika kartar med olika köregenskaper att välja mellan?
+- Banorna heter Gårdsvarvet, Myrspången, Kristallberget och Varggropen, och cupen heter Godiscupen. Bra namn?
+- Blir man träffad lagom ofta? I Äventyr är det ungefär en till tre gånger per lopp.
+- Godisängen finns nu bara som sista delen av Varggropen. Vill du ha en ren godisbana också?
+- Går det bra på Elofs enhet? Jag har bara mätt på den här datorn.
 
 Från genomspelningen av Äventyr 1 den 13 november (allt är byggt; inget hindrar):
 

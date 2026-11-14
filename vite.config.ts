@@ -43,7 +43,8 @@ export default defineConfig(({ mode }) => {
       // ...and when it carries no Zstandard decoder, which no texture of the game's needs (src/render/no-zstd.ts).
       noZstd(),
       // The drawn icons, once, at the top of every page (src/ui/sprite.ts): the game's script carries none of them.
-      { name: 'icon-sprite', transformIndexHtml: (html: string) => html.replace(/<body([^>]*)>/, (body) => `${body}\n  ${spriteHtml()}`) },
+      // (Only the game's own page: godisracet.html draws its own few emblems.)
+      { name: 'icon-sprite', transformIndexHtml: (html: string, ctx: { filename: string }) => ctx.filename.replaceAll('\\', '/').endsWith('/index.html') ? html.replace(/<body([^>]*)>/, (body) => `${body}\n  ${spriteHtml()}`) : html },
       staticPresentation(MEMORIES, shellHtml),
       // The home screen's name for the web app on an iPhone, from the game's words (access-and-devices.md row 21).
       { name: 'short-name', transformIndexHtml: (html: string) => html.replace('%SHORT_NAME%', sv.homeScreen.shortName) },
@@ -76,7 +77,8 @@ export default defineConfig(({ mode }) => {
         },
       }),
     ],
-    build: { target: 'es2022', chunkSizeWarningLimit: 900, emptyOutDir: true },
+    // Two pages: the adventure, and Godisracet on its own (godisracet.html, docs/tv-console.md).
+    build: { target: 'es2022', chunkSizeWarningLimit: 900, emptyOutDir: true, rollupOptions: { input: { main: 'index.html', godisracet: 'godisracet.html' } } },
     // A robot plays a whole chapter in one test. Vitest's five seconds are enough on a quiet computer, and
     // not when another session's browser is drawing the game beside it (HANDOVER.md, "Known bugs").
     test: { include: ['tests/{unit,sim,robot}/**/*.test.ts'], environment: 'node', testTimeout: 30000, setupFiles: ['tests/setup.ts'] },

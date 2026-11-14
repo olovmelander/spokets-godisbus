@@ -11,7 +11,9 @@ export function staticPresentation(memories, shell) {
     name: 'static-presentation',
     apply: 'build',
     enforce: 'pre',
-    transformIndexHtml(html) {
+    transformIndexHtml(html, ctx) {
+      // The adventure's page only: Godisracet's own page (godisracet.html) uses none of it.
+      if (!ctx.filename.replaceAll('\\', '/').endsWith('/index.html')) return html;
       return html.replace('</body>', `${memoryHtml}\n${shellMarkup}\n</body>`);
     },
     transform(_code, id) {
