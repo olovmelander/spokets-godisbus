@@ -271,7 +271,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
       far.update(cameraX, groundY, clock, night);
       if (gardenLeaves) gardenLeaves.position.z = -54;
       if (quiet) wild?.update(cameraX, groundY, clock, night, quiet);
-      life?.update(clock);
+      life?.update(clock, elof);
       if (sky) sky.material.uniforms.time!.value = still ? 0 : clock;
     },
   };

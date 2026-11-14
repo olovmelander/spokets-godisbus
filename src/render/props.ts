@@ -505,6 +505,8 @@ export function spotProp(spot: Spot): SpotProp | null {
       return {
         group,
         update(used, clock, dt, _strike, world) {
+          // Where it brings the lichen down for him, its part from its berry on is told there (./jay-lichen.ts).
+          if (bird.userData.directed) return;
           const rig = jayRigOf(bird);
           if (rig) {
             stepGroundJay(bird, rig, { used, clock, dt, x: spot.at.x, ...(world ? { elof: world.elof } : {}), calm: world?.calm ?? false });

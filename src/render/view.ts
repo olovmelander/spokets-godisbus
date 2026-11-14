@@ -12,6 +12,7 @@ import { braidTip, mammaPathY, mammaPathZ, mammaSteps, pineTilt, mammaLogPose } 
 import { createPaddle, type Paddle } from './paddle';
 import { createScarves } from './scarf';
 import { createHoldingOut, createUmbrellaCarry, handsOn, heldUp, holdAt, holdingOut, UMBRELLA } from './umbrella-hold';
+import { createMoaAnswer } from './umbrella-thanks';
 import { swayingBoughs } from './swaying-boughs';
 import { rootHollow } from './root-hollow';
 import { rainGearFor } from './rain-gear';
@@ -48,6 +49,7 @@ import { buildHooks } from './rings';
 import type { TextureOwnershipInfo } from './texture-ownership';
 import { captureFrame } from './capture';
 import { observeGpu, type GpuMemory } from './gpu-memory';
+import { BREDBYN_CHURCH, churchAt } from '../content/bredbyn';
 import { KINDS } from '../content/kinds';
 import { personFor } from '../content/people';
 import { PLACES, dress } from './dressing';
@@ -92,7 +94,9 @@ import { createGhostThought } from './ghost-thought';
 import { drawOverFrame, overFrame } from './over-frame';
 import { drawnWhile } from './idle';
 import type { Afoot, Floats } from './floating-ride';
+import { familyShot } from './family-shot';
 import { buildGhostLace, letDown } from './ghost-lace';
+import { broughtDown, buildJayLichen } from './jay-lichen';
 import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
 import { windAt, type Blow } from './wind';
@@ -477,6 +481,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Berget's lace, let down and held by the ghost (./ghost-lace.ts).
   const ghostLace = buildGhostLace(chapter);
   scene.add(ghostLace.group);
+  // The jay brings Stormskogen's beard lichen down for him (./jay-lichen.ts).
+  const jayLichen = buildJayLichen(chapter, climbs.group);
+  scene.add(jayLichen.group);
+  const lichenJay = things.find((thing) => chapter.climbs?.some((climb) => climb.broughtBy?.jay === thing.spot.id))?.prop?.group ?? null;
   // The dressing brings its own ground and its own trees.
   if (!dressing) scene.add(buildGround(chapter), buildTrunks(chapter));
   scene.add(climbs.group, buildHooks(chapter), lace.mesh, trail.group, sideTrail.group, ledges.group, glitter.group);
@@ -654,9 +662,10 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       if (landmarks) {
         // In Stormbyn the river's yard is narrow: the church's belfry was buried inside the sweet shop.
         // Its wider crossing has room for the same church and separate wooden belfry side by side.
-        const stormStreet = chapter.id === 'stormbyn';
-        landmarks.position.set(chapter.id === 'look-street' ? 13 : stormStreet ? 97.8 : 46, 2.3, -29);
-        landmarks.scale.setScalar(0.53);
+        // Where it stands in this chapter: in Byn i stormen over the flooded crossing, clear of Moa's wall (../content/bredbyn.ts).
+        const at = churchAt(chapter.id);
+        landmarks.position.set(at.x, at.y, BREDBYN_CHURCH.z);
+        landmarks.scale.setScalar(BREDBYN_CHURCH.scale);
       }
       scene.add(model);
       models.push('boot/bredbyn');
@@ -852,8 +861,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       .catch((error) => console.warn(`The private/${who}-wardrobe could not be loaded; the rain gear is drawn from the body.`, error));
   };
   const stands = chapter.prologue ? [] : [
-    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen })),
-    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined })),
+    ...things.map((thing) => ({ look: thing.spot.look, word: thing.spot.word, prop: thing.prop, at: thing.spot.standsAt?.x ?? thing.spot.at.x, glad: thing.spot.id as string | undefined, seated: thing.spot.seated, paddles: thing.spot.paddles, standsAt: thing.spot.standsAt, goesTo: thing.spot.goesTo, goesWhen: thing.spot.goesWhen, vista: thing.spot.vista })),
+    ...decor.map((d) => ({ look: d.def.look, word: d.def.word, prop: d.prop, at: d.def.at.x, glad: d.def.after, seated: false, paddles: false, standsAt: undefined, goesTo: undefined, goesWhen: undefined, vista: undefined })),
   ].filter((stand) => stand.look === 'sign' && stand.prop !== null && personFor(stand.word) !== null);
   // One Mamma lays the pine and walks to the braid; the second call is only an interaction.
   if (chapter.id === 'myren') for (let i = stands.length - 1; i >= 0; i--) {
@@ -957,7 +966,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   for (const thing of things) {
     const size = thing.spot.look && animal[thing.spot.look as keyof typeof animal];
-    if (size && thing.prop) characterShadows.add({ object: thing.prop.group, height: size[0], radius: size[1] });
+    if (size && thing.prop) characterShadows.add({ object: thing.prop.group, height: size[0], radius: size[1], active: () => thing.prop!.group.userData.aloft !== true });
   }
   for (const carrier of carriers) if (carrier.prop && (carrier.ride.look === 'crane' || carrier.ride.look === 'ants')) {
     characterShadows.add({ object: carrier.prop, height: carrier.ride.look === 'crane' ? 1.6 : .3, radius: .7,
@@ -1067,6 +1076,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const capGift = chapter.id === 'granskog' ? carriers.find(carrier => carrier.ride.id === 'cap') : undefined;
   // Bertil's answer to Elof's thanks across the pool (./cap-thanks.ts).
   const bertilAnswer = createBertilAnswer();
+  const moaAnswer = createMoaAnswer();
   const capTime = chapter.later?.find(wait => wait.flag === 'family:cap-ready')?.seconds ?? 2.4;
   let capSince = -1;
   const capFrom = new Vector3(), capAt = new Vector3();
@@ -1607,11 +1617,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       camAt.lerp(shot.at, k);
     };
     {
-      const centreX = nearbyFamily ? (nearbyFamily.prop!.group.position.x + x) / 2 : 0;
-      const familyY = nearbyFamily ? nearbyFamily.prop!.group.position.y : 0;
-      const shotHeight = Math.max(viewHeight * look.zoom, 7.8 + Math.abs(familyY - y), 8.8 / camera.aspect);
-      const bothY = (familyY + y) / 2 + 2.2;
-      shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, centreX, bothY, shotHeight / 2 / Math.tan(FOV * Math.PI / 360), centreX, bothY);
+      // He and whoever he has come up to, and where the spot says so what lies beyond them (./family-shot.ts).
+      const both = familyShot({ x, y }, nearbyFamily ? nearbyFamily.prop!.group.position : { x: 0, y: 0 }, viewHeight * look.zoom, camera.aspect, nearbyFamily?.vista, nearbyFamily?.at);
+      shotIn(nearShots.family, !!nearbyFamily && !chapter.epilogue, both.x, both.y, both.height / 2 / Math.tan(FOV * Math.PI / 360), both.x, both.y);
     }
     {
       const shotHeight = Math.max(8.4, 10.2 / camera.aspect);
@@ -1935,7 +1943,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // The lingonberries he picks in Granskogen, for the jay and for the vittra's door, held up in front of him in his
     // left hand until he gives each.
     const berryHeld = (flags.has('berry') && !flags.has('jay')) || (flags.has('vittra:berry') && !flags.has('vittra:gift'));
-    const hasBerry = chapter.id === 'granskog' && berryHeld && !curr.hook && !!playerBody && elof.group.visible;
+    const hasBerry = (chapter.id === 'granskog' || chapter.id === 'stormskog') && berryHeld && !curr.hook && !!playerBody && elof.group.visible;
     carriedBerry.visible = hasBerry;
     if (hasBerry && playerBody) {
       elof.group.updateWorldMatrix(true, false);
@@ -2127,6 +2135,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // Berget's lace in the ghost's hands, and how it leans to it (./ghost-lace.ts).
     ghostLace.update({ flags, scene: sceneFrame ?? null, ghost: ghostState && !ghostState.gone ? ghost : null, facesModel: ghostFaces !== 0,
       elof: { x, y, climbing: curr.mode === 'climb' }, clock, dt, calm: calmStory });
+    jayLichen.update({ flags, scene: sceneFrame ?? null, bird: lichenJay, elof: { x, y, climbing: curr.mode === 'climb' }, clock, dt, calm: calmStory });
     if (chapter.prologue) {
       paintedEyes.forEach((eye, i) => { eye.visible = flags.has(i === 0 && paintedEyes.length > 1 ? 'eye' : 'paint'); });
     }
@@ -2229,6 +2238,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       }
       // Thanked across the pool for his cap, Bertil cheers and waves back (./cap-thanks.ts).
       if (capGift && one.who === 'bertil') bertilAnswer.update(words, lifeDt, calmStory, one.rig.legs, posed);
+      // And Moa, thanked across the flood for her umbrella (./umbrella-thanks.ts).
+      if (umbrellaRide && one.who === 'moa') moaAnswer.update(words, lifeDt, calmStory, one.rig.legs, posed);
 
       if (one.walk && one.walk.pace > 0.001) {
         // Walking over: the legs go by the ground they cover, and the body turns the way it goes.
@@ -3336,7 +3347,7 @@ function buildClimbs(chapter: ChapterData) {
     }
     for (const h of hoses) {
       // Berget's lace runs out when the ghost lets it down in its scene (./ghost-lace.ts), not at the flag.
-      const held = letDown(h.climb, flags, scene);
+      const held = letDown(h.climb, flags, scene) ?? broughtDown(h.climb, flags, scene, still);
       if (held !== null) h.down = held;
       else if (h.needs !== undefined) h.down = Math.min(1, Math.max(0, h.down + (flags.has(h.needs) ? dt : -dt) / 0.5));
       h.hose.scale.y = Math.max(0.001, h.down);

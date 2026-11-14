@@ -16,8 +16,9 @@ import { alongAll, round, row, slopeRow, timeCard } from '../kit';
  *    street lies at its shore: "Kliv på", and the current carries him the whole long way down it.
  * 3. **Gallret:** the drain's grate, five narrow bars over the deep dark, a hop from each to the next.
  * 4. **Moas paraply:** stone steps up a high wall, where Moa waits under her umbrella. From its top he sees the
- *    crossing flooded. "Ropa på Moa": she holds her umbrella out to him at the wall's edge, and he floats down
- *    under it, hanging from its crook, to the far side.
+ *    crossing flooded, and Anundsjö's church beyond it. "Ropa på Moa": she holds her umbrella out to him at the
+ *    wall's edge, and he floats down under it, hanging from its crook, to the far side. There he turns and
+ *    thanks her (`tack-moa`).
  * 5. **The swinging sign:** the shoemaker's sign swings in the wind over the pavement. From the bench under
  *    it he can ride it up to the hearts over it and on to a stand. A toy too.
  * 6. **The little one's cap:** Elof keeps it for him. The candy trail leads on towards Olympia.
@@ -118,6 +119,28 @@ const CAP_SCENE: SceneDef = {
   },
 };
 
+/** Where Moa stands at the wall's edge once she is called, and holds her umbrella out: her feet. */
+const MOA_EDGE = { x: 101.3, y: WALL, z: -0.9 };
+/**
+ * Down on the far side, out of her umbrella, he turns back to Moa on the wall and waves; the picture opens out over the
+ * flooded crossing to take in both of them, with the church between them, and he thanks her, while Moa cheers and waves
+ * back (src/render/umbrella-thanks.ts) (Olov, 14 November 2026: "Elof ska tacka Moa efter att han har flugit med
+ * paraplyet."). Told standing, as he thanks Bertil for his cap in Granskogen (`tack-bertil`): the picture holds while
+ * the words are up. A game taken up at the big candy after it has seen it.
+ */
+const THANKS_SCENE: SceneDef = {
+  id: 'tack-moa', on: 'umbrella', from: UMBRELLA.to.x - 1, before: 121, seconds: 2, hold: true,
+  lines: [{ at: 1.6, who: 'elof', line: 'sbThanksMoa', id: 'sbThanksMoa' }],
+  stage: {
+    shots: [
+      { at: 0, x: UMBRELLA.to.x - 1.6, y: 1.5, height: 5, width: 8, move: 0.5 },
+      // Both of them, each well inside the picture, her head under the words on a phone held sideways.
+      { at: 0.5, x: (MOA_EDGE.x + UMBRELLA.to.x) / 2, y: 5.5, height: 14, width: 24.5, move: 1 },
+    ],
+    elof: [{ at: 0, face: 0.5, act: 'wave', aim: { x: MOA_EDGE.x, y: WALL + 3, z: MOA_EDGE.z } }],
+  },
+};
+
 /** The high wall's stone steps: four risers, each a little under his reach, so he pulls himself up each. */
 const STEP_RISE = 1.25;
 const STEP_TREAD = 1.6;
@@ -164,7 +187,8 @@ export const stormbyn: ChapterData = {
     // ...the sweet shop, shut and dark, and the house with lying boards behind the grate.
     { from: 50, to: 66, depth: 'far', kind: 'house', foot: 1, wall: '#c9a24e', boards: 'upright', goods: 'candy', windows: [{ from: 54.6, to: 61.4 }] },
     { from: 66, to: 92, depth: 'far', kind: 'house', foot: 1, wall: '#a9b2a4', boards: 'lying', goods: 'yarn', windows: [{ from: 69, to: 76 }], door: { from: 81, to: 87 } },
-    // The crossing: open, with a low fence across it, the second lamp post standing in the flood's mirror.
+    // The crossing: open, with a low fence across it. Far behind it stands Anundsjö's church, whole from Moa's wall
+    // (src/content/bredbyn.ts).
     { from: 92, to: 118, depth: 'far', kind: 'yard', foot: 1, lowFence: true },
     // The shoemaker's, whose sign swings over the pavement in front of its window.
     { from: 118, to: 142, depth: 'near', kind: 'house', wall: '#b7ab90', boards: 'upright', goods: 'boots', windows: [{ from: 124.2, to: 132.4 }] },
@@ -178,9 +202,14 @@ export const stormbyn: ChapterData = {
     // Up the steps: the road up the hill towards Olympia, with a low fence along it.
     { from: 164, to: 186, depth: 'far', kind: 'yard', foot: UP, lowFence: true },
   ],
-  // Two lamp posts on the far pavement, dark tonight: one in the yard across the river, one at the far end of
-  // the flooded crossing, out of the tall picture from the wall's top. Neither stands behind a big candy.
-  lampPosts: [44.4, 114.4],
+  // Two lamp posts on the far pavement, dark tonight: one in the yard across the river, one by the house across
+  // the grate, out of the picture from the wall's top: it stood at the crossing's far end, before the church's
+  // belfry. Neither stands behind a big candy.
+  lampPosts: [44.4, 79],
+  // No birch of the yard's own stands before the church either, and the passer-by on the road behind the crossing
+  // waits short of it while he is on the wall, in the air under the umbrella, and where he lands and thanks her.
+  treeGaps: [{ from: 95, to: 122, back: -40 }],
+  streetClear: { from: 76, while: [WALL_FROM - 0.5, 121.5] },
   storm: { bouncers: 'awning', rain: 0.85,
     lightning: 9,
     // The storm has cut the power in the whole village: no street lamp, and no lamp in any window (src/render/village.ts
@@ -197,8 +226,8 @@ export const stormbyn: ChapterData = {
   },
   coda: 'moa',
   spawn: { x: 1, y: 3.01 },
-  // Where and when, as the chapter opens; and the little one's cap, found.
-  scenes: [timeCard('stormbyn', 1), CAP_SCENE],
+  // Where and when, as the chapter opens; the little one's cap, found; and his thanks to Moa across the flood.
+  scenes: [timeCard('stormbyn', 1), CAP_SCENE, THANKS_SCENE],
   goalX: 180,
   // Elof returns the cap in the finale: he must take it with him, even if he jumped over it at first.
   goalNeeds: 'cap',
@@ -318,7 +347,9 @@ export const stormbyn: ChapterData = {
     { id: 'leaf', at: LEAF.from, verb: 'take', word: 'board', ride: 'leaf' },
     // On the wall: Moa waits there with her umbrella open over her head (src/render/umbrella-hold.ts). He calls her, and she
     // steps to the edge, bends and holds it out low for him there; he takes hold of its crook, and she lets go.
-    { id: 'umbrella:ready', look: 'sign', at: { x: 99.6, y: WALL }, goesTo: { x: 101.3, y: WALL, z: -0.9 }, verb: 'call', word: 'callMoa' },
+    // The picture of the two of them looks on over the crossing as he comes up to her (`vista`): they stand in its near
+    // third, and the whole church beyond the flood beside them, clear of her umbrella where she holds it out.
+    { id: 'umbrella:ready', look: 'sign', at: { x: 99.6, y: WALL }, goesTo: MOA_EDGE, vista: { lead: 5.4, width: 17 }, verb: 'call', word: 'callMoa' },
     { id: 'umbrella', at: { x: 102.6, y: WALL }, verb: 'take', word: 'sbUmbrella', needs: 'family:umbrella-ready', ride: 'umbrella' },
     // The little one's carved cap, in the gutter: he finds it by coming close.
     { id: 'cap', look: 'tiny-cap', at: CAP, verb: 'take', touch: true },
@@ -363,7 +394,8 @@ export const stormbyn: ChapterData = {
     { id: 'sbRiver', at: 34.4, who: 'elof', line: 'sbRiver', aside: true },
     { id: 'family:moa', at: 97.4, until: 'umbrella:ready', who: 'moa', line: 'sbMoaHere', read: true },
     { id: 'family:umbrella', on: 'family:umbrella-ready', until: 'umbrella', within: [95, 104], who: 'moa', line: 'sbMoaHold', read: true },
-    // Under the umbrella, as he lifts off, or not at all; and Moa's word as he lands, which stands by itself.
+    // Under the umbrella, as he lifts off, or not at all. Landed, he thanks her standing (`tack-moa`); and Moa's word
+    // comes after him as he goes on, which stands by itself.
     { id: 'sbFloat', on: 'umbrella', within: [100, 120], who: 'elof', line: 'sbFloat', aside: 8 },
     { id: 'sbLanded', at: 120.6, needs: 'umbrella', who: 'moa', line: 'sbMoaLanded', aside: true },
     // Said once he holds the cap up and looks at it (`mossan`).

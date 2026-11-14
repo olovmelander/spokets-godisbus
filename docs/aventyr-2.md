@@ -153,7 +153,10 @@ cup of cocoa in Morgonen efter.
 6. **Gamla trägubbens minne:** at a dark hollow Klonk shows the old one's thought: the crack on the mountain.
    "Gamla trägubben låg ensam i flera år." "Därför skyndar han. Lillgubben är ensam!" He stands at the hollow while
    it is said, the thought in the middle of the picture.
-7. **Lavskrikan** from Äventyr 1 shelters in a hollow; a lingonberry, and it shows the way up.
+7. **Lavskrikan** from Äventyr 1 shelters in a hollow; a lingonberry, and it shows the way up: it flies up over the
+   high root's edge, lands on a dead snag where the beard lichen hangs wound up, and tugs it loose, so that it unrolls
+   down the face for him to climb (Olov, 14 November 2026: it must be seen that the jay arranges it; the lichen came
+   down the moment it had its berry). He is free meanwhile, and it is climbable once it has reached the ground.
 8. Down the hill towards the village, where every window is dark.
 
 ### Kapitel 3: Byn i stormen (village street at night)
@@ -167,6 +170,8 @@ cup of cocoa in Morgonen efter.
    night.
 4. **Moas paraply:** "Ropa på Moa". She waits on the high wall with her umbrella open over her head; called, she
    holds it out to him at the edge, he takes its crook, and he floats down under it over the flooded crossing.
+   Anundsjö's church stands whole beyond the crossing in that picture, its belfry beside it (Olov, 14 November 2026).
+   Landed, he turns and thanks her: "Tack, Moa! Ditt paraply kan flyga!", and she cheers and waves back from the wall.
 5. **The swinging sign:** a moving platform.
 6. **Fjun's cap:** the little one's carved cap lies in the gutter. He stops, picks it up and holds it up to look at it
    before he says what it is (Olov, 9 November 2026: finding it went far too fast).

@@ -24,6 +24,7 @@ const server = await createServer({ root, cacheDir: join(root, '.vite/bredbyn'),
         export { Game } from ${JSON.stringify(join(root, 'src/app/game.ts'))};
         export { byn } from ${JSON.stringify(join(root, 'src/content/chapters/byn.ts'))};
         export { lookStreet } from ${JSON.stringify(join(root, 'src/content/chapters/look.ts'))};
+        export { COURSES, loadAdventure2 } from ${JSON.stringify(join(root, 'src/content/chapters/index.ts'))};
         let scene, camera; const before = Scene.prototype.onBeforeRender;
         Scene.prototype.onBeforeRender = function (...args) { if (this.getObjectByName('chase-ghost')) { scene = this; camera = args[2]; } before.apply(this, args); };
         export const renderedScene = () => scene;
@@ -74,6 +75,9 @@ const cases = [
   ...[[390,844], [844,390]].map(([width,height]) => ({ width,height,tier:'low',place:'puddle',x:48 })),
   ...[['street',25], ['bakery',82]].map(([place,x]) => ({ width:844,height:390,tier:'high',place,x })),
   ...[['shore-entry',41.9], ['shore-exit',62.8], ['look-street',12]].map(([place,x]) => ({ width:844,height:390,tier:'low',place,x })),
+  // Byn i stormen, where Moa holds her umbrella out to him at the wall's edge (Olov, 14 November 2026: "Kan vi göra
+  // kyrkan mer synlig i bakgrunden när Moa ger Elof sitt paraply? Nu syns bara halva kyrkan.").
+  ...[[1280,720,'high'], [844,390,'high'], [390,844,'low']].map(([width,height,tier]) => ({ width,height,tier,place:'storm-wall',x:102.2 })),
 ];
 try {
   for (const { width, height, tier, place, x } of cases) {
@@ -88,8 +92,12 @@ try {
     const initial = await page.evaluate(async ({ x, tier, place }) => {
       const f = await import('/spokets-godisbus/bredbyn-fixture.js');
       const rideView = place === 'puddle' || place.startsWith('shore-');
-      const chapter = { ...(place === 'look-street' ? f.lookStreet : f.byn), spawn: { x:rideView ? 40.6 : x, y: .01 } };
-      const game = new f.Game(chapter, {}, { placed:['box'],flags:['placed:box'] });
+      const storm = place === 'storm-wall';
+      if (storm) await f.loadAdventure2();
+      const chapter = storm ? { ...f.COURSES.stormbyn, spawn: { x, y: 5.01 } }
+        : { ...(place === 'look-street' ? f.lookStreet : f.byn), spawn: { x:rideView ? 40.6 : x, y: .01 } };
+      // On the wall she has been called, and holds it out at the edge.
+      const game = new f.Game(chapter, {}, storm ? { flags:['umbrella:ready','family:umbrella-ready'] } : { placed:['box'],flags:['placed:box'] });
       if (rideView) {
         const step = (act = false) => game.frame(1/60,{ x:0,hopHeld:false },{ act,hop:false,helper:false });
         for (let i=0;i<30;i++) step();
@@ -104,6 +112,8 @@ try {
       await view.ready; for (let i = 0; i < 4; i++) draw();
       // Settle the real ride camera, which looks lower than a free-standing preview spawn.
       if (rideView) draw(4);
+      // And the picture of the two of them on the wall, which looks on over the crossing; she crouches at its edge.
+      if (storm) for (let i = 0; i < 40; i++) draw(.1);
       const scene = f.renderedScene();
       const state = () => JSON.stringify({ curr:sim.curr,checkpoint:sim.checkpoint,collected:[...sim.collected],flags:[...sim.flags],placed:sim.placed,ground:chapter.ground });
       const snapshot = () => ({ ...view.info(),state:state(),player:{ x:sim.curr.x,y:sim.curr.y,mode:sim.curr.mode },
@@ -116,6 +126,19 @@ try {
     await picture(page,join(shots,`${name}.png`));
     check(`${name}: actual village assets fit the rendering budget`, initial.models.includes('boot/village') && withinDraws(initial.drawCalls,tier));
     check(`${name}: one church and one separate belfry stand in the scene`, initial.church?.count === 1 && initial.belfry?.count === 1);
+    if (place === 'storm-wall') {
+      // The whole church beside the two of them: in the picture from end to end and under the words, and seen: not
+      // behind her umbrella, the yard's birches, a lamp post, the flood's far bank or the shoemaker's gable. (A ray
+      // through the box round a steep roof or a tapering tower misses it at the corners: all of it seen is about 0.6.)
+      for (const [kind, least] of [['church', .5], ['belfry', .4]]) {
+        const one = initial[kind], [left,bottom,right,top] = one.bounds;
+        check(`${name}: ${kind} stands whole in the picture where Moa hands him her umbrella`,
+          one.shown && left > -.98 && right < .98 && bottom > -.98 && top < .7);
+        check(`${name}: ${kind} is seen there, with nothing of the street before it (${one.visible}/${one.tested} rays)`,
+          one.tested >= 80 && one.visible / one.tested >= least);
+      }
+      check(`${name}: Elof is in the picture with it`, initial.feet?.x > width*.1 && initial.feet?.x < width*.5 && initial.feet?.y < height*.9);
+    }
     if (place.startsWith('shore-')) check(`${name}: real leaf and rider remain framed at the camera-zone boundary`,
       initial.player.mode === 'ride' && initial.feet?.y < height*.9 && initial.head?.y > height*.08 && initial.head?.x > width*.08 && initial.head?.x < width*.92);
     if (place === 'puddle') {

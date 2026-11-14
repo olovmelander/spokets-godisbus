@@ -28,8 +28,9 @@ import { alongAll, flightAt, jump, round, row, slopeRow, timeCard } from '../kit
  *    old one's thought, the crack on the mountain where it lay: "Gamla trägubben låg ensam i flera år."
  *    "Därför skyndar han. Lillgubben är ensam!" He stands at the hollow while it is said, the picture on the
  *    thought (`ss:minnet`): the answer to the night's question is not said on the run.
- * 8. **Lavskrikan:** the jay from Äventyr 1 shelters from the rain. A lingonberry for it, and it shows the
- *    beard lichen down a high root, the way up.
+ * 8. **Lavskrikan:** the jay from Äventyr 1 shelters from the rain. A lingonberry for it, and it flies up over the
+ *    edge of a high root and tugs loose the beard lichen wound up there, which unrolls down the face: the way up
+ *    (`LICHEN`).
  * 9. **Backen:** from the root a gentle slope runs down towards the village, where every window is dark.
  *    A flash shows the old trägubbe far ahead, hurrying down.
  *
@@ -52,6 +53,22 @@ const FLASH_AT = 35.2;
 const HOLLOW = { x: 155.5, y: -1.2 };
 /** Set when the picture has closed in on the hollow and its thought: the words about it wait for that. */
 const SHOWN = 'ss:memory-shown';
+
+/**
+ * The jay brings the beard lichen down (Olov, 14 November 2026: "När man har gett lavskrikan ett lingon och den visar
+ * vägen ska den först flyga upp över kanten. Därefter ska det tydligt framgå visuellt att det är lavskrikan som ordnar
+ * det Elof kan klättra på för att ta sig upp. Nu dyker det som Elof ska klättra på upp direkt när man ger fågeln
+ * lingonet."). Given its berry it swallows it, springs, flies up over the root's edge and lands on the dead snag there,
+ * where the lichen hangs wound up in a bundle; it pecks at it, and its second tug frees it (`loose`, seconds into the
+ * scene): the lichen unrolls down the face (`unroll`), swings and settles, and the jay hops out to the snag's tip, looks
+ * down at him and calls (src/render/jay-lichen.ts, which reads the moments from the climb's `broughtBy`).
+ *
+ * He is free all the while: "Visa vägen, kompis!" is an ordinary bubble, and a child who runs after the bird to the
+ * root's foot sees it tug the lichen down beside him. Nothing is there to climb before it has come down (`down`, the
+ * climb's flag, set as it reaches the ground): it was let down the moment the berry was given. A game taken up after
+ * the berry finds it down (the scene is `live`, and its end sets the flag too).
+ */
+const LICHEN = { scene: 'ss:laven', down: 'ss:lichen', loose: 3.4, unroll: 0.6 };
 
 /**
  * From the high root, the old one far down the hill (Olov, 12 November 2026: "Det kan se bättre ut när trägubben i slutet
@@ -158,6 +175,13 @@ export const stormskog: ChapterData = {
           { at: 2.2, act: 'wave', aim: { x: GAP.klonk, y: 0.6, z: 0 } },
         ],
       },
+    },
+    // The jay, given its berry, brings the beard lichen down the high root (`LICHEN`). He is free in it. Its own call
+    // sounds as it looks down at him from the snag.
+    {
+      id: LICHEN.scene, on: 'jay', live: true, seconds: LICHEN.loose + 2.4,
+      cues: [{ at: LICHEN.loose + LICHEN.unroll, flag: LICHEN.down }],
+      sounds: [{ at: LICHEN.loose + 1.05, sound: 'bird' }],
     },
   ],
   goalX: 205,
@@ -315,14 +339,18 @@ export const stormskog: ChapterData = {
   // The crack on the mountain, left at the hollow once Klonk has shown it.
   thoughtClues: [{ at: { x: 155.5, y: -0.6 }, picture: 'pine-crack', after: 'ss:hollow' }],
   climbs: [
-    // The beard lichen down the high root: the jay shows it once it is his friend.
-    { x: 177.7, bottom: 0, top: 4, exit: 1, needs: 'jay', look: 'lichen' },
+    // The beard lichen down the high root: the jay, once it is his friend, tugs it loose up on the edge, and it is
+    // there to climb when it has unrolled to the ground (`LICHEN`).
+    { x: 177.7, bottom: 0, top: 4, exit: 1, needs: LICHEN.down, look: 'lichen',
+      broughtBy: { scene: LICHEN.scene, jay: 'jay', at: LICHEN.loose, seconds: LICHEN.unroll } },
   ],
   rides: [{ id: 'owl', look: 'owl', ...OWL }],
   // The memory also reaches a child who passes the hollow or resumes beyond it without its receipt:
   // keep its picture and unlock the explanation, just as touching the hollow does on the walking route.
-  // Klonk is awake in a game taken up beyond the gap, as in one that saw him wake.
-  sets: [{ flag: 'ss:hollow', when: ['beat:ss:hollow'] }, { flag: 'ss:woke', when: ['scene:ss:vaknar'] }],
+  // Klonk is awake in a game taken up beyond the gap, as in one that saw him wake. And the lichen hangs down in a
+  // game taken up after the jay had its berry, as in one that saw it brought down.
+  sets: [{ flag: 'ss:hollow', when: ['beat:ss:hollow'] }, { flag: 'ss:woke', when: ['scene:ss:vaknar'] },
+    { flag: LICHEN.down, when: [`scene:${LICHEN.scene}`] }],
   jumps: [
     // Up the ravine's far side, step by step.
     jump({ x: 39.1, y: 0 }, { x: 40, y: 0.8 }),
@@ -425,6 +453,9 @@ export const stormskog: ChapterData = {
     { from: 105, to: 126, zoom: 1.5, lift: 0.9, lead: 3.4 },
     { from: 125, to: 143, zoom: 1.35, lift: 0.4 },
     { from: 150, to: 161, zoom: 1.15, lift: -0.2 },
+    // From the jay to the high root's foot the picture takes in the root's edge four EL up, the snag on it and the
+    // jay's flight up to it, under the words at the picture's top on a phone held sideways too.
+    { from: 169.5, to: 178, zoom: 1.7, lift: 1.5 },
     { from: 164, to: 184.5, zoom: 1.25, lift: 0.3 },
     // From the high root the hill and the dark village below.
     { from: 184.5, to: 210, zoom: 1.45, lift: 0.4, lead: 3.5 },
