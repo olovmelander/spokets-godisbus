@@ -602,8 +602,19 @@ if wanted('schack'):
 # after the name Olympia on the red hall), in the game's own Playpen Sans; no other word, letter or mark. A frame of
 # rough boards, two peeled posts behind it and a little roof of boards over it. 13 wide and 8.5 high, its foot 3 up: low
 # enough that the name is in the picture on a phone held sideways, where the camera looks down onto the water.
+#
+# It stands in the ground (Olov, 14 November 2026: the board "ser ut att svava i luften i stallet for att vara forankrad
+# i marken"). The chapter has it out in the shallows behind the beach stones, lifted so that its name is over the high
+# stone, and its posts ended in the air over the lake. Now it has an islet of its own under it, a hump of the shore
+# with worn grass on it and sand and stones at its waterline, which its posts go well down into, with stones heaped
+# round their feet; and it is braced as a board this big in the wind has to be: a rail under it, two braces up from the
+# posts' feet, a stay out from each post and one back. The chapter puts its origin 2.3 over its ground at 10/13 of its
+# size (src/content/aventyr2/chapters/flarken.ts), so the lake lies SIGN_LAKE under its origin, and the islet's top is
+# SIGN_GROUND under it: a little over the water.
 
 SIGN_LOW = 3.0
+SIGN_GROUND = -2.7
+SIGN_LAKE = -3.8
 
 if wanted('solskylt'):
     part = new_part()
@@ -620,9 +631,118 @@ if wanted('solskylt'):
     SUN = tone('#d9a84e')
     FACE_ = tone('#3a2a1c')
     FRONT = -0.2
-    # Its two posts behind it, peeled and grey, and the boards of its back.
-    for x in (-W + 0.6, W - 0.6):
-        log(part, Vector((x, 0.32, -0.2)), Vector((x, 0.32, HIGH + 0.9)), 0.3, POST, x, sides=8, every=3.0, ends=(None, lit(POST, 1.1)))
+    # Its two posts behind it, peeled and grey, down into the islet's ground, and the boards of its back.
+    POST_X = W - 0.6
+    for x in (-POST_X, POST_X):
+        log(part, Vector((x, 0.32, SIGN_GROUND - 0.9)), Vector((x, 0.32, HIGH + 0.9)), 0.34, POST, x, sides=10, every=1.5, ends=(None, lit(POST, 1.1)))
+    # Its bracing: a rail between the posts under the board, two braces from the posts' feet up to the rail's middle, a
+    # stay from each post out to the ground beside it, and one back from it.
+    BRACE = tone('#6f5a44')
+    TOWARDS = Vector((0.0, -1.0, 0.0))
+    beam(part, Vector((-POST_X - 0.5, 0.02, LOW - 0.85)), Vector((POST_X + 0.5, 0.02, LOW - 0.85)), 0.34, 0.14, BRACE, up=TOWARDS, seed=1.0)
+    for side in (-1.0, 1.0):
+        beam(part, Vector((side * POST_X, -0.04, SIGN_GROUND + 0.35)), Vector((side * 0.25, -0.04, LOW - 0.95)), 0.26, 0.1,
+             lit(BRACE, 0.94 + 0.1 * side), up=TOWARDS, seed=2.0 + side)
+        beam(part, Vector((side * POST_X, 0.32, LOW - 1.3)), Vector((side * (POST_X + 2.0), 0.32, SIGN_GROUND - 0.4)), 0.24, 0.24,
+             lit(BRACE, 0.9), up=TOWARDS, seed=4.0 + side)
+        beam(part, Vector((side * POST_X, 0.6, LOW - 0.2)), Vector((side * POST_X, 3.0, SIGN_GROUND - 0.5)), 0.22, 0.22, lit(BRACE, 0.8), seed=6.0 + side)
+    # The islet it stands on: a low hump out of the lake, closed underneath, its top worn grass, drier in patches and
+    # trodden to earth round the posts, its shore sand, wet and dark at the waterline, and mud under the water.
+    GRASS = tone('#6c7a40')
+    GRASS_DRY = tone('#8c8648')
+    EARTH = tone('#5c5038')
+    SAND_ = tone('#b7a57e')
+    SAND_WET = tone('#6c6450')
+    MUD = tone('#34352f')
+    ISLET_A = 8.8
+    ISLET_B = 3.1
+    ISLET_Y = 0.5
+    AROUND = 48
+    OUT = (0.18, 0.36, 0.54, 0.7, 0.82, 0.92, 1.0, 1.1, 1.26)
+
+    def islet_edge(a):
+        return 1.0 + 0.07 * math.sin(3.0 * a + 0.6) + 0.05 * math.sin(5.0 * a + 2.1) + 0.03 * math.sin(9.0 * a)
+
+    def islet_top(x, y):
+        """How high the islet's top is at a place on it, and how far out towards its shore that is (0 to 1)."""
+        a = math.atan2((y - ISLET_Y) / ISLET_B, x / ISLET_A)
+        out = math.sqrt((x / ISLET_A) ** 2 + ((y - ISLET_Y) / ISLET_B) ** 2) / islet_edge(a)
+        high = SIGN_LAKE + 0.14 + (SIGN_GROUND - SIGN_LAKE - 0.14) * (1.0 - min(1.0, out) ** 2.4)
+        return (high + 0.14 * (noise(x * 0.6, y * 0.6, 1.0) - 0.5) * max(0.0, 1.0 - out), out)
+
+    rings = []
+    tones_ = []
+    for out in OUT:
+        ring = []
+        shades = []
+        for j in range(AROUND):
+            a = TAU * j / AROUND
+            x = ISLET_A * out * math.cos(a) * islet_edge(a)
+            y = ISLET_Y + ISLET_B * out * math.sin(a) * islet_edge(a)
+            if out <= 1.0:
+                z = islet_top(x, y)[0]
+            else:
+                z = SIGN_LAKE - (0.3 if out < 1.2 else 1.0)
+            grass = blend(GRASS, GRASS_DRY, noise(x * 0.5, y * 0.5, 3.0) * 1.3 - 0.1)
+            near_post = min(math.hypot(x - POST_X, y - 0.32), math.hypot(x + POST_X, y - 0.32))
+            grass = blend(EARTH, grass, (near_post - 0.5) / 1.2)
+            if out < 0.6:
+                colour = grass
+            elif out < 0.86:
+                colour = blend(grass, SAND_, (out - 0.6) / 0.26 + 0.25 * (noise(x, y, 5.0) - 0.5))
+            elif out <= 1.0:
+                colour = blend(SAND_, SAND_WET, (out - 0.86) / 0.14)
+            else:
+                colour = MUD
+            ring.append(Vector((x, y, z)))
+            shades.append(lit(colour, 0.9 + 0.2 * noise(x * 2.0, y * 2.0, 7.0)))
+        rings.append(ring)
+        tones_.append(shades)
+    skin(part, rings, tones_, first=(Vector((0.0, ISLET_Y, islet_top(0.0, ISLET_Y)[0])), GRASS), last=(Vector((0.0, ISLET_Y, SIGN_LAKE - 1.0)), MUD))
+    # Stones heaped round each post's foot, and a few along the shore in front: grey granite, each its own.
+    STONE_TONES = (tone('#8a8a84'), tone('#77756f'), tone('#96928a'))
+    heap = []
+    for (k, px) in enumerate((-POST_X, POST_X)):
+        for m in range(6):
+            a = TAU * m / 6.0 + 0.5 * k
+            heap.append((px + 0.72 * math.cos(a), 0.32 + 0.6 * math.sin(a), 0.38 + 0.24 * rnd(m, k + 2.0), 2))
+        heap.append((px + (ISLET_A * 0.2 if k == 0 else -ISLET_A * 0.16), -1.5, 0.34, 1))
+    for m in range(7):
+        heap.append((-6.6 + 2.2 * m + 0.8 * (rnd(m, 9.0) - 0.5), ISLET_Y - ISLET_B * 0.86 + 0.3 * rnd(m, 4.0), 0.2 + 0.16 * rnd(m, 5.0), 1))
+    for (k, (sx, sy, size, detail)) in enumerate(heap):
+        ground = islet_top(sx, sy)[0]
+        made = lump(part, Vector((sx, sy, ground + size * 0.32)), (size * (1.0 + 0.3 * rnd(k, 1.0)), size * (1.0 + 0.3 * rnd(k, 2.0)), size * 0.7), detail, STONE_TONES[k % 3])
+        for v in made:
+            d = v.co - Vector((sx, sy, ground + size * 0.32))
+            swell = 1.0 + 0.16 * (noise(d.x * 3.0 + k, d.y * 3.0, d.z * 3.0) - 0.5)
+            v.co = Vector((sx, sy, ground + size * 0.32)) + d * swell
+            part['paint'][v] = lit(STONE_TONES[k % 3], 0.78 + 0.34 * noise(d.x * 5.0 + k, d.y * 5.0, d.z * 5.0 + 2.0) + 0.1 * max(0.0, d.z / size))
+    # Grass in tufts on it, longest against the posts' feet and the stones: thin blades, pale at their tips.
+    BLADE = tone('#7a8444')
+    BLADE_TIP = tone('#c2b872')
+    tufts = []
+    for (k, px) in enumerate((-POST_X, POST_X)):
+        for m in range(5):
+            a = TAU * m / 5.0 + 0.9 * k + 0.3
+            tufts.append((px + 1.15 * math.cos(a), 0.32 + 0.95 * math.sin(a), 1.7))
+    for m in range(34):
+        tufts.append((ISLET_A * 0.84 * (2.0 * rnd(m, 11.0) - 1.0), ISLET_Y + ISLET_B * 0.66 * (2.0 * rnd(m, 12.0) - 1.0), 0.9 + 0.6 * rnd(m, 13.0)))
+    for (k, (tx, ty, tall)) in enumerate(tufts):
+        for m in range(11):
+            a = TAU * rnd(m, k + 20.0)
+            r = 0.06 + 0.2 * rnd(m * 3.0, k)
+            x = tx + r * math.cos(a)
+            y = ty + r * math.sin(a)
+            (ground, out) = islet_top(x, y)
+            if out > 0.8:
+                continue
+            high = tall * (0.45 + 0.6 * rnd(m * 7.0, k + 1.0))
+            lean = 0.2 + 0.3 * rnd(m * 5.0, k + 2.0)
+            across = Vector((-math.sin(a), math.cos(a), 0.0)) * 0.055
+            foot = Vector((x, y, ground - 0.03))
+            tip = foot + Vector((math.cos(a) * lean * high, math.sin(a) * lean * high, high))
+            shade = lit(BLADE, 0.8 + 0.4 * rnd(m, k + 3.0))
+            face(part, (put(part, foot - across, shade), put(part, foot + across, shade), put(part, tip, BLADE_TIP)))
     block(part, (-W - 0.1, -0.08, LOW - 0.1), (W + 0.1, 0.0, HIGH + 0.1), lit(FRAME_WOOD, 0.85), 1.0, grain=0.05)
     # The painting, a little in front of the boards: the sky down to the ridge, the ridge's wavy top, the lake below it.
     HORIZON = LOW + 8.5 * 0.42
@@ -685,7 +805,7 @@ if wanted('solskylt'):
         beam(part, Vector((-W - 0.8, side * 0.55, HIGH + 0.4 + 0.25)), Vector((W + 0.8, side * 0.55, HIGH + 0.4 + 0.25)), 1.2, 0.08,
              lit(FRAME_WOOD, 0.8), up=Vector((0.0, side * 0.45, 1.0)))
     block(part, (-W - 0.85, -0.08, HIGH + 0.82), (W + 0.85, 0.08, HIGH + 0.98), lit(FRAME_WOOD, 0.7), 5.0, grain=0.0)
-    finish(part, 'solskylt', sharp=40.0, strength=0.5, reach=0.6, floor=0.0, leaf=True)
+    finish(part, 'solskylt', sharp=40.0, strength=0.55, reach=0.8, leaf=True)
     # The name, made as the name on Olympia's hall is (art/blender/olympia.py): Playpen Sans's letters as Blender sets
     # them, flat, a little in front of the lake's paint. A thing of its own, `solskylt-name`, which the game keeps white
     # in the night (src/render/shared-models.ts); none of the kit's shade is baked on it.
@@ -815,92 +935,144 @@ if wanted('grasten'):
     finish(part, 'grasten', sharp=180.0, strength=0.3, reach=0.4)
 
 
-# A thick piece of old pine bark, as the bark is to the game: 2 long, 1.5 high and 1 deep, its origin the middle of its
-# bottom. It stands on its edge with its outside to the camera: old pine bark's plates, grey-brown and each its own, a
-# little domed, between deep fissures that are rust-red where they open; its broken ends and its top show the bark's
-# layers, red-brown, and its back is the inside, smoother and darker. Its top is level, where he stands when it floats.
+# A thick piece of an old pine's bark (Olov, 14 November 2026: "Kan vi forbattra bade designen och texturen pa barken som
+# flyter, sa att den ser snyggare ut?"; it was a block of bulging plates like a wall of field stones). As the bark is to
+# the game: 2 long and 1.5 high as it stands on the planks on its long edge, its outside to the camera, and BARK_T
+# thick; its origin the middle of its bottom. When it goes into the water the game lays it down flat, its outside up,
+# and it floats so (src/content/aventyr2/bark-raft.ts): what is its top on the planks is then its far edge.
+#
+# Its outside is an old pine's: long plates in columns between the long furrows that run up the trunk, each plate built
+# up in steps like a map's contours, its top grey and cinnamon scales in rings with flecks of orange where scales have
+# come off, the steps under them red-brown; the furrows deep, nearly black at the bottom. Its long edges curl outwards a little, as bark
+# does when it dries. Round its broken edge are the bark's layers, each a little further out or in than the next: grey
+# outermost, then red-brown and rust by turns, and palest innermost; its back is its pale inside.
 
-BARK_SEEDS = [(-1.15 + 2.3 * rnd(k, 1.3), -0.15 + 1.8 * rnd(k, 2.9)) for k in range(54)]
+BARK_T = 0.9
+BARK_PLATE = 0.16
+# Its plates stand in columns between long furrows that run up the trunk, each column cut across into plates of its own
+# lengths: where each furrow is at the piece's mid height, and where each column is cut.
+BARK_COLS = 6
+BARK_EDGES = [-1.32 + 2.64 * k / BARK_COLS + (0.12 * (rnd(k, 3.3) - 0.5) if k > 0 and k < BARK_COLS else 0.0) for k in range(BARK_COLS + 1)]
+BARK_CUTS = []
+for k in range(BARK_COLS):
+    cuts = []
+    z = -0.35 + 0.5 * rnd(k, 1.7)
+    while z < 1.95:
+        cuts.append(z)
+        z += 0.72 + 0.6 * rnd(k * 3.1, len(cuts) + 0.5)
+    BARK_CUTS.append(cuts)
+
+
+def bark_furrow(k, z):
+    """Where the furrow between two columns is at a height: it wanders as it goes up."""
+    return BARK_EDGES[k] + 0.05 * math.sin(z * 4.0 + k * 1.9) + 0.04 * (noise(z * 2.5, k * 1.0, 4.0) - 0.5)
 
 
 def bark_plate(x, z):
-    """Where on old pine bark (x, z) is: (how far into its plate, from 0 in a fissure to 1, which plate it is). The
-    plates are cells round scattered middles, a little longer than they are high."""
-    near = 9.0
-    second = 9.0
-    which = 0
-    for k in range(len(BARK_SEEDS)):
-        dx = (x - BARK_SEEDS[k][0]) / 2.1
-        dz = z - BARK_SEEDS[k][1]
-        d = math.sqrt(dx * dx + dz * dz)
-        if d < near:
-            second = near
-            near = d
-            which = k
-        elif d < second:
-            second = d
-    return (max(0.0, min(1.0, (second - near - 0.012) / 0.07)), which)
+    """Where on old pine bark (x, z) is: (how far it is from the nearest furrow, which plate it is on)."""
+    col = BARK_COLS - 1
+    for k in range(BARK_COLS):
+        if x < bark_furrow(k + 1, z):
+            col = k
+            break
+    far = min(x - bark_furrow(col, z), bark_furrow(col + 1, z) - x)
+    row = 0
+    cuts = BARK_CUTS[col]
+    for m in range(len(cuts)):
+        cut = cuts[m] + 0.06 * math.sin(x * 9.0 + m * 2.3 + col)
+        far = min(far, abs(z - cut) * 0.8)
+        if z >= cut:
+            row = m + 1
+    return (max(0.0, far), col * 7 + row)
+
+
+def bark_step(far):
+    """A plate's contours: (which of its three steps a place this far from a furrow is on, from 0 lowest to 2, how far
+    up the riser to it, from 0 to 1)."""
+    t = max(0.0, min(1.0, (far - 0.012) / 0.12)) * 3.0
+    level = min(2.0, math.floor(t))
+    riser = max(0.0, min(1.0, (t - level) / 0.35))
+    return (level, riser * riser * (3.0 - 2.0 * riser))
 
 
 if wanted('barkbit'):
     part = new_part()
-    PLATE = tone('#7a573a')
-    PLATE_PALE = tone('#a08468')
-    LICHEN_ = tone('#7f8468')
-    FISSURE = tone('#24140d')
-    FISSURE_RED = tone('#9a4a24')
-    LAYER = (tone('#7a4228'), tone('#94552f'))
-    INSIDE = tone('#5c4636')
-    NX = 36
-    NZ = 27
-    FRONT_Y = -0.36
-    BACK_Y = 0.5
+    SCALE = (tone('#8f8272'), tone('#a08a76'), tone('#7c7062'), tone('#96785e'))
+    FLECK = tone('#b9774a')
+    STEP = (tone('#6a3a22'), tone('#8c5636'))
+    FURROW = tone('#1e110b')
+    LAYERS = (tone('#7a4a2e'), tone('#b06c3e'), tone('#6a3c22'), tone('#c68048'), tone('#8a4e2a'), tone('#dcbc90'))
+    INSIDE = tone('#caa37a')
+    NX = 58
+    NZ = 42
+    FRONT_Y = -BARK_T * 0.5
+    BACK_Y = BARK_T * 0.5
 
     def outline_at(u, v):
-        """Where on its face (u, v) from 0 to 1 is: its ends broken off unevenly, its bottom uneven, its top level."""
-        left = -1.0 + 0.1 * noise(v * 4.0, 1.0, 2.0) + (0.06 if v > 0.55 and v < 0.75 else 0.0) + 0.08 * v * v
-        right = 1.0 - 0.12 * noise(v * 3.6, 4.0, 1.0) - 0.1 * v * v
-        bottom = 0.05 * noise(u * 5.0, 2.0, 3.0)
-        return (left + (right - left) * u, bottom + (1.5 - bottom) * v)
+        """Where on its face (u, v) from 0 to 1 is: its ends broken off unevenly, its top and bottom level."""
+        left = -0.95 + 0.07 * (noise(v * 5.0, 1.0, 2.0) - 0.5) + 0.05 * (1.0 - v) * v * 4.0 * (noise(v * 2.0, 3.0, 1.0) - 0.3)
+        right = 0.95 + 0.07 * (noise(v * 4.4, 4.0, 1.0) - 0.5) - 0.05 * (1.0 - v) * v * 4.0 * (noise(v * 2.3, 6.0, 2.0) - 0.3)
+        return (left + (right - left) * u, 1.5 * v)
 
     front = []
-    back = []
     for i in range(NX + 1):
-        row_f = []
-        row_b = []
+        row = []
         for j in range(NZ + 1):
             (x, z) = outline_at(i / NX, j / NZ)
-            (inside, which) = bark_plate(x, z)
-            edge = min(i, NX - i, j, NZ - j) / 3.0
-            dome = inside * (0.1 + 0.05 * rnd(which, 4.0)) * min(1.0, edge + 0.35)
-            colour = blend(lit(PLATE, 0.82 + 0.3 * rnd(which, 5.0)), PLATE_PALE, max(0.0, inside - 0.75) * 2.0)
-            if rnd(which, 6.0) < 0.2:
-                colour = blend(colour, LICHEN_, 0.45 * inside)
-            if inside < 0.55:
-                colour = blend(FISSURE, FISSURE_RED, inside / 0.3) if inside < 0.3 else blend(FISSURE_RED, colour, (inside - 0.3) / 0.25)
-            # Its face bulges a little, as a piece of a round trunk's bark does.
-            row_f.append(put(part, Vector((x, FRONT_Y - dome - 0.1 * math.sin(math.pi * i / NX), z)), colour))
-            row_b.append(put(part, Vector((x, BACK_Y - 0.06 * noise(x * 2.0, z * 2.0, 5.0), z)), INSIDE))
-        front.append(row_f)
-        back.append(row_b)
+            (far, which) = bark_plate(x, z)
+            (level, riser) = bark_step(far)
+            relief = BARK_PLATE * ((level + riser) / 3.0) * (0.85 + 0.3 * rnd(which, 4.0))
+            top = level >= 2.0 and riser >= 1.0
+            # On a plate's top its scales lie in rings round it, each a thin flake a little under the one inside it.
+            ring = math.floor(far / 0.045)
+            flake = noise(x * 13.0, z * 8.0, 3.0)
+            if top:
+                relief += 0.012 * min(4.0, ring - 2.0) + 0.012 * (flake - 0.5)
+            # Its long edges curl outwards, and its whole face bulges a little, as a piece off a round trunk does.
+            curl = 0.07 * (max(0.0, 1.0 - z / 0.22) ** 2 + max(0.0, 1.0 - (1.5 - z) / 0.22) ** 2)
+            bulge = 0.06 * math.cos(math.pi * x / 2.3)
+            if top:
+                colour = lit(SCALE[int(which + ring) % 4], 0.84 + 0.3 * flake)
+                if noise(x * 6.0 + which, z * 4.0, 9.0) > 0.68:
+                    colour = blend(colour, FLECK, 0.75)
+            elif far < 0.02:
+                colour = FURROW
+            elif riser < 1.0:
+                colour = blend(FURROW, STEP[int(min(1.0, level))], 0.25 + 0.5 * riser)
+            else:
+                colour = lit(STEP[int(min(1.0, level))], 0.88 + 0.24 * rnd(which, 7.0 + level))
+            row.append(put(part, Vector((x, FRONT_Y - relief - curl - bulge, z)), colour))
+        front.append(row)
     for i in range(NX):
         for j in range(NZ):
             face(part, (front[i][j], front[i + 1][j], front[i + 1][j + 1], front[i][j + 1]))
-            face(part, (back[i][j], back[i][j + 1], back[i + 1][j + 1], back[i + 1][j]))
-    # Round its edge, from the face to the back: the bark's layers, bands of red-brown from the outside in, each its own.
+    # Round its broken edge, from its face to its back: first the plates' own sides, down to the furrows' floor; then the
+    # bark's layers, thin bands of red-brown and rust by turns, each a little further out or in than the next (on its
+    # ends: its top and bottom stay level), the innermost pale; and its pale inside as its back.
     rim = [(i, 0) for i in range(NX)] + [(NX, j) for j in range(NZ)] + [(i, NZ) for i in range(NX, 0, -1)] + [(0, j) for j in range(NZ, 0, -1)]
+    BANDS = len(LAYERS)
     rings = []
     for (i, j) in rim:
         a = front[i][j]
-        b = back[i][j]
-        rings.append([a] + [put(part, a.co.lerp(b.co, t_), LAYER[m]) for (m, t_) in enumerate((0.22, 0.5))] + [b])
+        end = 1.0 if (i == 0 or i == NX) else 0.0
+        way = Vector((-1.0 if i == 0 else (1.0 if i == NX else 0.0), 0.0, 0.0))
+        ring = [a, put(part, Vector((a.co.x, FRONT_Y, a.co.z)), FURROW)]
+        for m in range(BANDS):
+            t_ = (m + 1.0) / BANDS
+            jut = (0.05 * (rnd(m, 3.0) - 0.4) + 0.025 * (rnd(m * 7.0 + i * 0.3, j * 0.3) - 0.5)) * end
+            at = Vector((a.co.x, FRONT_Y + (BACK_Y - FRONT_Y) * t_, a.co.z)) + way * jut
+            ring.append(put(part, at, LAYERS[m]))
+        rings.append(ring)
     for k in range(len(rim)):
         here = rings[k]
         on = rings[(k + 1) % len(rim)]
-        for m in range(3):
-            made = face(part, (here[m], on[m], on[m + 1], here[m + 1]))
-            part['flat'][made] = lit(LAYER[m] if m < 2 else INSIDE, 0.94 + 0.1 * rnd(k, m))
-    finish(part, 'barkbit', sharp=60.0, strength=0.6, reach=0.3)
+        # (The plates' sides keep their corners' own colours, the plate's above and the furrow's dark below.)
+        face(part, (here[0], on[0], on[1], here[1]))
+        for m in range(BANDS):
+            made = face(part, (here[m + 1], on[m + 1], on[m + 2], here[m + 2]))
+            part['flat'][made] = lit(LAYERS[m], 0.9 + 0.2 * rnd(k * 0.37, m))
+    face(part, [ring[BANDS + 1] for ring in reversed(rings)], INSIDE)
+    finish(part, 'barkbit', sharp=28.0, strength=0.65, reach=0.25)
 
 
 # Where the jetty's last planks have gone: the ends of its three rows of planks broken off, splintered and paler where

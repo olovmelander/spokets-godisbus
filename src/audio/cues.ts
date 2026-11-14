@@ -136,6 +136,8 @@ export interface Heard {
   bounces?: number;
   /** The signs he has called at: each one's id, and the word on its button, "callMoa". */
   calls?: readonly { id: string; word: string | undefined }[];
+  /** He sits and slides down a chute (PlayerState.sliding). */
+  sliding?: boolean;
 }
 
 /** What has to be remembered between frames: the candy streak, the stride, and when he last bounced. */
@@ -185,7 +187,10 @@ export function cuesFor(before: Heard, now: Heard, memory: CueMemory): Cue[] {
   if (now.mode === 'free' && before.mode === 'free') {
     if (before.grounded && !now.grounded && now.vy > 3) cues.push({ kind: 'jump' });
     if (!before.grounded && now.grounded) cues.push({ kind: 'land', hard: Math.min(1, Math.max(0, -before.vy) / 10), ...on });
-    if (now.grounded) {
+    // Down a slide's chute: its whoosh as he sits down, a laugh with it, and no footsteps on the way.
+    if (now.sliding && !before.sliding) cues.push({ kind: 'slide' }, { kind: 'giggle' });
+    if (now.sliding) memory.stride = 0;
+    else if (now.grounded) {
       memory.stride += Math.abs(now.vx) * dt;
       if (memory.stride >= STRIDE) {
         memory.stride -= STRIDE;

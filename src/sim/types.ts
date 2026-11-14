@@ -328,6 +328,17 @@ export interface Bouncer {
 }
 
 /**
+ * A playground slide's chute (Flärken; Olov, 14 November 2026: "när han tar sig nedför ska han åka"): a straight stretch
+ * of the ground's outline from its top (`from`) down to its foot (`to`). Heading down it he sits and slides, gathering
+ * speed, and comes off its foot in a little hop (./chute.ts); up it he walks, as up any slope. A toy of the way: it
+ * cannot be missed or failed.
+ */
+export interface Chute {
+  from: Vec;
+  to: Vec;
+}
+
+/**
  * A place where cones roll (plan §4.7, E2): one sets off from `from` every so often and rolls to `to`. One
  * that reaches Elof's legs bowls him into the glitter bubble, which takes him to the last big candy.
  */
@@ -602,6 +613,8 @@ export interface ChapterData {
   }[];
   /** Cranberries to bounce on (plan §4.8, O7). */
   bouncers?: Bouncer[];
+  /** Chutes he slides down sitting (Flärken's slide). */
+  chutes?: Chute[];
   /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */
   challenges?: Challenge[];
   /**
@@ -976,4 +989,9 @@ export interface PlayerState {
   hook: Vec | null;
   /** The word for the button, where the verb's own is too plain: a key of `sv.verbs`. */
   word: string | null;
+  /**
+   * He sits and slides down a chute (ChapterData.chutes): his feet's middle is on its line and he goes its way. To
+   * everything else he is on his own feet on the ground (`mode` is 'free'); the picture sits him down.
+   */
+  sliding?: boolean;
 }

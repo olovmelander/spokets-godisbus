@@ -58,6 +58,18 @@ export const SLIDE_TIME = 1;
 /** Ground too steep to stand on is slid down no faster than this. */
 export const STEEP_SLIDE_SPEED = 3;
 
+/**
+ * A slide's chute (./chute.ts): he sits down going no faster than CHUTE_START along it, gathers CHUTE_PULL EL/s² down
+ * it up to CHUTE_SPEED (faster than he runs), and comes off its foot at CHUTE_OUT along the ground in a hop CHUTE_HOP
+ * high. He sits down only this far (CHUTE_ROOM) or more from its foot: nearer, he walks off it.
+ */
+export const CHUTE_START = 2.2;
+export const CHUTE_PULL = 5.5;
+export const CHUTE_SPEED = 6;
+export const CHUTE_OUT = 4.2;
+export const CHUTE_HOP = 0.16;
+export const CHUTE_ROOM = 0.6;
+
 /** Within this of a hook, Använd throws the lace (plan §4.2). */
 export const LACE_REACH = 4;
 /** How fast the lace pulls him in to its swinging length. */

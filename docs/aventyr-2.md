@@ -323,10 +323,16 @@ The worlds were authored from this design and keep its beats, with these details
   as lace rings and the slide; the picnic table, dry under its top; the torn volleyball net as a bounce up to the
   changing rooms' roofs, and a banging door; wet stones in the shallows with a reed up the high one; seven floating
   reed mats; six jetty posts against the waves; Mamma's SUP held against the broken jetty; up the diving tower to
-  the lookout, where the picture goes out over the lake with him to the little one, caught on a stone where the river
-  begins; at the gap, where the planks have broken off, a round stone that rolls off the edge and sinks, and then the
-  bark pushed three times into the gap ("Bark flyter, precis som Klonk!"). The painted sun board behind the shallows
-  says Flärken (Olov's decision, 9 November 2026). The outlet takes both figures down the river: "Trä flyter!"
+  the lookout, where the picture goes out over the lake with him to the little one, on a piece of bark caught against
+  a stone where the river begins; at the gap, where the planks have broken off, a round stone that rolls off the edge
+  and sinks, and then the bark pushed three times into the gap ("Bark flyter, precis som Klonk!"). The painted sun
+  board behind the shallows says Flärken (Olov's decision, 9 November 2026). The outlet takes both figures down the
+  river: "Trä flyter!"
+  - As of 14 November 2026 (Olov's list): going down the slide he sits and slides (`chutes`, `src/sim/chute.ts`); the
+    net is a net that dips and springs, with a ball tossed in it (`volley-net.ts`); the reed mats are rafts of bog
+    (`gungfly.ts`); the sun board stands braced on an islet of its own; the little one is on the same piece of bark at
+    the lookout, at the outlet and down Älven (`bark-boat.ts`); and the bark raft is a thick piece of pine bark that
+    falls flat into the water and floats so (`bark-raft.ts`).
 - **Älven** (goal at 186 EL, 92 candies): a little raft and a birch leaf down the current; stones and bobbing logs; the rapids
   under the bridge in Bredbyn, where Pappa, at the railing over the bank, lowers his knitted scarf in both hands and
   walks along the bridge lifting Elof over, the scarf hanging straight down to Elof's hands; the beaver's gnawed

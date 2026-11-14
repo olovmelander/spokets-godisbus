@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { Box3, BufferGeometry, DoubleSide, Float32BufferAttribute, Mesh, MeshBasicMaterial, Raycaster, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { flarken } from '../../src/content/aventyr2/chapters/flarken';
+import { BARK } from '../../src/content/aventyr2/bark-raft';
 import { building } from '../../src/content/aventyr2/buildings';
 import { bankShapes, jettiesOf } from '../../src/render/dressing/ground';
 import { drawnPools } from '../../src/render/water';
@@ -141,6 +142,47 @@ describe('Flärkenbadet, made in Blender', () => {
     expect(sunboard.x).toBeGreaterThan(flarken.surfaces!.find((s) => s.kind === 'stone')!.from);
   });
 
+  it('stands the sun board in the ground: on an islet of its own in the lake, its posts down into it (Olov, 14 November 2026)', () => {
+    // It "ser ut att sväva i luften i stället för att vara förankrad i marken": the chapter has it out in the shallows,
+    // lifted so that its name is over the high stone, and its posts ended in the air, three of him over the water.
+    const sunboard = buildings.find((def) => def.kind === 'sunboard')!;
+    const fit = (sunboard.width ?? 12) / 13;
+    const world = (y: number) => (sunboard.y ?? 0) + y * fit;
+    const lake = flarken.water!.find((w) => w.from <= sunboard.x && w.to >= sunboard.x)?.y ?? flarken.water![1]!.y;
+    const board = new Box3().setFromObject(kit.get('solskylt')!);
+    const name = new Box3().setFromObject(kit.get('solskylt-name')!);
+    // The islet goes down under the lake all round, and is wider than the board and deeper than its posts stand.
+    expect(world(board.min.y)).toBeLessThan(lake - 0.5);
+    expect(board.max.x - board.min.x).toBeGreaterThan(name.max.x - name.min.x + 4);
+    for (const side of [-1, 1]) {
+      // Its top a step in front of each post: over the water, and no higher than the jetty's planks.
+      const ground = hit('solskylt', new Vector3(side * 5.9, -1, 0.7), down());
+      expect(ground, `the islet in front of the post at ${side}`).not.toBeNull();
+      expect(world(ground!.y)).toBeGreaterThan(lake + 0.3);
+      expect(world(ground!.y)).toBeLessThan(0.6);
+      // The post is there from the islet's top up to the board: a ray from the camera's side meets it all the way.
+      for (const y of [ground!.y + 0.4, ground!.y + 2, ground!.y + 4]) {
+        const post = hit('solskylt', new Vector3(side * 5.9, y, 20), new Vector3(0, 0, -1));
+        expect(post, `the post at ${side}, ${y.toFixed(1)}`).not.toBeNull();
+        expect(Math.abs(post!.z)).toBeLessThan(1.2);
+      }
+      // And goes on down into the ground: it is still there under the islet's top.
+      const under = hit('solskylt', new Vector3(side * 5.9, ground!.y - 0.4, -20), new Vector3(0, 0, 1));
+      expect(under).not.toBeNull();
+      // A stay out from it to the ground beside it: a ray down, out from the post, meets wood well over the islet.
+      const stay = hit('solskylt', new Vector3(side * 6.9, 6, -0.32), down());
+      expect(stay).not.toBeNull();
+      expect(stay!.y).toBeGreaterThan(ground!.y + 0.8);
+    }
+    // Braced between the posts under the board: a ray up the middle from the islet meets a rail before the board.
+    const middle = hit('solskylt', new Vector3(0, -1.5, 0), new Vector3(0, 1, 0));
+    expect(middle).not.toBeNull();
+    expect(middle!.y).toBeLessThan(name.min.y - 0.6);
+    // The stand-in built in code, until the model has come, has its posts down to an islet too.
+    const standIn = new Box3().setFromObject(building(sunboard).group.children[0]!);
+    expect(standIn.min.y).toBeLessThan(lake - 0.3);
+  });
+
   it('has the stone and the bark of the puzzle at the jetty\'s end as big as they are to the game', () => {
     const size = (name: string) => new Box3().setFromObject(kit.get(name)!);
     const stone = flarken.movers!.find((mover) => mover.id === 'sjon-stone')!;
@@ -157,6 +199,23 @@ describe('Flärkenbadet, made in Blender', () => {
     expect(Math.abs(piece.min.y)).toBeLessThan(0.02);
     expect(Math.abs(piece.max.y - bark.height)).toBeLessThan(0.06);
     expect(Math.abs((piece.max.x - piece.min.x) - bark.width)).toBeLessThan(0.15);
+    // A thick piece of bark, not a block (Olov, 14 November 2026): its outside, towards the camera as it stands, is in
+    // plates between furrows, and it is as thick as the game lays it flat on the water (src/content/aventyr2/bark-raft.ts).
+    expect(BARK.tall).toBeCloseTo(bark.height, 5);
+    expect(piece.min.z).toBeCloseTo(-BARK.back, 2);
+    const faces: number[] = [];
+    for (let x = -0.8; x <= 0.8; x += 0.05) for (const y of [0.4, 0.75, 1.1]) {
+      const face = hit('barkbit', new Vector3(x, y, 20), new Vector3(0, 0, -1));
+      expect(face).not.toBeNull();
+      faces.push(face!.z);
+    }
+    const tops = faces.filter((z) => z > Math.max(...faces) - 0.1);
+    // Its plates' tops, a good part of its face, are where the game takes its top to be when it lies flat.
+    expect(tops.length / faces.length).toBeGreaterThan(0.3);
+    expect(Math.abs(tops.reduce((sum, z) => sum + z, 0) / tops.length - (BARK.thick - BARK.back)), `plates at ${(tops.reduce((sum, z) => sum + z, 0) / tops.length).toFixed(3)}`).toBeLessThan(0.06);
+    // And its furrows are deep: a tenth of him and more under the plates.
+    expect(Math.max(...faces) - Math.min(...faces)).toBeGreaterThan(0.1);
+    expect(faces.filter((z) => z < Math.max(...faces) - 0.08).length).toBeGreaterThan(5);
   });
 
   it('breaks the jetty\'s planks off at both sides of the gap, and puts nothing over it where he could stand', () => {
