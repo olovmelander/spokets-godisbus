@@ -737,11 +737,12 @@ describe('Äventyr 2, Kapitel 5: Flärken', () => {
       const shot = scene.stage!.shots![0]!;
       expect(seen.at).toBeGreaterThanOrEqual(shot.at + (shot.move ?? 1));
       expect(seen.at).toBeLessThan(scene.seconds);
-      // What it shows: the little one on its stone, far out behind the jetty's end, where the lake runs out, until he
-      // has left the tower; and the shot has it in the middle of its picture, either way up.
+      // What it shows: the little one on its bark against a stone, far out behind the jetty's end, where the lake runs
+      // out, and there until the current takes it at the end (Olov, 14 November 2026: tests/unit/flarken-little-one.test.ts);
+      // and the shot has it in the middle of its picture, either way up.
       const sighting = flarken.storm!.sightings!.find((s) => s.on === lookout.needs)!;
       expect(sighting.who).toBe('lillgubbe');
-      expect(sighting.until).toBe('beat:sjon:gap');
+      expect(sighting.until).toBe('sjon:current');
       expect(sighting.at.x).toBeGreaterThan(flarken.checkpoints![CP.far]!.x);
       expect(sighting.z).toBeLessThan(-3);
       expect(Math.abs(sighting.at.x - shot.x)).toBeLessThan(shot.width! / 2);
