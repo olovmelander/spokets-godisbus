@@ -203,6 +203,8 @@ function airPose(vy: number, air: Air, out: Pose): void {
   crouch('legL', 0.45); crouch('legR', 0.38); crouch('kneeL', 0.8); crouch('kneeR', 0.75);
   crouch('footL', 0.35); crouch('footR', 0.37); crouch('armL', -0.5); crouch('armR', -0.4);
   crouch('elbowL', 0.4); crouch('elbowR', 0.35); crouch('spread', 0); crouch('lean', 0.34); crouch('nod', 0.12);
+  // Jumping on the run, he keeps leaning the way he goes, as far as he is going, instead of straightening up in the air.
+  out.lean += 0.14 * m;
 }
 
 /**
@@ -268,7 +270,10 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     const bent = 0.08 + (0.5 + 0.45 * run) * effort;
     out.elbowL = bent - swing * 0.12; out.elbowR = bent + swing * 0.12;
     // (Landing, the trunk gives a moment after the legs: createPlayerMotion adds it.)
-    out.lean = (0.1 + 0.08 * run) * pace; out.nod = -0.05 * pace;
+    // Running, he leans well into it, about twenty degrees, and holds his head up against it, looking ahead: his
+    // straight legs reach far ahead of him with each step, and with the trunk nearer upright he looked to lean back (Olov,
+    // 14 November 2026: "Elof lutar så mycket bakåt när han springer").
+    out.lean = (0.1 + 0.25 * run) * pace; out.nod = -(0.05 + 0.13 * run) * pace;
     out.twist = swing * (0.3 + 0.16 * run);
     // Cancel the whole shin pitch during recovery; leaving ten percent tips the long toe into the ground.
     plantFeet(out, phase, 1);
