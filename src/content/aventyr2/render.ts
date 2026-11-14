@@ -52,6 +52,7 @@ import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { jettyWavesExtra } from '../../render/jetty-waves';
 import { teamBenchesExtra } from './team-benches';
+import { fieldBoulder } from './field-boulder';
 import { hazelExtra } from './hazel';
 import { ballBag } from './ball-bag';
 import { barnChimney } from './barn-chimney';
@@ -3146,17 +3147,9 @@ function barnDoor(mover: Mover): Group {
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
-    boulder: (mover) => {
-      // A round field stone, as wide and as high as the thing it is to the simulation, with moss on its shaded side.
-      const group = new Group();
-      const stone = new Mesh(rock(Math.round(mover.width * 37), mover.width / 2 * 1.06, mover.height / 2 * 1.04, mover.width * 0.46), solid('#7a7e80', 0.86, { flatShading: true }));
-      stone.position.y = mover.height / 2;
-      stone.castShadow = true;
-      const moss = new Mesh(rock(Math.round(mover.width * 41), mover.width * 0.3, mover.height * 0.2, mover.width * 0.3), solid('#55703e', 0.95, { flatShading: true }));
-      moss.position.set(-mover.width * 0.16, mover.height * 0.86, 0.04);
-      group.add(stone, moss);
-      return group;
-    },
+    // A field stone, as wide and as high as the thing it is to the simulation (./field-boulder.ts): Billsta's, under the
+    // seesaw, whose trunk lies in a trough across its top, a little behind the path.
+    boulder: (mover) => fieldBoulder({ width: mover.width, height: mover.height, depth: mover.width * 1.45, back: -0.14, saddle: { z: -0.34, deep: 0.12, wide: 0.26 }, seed: 3 }),
     riverLog: (mover) => {
       // A sawn log floating half under, its top level where he stands (./river-log.ts): the kit's fallen branch, fitted
       // to the thing's box, lay 0.47 to 0.78 under his feet.
