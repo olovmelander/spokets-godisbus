@@ -63,7 +63,8 @@
     "share": 1,
     "tagHeard": false,
     "takes": 1,
-    "ok": true
+    "ok": true,
+    "spoken": "Stårmkvällen. lördag kväll"
   },
   "biMorfarHere": {
     "key": "biMorfarHere",
@@ -1602,8 +1603,9 @@
     "heard": "Stormnatten",
     "share": 1,
     "tagHeard": false,
-    "takes": 2,
-    "ok": true
+    "takes": 1,
+    "ok": true,
+    "spoken": "Stårmnatten"
   },
   "sgPumpkin": {
     "key": "sgPumpkin",
@@ -1812,7 +1814,8 @@
     "share": 1,
     "tagHeard": false,
     "takes": 1,
-    "ok": true
+    "ok": true,
+    "spoken": "Stårmgården. klockan åtta"
   },
   "ssDark": {
     "key": "ssDark",
@@ -2160,11 +2163,12 @@
     "speaker": "storyteller",
     "text": "Stormskogen. klockan nio",
     "tag": "[warm]",
-    "heard": "Stormskogen klockan nio",
+    "heard": "Stormskogen. Klockan nio",
     "share": 1,
     "tagHeard": false,
     "takes": 1,
-    "ok": true
+    "ok": true,
+    "spoken": "Stårmskogen. klockan nio"
   },
   "sbDark": {
     "key": "sbDark",

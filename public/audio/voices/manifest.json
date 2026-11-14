@@ -903,11 +903,12 @@
   "scene_stormkvall": {
     "speaker": "storyteller",
     "text": "Stormkvällen. lördag kväll",
+    "spoken": "Stårmkvällen. lördag kväll",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:42:11.726Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "biMorfarHere": {
     "speaker": "morfar",
@@ -1479,11 +1480,12 @@
   "scene_a2title": {
     "speaker": "storyteller",
     "text": "Stormnatten",
+    "spoken": "Stårmnatten",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:28.482Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "sgPumpkin": {
     "speaker": "elof",
@@ -1650,11 +1652,12 @@
   "scene_stormgard": {
     "speaker": "storyteller",
     "text": "Stormgården. klockan åtta",
+    "spoken": "Stårmgården. klockan åtta",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:36.675Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "ssDark": {
     "speaker": "elof",
@@ -1938,11 +1941,12 @@
   "scene_stormskog": {
     "speaker": "storyteller",
     "text": "Stormskogen. klockan nio",
+    "spoken": "Stårmskogen. klockan nio",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:51.959Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "sbDark": {
     "speaker": "elof",

@@ -8,7 +8,9 @@ import { heard, shown, stillSaid } from '../../src/audio/recorded';
  * over the new words (src/audio/recorded.ts, read by vite.config.ts). Punctuation is not heard, so it may change.
  */
 const VOICES = new URL('../../public/audio/voices/', import.meta.url);
-const manifest = JSON.parse(readFileSync(new URL('manifest.json', VOICES), 'utf8')) as Record<string, { text: string }>;
+const manifest = JSON.parse(readFileSync(new URL('manifest.json', VOICES), 'utf8')) as Record<string, { text: string; spoken?: string }>;
+/** Lines the recorder sends spelled as they sound (scripts/record-voices.mjs). */
+const SPOKEN = JSON.parse(readFileSync(new URL('../../scripts/voices-spoken.json', import.meta.url), 'utf8')) as Record<string, string>;
 const recorded = readdirSync(VOICES).filter((file) => file.endsWith('.mp3')).map((file) => file.slice(0, -4));
 
 describe('the recorded voices', () => {
@@ -25,5 +27,19 @@ describe('the recorded voices', () => {
     }
     // Olov's full-playthrough edits may rewrite any number of lines. Every file above is still checked:
     // a stale recording must remain silent until a matching replacement is explicitly commissioned.
+  });
+
+  // Olov, 14 November 2026: the narrator's "Stormkvällen", "Stormgården" and "Stormskogen" sounded wrong: "storm" was
+  // said as "stor", with a long closed vowel. Sent as "Stårm…" it is said right; the line shown keeps its own spelling.
+  it('records a line spelled by sound with the same words, and still plays it over the line as written', () => {
+    expect(Object.keys(SPOKEN)).toEqual(expect.arrayContaining(['scene_stormkvall', 'scene_stormgard', 'scene_stormskog']));
+    for (const [key, sound] of Object.entries(SPOKEN)) {
+      const line = shown(key);
+      expect(line, `${key}: no such line`).toBeDefined();
+      expect(heard(sound).split(' ').length, key).toBe(heard(manifest[key]!.text).split(' ').length);
+      expect(manifest[key]!.spoken, `${key}: recorded before its spelling by sound`).toBe(sound);
+      expect(stillSaid([key], manifest), key).toEqual([key]);
+    }
+    for (const key of ['scene_stormkvall', 'scene_stormgard', 'scene_stormskog', 'scene_a2title']) expect(SPOKEN[key]).toMatch(/^Stårm/);
   });
 });
