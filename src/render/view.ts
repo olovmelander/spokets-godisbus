@@ -91,6 +91,7 @@ import { saturdayBag } from './saturday-bag';
 import { createGhostThought } from './ghost-thought';
 import { drawOverFrame, overFrame } from './over-frame';
 import { drawnWhile } from './idle';
+import type { Afoot, Floats } from './floating-ride';
 import { buildGhostLace, letDown } from './ghost-lace';
 import { buildVerbMarks } from './verb-marks';
 import { MODEL_TURN, blinkEyes, createGhostMotion, eyeNodes } from './ghost-model';
@@ -1341,6 +1342,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     const surface = water.surfaceAt(x);
     // A walked ride (Ride.ground): he goes on his own feet, wading where it goes through the water, and is drawn walking.
     const walkedRide = curr.mode === 'ride' && carriers.some((c) => c.ride.ground && x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5);
+    // Onto a raft that lies at the bank, and off it at the far bank, he goes on his own feet too (./floating-ride.ts).
+    const afoot = curr.mode === 'ride' && !walkedRide && carriers.some((c) => x >= c.ride.from.x - 0.5 && x <= c.ride.to.x + 0.5 && (c.prop?.userData.afoot as Afoot | undefined)?.(x));
     if (surface !== null && dt > 0 && !calmStory) {
       const feet = walkedRide ? y : curr.standY ?? y;
       const wading = (walkedRide || curr.mode === 'free' && curr.grounded) && feet > surface - 0.7 && feet < surface + 0.3;
@@ -1351,7 +1354,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         if (!prev.grounded && !walkedRide) water.ripple(x, 0.05, 1.1);
       } else rippleWalked = 0;
       if (curr.mode === 'bubble' && prev.mode !== 'bubble' && y < surface + 0.6) water.ripple(x, 0.05, 1.4);
-      const afloatHere = curr.mode === 'ride' && !walkedRide && Math.abs(y - surface) < 0.8 && Math.abs(curr.x - prev.x) > 1e-4;
+      const afloatHere = curr.mode === 'ride' && !walkedRide && !afoot && Math.abs(y - surface) < 0.8 && Math.abs(curr.x - prev.x) > 1e-4;
       rippleWake = afloatHere ? rippleWake + dt : 0.3;
       if (rippleWake >= 0.3) {
         rippleWake = 0;
@@ -1413,6 +1416,16 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
         c.prop.scale.setScalar(1);
         drawnWhile(c.prop, held.shown);
         if (held.seat) { craneSeat.copy(held.seat); craneHeld = true; }
+        continue;
+      }
+      // What floats places itself (./floating-ride.ts): at the bank where he boards it, under him, and at the far bank after.
+      const floats = c.prop.userData.floats as Floats | undefined;
+      if (floats) {
+        const boards = chapter.spots?.find((spot) => spot.ride === c.ride.id);
+        c.prop.scale.setScalar(1);
+        drawnWhile(c.prop, true);
+        floats({ ride: c.ride, ridden: c === carrier, boarded: !!boards && flags.has(boards.id), x, y, clock, dt, calm: calmStory,
+          surface: (at) => water.surfaceAt(at), ripple: (at, z, strength) => water.ripple(at, z, strength) });
         continue;
       }
       // What he is told to step onto lies ready where he boards it, from when it is ready until he does: Moa's cap in
@@ -1714,7 +1727,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
     // His model's own legs (Rig.legs), where it has come: its feet hold the ground as he walks.
     const ownLegs = (playerBody as Partial<Pick<Rig, 'legs'>>).legs;
     // Hang by his hands from the scarf, and from Moa's umbrella; walk on his own feet on the way home.
-    const moving = bathroom ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : onScarf || umbrellaHung ? { ...curr, mode: 'swing' as const } : walkedRide ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
+    const moving = bathroom ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : onScarf || umbrellaHung ? { ...curr, mode: 'swing' as const } : walkedRide || afoot ? { ...curr, mode: 'free' as const, grounded: true, atEdge: false } : curr;
     // Norrsken's continuous rescue line already owns both grips and the loop around the carving.
     const pullIndex = rescue ? -1 : movers.findIndex((m, i) => m.t !== undefined && m.t < 1 && (m.stop ?? 0) > 0 && chapter.movers?.[i]?.verb === 'pull' && !chapter.movers[i]!.on);
     const pullMover = pullIndex >= 0 ? movers[pullIndex]! : null;

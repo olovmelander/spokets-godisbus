@@ -260,9 +260,11 @@ export interface Ride {
   look?: RideLook;
   /**
    * Over this stretch it goes low, his feet at most `y` high, and climbs again after it (./ride-path.ts): the owl over
-   * the shallows in Älven, so that what lies there is in reach of the stick.
+   * the shallows in Älven, so that what lies there is in reach of the stick. `in` and `out` are how far before the
+   * stretch it comes down to it and how far after it it climbs back, where that is not a bird's swoop: a raft's deck,
+   * which he steps down onto at one bank and up off at the other.
    */
-  skim?: { from: number; to: number; y: number };
+  skim?: { from: number; to: number; y: number; in?: number; out?: number };
   /**
    * He walks it on his own feet, along this ground, and is not carried through the air: where his feet are, point to
    * point along the way (the bed of the shallows where he wades). It takes the arc's place, and the stick does not

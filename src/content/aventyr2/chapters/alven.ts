@@ -3,6 +3,7 @@ import type { Candy, ChapterData, Flyby, GhostPerch, Jump, Mover, Vec } from '..
 import type { Chooser } from '../context';
 import { alongAll, hopCandy, round, row, sighting, slopeRow, timeCard } from '../kit';
 import { OTTER_REACH } from '../otter';
+import { RAFT_SIZE } from '../river-raft';
 
 /**
  * Äventyr 2, Kapitel 6: Älven (docs/aventyr-2.md), down the river by night. Units: EL. At Flärken the lake's outlet
@@ -59,8 +60,18 @@ interface Stone {
 const OUTLET: Stone = { from: -3, to: 14, y: 0 };
 const GRAVEL: Stone = { from: 29.4, to: 37, y: 0.3 };
 const BANK: Stone = { from: 49.6, to: 53, y: 0 };
-/** The raft: low on the water, steered only a little, from bank to bank. */
-const RAFT = { from: { x: 13.4, y: 0 }, to: { x: 30.4, y: GRAVEL.y }, rise: 0.25, time: 5.4, corridor: 0.3 };
+/**
+ * The raft: in the water, steered only a little, from bank to bank. It floats (../river-raft.ts; Olov, 14 November
+ * 2026: "Det ser ut som om flotten i början svävar ovanför vattnet i stället för att flyta på det"): it lies in the
+ * water at the outlet's bank, and its deck is `freeboard` over the river. So his feet are at the deck all the way over
+ * the water (`skim`): he steps down onto it past the bank's edge and up off it onto the gravel bank, over about an EL
+ * at each end. Its arc rose 0.44 over the bank before, and the raft under his feet hung over the water.
+ */
+const RAFT_DECK = round(CURRENT + RAFT_SIZE.freeboard);
+const RAFT = {
+  from: { x: 13.4, y: 0 }, to: { x: 30.4, y: GRAVEL.y }, rise: 0.1, time: 5.4, corridor: 0.3,
+  skim: { from: round(OUTLET.to + 0.75), to: round(GRAVEL.from - 0.8), y: RAFT_DECK, in: 0.95, out: 0.95 },
+};
 /**
  * The arc the trail takes over the eddies, from the gravel bank's end to the bank after them: where the birch leaf
  * once went. Its candies stay where they were, over the turning logs, so that a saved game's candies keep their places.
@@ -142,6 +153,14 @@ const STICK = { x: 119.5, bottom: STUMP2.y, top: LODGE.y, exit: 1 as const, look
  * step each stands on (tests/unit/alven-beaver-place.test.ts).
  */
 const GNAWED = { z: -2, sunk: 0.3, turn: 0.36, scale: 0.85 };
+/**
+ * Where the frog sits on the far bank: on the moss between the sawn stump and the first step, between two of the
+ * trail's sweets and just behind the path, where nothing stands in front of it and it is in the picture's focus. It
+ * hops at most 0.6 EL to either side when he comes (../render.ts, `kit`): from here both ways land on open moss, clear
+ * of the stump, the sweets and the step. (In front of the path it hid his boots and was out of focus; left of the stump
+ * the felled branch, the grass and the lollipop stand round it.)
+ */
+const FROG = { x: 114.7, z: -0.7 };
 
 // 5. The lake: its shore, the owl, the otter's stone out in the shallows, and the far shore.
 const SHORE: Stone = { from: SLOPE_END, to: 137.4, y: 0 };
@@ -194,6 +213,14 @@ const KIDS = {
   /** Where Elof stands as the trail runs out, for them to look at. */
   elof: { x: 181.6, y: ON.y + 0.9, z: 0 },
 };
+/**
+ * The family's car on the road by the river, its tail towards where he comes from and its nose towards Billsta, and the
+ * birch that stands by the road behind it. The car is 29 EL long (../buildings.ts, `FAMILY_CAR`), so its tail is at
+ * x 180.5: the birch stands clear of it, on Moälven's bank across the stream that joins the river (`MOALVEN`), not in
+ * the stream's own water (`CREEK_WAY`), where the forest's own trees begin (`treeGaps`).
+ */
+const CAR = { x: 195, z: -17 };
+const BIRCH_BY_ROAD = { x: 169.6, z: -19 };
 /** Where the old one is seen on his log: on the bank after the eddies, the stones and their logs ahead. */
 const OLD_SEEN = 50.4;
 /**
@@ -469,16 +496,20 @@ export const alven: ChapterData = {
       { kind: 'birch', x: 86, z: -15 },
       // The beaver's lodge, a heap of sticks behind the stumps and the slope he climbs.
       { kind: 'lodge', x: 122.4, z: -7, y: CURRENT, width: 18, height: 7.4 },
-      { kind: 'birch', x: 181, z: -18 },
+      // A birch by the road, well behind the car's tail: at x 181 it stood up through the boot (Olov, 14 November 2026:
+      // "I slutet står bilen så att bakluckan hamnar mitt i trädet"; tests/unit/alven-car-place.test.ts).
+      { kind: 'birch', x: BIRCH_BY_ROAD.x, z: BIRCH_BY_ROAD.z },
       // The road along the river, where the family's car stops for him at the end.
-      { kind: 'car', x: 195, z: -17, lit: 'beat:al:billsta' },
+      { kind: 'car', x: CAR.x, z: CAR.z, lit: 'beat:al:billsta' },
     ],
   },
   // Far across the lake a moose may come down to the water.
   life: [{ kind: 'moose', from: 128, to: 137 }],
   decor: [
-    // A frog on the bank, by the reeds: between two of the trail's sweets, where one does not hide it.
-    { look: 'kit', word: 'groda', at: { x: 112.6, y: 0 }, z: -1.3, turn: 0.5, scale: 0.8 },
+    // A frog on the bank's moss, just behind the path, between two of the trail's sweets and past the sawn stump: seen
+    // whole. It sat at the stump's own x, a step in front of the stump's middle, so that it stood in the stump (Olov,
+    // 14 November 2026: "står en groda mitt inne i stubben"; `FROG`, tests/unit/alven-frog-place.test.ts).
+    { look: 'kit', word: 'groda', at: { x: FROG.x, y: 0 }, z: FROG.z, turn: 0.5, scale: 0.8 },
     // The beaver itself, on the bank by its stumps, gnawing a stick: it looks at Elof, thumps its tail and goes into its
     // lodge at its foot; it comes out at the very top of the lodge as he comes up onto the roof, and swims out over the
     // lake once he is down by it (../beaver.ts).
@@ -511,7 +542,9 @@ export const alven: ChapterData = {
     // Behind the beaver, so its paws, stick and broad tail are seen as he comes off the bridge.
     { look: 'reed', at: { x: 113, y: 0 }, z: -6 },
     ...[165.4, 177.4, 190.4].map((x) => ({ look: 'reed' as const, at: { x, y: ON.y } })),
-    ...[15.2, 48.8].map((x) => ({ look: 'reed' as const, at: { x, y: CURRENT } })),
+    // (The first stood where the raft lies moored now, and in its lane: it stands behind the lane, by the bank.)
+    { look: 'reed', at: { x: 14.5, y: CURRENT }, z: -1.7 },
+    { look: 'reed', at: { x: 48.8, y: CURRENT } },
     { look: 'reed', at: { x: 164.4, y: LAKE } },
   ],
   // Klonk is always a little ahead. Over open water he floats, being wood; elsewhere he waits on firm ground.
@@ -605,8 +638,10 @@ export const alven: ChapterData = {
   ],
   cameras: [
     { from: -3, to: 13, zoom: 1.2 },
-    // Down the current the picture is wide and looks ahead, so the next bank is in it.
-    { from: 13, to: 52, zoom: 1.45, lift: 0.3, lead: 3.4 },
+    // Down the current the picture is wide and looks ahead, so the next bank is in it. On the raft his feet are at its
+    // deck, under the banks' height, and a ride's picture is two EL under him: lifted, so that the eye stays over the
+    // water as it was (it went under the surface, and the river was seen from below).
+    { from: 13, to: RAFT.to.x, zoom: 1.45, lift: 0.85, lead: 3.4 },
     { from: 52, to: 82, zoom: 1.3, lift: 0.2 },
     // At the rapids the bridge is in the picture, the scarf coming down from Pappa's hands at its railing (on a big
     // screen his hands too), and the arc he is lifted along.
@@ -616,6 +651,8 @@ export const alven: ChapterData = {
     { from: 132, to: 168, zoom: 1.6, lift: 1.4, lead: 3.4 },
     // At the end the river widens, and the family's car waits on the road.
     { from: 168, to: ON.to, zoom: 1.55, lift: 0.8 },
+    // The gravel bank and the eddies after the raft: as the current's picture was, on his own feet.
+    { from: RAFT.to.x, to: 52, zoom: 1.45, lift: 0.3, lead: 3.4 },
   ],
   candy: [
     // 0. the outlet's bank, up to the raft
