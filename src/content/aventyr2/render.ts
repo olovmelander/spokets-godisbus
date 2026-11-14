@@ -37,6 +37,7 @@ import { createGrandparent, type Going, type Grandparent } from './grandparents'
 import { ELDER_BACK, afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
+import { riverRaft } from './river-raft';
 import { beaverLife } from './beaver';
 import { otterLife } from './otter';
 import { installRiverCreatures } from './river-creatures';
@@ -2539,7 +2540,8 @@ function rideLooks(): Record<string, (look: RideLook) => Object3D | null> {
     owl: () => { const g = new Group(); g.name = 'owl-ridden'; const bird = owl(true); bird.position.y = 0.5; g.add(bird); return g; },
     // The ball Bertil kicks, under his feet as it flies.
     football: () => { const g = new Group(); const b = football(0.8); b.position.y = -0.84; g.add(b); return g; },
-    raft: () => { const g = new Group(); g.add(raft(3.2, 0.5)); g.children[0]!.position.y = -0.5; return g; },
+    // Älven's raft floats: it places itself, at the bank, under him and at the far bank (./river-raft.ts).
+    raft: () => riverRaft(() => course),
   };
 }
 
