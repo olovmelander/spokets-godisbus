@@ -1090,16 +1090,22 @@ finish(part, 'jattekotte', sharp=50.0, strength=0.6, reach=0.3, recalc=False)
 
 # Stock: the fallen spruce he nearly catches the ghost on. The block is 5 long and 0.8 high. Bark in plates
 # with dark furrows between them, moss along its top, four broken boughs, a broken root end and a torn end.
+# Olov, 15 November 2026: "Kan vi ge tradet som ligger pa marken efter att pappa skjutit over Elof pa gungbradan
+# battre design och textur". It read as a smooth brown pipe: its bark was painted on 44 rings of 17 points. Now on more
+# than twice as many each way, the plates stand out of deep furrows in a spruce's grey-brown with rust-red scales, grey
+# lichen grows in patches, the moss of its top runs down its sides in tongues, three bracket fungi stand out of its
+# front, and stubs of its lower boughs stick out round it, as well as the four broken ones at its back.
 part = new_part()
 LOG_FROM = -0.25
 LOG_TO = 5.05
 LOG_DEEP = 1.9
 LOG_HIGH = 0.62
 LOG_AXIS = (-0.2, 0.2)
-ALONG_LOG = 44
-# Round it from under its front to the back of its top: more rows where the bark shows, fewer in the moss.
-ROUND_LOG = (-42.0, -28.0, -15.0, -4.0, 6.0, 15.0, 24.0, 33.0, 42.0, 51.0, 60.0, 70.0, 82.0, 94.0, 106.0, 120.0, 135.0)
-GREY_LICHEN = tone('#9aa08e')
+ALONG_LOG = 100
+# Round it from under its front to the back of its top, evenly.
+ROUND_LOG = tuple(-42.0 + 177.0 * k / 34.0 for k in range(35))
+GREY_LICHEN = tone('#a7ad9a')
+BARK_RUST = tone('#8a5434')
 rings = []
 tones = []
 for i in range(ALONG_LOG + 1):
@@ -1109,17 +1115,25 @@ for i in range(ALONG_LOG + 1):
     for j in range(len(ROUND_LOG)):
         angle = math.radians(ROUND_LOG[j])
         up = math.sin(angle)
-        # Plates of bark, longer along the trunk than round it, with a furrow where two meet.
-        plate = abs(noise(x * 0.75 + 3.0 + angle * 0.9, angle * 12.0 + 0.25 * math.sin(x * 2.7), 0.5) - 0.5) * 2.0
-        furrow = max(0.0, 1.0 - plate / 0.2)
-        moss = max(0.0, min(1.0, (up - 0.8) / 0.14)) * min(1.0, 0.5 + 0.9 * noise(x * 1.3, angle * 2.0, 5.0))
-        swell = 1.0 + (0.035 - 0.085 * furrow + (noise(x * 5.0, angle * 14.0, 2.0) - 0.5) * 0.05) * (1.0 - moss) + moss * 0.025
+        # Scales of bark, as long round it as along it on its surface (`round_at`, the way round it in EL), with a
+        # crack where two meet: irregular plates, not long stripes.
+        round_at = angle * LOG_DEEP * 0.75
+        plate = abs(noise(x * 2.6 + 3.0, round_at * 2.6 + 0.2 * math.sin(x * 2.7), 0.5) - 0.5) * 2.0
+        plate = min(plate, abs(noise(x * 5.5 + 11.0, round_at * 5.5, 4.5) - 0.5) * 2.6)
+        furrow = max(0.0, 1.0 - plate / 0.22)
+        # The moss of its top, running down its sides in tongues.
+        reach = 0.62 + 0.3 * noise(x * 1.6 + 2.0, 0.5, 3.0)
+        moss = max(0.0, min(1.0, (up - reach) / 0.12)) * min(1.0, 0.5 + 0.9 * noise(x * 1.3, angle * 2.0, 5.0))
+        cushion = moss * (0.03 + 0.04 * noise(x * 4.1, angle * 6.0, 8.0))
+        swell = 1.0 + (0.06 - 0.16 * furrow + (noise(x * 6.0, angle * 18.0, 2.0) - 0.5) * 0.07) * (1.0 - moss) + cushion
         thick = 1.05 - 0.09 * i / ALONG_LOG
         ring.append(Vector((x, LOG_AXIS[0] - LOG_DEEP * thick * swell * math.cos(angle), LOG_AXIS[1] + LOG_HIGH * swell * up)))
-        bark = blend(BARK, BARK_PALE, noise(x * 1.2 + angle, angle * 11.0, 7.0) * 1.4 - 0.2)
-        bark = blend(bark, GREY_LICHEN, max(0.0, noise(x * 0.9 + 5.0, angle * 3.0, 1.0) - 0.66) * 1.6)
-        bark = blend(bark, BARK_DARK, furrow * 0.9)
-        green = blend(MOSS_DEEP, MOSS_BRIGHT, noise(x * 2.3, angle * 5.0, 9.0))
+        bark = blend(BARK, BARK_PALE, noise(x * 1.6 + angle, angle * 13.0, 7.0) * 1.4 - 0.2)
+        # Rust-red scales where the grey has flaked off.
+        bark = blend(bark, BARK_RUST, max(0.0, noise(x * 2.4 + 9.0, angle * 9.0, 4.0) - 0.55) * 2.2)
+        bark = blend(bark, GREY_LICHEN, max(0.0, noise(x * 1.1 + 5.0, angle * 3.5, 1.0) - 0.6) * 1.8)
+        bark = blend(bark, BARK_DARK, furrow * 0.95)
+        green = blend(MOSS_DEEP, MOSS_BRIGHT, noise(x * 2.3, angle * 5.0, 9.0) * 0.7 + noise(x * 7.0, angle * 14.0, 6.0) * 0.3)
         shades.append(blend(bark, green, moss))
     rings.append(ring)
     tones.append(shades)
@@ -1151,6 +1165,39 @@ for x, lean, back, long, thick in ((0.9, -0.35, 0.5, 0.95, 0.1), (2.2, 0.3, 0.75
     bent = way + Vector((lean * 0.3, 0.1, 0.0))
     tube(part, [root, root + way * (long * 0.5), root + bent * (long * 0.9), root + bent * long + Vector((0.03, 0.0, 0.05))],
          [thick * 1.3, thick, thick * 0.8, thick * 0.3], [BARK_DARK, BARK, BARK_PALE, WOOD_PALE], 6)
+
+
+def log_at(x, degrees, out=0.0):
+    """A point on the log's bark at x, `degrees` round from its front, `out` off it."""
+    angle = math.radians(degrees)
+    thick = 1.05 - 0.09 * (x - LOG_FROM) / (LOG_TO - LOG_FROM)
+    return Vector((x, LOG_AXIS[0] - (LOG_DEEP * thick + out) * math.cos(angle), LOG_AXIS[1] + (LOG_HIGH + out * 0.33) * math.sin(angle)))
+
+
+# Stubs of its lower boughs, broken short, sticking out round its front and top.
+for x, degrees, long, thick in ((0.55, 38.0, 0.32, 0.07), (1.45, 8.0, 0.24, 0.06), (2.65, 52.0, 0.4, 0.075), (3.6, 20.0, 0.28, 0.06), (4.55, 44.0, 0.26, 0.055)):
+    root = log_at(x, degrees, -0.04)
+    tip = log_at(x + 0.08, degrees, long)
+    tube(part, [root, root + (tip - root) * 0.55, tip], [thick, thick * 0.8, thick * 0.55], [BARK_DARK, BARK, WOOD_PALE], 6)
+# Bracket fungi on its front, as the red-belted conk grows on a dead spruce: shelves tipped up towards the camera, so
+# that it sees their tops, dark at the heart, with a rust-red belt and a cream rim, a pale underside, and a thick edge.
+# (The kit's material is drawn from both sides.)
+FUNGUS = (tone('#3a2a20'), tone('#a8482c'), tone('#d88a4c'), tone('#efe2c4'), tone('#e2d6b8'))
+for x, degrees, wide in ((1.05, -2.0, 0.5), (1.48, -12.0, 0.34), (3.95, 8.0, 0.56)):
+    base = log_at(x, degrees, -0.05)
+    STEPS = 10
+    def shelf_at(k, reach, drop):
+        t = math.pi * k / STEPS
+        return base + Vector((-math.cos(t) * reach * 0.9, -math.sin(t) * reach * 0.55, math.sin(t) * reach * 0.62 - drop))
+    heart_top = put(part, base + Vector((0.0, 0.0, 0.02)), FUNGUS[0])
+    heart_under = put(part, base + Vector((0.0, 0.0, -0.07)), FUNGUS[4])
+    band = [put(part, shelf_at(k, wide * 0.55, -0.02), FUNGUS[1]) for k in range(STEPS + 1)]
+    rim = [put(part, shelf_at(k, wide, 0.0), blend(FUNGUS[2], FUNGUS[3], 0.6)) for k in range(STEPS + 1)]
+    under = [put(part, shelf_at(k, wide * 0.97, 0.08), FUNGUS[4]) for k in range(STEPS + 1)]
+    for k in range(STEPS):
+        for quad in ((heart_top, band[k + 1], band[k]), (band[k], band[k + 1], rim[k + 1], rim[k]), (heart_under, under[k], under[k + 1]),
+                     (rim[k], rim[k + 1], under[k + 1], under[k])):
+            face(part, quad)
 finish(part, 'stock', sharp=55.0, strength=0.5, reach=0.3, recalc=False)
 
 # Virvelsten: the stone he stands on to pull the ghost out of the eddy. The block is 2.4 long and 0.5 high,
@@ -1195,23 +1242,27 @@ finish(part, 'virvelsten', sharp=30.0, strength=0.6, reach=0.6)
 # Myrstack: the anthill, a mound of spruce needles as high as six of him, with twigs in it and the ants'
 # holes. The block is 6 long and 6 high: its top is level and its two sides are steep where he walks, towards
 # the camera it is a dome, and behind where he walks the mound goes on up to its crown.
-NEEDLE = (tone('#38312a'), tone('#483e33'), tone('#5a4e40'), tone('#6a5c4a'))
-STROKE = (tone('#84704f'), tone('#9c8a66'), tone('#b9a884'), tone('#28221c'), tone('#6a5a44'), tone('#8a5a30'), tone('#4a3f33'))
-STRAW = tone('#b79a66')
+# Olov, 15 November 2026: "Kan vi gora myrstacken snyggare design och textur". It was a dark grey-brown, its foot shaded
+# to a dark teal, with loose needles lying on it like sticks. Now the needles are a wood ant's mound: rust and golden
+# brown, paler and drier towards the crown and darker and damp at the foot, in a fine grain of their own (twice as
+# many points to paint it on), with many more short loose needles, more twigs and a few small cones.
+NEEDLE = (tone('#4a2e1c'), tone('#6a4126'), tone('#8a5a32'), tone('#a87443'))
+STROKE = (tone('#a8743e'), tone('#c08a4c'), tone('#d6aa6c'), tone('#3a2618'), tone('#8a5a30'), tone('#b06a34'), tone('#6a4a2e'))
+STRAW = tone('#d0ae72')
 HOLE = tone('#1a100a')
-HILL_SHADE = tone('#4d5e55')
+HILL_SHADE = tone('#3a2a1e')
 HILL_TOP = 6.03
 HILL_HALF = 3.06
 HILL_FRONT = 6.0
 HILL_AT = Vector((3.0, -0.5, 0.0))
-SPOKES = 24
-DOWN = 12
+SPOKES = 48
+DOWN = 24
 # The mound behind: where its crown stands, how high, and how far it reaches to the left, right, front and back.
 MOUND_AT = Vector((2.6, 5.2, 0.0))
 MOUND_TOP = 7.6
 MOUND = (4.9, 3.5, 4.6, 5.6)
-ROUND_MOUND = 22
-DOWN_MOUND = 7
+ROUND_MOUND = 36
+DOWN_MOUND = 12
 
 
 def hill_at(spoke, row):
@@ -1241,7 +1292,10 @@ def mound_at(spoke, row):
 
 def needles(at, steep):
     """The colour of the mound at a place: rust needles, a straw here and there, and the dark of a hole."""
-    n = noise(at.x * 1.9, at.y * 1.9, at.z * 1.9) * 0.6 + noise(at.x * 5.3, at.y * 5.3, at.z * 5.3) * 0.4
+    n = noise(at.x * 1.9, at.y * 1.9, at.z * 1.9) * 0.45 + noise(at.x * 5.3, at.y * 5.3, at.z * 5.3) * 0.3
+    n += noise(at.x * 13.0 + 7.0, at.y * 13.0, at.z * 13.0) * 0.25
+    # Drier and paler towards the crown, damp and darker towards the foot.
+    n += (at.z / HILL_TOP - 0.5) * 0.18
     k = min(2.999, max(0.0, n * 4.2 - 0.6))
     colour = blend(NEEDLE[int(k)], NEEDLE[int(k) + 1], k - int(k))
     if noise(at.x * 7.0 + 3.0, at.y * 7.0, at.z * 7.0) > 0.78:
@@ -1266,11 +1320,11 @@ def sliver(part, at, toward, out, n, over=0.03):
     turn = TAU * rnd(n, 61.0)
     way = way * math.cos(turn) + side * math.sin(turn)
     side = out.cross(way)
-    long = 0.2 + 0.3 * rnd(n, 67.0)
+    long = 0.13 + 0.2 * rnd(n, 67.0)
     colour = STROKE[int(rnd(n, 71.0) * len(STROKE)) % len(STROKE)]
     a = put(part, at - way * (long / 2.0) + out * over, colour)
     b = put(part, at + way * (long / 2.0) + out * over, colour)
-    c = put(part, at + side * 0.035 + out * (over * 1.6), lit(colour, 1.15))
+    c = put(part, at + side * 0.024 + out * (over * 1.6), lit(colour, 1.15))
     face(part, (a, b, c))
 
 
@@ -1324,9 +1378,9 @@ for a in range(ROUND_MOUND):
     for r in range(DOWN_MOUND):
         face(part, (round_it[a][r], round_it[a][r + 1], round_it[b][r + 1], round_it[b][r]))
 # Loose needles: on the dome, on its two sides, and on the mound behind.
-for n in range(620):
-    spoke = 0.6 + 22.8 * rnd(n, 41.0)
-    row = 1.2 + 10.5 * rnd(n, 43.0) ** 0.8
+for n in range(1700):
+    spoke = 1.2 + 45.6 * rnd(n, 41.0)
+    row = 2.4 + 21.0 * rnd(n, 43.0) ** 0.8
     at = hill_at(spoke, row)
     out = at - Vector((HILL_AT.x, HILL_AT.y, at.z * 0.5))
     level = at.z > HILL_TOP - 0.2
@@ -1334,30 +1388,44 @@ for n in range(620):
         out = Vector((0.0, 0.0, 1.0))
     out.normalize()
     # Where he walks they lie flat on it: his feet stand on the mound, not over it.
-    sliver(part, at, hill_at(spoke + 0.4, row + 0.3), out, n, 0.006 if level else 0.03)
-for n in range(260):
+    sliver(part, at, hill_at(spoke + 0.8, row + 0.6), out, n, 0.006 if level else 0.03)
+for n in range(600):
     left = n % 2 == 0
     at = Vector((HILL_AT.x + (-HILL_HALF if left else HILL_HALF), HILL_AT.y + BACK * rnd(n, 73.0), 0.2 + 5.6 * rnd(n, 79.0)))
-    sliver(part, at, at + Vector((0.0, 0.3, 0.3)), Vector((-1.0 if left else 1.0, 0.0, 0.0)), n + 700)
-for n in range(240):
+    sliver(part, at, at + Vector((0.0, 0.3, 0.3)), Vector((-1.0 if left else 1.0, 0.0, 0.0)), n + 2000)
+for n in range(600):
     spoke = ROUND_MOUND * rnd(n, 83.0)
-    row = 0.6 + 6.0 * rnd(n, 89.0) ** 0.8
+    row = 1.0 + 10.3 * rnd(n, 89.0) ** 0.8
     at = mound_at(spoke, row)
     out = at - Vector((MOUND_AT.x, MOUND_AT.y, at.z * 0.5))
     out.normalize()
-    sliver(part, at, mound_at(spoke + 0.4, row + 0.3), out, n + 1000)
+    sliver(part, at, mound_at(spoke + 0.4, row + 0.3), out, n + 3000)
 # Twigs the ants have carried there.
 TWIG = (tone('#9c8a70'), tone('#6a5038'), tone('#b9a584'))
-for n in range(18):
-    spoke = 3.0 + 18.0 * rnd(n, 41.0)
-    row = 2.5 + 8.5 * rnd(n, 43.0)
+for n in range(40):
+    spoke = 6.0 + 36.0 * rnd(n, 41.0)
+    row = 5.0 + 17.0 * rnd(n, 43.0)
     at = hill_at(spoke, row)
-    ahead = hill_at(spoke + 0.6, row + 0.5 * (rnd(n, 47.0) - 0.5) * 4.0) - at
+    ahead = hill_at(spoke + 1.2, row + 1.0 * (rnd(n, 47.0) - 0.5) * 4.0) - at
     ahead.normalize()
     out = at - Vector((HILL_AT.x, HILL_AT.y, at.z * 0.5))
     out.normalize()
     long = 0.5 + 0.7 * rnd(n, 53.0)
     tube(part, [at - ahead * (long / 2.0) + out * 0.05, at + ahead * (long / 2.0) + out * 0.11], [0.04, 0.026], [TWIG[n % 3], TWIG[(n + 1) % 3]], 3)
+# Small spruce cones the ants have rolled up onto it, lying on its flanks: fat at their middle, blunt at their ends.
+CONE_SCALES = (tone('#6a4428'), tone('#8e5e36'), tone('#a87446'))
+for n in range(9):
+    spoke = 8.0 + 32.0 * rnd(n, 151.0)
+    row = 9.0 + 12.0 * rnd(n, 157.0)
+    at = hill_at(spoke, row)
+    ahead = hill_at(spoke + 1.0, row + (rnd(n, 163.0) - 0.5) * 3.0) - at
+    ahead.normalize()
+    out = at - Vector((HILL_AT.x, HILL_AT.y, at.z * 0.5))
+    out.normalize()
+    long = 0.32 + 0.12 * rnd(n, 167.0)
+    lift = out * 0.08
+    tube(part, [at - ahead * (long / 2.0) + lift, at - ahead * (long / 6.0) + lift, at + ahead * (long / 6.0) + lift, at + ahead * (long / 2.0) + lift],
+         [0.05, 0.085, 0.075, 0.03], [CONE_SCALES[0], CONE_SCALES[1], CONE_SCALES[2], CONE_SCALES[1]], 6)
 finish(part, 'myrstack', sharp=70.0, strength=0.4, reach=0.9, recalc=False)
 
 # KIT-PARTS-END
