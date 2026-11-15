@@ -12,6 +12,7 @@ import { glowTexture } from './glow';
 import { paperBag, SATURDAY_BAG_TALL } from './saturday-bag';
 import { rigWalker, STRIDE, type Walker } from './passerby';
 import { BRED_BYN_CHIMNEYS, BRED_BYN_SMOKE_Z } from '../content/bredbyn';
+import { pictureTop } from './picture-top';
 
 /**
  * The village street (the extra chapter Byn): its houses and its yard, two lamp posts on its far pavement, a
@@ -80,8 +81,13 @@ const SIGN: Partial<Record<StreetGoods, number>> = { bread: 1.7, boots: 2.1 };
 const PROUD = 0.35;
 /** The kit's parts that go on along a wall, and how long one of each is. */
 const TILES = { sockel: 4, panel: 1.35, liggande: 4, puts: 4, mur: 4, staket: 3.8, hack: 6 } as const;
-/** Where the kit's walls end: nothing of a house is built above 12 EL, and the picture never reaches there. */
+/**
+ * Where the kit's walls end, at the top of the shop floor. The picture seldom reaches over it; what stands there, the
+ * upper storey and the roof, is built here (`UPPER`).
+ */
 const TOP = 12;
+/** Where the kit's boards and corner boards begin, over the drip board on the stone foot. */
+const BOARDS = 1.95;
 /** A shop window's sill, over its house's foot: the floor its wares stand on. */
 const SILL = 2.6;
 /**
@@ -89,7 +95,10 @@ const SILL = 2.6;
  * there comes out of its dark opening and goes into it. `near` is its front edge, behind the path.
  */
 const PASSAGE = { near: -10.7, wide: 5.4, post: 0.5 };
-/** How far back a house's side wall goes: no further than where the picture's top edge is still under its top. */
+/**
+ * How far back a house's side wall goes, and its roof: a far house no deeper than to stand clear of Anundsjö's church
+ * behind it (../content/bredbyn.ts, 29 behind the path).
+ */
 const SIDE = { near: 17, far: 8 };
 /** The colour of each shop's door. */
 const DOORS: Record<StreetGoods, string> = { candy: '#7a5632', bread: '#6b8494', boots: '#5d4a36', yarn: '#6a4a3a' };
@@ -127,6 +136,39 @@ export const AWNING = {
   /** The rod left in its crank: how far in from the awning's first end, and how high over the foot it ends. */
   crank: { in: 0.45, end: 4.1 },
 } as const;
+
+/**
+ * A house is whole over its shop floor (Olov, 15 November 2026, of the picture that opens out over the flood when Elof
+ * thanks Moa in Byn i stormen: "vissa byggnader inte är fullt modellerade – de slutar liksom med ett rakt streck"). The
+ * kit ends at `TOP`, where the picture usually ends too; a picture opened out saw the walls stop there against the sky.
+ * Over it, built here in the house's own colours: a moulded band over the shop floor, round its corners; an upper storey
+ * of its boards, with its windows; the eaves with their gutter, which the downpipes go up to; and a pitched roof of
+ * painted sheet metal with its seams, a gable where the house's end is seen, and a chimney. Heights are over the house's
+ * foot, and `out` is out of the wall's face.
+ */
+export const UPPER = {
+  /** The band over the shop windows and the door: from just under the kit's top to `top`, standing `out` out, its cap more. */
+  band: { top: TOP + 1, out: 0.32, cap: 0.5 },
+  /** The upper windows: how wide the glass is, its sill and its head, and about how much front each window has. */
+  window: { wide: 4.2, sill: 15.6, head: 22.2, every: 9 },
+  /**
+   * Where the walls carry the roof; how far over that the roof lies on them; how far it stands out over the front and
+   * over a gable; how steep it is (its rise to its run); and its fascia board's height.
+   */
+  eaves: 25.5, lies: 0.35, overhang: 1.3, verge: 0.8, pitch: 0.84, fascia: 0.5,
+  /**
+   * How far over the play picture's top (./picture-top.ts) a yard birch's stem goes on, parting into limbs: into the thick
+   * of the crown that the flora hangs from just under that top, about 8 high (./lift/flora/trees.ts `birchBoughs`).
+   */
+  birch: 3,
+} as const;
+/** Painted sheet metal: black, Falu red, and grey-green, as on Köpmangatan (docs/bredbyn-reference-study.md). */
+const ROOFS = ['#4a4f52', '#6a3a32', '#56605c'].map((hex) => new Color(hex));
+const TRIM = new Color('#f4efe2');
+const ZINC = new Color('#c3c8c6');
+const BRICK = new Color('#7d4537');
+/** An upper window's glass, low and high: the day's sky in it, or, with the power out, the night's. */
+const GLASS = { day: [new Color('#4b5f6e'), new Color('#93a8b8')], night: [new Color('#1f252d'), new Color('#36414d')] } as const;
 
 type End = 'side' | 'flat' | 'none';
 
@@ -490,7 +532,7 @@ function run(build: Build, kit: VillageKit, name: keyof typeof TILES, wall: Wall
 }
 
 /** How high a part's foot stands: where the chapter says, or on the highest ground under it. */
-function footOf(chapter: ChapterData, part: StreetPart): number {
+export function footOf(chapter: ChapterData, part: StreetPart): number {
   if (part.foot !== undefined) return part.foot;
   const first = Math.max(part.from, chapter.ground[0]!.x) + 0.25;
   const last = Math.min(part.to, chapter.ground[chapter.ground.length - 1]!.x) - 0.25;
@@ -562,6 +604,34 @@ function block(build: Build, [x0, x1]: [number, number], [y0, y1]: [number, numb
     for (const [x, y, z] of corners) corner(build, x!, y!, z!, normal, colour);
     build.index.push(first, first + 1, first + 2, first, first + 2, first + 3);
   }
+}
+
+type Point = readonly [number, number, number];
+/** A point on a wall: so far along it, so high over its foot and so far out of its face. */
+const onWall = (wall: Wall, along: number, up: number, out: number): Point =>
+  [wall.x + wall.along[0] * along + wall.out[0] * out, wall.y + up, wall.z + wall.along[1] * along + wall.out[1] * out];
+/** A direction given along a wall, up and out of it, in the world's terms. */
+const across = (wall: Wall, along: number, up: number, out: number): Point =>
+  [wall.along[0] * along + wall.out[0] * out, up, wall.along[1] * along + wall.out[1] * out];
+
+/** A flat piece through three or four corners, counter-clockwise as seen from the side it faces; a colour for each, or one. */
+function facet(build: Build, corners: readonly Point[], normal: Point, colour: Color | readonly Color[]): void {
+  const first = build.position.length / 3;
+  for (const [k, [x, y, z]] of corners.entries()) corner(build, x, y, z, normal, colour instanceof Color ? colour : colour[k]!);
+  build.index.push(first, first + 1, first + 2);
+  if (corners.length === 4) build.index.push(first, first + 2, first + 3);
+}
+
+/**
+ * A small box on a wall, from `a0` to `a1` along it, `u0` to `u1` up it and `o0` to `o1` out of it: its face, its two
+ * ends and, unless `under` is false, its underside. Its top and its back are never seen from the street.
+ */
+function boxOn(build: Build, wall: Wall, [a0, a1]: readonly [number, number], [u0, u1]: readonly [number, number], [o0, o1]: readonly [number, number], colour: Color, under = true): void {
+  const at = (a: number, u: number, o: number) => onWall(wall, a, u, o);
+  facet(build, [at(a0, u0, o1), at(a1, u0, o1), at(a1, u1, o1), at(a0, u1, o1)], across(wall, 0, 0, 1), colour);
+  facet(build, [at(a0, u0, o0), at(a0, u0, o1), at(a0, u1, o1), at(a0, u1, o0)], across(wall, -1, 0, 0), colour);
+  facet(build, [at(a1, u0, o1), at(a1, u0, o0), at(a1, u1, o0), at(a1, u1, o1)], across(wall, 1, 0, 0), colour);
+  if (under) facet(build, [at(a0, u0, o0), at(a1, u0, o0), at(a1, u0, o1), at(a0, u0, o1)], [0, -1, 0], colour);
 }
 
 /**
@@ -722,6 +792,167 @@ function house(build: Build, kit: VillageKit, chapter: ChapterData, parts: reado
   if (end.left === 'side') {
     side(build, kit, { x: from, y: foot, z: z - long, along: [0, 1], out: [-1, 0] }, long, 'last', boards, paint, passage(parts[i - 1], long - (z - PASSAGE.near) - PASSAGE.wide));
   }
+
+  // Over the shop floor, the rest of the house. An empty kit (a test's, to look at the masonry alone) puts no house together.
+  if (kit.has('sockel')) upper(build, kit, chapter, parts, i, { from, to, foot, paint, boards });
+}
+
+/**
+ * The rest of a house over its shop floor (`UPPER`): its band, its upper storey with its windows and corner boards, its
+ * eaves and gutter, and its roof with a chimney, and a gable at each end that is seen. An end is not seen where a house of
+ * the same depth goes on from it at the same height, the two under one roof, nor at the street's own two ends, which the
+ * ground's end walls close.
+ */
+function upper(build: Build, kit: VillageKit, chapter: ChapterData, parts: readonly StreetPart[], i: number,
+  house: { from: number; to: number; foot: number; paint: Paint; boards: 'panel' | 'liggande' | 'puts' }): void {
+  const part = parts[i]!;
+  const { from, to, foot, paint, boards } = house;
+  const { band, overhang, verge, pitch, fascia } = UPPER;
+  const z = STREET_DEPTH[part.depth];
+  const deep = SIDE[part.depth];
+  const end = ends(parts, i);
+  const front: Wall = { x: 0, y: foot, z, along: [1, 0], out: [0, 1] };
+  const seen = (beside: StreetPart | undefined) => beside !== undefined
+    && !(beside.kind === 'house' && beside.depth === part.depth && footOf(chapter, beside) === foot);
+  const left = seen(parts[i - 1]);
+  const right = seen(parts[i + 1]);
+  // The roof's height over the foot, so far behind the front's face: at the eaves' edge, out over the street, and at its
+  // ridge. Under the eaves the walls end.
+  const edge = roofAt(-overhang);
+  const ridge = roofAt(deep / 2);
+  const wallTop = edge - fascia;
+  const x0 = from - (left ? verge : 0);
+  const x1 = to + (right ? verge : 0);
+  const seed = part.from * 7.3;
+  const corners = { left: end.left !== 'none' || left, right: end.right !== 'none' || right };
+
+  // The band over the shop floor, under its drip cap, and round each end that is seen.
+  boxOn(build, front, [from - (left ? band.out : 0), to + (right ? band.out : 0)], [TOP - 0.2, band.top - 0.15], [0, band.out], TRIM);
+  boxOn(build, front, [from - (left ? band.cap : 0), to + (right ? band.cap : 0)], [band.top - 0.15, band.top], [0, band.cap], TRIM);
+
+  // The upper storey: its boards between its corner boards, and its windows along it.
+  upperBoards(build, front, [from + (corners.left ? CORNER : 0), to - (corners.right ? CORNER : 0)], [band.top, wallTop], boards, paint.wall, seed, true);
+  const knut = kit.get('knut');
+  const tall = (wallTop - band.top) / (TOP - BOARDS);
+  const up = band.top - BOARDS * tall;
+  if (corners.left) put(build, knut, front, from, paint, { up, tall });
+  if (corners.right) put(build, knut, front, to, paint, { up, tall, mirror: true });
+  const count = Math.max(1, Math.round((to - from) / UPPER.window.every));
+  const glass = powerOut(chapter) ? GLASS.night : GLASS.day;
+  for (let k = 0; k < count; k++) upperWindow(build, front, from + ((k + 0.5) * (to - from)) / count, glass);
+  // The downpipes go up past the band to the gutter, and out to it under the eaves.
+  for (const x of part.pipes ?? []) {
+    boxOn(build, front, [x - 0.27, x + 0.27], [TOP - 0.3, wallTop - 0.55], [0.39, 0.93], ZINC, false);
+    boxOn(build, front, [x - 0.27, x + 0.27], [wallTop - 0.55, wallTop - 0.05], [0.39, overhang + 0.3], ZINC);
+  }
+
+  // The eaves: their underside, the fascia board at their edge, and the gutter hung on it.
+  facet(build, [onWall(front, x0, wallTop, 0), onWall(front, x1, wallTop, 0), onWall(front, x1, wallTop, overhang - 0.16), onWall(front, x0, wallTop, overhang - 0.16)],
+    [0, -1, 0], TRIM.clone().multiplyScalar(0.72));
+  boxOn(build, front, [x0, x1], [wallTop, edge], [overhang - 0.16, overhang], TRIM);
+  boxOn(build, front, [x0 + 0.15, x1 - 0.15], [wallTop - 0.1, wallTop + 0.34], [overhang, overhang + 0.4], ZINC);
+
+  // The roof, from the eaves' edge up to the ridge: painted sheet metal, its standing seams catching the light, and the
+  // cap along its ridge. Its far side is never seen from the street.
+  const metal = ROOFS[Math.floor(hash(seed) * ROOFS.length)]!;
+  const slope = Math.hypot(1, pitch);
+  const outward = across(front, 0, 1 / slope, pitch / slope);
+  const onRoof = (x: number, back: number, raised = 0) => onWall(front, x, roofAt(back) + raised / slope, -back + (raised * pitch) / slope);
+  const low = metal.clone().multiplyScalar(0.88), high = metal.clone().multiplyScalar(1.06);
+  facet(build, [onRoof(x0, -overhang), onRoof(x1, -overhang), onRoof(x1, deep / 2), onRoof(x0, deep / 2)], outward, [low, low, high, high]);
+  const seams = Math.max(1, Math.round((x1 - x0) / 1.35));
+  const shine = metal.clone().multiplyScalar(1.35);
+  for (let k = 1; k < seams; k++) {
+    const x = x0 + (k * (x1 - x0)) / seams;
+    facet(build, [onRoof(x - 0.05, -overhang, 0.04), onRoof(x + 0.05, -overhang, 0.04), onRoof(x + 0.05, deep / 2, 0.04), onRoof(x - 0.05, deep / 2, 0.04)], outward, shine);
+  }
+  boxOn(build, front, [x0, x1], [ridge - 0.3, ridge + 0.2], [-deep / 2 - 0.3, -deep / 2 + 0.3], metal.clone().multiplyScalar(0.8), false);
+
+  // A chimney on the ridge, somewhere along the house, with its cap.
+  const stack = from + (0.22 + 0.56 * hash(seed + 3)) * (to - from);
+  const half = part.depth === 'near' ? 0.9 : 0.7;
+  boxOn(build, front, [stack - half, stack + half], [roofAt(deep / 2 - half) - 0.3, ridge + 2.6], [-deep / 2 - half, -deep / 2 + half], BRICK, false);
+  boxOn(build, front, [stack - half - 0.18, stack + half + 0.18], [ridge + 2.6, ridge + 2.85], [-deep / 2 - half - 0.18, -deep / 2 + half + 0.18], ZINC.clone().multiplyScalar(0.55));
+
+  // Each end that is seen: the side wall goes on up into its gable.
+  if (left) gable(build, { x: from, y: foot, z: z - deep, along: [0, 1], out: [-1, 0] }, deep, 'last', boards, paint.wall, seed + 50);
+  if (right) gable(build, { x: to, y: foot, z, along: [0, -1], out: [1, 0] }, deep, 'first', boards, paint.wall, seed + 90);
+}
+
+/** The roof's height over a house's foot, so far behind the face of the wall it lies on (in front of it: less than 0). */
+function roofAt(back: number): number {
+  return UPPER.eaves + UPPER.lies + back * UPPER.pitch;
+}
+
+/**
+ * The boards of an upper storey on a wall, from `a0` to `a1` along it and from `low` to `high` up it, as the kit's are on
+ * the shop floor: lying boards each over the one below, upright boards under cover strips 1.35 apart, or plaster. Under
+ * eaves they lose a little of the sky towards the top.
+ */
+function upperBoards(build: Build, wall: Wall, [a0, a1]: readonly [number, number], [low, high]: readonly [number, number], boards: 'panel' | 'liggande' | 'puts', wood: Color, seed: number, eaves: boolean): void {
+  if (a1 - a0 < 0.05 || high - low < 0.05) return;
+  const sky = (up: number) => (eaves ? 1 - 0.22 * Math.min(1, Math.max(0, (up - low) / (high - low))) ** 2 : 1);
+  const tint = (k: number, up: number) => wood.clone().multiplyScalar((0.965 + 0.07 * hash(seed + k)) * sky(up));
+  if (boards === 'liggande') {
+    const courses = Math.max(1, Math.round((high - low) / 0.8));
+    const tall = (high - low) / courses;
+    const long = Math.hypot(0.1, tall);
+    for (let k = 0; k < courses; k++) {
+      const foot = low + k * tall, head = foot + tall;
+      const colour = tint(k, foot + tall / 2);
+      // Each board leans out at its foot over the one below, and its underside is in its own shade.
+      facet(build, [onWall(wall, a0, foot, 0.1), onWall(wall, a1, foot, 0.1), onWall(wall, a1, head, 0), onWall(wall, a0, head, 0)], across(wall, 0, 0.1 / long, tall / long), colour);
+      facet(build, [onWall(wall, a0, foot, 0), onWall(wall, a1, foot, 0), onWall(wall, a1, foot, 0.1), onWall(wall, a0, foot, 0.1)], [0, -1, 0], colour.clone().multiplyScalar(0.7));
+    }
+    return;
+  }
+  const bottom = tint(0, low), top = tint(0, high);
+  facet(build, [onWall(wall, a0, low, 0), onWall(wall, a1, low, 0), onWall(wall, a1, high, 0), onWall(wall, a0, high, 0)], across(wall, 0, 0, 1), [bottom, bottom, top, top]);
+  if (boards === 'puts') return;
+  const strips = Math.max(1, Math.round((a1 - a0) / 1.35));
+  for (let k = 0; k <= strips; k++) {
+    const at = a0 + (k * (a1 - a0)) / strips;
+    boxOn(build, wall, [Math.max(a0, at - 0.175), Math.min(a1, at + 0.175)], [low, high], [0, 0.15], tint(k + 100, (low + high) / 2), false);
+  }
+}
+
+/** An upper window, `at` along its wall: its glass, its casing, the post between its two casements, its sill and its crown. */
+function upperWindow(build: Build, wall: Wall, at: number, glass: readonly Color[]): void {
+  const { wide, sill, head } = UPPER.window;
+  const half = wide / 2;
+  facet(build, [onWall(wall, at - half, sill, 0.17), onWall(wall, at + half, sill, 0.17), onWall(wall, at + half, head, 0.17), onWall(wall, at - half, head, 0.17)],
+    across(wall, 0, 0, 1), [glass[0]!, glass[0]!, glass[1]!, glass[1]!]);
+  boxOn(build, wall, [at - half - 0.5, at - half], [sill, head], [0, 0.3], TRIM, false);
+  boxOn(build, wall, [at + half, at + half + 0.5], [sill, head], [0, 0.3], TRIM, false);
+  boxOn(build, wall, [at - half - 0.5, at + half + 0.5], [head, head + 0.5], [0, 0.3], TRIM);
+  boxOn(build, wall, [at - 0.1, at + 0.1], [sill, head], [0.17, 0.26], TRIM, false);
+  boxOn(build, wall, [at - half - 0.75, at + half + 0.75], [sill - 0.4, sill], [0, 0.55], TRIM);
+  boxOn(build, wall, [at - half - 0.75, at + half + 0.75], [head + 0.5, head + 0.72], [0, 0.48], TRIM);
+}
+
+/**
+ * A gable over a side wall that is seen, `deep` along it, with the front's corner at its `first` or `last` end: the side
+ * wall goes on up over the band to where the roof lies on it, and the gable's triangle up to the ridge, under the roof's
+ * verge, its underside and its verge boards.
+ */
+function gable(build: Build, wall: Wall, deep: number, corner: 'first' | 'last', boards: 'panel' | 'liggande' | 'puts', wood: Color, seed: number): void {
+  const { band, overhang, verge } = UPPER;
+  // The roof over the wall, so far along it: it rises from both ends to the ridge over the middle.
+  const roof = (along: number) => roofAt(Math.min(along, deep - along));
+  const base = roofAt(0) - 0.3;
+  boxOn(build, wall, [0, deep], [TOP - 0.2, band.top - 0.15], [0, band.out], TRIM);
+  boxOn(build, wall, [0, deep], [band.top - 0.15, band.top], [0, band.cap], TRIM);
+  upperBoards(build, wall, corner === 'first' ? [CORNER, deep] : [0, deep - CORNER], [band.top, base], boards, wood, seed, false);
+  facet(build, [onWall(wall, 0, base, 0), onWall(wall, deep, base, 0), onWall(wall, deep / 2, roof(deep / 2) - 0.3, 0)], across(wall, 0, 0, 1), wood.clone().multiplyScalar(0.94));
+  for (const [a0, a1] of [[-overhang, deep / 2], [deep / 2, deep + overhang]] as const) {
+    const rise = (roof(a1) - roof(a0)) / (a1 - a0);
+    const long = Math.hypot(1, rise);
+    // The roof's underside, from the gable out to its verge, and the verge board along its edge.
+    facet(build, [onWall(wall, a0, roof(a0) - 0.3, 0), onWall(wall, a1, roof(a1) - 0.3, 0), onWall(wall, a1, roof(a1) - 0.3, verge), onWall(wall, a0, roof(a0) - 0.3, verge)],
+      across(wall, rise / long, -1 / long, 0), TRIM.clone().multiplyScalar(0.7));
+    facet(build, [onWall(wall, a0, roof(a0) - 0.6, verge), onWall(wall, a1, roof(a1) - 0.6, verge), onWall(wall, a1, roof(a1) + 0.05, verge), onWall(wall, a0, roof(a0) + 0.05, verge)],
+      across(wall, 0, 0, 1), TRIM);
+  }
 }
 
 /**
@@ -749,7 +980,97 @@ function yard(build: Build, kit: VillageKit, chapter: ChapterData, part: StreetP
   run(build, kit, 'staket', front, part.from + 1.4, part.to - 1.4, paint, { ...fence, shade: onWall });
   for (const x of posts) put(build, kit.get('grindstolpe'), front, x, paint, fence);
   run(build, kit, 'hack', front, part.from, part.to, paint, { ...fence, shade: behind });
-  put(build, kit.get('bjork'), front, part.from + (part.lowFence ? 2 : (part.to - part.from) * 0.4), paint);
+  const birch = kit.get('bjork');
+  const at = part.from + (part.lowFence ? 2 : (part.to - part.from) * 0.4);
+  put(build, birch, front, at, paint);
+  if (birch) birchStem(build, birch, front, at, pictureTop(chapter)(at, front.z - 0.6) + UPPER.birch - front.y, part.from);
+}
+
+/**
+ * The yard birch's stem goes on over the kit's, which ends a little over the picture's usual top, up into the crown that
+ * the flora hangs there (./lift/flora/trees.ts `birchBoughs`), and parts into limbs that reach `high` over its foot: in a
+ * picture opened out it no longer ends like a pipe cut across under the crown, nor in a spike. It goes on from the kit's
+ * highest ring, in the kit's own white and with dark scars across it.
+ */
+function birchStem(build: Build, kit: Shape, wall: Wall, at: number, high: number, seed: number): void {
+  let top = -Infinity;
+  for (let i = 0; i < kit.whose.length; i++) top = Math.max(top, kit.position[i * 3 + 1]!);
+  const ring = Array.from({ length: kit.whose.length }, (_, i) => i).filter((i) => kit.position[i * 3 + 1]! > top - 0.01);
+  if (ring.length < 3 || top > high - 2.5) return;
+  const cx = ring.reduce((sum, i) => sum + kit.position[i * 3]!, 0) / ring.length;
+  const cz = ring.reduce((sum, i) => sum + kit.position[i * 3 + 2]!, 0) / ring.length;
+  const thick = Math.max(...ring.map((i) => Math.hypot(kit.position[i * 3]! - cx, kit.position[i * 3 + 2]! - cz)));
+  // Its white: the lightest of the kit's at that ring.
+  const white = new Color(0, 0, 0);
+  for (const i of ring) if (kit.colour[i * 3]! > white.r) white.setRGB(kit.colour[i * 3]!, kit.colour[i * 3 + 1]!, kit.colour[i * 3 + 2]!);
+  const scar = white.clone().multiplyScalar(0.28);
+  // Its rings from the kit's top up to its tip's foot, a scar here and there, wandering a little as a birch's stem does.
+  const neck = high - 2.2;
+  const rows: { y: number; dark: boolean }[] = [{ y: top - 0.05, dark: false }];
+  for (let k = 0; rows.at(-1)!.y < neck; k++) {
+    const y = Math.min(neck, rows.at(-1)!.y + 0.9 + hash(seed + k) * 1.2);
+    rows.push({ y, dark: false });
+    if (y < neck - 0.4 && hash(seed + k + 0.5) < 0.4) rows.push({ y: y + 0.16, dark: true });
+  }
+  const SIDES = 8;
+  const span = neck - top;
+  const thin = Math.max(0.42, thick * 0.55);
+  /** The stem's middle so high, wandering a little as a birch's stem does, and how thick it is there. */
+  const axis = (y: number) => {
+    const k = (y - top) / span;
+    return { x: cx + 0.22 * k * Math.sin(1.3 * (y - top) + seed), z: cz + 0.14 * k * Math.cos(0.9 * (y - top) + seed), r: thick + (thin - thick) * k };
+  };
+  const place = (y: number, angle: number) => {
+    const { x, z, r } = axis(y);
+    return onWall(wall, at + x + r * Math.cos(angle), y, z + r * Math.sin(angle));
+  };
+  for (let r = 0; r + 1 < rows.length; r++) {
+    const colour = rows[r + 1]!.dark ? scar : white.clone().multiplyScalar(0.92 + 0.08 * hash(seed + r));
+    for (let s = 0; s < SIDES; s++) {
+      const a = (s / SIDES) * Math.PI * 2, b = ((s + 1) / SIDES) * Math.PI * 2, mid = (a + b) / 2;
+      facet(build, [place(rows[r]!.y, b), place(rows[r]!.y, a), place(rows[r + 1]!.y, a), place(rows[r + 1]!.y, b)], across(wall, Math.cos(mid), 0, Math.sin(mid)), colour);
+    }
+  }
+  // At its top it parts into limbs going up into the crown, and a bough or two leaves it lower down: white where they leave
+  // it, dark towards their ends, as a birch's limbs are.
+  const twig = new Color('#4a4038');
+  const end = axis(neck);
+  const limbs: [number, number, number, number, number, number][] = [
+    // [how high it leaves the stem, its lean (to the side, back), how long, how thick where it leaves]
+    [neck - 0.1, 0.42, -0.1, 2.4, thin * 0.78, 0],
+    [neck - 0.1, -0.5, 0.12, 2.1, thin * 0.7, 0],
+    [top + span * 0.45, -0.95, -0.2, 2.2, 0.16, 1],
+    [top + span * 0.75, 0.9, 0.15, 1.9, 0.14, 1],
+  ];
+  for (const [y, side, back, long, r0, bough] of limbs) {
+    const from = bough ? axis(y) : end;
+    limb(build, wall, [at + from.x, y, from.z], [Math.sin(side), Math.cos(side) * (bough ? 0.7 : 1), back], long, r0, [white, twig]);
+  }
+}
+
+/**
+ * A limb of a tree, tapering from `r0` where it leaves `from` (in the wall's terms: along, up, out) to a point `long` on
+ * along `towards`, white at its foot and `colours[1]` at its end.
+ */
+function limb(build: Build, wall: Wall, from: readonly number[], towards: readonly number[], long: number, r0: number, colours: readonly Color[]): void {
+  const d = new Vector3(towards[0], towards[1], towards[2]).normalize();
+  const u = new Vector3().crossVectors(d, new Vector3(0, 0, 1)).normalize();
+  const v = new Vector3().crossVectors(u, d);
+  const SIDES = 6;
+  const ring = (k: number, angle: number) => {
+    const r = r0 * (1 - k) + 0.02 * k;
+    const p = new Vector3(from[0], from[1], from[2]).addScaledVector(d, long * k)
+      .addScaledVector(u, r * Math.cos(angle)).addScaledVector(v, r * Math.sin(angle));
+    return onWall(wall, p.x, p.y, p.z);
+  };
+  const tint = (k: number) => colours[0]!.clone().lerp(colours[1]!, Math.min(1, k * 1.4));
+  for (const [k0, k1] of [[0, 0.5], [0.5, 1]] as const) {
+    for (let s = 0; s < SIDES; s++) {
+      const a = (s / SIDES) * Math.PI * 2, b = ((s + 1) / SIDES) * Math.PI * 2, mid = (a + b) / 2;
+      const n = new Vector3().addScaledVector(u, Math.cos(mid)).addScaledVector(v, Math.sin(mid));
+      facet(build, [ring(k0, b), ring(k0, a), ring(k1, a), ring(k1, b)], across(wall, n.x, n.y, n.z), [tint(k0), tint(k0), tint(k1), tint(k1)]);
+    }
+  }
 }
 
 /** Granite courses on a raised pavement's kerb or a shop's step, merged with the house above it. */
