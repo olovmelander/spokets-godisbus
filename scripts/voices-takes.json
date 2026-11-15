@@ -63,7 +63,8 @@
     "share": 1,
     "tagHeard": false,
     "takes": 1,
-    "ok": true
+    "ok": true,
+    "spoken": "Stårmkvällen. lördag kväll"
   },
   "biMorfarHere": {
     "key": "biMorfarHere",
@@ -1531,9 +1532,9 @@
   "skHandful": {
     "key": "skHandful",
     "speaker": "moa",
-    "text": "Jag såg honom ta en näve ur skålen!",
+    "text": "Jag såg gamla trägubben ta en näve godis!",
     "tag": "[bright]",
-    "heard": "Jag såg honom ta en näve ur skålen",
+    "heard": "Jag såg gamla trägubben ta en näve godis",
     "share": 1,
     "tagHeard": false,
     "takes": 1,
@@ -1602,8 +1603,9 @@
     "heard": "Stormnatten",
     "share": 1,
     "tagHeard": false,
-    "takes": 2,
-    "ok": true
+    "takes": 1,
+    "ok": true,
+    "spoken": "Stårmnatten"
   },
   "sgPumpkin": {
     "key": "sgPumpkin",
@@ -1812,7 +1814,8 @@
     "share": 1,
     "tagHeard": false,
     "takes": 1,
-    "ok": true
+    "ok": true,
+    "spoken": "Stårmgården. klockan åtta"
   },
   "ssDark": {
     "key": "ssDark",
@@ -2160,11 +2163,12 @@
     "speaker": "storyteller",
     "text": "Stormskogen. klockan nio",
     "tag": "[warm]",
-    "heard": "Stormskogen klockan nio",
+    "heard": "Stormskogen. Klockan nio",
     "share": 1,
     "tagHeard": false,
     "takes": 1,
-    "ok": true
+    "ok": true,
+    "spoken": "Stårmskogen. klockan nio"
   },
   "sbDark": {
     "key": "sbDark",
@@ -3786,9 +3790,9 @@
   "soLastOne": {
     "key": "soLastOne",
     "speaker": "elof",
-    "text": "Ditt allra sista. Det sparade du åt mig.",
-    "tag": "[thoughtful]",
-    "heard": "Ditt allra sista, det sparade du åt mig",
+    "text": "Tack, gamla trägubben! Ditt allra sista.",
+    "tag": "[grateful]",
+    "heard": "Tack gamla trägubben, ditt allra sista",
     "share": 1,
     "tagHeard": false,
     "takes": 1,
@@ -4449,6 +4453,94 @@
     "text": "Myren. klockan halv fem",
     "tag": "[warm]",
     "heard": "Myren klockan halv fem",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "sgSickanBig": {
+    "key": "sgSickanBig",
+    "speaker": "elof",
+    "text": "Vad stor du är, Sickan!",
+    "tag": "[affectionate, surprised]",
+    "heard": "Vad stor du är, Sickan!",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "sgSickan": {
+    "key": "sgSickan",
+    "speaker": "elof",
+    "text": "Sickan! Är du också ute i stormen?",
+    "tag": "[affectionate, surprised]",
+    "heard": "Sickan, är du också ute i stormen?",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "sbThanksMoa": {
+    "key": "sbThanksMoa",
+    "speaker": "elof",
+    "text": "Tack, Moa! Ditt paraply kan flyga!",
+    "tag": "[grateful]",
+    "heard": "Tack Moa! Ditt paraply kan flyga",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "skBertilGreet": {
+    "key": "skBertilGreet",
+    "speaker": "bertil",
+    "text": "Hälsa lillgubben att vi kommer!",
+    "tag": "[bright]",
+    "heard": "Hälsa lillgubben att vi kommer",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "skMoaSmall": {
+    "key": "skMoaSmall",
+    "speaker": "moa",
+    "text": "Små kan hitta små, lillebror!",
+    "tag": "[bright]",
+    "heard": "Små kan hitta små lillebror",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "soLightThem": {
+    "key": "soLightThem",
+    "speaker": "elof",
+    "text": "Men lamporna når jag. Jag tänder dem!",
+    "tag": "[excited]",
+    "heard": "Men lamporna når jag. Jag tänder dem",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "biNut": {
+    "key": "biNut",
+    "speaker": "elof",
+    "text": "En hasselnöt! Lika stor som mitt huvud!",
+    "tag": "[excited]",
+    "heard": "En hasselnöt, lika stor som mitt huvud",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "biWelcome": {
+    "key": "biWelcome",
+    "speaker": "mormor",
+    "text": "Varsågod, lilla Elof. Kliv in!",
+    "tag": "[gentle]",
+    "heard": "Varsågod, lilla Elof. Kliv in",
     "share": 1,
     "tagHeard": false,
     "takes": 1,

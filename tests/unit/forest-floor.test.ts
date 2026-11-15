@@ -3,8 +3,11 @@ import { COURSES } from '../../src/content/chapters';
 import { groundOf } from '../../src/render/dressing';
 import { FLOOR_ENDS, bankShapes, floorDrop, forwardAt, shoreAt, slopeDrop } from '../../src/render/dressing/ground';
 import { heightAt, landscape } from '../../src/render/dressing/kit';
+import { openPools } from '../../src/render/dressing/natural';
 
 const forest = landscape(COURSES['granskog']!);
+/** A pool that runs on towards the camera has its banks beside it all the way: a wall into one does not draw back. */
+const intoPool = (x: number) => openPools(forest).some((w) => Math.abs(x - w.from) < 1e-6 || Math.abs(x - w.to) < 1e-6);
 /** The tops of the forest's walls: a wall tall enough to hide something at its foot. */
 function wallTops() {
   const tops: { x: number; y: number; side: number }[] = [];
@@ -38,9 +41,21 @@ describe("the forest's floor", () => {
     for (const top of tops) {
       const on = top.x + top.side * 0.05;
       // Only where the top is ground to stand on: a wall's top can be another wall's foot.
-      if (Math.abs(heightAt(forest, on) - top.y) > 0.3) continue;
+      if (Math.abs(heightAt(forest, on) - top.y) > 0.3 || intoPool(top.x)) continue;
       expect(forwardAt(forest, on), `the wall top at x ${top.x}`).toBeLessThan(0.02);
+      // The floor rolls over the edge there as a bank, 0.7 out at the most (ground.ts, CHEEK): a hand under his knee.
+      expect(floorDrop(forest, on, 0.7), `the wall top at x ${top.x}`).toBeGreaterThan(0.05);
       expect(floorDrop(forest, on, 1.2), `the wall top at x ${top.x}`).toBeNull();
+    }
+    // In the mesh: within a step of a tall wall's top nothing of the upper floor stands further out than that.
+    const tall = tops.filter((top) => !intoPool(top.x) && Math.abs(heightAt(forest, top.x + top.side * 0.05) - top.y) < 0.3);
+    for (const { shape } of bankShapes(forest, groundOf(forest.place!))) {
+      const at = shape.getAttribute('position');
+      for (let i = 0; i < at.count; i++) {
+        const [x, y, z] = [at.getX(i), at.getY(i), at.getZ(i)];
+        const top = tall.find((wall) => (x - wall.x) * wall.side > -0.01 && (x - wall.x) * wall.side < 0.3 && y > wall.y - 2 && y < wall.y + 0.01);
+        if (top) expect(z, `at x ${x.toFixed(2)}, y ${y.toFixed(2)}`).toBeLessThan(0.45 + 0.7 + 0.21);
+      }
     }
   });
 
@@ -53,25 +68,28 @@ describe("the forest's floor", () => {
     }
   });
 
-  it('has a near shore in front of each pool, a finger over its water', () => {
+  it('lets each pool run on towards the camera between its banks, to a shore far in front', () => {
+    // Olov, 14 November 2026: "Kan vattnet i diket rinna vidare ut ur bild i riktning mot kameran ... i stället för att
+    // sluta i en rak linje närmast kameran?" A pool had a near shore half a length in front of the path, one line.
     const pools = forest.water ?? [];
     expect(pools.length).toBeGreaterThan(0);
-    for (const pool of pools) {
-      const middle = (pool.from + pool.to) / 2;
-      const shore = shoreAt(forest, middle);
-      expect(shore, `the pool at x ${middle}`).not.toBeNull();
-      expect(shore!).toBeGreaterThan(pool.y);
-      expect(shore!).toBeLessThan(pool.y + 0.15);
-    }
-    // In the mesh: in front of a pool no point of the floor's first row lies under the water.
+    expect(openPools(forest).map((w) => w.from)).toEqual(pools.map((w) => w.from));
+    for (const pool of pools) expect(shoreAt(forest, (pool.from + pool.to) / 2), `the pool at x ${pool.from}`).toBeNull();
+    // In the mesh: between its banks the bed lies under the water all the way to where a picture held sideways ends,
+    // down the floor's own fall; and before the floor's end it has come up as a shore, a finger over the water.
     const pool = pools[0]!;
+    let under = 0, shore = 0;
     for (const { shape } of bankShapes(forest, groundOf(forest.place!))) {
       const at = shape.getAttribute('position');
       for (let i = 0; i < at.count; i++) {
         const [x, y, z] = [at.getX(i), at.getY(i), at.getZ(i)];
-        if (x > pool.from + 1 && x < pool.to - 1 && z > 0.49 && z < 0.95) expect(y, `at x ${x.toFixed(1)}, z ${z.toFixed(2)}`).toBeGreaterThan(pool.y);
+        if (x < pool.from + 2 || x > pool.to - 2 || z < 0.49) continue;
+        if (z < 3.85) { under++; expect(y, `at x ${x.toFixed(1)}, z ${z.toFixed(2)}`).toBeLessThan(pool.y - slopeDrop(z) - 0.5); }
+        if (z > 4.61 && z < 5.01) { shore++; expect(y - (pool.y - slopeDrop(z)), `at x ${x.toFixed(1)}, z ${z.toFixed(2)}`).toBeGreaterThan(0.02); }
       }
     }
+    expect(under).toBeGreaterThan(200);
+    expect(shore).toBeGreaterThan(20);
   });
 
   it("is the forest's and the lawn's: the bog keeps its front, and the rock has its own", () => {

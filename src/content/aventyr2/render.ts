@@ -1,7 +1,7 @@
 import {
   AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, ExtrudeGeometry, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, RingGeometry,
-  CatmullRomCurve3, Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector2, Vector3,
+  Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
   type Material,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -21,7 +21,7 @@ import { lessMotion } from '../../platform/motion';
 import { kitLife } from '../../render/kit-life';
 import { ambientOf, stepAmbient } from '../../render/ambient-animals';
 import { drawnWhile } from '../../render/idle';
-import { litLamp } from '../../render/stage';
+import { flashlight, lampColour, litLamp } from '../../render/flashlight';
 import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
 import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
@@ -37,6 +37,7 @@ import { createGrandparent, type Going, type Grandparent } from './grandparents'
 import { ELDER_BACK, afloat, flightAt, elderWalk } from './kit';
 import { moonstone } from './moonstone';
 import { logSeed, riverLogShape, riverLogWood } from './river-log';
+import { riverRaft } from './river-raft';
 import { beaverLife } from './beaver';
 import { otterLife } from './otter';
 import { installRiverCreatures } from './river-creatures';
@@ -52,11 +53,24 @@ import { openWaterAt } from '../../render/water';
 import { barrelLid, barrelTap } from '../../render/rain-barrel';
 import { jettyWavesExtra } from '../../render/jetty-waves';
 import { teamBenchesExtra } from './team-benches';
+import { BARK_BOAT, barkBoat } from './bark-boat';
+import { volleyNetExtra } from './volley-net';
+import { floatingBark } from './bark-raft';
+import { gungflyExtra } from './gungfly';
+import { fieldBoulder } from './field-boulder';
 import { hazelExtra } from './hazel';
+import { vistaExtra } from './billsta-vista';
 import { ballBag } from './ball-bag';
+import { bigBall, rollBalls } from './big-ball';
+import { GRABS, grabPlaces } from './bowl';
+import { offering, offerPose } from '../../render/gift-handover';
+import { candyBowl, WATCH_TURN } from './candy-bowl';
 import { barnChimney } from './barn-chimney';
 import { barnLoft } from './barn-loft';
-import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
+import { flowerPot } from './flower-pots';
+import { createTrampoline, type Trampoline } from './trampoline';
+import { installSickan, sickanExtra } from './sickan';
+import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, UNDER_ROOF, underRoof, type LandingAnchor } from './storm-rain';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -537,6 +551,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const base = { hemisphere: hemisphere.intensity, sun: sun.intensity };
   // A home with a door out into the storm: the room's warm lamps stay behind him, and the night has the light.
   const doorway = rain > 0 ? chapter.outdoors : undefined;
+  UNDER_ROOF.dry = 0;
   const room = { sky: hemisphere.color.clone(), ground: hemisphere.groundColor.clone(), sun: sun.color.clone() };
   // The room's lamps on the evening of the storm, until the power goes (../../render/power-cut.ts).
   const powerCut = chapter.id === POWER_CHAPTER ? createPowerCut(chapter.id, PENDANT, scene) : null;
@@ -568,6 +583,11 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       log.userData.keep = 0;
       figure.add(log);
     }
+    // And the little one a piece of bark (./bark-boat.ts): the same that it sat on where it was seen (`sightings`). It
+    // lies in the water wherever it floats: `rides` is how high the flight's own height is over the water then.
+    const barked = def.who === 'lillgubbe' && afloat(def);
+    if (barked) figure.add(barkBoat());
+    const rides = barked ? (BARK_BOAT.thick - BARK_BOAT.sunk + (lit ? FIGURE_MIDDLE.lillgubbe : 0)) * (def.size ?? 1.2) : null;
     let halo: Mesh | null = null;
     if (lit) {
       if (!def.walk) figure.position.y = -FIGURE_MIDDLE[def.who];
@@ -605,7 +625,9 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         rest: figure.position.clone(), logRest: log.position.clone(), local: new Vector3(), inverse: new Matrix4(),
       };
     }
-    return { def, figure: holder, halo, elapsed: -1, seen: false, flashed: 0, reveals, restored: false, resumed: false, boards };
+    // A flight that goes on from where the same figure was seen (`sightings`) begins with its glow up, as that one had it.
+    const handed = (storm?.sightings ?? []).some((seen) => seen.until === def.on && seen.who === def.who);
+    return { def, figure: holder, halo, elapsed: -1, seen: false, flashed: 0, reveals, restored: false, resumed: false, boards, handed, rides };
   });
 
   // Someone seen far off (Olov, 9 November 2026: "Man ser inte lillgubben där ån börjar"): the carving itself, pale and
@@ -617,15 +639,24 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     root.name = 'sighting';
     root.position.set(def.at.x, def.at.y, def.z);
     const size = def.size ?? 1;
-    const stone = new Mesh(rock(def.at.x * 7, 0.95, 0.5, 0.8), solid('#363a40', 0.35));
-    stone.position.y = -0.05;
-    const figure = def.who === 'lillgubbe' ? littleFigure() : oldFigure();
+    // The little one is on a piece of bark, caught against a stone in the current (./bark-boat.ts; Olov, 14 November
+    // 2026): the bark the å then takes with it, him on it. The stone is beyond it and downstream, clear of them both.
+    const boat = def.who === 'lillgubbe' ? barkBoat() : null;
+    const stone = new Mesh(boat ? rock(def.at.x * 7, 0.62, 0.42, 0.56) : rock(def.at.x * 7, 0.95, 0.5, 0.8), solid('#363a40', 0.35));
+    if (boat) stone.position.set(0.5 * BARK_BOAT.long * size + 0.3, -0.06, -0.42);
+    else stone.position.y = -0.05;
+    const carving = def.who === 'lillgubbe' ? littleFigure() : oldFigure();
     // Lit a little from within, as the meeting's pair are: pale wood that holds what light there is.
-    lightFromWithin(figure);
+    lightFromWithin(carving);
+    const figure = new Group();
+    figure.add(carving);
+    if (boat) figure.add(boat);
     figure.scale.setScalar(size);
-    figure.position.y = 0.4;
+    // Where its feet are over the water: on the bark's top, or on the stone's.
+    const rest = boat ? (BARK_BOAT.thick - BARK_BOAT.sunk) * size : 0.4;
+    figure.position.y = rest;
     const halo = glow('#dfe8ff', 2.6 * size, 0.42);
-    halo.position.set(0, 0.4 + 0.35 * size, -0.5);
+    halo.position.set(0, rest + 0.35 * size, -0.5);
     const water = new MeshBasicMaterial({ color: '#cfe0f0', transparent: true, opacity: 0, depthWrite: false, blending: AdditiveBlending, fog: false });
     const rings = [0, 1].map(() => {
       const ring = new Mesh(new RingGeometry(0.92, 1, 40).rotateX(-Math.PI / 2), water.clone());
@@ -645,7 +676,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     root.add(stone, figure, halo, streaks);
     drawnWhile(root, false);
     group.add(root);
-    return { def, root, figure, halo, rings, streaks, lanes, seen: false };
+    return { def, root, figure, halo, rings, streaks, lanes, seen: false, rest, afloat: !!boat };
   });
   const streakAt = new Object3D();
   const streakTint = new Color();
@@ -663,7 +694,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
 
   // A lamp shining on him from somewhere: Moa's from the window ("Jag lyser för dig från fönstret!").
   const beams = (storm?.beams ?? []).map((def) => {
-    const lamp = litLamp();
+    const lamp = litLamp(lampColour('moa'));
     lamp.scale.setScalar(1.8);
     lamp.position.set(def.at.x, def.at.y, def.z);
     lamp.visible = false;
@@ -759,11 +790,17 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     balls.geometry = footballGeometry().scale(1, 1, 1 / 1.9);
     balls.material = footballMaterial();
   }
-  // The bouncers as what they are here: the garden's trampoline, or the striped flap of an awning.
+  // The bouncers as what they are here: the garden's trampoline (./trampoline.ts), or the striped flap of an awning.
+  const trampolines: Trampoline[] = [];
   if (storm?.bouncers) {
-    for (const holder of scene.children.filter((child) => child.name === 'bouncer')) {
+    for (const [i, holder] of scene.children.filter((child) => child.name === 'bouncer').entries()) {
       holder.clear();
-      holder.add(storm.bouncers === 'trampoline' ? trampoline() : storm.bouncers === 'net' ? saggingNet() : awningFlap());
+      if (storm.bouncers === 'trampoline') {
+        // In the place itself, not in the holder: the view squashes that whole, as it does a cranberry.
+        const made = createTrampoline(chapter.bouncers![i]!);
+        group.add(made.group);
+        trampolines.push(made);
+      } else holder.add(storm.bouncers === 'net' ? saggingNet() : awningFlap());
     }
   }
 
@@ -773,17 +810,19 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if ((d.look !== 'tragubbe' && d.look !== 'lillgubbe') || (d.z ?? 0) > -6) continue;
     const size = d.scale ?? 1;
     const rock = new Mesh(new SphereGeometry(1.4, 12, 8), solid('#3c4048', 0.9, { flatShading: true }));
+    // (Billsta's vista draws a stone of its own there, and puts this one away: ./billsta-vista.ts.)
+    rock.name = 'figure-stone';
     rock.scale.set(1.3 * size, 0.55 * size, size);
     rock.position.set(d.at.x, d.at.y - (size === 1 ? 0.45 : 0.72 * size), d.z ?? 0);
     group.add(rock);
   }
 
-  // The gusts' shelters as what they are here: upturned flower pots on the lawn, or the jetty's posts.
+  // The gusts' shelters as what they are here: flower pots on the lawn (./flower-pots.ts), or the jetty's posts.
   // (The boulders they stand in for join the scene after this is built: they are put away on the first frame.)
   const shelterOf = (i: number) => (Array.isArray(storm?.shelters) ? storm.shelters[i] ?? 'stones' : storm?.shelters ?? 'stones');
   for (const [i, gust] of (chapter.gusts ?? []).entries()) {
     const kind = shelterOf(i);
-    if (kind !== 'stones') for (const x of gust.shelters) group.add(kind === 'pots' ? flowerPot(x, gust.y) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
+    if (kind !== 'stones') for (const [n, x] of gust.shelters.entries()) group.add(kind === 'pots' ? flowerPot(x, gust.y, n) : kind === 'vents' ? roofVent(x, gust.y) : kind === 'rocks' ? boulder(x, gust.y) : jettyPost(x, gust.y));
   }
 
   // The rain barrel and the watering can stand on the lawn, their tops where the outline has them.
@@ -872,7 +911,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   let boardedAt = 0, landedAt = -1;
   const setDown = new Vector3(), owlStart = new Vector3();
   return {
-    update({ dt, clock, flags, x, y, camera, still, tier, riding, revealPaused, scene: moment }: ExtraFrame) {
+    update({ dt, clock, flags, x, y, camera, still, tier, riding, revealPaused, scene: moment, bouncers, stand }: ExtraFrame) {
+      // The trampoline's mat gives under him, and he is drawn on it where he crosses it (./trampoline.ts).
+      for (const [i, one] of trampolines.entries()) {
+        const lift = one.update(x, y, bouncers?.[i]?.squash ?? 0, dt, clock, still);
+        if (stand) stand.lift += lift;
+      }
       elof.x = x;
       elof.flags = flags;
       elof.still = still;
@@ -880,6 +924,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       elof.y = y;
       elof.riding = riding;
       elof.scene = moment;
+      // The wind's balls turn as far as they roll (./big-ball.ts).
+      if (balls) rollBalls(balls);
       drift?.(dt, still);
       // The owl's slow, deep beats, wherever it flies: wide over the water and a little under him. Its downstroke is
       // the slower, and between bursts it glides on wings held near level (a positive turn lowers its wings).
@@ -993,7 +1039,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const at = rainDropAt(s, t, cx, cy);
           place.position.set(at.x, at.y, s.z + cz);
           // No rain falls indoors: only out of doors, beyond the house's corner.
-          const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
+          const out = (chapter.outdoors !== undefined && place.position.x < chapter.outdoors) || underRoof(place.position.x) ? 0 : 1;
           place.scale.set(out, out * s.long, out);
           place.updateMatrix();
           drops.setMatrixAt(i, place.matrix);
@@ -1011,7 +1057,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const at = rainLandingAt(s, i, t, cx, landingAnchors[i]);
           landingAnchors[i] = at;
           const { x, age: k } = at;
-          const out = chapter.outdoors !== undefined && x < chapter.outdoors;
+          const out = (chapter.outdoors !== undefined && x < chapter.outdoors) || underRoof(x);
           const ground = heightAt(chapter, x), water = openWaterAt(chapter, x);
           place.position.set(x, Math.max(ground, water ?? ground) + 0.02, at.z);
           place.rotation.set(0, 0, 0);
@@ -1093,10 +1139,18 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           flashBolt = (flashBolt + 1) % bolts.length;
           bolts[flashBolt]!.position.set(s.def.at.x + (random() - 0.5) * 12, cy + 20, -60);
         }
-        drawnWhile(s.root, shown);
-        if (!shown) continue;
+        // When the current has taken the bark, the stone it was caught on stays where it is, the water going by it: only
+        // the figure, its light and the rings round it go with the flight that takes over.
+        const left = s.afloat && flags.has(s.def.on) && !shown;
+        drawnWhile(s.root, shown || left);
+        drawnWhile(s.figure, shown);
+        drawnWhile(s.halo, shown);
+        for (const ring of s.rings) drawnWhile(ring, shown);
+        if (!shown && !left) continue;
         s.figure.rotation.z = still ? 0 : Math.sin(clock * 1.6) * 0.07 + Math.sin(clock * 2.9 + 1) * 0.025;
-        s.figure.position.y = 0.4 + (still ? 0 : Math.sin(clock * 1.3) * 0.03);
+        s.figure.position.y = s.rest + (still ? 0 : Math.sin(clock * 1.3) * 0.03);
+        // On its bark it tugs at the stone it is caught on, as the current pulls at it.
+        if (s.afloat) s.figure.position.x = still ? 0 : 0.05 * Math.sin(clock * 0.9) + 0.03 * Math.sin(clock * 2.3 + 0.7);
         (s.halo.material as MeshBasicMaterial).opacity = still ? 0.4 : 0.36 + 0.06 * Math.sin(clock * 1.7);
         for (const [i, ring] of s.rings.entries()) {
           const k = still ? 0.3 + 0.4 * i : (clock * 0.45 + i * 0.5) % 1;
@@ -1153,8 +1207,12 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
         // On the water a figure floats, bobbing along; in the air it tumbles across the sky.
         const floating = afloat(f.def);
         const at = flightAt(f.def, k);
-        f.figure.position.set(at.x, at.y + (floating ? 0.12 * Math.sin(clock * 3) : 0), at.z);
-        f.figure.rotation.z = f.def.walk ? (still ? 0 : Math.sin(clock * 9) * .065) : still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * 0.25 : -k * 9;
+        // The little one's bark lies in the water, at the water's own level where it is: whatever height its flight was
+        // written at, it never hangs over the water or goes under it. It bobs less than a log: it is flat.
+        const level = f.rides === null ? null : openWaterAt(chapter, at.x);
+        if (level !== null) at.y = level + f.rides!;
+        f.figure.position.set(at.x, at.y + (floating ? (f.rides === null ? 0.12 : 0.05) * Math.sin(clock * 3) : 0), at.z);
+        f.figure.rotation.z = f.def.walk ? (still ? 0 : Math.sin(clock * 9) * .065) : still ? (floating ? 0 : 0.4) : floating ? Math.sin(clock * 2.2) * (f.rides === null ? 0.25 : 0.12) : -k * 9;
         if (f.boards) {
           const h = still || f.restored ? 1 : f.elapsed / BOARDING.seconds;
           // In the air he does not rock with the log: it rocks under him once he stands on it.
@@ -1162,7 +1220,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           board(f.boards, f.figure, h);
         }
         // Its glow comes up as the flash finds it, breathes with each flash, and goes as it is lost in the dark.
-        if (f.halo) (f.halo.material as MeshBasicMaterial).opacity = (0.42 + 0.5 * flash) * smooth(k / 0.06) * (1 - smooth((k - 0.82) / 0.18));
+        if (f.halo) (f.halo.material as MeshBasicMaterial).opacity = (0.42 + 0.5 * flash) * (f.handed ? 1 : smooth(k / 0.06)) * (1 - smooth((k - 0.82) / 0.18));
       }
       for (const b of beams) {
         b.lamp.visible = x >= b.def.within[0] && x <= b.def.within[1];
@@ -1218,21 +1276,6 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   };
 }
 
-/** An upturned terracotta flower pot, a shelter from the wind as tall as two of him. */
-function flowerPot(x: number, y: number): Group {
-  const group = new Group();
-  const clay = solid('#b65f3a', 0.8);
-  const pot = new Mesh(new CylinderGeometry(0.62, 0.92, 1.7, 20), clay);
-  pot.position.y = 0.85;
-  const rim = new Mesh(new CylinderGeometry(1.0, 1.0, 0.28, 20), clay);
-  rim.position.y = 0.14;
-  group.add(pot, rim);
-  group.position.set(x, y, -1.3);
-  group.userData.model = 'kruka';
-  group.userData.turn = x * 1.7;
-  return group;
-}
-
 /** A boulder of the hillside, granite grey and faceted, as big as the lumps it stands in for. */
 function boulder(x: number, y: number): Group {
   const stone = new Group();
@@ -1263,53 +1306,13 @@ function jettyPost(x: number, y: number): Group {
   return group;
 }
 
-/** The garden's trampoline, as big as a table to him: a dark round mat on a green frame, its top at the bouncer's. */
-function trampoline(): Group {
-  const group = new Group();
-  const mat = new Mesh(new CylinderGeometry(1.5, 1.5, 0.06, 28), solid('#1e2226', 0.7));
-  mat.position.y = 0.5;
-  const rim = new Mesh(new TorusGeometry(1.6, 0.12, 8, 30), solid('#3c7a52', 0.6));
-  rim.rotation.x = Math.PI / 2;
-  rim.position.y = 0.52;
-  group.add(mat, rim);
-  for (const a of [0.4, 2.0, 3.6, 5.2]) {
-    const leg = new Mesh(new CylinderGeometry(0.05, 0.05, 1.4, 6), solid('#2c5a3c', 0.6));
-    leg.position.set(Math.cos(a) * 1.55, -0.2, Math.sin(a) * 1.55 - 0.3);
-    group.add(leg);
-  }
-  group.position.z = -0.3;
-  return group;
-}
-
 /**
- * A volleyball net torn loose and sagging low between its two posts: a white top band dipping to the
- * bouncer's top in the middle, the mesh hanging under it. He lands in the dip.
+ * Flärken's volleyball net, hung like a hammock between its posts, is drawn by ./volley-net.ts, which moves it: it
+ * dips and springs under him, and the wind tosses a ball in it. Nothing of it is in the bouncer's own holder, which the
+ * view squashes whole as a cranberry is squashed (it flattened the net's posts with it).
  */
 function saggingNet(): Group {
-  const group = new Group();
-  const white = solid('#f2f2ee', 0.7);
-  const mesh = solid('#d4d6d2', 0.8);
-  const sag = (x: number) => 0.5 + 1.6 * (x / 2.4) ** 2;
-  const points = Array.from({ length: 13 }, (_, i) => new Vector3(-2.4 + (i / 12) * 4.8, sag(-2.4 + (i / 12) * 4.8), 0));
-  const band = new Mesh(new TubeGeometry(new CatmullRomCurve3(points), 24, 0.07, 6), white);
-  group.add(band);
-  for (let i = 0; i <= 12; i++) {
-    const x = -2.1 + i * 0.35;
-    const strand = new Mesh(new BoxGeometry(0.025, 0.42, 0.025), mesh);
-    strand.position.set(x, sag(x) - 0.22, 0);
-    group.add(strand);
-  }
-  for (const k of [1, 2]) {
-    const lower = points.map((p) => new Vector3(p.x, p.y - k * 0.18, 0));
-    group.add(new Mesh(new TubeGeometry(new CatmullRomCurve3(lower), 24, 0.02, 4), mesh));
-  }
-  for (const x of [-2.5, 2.5]) {
-    const post = new Mesh(new CylinderGeometry(0.06, 0.07, 2.4, 8), solid('#c8ccce', 0.5, { metalness: 0.4 }));
-    post.position.set(x, 1.2, 0);
-    group.add(post);
-  }
-  group.position.z = -0.2;
-  return group;
+  return new Group();
 }
 
 /** An awning's loose flap: striped cloth, sagging, its top at the bouncer's. */
@@ -1900,10 +1903,26 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       }
       // Where he boards a log (`boards`): his flight begins with the hop from here, so this figure goes at once.
       if (spot.word === 'boards') return standing(spot, figure, undefined, 'handed');
+      // On the shelf on the evening of the storm (`grabs`): he turns to the window the gust took the little one out of,
+      // and his leap from here, by way of the bowl of sweets, is the bowl's (./candy-bowl.ts): this figure goes at once.
+      if (spot.word === GRABS) {
+        return standing(spot, figure, (_clock, dt) => {
+          const gust = elof.flags?.has(WINDOW_BURST) ?? false;
+          figure.rotation.y = elof.still ? (gust ? WATCH_TURN : 0) : figure.rotation.y + ((gust ? WATCH_TURN : 0) - figure.rotation.y) * Math.min(1, dt * 5);
+        }, 'handed');
+      }
+      // And there he gives Elof the golden sweet (../../render/gift-handover.ts): a step out from beside the little
+      // one, towards him, turned to him and bowed, with it in his hands; and back when Elof's hand has it.
+      let out = 0;
+      if (met) figure.rotation.order = 'YXZ';
       return standing(spot, figure, met ? (clock, dt) => {
-        figure.rotation.z = Math.sin(clock * 1.1) * 0.04;
+        out = offering(out, elof.flags, dt, elof.still);
         const seen = elof.flags?.has('eye') && Math.abs(elof.x - spot.at.x) < 5;
-        figure.rotation.y += ((seen ? -0.9 : 0) - figure.rotation.y) * Math.min(1, dt * 1.6);
+        const pose = offerPose(out, clock, seen ? -0.9 : 0);
+        figure.position.set(pose.x, pose.y, pose.z);
+        figure.rotation.z = Math.sin(clock * 1.1) * 0.04 * pose.rock;
+        figure.rotation.y = elof.still ? pose.turn : figure.rotation.y + (pose.turn - figure.rotation.y) * Math.min(1, dt * (1.6 + 8 * (1 - pose.rock)));
+        figure.rotation.x = pose.bow;
       } : undefined, spot.id.startsWith('decor:') && !met ? 'leap' : 'shrink');
     },
     seesawLog: (spot) => {
@@ -2005,7 +2024,9 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         const k = smooth(gladFor / 0.4);
         const tremble = Math.sin(clock * 5.3) * 0.03 + Math.sin(clock * 8.1 + 1) * 0.012;
         figure.rotation.z = tremble * (1 - k) + Math.sin(gladFor * 1.7) * 0.06 * k;
-        figure.position.y = glad && !home ? gladHop(gladFor) * k : 0;
+        // On the clock, as its cap hops (`tiny-cap`, worn): counted from its own gladness, they were out of step and the
+        // cap hopped off its head. Its gladness growing in (`k`) keeps the first hop from starting halfway up.
+        figure.position.y = glad && !home ? gladHop(clock) * k : 0;
       }, spot.id.startsWith('decor:') && spot.word !== 'lifted' ? 'blown' : 'shrink');
     },
     pumpkin: (spot) => {
@@ -2071,6 +2092,10 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     },
     // The rain barrel's tap, its outlet out over the can towards the ditch: its water is the pour's (render/rain-barrel.ts).
     tap: (spot) => barrelTap(spot),
+    // The bowl of Saturday sweets on the table, and the old one's leap by way of it (./candy-bowl.ts): lit from within
+    // as he leaps, as he is wherever he is seen in the storm's dark, so that he is seen in the room's.
+    candyBowl: (spot) => candyBowl(spot, elof, () => { const figure = oldFigure(); lightFromWithin(figure); return figure; },
+      () => (playing.chapter ? grabPlaces(playing.chapter) : null)),
     candle: (spot) => {
       // Mamma's candle on the evening of the storm: on the table from the start, its wick black, until it catches in the
       // dark after the power has gone (`CANDLES_LIT`, ../home-power.ts). Its flame grows up from the wick as it catches.
@@ -2140,16 +2165,13 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
     flashlight: (spot) => {
       // Stormkvällen's flashlight, lying switched off on the table: Pappa can't find it in the dark ("Var är ficklampan?
       // Jag ser ingenting!"), and Elof lights it as he takes it (../../render/view.ts, `carriedLamp`). It lay there
-      // shining a long beam across the room, before the power cut too. Its red body and pale glass catch the candle.
+      // shining a long beam across the room, before the power cut too. Its red body and pale glass catch the candle: the
+      // same lamp that he then carries and Pappa holds (../../render/flashlight.ts), lying on its side.
       const group = new Group();
-      const body = new Mesh(new CylinderGeometry(0.09, 0.09, 0.6, 10), solid('#c8372a', 0.5));
-      body.rotation.z = Math.PI / 2;
-      const head = new Mesh(new CylinderGeometry(0.15, 0.1, 0.18, 12), solid('#2a2a2a', 0.4));
-      head.rotation.z = Math.PI / 2;
-      head.position.x = 0.38;
-      const glass = new Mesh(new CircleGeometry(0.13, 14).rotateY(Math.PI / 2), new MeshStandardMaterial({ color: '#dfe6ea', roughness: 0.15, metalness: 0.3 }));
-      glass.position.x = 0.475;
-      group.add(body, head, glass);
+      const lamp = flashlight(lampColour('pappa'));
+      lamp.rotation.y = Math.PI / 2;
+      lamp.position.y = 0.075;
+      group.add(lamp);
       return standing(spot, group);
     },
     'tiny-cap': (spot) => {
@@ -2276,14 +2298,29 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       };
     },
     floatBall: (spot) => {
-      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings.
+      // A small ball adrift in a puddle, turning slowly and bobbing on the rain's rings. When the big ball it waits for
+      // comes down into the water beside it (./big-ball.ts), the wave washes it away behind that one, out in the puddle: the big
+      // one came up through it, and then it was gone.
       const group = new Group();
       const small = football(0.36);
       small.position.y = 0.26;
       group.add(small);
-      return standing(spot, group, (clock) => {
-        group.position.y = Math.sin(clock * 1.6) * 0.05;
-        small.rotation.z = Math.sin(clock * 0.7) * 0.5;
+      let big: Object3D | null | undefined;
+      let washed = 0;
+      return standing(spot, group, (clock, dt) => {
+        if (big === undefined) {
+          // What it waits for is the thing whose placing takes it away (the chapter's decor, `until`).
+          const until = playing.chapter?.decor?.find((d) => d.look === 'floatBall' && d.at.x === spot.at.x && d.at.y === spot.at.y)?.until;
+          let top: Object3D = group;
+          while (top.parent) top = top.parent;
+          big = until?.startsWith('placed:') ? top.getObjectByName(`mover:${until.slice('placed:'.length)}`) ?? null : null;
+        }
+        // In the water, and within a length and a half of it.
+        const splashed = !!big && big.position.y < spot.at.y - 0.3 && Math.abs(big.position.x - spot.at.x) < 1.6;
+        washed = splashed ? Math.min(1, washed + dt / 0.8) : 0;
+        const away = smooth(washed);
+        group.position.set(0.5 * away, Math.sin(clock * 1.6) * 0.05 + 0.16 * Math.sin(washed * Math.PI * 2.5) * (1 - washed), -2.3 * away);
+        small.rotation.z = Math.sin(clock * 0.7) * 0.5 + away * 1.4;
         small.rotation.y = clock * 0.3;
       });
     },
@@ -2367,15 +2404,14 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
       return standing(spot, group, (clock) => { (light.material as MeshBasicMaterial).opacity = 0.6 + 0.1 * Math.sin(clock * 7); });
     },
     deadLamp: (spot) => {
-      // A flashlight the storm has put out, set down on the boards: a dull body and a pale, dark glass.
+      // A flashlight the storm has put out, set down on the boards, its glass dark: its owner's own, as they then hold it
+      // lit (../../render/flashlight.ts; the chapter says whose it is, in `word`).
       const group = new Group();
-      const body = new Mesh(new CylinderGeometry(0.1, 0.1, 0.62, 10).rotateZ(Math.PI / 2), solid('#3c4048', 0.5));
-      const head = new Mesh(new CylinderGeometry(0.17, 0.11, 0.2, 12).rotateZ(-Math.PI / 2), solid('#50565e', 0.45));
-      head.position.x = 0.4;
-      const glass = new Mesh(new CircleGeometry(0.15, 12).rotateY(Math.PI / 2), solid('#aab4c0', 0.2));
-      glass.position.x = 0.505;
-      group.add(body, head, glass);
-      group.position.y = 0.17;
+      const lamp = flashlight(lampColour(spot.word));
+      lamp.rotation.y = Math.PI / 2;
+      lamp.scale.setScalar(1.25);
+      group.add(lamp);
+      group.position.y = 0.14 * 1.25;
       return standing(spot, group, () => {});
     },
     owlLanding: (spot) => {
@@ -2539,7 +2575,8 @@ function rideLooks(): Record<string, (look: RideLook) => Object3D | null> {
     owl: () => { const g = new Group(); g.name = 'owl-ridden'; const bird = owl(true); bird.position.y = 0.5; g.add(bird); return g; },
     // The ball Bertil kicks, under his feet as it flies.
     football: () => { const g = new Group(); const b = football(0.8); b.position.y = -0.84; g.add(b); return g; },
-    raft: () => { const g = new Group(); g.add(raft(3.2, 0.5)); g.children[0]!.position.y = -0.5; return g; },
+    // Älven's raft floats: it places itself, at the bank, under him and at the far bank (./river-raft.ts).
+    raft: () => riverRaft(() => course),
   };
 }
 
@@ -3063,73 +3100,12 @@ function fieldStone(mover: Mover): Group {
  * in with a splash, bobs up again and floats under him, mostly under the water, rocking a little.
  */
 function barkRaft(mover: Mover): Group {
-  const outer = new Group();
-  const holder = new Group();
-  holder.name = 'bark-holder';
-  holder.userData.model = 'barkbit';
-  const splash = waterSplash(0.9);
-  outer.add(holder, splash.group);
-  const before = mover.stops[mover.stops.length - 2]!;
-  const last = mover.stops[mover.stops.length - 1]!;
-  /** How long it slides to the edge, and how long it takes from tipping to being in the water. */
-  const SLIDE = 0.32, DROP = 0.3;
-  let ready = false, edge = before.x, water = last.y + mover.height * 0.6, start = 0;
-  let state: 'unknown' | 'planks' | 'going' | 'afloat' = 'unknown';
-  outer.userData.tick = (clock: number) => {
-    const mesh = outer.parent;
-    if (!mesh) return;
-    if (!ready) {
-      ({ edge, water } = edgeAhead(playing.chapter, before.x, before.y, last.x));
-      ready = true;
-    }
-    const sx = mesh.position.x, sy = mesh.position.y;
-    // On the planks, give or take the little way past a stop that a push settles back from.
-    const onPlanks = sx <= before.x + 0.2 && sy >= before.y - 0.05;
-    if (state === 'unknown') state = Math.abs(sx - last.x) < 1e-3 && Math.abs(sy - last.y) < 1e-3 ? 'afloat' : 'planks';
-    if (state === 'planks' && !onPlanks) { state = 'going'; start = clock; }
-    if (state !== 'planks' && onPlanks) state = 'planks';
-    if (state === 'planks') {
-      // On the planks it slides as the simulation has it, at the back.
-      holder.position.set(0, 0, BARK_Z);
-      holder.rotation.set(0, 0, 0);
-      splash.update(-1, elof.still);
-      return;
-    }
-    const t = state === 'afloat' ? 60 : clock - start;
-    // Where its middle is when it tips: a little over the edge.
-    const over = edge + mover.width * 0.12;
-    const tipped = over + (last.x - over) * 0.7;
-    let x: number, y: number, tip: number;
-    if (t < SLIDE) {
-      const u = t / SLIDE;
-      x = before.x + (over - before.x) * (1.6 * u - 0.6 * u * u);
-      y = before.y;
-      tip = 0;
-    } else if (t < SLIDE + DROP) {
-      const k = (t - SLIDE) / DROP;
-      x = over + (tipped - over) * k;
-      y = before.y + (last.y - 0.22 - before.y) * k * k;
-      tip = -0.45 * Math.sin(Math.PI * k);
-    } else {
-      // Under, and up again: it bobs a few times and settles where it floats.
-      const k = t - SLIDE - DROP;
-      x = tipped + (last.x - tipped) * (1 - Math.exp(-k / 0.3));
-      y = last.y - 0.22 * Math.exp(-k / 0.28) * Math.cos(k * 6.5);
-      tip = 0.07 * Math.exp(-k / 0.35) * Math.sin(k * 8);
-    }
-    const z = BARK_Z * (1 - smooth(t / (SLIDE + DROP)));
-    // Afloat, it rocks a little on the water.
-    const bob = elof.still ? 0 : Math.sin(clock * 1.9) * 0.02;
-    const rock_ = elof.still ? 0 : Math.sin(clock * 1.3 + 1) * 0.015;
-    mesh.rotation.z = 0;
-    mesh.scale.set(1, 1, 1);
-    holder.position.set(x - sx, y + bob - sy, z);
-    holder.rotation.set(0, 0, tip + rock_);
-    // In it goes where its foot meets the water as it tips.
-    splash.group.position.set(over + (tipped - over) * 0.6 - sx, water - sy, 0);
-    splash.update(t - SLIDE - DROP * 0.6, elof.still);
-  };
-  return outer;
+  // Drawn by ./bark-raft.ts: on the planks it stands on its edge; in the water it lies flat, as bark floats, rides and
+  // rocks, and gives under him when he lands on it.
+  return floatingBark(mover, {
+    behind: BARK_Z, splash: waterSplash(0.9), still: () => elof.still, elof: () => elof,
+    edge: (from, to) => edgeAhead(playing.chapter, from.x, from.y, to),
+  });
 }
 
 /** The fallen long arm of Klonk's seesaw comes to rest with its top on the ground. */
@@ -3145,17 +3121,9 @@ function barnDoor(mover: Mover): Group {
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
-    boulder: (mover) => {
-      // A round field stone, as wide and as high as the thing it is to the simulation, with moss on its shaded side.
-      const group = new Group();
-      const stone = new Mesh(rock(Math.round(mover.width * 37), mover.width / 2 * 1.06, mover.height / 2 * 1.04, mover.width * 0.46), solid('#7a7e80', 0.86, { flatShading: true }));
-      stone.position.y = mover.height / 2;
-      stone.castShadow = true;
-      const moss = new Mesh(rock(Math.round(mover.width * 41), mover.width * 0.3, mover.height * 0.2, mover.width * 0.3), solid('#55703e', 0.95, { flatShading: true }));
-      moss.position.set(-mover.width * 0.16, mover.height * 0.86, 0.04);
-      group.add(stone, moss);
-      return group;
-    },
+    // A field stone, as wide and as high as the thing it is to the simulation (./field-boulder.ts): Billsta's, under the
+    // seesaw, whose trunk lies in a trough across its top, a little behind the path.
+    boulder: (mover) => fieldBoulder({ width: mover.width, height: mover.height, depth: mover.width * 1.45, back: -0.14, saddle: { z: -0.34, deep: 0.12, wide: 0.26 }, seed: 3 }),
     riverLog: (mover) => {
       // A sawn log floating half under, its top level where he stands (./river-log.ts): the kit's fallen branch, fitted
       // to the thing's box, lay 0.47 to 0.78 under his feet.
@@ -3172,7 +3140,7 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
     fieldstone: (mover) => fieldStone(mover),
     bark: (mover) => {
       const outer = barkRaft(mover);
-      const group = outer.getObjectByName('bark-holder')!;
+      const group = outer.getObjectByName('bark-piece')!;
       // Until the kit's has come (art/blender/flarken.py, `barkbit`): pine bark, grey-brown and furrowed, pale enough to
       // be told in the storm's dark.
       const slab = new Mesh(new BoxGeometry(mover.width, mover.height, 1.2, 6, 2, 3), solid('#9a7656', 1, { flatShading: true, emissive: '#3a2614', emissiveIntensity: 0.5 }));
@@ -3214,7 +3182,8 @@ function moverLooks(): Record<string, (mover: Mover) => Group | null> {
       }
       return group;
     },
-    football: (mover) => { const g = new Group(); g.add(football(Math.min(mover.width, mover.height) / 2)); return g; },
+    // Olympia's big ball: it rolls, flies, bounces and floats (./big-ball.ts).
+    football: (mover) => bigBall(mover, { chapter: () => playing.chapter, still: () => elof.still, splash: waterSplash(1) }),
     raft: (mover) => { const g = new Group(); g.add(raft(mover.width, mover.height)); return g; },
     buoy: (mover) => {
       // A swimming buoy: a white float with a red band, bobbing.
@@ -3280,12 +3249,21 @@ export function installPictures(): void {
   if (!PACK.extras.includes(stormExtra)) PACK.extras.push(stormExtra);
   // The waves over a jetty where its gusts blow (Flärken; ../../render/jetty-waves.ts).
   if (!PACK.extras.includes(jettyWavesExtra)) PACK.extras.push(jettyWavesExtra);
-  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts).
+  // Olympia's team benches, whose roofs the drops pour from (./team-benches.ts), and the yard behind its pitch.
   if (!PACK.extras.includes(teamBenchesExtra)) PACK.extras.push(teamBenchesExtra);
+  // Flärken's volleyball net, which dips and springs (./volley-net.ts).
+  if (!PACK.extras.includes(volleyNetExtra)) PACK.extras.push(volleyNetExtra);
+  // Flärken's gungfly, rafts of bog that tip and well up as they sink (./gungfly.ts).
+  if (!PACK.extras.includes(gungflyExtra)) PACK.extras.push(gungflyExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
+  // The view from Billaberget's brow down over the narrow (./billsta-vista.ts).
+  if (!PACK.extras.includes(vistaExtra)) PACK.extras.push(vistaExtra);
   // Älven's beaver and otter with bones and clips, from Blender, where their lives wait for them (./river-creatures.ts).
   if (!PACK.models.includes(installRiverCreatures)) PACK.models.push(installRiverCreatures);
+  // Sickan, the family's cat, out in Stormgården (./sickan.ts).
+  if (!PACK.extras.includes(sickanExtra)) PACK.extras.push(sickanExtra);
+  if (!PACK.models.includes(installSickan)) PACK.models.push(installSickan);
 }
 
 /** For the tests: the looks, and which chapters have a dimmed sky. */

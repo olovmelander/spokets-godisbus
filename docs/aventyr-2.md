@@ -115,7 +115,9 @@ cup of cocoa in Morgonen efter.
 3. **Fönstret slår upp** (held scene). The window by the shelf rattles on its hook all evening. A gust bursts it:
    its two halves fly outward, as Swedish windows open, and bang in the wind, the hook hanging loose (6 November
    2026; before, the window never moved). The little one is swept out into the dark, and the old one leaps after
-   it. Pappa sees only the open window and the empty places, and in the next scene he pulls it to. The morning
+   it by way of the glass bowl of Saturday sweets on the table (14 November 2026): down into it, up with his arms
+   full, and out through the window, sweets spilling. That fistful is his trail. The bowl is half empty after, and
+   stands so at the Sunday breakfast. Äventyr 1's home has no bowl: its Saturday sweets are in the bag. Pappa sees only the open window and the empty places, and in the next scene he pulls it to. The morning
    after, he and Elof mend its hook.
 4. **Klonk's star** (held scene). Pappa shuts the burst window and Mamma looks out after the figures, their backs
    to the room. With no grown-up looking, Klonk wakes on the shelf, hops down to Elof's feet and opens its carved
@@ -124,7 +126,10 @@ cup of cocoa in Morgonen efter.
    behind the grown-ups' backs. They turn at the sound, and Klonk is wood again while they look. Elof is small.
 5. **Vi letar tillsammans** (held scene): the family pull on raincoats and headlamps; each says what they will do.
    Only now is the old one's trail there: a big candy under the window where he landed, then sweets one at a time
-   to the veranda door. Out through the veranda door. Title: *Stormnatten*.
+   to the veranda door, and Moa says she saw him take a fistful. Out through the veranda door: Moa and Bertil go ahead
+   and wait by it, and when he has stepped out all four walk out after him, Pappa first with his lamp, and kneel and
+   crouch along the deck (14 November 2026). At its edge each says something to him, Moa and Bertil too, and he calls
+   out to the little one. Title: *Stormnatten*.
 
 ### Kapitel 1: Stormgården (garden at night)
 
@@ -153,7 +158,10 @@ cup of cocoa in Morgonen efter.
 6. **Gamla trägubbens minne:** at a dark hollow Klonk shows the old one's thought: the crack on the mountain.
    "Gamla trägubben låg ensam i flera år." "Därför skyndar han. Lillgubben är ensam!" He stands at the hollow while
    it is said, the thought in the middle of the picture.
-7. **Lavskrikan** from Äventyr 1 shelters in a hollow; a lingonberry, and it shows the way up.
+7. **Lavskrikan** from Äventyr 1 shelters in a hollow; a lingonberry, and it shows the way up: it flies up over the
+   high root's edge, lands on a dead snag where the beard lichen hangs wound up, and tugs it loose, so that it unrolls
+   down the face for him to climb (Olov, 14 November 2026: it must be seen that the jay arranges it; the lichen came
+   down the moment it had its berry). He is free meanwhile, and it is climbable once it has reached the ground.
 8. Down the hill towards the village, where every window is dark.
 
 ### Kapitel 3: Byn i stormen (village street at night)
@@ -167,6 +175,8 @@ cup of cocoa in Morgonen efter.
    night.
 4. **Moas paraply:** "Ropa på Moa". She waits on the high wall with her umbrella open over her head; called, she
    holds it out to him at the edge, he takes its crook, and he floats down under it over the flooded crossing.
+   Anundsjö's church stands whole beyond the crossing in that picture, its belfry beside it (Olov, 14 November 2026).
+   Landed, he turns and thanks her: "Tack, Moa! Ditt paraply kan flyga!", and she cheers and waves back from the wall.
 5. **The swinging sign:** a moving platform.
 6. **Fjun's cap:** the little one's carved cap lies in the gutter. He stops, picks it up and holds it up to look at it
    before he says what it is (Olov, 9 November 2026: finding it went far too fast).
@@ -184,7 +194,8 @@ the pitch. A football is one and a half Elofs high: the puzzles are football puz
 3. **Bollen i målet:** the goalmouth is flooded and too wide, and a small ball bobs in it. The answer is behind him: he
    ran under a table with a big football on it. He goes back, climbs up behind it, and kicks it down and on into the
    water, where it floats: a stepping stone.
-4. **The net and the crossbar:** climb the goal's net up to the crossbar and walk along it.
+4. **The net's post and the crossbar:** climb the post behind the goal's net up to the goal's top and walk along it to
+   the crossbar (Olov, 14 November 2026: nothing was seen to climb there; the back net lies across the path, on edge).
 5. **The corner flag** snapping in the gusts, and the benches' roofs dripping, with a dry way under them.
 6. **Bertil's free kick:** "Ropa på Bertil". He kicks the ball, and Elof rides it in a great arc into the far goal.
 7. **The biathlon range:** knock the targets white, one by one (optional), for side candy.
@@ -240,14 +251,16 @@ Själevadsfjärden.
 ### Finalen: Stormens öga (in the narrow at Billsta, Själevadsfjärden beyond)
 
 1. On a jetty below Billaberget (not mormor and morfar's: their house is up by the road) the wind has knocked down the family's
-   lamps and they have gone out. They call for him over the water and cannot hear his voice at their feet; mormor points out
-   the lamps. He lights them
-   one by one, and each of them feels that he is near (Moa: "Det är Elof. Jag vet att det är Elof."). The row of light
+   lamps and they have gone out. They call for him over the water and cannot hear his voice at their feet. Nobody tells
+   him what to do (14 November 2026: mormor used to, before anyone had seen him): he says it himself. He lights them
+   one by one, each of them wonders who did, and feels that he is near (Moa: "Det är Elof. Jag vet att det är Elof."). The row of light
    goes out over the water, and the owl comes to it and flies Elof out over the waves. Far down the lake, Själevad's
    white church stands in the flashes.
 2. **The storm's eye:** the wind drops, the clouds part, stars and the moon. On the stone the old trägubbe holds
    the little one. They are cold and still, and then they see him.
-3. **The golden sweet:** only after the meeting does the old one reveal the geléhallon in gold paper it saved for him.
+3. **The golden sweet:** only after the meeting does the old one reveal the geléhallon in gold paper it saved for him:
+   he steps out to Elof and holds it out in his hands, Elof takes it from them and thanks him by name (14 November
+   2026: it is the old one's to give, not Klonk's).
    Elof recognises the glitter and remembers that this magic makes him big. *Smaka*: he grows,
    with both figures and the little one's returned cap carried in his hands through the walk home.
 4. The family's lamps, and mormor's lantern, on the shore. Morfar: "Vi följer med hem och äter frukost!" They all
@@ -310,17 +323,23 @@ The worlds were authored from this design and keep its beats, with these details
 - **Olympia** (goal at 179 EL, 94 trail candies): up three stone steps from the road to the ground on its hill, and
   over the high fence by the ball-stop net; footballs bowled across the small pitch from behind; *Bollen i målet*, the big ball fetched from its table
   and kicked four times ("Sparka") into the flooded goalmouth, where it floats as a stepping stone ("Mål! Fast det var jag som gick in!");
-  a side way up the goal's net and along its white crossbar; the corner flag and the dripping benches; Bertil's
+  a side way up the post behind the goal's net and along its white crossbar; the corner flag and the dripping benches; Bertil's
   free kick over the centre circle, which is a lake, into the far goal; five biathlon targets turned white with
   pine cones (optional); the dark floodlit trail, where the strongest gust takes the little one north.
 - **Flärken** (reworked from "Sjön" into Flärkenbadet; goal at 188 EL, 111 trail candies): the playground's swings
   as lace rings and the slide; the picnic table, dry under its top; the torn volleyball net as a bounce up to the
   changing rooms' roofs, and a banging door; wet stones in the shallows with a reed up the high one; seven floating
   reed mats; six jetty posts against the waves; Mamma's SUP held against the broken jetty; up the diving tower to
-  the lookout, where the picture goes out over the lake with him to the little one, caught on a stone where the river
-  begins; at the gap, where the planks have broken off, a round stone that rolls off the edge and sinks, and then the
-  bark pushed three times into the gap ("Bark flyter, precis som Klonk!"). The painted sun board behind the shallows
-  says Flärken (Olov's decision, 9 November 2026). The outlet takes both figures down the river: "Trä flyter!"
+  the lookout, where the picture goes out over the lake with him to the little one, on a piece of bark caught against
+  a stone where the river begins; at the gap, where the planks have broken off, a round stone that rolls off the edge
+  and sinks, and then the bark pushed three times into the gap ("Bark flyter, precis som Klonk!"). The painted sun
+  board behind the shallows says Flärken (Olov's decision, 9 November 2026). The outlet takes both figures down the
+  river: "Trä flyter!"
+  - As of 14 November 2026 (Olov's list): going down the slide he sits and slides (`chutes`, `src/sim/chute.ts`); the
+    net is a net that dips and springs, with a ball tossed in it (`volley-net.ts`); the reed mats are rafts of bog
+    (`gungfly.ts`); the sun board stands braced on an islet of its own; the little one is on the same piece of bark at
+    the lookout, at the outlet and down Älven (`bark-boat.ts`); and the bark raft is a thick piece of pine bark that
+    falls flat into the water and floats so (`bark-raft.ts`).
 - **Älven** (goal at 186 EL, 92 candies): a little raft and a birch leaf down the current; stones and bobbing logs; the rapids
   under the bridge in Bredbyn, where Pappa, at the railing over the bank, lowers his knitted scarf in both hands and
   walks along the bridge lifting Elof over, the scarf hanging straight down to Elof's hands; the beaver's gnawed
@@ -344,7 +363,7 @@ The worlds were authored from this design and keep its beats, with these details
   church far down the lake; mormor and morfar's house is not on the shore. Mormor and morfar come down with
   everyone and welcome them ("Hemma hos oss finns det varm choklad."), and come to breakfast in Morgonen efter.
   (9 November 2026, Olov's play-through:) the meeting waits until Elof has gone up to the figures; at its end the old
-  one holds out the golden sweet on its paper in a glitter. He carries it up before him, looks at it in his hands,
+  one holds out the golden sweet on its paper, in his hands, in a glitter, and Elof takes it from them. He carries it up before him, looks at it in his hands,
   tastes it, and grows in its glitter. Bertil hopes the next adventure will be in slippers, then mentions the family's
   approaching trip to Thailand (Olov, 11 November 2026). *Gå hem* is walked:
   off the stone, through the shallows and up onto the shore, where the family come to meet him and walk on with him,

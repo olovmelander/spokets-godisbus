@@ -4,6 +4,7 @@ import type { ExtraContext, ViewExtra } from '../../render/extensions';
 import { paint } from './buildings';
 import { TEAM_BENCHES } from './chapters/olympia';
 import { crestMaterial } from './club-crest';
+import { olympiaYard } from './olympia-yard';
 
 /**
  * Olympia's two team benches by the touchline (Olov's playthrough pass, 12 November 2026): "Spring förbi bänkarna mellan
@@ -118,7 +119,10 @@ export function crestPlaces(): { x: number; y: number; z: number }[] {
   return TEAM_BENCHES.map(({ from, to }) => ({ x: (from + to) / 2, y: CREST.y, z: CREST.z }));
 }
 
-/** Olympia's team benches (registered by ./render.ts). Other chapters get nothing. */
+/**
+ * Olympia's team benches (registered by ./render.ts), and with them the ground behind the pitch that the chapter's store,
+ * hall, masts and stand stand on (./olympia-yard.ts). Other chapters get nothing.
+ */
 export function teamBenchesExtra({ chapter, scene }: ExtraContext): ViewExtra | null {
   if (chapter.id !== 'olympia') return null;
   const benches = new Group();
@@ -138,6 +142,6 @@ export function teamBenchesExtra({ chapter, scene }: ExtraContext): ViewExtra | 
     mesh.name = 'club-crest';
     benches.add(mesh);
   }
-  scene.add(benches);
+  scene.add(benches, olympiaYard(chapter));
   return { update() {} };
 }

@@ -1,12 +1,34 @@
 import { BoxGeometry, CapsuleGeometry, ConeGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_AFTER, RUN_SPEED } from '../sim/constants';
 import type { PlayerState } from '../sim/types';
-import { blendPose, createSway, JOINTS, plantFeet, STANDING, type Legs, type Pose } from './rig';
-import { stand, wave as series, type Gait, type Series } from './gait';
+import { blendPose, createSway, JOINTS, STANDING, type Legs, type Pose } from './rig';
+import { ankleOf, createFooting, reachWith, rolled, stand, stepOf, stride, type Gait, type Strider } from './gait';
 import { GAITS, STANDS } from './motion-data';
 
-/** A small boy's stride, as Bertil's is keyed: Elof's hips, trunk and hands go with it. */
-const BOY = GAITS.bertil;
+/**
+ * A small boy's walk and run, as Bertil's are keyed in Blender (./motion-data.ts): Elof strides as he does, on shorter legs
+ * in bigger boots. His boots are two thirds as long as his legs (the family's shoes are under half): rolled from heel to
+ * toe as far as Bertil rolls his, and lifted as high, the ankle came up half his leg's length and the knee past a right
+ * angle, as in a march. He rolls them less and lifts them less, so that the knee bends about as far as a walking child's;
+ * and his leg, reaching for the ground at the end of a step, straightens softly instead of stopping straight in a frame,
+ * the foot slowing as it comes down rather than swinging out past where it lands (`paw`).
+ */
+const own = (gait: Gait, lift: number, clear: number, roll: number, soft: number, paw: number, toes = 0): Gait => ({
+  ...gait, lift, clear, soft, paw,
+  // (Toes up as the heel comes down and for a moment each side of it: a raised cosine, cubed, as its Fourier series.)
+  pitch: gait.pitch.map((value, i) => value * roll + toes * ([0.3125, 0.46875, 0, 0.1875, 0, 0.03125][i] ?? 0)),
+});
+/**
+ * Running, his foot comes down far ahead for his legs, on its heel with the toes up, as the stride rolls a foot to reach
+ * the ground (./gait.ts): it comes in through the air with its toes up already. Level until it touched, it flicked up
+ * in the frame it landed.
+ */
+const BOY: Strider = { walk: own(GAITS.bertil.walk, 0.022, 0.13, 0.4, 0.06, 0.5), run: own(GAITS.bertil.run, 0.05, 0.16, 0.5, 0.08, 0.7, 0.3) };
+/**
+ * Walked somewhere by a scene (its `walk` act, ./acting.ts), he takes his own steps on his own legs: at a trot, this many
+ * of his heights a second, whatever way the scene moves him. (He strode as Pappa does, on the rehearsal figure's legs.)
+ */
+export const SCENE_WALK = { strider: BOY, gait: 1 } as const;
 /** What standing gives him while he waits: the legs on the ground, the hips over them, the trunk and head. */
 const STOOD = ['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll', 'bendSide', 'tilt'] as const;
 import { createArmContact } from './arm-contact';
@@ -115,32 +137,65 @@ function idlePose(act: IdleAct, u: number, near: 1 | -1, out: Pose): number {
 }
 
 /**
- * How far each leg swings from the hip at `pace`: about 0.42 at a walk, 0.74 at a run. A walk's step is long enough
- * that its cadence stays a small boy's, and the stride is paced by it (`strideRate`), so the planted foot holds still.
+ * The public figure's legs (createPlayerStandIn), as shares of its height: his stride is fitted to the legs he has, these
+ * or his model's own (Rig.legs), so that a planted foot stays where it came down (./gait.ts).
  */
-export function strideReach(pace: number): number {
-  return 0.74 * Math.pow(clamp(pace), 0.52);
-}
+export const STAND_IN_LEGS: Readonly<Legs> = { hip: 0.4, thigh: 0.19, shin: 0.165, ankle: 0.045, heel: 0.065, toe: 0.135, width: 0.075 };
 
-/** Leg length (thigh and shin, ./rig.ts) in EL at size 1, as far as a swing carries the foot with the knee's give. */
-const STEP_LEG = 0.8;
+/** Going slower than this (his own heights a second), his steps get no shorter: he takes them more slowly. */
+const SLOW = 0.3;
+/**
+ * His steps are a little shorter than the family's for their legs, and he takes more of them: his legs are short under a
+ * big head, and a step as long as theirs put his foot down far ahead of him, the hips sinking between his feet at each
+ * one. In a sprint (from SPRINT) they are as long as theirs.
+ */
+const SHORT_STEPS = 0.85;
+
+/** From how fast (his own heights a second) he sprints, and how much further forward the trunk goes then, the head held up against it. */
+const SPRINT = 1.6, SPRINT_LEAN = 0.07, SPRINT_NOD = 0.05;
 
 /**
- * How far round the stride goes for `distance` EL travelled at `pace`, at size `tall`: half a turn (one step) for
- * each step's length, the ground the planted foot covers as the leg swings through. A bigger Elof steps longer.
+ * How he strides at `speed`, in his own heights a second, on `legs`. He is as big as a thumb out in the world and three
+ * times that at home, and goes as fast in EL either way: it is how fast he goes for his size that says how he moves.
+ * `step`: how long a step is, in his heights, longer as he goes faster and fitted to his legs. `run`: how far it is a run
+ * (0 a walk), from about three leg lengths a second, as the family's is (./acting.ts): short legs have to run sooner.
+ * `amount`: how much of the stride's own motion there is, the arms' swing, the trunk's lean and the hips' rise and fall.
  */
-export function strideRate(distance: number, pace: number, tall = 1): number {
-  return (distance / Math.max(0.2, tall)) * Math.PI / Math.max(0.12, STEP_LEG * Math.sin(strideReach(pace)));
+export function strideAt(speed: number, legs: Legs = STAND_IN_LEGS): { step: number; run: number; amount: number } {
+  const gait = Math.max(0, speed);
+  return {
+    step: stepOf(Math.max(gait, SLOW), legs) * (SHORT_STEPS + (1 - SHORT_STEPS) * smooth((gait - SPRINT) / SPRINT)),
+    run: smooth((gait / legs.hip - 2.15) / 1.1),
+    amount: gait <= 1e-6 ? 0 : 0.65 + 0.35 * smooth((gait - 0.1) / 0.3),
+  };
 }
 
+/** Setting off, he leans into it only as far as this, with the stride's own lean (radians): never bent far over. */
+const LEAN_MOST = 0.3;
+
+/** The trunk in a sprint: a little further into it than a run's own lean, looking ahead. */
+function sprinting(out: Pose, speed: number, amount: number): void {
+  const sprint = smooth((speed - SPRINT) / SPRINT) * amount;
+  out.lean += SPRINT_LEAN * sprint; out.nod -= SPRINT_NOD * sprint;
+}
+
+/** How far the hips come down when both knees bend `bend` (radians) from straight, in the body's heights. */
+const dropOf = (bend: number, legs: Legs) => {
+  const thigh = legs.thigh, shin = legs.shin;
+  return thigh + shin - Math.sqrt(thigh * thigh + shin * shin + 2 * thigh * shin * Math.cos(Math.max(0, Math.min(2.4, bend))));
+};
+
 /**
- * A thigh's angle at its stride's `phase`, for a swing of `reach` either way: forward in a smooth arc through the swing
- * (the cosine is positive), and back through the stance so that the planted foot moves under the hip in a straight line.
+ * The hips come down `drop` (heights) over feet that stay where they are, each tipped as it was: both knees give, and
+ * the thighs come forward by as much as keeps the soles on the ground (a landing's give, a stop's).
  */
-function thigh(phase: number, reach: number): number {
-  if (Math.cos(phase) >= 0) return reach * Math.sin(phase);
-  const u = ((((phase - Math.PI / 2) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2)) / Math.PI;
-  return Math.asin(Math.sin(reach) * (1 - 2 * Math.min(1, u)));
+function sink(pose: Pose, legs: Legs, drop: number): void {
+  if (drop <= 1e-6) return;
+  const least = 0.35 * (legs.thigh + legs.shin);
+  for (const side of [0, 1] as const) {
+    const at = ankleOf(pose, side, legs);
+    reachWith(at.ahead, Math.max(Math.min(at.down, least), at.down - drop), at.out, at.pitch, legs, pose, side);
+  }
 }
 
 /** A landing's give, 0 → 1 → 0: up to its deepest `tau` seconds after `t` = 0, and back over a few times that. */
@@ -164,15 +219,23 @@ const PUSH_REACH = 0.3;
 
 /**
  * Where a jump is: how long since he left the ground, whether he jumped (rather than stepped off), how fast he went along
- * (a share of a run), and how far he has risen since.
+ * (a share of a run), and how far he has risen since. `step`: the ground lifted him over a low step as he walked (the
+ * game takes him up one in a little hop of its own): that is a step up, not a jump.
  */
-export interface Air { t: number; pushed: boolean; carry: number; rise?: number }
+export interface Air { t: number; pushed: boolean; carry: number; rise?: number; step?: boolean }
+
+/** A jump leaves the ground faster than this share of a jump's speed; the lift over a step he walks up is slower. */
+const JUMPED = 0.7;
+/** Off an edge, the arms come out for balance once the fall has lasted this long, over this long (seconds): not in a kerb's. */
+const BALANCE_AFTER = 0.08, BALANCE_OVER = 0.16;
 
 /**
  * In the air, as a small boy jumps (the leading leg is the left one here; the caller mirrors it): a dip and a push off his
  * toes with the arms swung up, the knees tucking as he rises to the top with the arms out for balance, and the legs
  * opening to reach for the ground as he falls, the leading foot ahead as far as he is going forward, the head down to
- * where he lands. Stepping off a ledge he does not push: the legs reach down from where they were.
+ * where he lands. Stepping off a ledge he does not push: the legs reach down from where they were, and the arms come out
+ * only as the fall lasts. Up a step he walks, he steps: the leading knee up and its foot onto it, the other leg pushing
+ * off behind, the arms as they swing in a walk.
  */
 function airPose(vy: number, air: Air, out: Pose): void {
   const rise = clamp(vy / JUMP_SPEED), fall = clamp(-vy / JUMP_SPEED), m = clamp(air.carry);
@@ -203,17 +266,32 @@ function airPose(vy: number, air: Air, out: Pose): void {
   crouch('legL', 0.45); crouch('legR', 0.38); crouch('kneeL', 0.8); crouch('kneeR', 0.75);
   crouch('footL', 0.35); crouch('footR', 0.37); crouch('armL', -0.5); crouch('armR', -0.4);
   crouch('elbowL', 0.4); crouch('elbowR', 0.35); crouch('spread', 0); crouch('lean', 0.34); crouch('nod', 0.12);
+  if (!air.pushed) {
+    // No jump: the arms stay down by his sides, the one against the leading leg ahead, and come out as a fall lasts.
+    const balance = air.step ? 0 : smooth((air.t - BALANCE_AFTER) / BALANCE_OVER);
+    const low = (joint: 'armL' | 'armR' | 'elbowL' | 'elbowR' | 'spread' | 'wristL' | 'wristR', value: number) => { out[joint] = value + (out[joint] - value) * balance; };
+    low('armL', -0.2 - 0.25 * m); low('armR', 0.3 + 0.3 * m); low('elbowL', 0.35 + 0.4 * m); low('elbowR', 0.4 + 0.4 * m);
+    low('spread', 0.06); low('wristL', 0); low('wristR', 0);
+  }
+  if (air.step) {
+    // Up a step: the leading foot comes up level onto it, the knee high, and reaches down for it as he comes over; the
+    // other leg is left behind, its toes down. He looks where he puts his foot.
+    const up = clamp(0.5 + vy / (0.5 * JUMP_SPEED));
+    out.legL = 0.5 + 0.3 * up; out.kneeL = 0.55 + 0.5 * up; out.footL = out.kneeL - out.legL;
+    out.legR = -0.22; out.kneeR = 0.14; out.footR = -0.3;
+    out.lean = 0.08; out.nod = 0.1; out.twist = 0;
+  }
   // Jumping on the run, he keeps leaning the way he goes, as far as he is going, instead of straightening up in the air.
   out.lean += 0.14 * m;
 }
 
 /**
- * One pose language for the rounded public figure and the approved model's named bones. `leg`: how far his planted foot
- * goes back under him for a swing's sine, in EL at size 1 (twice the leg, hip to ankle): his model's own legs are shorter
- * than the stride's measure, and swing further for the same step, so that the foot holds the ground. `air`: where a jump
- * is (left out, the arc alone, as at its top: no push, the legs tucked by how near the top he is).
+ * One pose language for the rounded public figure and the approved model's named bones. On his feet he strides as the
+ * family do (./gait.ts): `phase` is the stride's (π a step, the left heel down at 0), `speed` how fast he goes in his own
+ * heights a second, and `legs` the legs he has, which the stride is fitted to. `landing`: how far his knees give (radians).
+ * `air`: where a jump is (left out, the arc alone, as at its top: no push, the legs tucked by how near the top he is).
  */
-export function playerPose(player: MotionState, phase: number, pace: number, landing: number, out: Pose, leg = STEP_LEG, air?: Air): Pose {
+export function playerPose(player: MotionState, phase: number, speed: number, landing: number, out: Pose, legs: Legs = STAND_IN_LEGS, air?: Air): Pose {
   Object.assign(out, STANDING);
   if (player.mode === 'climb') {
     const step = Math.sin(phase);
@@ -252,34 +330,15 @@ export function playerPose(player: MotionState, phase: number, pace: number, lan
     out.armL = 0.25; out.armR = 0.4; out.elbowL = out.elbowR = 0.3;
     out.legL = 0.1; out.legR = -0.12; out.kneeL = 0.1; out.kneeR = 0.18;
   } else {
-    const effort = Math.sqrt(clamp(pace)), run = smooth((pace - 0.35) / 0.65);
-    const reach = strideReach(pace), swing = Math.sin(phase) * reach;
-    const recovery = Math.cos(phase), fold = effort * (0.45 + 0.65 * run);
-    // The leg on the ground goes back under him in a straight line, as fast as he goes on, so that its foot stays where it
-    // came down (a swung arc would skate it forward at each end of the step and back in the middle); the other swings.
-    const legs = leg === STEP_LEG ? reach : Math.asin(Math.min(Math.sin(1), STEP_LEG * Math.sin(reach) / leg));
-    // Landing, the hips go back and down over the feet: the thighs come forward by half what the knees bend, so the feet
-    // stay under him.
-    out.legL = thigh(phase, legs) + 0.5 * landing; out.legR = thigh(phase + Math.PI, legs) + 0.5 * landing;
-    // The recovering foot folds behind the knee; the supporting leg extends on its way back.
-    // Squaring the lift makes both ends of contact smooth instead of snapping the knee straight.
-    out.kneeL = Math.max(0, recovery) ** 2 * fold + landing;
-    out.kneeR = Math.max(0, -recovery) ** 2 * fold + landing;
-    out.armL = -swing * 0.9; out.armR = swing * 0.9;
-    // A run bends the arms and drives them, and each stride goes through the trunk: the shoulders turn against the hips.
-    const bent = 0.08 + (0.5 + 0.45 * run) * effort;
-    out.elbowL = bent - swing * 0.12; out.elbowR = bent + swing * 0.12;
-    // (Landing, the trunk gives a moment after the legs: createPlayerMotion adds it.)
-    // Running, he leans well into it, about twenty degrees, and holds his head up against it, looking ahead: his
-    // straight legs reach far ahead of him with each step, and with the trunk nearer upright he looked to lean back (Olov,
-    // 14 November 2026: "Elof lutar så mycket bakåt när han springer").
-    out.lean = (0.1 + 0.25 * run) * pace; out.nod = -(0.05 + 0.13 * run) * pace;
-    out.twist = swing * (0.3 + 0.16 * run);
-    // Cancel the whole shin pitch during recovery; leaving ten percent tips the long toe into the ground.
-    plantFeet(out, phase, 1);
-    // Giving on landing, the soles stay flat: the ankles take up what the shins tip that the stride's feet do not.
-    const flat = (side: number) => { const t = clamp(0.5 - side * Math.cos(phase) * 2), k = t * t * (3 - 2 * t); return 1 - 0.55 * k - (1 - k); };
-    out.footL += 0.5 * landing * flat(1); out.footR += 0.5 * landing * flat(-1);
+    // His feet are put down where each step needs them and the legs reach them, the knee giving as the weight comes on:
+    // the foot comes down a little ahead of him with the trunk over it, leaning a little the way he goes and more as he
+    // goes faster. (With straight legs swung from the hip and the trunk upright over them, he looked to lean back: Olov,
+    // 14 November 2026, "Ibland lutar Elof sig väldigt mycket bakåt när han går".)
+    const { step, run, amount } = strideAt(speed, legs);
+    stride(out, phase, step, amount, run, BOY, legs);
+    sprinting(out, speed, amount);
+    // Landing, the hips come down over the feet, the soles flat where they are.
+    sink(out, legs, dropOf(landing, legs));
   }
   return out;
 }
@@ -305,6 +364,11 @@ const CATCH: Record<Joint, number> = {
  * whenever it comes: a stride's fastest turns stay well under it.
  */
 const JUMP = 0.3;
+
+/** What a stride places on the ground: its legs, and the hips over them. */
+const PLACED: ReadonlySet<Joint> = new Set<Joint>(['legL', 'legR', 'kneeL', 'kneeR', 'footL', 'footR', 'splayL', 'splayR', 'sway', 'hipRoll']);
+/** A knee and an elbow bend one way only. */
+const HINGES: ReadonlySet<Joint> = new Set<Joint>(['kneeL', 'kneeR', 'elbowL', 'elbowR']);
 
 /**
  * Inertial blending: the pose drawn follows what is asked of it exactly while that moves smoothly, however fast; where it
@@ -334,8 +398,10 @@ export function createFollower() {
     /**
      * Takes `target` (what is asked) over `dt` seconds into `out`; `jumped`: the body has just changed what it does, and
      * `quick` times as quickly as the joints' own rates it takes that up (a jump's dip: down into the knees at once).
+     * `firm`: the legs are a stride's, fitted to the ground, and are drawn as it has them however fast they go: a heel
+     * coming down stops a knee in a frame, and taken for a jump, the knee went on past straight at the speed it had.
      */
-    follow(target: Pose, dt: number, out: Pose, jumped = false, quick = 1): Pose {
+    follow(target: Pose, dt: number, out: Pose, jumped = false, quick = 1, firm = false): Pose {
       const jump = JUMP * (dt * 60) ** 2;
       for (const joint of JOINTS) {
         const x = target[joint];
@@ -345,18 +411,22 @@ export function createFollower() {
           continue;
         }
         const now = x - asked[joint];
-        if (pending.has(joint)) {
-          // The frame after a jump: how fast what is asked now goes is known, and the body keeps its own speed.
+        if (pending.has(joint) && !jumped) {
+          // The frame after a jump: how fast what is asked now goes is known, and the body keeps its own speed. (Unless
+          // the body changes what it does again in that frame, as when he comes down and strides on in the next: taken for
+          // how fast the new pose goes, that second jump threw the joint on at a hundred radians a second.)
           offSpeed[joint] = speed[joint] - now / dt;
           step[joint] = now;
           pending.delete(joint);
-        } else if (jumped || Math.abs(now - step[joint]) > jump) {
+        } else if (jumped || (!(firm && PLACED.has(joint)) && Math.abs(now - step[joint]) > jump)) {
           // A jump: the body goes on from where it was at the speed it had.
           off[joint] = drawn[joint] + speed[joint] * dt - x;
           offSpeed[joint] = speed[joint] - step[joint] / dt;
           rate[joint] = CATCH[joint] * (jumped ? quick : 1);
           pending.add(joint);
           asked[joint] = x;
+          // (Carried on past straight, a knee or an elbow stops there.)
+          if (HINGES.has(joint) && x >= 0 && x + off[joint] < 0) off[joint] = -x;
           speed[joint] = (x + off[joint] - drawn[joint]) / dt;
           drawn[joint] = x + off[joint];
           continue;
@@ -367,6 +437,7 @@ export function createFollower() {
         offSpeed[joint] = (offSpeed[joint] - w * k) * e;
         if (Math.abs(off[joint]) < 1e-7 && Math.abs(offSpeed[joint]) < 1e-6) off[joint] = offSpeed[joint] = 0;
         asked[joint] = x;
+        if (HINGES.has(joint) && x >= 0 && x + off[joint] < 0) { off[joint] = -x; offSpeed[joint] = Math.max(0, offSpeed[joint]); }
         const at = x + off[joint];
         speed[joint] = (at - drawn[joint]) / dt;
         drawn[joint] = at;
@@ -405,6 +476,120 @@ export function createTurning(start = 0, rate = 30) {
   };
 }
 
+/** How quickly the speed his stride goes by follows the speed he goes at, a second: a stride changes over a step, not in a frame. */
+const GAIT_EASE = 14;
+/** How quickly the stride's own motion comes in as he sets off, and dies away once he has stopped, a second. */
+const AMOUNT_EASE = 16, SETTLE = 7;
+/**
+ * How quickly a walk becomes a run and a run a walk, a second. The game takes him from a run to nothing in a few frames;
+ * a walk has each foot down for longer than a run, and changed as fast as his speed, a foot high in a run's swing was
+ * on the ground a frame later.
+ */
+const RUN_EASE = 6;
+/** The most steps a second his stride counts: setting off into a sprint, the game has him at full speed before a child could take two. */
+const CADENCE = 6.2;
+
+/** A foot as a stop finds it: where it stands flat, ahead of the hips (his heights), or would if it were down; how it is
+ * tipped; how far off the ground it is; how far out from under its hip; and how far it is still carried on ahead. */
+interface Halted { flat: number; pitch: number; raise: number; out: number; carry: number; planted: boolean; seconds: number }
+const rolling = { x: 0, y: 0 };
+
+/**
+ * Stopped, his feet come together under him. The game stops him within a few frames, wherever his stride is: a foot in the
+ * air, or one far ahead and the other behind. He does not slide them home, and he does not stand with a foot out ahead
+ * of him, the trunk behind it: the foot in the air comes down under his hips, then the one behind steps up beside it, and
+ * one left ahead steps back, each a small low step with the weight over the other foot. One for each body that walks.
+ */
+function createGather() {
+  const feet: [Halted, Halted] = [
+    { flat: 0, pitch: 0, raise: 0, out: 0, carry: 0, planted: true, seconds: 0 },
+    { flat: 0, pitch: 0, raise: 0, out: 0, carry: 0, planted: true, seconds: 0 },
+  ];
+  let active = false, t = 0, first: 0 | 1 = 0, hips = 0, bounce = 0, drawnHips = 0;
+  /** How long the hips and the soles take to come level, in seconds; and how quickly the hips rise, a second. */
+  const LEVEL = 0.14, RISE = 16;
+  return {
+    get active(): boolean { return active; },
+    reset(): void { active = false; },
+    /**
+     * From the stride as it was last drawn (`pose`, its legs), with `down`: which feet it had on the ground, and
+     * `speeds`: how fast each ankle was going ahead of the hips (heights a second).
+     */
+    begin(pose: Pose, legs: Legs, down: readonly [boolean, boolean], speeds: readonly [number, number]): void {
+      active = true; t = 0; bounce = pose.bounce;
+      const ankles = [ankleOf(pose, 0, legs), ankleOf(pose, 1, legs)] as const;
+      // How high the hip joints are over the ground: over the feet that stand on it, or else over the lower foot.
+      const over = ankles.map((ankle) => ankle.down + rolled(0, ankle.pitch, legs, rolling).y);
+      const standing = [0, 1].filter((side) => down[side]);
+      hips = standing.length > 0 ? standing.reduce((sum, side) => sum + over[side]!, 0) / standing.length : Math.max(over[0]!, over[1]!);
+      drawnHips = hips;
+      for (const side of [0, 1] as const) {
+        const ankle = ankles[side], foot = feet[side];
+        foot.pitch = ankle.pitch; foot.out = ankle.out; foot.planted = down[side];
+        foot.flat = ankle.ahead - rolled(0, ankle.pitch, legs, rolling).x;
+        foot.raise = down[side] ? 0 : Math.max(0, hips - over[side]!);
+        // A step home takes longer the further it has to come; a foot that is there already takes none.
+        const far = Math.abs(foot.flat) + foot.raise;
+        foot.seconds = far < 0.012 && Math.abs(foot.pitch) < 0.04 ? 0 : Math.min(0.26, 0.14 + 0.7 * Math.abs(foot.flat) + 0.8 * foot.raise);
+        // A foot in the air goes on a little the way it was going before it comes back under him.
+        foot.carry = down[side] ? 0 : Math.max(-0.2, Math.min(0.2, speeds[side] * foot.seconds));
+      }
+      // The foot in the air first; with both down, the one behind; with neither, the lower.
+      first = down[0] !== down[1] ? (down[0] ? 1 : 0) : down[0] ? (feet[0].flat <= feet[1].flat ? 0 : 1) : feet[0].raise <= feet[1].raise ? 0 : 1;
+    },
+    /** The legs `dt` seconds on, over `pose` (its trunk and arms are left as they are): whether both feet are home, where they then stay. */
+    step(pose: Pose, legs: Legs, dt: number): boolean {
+      t += dt;
+      const second = (1 - first) as 0 | 1, most = (legs.thigh + legs.shin) * 0.998;
+      const level = smooth(t / LEVEL);
+      const placed = [0, 1].map((side) => {
+        const foot = feet[side]!, from = side === first ? 0 : feet[first].seconds;
+        const k = foot.seconds <= 0 ? 1 : clamp((t - from) / foot.seconds), e = smooth(k);
+        // Home along a smooth way, carried on at first as it was going; up a little from the ground and down again, or down
+        // from where it was in the air; and flat as it comes down (a foot that waits its turn settles flat at once).
+        // (It is over its place a little before it is down, and comes straight down onto it: it does not scuff the last of the way.)
+        const j = Math.min(1, k / 0.85);
+        const flat = (2 * j * j * j - 3 * j * j + 1) * foot.flat + (j * j * j - 2 * j * j + j) * foot.carry;
+        const hop = foot.planted && foot.seconds > 0 ? Math.min(0.035, 0.008 + 0.18 * Math.abs(foot.flat)) * Math.sin(Math.PI * k) ** 2 : 0;
+        const raise = foot.raise * (1 - e) + hop;
+        const pitch = foot.pitch * (1 - (foot.planted ? Math.max(level, e) : e));
+        rolled(flat, pitch, legs, rolling);
+        return { x: rolling.x, y: rolling.y + raise, pitch, out: foot.out * (1 - level), k, moving: k > 0 && k < 1 && foot.planted };
+      });
+      // The hips come up to standing as the feet come in under them: never higher than either leg reaches its foot from, in
+      // the air or on the ground, so that they rise as a foot comes home, and not in the frame it lifts. They rise softly,
+      // coming to rest as they get there: a knee near straight turns a lot for a little rise, and hips that rose as fast as
+      // a foot lifted, or stopped short at a leg's full length, snapped the other knee straight.
+      let want = hips + (legs.hip - hips) * level;
+      for (const foot of placed) want = Math.min(want, foot.y + Math.sqrt(Math.max(0, most * most - foot.x * foot.x - foot.out * foot.out)));
+      drawnHips = want < drawnHips ? want : drawnHips + (want - drawnHips) * (1 - Math.exp(-RISE * dt));
+      const high = drawnHips;
+      placed.forEach((foot, side) => reachWith(foot.x, high - foot.y, foot.out, foot.pitch, legs, pose, side as 0 | 1));
+      // The weight over the foot that stays while the other steps, and back to the middle as it comes down.
+      for (const side of [0, 1] as const) {
+        const foot = placed[side]!;
+        if (!foot.moving) continue;
+        const shift = (side === 0 ? -1 : 1) * 0.35 * Math.sin(Math.PI * foot.k) ** 0.7;
+        pose.sway += shift * legs.width * 5.2; pose.hipRoll += shift * 0.05;
+      }
+      pose.bounce = bounce * (1 - level);
+      return t >= feet[first].seconds + feet[second].seconds;
+    },
+  };
+}
+
+/** Setting off, the stride begins this far into a step: the first foot lifts almost at once. */
+const SET_OFF_AT = 0.12;
+/**
+ * And its first step is a short, quick one. A stride has its standing foot come down well ahead of the hips; setting off,
+ * that foot stands under them, and left to the stride's own count it would trail a whole step behind before it lifted, the
+ * leg at full stretch. So the stride counts this many steps more over the first ground he covers, half as fast again as
+ * the ground asks: the foot that stays lifts near where a stride lifts it, and the first foot comes down half a step ahead.
+ */
+const FIRST_STEP = 0.62, FIRST_QUICKER = 0.5;
+/** The stride's footing, with the ground along his way measured in his own heights: ahead is +x. */
+const AHEAD = Math.PI / 2;
+
 /** Only actual travel advances a stride: blocked movement, rides and a paused view never march. */
 export function createPlayerMotion() {
   const target = { ...STANDING }, pose = { ...STANDING };
@@ -414,11 +599,17 @@ export function createPlayerMotion() {
   let lastX: number | null = null, lastY = 0, lastMode: PlayerState['mode'] = 'free';
   let grounded = true, free = false, phase = 0, landing = 0, landed = Infinity, impact = 0, idle = 0;
   let speed = 0, lead = 1;
+  // His stride (./gait.ts): how many steps it has counted, the speed it goes by (his heights a second) and how much of its
+  // motion there is, how long its steps are drawn (1: as long as the speed asks), and the feet's hold on the ground.
+  const footing = createFooting(), at = { x: 0, z: 0, yaw: AHEAD, height: 1, dt: 0 };
+  let striding = false, steps = 0, gait = 0, amount = 0, running = 0, leftFirst = false, setOffs = 0, quick = 0;
+  // Stopping: his feet's last steps home (createGather), and where each ankle was a frame ago, for how fast it goes.
+  const gather = createGather(), ankleWas: [number, number] = [0, 0], ankleSpeed: [number, number] = [0, 0];
   // Where a jump is (Air), and the follower that keeps every joint from snapping between states.
   const air: Air = { t: 0, pushed: false, carry: 0, rise: 0 };
   let leftAt = 0, was = '';
   const follower = createFollower();
-  // On his feet he is drawn a little softened, as he always has been (STRIDE_EASE).
+  // Standing, he is drawn a little softened, as he always has been (STRIDE_EASE).
   const strode = { ...STANDING };
   let wasScripted = false, blendT = 0;
   const blendFrom = { ...STANDING }, lastScripted = { ...STANDING };
@@ -435,23 +626,28 @@ export function createPlayerMotion() {
     }
     return last = bag.pop()!;
   };
+  /** The stride lets go of the legs: the next one sets off from standing. */
+  const halt = () => { striding = false; amount = 0; footing.reset(); gather.reset(); };
   return {
     /** The idle playing now, if any. */
     get idling(): IdleAct | null { return act; },
     /** A hand in his hair: −1 to 1 while he scratches his head. */
     get ruffle(): number { return ruffle; },
     /**
-     * `wind` is the shared wind where he stands (`windAt`, ./wind.ts): standing in a strong one, he leans into it with
-     * an arm up. It never moves the simulation, and with `calm` (reduced motion) he stands quite still.
+     * `x`: where he is drawn along the course, and `dt` the time that has passed there since the last frame (the two go
+     * together: his stride is paced by how far he has come in how long). `wind` is the shared wind where he stands
+     * (`windAt`, ./wind.ts): standing in a strong one, he leans into it with an arm up. It never moves the simulation, and
+     * with `calm` (reduced motion) he stands quite still. `tall`: how big he is drawn, and `legs`: his model's own legs.
      */
     update(player: PlayerState, x: number, dt: number, scripted: Pose | null, wave = 0, calm = false, wind = 0, tall = 1, legs?: Legs): Pose {
-      const leg = legs ? 2 * (legs.thigh + legs.shin) : STEP_LEG;
+      const body = legs ?? STAND_IN_LEGS, height = Math.max(0.2, tall);
       const travel = lastX === null ? 0 : x - lastX, distance = Math.abs(travel), previousMode = lastMode;
       const climb = lastMode === 'climb' && player.mode === 'climb' ? player.y - lastY : 0;
       // Assisted arcs move a kinematic body: its reported velocity stays zero.
       const vy = player.mode === 'fly' && previousMode === 'fly' && dt > 0 ? (player.y - lastY) / dt : player.vy;
       const airborne = player.mode === 'free' || player.mode === 'fly', wasY = lastY;
-      lastX = x; lastY = player.y; lastMode = player.mode;
+      // A frame in which no time passes draws him as he was, and keeps what he has travelled for the next that does.
+      if (dt > 0 || scripted) { lastX = x; lastY = player.y; lastMode = player.mode; }
       if (scripted) {
         grounded = player.grounded; free = false; landing = 0; impact = 0; idle = 0; speed = 0;
         // Into a scene, and from one act to the next, he moves over a moment instead of in one frame; once there he
@@ -468,6 +664,7 @@ export function createPlayerMotion() {
         // Out of the scene, he goes on from the scene's pose.
         follower.reset(held);
         for (const joint of JOINTS) strode[joint] = held[joint];
+        halt(); gait = 0;
         return Object.assign(drawn, held);
       }
       const unscripted = wasScripted;
@@ -478,45 +675,96 @@ export function createPlayerMotion() {
       const carried = player.mode === 'ride' || player.mode === 'fly' || player.mode === 'bubble';
       // (Taking hold of a hose or a ledge puts him a little way along to it: that is no teleport either.)
       const continuous = carried || distance <= Math.max(RUN_SPEED * 2, Math.abs(player.vx) * 1.5) * dt + 0.35;
-      const touchesDown = walking && !grounded && (previousMode === 'free' || previousMode === 'fly') && impact > 0 && continuous;
-      // The first grounded frame already travels. Waiting for the previous frame to be free would leave pace zero here
-      // and make the heel-strike reset below unreachable on every running landing.
-      const pace = walking && (free || touchesDown) && continuous ? clamp(distance / (dt * RUN_SPEED)) : 0;
+      // On his feet again out of the air: with a fall behind him he lands (and gives); lifted up a step he walks, he only
+      // arrives on it.
+      const arrives = walking && !grounded && (previousMode === 'free' || previousMode === 'fly') && continuous;
+      const touchesDown = arrives && impact > 0;
+      // How fast he goes, in his own heights a second. The first grounded frame already travels: waiting for the previous
+      // frame to be free would leave it zero here, and no running landing would stride on from its heel strike.
+      const rate = walking && (free || arrives) && continuous ? distance / (dt * height) : 0;
       // Filter measured travel before taking acceleration, so interpolation does not shake the torso.
       const before = speed;
       speed = walking && free && continuous && !player.atEdge ? speed + (travel / dt - speed) * (1 - Math.exp(-16 * dt)) : 0;
       const acceleration = walking && free && continuous && !player.atEdge
-        ? Math.max(-1, Math.min(1, (speed - before) * RUN_AFTER / (dt * RUN_SPEED))) : 0;
+        ? Math.max(-1, Math.min(1, (speed - before) * RUN_AFTER / (dt * RUN_SPEED * height))) : 0;
       const braking = Math.abs(speed) < Math.abs(before) ? Math.abs(acceleration) : 0;
       // Turned about while still going the old way, he plants and skids: the legs do not stride backwards.
       const skid = walking && travel * player.facing < -1e-4;
-      if (pace > 0 && !skid) phase += strideRate(distance, pace, tall);
+      // Walking: he covers ground on his feet, the way he faces.
+      const moving = rate > 1e-3 && !skid && !player.atEdge;
       if (Math.abs(climb) <= CLIMB_SPEED * dt * 3 + 0.05) phase += climb * 7;
-      if (!continuous) { phase = 0; landing = 0; landed = Infinity; impact = 0; speed = 0; Object.assign(pose, STANDING); follower.reset(); }
+      if (!continuous) { phase = 0; landing = 0; landed = Infinity; impact = 0; speed = 0; gait = 0; halt(); Object.assign(pose, STANDING); follower.reset(); }
       // A running jump leads with the foot already ahead. Keep that choice through the whole flight.
       if (airborne && !player.grounded && grounded) {
         lead = pose.legL >= pose.legR ? 1 : -1;
-        // A jump pushes off; a step off a ledge does not.
-        air.t = 0; air.pushed = player.mode === 'fly' || vy > 0.35 * JUMP_SPEED; air.carry = clamp(distance / (dt * RUN_SPEED)); leftAt = wasY;
+        // A jump pushes off; a step off a ledge does not, nor the lift over a step he walks up. (Against a step's riser he
+        // stands still for a moment as he is lifted: how fast he goes is how fast his stride was going.)
+        air.t = 0; air.pushed = player.mode === 'fly' || vy > JUMPED * JUMP_SPEED; air.step = !air.pushed && vy > 0.1 * JUMP_SPEED;
+        air.carry = clamp(Math.max(distance / dt, gait * height) / RUN_SPEED); leftAt = wasY;
       } else if (airborne && !player.grounded) air.t += dt;
       air.rise = airborne && !player.grounded ? player.y - leftAt : 0;
       // Stepping off a ride, a hose or the finished clamber is not a fall onto the ground.
       if (touchesDown) {
         landing = 0.2 + 0.8 * clamp(impact / JUMP_SPEED);
         landed = 0;
-        // Landing on the run, the leading foot is the one that comes down: the stride goes on from its heel strike.
-        if (pace > 0.05) phase = lead > 0 ? Math.PI / 2 : Math.PI * 1.5;
       } else landed += dt;
       impact = airborne && !player.grounded ? Math.max(impact, -vy) : 0;
       grounded = player.grounded; free = walking;
       // The give on landing: through the knees and hips first, deepest a moment after he comes down, on from the knees'
       // bend as he reached for the ground.
       const absorb = landing > 0 ? READY * Math.exp(-landed / 0.2) + landing * give(landed, GIVE) : 0;
-      playerPose(player.mode === 'fly' ? { ...player, vy } : player, phase, skid ? 0 : pace, absorb, target, leg, air);
+      // The speed his stride goes by follows his own, through the air too: landing on the run, he runs on.
+      const through = airborne && !player.grounded && player.mode === 'free' && continuous ? distance / (dt * height) : 0;
+      const gaitWas = gait;
+      gait += ((moving ? rate : through) - gait) * (1 - Math.exp(-GAIT_EASE * dt));
+      if (!walking || skid || player.atEdge) {
+        // Off his feet, at an edge, or sliding the old way after a turn about: the stride lets go, and its speed goes with him.
+        if (striding) { const kept = amount; halt(); if (!walking) amount = kept; }
+      } else if (moving) {
+        // Off again before his feet were home: the stride sets off anew from under him.
+        if (gather.active) halt();
+        if (!striding) {
+          striding = true; setOffs++;
+          footing.reset();
+          // Landing on the run, the leading foot is the one that comes down: the stride goes on from its heel strike, as
+          // lively as he was going. From standing, the first foot lifts almost at once, the other foot the next time.
+          if (arrives && amount > 0.3) { steps = lead > 0 ? 0 : 1; quick = 0; }
+          else { steps = (leftFirst ? 1 : 0) + SET_OFF_AT; leftFirst = !leftFirst; amount = 0; running = 0; quick = FIRST_STEP; }
+        }
+        // (Steps as long as his speed over this frame makes them, from where it was to where it is: counted by the
+        // speed it ends at, a slow tablet's stride fell a sixth of a step behind a fast screen's in getting up to a run.)
+        const now = strideAt(gait, body);
+        const counted = distance / (height * strideAt((gaitWas + gait) / 2, body).step), more = Math.min(quick, counted * FIRST_QUICKER);
+        steps += Math.min(counted + more, CADENCE * dt); quick -= more;
+        at.x += distance / height;
+        amount += (now.amount - amount) * (1 - Math.exp(-AMOUNT_EASE * dt));
+        running += (now.run - running) * (1 - Math.exp(-RUN_EASE * dt));
+      } else if (striding && !gather.active) {
+        // Stopped: from the stride as it was last drawn (the target still holds it), his feet come home.
+        gather.begin(target, body, footing.down, ankleSpeed);
+      }
+      if (striding && gather.active) {
+        // The trunk and the arms settle as the stride's own motion dies away; the legs are the last steps home.
+        amount *= Math.exp(-SETTLE * dt);
+        stride(target, steps * Math.PI, strideAt(gait, body).step, amount, running, BOY, body, calm);
+        sprinting(target, gait, amount);
+        if (gather.step(target, body, dt) && amount < 0.05) halt();
+        sink(target, body, dropOf(absorb, body));
+      } else if (striding) {
+        // On his feet: the stride, its planted feet held where they came down (./gait.ts).
+        at.dt = dt;
+        footing.stride(target, steps * Math.PI, strideAt(gait, body).step, amount, running, BOY, body, calm, at);
+        sprinting(target, gait, amount);
+        for (const side of [0, 1] as const) {
+          const ahead = ankleOf(target, side, body).ahead;
+          ankleSpeed[side] = (ahead - ankleWas[side]) / dt; ankleWas[side] = ahead;
+        }
+        sink(target, body, dropOf(absorb, body));
+      } else playerPose(player.mode === 'fly' ? { ...player, vy } : player, phase, 0, absorb, target, body, air);
       if (airborne && !player.grounded && air.pushed && air.t < PUSH && !calm) {
         // Through the dip and the push the body is drawn with its feet on the ground, as far as its legs push it up, and goes
         // up after them.
-        target.bounce = -Math.min((air.rise ?? 0) / Math.max(0.2, tall), PUSH_REACH) * 5.2 * (1 - smooth(air.t / PUSH));
+        target.bounce = -Math.min((air.rise ?? 0) / height, PUSH_REACH) * 5.2 * (1 - smooth(air.t / PUSH));
       }
       if (walking && landed < 1.5 && !calm) {
         // The trunk a moment after the legs: it goes on down over them and comes up again, the head after it; the arms
@@ -539,33 +787,23 @@ export function createPlayerMotion() {
         target.kneeL += 0.45 * Math.max(0, -going); target.kneeR += 0.45 * Math.max(0, -going);
         target.lean -= 0.08 * going;
       }
-      if (walking && !player.atEdge && pace > 0 && !calm) {
-        // The hips, trunk, head and hands go with his stride as the family's do (./gait.ts, keyed in Blender for a small
-        // boy): over the standing foot and tipped away from the swinging one, the head level against it, the hands trailing.
-        // His left heel comes down a quarter turn on from the family's.
-        const run = smooth((pace - 0.35) / 0.65), at = phase - Math.PI / 2, k = Math.min(1, pace * 1.6);
-        const curve = (pick: (g: Gait) => Series, x: number) => series(pick(BOY.walk), x) * (1 - run) + series(pick(BOY.run), x) * run;
-        target.sway += curve((g) => g.sway, at) * 5.2 * k;
-        target.hipRoll += curve((g) => g.roll, at) * k;
-        target.bendSide += curve((g) => g.side, at) * k;
-        target.tilt += curve((g) => g.tilt, at) * k;
-        target.wristL += curve((g) => g.wrist, at) * k;
-        target.wristR += curve((g) => g.wrist, at + Math.PI) * k;
-      }
       if (walking && !player.atEdge) {
-        // Lean into a start or a change of direction; plant and soften both knees while stopping.
+        // Into a start or a change of direction he leans a little the way he goes; stopping, both knees soften, and only
+        // braking hard from a run does the trunk come back a little, for a moment. For his size: at home, three times as
+        // big, the same start is a third as hard.
         const weight = calm ? (skid ? 0.3 : 0.45) : 1, drive = acceleration * player.facing;
-        // Turned about while still going the old way, he leans hard into the new way.
-        target.lean += drive * (skid ? 0.3 : 0.18) * weight; target.nod -= drive * 0.08 * weight;
-        target.legL += braking * 0.12; target.legR += braking * 0.12;
-        target.kneeL += braking * 0.28; target.kneeR += braking * 0.28;
-        target.armL += braking * 0.18 * weight; target.armR += braking * 0.18 * weight;
+        const hard = smooth((Math.abs(before) / height - 0.8) / 1.6);
+        // Turned about while still going the old way, he leans into the new way.
+        const room = skid ? 1 : clamp(1 - target.lean / LEAN_MOST);
+        target.lean += (drive > 0 ? drive * (skid ? 0.3 : 0.12) * room : drive * 0.1 * hard) * weight; target.nod -= Math.max(0, drive) * 0.06 * weight;
+        sink(target, body, dropOf(0.28 * braking, body));
+        target.armL += braking * 0.18 * weight * hard; target.armR += braking * 0.18 * weight * hard;
       }
-      idle = walking && pace === 0 && !player.atEdge && wave <= 0 ? idle + dt : 0;
+      idle = walking && rate <= 1e-3 && !player.atEdge && wave <= 0 ? idle + dt : 0;
       ruffle = 0;
       if (idle === 0) { act = null; nextAt = FIRST + random() * 1.2; stretchedAt = -Infinity; }
       blown = calm ? 0 : blown + (wind - blown) * -Math.expm1(-dt / .35);
-      if (!calm && idle > 0.4 && legs) {
+      if (!calm && idle > 0.4 && legs && !striding) {
         // Waiting, he stands as a small boy stands (./gait.ts): the weight onto one leg and the other, the other knee easy.
         // A little idle of his own lifts it while it plays.
         stand(standing, idle, STANDS.bertil, legs, false, smooth((idle - 1.2) / 1.5) * (act ? 0.35 : 1));
@@ -604,16 +842,17 @@ export function createPlayerMotion() {
       if (wave > 0 && walking) {
         target.armR = 2; target.elbowR = 0.7 + (calm ? 0 : Math.sin(wave * 22) * 0.3);
       }
-      // On his feet he is drawn softened, as he always has been; whatever jumps (off the ground, onto it, onto a hose) the
-      // follower takes up.
-      const ease = walking && continuous ? 1 - Math.exp(-STRIDE_EASE * dt) : 1;
+      // Standing, he is drawn softened, as he always has been. Striding, he is drawn as the stride has him: its legs put his
+      // feet where they stand, and softened they would trail behind the ground. Whatever jumps (off the ground, onto it, onto
+      // a hose, into a stride and out of it) the follower takes up.
+      const ease = striding ? 1 : walking && continuous ? 1 - Math.exp(-STRIDE_EASE * dt) : 1;
       for (const joint of JOINTS) strode[joint] += (target[joint] - strode[joint]) * ease;
       for (const joint of JOINTS) target[joint] = strode[joint];
-      // A new state of the body (off the ground or onto it, onto a hose or a ledge, a skid, an edge, a wave, out of a scene)
-      // is taken up by the follower from what was drawn.
-      const doing = `${player.mode}:${player.grounded}:${skid}:${!!player.atEdge}:${wave > 0}`;
+      // A new state of the body (off the ground or onto it, onto a hose or a ledge, a skid, an edge, a wave, into a stride
+      // or out of one, out of a scene) is taken up by the follower from what was drawn.
+      const doing = `${player.mode}:${player.grounded}:${skid}:${!!player.atEdge}:${wave > 0}:${striding}:${setOffs}`;
       // Leaving the ground in a jump, the legs go down into the dip at once, and the arms back.
-      follower.follow(target, dt, pose, doing !== was || unscripted, airborne && !player.grounded && air.pushed && air.t === 0 ? 1.8 : 1);
+      follower.follow(target, dt, pose, doing !== was || unscripted, airborne && !player.grounded && air.pushed && air.t === 0 ? 1.8 : 1, striding);
       was = doing;
       // A story's explicit seat ends with its act; locomotion is supported by the actual posed soles.
       pose.seat = null;

@@ -6,6 +6,8 @@ export interface CameraIntent {
   x: number;
   y: number;
   zoom: number;
+  /** Over a vista, how far the camera rises over where it looks, looking down (`CameraZone.eye`). */
+  eye?: number;
 }
 
 /**
@@ -32,5 +34,5 @@ export function cameraIntent(player: PlayerState, zones: readonly CameraZone[] =
   const standing = Math.abs(player.y - player.standY) < 0.02 && Math.abs(player.vy) < 0.05;
   const below = standing && drop > STEP_HEIGHT ? player.y : drop > FALL_LIMIT ? player.standY : player.groundY;
   const ground = Math.max(below, player.y - 3);
-  return { x: player.x + player.facing * (zone?.lead ?? CAMERA_LEAD), y: ground + lift, zoom };
+  return { x: player.x + player.facing * (zone?.lead ?? CAMERA_LEAD), y: ground + lift, zoom, ...(zone?.eye ? { eye: zone.eye } : {}) };
 }

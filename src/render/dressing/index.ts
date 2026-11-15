@@ -1,4 +1,4 @@
-import { Group, type Object3D, type Texture } from 'three';
+import { Group, Matrix4, type InstancedMesh, type Object3D, type Texture } from 'three';
 import type { ChapterData, PlaceId } from '../../sim/types';
 import { scenery } from '../backdrop';
 import { createLife, type Life, type LifeAsk, type Quiet } from '../life';
@@ -15,6 +15,7 @@ import { bakeForestShadows } from '../forest-shadows';
 import { forestLandmarks } from '../forest-kit';
 import { fitOutdoorLandmarks, outdoorModels, updateOutdoorModels } from '../outdoor-models';
 import { bank, type Ground } from './ground';
+import { edgesOf, type Edges } from './natural';
 import { rockLife } from './rocky';
 import { heightAt, landscape, makeKit, type PlaceLook } from './kit';
 import { houseDoor } from './house-door';
@@ -149,6 +150,31 @@ export interface Dressing {
   install?(model: Object3D): boolean;
 }
 
+/**
+ * What grows and lies on the ground stands where the ground is drawn: each blade, cushion and stone as far along the
+ * path as the ground under it, where a grown wall's line has moved it away from the plane he moves in (./natural.ts).
+ */
+function standWith(root: Object3D, edges: Edges): void {
+  if (!edges.banks.length) return;
+  const matrix = new Matrix4();
+  root.traverse((object) => {
+    const many = object as InstancedMesh;
+    if (!many.isInstancedMesh) return;
+    let moved = false;
+    for (let i = 0; i < many.count; i++) {
+      many.getMatrixAt(i, matrix);
+      const dx = edges.shiftOn(matrix.elements[12]!, matrix.elements[14]!);
+      if (dx === 0) continue;
+      matrix.elements[12]! += dx;
+      many.setMatrixAt(i, matrix);
+      moved = true;
+    }
+    if (!moved) return;
+    many.instanceMatrix.needsUpdate = true;
+    many.computeBoundingSphere();
+  });
+}
+
 /** How long a stretch of scatter is: each is drawn only while it is in the picture. */
 const STRETCH = 18;
 
@@ -197,6 +223,10 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   makeKit();
   // What stands on the ground comes first: the bee is told where the dandelions are.
   const standing = scatter(landChapter, from, to, look.id, own);
+  // The lines its grown walls take through the depth (./natural.ts), from the land as the scatter has it: with the hedge.
+  // What grows and lies on the ground goes with them.
+  const edges = edgesOf(landChapter, own);
+  standWith(standing, edges);
   const bushes = hedge(chapter);
   if (bushes) standing.add(bushes);
   // Gården's hedge has an arch into the forest: what is seen through it, and the path trodden into it (./hedge-gate.ts).
@@ -209,7 +239,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
   // The bush owns the green foliage. Beneath it the bank is ordinary lawn, continuous with either side;
   // keep the hedge markers on the scatter copy so grass does not grow through the walkable clipped lip.
   const groundChapter = bushes ? { ...landChapter, surfaces: landChapter.surfaces?.filter(surface => surface.kind !== 'hedge') } : landChapter;
-  const ground = bank(groundChapter, own, look.id === 'village' ? footShade(chapter) ?? undefined : undefined);
+  const ground = bank(groundChapter, own, look.id === 'village' ? footShade(chapter) ?? undefined : undefined, edges);
   if (look.id === 'forest') bakeForestShadows(ground, standing, look.sun.from);
   const air = effects(landChapter, from, to, look.id, standing);
   const front = foreground(landChapter, from, to, OWN[look.id].growth, standing);
@@ -271,7 +301,7 @@ export function dress(chapter: ChapterData, look: PlaceLook, asked: LifeAsk = {}
       far.update(cameraX, groundY, clock, night);
       if (gardenLeaves) gardenLeaves.position.z = -54;
       if (quiet) wild?.update(cameraX, groundY, clock, night, quiet);
-      life?.update(clock);
+      life?.update(clock, elof);
       if (sky) sky.material.uniforms.time!.value = still ? 0 : clock;
     },
   };

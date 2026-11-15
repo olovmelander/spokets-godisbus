@@ -5,7 +5,10 @@
 //   - Eleven v4, stability 0.35, no previous or next text;
 //   - every take is heard back with speech-to-text: at least 85 % of the line's words, and no word of the tag, or it is
 //     taken again (up to three takes; the best is kept and reported);
-//   - the takes are levelled to one loudness afterwards (scripts/level-voices.py).
+//   - the takes are levelled to one loudness afterwards (scripts/level-voices.py);
+//   - a line the model says wrongly as it is written is sent spelled as it sounds (scripts/voices-spoken.json): the
+//     narrator said the compounds of "storm" as "stor", with a long, closed vowel, until they were sent as "Stårm…".
+//     The manifest keeps the line's own words: they are what the game shows, and what a recording is matched by.
 // Reads ELEVENLABS_API_KEY from .env. Writes public/audio/voices/<key>.mp3 and its manifest entry.
 //
 //   node scripts/record-voices.mjs --dry-run            the lines, their direction and the characters it would use
@@ -20,6 +23,8 @@ const OUT = join(ROOT, 'public', 'audio', 'voices');
 const MANIFEST = join(OUT, 'manifest.json');
 const CONFIG = JSON.parse(readFileSync(join(ROOT, 'scripts', 'voices-config.json'), 'utf8'));
 const REPORT = join(ROOT, 'scripts', 'voices-takes.json');
+/** Lines sent spelled as they sound, by key: the same words, heard right. */
+const SPOKEN = JSON.parse(readFileSync(join(ROOT, 'scripts', 'voices-spoken.json'), 'utf8'));
 
 const env = Object.fromEntries(existsSync(join(ROOT, '.env'))
   ? readFileSync(join(ROOT, '.env'), 'utf8').split(/\r?\n/).filter((l) => l.includes('=') && !l.trim().startsWith('#'))
@@ -72,6 +77,8 @@ export function direction(line) {
   if (/…|\.\.\./.test(t)) add('hesitant');
   if (/^(nu |jag ska|jag hämtar|vi måste|vi går|jag följer|jag klarar)/i.test(t)) add('determined');
   if (/^(du ska heta|hurra|vi klarade)/i.test(t)) add('joyful');
+  // Sickan is the family's own cat: meeting her in the storm is a glad surprise, never an alarm.
+  if (/\bsickan\b/i.test(t)) { add('affectionate'); add('surprised'); }
   if (/\b(blåsten|stormen|blixten)\b/i.test(t) && t.includes('!')) add('alarmed');
   if (line.speaker === 'elof' && /\bklonk\b/i.test(t) && /\b(du|dig|vi)\b/i.test(t)) add('affectionate');
   if (line.speaker === 'spoket') add('playful');
@@ -89,8 +96,11 @@ export function direction(line) {
   return `[${picks.join(', ')}]`;
 }
 
-/** What is sent: the tag, then the words exactly as written. */
-export const say = (line) => `${direction(line)} ${line.text}`;
+/** The words that are sent: the line's own, or its spelling by sound where the model needs one. */
+export const spoken = (line) => SPOKEN[line.key] ?? line.text;
+
+/** What is sent: the tag, then the words exactly as written (or as spelled by sound). */
+export const say = (line) => `${direction(line)} ${spoken(line)}`;
 
 /** The words of `say` without its tag are the line's own (the method's check). */
 export const untagged = (text) => text.replace(/\[[^\]]*\]\s*/g, '').trim();
@@ -159,7 +169,7 @@ function chosen(manifest) {
     const had = manifest[line.key];
     const file = join(OUT, `${line.key}.mp3`);
     // Already said by this voice with these words.
-    if (had && existsSync(file) && had.voiceId === id && heard(had.text) === heard(line.text)) return false;
+    if (had && existsSync(file) && had.voiceId === id && heard(had.text) === heard(line.text) && (had.spoken ?? null) === (SPOKEN[line.key] ?? null)) return false;
     return true;
   });
 }
@@ -167,7 +177,7 @@ function chosen(manifest) {
 async function record(line, manifest) {
   const voiceId = CONFIG.voices[line.speaker];
   const text = say(line);
-  if (untagged(text) !== line.text.trim()) throw new Error(`${line.key}: say without its tag is not the line`);
+  if (untagged(text) !== spoken(line).trim()) throw new Error(`${line.key}: say without its tag is not the line`);
   const tag = direction(line);
   let best = null;
   for (let take = 1; take <= 3; take++) {
@@ -180,7 +190,7 @@ async function record(line, manifest) {
   }
   writeFileSync(join(OUT, `${line.key}.mp3`), best.audio);
   manifest[line.key] = {
-    speaker: line.speaker, text: line.text, tag, voiceId, model: CONFIG.model_id, stability: 0.35,
+    speaker: line.speaker, text: line.text, ...(SPOKEN[line.key] ? { spoken: SPOKEN[line.key] } : {}), tag, voiceId, model: CONFIG.model_id, stability: 0.35,
     generatedAt: new Date().toISOString(),
   };
   return { key: line.key, speaker: line.speaker, text: line.text, tag, heard: best.transcript, share: Number(best.share.toFixed(2)),

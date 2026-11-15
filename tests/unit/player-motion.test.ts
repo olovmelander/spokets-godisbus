@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { CLIMB_SPEED, JUMP_SPEED, RUN_SPEED, WALK_SPEED } from '../../src/sim/constants';
 import type { PlayerState } from '../../src/sim/types';
 import { Sim } from '../../src/sim/sim';
-import { createPlayerMotion, createPlayerStandIn, playerPose, strideRate, strideReach } from '../../src/render/player-motion';
+import { ankleOf, rolled } from '../../src/render/gait';
+import { createPlayerMotion, createPlayerStandIn, playerPose, STAND_IN_LEGS, strideAt } from '../../src/render/player-motion';
 import { createModelRig, STANDING, type Pose } from '../../src/render/rig';
 
 const player = (more: Partial<PlayerState> = {}): PlayerState => ({ x: 0, y: 0, vx: 0, vy: 0, facing: 1, grounded: true,
@@ -87,32 +88,44 @@ describe('the player’s shared motion', () => {
     }
   });
 
-  it('extends the supporting leg, folds only the recovering foot, and gives running more reach than walking', () => {
-    const walk = target(player(), 0, WALK_SPEED / RUN_SPEED), run = target(player(), 0, 1);
-    expect(walk.kneeL).toBeGreaterThan(0.2); expect(walk.kneeR).toBe(0);
-    expect(run.kneeL).toBeGreaterThan(walk.kneeL + 0.5); expect(run.kneeR).toBe(0);
-    const opposite = target(player(), Math.PI, 1);
-    expect(opposite.kneeL).toBe(0); expect(opposite.kneeR).toBeCloseTo(run.kneeL);
-    const walkReach = target(player(), Math.PI / 2, WALK_SPEED / RUN_SPEED);
-    const runReach = target(player(), Math.PI / 2, 1);
-    expect(runReach.legL).toBeGreaterThan(walkReach.legL + 0.3);
-    expect(runReach.armL).toBeLessThan(0); expect(runReach.armR).toBeGreaterThan(0);
-    expect(runReach.elbowR).toBeGreaterThan(runReach.elbowL);
+  it('puts the foot down ahead on a knee that gives, folds the foot that swings through, and reaches further in a run', () => {
+    // The left heel comes down at the start of the stride: that leg ahead, its knee nearly straight, the other behind.
+    const walk = target(player(), 0, WALK_SPEED / 3), run = target(player(), 0, RUN_SPEED);
+    expect(walk.legL).toBeGreaterThan(0.2);
+    expect(ankleOf(walk, 0, STAND_IN_LEGS).ahead).toBeGreaterThan(0.08); expect(ankleOf(walk, 1, STAND_IN_LEGS).ahead).toBeLessThan(-0.03);
+    expect(walk.kneeL).toBeLessThan(0.45);
+    // A moment on, the weight on it, its knee has given.
+    expect(target(player(), 0.5, WALK_SPEED / 3).kneeL).toBeGreaterThan(0.15);
+    // Swinging through, the knee folds, about as far as a walking child's: further in a run, its heel kicked up behind.
+    const fold = (speed: number) => Math.max(...Array.from({ length: 40 }, (_, i) => target(player(), i * Math.PI / 20, speed).kneeL));
+    expect(fold(WALK_SPEED / 3)).toBeGreaterThan(walk.kneeL + 0.5); expect(fold(WALK_SPEED / 3)).toBeLessThan(1.6);
+    expect(fold(RUN_SPEED)).toBeGreaterThan(fold(WALK_SPEED / 3) + 0.3);
+    // Half a stride on it is the right heel's turn, the same way round.
+    const opposite = target(player(), Math.PI, RUN_SPEED);
+    expect(opposite.legR).toBeCloseTo(run.legL, 1); expect(opposite.kneeR).toBeCloseTo(run.kneeL, 1);
+    // A run reaches further, and drives the bent arms: each arm goes with the other side's leg.
+    const most = (speed: number) => Math.max(...Array.from({ length: 40 }, (_, i) => ankleOf(target(player(), i * Math.PI / 20, speed), 0, STAND_IN_LEGS).ahead));
+    expect(most(RUN_SPEED)).toBeGreaterThan(most(WALK_SPEED / 3) + 0.03);
+    expect(run.armL).toBeLessThan(0); expect(run.armR).toBeGreaterThan(0);
+    expect(run.elbowL).toBeGreaterThan(walk.elbowL + 0.5);
   });
 
-  it('leans well into a run with his head up, and keeps leaning the way he goes when he jumps on the run', () => {
-    // Olov, 14 November 2026: "Elof lutar så mycket bakåt när han springer". His legs reach far ahead with each step,
-    // so the trunk leans clearly forward: about twenty degrees, the head held up to look ahead.
+  it('leans a little into a walk and more into a run, his head up, and keeps leaning the way he goes when he jumps on the run', () => {
+    // Olov, 14 November 2026: "Elof lutar så mycket bakåt när han springer", and then: "Han ska inte luta onaturligt bakåt
+    // eller framåt". His foot comes down near under him now, so the trunk needs no twenty degrees to stand over it: a few
+    // degrees walking, ten or so at a run, fifteen in a sprint, the head held up to look ahead.
     const body = createPlayerStandIn(), at = (name: string) => body.group.getObjectByName(name)!.getWorldPosition(new Vector3());
     for (let i = 0; i < 16; i++) {
-      const phase = i * Math.PI / 8, run = target(player(), phase, 1), walk = target(player(), phase, WALK_SPEED / RUN_SPEED);
-      expect(run.lean).toBeGreaterThan(0.3);
-      expect(run.lean).toBeGreaterThan(walk.lean + 0.25);
-      expect(run.lean + run.nod).toBeGreaterThan(0.1);
-      expect(run.lean + run.nod).toBeLessThan(0.25);
-      body.pose(run); body.group.updateWorldMatrix(true, true);
+      const phase = i * Math.PI / 8;
+      const walk = target(player(), phase, WALK_SPEED / 3), jog = target(player(), phase, RUN_SPEED / 3), sprint = target(player(), phase, RUN_SPEED);
+      expect(walk.lean).toBeGreaterThan(0.03); expect(walk.lean).toBeLessThan(0.1);
+      expect(jog.lean).toBeGreaterThan(walk.lean + 0.05); expect(jog.lean).toBeLessThan(0.22);
+      expect(sprint.lean).toBeGreaterThan(jog.lean + 0.04); expect(sprint.lean).toBeLessThan(0.3);
+      expect(sprint.lean + sprint.nod).toBeGreaterThan(0.1);
+      expect(sprint.lean + sprint.nod).toBeLessThan(0.25);
+      body.pose(sprint); body.group.updateWorldMatrix(true, true);
       const head = at('player-head'), hips = at('player-hip-left').add(at('player-hip-right')).multiplyScalar(0.5);
-      expect(Math.atan2(head.x - hips.x, head.y - hips.y)).toBeGreaterThan(0.25);
+      expect(Math.atan2(head.x - hips.x, head.y - hips.y)).toBeGreaterThan(0.18);
     }
     for (const vy of [JUMP_SPEED * 0.6, 0, -JUMP_SPEED * 0.6]) {
       const air = (carry: number) => playerPose(player({ grounded: false, vy }), 0, 0, 0, { ...STANDING }, undefined, { t: 1, pushed: true, carry });
@@ -120,44 +133,57 @@ describe('the player’s shared motion', () => {
     }
   });
 
-  it('paces the stride by how far the legs swing and by his size, so the planted foot holds still', () => {
-    for (const pace of [WALK_SPEED / RUN_SPEED, 0.7, 1]) {
-      // One step, half a turn of the stride, is as long as the ground the swinging leg covers.
-      const step = 0.8 * Math.sin(strideReach(pace));
-      expect(strideRate(step, pace)).toBeCloseTo(Math.PI, 6);
-      // At three times his size he takes a third as many steps for the same ground.
-      expect(strideRate(1, pace, 3)).toBeCloseTo(strideRate(1, pace) / 3, 6);
+  it('paces the stride by how fast he goes for his size, so the planted foot holds still', () => {
+    for (const speed of [WALK_SPEED / 3, RUN_SPEED / 3, WALK_SPEED]) {
+      // Over a step's ground the stride goes half a turn round, and the foot on the ground goes back under him as far
+      // as he goes on: where it stands flat (its ankle's place, less what its roll from heel to toe moves it).
+      const { step } = strideAt(speed), at = { x: 0, y: 0 };
+      const flat = (phase: number) => {
+        const foot = ankleOf(target(player(), phase, speed), 0, STAND_IN_LEGS);
+        return foot.ahead - rolled(0, foot.pitch, STAND_IN_LEGS, at).x;
+      };
+      // Through the middle of the left foot's time on the ground (it comes down at the stride's start).
+      for (let turn = 0.2; turn < 0.6; turn += 0.05) {
+        const on = 0.02, along = on / Math.PI * step;
+        expect((flat(turn * Math.PI + on) - flat(turn * Math.PI)) / -along).toBeCloseTo(1, 1);
+      }
     }
-    // A walk's cadence stays a small boy's: between two and five steps a second.
-    const walkSteps = strideRate(WALK_SPEED, WALK_SPEED / RUN_SPEED) / Math.PI;
-    expect(walkSteps).toBeGreaterThan(2);
-    expect(walkSteps).toBeLessThan(5);
+    // His steps are longer as he goes faster, and a walk's cadence is a small boy's at either size: one and a half to
+    // four steps a second.
+    expect(strideAt(RUN_SPEED).step).toBeGreaterThan(strideAt(WALK_SPEED).step + 0.2);
+    for (const speed of [WALK_SPEED / 3, WALK_SPEED]) {
+      const steps = speed / strideAt(speed).step;
+      expect(steps).toBeGreaterThan(1.5); expect(steps).toBeLessThan(4);
+    }
   });
 
-  it('leans into acceleration, plants to stop, then settles without marching in place', () => {
+  it('leans into a start, stops on bent knees without rocking far back, then settles without marching in place', () => {
     const motion = createPlayerMotion(), state = player();
-    let x = 0, startingLean = 0;
+    let x = 0, startingLean = 0, cruisingLean = 0;
     motion.update(state, x, 1 / 60, null);
-    for (let frame = 1; frame <= 60; frame++) {
+    for (let frame = 1; frame <= 90; frame++) {
       x += RUN_SPEED * Math.min(1, frame / 18) / 60;
       const p = motion.update(state, x, 1 / 60, null);
       if (frame <= 24) startingLean = Math.max(startingLean, p.lean);
+      if (frame > 60) cruisingLean = Math.max(cruisingLean, p.lean);
     }
-    const cruising = { ...motion.update(state, x + RUN_SPEED / 60, 1 / 60, null) };
-    x += RUN_SPEED / 60;
-    expect(startingLean).toBeGreaterThan(cruising.lean + 0.045);
+    // Into the start he leans as far as he does at speed and a little more, but never bent far over.
+    expect(startingLean).toBeGreaterThan(0.15); expect(startingLean).toBeLessThan(0.36);
+    expect(cruisingLean).toBeGreaterThan(0.2); expect(cruisingLean).toBeLessThan(0.3);
     let stoppingLean = Infinity, planted = 0;
     for (let frame = 1; frame <= 15; frame++) {
       x += RUN_SPEED * Math.max(0, 1 - frame / 9) / 60;
       const p = motion.update(state, x, 1 / 60, null);
       stoppingLean = Math.min(stoppingLean, p.lean);
       if (frame >= 9) planted = Math.max(planted, Math.min(p.kneeL, p.kneeR));
-      expect(p.bounce).toBe(0); expect(p.seat).toBeNull();
+      expect(p.seat).toBeNull();
     }
-    expect(stoppingLean).toBeLessThan(-0.03); expect(planted).toBeGreaterThan(0.07);
-    for (let frame = 0; frame < 90; frame++) motion.update(state, x, 1 / 60, null);
+    // Braking hard from a sprint the trunk comes up, and back only a little (it rocked back ten degrees at every stop).
+    expect(stoppingLean).toBeLessThan(0.15); expect(stoppingLean).toBeGreaterThan(-0.12); expect(planted).toBeGreaterThan(0.07);
+    for (let frame = 0; frame < 54; frame++) motion.update(state, x, 1 / 60, null);
     const settled = motion.update(state, x, 1 / 60, null);
-    expect(Math.abs(settled.legL)).toBeLessThan(1e-7); expect(settled.kneeR).toBeLessThan(1e-7);
+    expect(Math.abs(settled.legL)).toBeLessThan(0.01); expect(settled.kneeR).toBeLessThan(0.01); expect(settled.bounce).toBe(0);
+    expect(Math.abs(settled.lean)).toBeLessThan(0.03);
   });
 
   it('plants for a reversal and directs the weight shift into the new facing, with quieter reduced motion', () => {
@@ -204,7 +230,9 @@ describe('the player’s shared motion', () => {
       expect(motion.update(state, x, 0, null)).toEqual(rising);
       return rising;
     };
-    expect(jump(8).legL).toBeGreaterThan(jump(18).legL + 0.5);
+    // A step later it is the other leg that leads.
+    const steps = RUN_SPEED / strideAt(RUN_SPEED).step, later = Math.round(60 / steps);
+    expect(Math.sign(jump(24).legL - jump(24).legR)).toBe(-Math.sign(jump(24 + later).legL - jump(24 + later).legR));
   });
 
   it('steps out of carried modes without adding a false landing impact, and without a snap', () => {
@@ -269,7 +297,7 @@ describe('the player’s shared motion', () => {
       }
       expect(fastest).toBeGreaterThan(8.5);
       const restored = motion.update(player({ vx: RUN_SPEED }), 90, 1 / fps, null);
-      expect(restored.legL).toBe(0); expect(restored.armL).toBeLessThan(.02);
+      expect(restored.legL).toBe(0); expect(restored.armL).toBeLessThan(.03);
     }
   });
 
@@ -344,17 +372,20 @@ describe('the player’s shared motion', () => {
   });
 
   it('keeps gait phase with distance at different frame rates and resets after a teleport', () => {
-    const poses = [30, 60, 120].map((fps) => {
+    // The ground he covers paces his stride, not the frames: over the same ground he takes as many steps at any rate (the
+    // legs cross once a step), whatever the frames between.
+    const steps = [30, 60, 120, 240].map((fps) => {
       const motion = createPlayerMotion(), state = player({ vx: RUN_SPEED });
       motion.update(state, 0, 1 / fps, null);
-      let pose: Pose = { ...STANDING };
-      for (let frame = 1; frame <= fps * 2; frame++) pose = motion.update(state, frame * RUN_SPEED / fps, 1 / fps, null);
-      return { ...pose };
+      let crossings = 0, ahead = 0;
+      for (let frame = 1; frame <= fps * 4; frame++) {
+        const pose = motion.update(state, frame * RUN_SPEED / fps, 1 / fps, null), now = Math.sign(pose.legL - pose.legR);
+        if (now !== 0 && now !== ahead) { if (ahead !== 0) crossings++; ahead = now; }
+      }
+      return crossings;
     });
-    for (const p of poses) {
-      expect(Math.abs(p.legL - poses[1]!.legL)).toBeLessThan(0.1);
-      expect(Math.abs(p.kneeR - poses[1]!.kneeR)).toBeLessThan(0.1);
-    }
+    expect(steps[1]!).toBeGreaterThan(12);
+    for (const count of steps) expect(Math.abs(count - steps[1]!)).toBeLessThanOrEqual(1);
     const motion = createPlayerMotion(), state = player({ vx: RUN_SPEED });
     motion.update(state, 0, 1 / 60, null);
     for (let i = 1; i < 30; i++) motion.update(state, i * RUN_SPEED / 60, 1 / 60, null);
@@ -386,7 +417,7 @@ describe('the player’s shared motion', () => {
     expect(motion.update(player(), 2, 0, null)).toEqual(scripted);
     for (let i = 0; i < 90; i++) motion.update(player(), 2, 1 / 60, null);
     const standing = motion.update(player(), 2, 1 / 60, null);
-    expect(standing.armR).toBeLessThan(1e-5); expect(standing.kneeL).toBeLessThan(1e-5);
+    expect(standing.armR).toBeCloseTo(STANDING.armR, 5); expect(standing.kneeL).toBeLessThan(1e-5);
     expect(standing.seat).toBeNull();
   });
 });

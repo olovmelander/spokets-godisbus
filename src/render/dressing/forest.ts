@@ -3,6 +3,7 @@ import type { ChapterData } from '../../sim/types';
 import { placing, together, type ForestKit, type Placed } from '../forest-kit';
 import { openWaterAt } from '../water';
 import { floorDrop, shoreAt } from './ground';
+import { edgesOf } from './natural';
 import { KIT, TALL_BLADES, grows, heightAt, landscape, mossAt, sequence, softMoss, tallGrass } from './kit';
 
 // --- the forest ---------------------------------------------------------------------------------------------
@@ -75,8 +76,10 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   // With room for the far shores of the pools in the stretch (below).
   const shoreWaters = chapter.river ? [] : (chapter.water ?? []).filter((w) => w.to + 0.6 > from && w.from - 0.6 < to);
   const shoreRoom = shoreWaters.reduce((sum, w) => sum + Math.ceil((Math.min(to, w.to + 0.6) - Math.max(from, w.from - 0.6)) / SHORE_STEP) + 1, 0);
-  // And for the moss that rounds over the top of each bank at the pool's ends, behind the path.
-  const lipRoom = shoreWaters.length * 2 * LIP_COUNT;
+  // And for the moss that rounds over the lip of each grown wall in the stretch: a step's, a pit's, a pool's bank
+  // (./natural.ts). Behind the path, and along a pool's banks in front of it too.
+  const lips = edgesOf(chapter).banks.filter((bank) => bank.kind === 'moss' && bank.x >= from && bank.x < to && bank.top - bank.foot >= 0.3);
+  const lipRoom = lips.length * (LIP_COUNT + LIP_FRONT);
   const cushions = new InstancedMesh(hummock ?? KIT.ball, hummock ? softMoss(kit!.material) : KIT.moss, cushionsBehind + Math.round(length * (hummock ? HUMMOCKS_IN_FRONT : FRONT.cushions)) + capping + shoreRoom + lipRoom);
   let n = 0;
   // The balls' numbers are drawn with the kit too, so that everything after them stands where it stood.
@@ -437,10 +440,11 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
   // Where the moss meets a pool's end it rounds over the edge of the bank instead of ending in a sharp line.
   if (kit && hummock) {
     const lip = sequence(seed * 43 + 17);
-    for (const w of shoreWaters) for (const [edge, out] of [[w.from, -1], [w.to, 1]] as const) {
-      if (edge < from || edge >= to) continue;
-      for (let i = 0; i < LIP_COUNT && cushions.count < cushions.instanceMatrix.count; i++) {
-        const z = -0.7 - (i / LIP_COUNT) * 5.2 - lip() * 0.3;
+    for (const bank of lips) {
+      const [edge, out] = [bank.x, bank.side];
+      for (let i = 0; i < LIP_COUNT + (bank.open ? LIP_FRONT : 0) && cushions.count < cushions.instanceMatrix.count; i++) {
+        // Behind the path from a step in; in front of it, along a pool's bank, from a step out to where the pool ends.
+        const z = i < LIP_COUNT ? -0.6 - (i / LIP_COUNT) * 6.4 - lip() * 0.3 : 0.75 + ((i - LIP_COUNT) / LIP_FRONT) * 3.2 + lip() * 0.3;
         const x = edge + out * (0.12 + lip() * 0.25);
         const wide = 0.32 + lip() * 0.3, high = wide * (0.5 + lip() * 0.3);
         place.position.set(x, top(x, z) - high * 0.5, z);
@@ -477,8 +481,9 @@ function grown(chapter: ChapterData, from: number, to: number, seed: number, kit
 const STONES = ['sten-a', 'sten-b', 'sten-c'];
 /** How far apart the hummocks of a pool's far shore stand, in EL. */
 const SHORE_STEP = 0.55;
-/** How many hummocks round over the top of a pool's bank at each end. */
-const LIP_COUNT = 12;
+/** How many hummocks round over the lip of a grown wall behind the path, and along a pool's bank in front of it. */
+const LIP_COUNT = 14;
+const LIP_FRONT = 7;
 /** Clumps of tall grass to the length of a stretch (`tallGrass`). */
 const TALL_CLUMPS = 0.45;
 /** How many of the kit's cushions lie behind the path and in front of it, to the length: the balls that stand in for them are 22 and 5. */

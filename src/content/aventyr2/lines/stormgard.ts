@@ -32,6 +32,9 @@ export const words: ChapterWords = {
     // 7. the hedge
     sgFlash: 'Där! Lillgubben flyger över häcken!',
     sgForest: 'Han flög mot skogen. Kom, Klonk!',
+    // Sickan, the family's cat: the first time he sees her, on the veranda, and as he crosses the lid towards her
+    sgSickan: 'Sickan! Är du också ute i stormen?',
+    sgSickanBig: 'Vad stor du är, Sickan!',
   },
   verbs: {
     sgTurnTap: 'Vrid på kranen',

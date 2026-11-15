@@ -25,12 +25,14 @@ describe('Äventyr 2: the buildings', () => {
 
   // Olov, 12 November 2026: "Man har en rak platta som gräs sen under den så böjer sig gräset på något sätt". It ran on
   // level 7 EL towards the camera, a plate over the ground rolling away under it; now it lies on the ground as the lawn
-  // does (src/content/aventyr2/pitch.ts).
-  it('lays a pitch level where he walks, and in front of the path down the ground\'s slope a finger over it, as far as the floor goes', () => {
+  // does (src/content/aventyr2/pitch.ts). And behind the path, where the ground rises a little towards the back, the turf
+  // rises with it (Olov, 14 November 2026, of what stands behind the pitch: "ser ut att sväva i luften"): level, it lay
+  // under the ground from 7 EL back, and a pale band of the ground's own far turf was seen between the pitch and the yard.
+  it('lays a pitch on the ground: level where he walks, up its gentle rise behind, and in front of the path down its slope, as far as the floor goes', () => {
     const made = building({ kind: 'pitch', x: 0, z: 0, width: 100, height: 22, marks: { halfway: 10, front: 7 } });
     const geometry = (made.group.children[0] as Mesh).geometry;
     geometry.computeBoundingBox();
-    expect(geometry.boundingBox!.max.y).toBeLessThan(0.2);
+    expect(geometry.boundingBox!.max.y).toBeLessThan(0.4);
     expect(geometry.boundingBox!.max.z).toBeGreaterThanOrEqual(4.9);
     expect(geometry.boundingBox!.min.z).toBeLessThanOrEqual(-22);
     // As wide as it is told, and no wider: its last stripe ran on 9 EL past its end.
@@ -38,9 +40,26 @@ describe('Äventyr 2: the buildings', () => {
     const position = geometry.getAttribute('position');
     for (let i = 0; i < position.count; i++) {
       const [z, y] = [position.getZ(i), position.getY(i)];
-      const ground = z <= 0.45 ? 0 : -slopeDrop(z);
+      const ground = z <= 0.45 ? Math.max(0, -slopeDrop(z)) : -slopeDrop(z);
       expect(y, `at z ${z.toFixed(2)}`).toBeGreaterThanOrEqual(ground - 1e-4);
       expect(y, `at z ${z.toFixed(2)}`).toBeLessThan(ground + 0.12);
+    }
+    // Over the ground all the way back: at every depth behind the path some turf lies over the ground's height there.
+    for (let z = -21.5; z <= 0; z += 0.5) {
+      const ground = Math.max(0, -slopeDrop(z));
+      let top = -Infinity;
+      for (let t = 0; t + 2 < position.count; t += 3) {
+        const zs = [0, 1, 2].map((k) => position.getZ(t + k));
+        if (Math.min(...zs) > z || Math.max(...zs) < z) continue;
+        // The triangle's height where it crosses this depth, at its highest.
+        for (let a = 0; a < 3; a++) for (let b = a + 1; b < 3; b++) {
+          const [za, zb] = [zs[a]!, zs[b]!];
+          if ((za - z) * (zb - z) > 0 || za === zb) continue;
+          const k = (z - za) / (zb - za);
+          top = Math.max(top, position.getY(t + a) + (position.getY(t + b) - position.getY(t + a)) * k);
+        }
+      }
+      expect(top, `the turf's top at z ${z.toFixed(1)}`).toBeGreaterThan(ground + 0.01);
     }
   });
 

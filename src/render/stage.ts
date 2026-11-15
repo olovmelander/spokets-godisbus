@@ -1,10 +1,11 @@
-import { flashlightCarryTarget, holdFlashlight, quietLampArm } from './lamp-hold';
+import { flashlightHandover, holdFlashlight, quietLampArm } from './lamp-hold';
+import { lampColour, litLamp } from './flashlight';
 import { createLampSpot } from './lamp-spot';
 import { HOME_LAYOUT } from '../content/home-layout';
 import { lampHandTransfer } from './rain-gear';
 import { paintStoryIllustration } from '../ui/story-illustrations';
 import {
-  AdditiveBlending, BoxGeometry, BufferAttribute, CanvasTexture, ConeGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, InstancedMesh, Mesh,
+  AdditiveBlending, BoxGeometry, CanvasTexture, CylinderGeometry, DynamicDrawUsage, Group, InstancedMesh, Mesh,
   MeshBasicMaterial, MeshStandardMaterial, Object3D, OctahedronGeometry, PlaneGeometry, SphereGeometry, SRGBColorSpace,
   TorusGeometry, Vector3,
 } from 'three';
@@ -24,6 +25,8 @@ import { goldSweet } from './gold-sweet';
 import { goldMouthWeight } from './gold-contact';
 import type { Grip } from './fingers';
 import { lookAt } from './look';
+import { hazelnut } from './hazelnut';
+import { routeAt, routeThrough, runProgress, runRate, runTop, type Route } from './run-route';
 import { createTalker, talk, type Free, type Look, type Talker } from './talk';
 
 /**
@@ -41,16 +44,16 @@ const TURNS_TO: readonly Act[] = ['reach', 'lift', 'offer', 'point'];
 /** How much of the arm's length a hand held out to give something uses: the elbow stays a little bent. */
 const OFFER_REACH = 0.82;
 /**
- * How each thing is held (./fingers.ts): the hand closes round the knife's haft, a lamp's body and the brush's stick, the
- * thumb over the fist; two fingers go through the mug's handle, the thumb on it; Moa pinches her crayon between her thumb
- * and her first finger near its tip, and the drawing at its edges. The size is the radius, in EL, of what the fingers
- * close round.
+ * How each thing is held (./fingers.ts): the hand closes round the knife's haft and the brush's stick, the thumb over the
+ * fist; a lamp lies slanting across the palm, the thumb along it (./lamp-hold.ts); two fingers go through the mug's
+ * handle, the thumb on it; Moa pinches her crayon between her thumb and her first finger near its tip, and the drawing
+ * at its edges. The size is the radius, in EL, of what the fingers close round.
  */
 export const GRIPS: Record<Thing, Grip> = {
   knife: { kind: 'power', size: 0.05 }, brush: { kind: 'power', size: 0.025 }, mug: { kind: 'loop', size: 0.024 },
   crayon: { kind: 'pinch', size: 0.035 }, drawing: { kind: 'pinch', size: 0.006 },
-  'lamp-mamma': { kind: 'power', size: 0.075 }, 'lamp-pappa': { kind: 'power', size: 0.075 },
-  'lamp-moa': { kind: 'power', size: 0.075 }, 'lamp-bertil': { kind: 'power', size: 0.075 },
+  'lamp-mamma': { kind: 'torch', size: 0.075 }, 'lamp-pappa': { kind: 'torch', size: 0.075 },
+  'lamp-moa': { kind: 'torch', size: 0.075 }, 'lamp-bertil': { kind: 'torch', size: 0.075 },
 };
 /** A hand laid on something: the wood it steadies, the paper; and one that points. */
 const FLAT: Grip = { kind: 'flat' }, POINTING: Grip = { kind: 'point' };
@@ -80,7 +83,7 @@ interface State {
   /** Gone in, out of the picture: not drawn. */
   away: boolean;
   /** The walk under way, when a key moves the actor: from where, how far it has come, and how long it takes. */
-  walk: { fromX: number; fromY: number; fromZ: number; toX: number; toY: number; toZ: number; at: number; seconds: number } | null;
+  walk: { fromX: number; fromY: number; fromZ: number; toX: number; toY: number; toZ: number; at: number; seconds: number; route?: Route } | null;
   /**
    * Walking when the scene began: how fast along the course, and the stride then. The scene starts them where
    * they come to a stop (GLIDE on), and they are drawn easing into it, not frozen mid-step.
@@ -102,28 +105,39 @@ const mixTurn = (a: number, b: number, t: number) => {
   const d = ((((b - a) % 1) + 1.5) % 1) - 0.5;
   return a + d * t;
 };
+/** An eased move's speed at `s` of its time, as a multiple of its mean: from rest to rest. */
+const eased = (s: number) => 6 * s * (1 - s);
+/** The curve of a key that bends its way (`ActorKey.via`, ./run-route.ts), from where the actor stood: made once a key. */
+const routes = new WeakMap<ActorKey, { x: number; z: number; route: Route }>();
+function routeOf(key: ActorKey, x: number, z: number, toX: number, toZ: number): Route {
+  const made = routes.get(key);
+  if (made && made.x === x && made.z === z) return made.route;
+  const route = routeThrough([{ x, z }, ...key.via!, { x: toX, z: toZ }]);
+  routes.set(key, { x, z, route });
+  return route;
+}
 /**
  * How many steps an eased walk of `way` over `seconds` has taken at `u` of the way through its time, for a body
  * `height` tall on `legs`: its distance counted in steps of the length each moment's speed gives (acting.ts stepLength).
  */
-function stepsOf(way: number, seconds: number, height: number, u: number, legs: Legs): number {
+function stepsOf(way: number, seconds: number, height: number, u: number, legs: Legs, rate = eased): number {
   // No interval has elapsed at the exact start key. Both speed and step length are zero there;
   // integrating 0 / 0 would poison a previous stride still settling under the new action.
   if (u <= 0) return 0;
   const n = 24;
   let steps = 0;
   for (let i = 0; i < n; i++) {
-    const s = (i + 0.5) / n * u, speed = way / seconds * 6 * s * (1 - s);
+    const s = (i + 0.5) / n * u, speed = way / seconds * rate(s);
     steps += speed * seconds * (u / n) / stepLength(speed / height, height, legs);
   }
   return steps;
 }
 /** How far through an eased walk (0 to 1 of its time) its stride has counted `n` steps (`stepsOf`, made whole by `fit`). */
-function strideAt(way: number, seconds: number, height: number, legs: Legs, fit: number, n: number): number {
+function strideAt(way: number, seconds: number, height: number, legs: Legs, fit: number, n: number, rate = eased): number {
   let low = 0, high = 1;
   for (let i = 0; i < 16; i++) {
     const mid = (low + high) / 2;
-    if (stepsOf(way, seconds, height, mid, legs) / fit < n) low = mid; else high = mid;
+    if (stepsOf(way, seconds, height, mid, legs, rate) / fit < n) low = mid; else high = mid;
   }
   return (low + high) / 2;
 }
@@ -228,15 +242,19 @@ export const yaw = (face: number) => Math.PI / 2 - face * Math.PI * 2;
 function apply(state: State, key: ActorKey, since: number): void {
   const first = state.actAt === -99;
   const move = key.move ?? 0.6;
-  const p = first || since >= move ? 1 : smooth(since / move);
+  // A way that bends (`via`) is run at an even pace along its curve; any other move is eased from rest to rest.
+  const bends = !!key.via?.length && !first;
+  const p = first || since >= move ? 1 : bends ? runProgress(since / move, move) : smooth(since / move);
   const toX = key.x ?? state.x, toY = key.y ?? state.y, toZ = key.z ?? state.z;
   const far = Math.hypot(toX - state.x, toZ - state.z);
+  const route = bends && p < 1 ? routeOf(key, state.x, state.z, toX, toZ) : undefined;
   if (far > 0.25 && p < 1 && !SEATED.includes(key.act ?? state.act)) {
-    state.walk = { fromX: state.x, fromY: state.y, fromZ: state.z, toX, toY, toZ, at: key.at, seconds: move };
+    state.walk = { fromX: state.x, fromY: state.y, fromZ: state.z, toX, toY, toZ, at: key.at, seconds: move, ...(route ? { route } : {}) };
   } else if (p >= 1) state.walk = null;
-  state.x = mix(state.x, toX, p);
+  const bent = route ? routeAt(route, p) : null;
+  state.x = bent ? bent.x : mix(state.x, toX, p);
   state.y = mix(state.y, toY, p);
-  state.z = mix(state.z, toZ, p);
+  state.z = bent ? bent.z : mix(state.z, toZ, p);
   if (key.face !== undefined) state.face = first ? key.face : mixTurn(state.face, key.face, smooth(since / Math.max(0.35, move)));
   else if (key.aim && key.act !== undefined && TURNS_TO.includes(key.act) && stanceOf(key.act, state.stance) !== 'sit') {
     // Reaching for something, lifting it somewhere or holding it out, the body turns to it: the arms only
@@ -364,24 +382,8 @@ const WALKING_HANDS: Partial<Record<Act, Free>> = {
   point: HANDS_FREE[1]!, shine: HANDS_FREE[1]!, offer: HANDS_FREE[1]!, wave: HANDS_FREE[1]!, paint: HANDS_FREE[1]!,
 };
 
-/**
- * A lit flashlight, pointing the way its holder faces (their +z), and its beam out into the dark. The beam is added to
- * the night, so what is black in it is nothing: it fades away from the lamp and has no end to see.
- */
-export function litLamp(): Mesh {
-  const body = new Mesh(new CylinderGeometry(0.075, 0.075, 0.42, 10).rotateX(Math.PI / 2), new MeshStandardMaterial({ color: '#3c4048', roughness: 0.5 }));
-  const head = new Mesh(new CylinderGeometry(0.13, 0.085, 0.16, 12).rotateX(Math.PI / 2).translate(0, 0, 0.27), new MeshStandardMaterial({ color: '#50565e', roughness: 0.45 }));
-  const LONG = 16;
-  const cone = new ConeGeometry(1.7, LONG, 18, 5, true).rotateX(-Math.PI / 2).translate(0, 0, LONG / 2 + 0.3);
-  const at = cone.getAttribute('position');
-  const fade = new Float32Array(at.count * 3);
-  for (let i = 0; i < at.count; i++) fade.fill(Math.max(0, 1 - (at.getZ(i) - 0.3) / LONG) ** 1.6, i * 3, i * 3 + 3);
-  cone.setAttribute('color', new BufferAttribute(fade, 3));
-  const beam = new Mesh(cone, new MeshBasicMaterial({ color: '#fff2c8', vertexColors: true, transparent: true, opacity: 0.16, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, fog: false }));
-  beam.name = 'lamp-beam';
-  body.add(head, beam);
-  return body;
-}
+// The family's flashlights are built in ./flashlight.ts; kept here for those who take one from the stage.
+export { litLamp };
 
 /** A thing the family holds: built small and plain, in the colours of what it is. */
 function thing(kind: Thing, drawing: CanvasTexture): Mesh {
@@ -390,7 +392,7 @@ function thing(kind: Thing, drawing: CanvasTexture): Mesh {
     case 'lamp-pappa':
     case 'lamp-moa':
     case 'lamp-bertil':
-      return litLamp();
+      return litLamp(lampColour(kind.slice(5)));
     case 'knife': {
       const handle = new Mesh(new BoxGeometry(0.09, 0.32, 0.09), new MeshStandardMaterial({ color: '#963c30', roughness: 0.7 }));
       const blade = new Mesh(new BoxGeometry(0.03, 0.24, 0.07), new MeshStandardMaterial({ color: '#cfd6d9', roughness: 0.25, metalness: 0.6 }));
@@ -652,6 +654,13 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   drawnWhile(raspberry, false);
   if (scenes.some(scene => scene.stage?.star === 'gold')) group.add(raspberry);
   let starOn: Group | null = null;
+  // What he holds in both hands in a scene that has him do so (`held`): Billsta's hazelnut. Picture only.
+  const nut = scenes.some((scene) => scene.stage?.held?.thing === 'hazelnut') ? hazelnut() : null;
+  if (nut) { nut.name = 'held-hazelnut'; drawnWhile(nut, false); group.add(nut); }
+  let nutHeld = false;
+  /** How far round the nut his fingers close, in EL for him small. */
+  const NUT_GRIP = 0.08;
+  const nutLeft = new Vector3(), nutRight = new Vector3();
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
   const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
   block.name = 'stage-block';
@@ -697,7 +706,9 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
 
   const place = new Object3D();
   const hand = new Vector3(), lampAim = new Vector3(), lampBefore = new Vector3(), kneeAt = new Vector3();
-  const lampMeeting = new Vector3(), lampOther = new Vector3();
+  const lampMeeting = new Vector3(), lampShown = new Vector3();
+  /** What Pappa was looking at when Elof gave him the flashlight (Stormkvällen): unknown until he has it. */
+  let staleAim: Point | null | undefined;
   const kneeOutside = new Vector3(), kneeNormal = new Vector3(0, -1, 0);
   const pose: Pose = { ...STANDING };
   const before: Pose = { ...STANDING };
@@ -738,6 +749,19 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   return {
     group,
     updateElof(rig, direction, height, calm) {
+      if (nut) {
+        // In both his hands, between them, its point up and a little towards him.
+        drawnWhile(nut, nutHeld);
+        if (nutHeld) {
+          const grip: Grip = { kind: 'power', size: NUT_GRIP * height };
+          for (const side of [0, 1] as const) rig.hold?.(side, grip);
+          if (rig.socket) { rig.socket(0, grip, nutLeft); rig.socket(1, grip, nutRight); } else { rig.hand(0, nutLeft); rig.hand(1, nutRight); }
+          nut.position.copy(nutLeft).add(nutRight).multiplyScalar(0.5);
+          nut.position.y -= 0.1 * height;
+          nut.scale.setScalar(height);
+          nut.rotation.set(0.25, 0.6, -0.15);
+        }
+      }
       // The golden sweet is in his hands as he looks at it too, held before him (`hands`).
       const shown = !!starOn && (direction?.act === 'show' || direction?.act === 'eat' || (starOn === raspberry && direction?.act === 'hands'));
       const bite = eatingAt(direction?.actT ?? 0, calm);
@@ -796,6 +820,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
       starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
+      const held = scene?.stage?.held;
+      nutHeld = !!held && (frame?.seconds ?? 0) >= held.from && (frame?.seconds ?? 0) < held.until;
       const t = frame?.seconds ?? 0;
       const elofKeys = scene?.stage?.elof;
       const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t, elof) : null;
@@ -852,6 +878,11 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           state = { ...state };
           state.holds = transfer > 0 ? 'lamp-pappa' : null;
           state.holdsLeft = transfer < 1 ? 'lamp-pappa' : null;
+          // Between the scenes that stage him he lights Elof's way with it, as the family do out in the storm, unless a
+          // scene left his beam on something. And what he was looking at when he was given it (the lamp over the table,
+          // which went out) is not what he lights with it: until a scene turns him to something else, Elof.
+          if (staleAim === undefined) staleAim = state.aim;
+          if (state.beam == null && (!(scene && keys) || state.aim === staleAim)) state.beam = { x: elof.x, y: elof.y + .4, z: 0 };
         }
         const was = live.get(who);
         let x = state.x, y = state.y, z = state.z, face = state.face, pace = 0, velocity = 0, walked = was?.walked ?? 0;
@@ -902,16 +933,20 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           stride = was.stride + step / stepLength(Math.max(gait, 0.3), rig.height, rig.legs);
         } else if (state.walk) {
           const w = state.walk;
-          const p = smooth((t - w.at) / w.seconds);
-          pace = Math.min(1, Math.sin(Math.PI * Math.min(1, (t - w.at) / w.seconds)) * 1.6);
-          const way = Math.hypot(w.toX - w.fromX, w.toZ - w.fromZ);
+          // A way that bends is run evenly along its curve (./run-route.ts): its length, its pace and its heading are the curve's.
+          const rate = w.route ? (s: number) => runRate(s, w.seconds) : eased;
+          const through = w.route ? (s: number) => runProgress(s, w.seconds) : smooth;
+          const p = through((t - w.at) / w.seconds);
+          pace = w.route ? Math.min(1, rate(Math.min(1, (t - w.at) / w.seconds)) / runTop(w.seconds) * 1.6)
+            : Math.min(1, Math.sin(Math.PI * Math.min(1, (t - w.at) / w.seconds)) * 1.6);
+          const way = w.route ? w.route.length : Math.hypot(w.toX - w.fromX, w.toZ - w.fromZ);
           walked = way * p;
           // Its gait at each moment from how fast the eased move goes then: setting off and arriving it takes short
           // steps, at its fastest long ones, and far and soon is a jog. The stride counts those steps, made a whole
           // number so that the walk ends with the feet together, and each step's swing fits its length.
           const u = Math.min(1, Math.max(0, (t - w.at) / w.seconds));
-          gait = way / w.seconds * 6 * u * (1 - u) / rig.height;
-          const steps = stepsOf(way, w.seconds, rig.height, u, rig.legs), all = stepsOf(way, w.seconds, rig.height, 1, rig.legs);
+          gait = way / w.seconds * rate(u) / rig.height;
+          const steps = stepsOf(way, w.seconds, rig.height, u, rig.legs, rate), all = stepsOf(way, w.seconds, rig.height, 1, rig.legs, rate);
           const whole = Math.max(1, Math.round(all)), fit = all / whole;
           stride = steps / fit;
           // Taken over from legs already striding, it starts where they were and comes round to the feet together.
@@ -939,10 +974,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (carry) step = Math.max(0.02, stepLength(gait, rig.height, rig.legs) / rig.height * fit);
           else {
             const k = Math.min(whole - 1, Math.floor(stride));
-            const at = (n: number) => n <= 0 ? 0 : n >= whole ? 1 : strideAt(way, w.seconds, rig.height, rig.legs, fit, n);
-            step = Math.max(0.02, way * (smooth(at(k + 1)) - smooth(at(k))) / rig.height);
+            const at = (n: number) => n <= 0 ? 0 : n >= whole ? 1 : strideAt(way, w.seconds, rig.height, rig.legs, fit, n, rate);
+            step = Math.max(0.02, way * (through(at(k + 1)) - through(at(k))) / rig.height);
           }
-          const travel = Math.atan2(w.toX - w.fromX, w.toZ - w.fromZ) / (Math.PI * 2);
+          const travel = w.route ? routeAt(w.route, p).travel : Math.atan2(w.toX - w.fromX, w.toZ - w.fromZ) / (Math.PI * 2);
           face = mixTurn(face, 0.25 - travel, Math.min(1, pace * 1.5));
           // Walking on the ground, a body keeps to it, up and down a step where it is, not sinking through a floor.
           if (Math.abs(w.fromY - ground(w.fromX)) < 0.05 && Math.abs(w.toY - ground(w.toX)) < 0.05) y = ground(x);
@@ -1237,12 +1272,16 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         talker.pose(pose);
         // A carrying hand cannot also wave or point underneath its torch solve: that moving palm would roll the
         // wrist around a steady beam. Keep this arm's base quiet, sharing the acquisition blend with the held prop.
+        // Shown to the others ("Ropa på mig när du behöver ljus."), it is the lamp that is held up, its light on the ceiling.
+        const showing = state.act === 'show' ? calm ? 1 : smooth(elapsed / .45) : state.before?.act === 'show' ? 1 - smooth(elapsed / .45) : 0;
         for (const side of [0, 1] as const) {
           const held = side === 0 ? state.holdsLeft : state.holds;
           if (!held?.startsWith('lamp-')) continue;
           const weight = calm || persistentLamp || !state.before || state.before.held[side] === held ? 1 : smooth(elapsed / .45);
           const support = persistentLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
           quietLampArm(pose, side, weight * support);
+          // And the other hand, which has nothing to show, is not raised empty beside it.
+          if (showing > 0 && !(side === 0 ? state.holds : state.holdsLeft)) quietLampArm(pose, side === 0 ? 1 : 0, showing * weight * support);
         }
         // Support begins with a relaxed, outward elbow. Carrying a raised gesture's roll into the knee solve can
         // turn the elbow through the torso during acquisition even though the final contact is correct.
@@ -1416,17 +1455,14 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
         const releasingMug = state.before && elapsed < .45 ? state.before.mug : null;
         const handingLamp = persistentLamp && transfer > 0 && transfer < 1;
         if (handingLamp) {
-          // Both hands meet at a reachable point ahead of the waist. Raw sleeve-gesture sockets can lie outside
-          // the other arm's reach. The receiving hand arrives before the giving hand lets go, so changing the
-          // fully supporting socket cannot jump the torch. The free arm keeps the authored sleeve movement.
-          // Each hand's carry follows the beam's way (./lamp-hold.ts), so the meeting point is worked out for it too.
+          // Both hands meet at a reachable point before the belly (./lamp-hold.ts flashlightHandover). Raw sleeve-gesture
+          // sockets can lie outside the other arm's reach. The receiving hand arrives before the giving hand lets go, so
+          // changing the fully supporting socket cannot jump the torch. The free arm keeps the authored sleeve movement.
           const beam = beamOf(state), from = state.glance ? state.glance.from : beamBefore(state);
           lampAim.set(beam?.x ?? elof.x, beam?.y ?? elof.y + .4, beam?.z ?? 0);
           lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
           const aimWeight = calm ? 1 : state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
-          flashlightCarryTarget(rig, 0, lampMeeting, lampAim, lampBefore, aimWeight);
-          flashlightCarryTarget(rig, 1, lampOther, lampAim, lampBefore, aimWeight);
-          lampMeeting.lerp(lampOther, transfer);
+          flashlightHandover(rig, lampMeeting, transfer, lampAim, lampBefore, aimWeight);
         }
         const heldHands = handingLamp && transfer > .5 ? [[0, state.holdsLeft], [1, state.holds]] as const
           : [[1, state.holds], [0, state.holdsLeft]] as const;
@@ -1452,12 +1488,18 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
             const from = state.glance ? state.glance.from : beamBefore(state);
             const aimWeight = state.glance?.weight ?? (state.before ? smooth(elapsed / .45) : 1);
             lampBefore.set(from?.x ?? elof.x, from?.y ?? elof.y + .4, from?.z ?? 0);
+            if (showing > 0) {
+              // Held up before the chest, pointing up past the face.
+              rig.mouth(lampShown).addScaledVector(forward, .45 * rig.height).addScaledVector(up, .3 * rig.height);
+              lampAim.lerp(lampShown, showing); lampBefore.lerp(lampShown, showing);
+            }
             // Newly taking a torch must follow the same event-time blend as the authored arms.
             // Pappa's persistent indoor torch is already in hand across every later act.
             const taking = calm || persistentLamp || had === current || !state.before ? 1 : smooth(elapsed / .45);
             const support = handingLamp ? side === 0 ? 1 - smooth(2 * transfer - 1) : smooth(2 * transfer) : 1;
             holdFlashlight(rig, mesh, side, lampAim, Math.max(.7, rig.height / 5.2), true, taking * support,
-              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused), handingLamp ? lampMeeting : undefined);
+              lampBefore, calm ? 1 : aimWeight, calm ? undefined : clock, cut || (!flowing && !paused), handingLamp ? lampMeeting : undefined,
+              chapter.place === 'home' && chapter.house ? HOME_LAYOUT.wall.z + .2 : undefined);
             continue;
           }
           const closing = !current ? 1 - smooth(elapsed / .45) : had === current || !state.before || elapsed >= .45 ? 1 : smooth(elapsed / .45);

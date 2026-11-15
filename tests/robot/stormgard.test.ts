@@ -19,10 +19,13 @@ import { decide, heightAt, playThrough } from './robot';
  * its lid, Bertil's boot, the playhouse and its thought, the hedge, and the two side ways.
  */
 
-/** What the robot does on the way, in the order the story has it. */
+/**
+ * What the robot does on the way, in the order the story has it. What he says of Sickan, the family's cat, is said
+ * once on the veranda (so not again between the flowerpots) and once on the lid (tests/unit/sickan.test.ts).
+ */
 const SAID = [
-  'sg:moa', 'sg:gutter', 'sg:pumpkin', 'sg:pumpkin-klonk', 'sg:gusts', 'sg:pot-klonk', 'sg:pot',
-  'sg:ditch', 'sg:barrel', 'sg:lid', 'sg:bertil-here', 'sg:boot-ready', 'sg:heja', 'sg:thanks',
+  'sg:moa', 'sg:gutter', 'sg:sickan', 'sg:pumpkin', 'sg:pumpkin-klonk', 'sg:gusts', 'sg:pot-klonk', 'sg:pot',
+  'sg:ditch', 'sg:barrel', 'sg:lid', 'sg:sickan-big', 'sg:bertil-here', 'sg:boot-ready', 'sg:heja', 'sg:thanks',
   'sg:playhouse', 'sg:lonely', 'sg:why', 'sg:flash', 'sg:forest', 'sg:end-klonk',
 ];
 const PUZZLES = ['sg:tap', 'placed:lid', 'sg:bertil', 'sg:boot-ready', 'sg:boot', 'sg:thought', 'goal'];

@@ -903,11 +903,12 @@
   "scene_stormkvall": {
     "speaker": "storyteller",
     "text": "Stormkvällen. lördag kväll",
+    "spoken": "Stårmkvällen. lördag kväll",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:42:11.726Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "biMorfarHere": {
     "speaker": "morfar",
@@ -1424,12 +1425,12 @@
   },
   "skHandful": {
     "speaker": "moa",
-    "text": "Jag såg honom ta en näve ur skålen!",
+    "text": "Jag såg gamla trägubben ta en näve godis!",
     "tag": "[bright]",
     "voiceId": "tPrL2xYfkQnwJhHMMdRM",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:25.550Z"
+    "generatedAt": "2026-11-14T23:30:04.506Z"
   },
   "skTrail": {
     "speaker": "elof",
@@ -1479,11 +1480,12 @@
   "scene_a2title": {
     "speaker": "storyteller",
     "text": "Stormnatten",
+    "spoken": "Stårmnatten",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:28.482Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "sgPumpkin": {
     "speaker": "elof",
@@ -1650,11 +1652,12 @@
   "scene_stormgard": {
     "speaker": "storyteller",
     "text": "Stormgården. klockan åtta",
+    "spoken": "Stårmgården. klockan åtta",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:36.675Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "ssDark": {
     "speaker": "elof",
@@ -1938,11 +1941,12 @@
   "scene_stormskog": {
     "speaker": "storyteller",
     "text": "Stormskogen. klockan nio",
+    "spoken": "Stårmskogen. klockan nio",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:51.959Z"
+    "generatedAt": "2026-11-14T14:02:13.735Z"
   },
   "sbDark": {
     "speaker": "elof",
@@ -3269,12 +3273,12 @@
   },
   "soLastOne": {
     "speaker": "elof",
-    "text": "Ditt allra sista. Det sparade du åt mig.",
-    "tag": "[thoughtful]",
+    "text": "Tack, gamla trägubben! Ditt allra sista.",
+    "tag": "[grateful]",
     "voiceId": "pKEH83CenvGnvS9JlN8f",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:45:06.164Z"
+    "generatedAt": "2026-11-14T23:30:04.363Z"
   },
   "soGoldLine": {
     "speaker": "elof",
@@ -3347,15 +3351,6 @@
     "model": "eleven_v4",
     "stability": 0.35,
     "generatedAt": "2026-11-12T21:45:09.663Z"
-  },
-  "soMormorSecret": {
-    "speaker": "mormor",
-    "text": "Där ligger de. Tänd dem, lille vän.",
-    "tag": "[gentle]",
-    "voiceId": "TI58dCdnaz4gmYn5EbvK",
-    "model": "eleven_v4",
-    "stability": 0.35,
-    "generatedAt": "2026-11-12T21:45:09.878Z"
   },
   "soLampMoa": {
     "speaker": "moa",
@@ -3797,5 +3792,77 @@
     "model": "eleven_v4",
     "stability": 0.35,
     "generatedAt": "2026-11-13T14:59:09.148Z"
+  },
+  "sgSickanBig": {
+    "speaker": "elof",
+    "text": "Vad stor du är, Sickan!",
+    "tag": "[affectionate, surprised]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:23:58.561Z"
+  },
+  "sgSickan": {
+    "speaker": "elof",
+    "text": "Sickan! Är du också ute i stormen?",
+    "tag": "[affectionate, surprised]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:23:58.816Z"
+  },
+  "sbThanksMoa": {
+    "speaker": "elof",
+    "text": "Tack, Moa! Ditt paraply kan flyga!",
+    "tag": "[grateful]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:23:58.820Z"
+  },
+  "skBertilGreet": {
+    "speaker": "bertil",
+    "text": "Hälsa lillgubben att vi kommer!",
+    "tag": "[bright]",
+    "voiceId": "JsPUTLdHju8qRnxHL4lo",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:30:04.307Z"
+  },
+  "skMoaSmall": {
+    "speaker": "moa",
+    "text": "Små kan hitta små, lillebror!",
+    "tag": "[bright]",
+    "voiceId": "tPrL2xYfkQnwJhHMMdRM",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:30:04.325Z"
+  },
+  "soLightThem": {
+    "speaker": "elof",
+    "text": "Men lamporna når jag. Jag tänder dem!",
+    "tag": "[excited]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-14T23:30:05.893Z"
+  },
+  "biNut": {
+    "speaker": "elof",
+    "text": "En hasselnöt! Lika stor som mitt huvud!",
+    "tag": "[excited]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-15T00:06:18.903Z"
+  },
+  "biWelcome": {
+    "speaker": "mormor",
+    "text": "Varsågod, lilla Elof. Kliv in!",
+    "tag": "[gentle]",
+    "voiceId": "TI58dCdnaz4gmYn5EbvK",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-15T00:06:19.141Z"
   }
 }

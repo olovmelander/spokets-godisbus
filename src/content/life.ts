@@ -168,7 +168,8 @@ const BOG_MIST: Ink = [246, 236, 212];
 const FOREST_MIST: Ink = [196, 212, 160];
 const GARDEN_HAZE: Ink = [214, 232, 236];
 
-const GEESE: Role = { act: 'flock', slot: 0, ink: [86, 92, 104], alpha: 0.8, size: 1.1, speed: 2.6, y: 12.5, strip: STRIPS.goose, birds: 9 };
+/** Geese over the garden: each a goose's size beside him, a little lower in the sky than they flew (see the cranes). */
+const GEESE: Role = { act: 'flock', slot: 0, ink: [78, 84, 96], alpha: 0.88, size: 1.9, speed: 2.8, y: 10.5, strip: STRIPS.goose, birds: 9 };
 /** Wood smoke in cool air: paler than a far forest, darker than a bright sky. */
 const SMOKE_INK: Ink = [222, 224, 228];
 
@@ -180,7 +181,10 @@ export const LIFE: Partial<Record<PlaceId, PlaceLife>> = {
     roles: {
       // A bull, 1.9 EL at the shoulder. Its hooves are a little under the eye line, in the nearest picture's mist.
       moose: { act: 'walk', slot: 0, ink: [50, 45, 40], alpha: 0.9, size: 0.95, stops: true, y: -0.2, calm: true, known: true },
-      cranes: { act: 'flock', slot: 0, ink: [104, 108, 116], alpha: 0.85, size: 1.2, speed: 2.2, y: 9.5, strip: STRIPS.crane, birds: 9 },
+      // Each crane as long as a crane is beside him, bill to trailing feet (it fills under half its cell's width), and the
+      // flock lower in the sky. In cells of 1.2 EL, under the top edge, they were grey specks of five pixels each through
+      // the lens's blur (Olov, 14 November 2026: "syns tydligt på de platser där de ska förekomma").
+      cranes: { act: 'flock', slot: 0, ink: [92, 96, 106], alpha: 0.9, size: 2.8, speed: 2.8, y: 5.6, strip: STRIPS.crane, birds: 9 },
     },
   },
   forest: {

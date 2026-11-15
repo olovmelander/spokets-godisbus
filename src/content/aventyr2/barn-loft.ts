@@ -1,10 +1,12 @@
-import { BoxGeometry, BufferGeometry, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Shape, SphereGeometry, TorusGeometry } from 'three';
+import { BoxGeometry, BufferGeometry, ExtrudeGeometry, Group, Mesh, MeshStandardMaterial, Shape, TorusGeometry } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Mover } from '../../sim/types';
 import { paintedWood } from '../../render/painted-wood';
 import { box, paint } from './buildings';
+import { hayDust, loftHay, type HayPlace } from './barn-hay';
 import { LOFT_GROUND } from './chapters/billsta';
-import { strawy } from './straw';
+import { UNDER_ROOF } from './storm-rain';
+import { hayMaterial } from './straw';
 
 /**
  * Billsta's barn, where mormor opens the door for him (Olov, 12 November 2026: "kan vi göra dörren som mormor öppnar
@@ -19,11 +21,12 @@ import { strawy } from './straw';
  * and the lantern-lit loft is seen through the doorway. As he goes in, the barn's front is taken away (it fades), as the
  * house's is at home, and he is inside: the loft's back wall of old grey boards, its posts and beams, hay heaped along the
  * wall, the bales he climbs, and at its far end the hatch in the gable he goes out through onto the long roof. When he is
- * out again, the barn's front is back.
+ * out again, the barn's front is back. The hay is its own (./barn-hay.ts): bales of stalks, loose hay heaped along the
+ * wall, straws on the boards, and dust in the lantern's light.
  *
  * To the simulation the door is a block that lifts out of his way (`DOOR`, ./chapters/billsta.ts); the picture keeps
  * everything where it stands and slides the door aside as the block goes up. It is all drawn in the world's own measures
- * here, about the mover's place. Five draws: the front, the door, the inside, the hay, and the iron.
+ * here, about the mover's place. Six draws: the front, the door, the inside, the hay, the iron, and the dust.
  */
 
 /** The barn, in EL: from its left end to its right, its front's face and its back wall inside, its eaves and ridge. */
@@ -49,7 +52,6 @@ const WHITE = '#e6e1d4';
 const IRON = '#1f2023';
 const INSIDE = ['#5a4b3c', '#53463a', '#615140', '#4c4034'];
 const TIMBER = '#43362a';
-const STRAW = ['#c8a75c', '#bf9d52', '#d2b46a'];
 
 /** Upright boards with battens over their joints, over a stretch of a wall facing the camera, between two heights. */
 function boards(parts: BufferGeometry[], from: number, to: number, low: number, high: number, z: number, colours: readonly string[], batten?: string): void {
@@ -75,56 +77,27 @@ function gableEnd(x: number, colour: string): BufferGeometry {
   return paint(new ExtrudeGeometry(shape, { depth: thick, bevelEnabled: false }).rotateY(-Math.PI / 2).translate(x + thick / 2, 0, 0), colour);
 }
 
-/** Loose stalks: lighter and darker than the bale they stick out of. */
-const STALKS = ['#e0c784', '#d8bc72', '#a98a45', '#b6964f'];
-
 /**
- * A hay bale, its top where he stands: pressed straw in flakes, each a little out of line with the next and its own
- * shade, its top edge worn round, loose stalks sticking out of it, and two twines along it. The stalks of its faces are
- * drawn by the hay's own material (./straw.ts). As one box it read as a cardboard carton.
- *
- * It stands back against the loft's wall and out past the path, and where it stands on the floor it goes on down into
- * it: the picture's floor runs on under the hay (./chapters/billsta.ts, `landmarks`), and meets it all along. As steps
- * of the ground, each bale had a front of the ground's own reaching out under it towards the camera, a grey wedge.
+ * Where the loft's hay is (./barn-hay.ts): the bale in the loft and the stack up to the hatch, each top where he stands;
+ * the hatch in the floor; the top of the planks, where a few straws lie; and mormor's lantern, at the door she holds it
+ * up in and where its light falls further in (./chapters/billsta.ts, `glows`).
  */
-function bale(parts: BufferGeometry[], from: number, to: number, low: number, high: number): void {
-  const z0 = LOFT_BARN.back + 0.1, z1 = 1.43, flakes = Math.max(3, Math.round((to - from) / 0.42));
-  const bottom = low === LOFT_GROUND.floor ? low - 0.45 : low;
-  const wide = (to - from + 0.04) / flakes;
-  let seed = Math.round(from * 97) + 11;
-  const next = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  /** How far the top edge is worn round, in height and in from the front. */
-  const worn = { down: 0.08, back: 0.09 };
-  for (let i = 0; i < flakes; i++) {
-    const wobble = ((i * 37 + Math.round(from * 10)) % 7) / 7 - 0.5;
-    const x = from - 0.02 + (i + 0.5) * wide;
-    const top = high + 0.012 + next() * 0.03;
-    const front = z1 + wobble * 0.025;
-    const colour = STRAW[(i + Math.round(from)) % STRAW.length]!;
-    // The flake, up to its worn edge, and its top set back from the front a little: a soft shoulder.
-    parts.push(box(wide - 0.006, top - worn.down - bottom, front - z0, x, (bottom + top - worn.down) / 2, (z0 + front) / 2, colour));
-    parts.push(box(wide - 0.02, worn.down, front - worn.back - z0, x, top - worn.down / 2, (z0 + front - worn.back) / 2, colour));
-  }
-  // Loose stalks: up out of its top along the front, out of its ends, and lying across its face, every which way,
-  // across the picture so that they are seen.
-  const stalk = (long: number, tilt: number, turn: number, x: number, y: number, z: number) =>
-    parts.push(paint(new BoxGeometry(long, 0.024, 0.024).rotateZ(tilt).rotateY(turn).translate(x, y, z), STALKS[Math.floor(next() * STALKS.length)]!));
-  for (let s = 0; s < Math.round((to - from) * 4); s++) {
-    stalk(0.3 + next() * 0.3, (next() - 0.5) * 1.4, (next() - 0.5) * 0.6, from + 0.1 + next() * (to - from - 0.2), high + 0.03, z1 - 0.06 - next() * 0.3);
-  }
-  for (const [end, side] of [[from, -1], [to, 1]] as const) {
-    for (let s = 0; s < 3; s++) stalk(0.3 + next() * 0.2, (next() - 0.5) * 0.8, 0, end + side * 0.12, low + 0.2 + next() * (high - low - 0.35), z1 - 0.1 - next() * 1.0);
-  }
-  for (let s = 0; s < Math.round((to - from) * 2); s++) {
-    stalk(0.3 + next() * 0.15, (next() - 0.5) * 0.5, 0, from + 0.2 + next() * (to - from - 0.4), low + 0.15 + next() * (high - low - 0.3), z1 + 0.012);
-  }
-  // The two twines, along it over its top and down its ends, as a baler ties it.
-  const twine = '#6f5634';
-  for (const k of [0.25, 0.8]) {
-    const z = z0 + (z1 - z0) * k;
-    parts.push(box(to - from + 0.08, 0.03, 0.04, (from + to) / 2, high + 0.045, z, twine));
-    for (const x of [from - 0.025, to + 0.025]) parts.push(box(0.03, high + 0.06 - bottom, 0.04, x, (bottom + high + 0.06) / 2, z, twine));
-  }
+export function loftHayPlace(): HayPlace {
+  const { left, right, back, front, thick } = LOFT_BARN;
+  const { floor, bale, hay, hatch, planks } = LOFT_GROUND;
+  const gable = right - thick / 2;
+  return {
+    floor, back: back + 0.1, front: front - 0.01, left: left + thick / 2, right: gable,
+    bales: [
+      { from: bale.from, to: bale.to, low: floor, high: bale.y },
+      { from: hay[0]!.x, to: hay[1]!.x, low: floor, high: hay[0]!.y },
+      { from: hay[1]!.x, to: gable, low: floor, high: hay[0]!.y },
+      { from: hay[1]!.x, to: gable, low: hay[0]!.y, high: hay[1]!.y },
+    ],
+    hatch,
+    threshold: { x: planks.to, slope: floor / (planks.to - planks.from) },
+    lamps: [{ x: 56.3, y: floor + 2.3, z: 0.9, reach: 8.5 }, { x: 64.6, y: floor + 2.6, z: -1.1, reach: 8.5 }],
+  };
 }
 
 /** The barn's front: stone foot, boards and battens, white corners and frame, the eaves, the roof over them. */
@@ -203,14 +176,13 @@ function doorLeaf(): { wood: BufferGeometry; iron: BufferGeometry } {
 }
 
 /**
- * Inside: the back wall's old grey boards, its posts and beams, the gables' inner faces; and apart from them, in the
- * hay's own material (./straw.ts), the hay along the wall and the bales.
+ * Inside: the back wall's old grey boards, its posts and beams, the gables' inner faces. The hay is apart from them
+ * (./barn-hay.ts).
  */
-function inside(): { wood: BufferGeometry; hay: BufferGeometry } {
+function inside(): BufferGeometry {
   const { left, right, back, front: z, eaves, passage, hatch, thick } = LOFT_BARN;
-  const { floor, bale: b, hay } = LOFT_GROUND;
+  const { floor, hay } = LOFT_GROUND;
   const parts: BufferGeometry[] = [];
-  const straw: BufferGeometry[] = [];
   boards(parts, left, right, floor, eaves, back, INSIDE);
   // A nailer across the wall, and the posts with a tie beam along their tops and beams across the barn from them.
   parts.push(box(right - left, 0.16, 0.14, (left + right) / 2, floor + 2.6, back + 0.16, TIMBER));
@@ -219,18 +191,6 @@ function inside(): { wood: BufferGeometry; hay: BufferGeometry } {
     parts.push(box(0.3, 0.32, z - back - 0.3, x, eaves - 0.5, (back + z) / 2 - 0.1, TIMBER));
   }
   parts.push(box(right - left, 0.3, 0.3, (left + right) / 2, eaves - 0.2, back + 0.3, TIMBER));
-  // Hay heaped against the back wall between the bale and the hatch's far side, in soft lumps.
-  let seed = 3;
-  const next = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let x = 61.6; x < 67.4; x += 0.55) {
-    const r = 0.55 + next() * 0.35;
-    straw.push(paint(new SphereGeometry(r, 7, 5).scale(1.3, 0.75 + next() * 0.3, 0.9).translate(x, floor + r * 0.45, back + 0.85 + next() * 0.3), STRAW[Math.floor(next() * STRAW.length)]!));
-  }
-  // The bales he climbs: one in the loft, and the stack up to the hatch, each top where he stands.
-  bale(straw, b.from, b.to, floor, b.y);
-  bale(straw, hay[0]!.x, hay[1]!.x, floor, hay[0]!.y);
-  bale(straw, hay[1]!.x, right - thick / 2, floor, hay[0]!.y);
-  bale(straw, hay[1]!.x, right - thick / 2, hay[0]!.y, hay[1]!.y);
   // The gables, seen from inside: the left one round the passage he came in by, the right one round the hatch.
   const across = (x: number, far: number, near: number, low: number, high: number, colour: string) => {
     if (near - far > 0.02 && high - low > 0.02) parts.push(box(thick, high - low, near - far, x, (low + high) / 2, (far + near) / 2, colour));
@@ -244,7 +204,7 @@ function inside(): { wood: BufferGeometry; hay: BufferGeometry } {
   across(right, hatch.far, hatch.near, floor, hay[1]!.y, INSIDE[2]!);
   // The gables' red triangles over the eaves, at both ends.
   parts.push(gableEnd(left, RED[0]!), gableEnd(right, RED[2]!));
-  return { wood: mergeGeometries(parts), hay: mergeGeometries(straw) };
+  return mergeGeometries(parts);
 }
 
 /** The iron: the rail over the doorway that the door hangs from, its brackets, and the stop at its end. */
@@ -285,19 +245,19 @@ export function barnLoft(mover: Mover, x: () => number, still: () => boolean): G
   slide.position.set((door.from + door.to) / 2, door.bottom - 0.04, LOFT_BARN.front + 0.12);
   slide.add(leaf, hangers);
   const railMesh = new Mesh(rail(), ironMaterial);
-  const loft = inside();
-  const insideMesh = new Mesh(loft.wood, new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
+  const insideMesh = new Mesh(inside(), new MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
   insideMesh.name = 'barn-loft';
   insideMesh.receiveShadow = true;
-  // The hay, its stalks drawn by its material (./straw.ts).
-  const hayMaterial = new MeshStandardMaterial({ vertexColors: true, roughness: 1 });
-  strawy(hayMaterial);
-  const hayMesh = new Mesh(loft.hay, hayMaterial);
+  // The hay (./barn-hay.ts), warm in the lantern's light (./straw.ts), and the dust that hangs in it.
+  const hayPlace = loftHayPlace();
+  const hay = hayMaterial(hayPlace.lamps);
+  const hayMesh = new Mesh(loftHay(hayPlace), hay.material);
   hayMesh.name = 'barn-hay';
   hayMesh.receiveShadow = true;
+  const dust = hayDust(hayPlace);
   // Everything is drawn where it stands in the world: the held group undoes the mover's place, and its lift.
   const held = new Group();
-  held.add(frontMesh, slide, railMesh, insideMesh, hayMesh);
+  held.add(frontMesh, slide, railMesh, insideMesh, hayMesh, dust.points);
   const group = new Group();
   group.add(held);
   let gone = 0, last = -1, rolled = 0;
@@ -313,9 +273,16 @@ export function barnLoft(mover: Mover, x: () => number, still: () => boolean): G
     rolled = still() || dt === 0 && open >= 1 ? open : rolled + (open - rolled) * Math.min(1, dt * 3.2);
     if (open === 0) rolled = 0;
     slide.position.x = (door.from + door.to) / 2 + door.slide * rolled * rolled * (3 - 2 * rolled);
+    // Her lantern lights the loft once the door is open: the hay is warm in it, and the dust shows.
+    hay.light.lit.value = rolled;
+    dust.tick(clock ?? 0, rolled, still());
     // While he is inside, the front fades away; out again, it comes back.
     const want = insideBarn(x()) ? 1 : 0;
     gone = still() ? want : gone + Math.sign(want - gone) * Math.min(Math.abs(want - gone), dt / 0.4);
+    // Under its roof it does not rain: while its front is away, the storm leaves the loft out (./storm-rain.ts).
+    UNDER_ROOF.from = LOFT_BARN.left;
+    UNDER_ROOF.to = LOFT_BARN.right;
+    UNDER_ROOF.dry = gone;
     for (const material of fadeables) {
       material.opacity = 1 - gone;
       material.depthWrite = gone < 0.02;

@@ -9,6 +9,7 @@ import type { ChapterData, HelpState, Mover, RideLook, Spot } from '../sim/types
 import { GHOST_CLEARANCE } from '../sim/constants';
 import { DEMO_SECONDS, demoFloor, demoFor, sampleDemo, type DemoPose } from './helper-demo';
 import { drawnWhile } from './idle';
+import { GIFT_SPOT, HELD_OUT, OFFER_TURN, offerBob } from './gift-handover';
 import { sweetSocket } from './candy';
 import { forestSocket, standingCone } from './forest-kit';
 import type { MountainSocket } from './mountain-kit';
@@ -505,6 +506,8 @@ export function spotProp(spot: Spot): SpotProp | null {
       return {
         group,
         update(used, clock, dt, _strike, world) {
+          // Where it brings the lichen down for him, its part from its berry on is told there (./jay-lichen.ts).
+          if (bird.userData.directed) return;
           const rig = jayRigOf(bird);
           if (rig) {
             stepGroundJay(bird, rig, { used, clock, dt, x: spot.at.x, ...(world ? { elof: world.elof } : {}), calm: world?.calm ?? false });
@@ -858,14 +861,16 @@ export function spotProp(spot: Spot): SpotProp | null {
       const gold = solid('#ffcf3a', 0.25, { emissive: '#d99a00', emissiveIntensity: 0.7 });
       const sweet = new Group();
       for (let i = 0; i < 9; i++) sweet.add(ball(0.07, gold, Math.cos(i * 2.4) * 0.09 * (1 - i / 14), 0.05 + i * 0.022, Math.sin(i * 2.4) * 0.09 * (1 - i / 14)));
-      sweetSocket(sweet, { shape: 'guldhallon', scale: 0.8, y: 0.12, glow: 0.65 });
-      sweet.position.y = 0.5;
       // The kit's model takes the sweet's place (./candy.ts), so the paper is beside it, not in it.
       let paper: Mesh | null = null;
-      if (spot.id === 'gift') {
-        // Äventyr 2's last gift ("Ett geléhallon i guldpapper!", "Ditt allra sista."): held out by the old one, half
-        // a step nearer him than where it is taken, on its crinkled gold paper, folded open.
-        const foil = new PlaneGeometry(0.46, 0.46, 6, 6).rotateX(-Math.PI / 2);
+      const given = spot.id === GIFT_SPOT;
+      if (given) {
+        // Äventyr 2's last gift ("Ett geléhallon i guldpapper!", "Ditt allra sista."): held out by the old one in his
+        // two hands, on its crinkled gold paper, folded open (./gift-handover.ts). It does not float or spin: it lies
+        // on the paper before him, as big as it is in Elof's hand a moment later, and goes with his hands.
+        sweetSocket(sweet, { shape: 'guldhallon', scale: 0.7, y: 0.09, glow: 0.65 });
+        sweet.scale.setScalar(0.75);
+        const foil = new PlaneGeometry(0.4, 0.4, 6, 6).rotateX(-Math.PI / 2);
         const at = foil.getAttribute('position');
         for (let i = 0; i < at.count; i++) {
           const x = at.getX(i), z = at.getZ(i);
@@ -873,18 +878,30 @@ export function spotProp(spot: Spot): SpotProp | null {
         }
         foil.computeVertexNormals();
         paper = new Mesh(foil, solid('#e6b52e', 0.28, { metalness: 0.75, emissive: '#7a5400', emissiveIntensity: 0.35, side: DoubleSide }));
+        paper.name = 'gold-paper';
+        sweet.name = 'offered-sweet';
         group.add(paper);
-        sweet.position.x = 0.55;
+      } else {
+        sweetSocket(sweet, { shape: 'guldhallon', scale: 0.8, y: 0.12, glow: 0.65 });
+        sweet.position.y = 0.5;
       }
       group.add(sweet);
       group.position.z = 0;
       return {
         group,
         update: (used, clock, dt) => {
-          vanish(used, dt);
+          // The given one is `used` when his hand has it (./view.ts): it goes into his hand, and the paper is let go.
+          vanish(used, dt, given ? 0.3 : 0.35);
+          if (paper) {
+            const held = HELD_OUT.y + offerBob(clock);
+            sweet.position.set(HELD_OUT.x, held + 0.02, HELD_OUT.z);
+            paper.position.set(HELD_OUT.x, held, HELD_OUT.z);
+            paper.rotation.y = OFFER_TURN;
+            drawnWhile(sweet, !used);
+            return;
+          }
           sweet.rotation.y = clock * 1.4;
           sweet.position.y = 0.5 + Math.sin(clock * 2) * 0.06;
-          if (paper) { paper.position.set(sweet.position.x, sweet.position.y + 0.01, 0); paper.rotation.y = sweet.rotation.y; }
         },
       };
     }

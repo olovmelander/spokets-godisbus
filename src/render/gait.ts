@@ -25,6 +25,19 @@ export interface Gait {
   /** How high the ankle rises through the swing, over its straight way, and where in the swing it is highest (0 to 1). */
   lift: number;
   peak: number;
+  /** The least a swinging foot is lifted, a share of the way it goes (left out: 0.22): however short the step, it is not dragged. */
+  clear?: number;
+  /**
+   * How fast a swinging foot is already going back under the hips as it comes down, a share of how fast the ground goes
+   * (left out: all of it). All of it, the foot swings out past where it lands and comes back onto it; on short legs that
+   * is past their reach, and the knee was flung straight at the end of every swing.
+   */
+  paw?: number;
+  /**
+   * How far short of full stretch the legs are softened, a share of the leg (left out: none in a walk, 0.08 in a run):
+   * past it the foot falls a little short and the knee goes on straightening smoothly, where it would stop in a frame.
+   */
+  soft?: number;
   /** How much lower than standing the hips go, a share of their height, and their rise and fall over the stride. */
   crouch: number;
   bob: Series;
@@ -92,7 +105,7 @@ export function stepOf(gait: number, legs: Legs = REHEARSAL_LEGS): number {
 }
 
 /** The ankle of a foot flat on the ground `x` ahead of the hips, tipped `pitch` about its heel (toes up) or its ball (heel up). */
-function rolled(x: number, pitch: number, legs: Legs, out: { x: number; y: number }): { x: number; y: number } {
+export function rolled(x: number, pitch: number, legs: Legs, out: { x: number; y: number }): { x: number; y: number } {
   const cos = Math.cos(pitch), sin = Math.sin(pitch);
   if (pitch >= 0) {
     out.x = x - legs.heel + legs.heel * cos - legs.ankle * sin;
@@ -140,12 +153,12 @@ function foot(c: number, step: number, at: (pick: (g: Gait) => number) => number
   out.pitch = pitchAt(c);
   rolled(left ?? -step * stance + ahead, pitchAt(stance), legs, start);
   rolled(step * stance + ahead, pitchAt(1), legs, end);
-  const speed = -2 * step * (1 - stance), w2 = w * w, w3 = w2 * w;
-  out.x = (2 * w3 - 3 * w2 + 1) * start.x + (w3 - 2 * w2 + w) * speed + (-2 * w3 + 3 * w2) * end.x + (w3 - w2) * speed;
+  const speed = -2 * step * (1 - stance), w2 = w * w, w3 = w2 * w, coming = speed * at((g) => g.paw ?? 1);
+  out.x = (2 * w3 - 3 * w2 + 1) * start.x + (w3 - 2 * w2 + w) * speed + (-2 * w3 + 3 * w2) * end.x + (w3 - w2) * coming;
   const peak = clamp(at((g) => g.peak), 0.15, 0.85), bend = Math.log(0.5) / Math.log(peak);
   const rise = Math.sin(Math.PI * Math.pow(w, bend)) ** 2;
   // However short the step, the foot is lifted to make it, never dragged: a share of the way it goes, at least.
-  const lift = Math.max(at((g) => g.lift) * pace, Math.abs(end.x - start.x) * 0.22);
+  const lift = Math.max(at((g) => g.lift) * pace, Math.abs(end.x - start.x) * at((g) => g.clear ?? 0.22));
   out.y = start.y + (end.y - start.y) * w + lift * rise;
   // Never through the ground: the heel or the ball clear of it.
   out.y = Math.max(out.y, under(out.pitch, legs));
@@ -265,8 +278,9 @@ export function stride(pose: Pose, phase: number, step: number, pace: number, ru
   }
   // Where the feet go across: the gait's own track, from under the hips as it sets off.
   const out = (at((g) => g.width) - legs.width) * p;
-  // A run's legs swing through full stretch every step: they are softened there (reachWith), a walk's are not.
-  const soft = 1 - 0.08 * k * p;
+  // A run's legs swing through full stretch every step: they are softened there (reachWith), a walk's are not, unless
+  // the gait asks for it.
+  const walkSoft = strider.walk.soft ?? 0, soft = 1 - (walkSoft + ((strider.run.soft ?? 0.08) - walkSoft) * k) * p;
   reachWith(left.x, hips + lift - left.y, out, left.pitch, legs, pose, 0, soft);
   reachWith(right.x, hips - lift - right.y, out, right.pitch, legs, pose, 1, soft);
   // Barely moving, the legs are those of standing: a nearly straight knee's angle is too touchy to settle there by itself.

@@ -97,6 +97,23 @@ describe('what it is made of', () => {
     }
   });
 
+  it('flies its flocks as big as the birds are beside him, and under the top of a phone’s picture', () => {
+    // The cranes' and the geese's cells were 1.2 and 1.1 EL wide, and they flew just under the top edge: through the
+    // lens's blur each was a grey speck of five pixels (Olov, 14 November 2026: "syns tydligt på de platser där de ska
+    // förekomma"). A bird fills under half its cell's width: in a cell of 2.8 EL a crane is as long as a crane is.
+    const half = Math.tan((30 * Math.PI) / 360);
+    const flocks = roles.filter(({ role }) => role.act === 'flock');
+    expect(flocks.map(({ kind }) => kind).sort()).toEqual(['cranes', 'geese']);
+    for (const { place, kind, role } of flocks) {
+      const z = LIFE[place]!.slots[role.slot]!.z;
+      expect(role.size * PHONE.px(z), `${place} ${kind}`).toBeGreaterThanOrEqual(18);
+      expect(role.size, `${place} ${kind}`).toBeLessThanOrEqual(3);
+      // The whole V: its longer arm rises 0.38 of a bird's width a rank over the leader.
+      const top = role.y + Math.ceil((role.birds! - 1) * 0.6) * role.size * 0.38 + role.size / 2;
+      expect(top, `${place} ${kind}`).toBeLessThan((PHONE.eye - z) * half * 0.92);
+    }
+  });
+
   it('shows the bog its moose as the audit measured it: about 34 px tall on a phone and 69 on a tablet', () => {
     const z = LIFE.bog!.slots[0]!.z;
     const tall = WALK.tall * LIFE.bog!.roles.moose!.size;

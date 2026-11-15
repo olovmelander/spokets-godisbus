@@ -2,7 +2,9 @@ import { Box3, Float32BufferAttribute, Group, InstancedMesh, Matrix4, Mesh, Mesh
 import type { Assets } from './assets';
 import { concrete } from './concrete';
 import { firewood } from './firewood';
+import { terracotta } from './terracotta';
 import { forestKit } from './forest-kit';
+import { oldWood } from './old-wood';
 import { weathered } from './weathered';
 import { carGlass } from './car-glass';
 import { AMBIENT, attachAmbient, rigAmbient } from './ambient-animals';
@@ -10,8 +12,8 @@ import { AMBIENT, attachAmbient, rigAmbient } from './ambient-animals';
 /** Authored models shared by both adventures. Only files actually used in this scene are fetched. */
 /** Which pack and file each model is in. What is mormor and morfar's own is in the private pack, and is only there on the site. */
 const NATURE = ['gran-a', 'gran-b', 'gran-c', 'bjork-a', 'bjork-b', 'tall-a', 'block-a', 'block-b', 'block-c', 'block-d', 'hylla-a', 'hylla-b',
-  'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b'];
-const PROPS = ['kruka', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
+  'stubbe-sagad', 'stubbe-gnagd', 'gren-a', 'gren-b', 'lag-mossig', 'stock-flod', 'vass-a', 'vass-b', 'klippa-a', 'klippa-b', 'rotvalta'];
+const PROPS = ['kruka', 'kruka-ljung', 'kruka-skal', 'kruka-valt', 'kruka-hog', 'kruka-stapel', 'stovel', 'paraply', 'flotte', 'bryggstolpe', 'lykta', 'tunna', 'kanna', 'pumpa', 'bil', 'bil-gra'];
 /** The street's life: a grown-up walking past behind Byn's houses (art/blender/a2-street.py). */
 const STREET = ['fotgangare'];
 const BUILT = ['rutschkana', 'picknick', 'staket', 'bro', 'trappa', 'vedstapel', 'rabatt', 'roddbat'];
@@ -215,7 +217,7 @@ export async function installSharedModels(assets: Assets, scene: Object3D, stand
 
 /**
  * The kit's own stuffs, by their material's name in Blender (art/blender/kit-tools.py, `STUFF`): firewood, wet
- * where it is stacked out in the rain at Billsta and dry in the woodshed, and concrete.
+ * where it is stacked out in the rain at Billsta and dry in the woodshed, concrete, and the flower pots' clay.
  */
 function builtDetail(model: Object3D, name: string): void {
   model.traverse((object) => {
@@ -223,6 +225,9 @@ function builtDetail(model: Object3D, name: string): void {
     if (!material?.isMeshStandardMaterial) return;
     if (material.name === 'kit-wood') firewood(material, name === 'vedstapel' ? 1 : 0);
     else if (material.name === 'kit-concrete') concrete(material);
+    // The stumps, the windfall and the root plate: bark, year rings, earth and moss (./old-wood.ts).
+    else if (material.name === 'kit-bark') oldWood(material);
+    else if (material.name === 'kit-clay') terracotta(material);
     else return;
     material.userData.ownWeather = true;
   });

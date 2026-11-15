@@ -21,15 +21,17 @@ import { halfOf, weightsOf, writeWeights } from './sleeves';
  * Its fingers move apart: the first finger points, and pinches against the thumb.
  *
  * A hand rests a little curled; it closes round a handle (`power`: the knife's haft, a lamp, a rung) until each finger
- * touches it, the thumb over the fist; hooks (`hook`: a lantern's bail); pinches with the thumb (`pinch`: a crayon, a
- * sheet's edge), tip to tip where the fingers are their own and against the first finger's side where they are one block;
+ * touches it, the thumb over the fist; holds a flashlight as one is held to light the way (`torch`: its barrel slanting
+ * across the palm, its lens out past the first finger, the thumb laid along it); hooks (`hook`: a lantern's bail); pinches
+ * with the thumb (`pinch`: a crayon, a sheet's edge), tip to tip where the fingers are their own and against the first
+ * finger's side where they are one block;
  * puts two fingers through a handle and the thumb on it (`loop`: the mug); points with the first finger (`point`); lies
  * flat on something (`flat`), or opens (`open`). Each grip has a socket: where the held thing's middle is, and its axis, in
  * the hand's own frame (./arm-contact.ts createHandHold puts it in the world).
  */
 
 /** How a hand is shaped. */
-export type GripKind = 'rest' | 'open' | 'flat' | 'power' | 'hook' | 'pinch' | 'point' | 'loop';
+export type GripKind = 'rest' | 'open' | 'flat' | 'power' | 'torch' | 'hook' | 'pinch' | 'point' | 'loop';
 /** A grip, and the held thing's radius in the world's units (a handle's, a crayon's, a bail's). */
 export interface Grip { kind: GripKind; size?: number }
 
@@ -397,6 +399,42 @@ function thumbTo(layout: Layout, axes: Axes, made: Shape, cost: (pad: Vector3, l
 }
 
 /**
+ * One finger closed round a circle (the handle where it crosses the finger's own plane of curl: along the hand `u`, and
+ * towards the palm `v`), at (`cu`, `cv`) with radius `rho`, the finger's own thickness in it: each bone in turn, from the
+ * palm out, becomes a chord of that circle, its end (the last bone's pad) coming onto it at the meeting reached first as it
+ * curls in. `most`: how far each knuckle bends at most. Returns the three knuckles' angles.
+ */
+function curlRound(finger: Digit, f: number, cu: number, cv: number, rho: number, u: (p: Vector3) => number, v: (p: Vector3) => number,
+  most: readonly number[]): [number, number, number] {
+  const out: [number, number, number] = [0, 0, 0];
+  const j = finger.joints;
+  let pu = u(j[0]), pv = v(j[0]), heading = 0, restHeading = 0;
+  for (let k = 0; k < 3; k++) {
+    const du = u(j[k + 1]!) - u(j[k]!), dv = v(j[k + 1]!) - v(j[k]!);
+    const full = Math.hypot(du, dv), l = full * (k === 2 ? 0.7 : 1), rest = Math.atan2(dv, du);
+    // Where a bone of length l from (pu, pv) meets the circle: the meeting reached first as it curls in.
+    const dx = cu - pu, dy = cv - pv, d = Math.hypot(dx, dy);
+    let want = heading + (rest - restHeading) + REST.fingers[f]![k]!;
+    if (d > 1e-9 && d <= rho + l && d >= Math.abs(rho - l)) {
+      const a = (l * l - rho * rho + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l * l - a * a));
+      const mx = pu + a * dx / d, my = pv + a * dy / d;
+      let turn = Infinity;
+      for (const s of [1, -1]) {
+        const angle = Math.atan2(my + s * h * dx / d - pv, mx - s * h * dy / d - pu);
+        const by = Math.atan2(Math.sin(angle - heading), Math.cos(angle - heading));
+        if (by > -0.3 && by < turn) { turn = by; want = heading + by; }
+      }
+    }
+    const angle = Math.min(most[k]!, Math.max(0.5 * REST.fingers[f]![k]!, want - heading - (rest - restHeading)));
+    out[k] = angle;
+    heading += rest - restHeading + angle;
+    restHeading = rest;
+    pu += full * Math.cos(heading); pv += full * Math.sin(heading);
+  }
+  return out;
+}
+
+/**
  * Closes the fingers round a handle of radius `r` (hand units), lying across the palm against it at the root knuckles:
  * each knuckle in turn, from the palm out, curls until the end of its bone comes against the handle (as a hand closes),
  * and the thumb comes round its far side over the first finger. Returns the shape and the handle's socket: its axis runs
@@ -420,31 +458,7 @@ export function powerGrip(layout: Layout, axes: Axes, r: number, through = false
   fingers.forEach((finger, f) => {
     // Through a handle, the first two fingers go round it; the others are tucked in under them.
     if (through && f > 1) { made.fingers[f] = [1.35, 1.6, 1.0]; return; }
-    const rho = r + 0.9 * finger.radius;
-    const j = finger.joints;
-    let pu = u(j[0]), pv = v(j[0]), heading = 0, restHeading = 0;
-    for (let k = 0; k < 3; k++) {
-      const du = u(j[k + 1]!) - u(j[k]!), dv = v(j[k + 1]!) - v(j[k]!);
-      const full = Math.hypot(du, dv), l = full * (k === 2 ? 0.7 : 1), rest = Math.atan2(dv, du);
-      // Where a bone of length l from (pu, pv) meets the circle: the meeting reached first as it curls in.
-      const dx = cu - pu, dy = cv - pv, d = Math.hypot(dx, dy);
-      let want = heading + (rest - restHeading) + REST.fingers[f]![k]!;
-      if (d > 1e-9 && d <= rho + l && d >= Math.abs(rho - l)) {
-        const a = (l * l - rho * rho + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l * l - a * a));
-        const mx = pu + a * dx / d, my = pv + a * dy / d;
-        let turn = Infinity;
-        for (const s of [1, -1]) {
-          const angle = Math.atan2(my + s * h * dx / d - pv, mx - s * h * dy / d - pu);
-          const by = Math.atan2(Math.sin(angle - heading), Math.cos(angle - heading));
-          if (by > -0.3 && by < turn) { turn = by; want = heading + by; }
-        }
-      }
-      const angle = Math.min(most[k]!, Math.max(0.5 * REST.fingers[f]![k]!, want - heading - (rest - restHeading)));
-      made.fingers[f]![k] = angle;
-      heading += rest - restHeading + angle;
-      restHeading = rest;
-      pu += full * Math.cos(heading); pv += full * Math.sin(heading);
-    }
+    made.fingers[f] = curlRound(finger, f, cu, cv, r + 0.9 * finger.radius, u, v, most);
   });
   // The thumb comes over the fist onto the handle's far side, beside the first finger: as near there as it reaches, its
   // last bone kept out of the handle where the fingers hold it (past the first finger the handle ends, or is a blade).
@@ -467,6 +481,198 @@ export function powerGrip(layout: Layout, axes: Axes, r: number, through = false
     }
     return pad.distanceTo(target) + 2 * inside;
   });
+  return { shape: made, socket: { at, axis } };
+}
+
+/**
+ * How far a flashlight's barrel slants across the palm, off straight across it (radians): from the heel of the hand under
+ * the little finger out past the first finger's root, as a torch (or a sword's hilt) is held to point where the arm goes.
+ * In a hand whose four fingers are one block, which closes as a mitten does, only a little: its fingers cannot each meet
+ * a barrel far aslant at its own place.
+ */
+export const TORCH_SLANT = { own: 0.7, block: 0.35 } as const;
+
+/** One digit's joints and end as a shape has it, in the hand's frame (as posedDigits, for one digit, into `line`). */
+const turned: [Quaternion, Quaternion, Quaternion] = [new Quaternion(), new Quaternion(), new Quaternion()];
+const carried = new Quaternion(), bone = new Vector3();
+function poseDigit(layout: Layout, axes: Axes, d: number, shape: Shape, line: Vector3[]): Vector3[] {
+  const digit = layout.digits[d]!;
+  digitTurns(axes, d, shape, turned);
+  line[0]!.copy(digit.joints[0]); carried.identity();
+  for (let j = 0; j < 3; j++) {
+    carried.multiply(turned[j]!);
+    line[j + 1]!.copy(line[j]!).add(bone.subVectors(digit.joints[j + 1]!, digit.joints[j]!).applyQuaternion(carried));
+  }
+  return line;
+}
+
+/**
+ * Closes the four fingers round a barrel of radius `r` (hand units) lying anywhere on the palm's side of them, along
+ * `axis` through `at` (hand's frame): each finger opens, and then each knuckle in turn, from the palm out, curls in until
+ * its own bone comes against the barrel, as a hand closes on a thing, or as near to it as that bone gets. In the round, not
+ * in each finger's own plane: the barrel may slant across the fingers, each meeting it at its own place.
+ */
+function closeRound(layout: Layout, axes: Axes, made: Shape, at: Vector3, axis: Vector3, r: number): void {
+  const most = [1.5, 1.8, 1.4], step = 0.04, point = new Vector3();
+  const line = [new Vector3(), new Vector3(), new Vector3(), new Vector3()];
+  for (let d = 1; d < 5; d++) {
+    const curl = made.fingers[d - 1]!, touch = r + 0.85 * layout.digits[d]!.radius;
+    // How far bone k is from the barrel's surface, at its nearest: along it from just past its knuckle to its end.
+    const clear = (k: number): number => {
+      poseDigit(layout, axes, d, made, line);
+      let least = Infinity;
+      for (const t of k === 2 ? [0.3, 0.55, 0.8] : [0.3, 0.65, 1]) least = Math.min(least, offLine(point.copy(line[k]!).lerp(line[k + 1]!, t), at, axis) - touch);
+      return least;
+    };
+    curl[0] = 0; curl[1] = 0.05; curl[2] = 0.05;
+    for (let k = 0; k < 3; k++) {
+      const from = curl[k]!, first = clear(k);
+      let chosen = from;
+      if (first > 0) {
+        // Clear of it to begin with: curled in until it touches, or as near to it as it gets.
+        let before = from, nearest = first;
+        for (let angle = from + step; angle <= most[k]! + 1e-9; angle += step) {
+          curl[k] = angle;
+          const gap = clear(k);
+          if (gap <= 0) {
+            // Between the last clear angle and this: halved until it just touches.
+            let lo = before, hi = angle;
+            for (let n = 0; n < 10; n++) { curl[k] = (lo + hi) / 2; if (clear(k) <= 0) hi = curl[k]!; else lo = curl[k]!; }
+            chosen = lo;
+            break;
+          }
+          if (gap < nearest) { nearest = gap; chosen = angle; }
+          before = angle;
+        }
+      } else {
+        // In it already, where the bone before left this one (its end against the barrel): turned on round until it is out of
+        // it, or to where it is least in it.
+        let best = first;
+        for (let angle = from + step; angle <= most[k]! + 1e-9; angle += step) {
+          curl[k] = angle;
+          const gap = clear(k);
+          if (gap > best) { best = gap; chosen = angle; }
+          if (gap > 0) break;
+        }
+      }
+      curl[k] = chosen;
+    }
+  }
+}
+
+/**
+ * Fingers already closed as round a handle, each closed that little further at its root until it comes against a barrel
+ * that lies a little deeper in the palm under it than the handle did (a block of fingers, the barrel aslant): at most
+ * `MORE`, the little finger most, so that the block stays one.
+ */
+function closeOnto(layout: Layout, axes: Axes, made: Shape, at: Vector3, axis: Vector3, r: number): void {
+  const MORE = 0.7, point = new Vector3();
+  const line = [new Vector3(), new Vector3(), new Vector3(), new Vector3()];
+  for (let d = 1; d < 5; d++) {
+    const curl = made.fingers[d - 1]!, touch = r + 0.85 * layout.digits[d]!.radius, from = curl[0]!;
+    const clear = (): number => {
+      poseDigit(layout, axes, d, made, line);
+      let least = Infinity;
+      for (let k = 0; k < 3; k++) for (const t of [0.4, 0.8]) least = Math.min(least, offLine(point.copy(line[k]!).lerp(line[k + 1]!, t), at, axis) - touch);
+      return least;
+    };
+    if (clear() <= 0) continue;
+    let chosen = from;
+    for (let angle = from + 0.03; angle <= from + MORE + 1e-9; angle += 0.03) {
+      curl[0] = angle;
+      if (clear() <= 0) break;
+      chosen = angle;
+    }
+    curl[0] = chosen;
+  }
+}
+
+/**
+ * Lays the thumb along a barrel (as above), its pad as near `target` as it comes without any of it in the barrel: a search
+ * over its swing across the palm, its root's curl (out from the palm as well as in) and its two outer joints' bend. The
+ * barrel passes over the thumb's own root, so it cannot simply close as it does over a fist.
+ */
+function thumbAlong(layout: Layout, axes: Axes, made: Shape, at: Vector3, axis: Vector3, r: number, target: Vector3): void {
+  const thumb = layout.digits[0]!, touch = r + 0.9 * thumb.radius, unit = layout.size;
+  const line = [new Vector3(), new Vector3(), new Vector3(), new Vector3()], point = new Vector3();
+  const cost = (across: number, root: number, bend: number): number => {
+    made.thumb = { across, joints: [root, bend, 0.8 * bend] };
+    poseDigit(layout, axes, 0, made, line);
+    let inside = 0;
+    for (const [k, t] of [[0, 0.75], [0, 1], [1, 0.5], [1, 1], [2, 0.5], [2, 1]] as const) inside = Math.max(inside, touch - offLine(point.copy(line[k]!).lerp(line[k + 1]!, t), at, axis));
+    // Near where it rests, other things equal: it is not wrenched round for a hair's gain.
+    const strain = Math.abs(across - REST.thumb.across) + Math.abs(root - REST.thumb.joints[0]) + 0.5 * bend;
+    return point.copy(line[2]!).lerp(line[3]!, 0.45).distanceTo(target) + 4 * inside + 0.004 * unit * strain;
+  };
+  const low = [-0.4, -0.6, 0], high = [1.3, 0.6, 0.9];
+  let best = { c: Infinity, at: [REST.thumb.across, REST.thumb.joints[0], 0.1] };
+  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 8; j++) for (let k = 0; k <= 5; k++) {
+    const tried = [low[0]! + (high[0]! - low[0]!) * i / 12, low[1]! + (high[1]! - low[1]!) * j / 8, low[2]! + (high[2]! - low[2]!) * k / 5];
+    const c = cost(tried[0]!, tried[1]!, tried[2]!);
+    if (c < best.c) best = { c, at: tried };
+  }
+  // Finer, about the best.
+  for (let span = 0.08; span > 0.004; span /= 2) for (let n = 0; n < 3; n++) for (const way of [1, -1]) {
+    const tried = [...best.at];
+    tried[n] = Math.min(high[n]!, Math.max(low[n]!, tried[n]! + way * span));
+    const c = cost(tried[0]!, tried[1]!, tried[2]!);
+    if (c < best.c) best = { c, at: tried };
+  }
+  made.thumb = { across: best.at[0]!, joints: [best.at[1]!, best.at[2]!, 0.8 * best.at[2]!] };
+}
+
+/**
+ * A flashlight held to light the way (Olov, 14 November 2026: "så att det ser snyggare och mer naturligt ut"): its barrel,
+ * of radius `r` (hand units), lies slanting across the palm, and the thumb lies along it on its own side, pointing at the
+ * lens. The socket's axis is the way the lens points: out past the thumb and the first finger, between straight across
+ * the hand and along it (`TORCH_SLANT`). In a hand with fingers of its own the barrel runs from the first finger's root
+ * knuckle to the heel of the hand under the little finger, and each finger closes round it where it meets it (the first
+ * finger over its root, the little finger reaching back over it into the palm).
+ */
+export function torchGrip(layout: Layout, axes: Axes, r: number): { shape: Shape; socket: Socket } {
+  const { digits, along, palmward, thumbward } = layout;
+  const thumbOn = (made: Shape, at: Vector3, axis: Vector3): void => {
+    // The thumb lies along the barrel on the side of it where it rests, and a little over it towards the palm's side, where
+    // the switch is: its pad against the barrel there, as far towards the lens as it reaches.
+    const thumb = digits[0]!;
+    const pad = thumb.joints[2].clone().lerp(thumb.joints[3], 0.45).sub(at);
+    const reach = pad.dot(axis);
+    const side = pad.addScaledVector(axis, -reach).normalize().addScaledVector(palmward, 0.6).normalize();
+    thumbAlong(layout, axes, made, at, axis, r, at.clone().addScaledVector(axis, reach + 0.3 * r).addScaledVector(side, r + 0.85 * thumb.radius));
+  };
+  if (!layout.separate) {
+    // One block of fingers closes as round a handle, all together, the barrel only a little aslant in them: it lies in the
+    // crook of the first finger as a handle does, and a little further into the palm under each finger after it, which
+    // closes that little further onto it. The thumb, which is its own, lies along it.
+    const slant = TORCH_SLANT.block, block = digits.slice(1);
+    const held = powerGrip(layout, axes, r);
+    const made = copyShape(held.shape);
+    const axis = thumbward.clone().multiplyScalar(Math.cos(slant)).addScaledVector(along, Math.sin(slant)).normalize();
+    const middle = block.reduce((sum, f) => sum + f.joints[0].dot(thumbward), 0) / block.length;
+    const back = 1.5 * (block[0]!.joints[0].dot(thumbward) - middle) * Math.tan(slant);
+    const at = held.socket.at.clone().addScaledVector(along, -back);
+    const y = at.dot(along);
+    at.addScaledVector(palmward, Math.max(0, layout.palm(y) + 0.85 * r - at.dot(palmward), layout.palm(y - r) + 0.85 * r - at.dot(palmward)));
+    closeOnto(layout, axes, made, at, axis, r);
+    thumbOn(made, at, axis);
+    return { shape: made, socket: { at, axis } };
+  }
+  const fingers = digits.slice(1), first = fingers[0]!;
+  const root = fingers.reduce((sum, f) => sum.add(f.joints[0]), new Vector3()).divideScalar(fingers.length);
+  const u = (p: Vector3) => p.dot(along), w = (p: Vector3) => p.dot(thumbward);
+  const slant = Math.tan(TORCH_SLANT.own);
+  // Where it crosses each finger's own line, along the hand: just short of the first finger's root knuckle, as a handle
+  // lies, and further back into the palm for each finger after it.
+  const y = u(first.joints[0]) - 0.25 * r - (w(first.joints[0]) - w(root)) * slant;
+  const crossing = (finger: Digit) => y + (w(finger.joints[0]) - w(root)) * slant;
+  // Against the palm's surface all the way (sunk a little into its softness), clear of the root knuckles.
+  let lift = root.dot(palmward) + 0.95 * fingers[1]!.radius + r;
+  for (const finger of fingers) lift = Math.max(lift, layout.palm(Math.max(0, crossing(finger))) + 0.85 * r, layout.palm(Math.max(0, crossing(finger) - r)) + 0.85 * r);
+  const at = root.clone().addScaledVector(along, y - root.dot(along)).addScaledVector(palmward, lift - root.dot(palmward));
+  const axis = thumbward.clone().multiplyScalar(Math.cos(TORCH_SLANT.own)).addScaledVector(along, Math.sin(TORCH_SLANT.own)).normalize();
+  const made = copyShape(REST);
+  closeRound(layout, axes, made, at, axis, r);
+  thumbOn(made, at, axis);
   return { shape: made, socket: { at, axis } };
 }
 
@@ -590,6 +796,7 @@ function makeHand(layout: Layout, bones: Bone[][], rests?: Quaternion[][]): Hand
       let found = made.get(key);
       if (!found) {
         found = kind === 'power' || kind === 'loop' ? powerGrip(layout, axes, Math.max(r, 0.004 * layout.size), kind === 'loop' && !!layout.separate)
+          : kind === 'torch' ? torchGrip(layout, axes, Math.max(r, 0.004 * layout.size))
           : kind === 'pinch' ? pinchGrip(layout, axes, r)
           : kind === 'point' ? pointing(layout, axes)
           : kind === 'hook' ? { shape: HOOK, socket: hookSocket(layout, axes, r) }

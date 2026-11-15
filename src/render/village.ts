@@ -1440,8 +1440,12 @@ export function shopBag(chapter: ChapterData, floor: number): Group {
  * behind them was far smaller than that scale, and made them a giant's. It is gone from Byn and Byn i stormen alike.
  * This is only scenery: its shadow and steady motion announce it, and it has no collision, timer or damage rule.
  * Everything is allocated at startup and the view's paused clock freezes it.
+ *
+ * Where the chapter keeps a stretch of the road clear for a picture (`streetClear`: the church over the flooded crossing,
+ * seen from Moa's wall in Byn i stormen), the passer-by stands and waits short of it while he is there, out of that
+ * picture, and walks on when he has gone: the legs crossed in front of the church every half minute.
  */
-export function villageLife(chapter: ChapterData): { group: Group; update(clock: number): void } {
+export function villageLife(chapter: ChapterData): { group: Group; update(clock: number, elof?: { x: number; y: number }): void } {
   const group = new Group();
   group.name = 'village-life';
   const shoes = new Group();
@@ -1473,11 +1477,24 @@ export function villageLife(chapter: ChapterData): { group: Group; update(clock:
   const lo = chapter.ground[0]!.x - 36;
   const hi = (chapter.shop?.to ?? chapter.goalX) + 40;
   const span = hi - lo;
+  const clear = chapter.streetClear;
+  /** The clock at the last picture, and how long the passer-by has stood waiting since the start. */
+  let last: number | null = null, waited = 0;
   return {
     group,
-    update(clock) {
+    update(clock, elof) {
+      const dt = last === null ? 0 : Math.max(0, clock - last);
+      // Short of a stretch kept clear it waits while he is where the picture is from: the time does not count.
+      if (clear && elof && elof.x >= clear.while[0] && elof.x <= clear.while[1]) {
+        const at = (seconds: number) => lo + ((seconds * STRIDE.speed + 45) % span);
+        const was = at(clock - dt - waited), now = at(clock - waited);
+        // In a picture that begins with him there (a game taken up on the wall), it has not come yet.
+        if (last === null && now > clear.from) waited += (now - clear.from) / STRIDE.speed;
+        else if (was <= clear.from && (now > clear.from || now < was)) waited += dt;
+      }
+      last = clock;
       // The loop resets beyond the playable view. Inside the shop its wall hides the road.
-      const walked = clock * STRIDE.speed + 45;
+      const walked = (clock - waited) * STRIDE.speed + 45;
       // The road behind the crossing is at zero. The old fixed two-EL lift left both soles in the air.
       shoes.position.set(lo + (walked % span), 0, -12.2);
       if (walker) walker.pose(walked);

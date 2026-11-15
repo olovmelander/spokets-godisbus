@@ -40,48 +40,552 @@ def turned(part, profile, sides, centre=(0.0, 0.0, 0.0)):
     return skin(part, rings, tones, first, last)
 
 
-# --- the flower pot ---------------------------------------------------------------------------------------------------------
-# An upturned terracotta pot, as tall as two of him: the rim on the ground, chipped, its clay bloomed with white lime where it
-# has dried, dark and wet where the rain runs, with a drainage hole on top and a little moss at its foot.
+# --- the flower pots ---------------------------------------------------------------------------------------------------------
+# Terracotta garden pots out in the autumn storm, each as tall as he is or taller (Olov, 14 November 2026: "behover modelleras
+# battre och fa battre texturer"). Thrown clay: a rolled rim with a ledge under it, a slight taper, the wall's thickness seen
+# at the lip, a drainage hole, a little out of round. Old: white lime bloomed out of the clay, moss and algae low down, chips
+# out of the rim, dark where the rain has wetted it. Six of them, one for each lee in Stormgarden's gusts:
+# - `kruka`: upturned, as it was (and as it stands on Garden's and Byn's lawns);
+# - `kruka-ljung`: in its saucer, full of heather;
+# - `kruka-skal`: a wide bowl with only its soil and last summer's stalks: where Klonk is blown in;
+# - `kruka-valt`: blown over, its soil spilt out of its mouth and its plant lying in the soil;
+# - `kruka-hog`: a tall one on its feet, with a tuft of grass that the wind lays flat;
+# - `kruka-stapel`: two upturned, the small one on the big one.
+# The wind comes from +X, so what grows leans towards -X.
+#
+# Their material is `kit-clay`: on it the game draws the clay's grain, its bloom, its moss and its wet
+# (src/render/terracotta.ts), from the colours painted here (white where the lime is, green where the moss is: that file
+# reads them by their hue, so change these colours and it together) and from what each corner carries, `_CLAY`. On clay
+# that is where on its own pot the corner is, in the pot's own space (its foot at 0, its mouth up), in units of CLAY_SPAN.
+# On what is not clay (soil, plants, water) it is: how much it sways in the wind, how wet it is, and -1.
 
-CLAY = tone('#b4613c')
+CLAY = tone('#c06a40')
+CLAY_ORANGE = tone('#d07e44')
 CLAY_DARK = tone('#7a3c26')
-CLAY_PALE = tone('#d09a74')
+CLAY_PALE = tone('#d59c76')
+CLAY_RAW = tone('#e0a070')
 LIME = tone('#e6dccc')
 MOSS = tone('#4c6a2c')
+ALGAE = tone('#2c3a20')
+SOIL = tone('#3e3026')
+SOIL_PALE = tone('#6c5540')
+ROOT = tone('#a48e6c')
 
-if wanted('kruka'):
+CLAY_STUFF = LEAF.copy()
+CLAY_STUFF.name = 'kit-clay'
+for node in CLAY_STUFF.node_tree.nodes:
+    if node.type == 'BSDF_PRINCIPLED':
+        node.inputs['Roughness'].default_value = 0.8
+
+NOT_CLAY = -1.0
+# What a corner says of where on its pot it is, is in this many EL: so that it lies within -1 to 1, and packs small.
+CLAY_SPAN = 2.5
+
+
+def wanted_pot(name):
+    """`krukor` builds every pot, to look at them together."""
+    return wanted(name) or ONLY == 'krukor'
+
+
+def clay_part():
     part = new_part()
-    paint = part['paint']
-    sides = 26
+    part['clay'] = {}
+    return part
+
+
+def since(part, mark):
+    """The points made since there were `mark` of them."""
+    part['bm'].verts.ensure_lookup_table()
+    return list(part['bm'].verts)[mark:]
+
+
+def other(part, mark, wet=0.7, sway=None):
+    """What was made since `mark` is not clay: how wet it is, and how it sways: None, not at all; else (the height where
+    it is rooted, the height of its top), and it sways more the higher up it is."""
+    for vert in since(part, mark):
+        swing = 0.0
+        if sway is not None:
+            swing = max(0.0, min(1.0, (vert.co.z - sway[0]) / max(0.01, sway[1] - sway[0]))) ** 1.6
+        part['clay'][vert] = (swing, wet, NOT_CLAY)
+
+
+def clay_tone(seed, local, kind, world, normal, chipped):
+    """The colour of a point of a pot: from where on the pot it is (`local`), what part of the pot it is (`kind`), and
+    where and how it faces in the world (moss grows low down and on its lee; the wind comes from +X)."""
+    # Its own clay, a little its own colour, paler in grains, darker where the kiln's fire reached it otherwise.
+    c = blend(CLAY, CLAY_ORANGE, rnd(seed, 2.0))
+    c = blend(c, CLAY_PALE, 0.3 * noise(local.x * 2.6 + seed, local.y * 2.6, local.z * 2.6))
+    c = blend(c, CLAY_DARK, max(0.0, noise(local.x * 1.3, local.y * 1.3 + seed, local.z * 1.1) - 0.5) * 1.4)
+    inside = kind in ('inside', 'floor', 'hole')
+    # Lime: white, bloomed out of the clay in clouds, most on its sides under the ledge, and inside where the soil stood.
+    cloud = 0.62 * noise(local.x * 2.1 + seed * 3.0, local.y * 2.1, local.z * 2.4) + 0.38 * noise(local.x * 5.3, local.y * 5.3 + seed, local.z * 5.0)
+    band = {'side': 1.0, 'rim': 0.55, 'ledge': 0.4, 'lip': 0.3, 'inside': 0.9, 'floor': 0.6, 'foot': 0.5, 'hole': 0.0}[kind]
+    lime = max(0.0, min(1.0, (cloud - 0.45) * 3.8)) * band
+    # Moss where the wet ground reaches it and in patches on its lee, and green-black algae under the ledge.
+    low = max(0.0, min(1.0, 1.0 - world.z / 0.62))
+    moss = max(0.0, min(1.0, (noise(world.x * 2.4 + seed, world.y * 2.4, world.z * 2.0) - 0.3) * 3.4)) * low
+    lee = max(0.0, -normal.x) * max(0.0, noise(world.x * 1.6 + seed, world.y * 1.6, world.z * 1.8 + seed) - 0.6) * 4.0
+    moss = max(moss, min(0.6, lee))
+    if kind == 'ledge':
+        moss = max(moss, 0.45)
+    if inside:
+        moss *= 0.3
+    if chipped > 0.0:
+        c = blend(c, CLAY_RAW, min(1.0, chipped * 1.4))
+        lime *= 1.0 - chipped
+        moss *= 1.0 - chipped
+    shown = blend(c, LIME, 0.4 * lime)
+    shown = blend(shown, blend(MOSS, ALGAE, noise(world.x * 3.0, world.y * 3.0, world.z * 3.0 + seed)), 0.6 * moss)
+    if inside:
+        shown = lit(shown, 0.78)
+    return shown
+
+
+def clay_pot(part, spec, place, seed, chips=()):
+    """A pot in its own space, its foot on 0 and its mouth up, put where `place` says. `spec`: `base` and `mouth`, the
+    radius of its body at the foot and under the rim; `tall`; `wall`, how thick; `rim`, (how high, how far out); `fill`,
+    how far under its lip the soil lies (None: empty, and seen down to its floor); `sides`. `chips`: bites out of its
+    rim, each (where round it, how wide, how deep). Gives the inner radius at the soil, or at its floor when it is empty."""
+    sides = spec.get('sides', 44)
+    tall = spec['tall']
+    base = spec['base']
+    mouth = spec['mouth']
+    wall = spec['wall']
+    rim_h = spec['rim'][0]
+    rim_out = spec['rim'][1]
+    fill = spec.get('fill')
+    hole = spec.get('hole', 0.14)
+    under = tall - rim_h
+    slope = (mouth - base) / under
+    belly = spec.get('belly', 0.025)
+    top = mouth + slope * rim_h + rim_out
+    lip_in = top - rim_out - wall
+
+    # (radius, height, the way it faces as (out, up), what it is), from the hole under it, up its side, over its rim
+    # and down its inside.
     rows = [
-        (1.02, 0.0), (1.05, 0.03), (1.05, 0.28), (0.98, 0.33), (0.92, 0.36), (0.88, 0.7), (0.8, 1.1), (0.68, 1.62), (0.64, 1.7),
-        (0.5, 1.74), (0.2, 1.74), (0.17, 1.66),
+        (hole * 0.8, 0.1, (0.0, -1.0), 'hole'), (hole, 0.0, (0.0, -1.0), 'foot'), (base * 0.62, 0.0, (0.0, -1.0), 'foot'),
+        (base - 0.04, 0.0, (0.3, -1.0), 'foot'), (base, 0.04, (1.0, -0.4), 'side'),
     ]
-    made = skin(part, [circle(Vector((0.0, 0.0, row[1])), Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), row[0], sides) for row in rows], [CLAY] * len(rows), None, (Vector((0.0, 0.0, 1.5)), tone('#1a1412')))
-    for i in range(len(rows)):
+    count = spec.get('rows', 8)
+    for i in range(1, count + 1):
+        z = 0.04 + (under - 0.07) * i / count
+        t = z / under
+        rows.append((base + (mouth - base) * t + belly * math.sin(math.pi * t), z, (1.0, -slope), 'side'))
+    rows += [
+        (mouth + 0.004, under - 0.012, (1.0, -slope), 'side'),
+        (mouth + rim_out * 0.86, under, (0.2, -1.0), 'ledge'),
+        (mouth + rim_out + slope * 0.035, under + 0.035, (1.0, -0.5), 'rim'),
+        (mouth + rim_out * 1.05 + slope * rim_h * 0.5, under + rim_h * 0.5, (1.0, 0.0), 'rim'),
+        (top, tall - 0.05, (1.0, 0.3), 'rim'),
+        (top - 0.022, tall - 0.014, (0.6, 0.8), 'lip'),
+        (top - 0.06, tall, (0.0, 1.0), 'lip'),
+        (lip_in + 0.035, tall, (0.0, 1.0), 'lip'),
+        (lip_in, tall - 0.035, (-1.0, 0.3), 'inside'),
+    ]
+    floor = wall * 1.3
+    low = floor if fill is None else tall - fill
+    steps = 6 if fill is None else 2
+    for i in range(1, steps + 1):
+        z = (tall - 0.035) + (low - (tall - 0.035)) * i / steps
+        t = min(1.0, z / under)
+        r = base + (mouth - base) * t + belly * math.sin(math.pi * t) + (slope * (z - under) if z > under else 0.0) - wall
+        rows.append((r, z, (-1.0, 0.0), 'inside'))
+    reach = rows[-1][0]
+    if fill is None:
+        rows.append((hole, floor, (0.0, 1.0), 'floor'))
+    # Its points in its own space: a little out of round, as a thrown pot is, and its lip a little wavy.
+    rings = []
+    for r, z, facing, kind in rows:
+        ring = []
         for j in range(sides):
+            a = TAU * j / sides
+            wob = 1.0 + spec.get('wobble', 0.012) * (noise(math.cos(a) * 1.3 + seed, math.sin(a) * 1.3, z * 0.9 + seed) - 0.5) * 2.0
+            wave = 0.014 * math.sin(2.0 * a + seed * 5.0) * (z / tall) ** 2.0
+            ring.append(Vector((r * wob * math.cos(a), r * wob * math.sin(a), z + wave)))
+        rings.append(ring)
+    # The chips: bitten down from the lip and in from the rim's face, ragged, the clay raw in them.
+    chipped = {}
+    bitten_from = under + rim_h * 0.3
+    for at, wide, deep in chips:
+        for i in range(len(rows)):
+            z = rows[i][1]
+            if rows[i][3] not in ('rim', 'lip', 'inside') or z < bitten_from:
+                continue
+            for j in range(sides):
+                a = TAU * j / sides
+                d = abs((a - at + math.pi) % TAU - math.pi) / wide
+                if d >= 1.0:
+                    continue
+                k = min(1.0, (1.0 - d) * 2.4)
+                bite = deep * k * (0.45 + 0.55 * noise(a * 9.0, z * 7.0, seed))
+                point = rings[i][j]
+                point.z -= bite * (z - bitten_from) / (tall - bitten_from)
+                if rows[i][3] != 'inside':
+                    point.x *= 1.0 - 0.3 * bite / top
+                    point.y *= 1.0 - 0.3 * bite / top
+                chipped[(i, j)] = max(chipped.get((i, j), 0.0), min(1.0, k * 1.5))
+    turn = place.to_3x3()
+    made = skin(part, [[place @ point for point in ring] for ring in rings], [CLAY] * len(rows),
+                (place @ Vector((0.0, 0.0, 0.1)), tone('#17110f')),
+                (place @ Vector((0.0, 0.0, low - 0.05)), tone('#17110f') if fill is None else SOIL))
+    for i in range(len(rows)):
+        facing = rows[i][2]
+        for j in range(sides):
+            a = TAU * j / sides
+            normal = turn @ Vector((facing[0] * math.cos(a), facing[0] * math.sin(a), facing[1]))
+            normal.normalize()
             vert = made[i][j]
-            at = vert.co
-            turn = j * TAU / sides
-            lime = noise(at.x * 1.6, at.y * 1.6, at.z * 2.2)
-            run = noise(math.cos(turn) * 3.0, math.sin(turn) * 3.0, at.z * 0.35)
-            colour = blend(CLAY, CLAY_PALE, noise(at.x * 6.0, at.y * 6.0, at.z * 6.0) * 0.9)
-            if lime > 0.58:
-                colour = blend(colour, LIME, (lime - 0.58) * 3.5)
-            colour = blend(colour, CLAY_DARK, max(0.0, run - 0.44) * 2.6)
-            if at.z < 0.5:
-                colour = blend(colour, MOSS, max(0.0, noise(at.x * 3.0, at.y * 3.0, 5.0) - 0.5) * 3.0 * (0.5 - at.z) * 2.0)
-            paint[vert] = colour
-    # A chip out of the rim.
-    for j in range(sides):
-        turn = j * TAU / sides
-        chip = max(0.0, 1.0 - abs(turn - 4.2) / 0.3)
-        if chip > 0.0:
-            for i in (0, 1, 2):
-                made[i][j].co = made[i][j].co * (1.0 - 0.1 * chip)
-                paint[made[i][j]] = CLAY_PALE
-    finish(part, 'kruka', sharp=62.0, strength=0.45, reach=0.5, floor=0.0)
+            colour = clay_tone(seed, rings[i][j], rows[i][3], vert.co, normal, chipped.get((i, j), 0.0))
+            if rows[i][3] == 'hole':
+                colour = tone('#17110f')
+            part['paint'][vert] = colour
+            part['clay'][vert] = (rings[i][j].x / CLAY_SPAN, rings[i][j].y / CLAY_SPAN, max(0.0, rings[i][j].z) / CLAY_SPAN)
+    return reach
+
+
+def soil_top(part, place, radius, high, seed, heap=0.07, wet=0.85):
+    """The soil in a pot: dark and wet, heaped a little in the middle, with clods. `high` is where it meets the wall."""
+    mark = len(part['bm'].verts)
+    rings = []
+    tones = []
+    for share, drop in ((1.0, -0.06), (0.985, 0.0), (0.82, 0.3), (0.58, 0.62), (0.3, 0.88)):
+        ring = []
+        row = []
+        for j in range(22):
+            a = TAU * (j + 0.5 * (len(rings) % 2)) / 22
+            bump = (noise(math.cos(a) * 3.0 * share + seed, math.sin(a) * 3.0 * share, seed) - 0.5) * 0.07 * (1.0 if share < 0.98 else 0.0)
+            ring.append(place @ Vector((radius * share * math.cos(a), radius * share * math.sin(a), high + heap * drop + bump)))
+            row.append(blend(SOIL, SOIL_PALE, noise(math.cos(a) * 6.0 * share, math.sin(a) * 6.0 * share, seed + 3.0) * 0.8))
+        rings.append(ring)
+        tones.append(row)
+    skin(part, rings, tones, (place @ Vector((0.0, 0.0, high - 0.08)), SOIL), (place @ Vector((0.0, 0.0, high + heap)), SOIL_PALE))
+    for i in range(9):
+        a = TAU * rnd(i, seed)
+        far = radius * (0.2 + 0.7 * rnd(i, seed + 1.0))
+        size = 0.04 + 0.05 * rnd(i, seed + 2.0)
+        lump(part, place @ Vector((far * math.cos(a), far * math.sin(a), high + heap * (1.0 - (far / radius) ** 2.0) + size * 0.3)),
+             (size, size, size * 0.7), 1, blend(SOIL, SOIL_PALE, rnd(i, seed + 4.0)))
+    other(part, mark, wet=wet)
+
+
+HEATH_STEM = tone('#4a4030')
+HEATH_GREEN = tone('#4e6236')
+HEATH_PINK = tone('#b8548c')
+HEATH_MAUVE = tone('#8a4c98')
+HEATH_TIP = tone('#dc9cc4')
+
+
+def heather(part, place, radius, high, seed, count=92, tall=1.0):
+    """Heather in bloom, as it is set out by the door in autumn: a mound of thin upright sprigs, close together, green
+    below and pink and mauve up their flowering halves, with green shoots among them; each leans out from the middle,
+    and all of them over with the wind."""
+    mark = len(part['bm'].verts)
+    for i in range(count):
+        a = i * GOLDEN + seed
+        far = radius * 0.96 * math.sqrt((i + 0.5) / count)
+        out = Vector((math.cos(a), math.sin(a), 0.0))
+        green = i % 4 == 3
+        long = tall * (0.62 + 0.5 * rnd(i, seed)) * (1.0 - 0.3 * (far / radius) ** 2.0) * (0.72 if green else 1.0)
+        lean = out * (0.12 + 0.6 * (far / radius) ** 1.5) + Vector((-0.3 - 0.28 * rnd(i, seed + 1.0), 0.16 * (rnd(i, seed + 5.0) - 0.5), 0.0))
+        foot = out * far + UP * (high - 0.04)
+        path = []
+        for k in range(5):
+            t = k / 4.0
+            path.append(place @ (foot + UP * (long * t * (1.0 - 0.12 * t)) + lean * (long * 0.6 * t * t)))
+        pink = blend(blend(HEATH_PINK, HEATH_MAUVE, rnd(i, seed + 2.0)), HEATH_TIP, 0.5 * rnd(i, seed + 6.0) ** 2.0)
+        shade = 0.8 + 0.4 * rnd(i, seed + 4.0)
+        thick = 0.85 + 0.35 * rnd(i, seed + 3.0)
+        if green:
+            tones = [HEATH_STEM, lit(HEATH_GREEN, 0.8), HEATH_GREEN, lit(HEATH_GREEN, 1.2), lit(HEATH_GREEN, 1.45)]
+        else:
+            tones = [HEATH_STEM, HEATH_GREEN, blend(HEATH_GREEN, pink, 0.6), lit(pink, shade), blend(lit(pink, shade), HEATH_TIP, 0.5)]
+        tube(part, path, [0.022 * thick, 0.034 * thick, 0.046 * thick, 0.04 * thick, 0.014 * thick], tones, 3)
+    top = (place @ Vector((0.0, 0.0, high + tall))).z
+    other(part, mark, wet=0.6, sway=((place @ Vector((0.0, 0.0, high))).z, top))
+
+
+GRASS_GREEN = tone('#7a9a48')
+GRASS_DARK = tone('#4e6e34')
+GRASS_STRAW = tone('#d8c078')
+GRASS_PALE = tone('#f0e2a8')
+
+
+def grass_tuft(part, place, radius, high, seed, count=52, tall=2.5):
+    """A tuft of tall garden grass in a pot, gone to straw at its tips, and laid over by the wind: each blade comes up
+    out of the tuft and streams away towards -X, the long ones furthest."""
+    turned_back = place.inverted().to_3x3()
+    for i in range(count):
+        a = i * GOLDEN + seed
+        far = radius * 0.8 * math.sqrt((i + 0.5) / count)
+        foot = Vector((far * math.cos(a), far * math.sin(a), high - 0.04))
+        long = tall * (0.5 + 0.55 * rnd(i, seed))
+        # The way it streams: downwind in the world, each a little to one side; and how soon it bends over.
+        way = math.pi + (rnd(i, seed + 1.0) - 0.5) * 1.3
+        along = turned_back @ Vector((math.cos(way), math.sin(way), 0.0))
+        across = Vector((-along.y, along.x, 0.0))
+        bend = 1.25 + 0.7 * rnd(i, seed + 2.0)
+        wide = 0.05 + 0.03 * rnd(i, seed + 3.0)
+        dry = rnd(i, seed + 4.0)
+        at = foot.copy()
+        rows = []
+        tones = []
+        steps = 7
+        for k in range(steps + 1):
+            t = k / steps
+            tilt = bend * t ** 1.4 + 0.12 * math.sin(t * 5.0 + i)
+            ahead = along * math.sin(tilt) + UP * math.cos(tilt)
+            if k > 0:
+                at = at + ahead * (long / steps)
+            w = wide * (1.0 - t ** 2.2) + 0.006
+            ridge = across.cross(ahead)
+            rows.append([place @ (at - across * w), place @ (at + ridge * (w * 0.5)), place @ (at + across * w)])
+            green = blend(GRASS_DARK, GRASS_GREEN, min(1.0, t * 2.2))
+            colour = blend(green, blend(GRASS_STRAW, GRASS_PALE, t), min(1.0, max(0.0, t * 1.6 - 0.25 + 0.7 * dry)))
+            tones.append([lit(colour, 0.86), colour, lit(colour, 0.92)])
+        made = skin(part, rows, tones, closed=False)
+        for k in range(steps + 1):
+            for vert in made[k]:
+                part['clay'][vert] = ((k / steps) ** 1.5, 0.6, NOT_CLAY)
+
+
+STALK = tone('#7a6a48')
+STALK_DARK = tone('#4a3e2c')
+LEAF_YELLOW = tone('#d8b03a')
+LEAF_BROWN = tone('#8a5a2c')
+
+
+def fallen_leaf(part, at, turn, size, colour, tilt=0.0):
+    """A birch leaf lying where the wind put it: a small pointed shape with a crease down its middle."""
+    along = Vector((math.cos(turn), math.sin(turn), 0.0))
+    across = Vector((-along.y, along.x, 0.0))
+    points = []
+    for u, w in ((-1.0, 0.0), (-0.4, 0.62), (0.3, 0.55), (1.0, 0.0), (0.3, -0.55), (-0.4, -0.62)):
+        points.append(put(part, at + along * (u * size) + across * (w * size) + UP * (0.02 + abs(w) * size * (0.25 + tilt)), colour if w else lit(colour, 0.8)))
+    middle = put(part, at + UP * 0.012, lit(colour, 0.7))
+    for k in range(6):
+        face(part, (points[k], points[(k + 1) % 6], middle))
+
+
+def dead_stalks(part, place, radius, high, seed, count=4):
+    """What is left of last summer's flowers: a few dry stalks, snapped, and leaves that the wind has dropped on the soil."""
+    mark = len(part['bm'].verts)
+    for i in range(count):
+        a = TAU * rnd(i, seed) + 0.6
+        far = radius * (0.25 + 0.5 * rnd(i, seed + 1.0))
+        foot = Vector((far * math.cos(a), far * math.sin(a), high - 0.03))
+        long = 0.34 + 0.4 * rnd(i, seed + 2.0)
+        knee = foot + UP * long + Vector((-0.1 * long, 0.06 * (rnd(i, seed + 3.0) - 0.5), 0.0))
+        # Snapped over at the knee, its top hanging downwind.
+        tip = knee + Vector((-0.34 - 0.2 * rnd(i, seed + 4.0), 0.2 * (rnd(i, seed + 5.0) - 0.5), -0.16 - 0.1 * rnd(i, seed + 6.0)))
+        tube(part, [place @ foot, place @ knee, place @ tip], [0.028, 0.022, 0.012], [STALK_DARK, STALK, lit(STALK, 1.15)], 5)
+        lump(part, place @ tip, (0.05, 0.05, 0.04), 1, STALK_DARK)
+    for i in range(6):
+        a = TAU * rnd(i, seed + 8.0)
+        far = radius * (0.3 + 0.6 * rnd(i, seed + 9.0))
+        fallen_leaf(part, place @ Vector((far * math.cos(a), far * math.sin(a), high + 0.03)), TAU * rnd(i, seed + 10.0), 0.11 + 0.05 * rnd(i, seed + 11.0),
+                    blend(LEAF_YELLOW, LEAF_BROWN, rnd(i, seed + 12.0) * 0.8), 0.3 * rnd(i, seed + 13.0))
+    other(part, mark, wet=0.6)
+
+
+def saucer(part, radius, high, base, seed):
+    """A clay saucer under a pot, with the rain standing in it round the pot's foot. Gives how high its floor is."""
+    floor = 0.05
+    rows = [(radius - 0.05, 0.0, (0.3, -1.0), 'foot'), (radius, 0.03, (1.0, -0.4), 'side'), (radius + 0.035, high - 0.02, (1.0, 0.2), 'rim'),
+            (radius + 0.02, high, (0.3, 1.0), 'lip'), (radius - 0.04, high, (-0.3, 1.0), 'lip'), (radius - 0.075, high - 0.03, (-1.0, 0.3), 'inside'),
+            (radius - 0.09, floor + 0.03, (-1.0, 0.3), 'inside'), (radius - 0.12, floor, (0.0, 1.0), 'floor')]
+    rings = []
+    for r, z, facing, kind in rows:
+        rings.append(circle(Vector((0.0, 0.0, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), r, 36))
+    made = skin(part, rings, [CLAY] * len(rows), (Vector((0.0, 0.0, 0.0)), CLAY_DARK), (Vector((0.0, 0.0, floor)), CLAY_DARK))
+    for i in range(len(rows)):
+        for j in range(36):
+            a = TAU * j / 36
+            normal = Vector((rows[i][2][0] * math.cos(a), rows[i][2][0] * math.sin(a), rows[i][2][1]))
+            normal.normalize()
+            vert = made[i][j]
+            colour = clay_tone(seed, vert.co, rows[i][3], vert.co, normal, 0.0)
+            part['paint'][vert] = colour
+            part['clay'][vert] = (vert.co.x / CLAY_SPAN, vert.co.y / CLAY_SPAN, max(0.0, vert.co.z) / CLAY_SPAN)
+    # The rain in it: dark and still, up to a finger under its edge.
+    mark = len(part['bm'].verts)
+    water = floor + 0.045
+    rings = []
+    for r, z in ((radius - 0.085, water), (base - 0.06, water), (base - 0.06, floor + 0.005), (radius - 0.085, floor + 0.005), (radius - 0.085, water)):
+        rings.append(circle(Vector((0.0, 0.0, z)), Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), r, 36))
+    skin(part, rings, [tone('#2a3238'), tone('#1c2228'), tone('#1c2228'), tone('#1c2228'), tone('#2a3238')])
+    other(part, mark, wet=1.0)
+    # The pot stands on its floor, a hair over it.
+    return floor + 0.004
+
+
+def pot_feet(part, radius, high, seed):
+    """Three clay feet under a pot, to keep it off the wet."""
+    for i in range(3):
+        a = TAU * i / 3.0 + 0.5
+        made = lump(part, Vector((radius * math.cos(a), radius * math.sin(a), high * 0.5)), (0.17, 0.17, high * 0.62), 2, CLAY)
+        for vert in made:
+            vert.co.z = max(0.0, min(high + 0.01, vert.co.z))
+            normal = Vector((vert.co.x - radius * math.cos(a), vert.co.y - radius * math.sin(a), 0.0))
+            if normal.length > 0.0001:
+                normal.normalize()
+            colour = clay_tone(seed + i, vert.co, 'side', vert.co, normal, 0.0)
+            part['paint'][vert] = colour
+            part['clay'][vert] = (vert.co.x / CLAY_SPAN, vert.co.y / CLAY_SPAN, max(0.0, vert.co.z) / CLAY_SPAN)
+
+
+def clay_finish(part, name, reach=0.5):
+    """Makes the pot's object, in the clay's material, with what its corners carry for the game."""
+    bm = part['bm']
+    layer = bm.loops.layers.float_vector.new('_CLAY')
+    for made in bm.faces:
+        for loop in made.loops:
+            loop[layer] = part['clay'].get(loop.vert, (0.0, 0.6, NOT_CLAY))
+    made = finish(part, name, sharp=58.0, strength=0.5, reach=reach, floor=0.0, leaf=True)
+    made.data.materials[0] = CLAY_STUFF
+    return made
+
+
+UPTURNED = Matrix.Rotation(math.pi, 4, 'X')
+
+if wanted_pot('kruka'):
+    # Upturned, its rim on the grass and its foot up, the drainage hole in the middle of it: 2.1 across and 1.74 tall.
+    part = clay_part()
+    spec = {'base': 0.62, 'mouth': 0.9, 'tall': 1.74, 'wall': 0.085, 'rim': (0.3, 0.085), 'fill': 0.3}
+    clay_pot(part, spec, Matrix.Translation((0.0, 0.0, 1.74)) @ UPTURNED, 1.0, chips=((4.2, 0.2, 0.13), (1.1, 0.13, 0.07)))
+    clay_finish(part, 'kruka')
+
+if wanted_pot('kruka-ljung'):
+    # In its saucer, full of heather: 2 across, 1.6 tall to its lip, the heather a head over that.
+    part = clay_part()
+    floor = saucer(part, 0.9, 0.17, 0.64, 2.0)
+    spec = {'base': 0.64, 'mouth': 0.88, 'tall': 1.52, 'wall': 0.08, 'rim': (0.27, 0.08), 'fill': 0.16}
+    place = Matrix.Translation((0.0, 0.0, floor)) @ Matrix.Rotation(0.4, 4, 'Z')
+    reach = clay_pot(part, spec, place, 2.0, chips=((5.0, 0.15, 0.09),))
+    soil_top(part, place, reach, 1.52 - 0.16, 2.0)
+    heather(part, place, reach, 1.52 - 0.13, 2.0)
+    clay_finish(part, 'kruka-ljung')
+
+if wanted_pot('kruka-skal'):
+    # A wide bowl, low enough for Klonk to stand in up to his middle: 2.3 across, 1.22 tall, its soil at 1.
+    part = clay_part()
+    spec = {'base': 0.74, 'mouth': 1.04, 'tall': 1.22, 'wall': 0.09, 'rim': (0.24, 0.07), 'fill': 0.22, 'belly': 0.05, 'rows': 7, 'sides': 48}
+    place = Matrix.Rotation(2.2, 4, 'Z')
+    reach = clay_pot(part, spec, place, 3.0, chips=((3.6, 0.17, 0.1), (0.4, 0.11, 0.06)))
+    soil_top(part, place, reach, 1.0, 3.0, heap=0.04)
+    dead_stalks(part, place, reach, 1.02, 3.0)
+    clay_finish(part, 'kruka-skal')
+
+if wanted_pot('kruka-valt'):
+    # Blown over: on its side, its mouth downwind and a little up, as it lies on its rim and the edge of its foot; a big
+    # bite out of its rim where it struck, the shard beside it. Its soil has spilt out of its mouth in a fan over the
+    # grass, and what grew in it lies in the soil, still in flower.
+    part = clay_part()
+    spec = {'base': 0.6, 'mouth': 0.88, 'tall': 1.66, 'wall': 0.085, 'rim': (0.28, 0.085)}
+    top = 0.88 + (0.88 - 0.6) / (1.66 - 0.28) * 0.28 + 0.085
+    tip = math.atan2(top - 0.6, 1.66)
+    lying = Matrix.Translation((0.85, 0.0, 0.6 * math.cos(tip) + 0.015)) @ Matrix.Rotation(-(math.pi / 2.0 - tip), 4, 'Y') @ Matrix.Rotation(1.2, 4, 'Z')
+    clay_pot(part, spec, lying, 4.0, chips=((4.1, 0.4, 0.3), (0.9, 0.16, 0.08)))
+    mouth_at = lying @ Vector((0.0, 0.0, 1.66))
+    # The soil it spilt: out of its mouth and over the grass in a fan, a little of it still in its lower lip.
+    mark = len(part['bm'].verts)
+    rings = []
+    tones = []
+    centre = Vector((mouth_at.x - 0.5, mouth_at.y - 0.3, 0.0))
+    for share, lift in ((1.0, 0.0), (0.8, 0.45), (0.5, 0.8), (0.22, 1.0)):
+        ring = []
+        row = []
+        for j in range(18):
+            a = TAU * j / 18
+            far = share * (0.7 + 0.3 * noise(math.cos(a) * 1.6, math.sin(a) * 1.6, 9.0)) * (1.0 + 0.3 * max(0.0, -math.cos(a)))
+            ring.append(centre + Vector((far * 1.2 * math.cos(a), far * 0.95 * math.sin(a), 0.01 + 0.3 * lift * (0.8 + 0.4 * noise(a * 2.0, share * 4.0, 2.0)))))
+            row.append(blend(SOIL, SOIL_PALE, 0.25 + 0.75 * noise(math.cos(a) * 5.0 * share, math.sin(a) * 5.0 * share, 6.0)))
+        rings.append(ring)
+        tones.append(row)
+    skin(part, rings, tones, (centre + Vector((0.0, 0.0, -0.02)), SOIL), (centre + Vector((0.0, 0.0, 0.33)), SOIL_PALE))
+    for i in range(10):
+        a = TAU * rnd(i, 21.0)
+        far = 0.4 + 0.6 * rnd(i, 22.0)
+        size = 0.06 + 0.06 * rnd(i, 23.0)
+        lump(part, centre + Vector((far * 1.2 * math.cos(a) - 0.1, far * 0.9 * math.sin(a), size * 0.6)), (size, size, size * 0.7), 1, blend(SOIL, SOIL_PALE, rnd(i, 24.0)))
+    # What is left in the pot: a tongue of soil along its lower side, out over its lip.
+    rings = []
+    tones = []
+    for k in range(5):
+        t = k / 4.0
+        at = Vector((mouth_at.x + 0.75 - 1.15 * t, mouth_at.y - 0.12 * t, mouth_at.z - 0.78 + 0.5 * math.sin(tip) * (1.0 - t) - 0.2 * t * t))
+        ring = []
+        row = []
+        for j in range(10):
+            a = TAU * j / 10
+            point = at + Vector((0.0, (0.34 + 0.14 * t) * math.cos(a), (0.12 + 0.05 * t) * math.sin(a)))
+            point.z = max(0.012, point.z)
+            ring.append(point)
+            row.append(blend(SOIL, SOIL_PALE, 0.2 + 0.8 * noise(a * 2.0, t * 5.0, 3.0)))
+        rings.append(ring)
+        tones.append(row)
+    skin(part, rings, tones, (rings[0][0] * 0.5 + rings[0][5] * 0.5, SOIL), (rings[-1][0] * 0.5 + rings[-1][5] * 0.5, SOIL_PALE))
+    other(part, mark, wet=0.6)
+    # What grew in it lies in the spilt soil: its stems out from the mouth and flat on the heap, broad leaves on them, and
+    # two red heads still in flower.
+    mark = len(part['bm'].verts)
+    crown = Vector((mouth_at.x - 0.1, mouth_at.y - 0.2, 0.3))
+    PEL_STEM = tone('#6a7a3c')
+    PEL_LEAF = tone('#4a7a3a')
+    PEL_RED = tone('#d43a30')
+    for i in range(4):
+        swing = (i - 1.5) * 0.42
+        end = crown + Vector((-0.75 - 0.12 * (i % 2), swing * 0.9 - 0.1, 0.0))
+        end.z = 0.2 + 0.06 * (i % 2)
+        mid = (crown + end) * 0.5 + Vector((0.0, 0.0, 0.12))
+        tube(part, [crown, mid, end], [0.05, 0.042, 0.03], [STALK, PEL_STEM, PEL_STEM], 5)
+        for k in range(3):
+            t = 0.4 + 0.27 * k
+            at = crown + (end - crown) * t + Vector((0.0, (rnd(i, k) - 0.5) * 0.36, 0.07 + 0.05 * rnd(k, i + 2.0)))
+            lump(part, at, (0.2 + 0.05 * rnd(k, i), 0.18, 0.04), 1, blend(PEL_LEAF, LEAF_YELLOW, 0.45 * rnd(i * 3.0 + k, 5.0)))
+        if i in (1, 2):
+            for k in range(7):
+                a = TAU * k / 7.0
+                lump(part, end + Vector((-0.08 + 0.1 * math.cos(a), 0.1 * math.sin(a), 0.08 + 0.04 * (k % 2))), (0.075, 0.075, 0.06), 1, lit(PEL_RED, 0.85 + 0.3 * rnd(k, 7.0 + i)))
+    other(part, mark, wet=0.6)
+    # The shard that broke out of its rim, lying on the grass by its mouth: a curved piece of the rim, its hollow up.
+    mark = len(part['bm'].verts)
+    rows = []
+    tones = []
+    for k in range(5):
+        t = k / 4.0
+        row = []
+        for m in range(4):
+            u = m / 3.0
+            wide = 0.3 * (1.0 - 0.75 * t)
+            row.append(Vector((mouth_at.x + 0.75 - 0.4 * t + 0.1 * u, mouth_at.y - 1.0 - wide * u + 0.1 * t,
+                               0.03 + 0.2 * (2.0 * u - 1.0) ** 2.0 * (1.0 - 0.6 * t) + 0.02 * t)))
+        rows.append(row)
+        tones.append([CLAY_RAW if k in (0, 4) or m in (0, 3) else blend(CLAY, CLAY_PALE, rnd(k, m)) for m in range(4)])
+    skin(part, rows, tones, closed=False)
+    other(part, mark, wet=0.5)
+    clay_finish(part, 'kruka-valt')
+
+if wanted_pot('kruka-hog'):
+    # A tall one on its three feet: 1.5 across and 2.1 tall to its lip, the grass streaming from it.
+    part = clay_part()
+    pot_feet(part, 0.4, 0.12, 5.0)
+    spec = {'base': 0.5, 'mouth': 0.66, 'tall': 1.98, 'wall': 0.075, 'rim': (0.32, 0.075), 'fill': 0.14, 'rows': 10, 'belly': 0.035, 'sides': 38}
+    place = Matrix.Translation((0.0, 0.0, 0.12)) @ Matrix.Rotation(0.9, 4, 'Z')
+    reach = clay_pot(part, spec, place, 5.0, chips=((2.6, 0.17, 0.1),))
+    soil_top(part, place, reach, 1.98 - 0.14, 5.0, heap=0.05)
+    grass_tuft(part, place, reach, 1.98 - 0.12, 5.0)
+    clay_finish(part, 'kruka-hog', reach=0.4)
+
+if wanted_pot('kruka-stapel'):
+    # Two put away upside down for the winter, the small one over the big one's foot and a little askew.
+    part = clay_part()
+    spec = {'base': 0.58, 'mouth': 0.86, 'tall': 1.5, 'wall': 0.085, 'rim': (0.27, 0.08), 'fill': 0.3}
+    clay_pot(part, spec, Matrix.Translation((0.0, 0.0, 1.5)) @ UPTURNED, 6.0, chips=((0.8, 0.17, 0.11),))
+    small = {'base': 0.46, 'mouth': 0.66, 'tall': 1.02, 'wall': 0.07, 'rim': (0.2, 0.065), 'fill': 0.2, 'rows': 6, 'sides': 36}
+    askew = Matrix.Translation((0.03, 0.02, 2.31)) @ Matrix.Rotation(0.12, 4, 'Y') @ Matrix.Rotation(0.07, 4, 'X') @ UPTURNED @ Matrix.Rotation(1.7, 4, 'Z')
+    clay_pot(part, small, askew, 7.0, chips=((3.0, 0.19, 0.09),))
+    clay_finish(part, 'kruka-stapel')
 
 # --- Bertil's boot ------------------------------------------------------------------------------------------------------------
 # A green rubber boot lying on the water as a boat: toe forward, along +X, the sole with its tread under it, the yellow-topped

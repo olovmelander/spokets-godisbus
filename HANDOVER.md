@@ -1,5 +1,121 @@
 # Handover
 
+## State (15 November 2026): Olov's second Äventyr 2 list, all fifty points
+
+Olov played Äventyr 2 through on 14 November and wrote about fifty points, chapter by chapter, plus general wishes for
+Elof's walk, the flashlights, the ground and the animals. Thirteen builders worked in parallel worktrees (branches
+`a2-14nov-<name>` from `f342178`); they were stopped twice (Olov shut the computer down for the night, and the Fable
+usage limit) and taken up again from their transcripts, finishing on Opus 5.5. The lead merged them into
+`a2-genomspelning-14nov`, fixed what met at the seams, recorded the new and changed lines, and merged `main`
+(Godisracet, #277) in. The builders looked at their own work in the game's camera, before and after, most of it on the
+family's real models (pictures in the session scratchpad only).
+
+- **The narrator's "Storm…" (1, 6, 14).** "Stormkvällen", "Stormgården" and "Stormskogen" were said as "stor…", with a
+  long closed vowel (measured: first formant about 320 Hz against about 400 Hz in "Byn i stormen"). Sent spelled by
+  sound, "Stårm…" (`scripts/voices-spoken.json`, read by `record-voices.mjs`; the manifest keeps the line's own words),
+  every take is heard as "Storm…". "Stormnatten" had the same fault and was recorded again too.
+- **Stormkvällen.**
+  - (2) Flashlights everywhere: a `torch` grip in `fingers.ts` (the barrel slanted across the palm, the thumb along it),
+    the arm placed by the grip so the forearm lies under the beam, the elbow always bent, the lamp clear of the coat
+    (each model's trunk measured), a little swing with the stride (`lamp-hold.ts`, `arm-contact.ts`, `rig.ts`). One
+    flashlight model in code (`flashlight.ts`), each person's own colour. Pappa passes it hand to hand, holds it up
+    when he shows it and lights Elof, not the ceiling; Elof lights the floor ahead. The family's models have their four
+    fingers as one block, so the hand closes like a mitten; a finger-by-finger grip is ready for hands that have them.
+  - (3) A glass bowl of the trail's own sweets on the table (`bowl.ts`, `candy-bowl.ts`). **In the story it is the old
+    trägubbe, not Klonk, who takes the fistful** (he leaves through the window, and his sweets become the trail; Moa's
+    old "Jag såg honom …" was easily heard as Klonk). He now leaps from the shelf into the bowl, comes up with four
+    sweets and leaps out of the window, close up, in the held `fonstret` (15.2 s); Moa says "Jag såg gamla trägubben ta
+    en näve godis!". Seven are left, and Morgonen efter's bowl has them. Äventyr 1's home has no bowl.
+  - (4) Moa and Bertil go ahead to the door (`verandan`); in the held `lofte` (5.85 s) all four come out through the
+    doorway one after another, Pappa lighting the deck, and take their places. Two big candies moved in place.
+  - (5) The promises are said standing at the deck's edge (`stormtitel`): Mamma, Moa "Små kan hitta små, lillebror!",
+    Bertil "Hälsa lillgubben att vi kommer!", Pappa, and Elof's answer.
+- **Stormgården.**
+  - (7) **Sickan**, the family's black cat: modelled, rigged and animated in Blender (`art/blender/sickan.py`, ten clips,
+    one draw, 1.68 EL at the withers); she waits at seven places from the veranda to the birch root, greets him with a
+    slow blink, trots on ahead, leaps the ditch, flattens her ears at lightning (`sickan.ts`, `sickan-life.ts`). Elof:
+    "Sickan! Är du också ute i stormen?" and "Vad stor du är, Sickan!".
+  - (8) Six different terracotta pots modelled in `a2-props.py`, with a clay shader (`terracotta.ts`); Gården's and
+    Byn's upturned pots are the new one too. (11) A garden trampoline built in code (`trampoline.ts`): steel frame, W
+    legs, 40 springs, woven mat that gives under him, wet blue pad with one cushion torn loose. (13) An arch in the
+    tall hedge, as in Gården; in `gangen` Klonk goes in first and Elof follows before the end page.
+  - (9, 10, 12) See "The ground" below.
+- **Stormskogen.** (17) The root plate after Klonk's bridge is a Blender model (`rotvalta` in `a2-nature.py`): spoke
+  roots, hanging fine roots, stones in rust-brown earth, peeled turf, the stem lying away. (18) The jay eats the
+  lingonberry, flies up over the high root's edge, lands on a dead snag and tugs a bundle of beard lichen loose, which
+  unrolls down the face; it is climbable only once it is down (`jay-lichen.ts`, `Climb.broughtBy`, scene `ss:laven`).
+- **Byn i stormen.** (19) The church moved to the right of the wall, over the flooded crossing, and the shot widens as
+  he comes up (`Spot.vista`, `family-shot.ts`); it is whole from the moment Moa holds the umbrella out. (20) Held
+  `tack-moa`: "Tack, Moa! Ditt paraply kan flyga!", Moa cheers and waves.
+- **Olympia.** (21) A tall hedge closes the way back at the start; the far end's earth wall moved to x 240. (22) The
+  buildings stand on one ground sheet with gravel, paths and grass at their feet (`olympia-yard.ts`); masts behind the
+  stand. (23) The ball turns by distance ÷ radius, arcs, bounces with squash, drops into the puddle and floats
+  (`big-ball.ts`). (24) A white post to climb behind the training goal (`box_goal`'s `post`, `a2-yard.py`). (25) The far
+  goal 7 deep, its net 3 EL clear of the first target.
+- **Flärken.** (29) See "The animals". (30) Elof sits and slides down the slide (`src/sim/chute.ts`, `chute-slide.ts`;
+  `PlayerState.sliding`); up it he walks. (31) A volleyball net with posts, guys, tapes and a mesh that dips and
+  springs; a ball and two cones in it bounce in the wind (`volley-net.ts`). (32) The sun board stands on its own islet,
+  posts in the ground, braced. (33) The gungfly mats are bog rafts that well water round his boots (`gungfly.ts`).
+  (34) The little one stands on a piece of bark at the lookout and floats away on the same bark (`bark-boat.ts`).
+  (35) The floating bark is thick pine bark that falls flat into the water and holds him (`bark-raft.ts`).
+- **Älven.** (36) The raft floats half under water, moored to a stake, dips when he boards (`river-raft.ts`,
+  `floating-ride.ts`, `Ride.skim` `in`/`out`). (37) The frog sits clear of the stump; the stumps are new models
+  (`stubbe-sagad` with buttresses and a sawn top; `stubbe-gnagd` a birch with tooth grooves). (38) The beaver lodge is a
+  dome of 544 gnawed sticks and mud (`a2-buildings.py`). (39) The birch that stood in the car's boot is across the
+  stream.
+- **Billsta.** (41) Moa and Bertil run up to the house and round its left end, along a curved route measured against the real house
+  (`ActorKey.via`, `run-route.ts`, `HOUSE` and `RUN` in `billsta.ts`). (42) Birches before the house instead of spruces;
+  held `bi:tack-mormor`: "Ladudörren är öppen! Tack, mormor!" and Mormor "Varsågod, lilla Elof. Kliv in!" (Morfar's
+  thanks still plays). (43) The barn's hay is bales of stalks bound with twine, loose hay along the wall, straws on the
+  boards, dust in the lantern light, and no rain inside the loft (`barn-hay.ts`, `straw.ts`, `UNDER_ROOF`). (44) The
+  seesaw's stone is a field stone built in code (`field-boulder.ts`); Flärken's `fieldStone()` is unchanged. (45) Held
+  `bi:nut`: Elof picks up a hazelnut as big as his head, holds it up, "En hasselnöt! Lika stor som mitt huvud!", and
+  lays it back (a moment, not a find; `hazelnut.ts`, `SceneStage.held`). (46) The brow is bare granite ending in a
+  brink, the ground behind it falls away (`ChapterData.brink`), and `billsta-vista.ts` draws the cliff, spruce tops
+  below, the narrow 32 EL down with its own water (current lines, wind patches, mirrored shores, a broken moon path,
+  white water at the stone), the far shore and haze; the camera rises and looks down there (`CameraZone.eye`). The
+  stone in the narrow is a water-worn boulder. The windfall lies at the forest's edge below the rise.
+- **Stormens öga.** (48) Mormor no longer speaks before the lamps are lit: Elof says "Men lamporna når jag. Jag tänder
+  dem!", lights them, and the family wonder who did it (her recording `soMormorSecret` is gone with her line).
+  (49) **The gold-paper geléhallon is the old trägubbe's**, his last sweet: he steps out, bows and holds it out in both
+  hands, and Elof takes it and says "Tack, gamla trägubben! Ditt allra sista." (`gift-handover.ts`). (50) The lying tree
+  is a big old windfall (`lag-mossig`, also at Billsta's end), moved behind the family on the shore.
+- **Elof's walk (51 and general).** Two causes, measured on the real Elof: at 144–240 Hz his legs stood still in 17–50 %
+  of frames and the camera jumped (he was paced by simulation steps, not by the time drawn; this computer's display runs
+  at 240 Hz); and at home his walk was a slow-motion sprint on straight legs, the foot landing far ahead. Now he
+  strides on feet put down and held under him (Bertil's Blender gait fitted to his legs, paced for his size), steps in
+  under himself when he stops, takes a kerb as a step, and is the same at every display rate (`player-motion.ts`,
+  `view.ts` `bodyDt`, three optional fields in `gait.ts`). Small and sprinting, his soles still slide a little.
+- **The ground (9, 10, 12, 15, 16 and general).** In the renderer only (`dressing/natural.ts`, `fringe.ts`, `ground.ts`,
+  `water.ts`): every grown wall (lawn, moss, peat, sand, rock) has its own wandering line through the depth, leans,
+  bulges and rounds over at its lip; a step's top rolls over as a short bank; grass and moss hang over the lips. Built
+  things stay straight. Stormgården's ditch, the flood, the rut, Granskogen's brook and Billsta's water run on towards
+  the camera and out of the picture, with wet sloping banks. His plane is exactly the simulation's. 129 places in 17
+  chapters were photographed before and after. +23 % ground triangles, no new draws.
+- **The animals (29, 40 and general).** Pappa's carved hare, bird and nisse are modelled in Blender
+  (`art/blender/carvings.py` → `boot/carvings.glb`, `carving-kit.ts`), warm in the storm light, on every tier. Every
+  animal was photographed where it is met; those that were not seen were moved where they are: owls within 6.5 EL,
+  sheltering birds 2–4 EL back (new ones in Olympia and Flärken), mallards into Myren's channels, the beaver's swim
+  nearer, Berget's hare and vättar out of the valley under the crane, far cranes and geese at their own size and in
+  the sky, ravens and bats under the picture's top. Full table in the djur builder's report (session transcript).
+- **Seams fixed at the merge.** The sawn stump moved 0.4 left so its new buttresses are not behind the frog; Pappa
+  walks out a tenth nearer the camera so his lamp hand clears the door post; the lamp test follows the window scene's
+  new timing; licence rows and kit lists from both sides kept.
+- **Voices.** Recorded with direction and levelled (−18.7 LUFS), each heard back whole on its first take: `sgSickan`,
+  `sgSickanBig`, `sbThanksMoa`, `skHandful`, `skMoaSmall`, `skBertilGreet`, `soLightThem`, `soLastOne`, `biWelcome`, `biNut`
+  and the four "Storm…" cards. Lines naming Sickan are directed "affectionate, surprised" (the storm rule had made them
+  alarmed). Not heard by a person.
+- **Validation.** Typecheck, all 3,332 tests in 347 files, the build with its size gates (728.8 KB of gzipped JavaScript;
+  5,872.5 KB at boot; Äventyr 2's chunk 158.5 of 160 KB) and the privacy check pass on the merged branch; and on that
+  build nineteen browser suites: smoke, aventyr2 (42), endings (78), journey, walk-and-talk (34), dialogue-reading,
+  release-routing (12), home-console (55), collection-bag, bredbyn (91), village (64), myren-loop (30), garden-loop (52),
+  forest-puzzles (52), mountain-loop (43), visual-overhaul, model-installation (22), talk-life (12), lifecycle (44). The
+  lead looked at Stormskogen's root plate, Billsta's brow, Älven's stump and Stormens öga's jetty on the family's
+  real models.
+- **Not verified:** the family's devices and frame time there; most pictures were stills; Mid was photographed only in
+  places; nobody played it through by hand.
+- **Next:** Olov plays Äventyr 2 through again and answers the questions below. No Blender work is waiting.
+
 ## State (14 November 2026, later): Godisracet is an arcade kart racer with four courses and a cup
 
 - **Olov:** asked for the TV's kart game to feel like an arcade kart racer ("more like Mario Cart or Crash team
@@ -6038,6 +6154,12 @@ record identify the exact published revision.
 
 ## Next
 
+**Olov's second Äventyr 2 list (15 November).** Keep a held scene where a thing in the story must be seen (the bowl,
+the gift, the hazelnut, the thanks), `ActorKey.via` for routes round buildings, `ChapterData.brink` and `CameraZone.eye`
+for views from a height, the natural edges (`dressing/natural.ts`: built things straight, his plane exact), Elof paced
+by the time drawn (`bodyDt`), and the flashlight hold for every lamp. Äventyr 2's chunk is 1.5 KB under its gate.
+Next: Olov plays Äventyr 2 through and answers the questions below. No Blender work is waiting.
+
 **The creature overhaul (13 November).** A new creature: a kit `art/blender/<creature>.py` built with
 `creature-tools.py` (recipe in its header and `crane-chick.py`), `node scripts/bake/blender-kit.mjs <kit> --out=<glb>`,
 and `creatureClips(model, '<creature>')` in the game with a code fallback. Keep one skinned draw per creature, and the
@@ -6647,6 +6769,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 2, second round (14–15 Nov) | Olov's fifty points from playing Äventyr 2 | One session on Olov's computer: thirteen builders and the lead, stopped overnight and by the Fable limit, finished on Opus 5.5; Blender headless | — / 1 list | Every point done; Sickan the cat, the narrator's "Storm…", the bowl and the gift given to the old trägubbe, natural ground edges everywhere, Elof's walk paced by the time drawn; 12 lines recorded |
 | Elof's run lean (14 Nov) | Elof leans back too much when he runs | One cloud session | — / 1 report | Twice the forward lean at a run, the head held up, a forward lean in running jumps; seen on the stand-in, not yet on the real Elof |
 | Mormor and the sofa (13 Nov, evening) | Mormor stands in the sofa's arm in Morgonen efter | One session on Olov's computer, while he played Äventyr 2 | — / 1 report | Grandparents' body offset in one constant; Mormor behind the table's far end; a sofa-clearance test |
 | Äventyr 1 round (13 Nov) | Olov's 18 points from playing Äventyr 1 | The same session: seven builders and the lead; Blender headless for the pine | — / 1 list (+1 correction) | Ghost on the floor and getting away, hands on knees, Moa's drawing and shyness, picture colours, the walk into the forest, thanks to Bertil and from the ghost, time cards, the lysklubba, the ghost's lace, the cairn line, the old pine and stones, one pull, no eye painting; 5 lines recorded |
@@ -6980,6 +7103,18 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- From Olov's second Äventyr 2 list (14–15 November), seen but not fixed: Äventyr 2's own chunk is 158.5 of its 160 KB
+  gate (raise the gate or split a part out before the next big Äventyr 2 change); the gnawed birch stumps' pale points
+  can read as small thatched roofs in Älven's light; Billsta's spruce tops below the brink are flat dark triangles, and a
+  flat patterned cliff stands to one side of the brow; Myren's and Flärken's islands still read somewhat as blocks from
+  the side; Granskogen's brook shows faint bands where its reflection bends; the leaning spruce (x 92–99) and the high
+  root (x 178) in Stormskogen are not root plates; in Stormens öga the family stand in a row so beams pass through the
+  ones beside, and lit lamps follow the looks into faces; the jay is tiny on a phone held upright; Olympia's corner flag
+  fills part of the picture at the goal's top; small and sprinting, Elof's soles still slide a little and his knee
+  extends fast; the family's own stop step (`footwork.ts`) still has the steep lift that made Elof's knee snap;
+  `plantFeet` in `rig.ts` is unused; the old `raft(w, h)` look and `lodge()` stand-in are unused; Bertil's `sg:heja`
+  comes late at a run; Klonk's veranda stop hides Sickan's paws a little; the bark raft's colour edges are stair-stepped
+  close up; a runner waits about 3.4 s on Billsta's first boulder before the hazelnut moment.
 - From Godisracet (14 November): karts or drivers to choose between; a course of Godisängen alone; moving
   hazards; a shortcut across an infield; skid marks on the road; a ghost of the best lap to race against; two
   players on one screen. A new course is one entry in `src/kart/sim/courses.ts`.
@@ -7045,6 +7180,41 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från din andra genomspelning av Äventyr 2 den 14 november (allt är byggt; inget hindrar):
+
+- **Vem tar godiset ur skålen?** I berättelsen är det gamla trägubben, inte Klonk: han hoppar ut genom fönstret, och
+  hans näve godis blir spåret. Nu hoppar han ner i skålen, tar en famn godis och hoppar ut, och Moa säger "Jag såg gamla
+  trägubben ta en näve godis!". Vill du att det ska vara Klonk i stället? Skålen står halvtom i Morgonen efter: bra?
+- **Geléhallonet i guldpapper** är gamla trägubbens allra sista godis: han bockar och räcker fram det, Klonk tittar på.
+  Elof säger "Tack, gamla trägubben! Ditt allra sista." ("Det sparade du åt mig" är borttaget.) Rätt?
+- Stormens öga: Mormor säger inget i början; Elof säger "Men lamporna når jag. Jag tänder dem!". Bra så?
+- Stormkvällen: Mamma och Pappa kommer ut från precis innanför dörren, efter Moa och Bertil. Okej?
+- Berättaren: "Stormnatten" (titeln) hade samma fel som "Storm…" och är också inspelad igen. Lyssna gärna på alla fyra.
+- Sickan: ska hon synas hemma också (Stormkvällen, Morgonen efter)? Helt svart med gulgröna ögon, eller någon vit fläck?
+  25 cm i mankhöjd bredvid Elofs 15 cm: lagom? "Vad stor du är, Sickan!": passar det?
+- Stormgården: skyddsnät på studsmattan (nu inget, så att det inte skymmer Elof)? En dyna har lossnat och fladdrar: okej?
+  Klonk går först genom hålet i häcken: eller bredvid Elof? Krukornas vita kalkfläckar: lagom?
+- Ficklamporna har ägarens färg (Pappa röd, Mamma gul, Moa blå, Bertil grön): bra? I Stormens öga lyser lamporna mot
+  ansiktena när familjen tittar på varandra: ska de hellre lysa mot marken?
+- Stormskogen: lavskrikan rycker loss skägglav som hänger ihoprullad på en torr gren. Hellre en rot eller klängväxt?
+  Rotvältan: för mörk eller läskig för Elof?
+- Byn i stormen: kyrkan står nu till höger om muren, över den översvämmade korsningen. Bra plats? Moa hejar och vinkar
+  när Elof tackar och säger sin replik efteråt: eller ska hon svara med ord direkt?
+- Olympia: en vit stång bakom träningsmålet att klättra på: eller hellre nätet? En ljus grusplan med stigar bakom planen,
+  och belysningsmasterna bakom läktaren: stämmer det med hur Olympia ser ut?
+- Flärken: Elof sitter ovanpå rutschkanan med benen längs den, så att han syns: eller nere i rännan? En boll och två
+  kottar studsar i volleybollnätet i vinden: bra? Lillgubben står på en barkbit även i Älven: bra?
+- Älven: flotten ligger förtöjd vid en påle och glider iväg när Elof kliver på: bra? Björken står nu på andra sidan
+  bäcken i stället för att bilen flyttats: bra?
+- Billsta: ska Elof ta med hasselnöten (nu lägger han tillbaka den)? Är månens glittergata på sundet för ljus en
+  stormnatt?
+- Marken: vattnet i dikena rinner nu ut ur bild mot kameran: eller hellre en mjuk, böjd strand närmast? Myrens tuvor är
+  rundare men lite blockiga från sidan: göra om dem lägre och mjukare?
+- Elofs gång: lite kortare, snabbare steg än Bertils, foten nära under honom. Ser det naturligt ut hemma? Liten och
+  springande kan fötterna glida lite i de långa stegen: okej?
+- Djuren: Pappas trägubbar (haren, fågeln, nissen) syns nu även på lägsta grafiknivån: bra? Gässen över Gården flyger
+  långt bort: närmare (då skyms röken ur skorstenarna)? Gråsparvarna i Stormens öga är borta: tillbaka nära ugglan?
 
 Godisracet den 14 november (allt är byggt; inget hindrar):
 

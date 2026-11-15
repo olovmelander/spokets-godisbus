@@ -13,14 +13,15 @@ import { alongAll, flightAt, hopCandy, jump, round, row, sighting, slopeRow, tim
  *    drops, read from their shadows, with a dry place between them. Moa lights him from the window.
  * 2. **The steps down,** and **the pumpkin lantern**: warm light, and the first big candy. "Gamla trägubben
  *    lämnar godis åt oss!"
- * 3. **Stormbyarna** (the exciting sequence): the open lawn, where gusts sweep across. Upturned flowerpots are
+ * 3. **Stormbyarna** (the exciting sequence): the open lawn, where gusts sweep across. The garden's flowerpots are
  *    the lee; one that catches him in the open takes him back to the last pot. Klonk is blown into one.
  * 4. **Regntunnan** (the puzzle): the ditch beyond the rain barrel is too wide to jump. Up the barrel's hose,
  *    *Vrid på kranen*: the water runs into the ditch and the floating lid rises into a bridge.
  * 5. **Bertils stövelbåt:** the lawn is flooded. "Ropa på Bertil": his rubber boot carries Elof over.
  * 6. **The playhouse:** a flash shows the old trägubbe up on its roof, and it leaps away. Its front steps lead
  *    up onto the roof, where the old one's thought picture waits: a lonely figure. "Varför väntar den aldrig?"
- * 7. **The hedge:** a flash of lightning shows the little one tumbling over the hedge towards the forest.
+ * 7. **The hedge:** a flash of lightning shows the little one tumbling over the hedge towards the forest. The hedge has
+ *    an arch into the forest, as it has in Gården, and at the goal he and Klonk go in through it, after him.
  *
  * Over the trail lie two side ways (docs/level-design.md), each with a heart as its tell and each letting
  * out forward onto the trail:
@@ -59,7 +60,7 @@ const LANTERN = { x: 30.6, y: STEPS[3]!.y, z: -0.9 };
 /** The stone edging of Mamma's flower bed, on the lawn below the steps: a held jump, or a pull-up. */
 const BED = { from: 37, to: 39, y: 0.8 };
 
-/** The open lawn and its upturned flowerpots, as far apart as Berget's boulders: the same beat of the dash. */
+/** The open lawn and its flowerpots (../flower-pots.ts), as far apart as Berget's boulders: the same beat of the dash. */
 const POTS = [44, 49.2, 54.4, 59.6, 64.8, 70];
 
 /**
@@ -112,6 +113,16 @@ const RUT = { from: 160, to: 161.4, bottom: -4.5 };
 const ROOT = { from: 166, top: 169, end: 172, to: 175, y: 1.4 };
 /** The low clipped hedge at the garden's end: a pull-up onto it, and the way to the forest. */
 const HEDGE = { from: 184.6, y: 1.2 };
+/** Where he stops, on the low hedge: the chapter's goal. */
+const GOAL = 189;
+/**
+ * The arch in the tall hedge behind the low one, where the way goes on into the forest (Olov, 14 November 2026: "ett
+ * hål i häcken som Elof går igenom när kapitlet avslutas, precis som i kapitlet ”Gården” i äventyr 1"). Its middle, as
+ * src/render/dressing/hedge-gate.ts (`gateOf`) cuts it in a hedge marked `gate` that has a low lip: 1.95 past the goal,
+ * as Gården's is; its opening is 2.7 wide (189.6 to 192.3), and its hedge stands 7.4 to 9.7 EL behind the path, level
+ * with the low hedge's top. A path is trodden over the low hedge into it, and bends a little to the right beyond.
+ */
+const ARCH = { x: GOAL + 1.95 };
 
 /**
  * The flash at the hedge (Olov, 9 November 2026: "När lillgubben flyger över häcken i slutet av kapitlet är det svårt
@@ -181,6 +192,33 @@ const HEDGE_SCENE: SceneDef = {
       { at: 0.15, act: 'point', aim: flown(0.3) },
       { at: 2, act: 'look', aim: flown(0.55) },
       { at: 3.6, act: 'look', aim: flown(0.85) },
+    ],
+  },
+};
+
+/**
+ * At the goal the two of them go on through the arch in the hedge and into the storm's forest, after the little one,
+ * while the picture holds on the arch and the tune closes: the coda's picture, as Gården's is (`skogen` there; Olov,
+ * 14 November 2026). Klonk, who has waited by the arch, goes in first, as it has gone ahead of him all the way ("Kom,
+ * Klonk!"); he follows it onto the path trodden over the low hedge, in through the arch and on among the spruces into
+ * the dark. For the picture only: the simulation keeps him at the goal. The last page comes once he is well in, a
+ * second before the scene's end (src/sim/walk-off.ts), so its photo is of him going into the forest.
+ */
+const WALK_OFF: SceneDef = {
+  id: 'gangen', on: 'goal', seconds: 9.4, hold: true,
+  stage: {
+    bars: false,
+    shots: [{ at: 0, x: ARCH.x - 0.7, y: HEDGE.y + 2.5, z: -5, height: 7.4, width: 8, eye: 1.3, move: 1.8 }],
+    actors: {
+      ghost: [
+        { at: 0, x: 192.4, y: HEDGE.y, z: 0, face: 0.5, move: 0.01, act: 'stand' },
+        { at: 0.15, x: ARCH.x + 0.35, y: HEDGE.y, z: -3, face: 0.7, move: 1.3, act: 'waddle' },
+        { at: 1.45, x: ARCH.x + 0.98, y: HEDGE.y + 0.04, z: -21, face: 0.75, move: 10.2 },
+      ],
+    },
+    elof: [
+      { at: 0, face: 0.9, act: 'walk', to: { x: ARCH.x - 0.15, y: HEDGE.y + 0.02, z: -1.2 }, move: 1.5 },
+      { at: 1.4, face: 0.76, to: { x: ARCH.x + 0.75, y: HEDGE.y + 0.06, z: -19 }, move: 11 },
     ],
   },
 };
@@ -270,7 +308,9 @@ export const stormgard: ChapterData = {
     // Zinc, pale grey (not 'iron': that is a street drain's grate, and the picture would dig a well round it).
     { from: CAN.from, to: CAN.to, kind: 'paving' },
     { from: PLAYHOUSE.from, to: PLAYHOUSE.to, kind: 'wood' },
-    { from: HEDGE.from, to: 196, kind: 'hedge' },
+    // The tall hedge behind the low one has its arch into the forest (src/render/dressing/hedge-gate.ts), for the
+    // picture only: he still stops at the goal on the low hedge, and the wall at the ground's end is where it was.
+    { from: HEDGE.from, to: 196, kind: 'hedge', gate: true },
   ],
   decor: [
     // Who else is out in it: a hedgehog in the lee of a pot, and a snail going up his blocks.
@@ -282,9 +322,10 @@ export const stormgard: ChapterData = {
     { look: 'tragubbe', at: PLAYHOUSE.ridge, until: 'beat:sg:playhouse', z: -0.4, word: 'lit' },
   ],
   spawn: { x: 1, y: DECK + 0.01 },
-  // Where and when, as the chapter opens (../kit.ts); and the little one over the hedge, watched.
-  scenes: [timeCard('stormgard', 1), TAP_SCENE, OLD_SEEN, HEDGE_SCENE],
-  goalX: 189,
+  // Where and when, as the chapter opens (../kit.ts); the little one over the hedge, watched; and at the goal, the two
+  // of them in through the hedge's arch after him.
+  scenes: [timeCard('stormgard', 1), TAP_SCENE, OLD_SEEN, HEDGE_SCENE, WALK_OFF],
+  goalX: GOAL,
   ground: [
     { x: -3, y: 16 },
     { x: -3, y: DECK },
@@ -396,9 +437,10 @@ export const stormgard: ChapterData = {
     { at: { x: 27.6, y: STEPS[2]!.y } },
     { at: { x: 32.4, y: STEPS[4]!.y } },
     { at: { x: 38, y: BED.y } },
-    // from pot to pot, and into one
+    // from pot to pot, and into one: the wide bowl with only its soil in it, where he stands on the soil, 1 EL over the
+    // lawn (../flower-pots.ts `BOWL_SOIL`; art/blender/a2-props.py `kruka-skal`)
     { at: { x: 46.6, y: 0 } },
-    { at: { x: POTS[2]!, y: 0.9 }, z: -1.3 },
+    { at: { x: POTS[2]!, y: 1 }, z: -1.3 },
     { at: { x: 62.2, y: 0 } },
     { at: { x: 68, y: 0 } },
     { at: { x: 74.6, y: 0 } },
@@ -418,7 +460,8 @@ export const stormgard: ChapterData = {
     { at: { x: 171.4, y: ROOT.y } },
     { at: { x: 178.6, y: 0 } },
     { at: { x: 183, y: 0 } },
-    { at: { x: 192, y: HEDGE.y } },
+    // by the arch in the hedge, where it waits for him to the end, and goes in before him (`gangen`)
+    { at: { x: 192.4, y: HEDGE.y }, stays: true },
   ],
   beats: [
     // Which lines are the story's and which are passing remarks (`aside`): docs/dialogue.md.
@@ -457,6 +500,15 @@ export const stormgard: ChapterData = {
     { id: 'sg:flash', on: 'sg:flight', who: 'elof', line: 'sgFlash' },
     { id: 'sg:forest', at: 180.2, who: 'elof', line: 'sgForest' },
     { id: 'sg:end-klonk', on: 'beat:sg:forest', who: 'spoket', line: 'sgKlonkKlonk', aside: true },
+    // Sickan, the family's cat (`SICKAN`, below): what he says the first time he sees her, sitting ahead of him on the
+    // veranda, and as he steps onto the lid towards her on the ditch's far bank, as big as a horse to him. Remarks
+    // both, said to a child who looks about. Each has room to be read before the story's next line at a run: the first
+    // is let go by one who runs the deck while Moa is still speaking (begun later, it kept the gusts' warning waiting),
+    // and is then said where he next comes upon her with nobody speaking, down between the flowerpots; the second is
+    // short, and begun on the lid, so that it is done before Bertil calls.
+    { id: 'sg:sickan', at: 8.6, who: 'elof', line: 'sgSickan', aside: 4.4 },
+    { id: 'sg:sickan-pots', at: round(POTS[3]! - 0.8), until: 'beat:sg:sickan', who: 'elof', line: 'sgSickan', aside: 7 },
+    { id: 'sg:sickan-big', at: DITCH.from + 0.4, who: 'elof', line: 'sgSickanBig', aside: true },
   ],
   cameras: [
     // Up on the sills: wider, looking down at the deck and its drops.
@@ -583,3 +635,81 @@ export const context: Chooser = (has, player) => {
   if (at < STEPS[0]!.x) return ['sgVeranda', 'sgMoa', 'house'];
   return ['sgTrail', 'sgFamily'];
 };
+
+/**
+ * Sickan, the family's black cat (Olov, 14 November 2026: "den ska gå runt på passande ställen på stormgården"). Where
+ * she keeps out of the storm and waits for him, one place after another, and the way she pads on ahead of him between
+ * them (../sickan-life.ts; she is picture only: ../sickan.ts). Every place is behind his path, never on it:
+ *
+ * 1. on the veranda, in the dry place between the gutter's two runs of drops;
+ * 2. at the foot of the steps, by the pumpkin lantern's light;
+ * 3. on the lawn, down in the lee between two flowerpots while the gusts go over;
+ * 4. on the ditch's near bank, which she leaps as he comes to the barrel, to sit on the far bank and watch the water,
+ *    and him over the flooded lawn;
+ * 5. on the lawn below the playhouse, where he comes down off its roof;
+ * 6. on the birch root, from where she sees him off to the hedge.
+ */
+/** Facing the way he comes from, and a little towards the camera. */
+const CAT_FACE = Math.PI + 0.62;
+/** How far behind the path she keeps: near enough to be sharp in the picture. */
+const CAT_Z = -2.8;
+export const SICKAN: readonly import('../sickan-life').SickanPlace[] = [
+  {
+    // She is up as he comes, three steps before he reaches her: at his run she is down the steps before him.
+    id: 'veranda', x: 15.2, y: DECK, z: CAT_Z, pose: 'sit', face: CAT_FACE, go: 12.2,
+    // Along the deck behind him, and down the steps in three bounds: every other tread, and the lawn.
+    path: [
+      { x: 22.9, y: DECK, z: -2.9, gait: 'trot' },
+      { x: 27.5, y: STEPS[2]!.y, z: CAT_Z, gait: 'leap' },
+      { x: 32.6, y: STEPS[4]!.y, z: -2.75, gait: 'leap' },
+      { x: 35.3, y: 0, z: -2.6, gait: 'leap' },
+    ],
+  },
+  {
+    id: 'lantern', x: 35.3, z: -2.6, pose: 'sit', face: CAT_FACE, go: 33.4, shake: true, wash: true,
+    // Round behind Mamma's flower bed, and along behind the flowerpots.
+    path: [
+      { x: 36.8, z: -4.6, gait: 'trot' },
+      { x: 39, z: -6.5, gait: 'trot' },
+      { x: 42.4, z: -6.4, gait: 'trot' },
+      { x: 44.6, z: -4, gait: 'trot' },
+      { x: 60.4, z: -3.9, gait: 'trot' },
+    ],
+  },
+  {
+    id: 'pots', x: round((POTS[3]! + POTS[4]!) / 2 + 0.3), z: -3, pose: 'crouch', face: CAT_FACE, go: round((POTS[3]! + POTS[4]!) / 2 - 1.2),
+    path: [
+      { x: POTS[4]! + 0.4, z: -3.9, gait: 'trot' },
+      { x: BARREL.from - 1, z: -3.8, gait: 'trot' },
+    ],
+  },
+  {
+    // At the ditch's edge, past the can, she waits only until he is at the barrel's foot, where the picture looks on
+    // to the ditch: she leaps it as he says it is too wide.
+    id: 'bank', x: DITCH.from - 0.9, z: -3.4, pose: 'stand', face: -0.45, go: 77, passing: true,
+    path: [
+      { x: DITCH.to + 1.2, z: -3.5, gait: 'leap' },
+      { x: DITCH.to + 4.6, z: -3, gait: 'walk' },
+    ],
+  },
+  {
+    // Past the big candy on the bank, so that she does not sit behind it.
+    id: 'far-bank', x: DITCH.to + 4.6, z: -3, pose: 'sit', face: CAT_FACE, go: DITCH.to + 7, wash: true,
+    // While the tap's water runs and the lid comes up, that is what she watches.
+    watch: { on: 'sg:pour', until: 'scene:kranen', x: LID.x, y: -0.6, z: -1 },
+    // No way on: she cannot go over the flooded lawn, and stays to see him off in Bertil's boot. She has gone round it,
+    // unseen, by the time he is over (beside Bertil, who is drawn smaller than life, she would be the size of a dog).
+  },
+  {
+    // On the lawn below the playhouse's far eaves, far enough on to be in the picture as he lands: under the eaves the
+    // picture, which is up on the roof with him, does not reach down to her.
+    id: 'playhouse', x: PLAYHOUSE.to + 5.8, z: -3, pose: 'sit', face: CAT_FACE, go: PLAYHOUSE.to + 4.4, wash: true,
+    // On over the lawn, over the rut's puddle in a leap, and up the birch root.
+    path: [
+      { x: RUT.from - 0.9, z: -3.3, gait: 'trot' },
+      { x: RUT.to + 0.9, z: -3.3, gait: 'leap' },
+      { x: ROOT.from, z: -3.2, gait: 'trot' },
+    ],
+  },
+  { id: 'root', x: ROOT.end - 0.2, y: ROOT.y, z: -3, pose: 'sit', face: CAT_FACE, go: Infinity },
+];

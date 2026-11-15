@@ -2,6 +2,7 @@ import { Group, Matrix4, Quaternion, Vector3 } from 'three';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actPose } from '../../src/render/acting';
 import { familyLampSide, holdFlashlight, lampCarryWeight, quietLampArm } from '../../src/render/lamp-hold';
+import { LAMP_HELD } from '../../src/render/flashlight';
 import { createFamilyMotion } from '../../src/render/family-motion';
 import { createRehearsalRig, STANDING, type Role } from '../../src/render/rig';
 import { createStage } from '../../src/render/stage';
@@ -31,7 +32,9 @@ describe('a flashlight carried in front of a posed body', () => {
       holdFlashlight(rig, lamp, side, new Vector3(x, .4, 0), Math.max(.7, rig.height / 5.2), true, 1, null, 1, time);
       expect(rig.hand(free, v()).distanceTo(greeting)).toBeLessThan(1e-8);
       expect(lamp.position.distanceTo(rig.hand(side, v()))).toBeLessThan(1e-8);
-      if (previous) expect(lamp.position.distanceTo(previous)).toBeLessThan(.04);
+      // A hand's pace as he passes under it (the whole forearm goes with the lamp now, a little faster than a hand at the
+      // waist did): never a jump.
+      if (previous) expect(lamp.position.distanceTo(previous)).toBeLessThan(.08);
       previous = lamp.position.clone();
     }
   });
@@ -76,14 +79,14 @@ describe('a flashlight carried in front of a posed body', () => {
       let previous = frame(1, 0, true);
       for (let i = 1; i <= 2 * rate; i++) {
         const current = frame(1 - i / rate, i / rate);
-        expect(current.angleTo(previous)).toBeLessThan(3 / rate);
+        expect(current.angleTo(previous)).toBeLessThan(3.5 / rate);
         previous = current;
         if (i === rate) for (let redraw = 0; redraw < 100; redraw++) expect(frame(0, 1).angleTo(current)).toBeLessThan(1e-7);
       }
       const completed = previous.clone(), rewound = frame(1, 0);
       // Timed, going back is a seek: the authored frame exactly. With reduced motion there is no clock to tell a seek,
       // and the hand now goes with the beam (the forearm along it), so the frame carried round comes back within a hair.
-      expect(rewound.angleTo(frame(1, 4, true))).toBeLessThan(timed ? 1e-7 : .03);
+      expect(rewound.angleTo(frame(1, 4, true))).toBeLessThan(timed ? 1e-7 : .05);
       return completed;
     };
     const at30 = trace(30), at60 = trace(60), at120 = trace(120);
@@ -107,7 +110,7 @@ describe('a flashlight carried in front of a posed body', () => {
       rig.pose({ ...STANDING }); holdFlashlight(rig, lamp, 1, aim, 1, true, 1, from, weight);
       expect(ray.dot(fingers)).toBeCloseTo(0, 8);
       expect(ray.length()).toBeCloseTo(1, 8); expect(fingers.length()).toBeCloseTo(1, 8);
-      expect(lamp.position.clone().addScaledVector(ray, .06).distanceTo(socket)).toBeLessThan(1e-8);
+      expect(lamp.position.clone().addScaledVector(ray, LAMP_HELD).distanceTo(socket)).toBeLessThan(1e-8);
       up.copy(fingers).negate(); side.crossVectors(up, ray);
       return new Quaternion().setFromRotationMatrix(matrix.makeBasis(side, up, ray));
     };
@@ -137,29 +140,33 @@ describe('a flashlight carried in front of a posed body', () => {
       expect(rig.hand(side === 0 ? 1 : 0, v()).distanceTo(free)).toBeLessThan(1e-8);
       expect(shoulder.distanceTo(elbow)).toBeCloseTo(lengths[0]!, 6);
       expect(elbow.distanceTo(wrist)).toBeCloseTo(lengths[1]!, 6);
-      expect(wrist.distanceTo(shoulder)).toBeLessThan((lengths[0]! + lengths[1]!) * .93);
+      // A relaxed arm, the elbow bent: for a beam at the floor ahead it hangs further down than it did held out before the
+      // waist, never straight.
+      expect(wrist.distanceTo(shoulder)).toBeLessThan((lengths[0]! + lengths[1]!) * .96);
       const s = rig.group.worldToLocal(shoulder.clone()), e = rig.group.worldToLocal(elbow.clone());
       const hand = rig.group.worldToLocal(lamp.position.clone());
       expect(e.y).toBeLessThan(s.y - .1);
       expect(e.x * (side === 0 ? 1 : -1)).toBeGreaterThan(Math.abs(s.x) * .85);
-      expect(hand.z).toBeGreaterThan(s.z + .3);
+      // Beside its own hip or before it, outside its own shoulder: a nearly hanging arm, the lamp clear of the coat.
+      expect(hand.z).toBeGreaterThan(s.z - .03 * rig.height);
+      expect(hand.x * (side === 0 ? 1 : -1)).toBeGreaterThan(Math.abs(s.x) * .9);
       expect(hand.y).toBeLessThan(s.y - .2);
       expect(lamp.position.distanceTo(rig.hand(side, v()))).toBeLessThan(1e-8);
     }
   });
 
-  it('attaches the lamp to the returned power-grip socket, including an offset palm, and aims the same beam axis', () => {
+  it('attaches the lamp to the returned torch-grip socket, including an offset palm, and aims the same beam axis', () => {
     const rig = createRehearsalRig('pappa'), lamp = new Group(), returned = v(), actualAxis = v();
     // A private hand's socket is not its wrist: a reachable target may move slightly when the grip rotates.
     rig.grasp = (_side, grip, target, axis, out, _weight, axisOut) => {
-      expect(grip.kind).toBe('power');
+      expect(grip.kind).toBe('torch');
       returned.copy(target).add(new Vector3(.03, -.02, .01));
       actualAxis.copy(axis).applyAxisAngle(new Vector3(0, 1, 0), .08);
       axisOut!.copy(actualAxis); return out.copy(returned);
     };
     rig.pose({ ...STANDING });
     holdFlashlight(rig, lamp, 0, new Vector3(-1, .6, 4), 1);
-    expect(lamp.position.clone().addScaledVector(actualAxis, .06).distanceTo(returned)).toBeLessThan(1e-8);
+    expect(lamp.position.clone().addScaledVector(actualAxis, LAMP_HELD).distanceTo(returned)).toBeLessThan(1e-8);
     expect(new Vector3(0, 0, 1).applyQuaternion(lamp.quaternion).distanceTo(actualAxis)).toBeLessThan(1e-8);
   });
 
@@ -238,7 +245,9 @@ describe('a flashlight carried in front of a posed body', () => {
       }
       last = points;
     }
-    expect(max).toBeLessThan(12 / rate);
+    // The hands meet before the belly, where both reach (flashlightHandover): a little further for the receiving hand to
+    // come from its sleeve than to the other hip, at a hand's pace still, never there in one frame.
+    expect(max).toBeLessThan(15 / rate);
   });
 
   it('does not borrow Moa’s drawing when Pappa finishes showing the raincoat', () => {
@@ -319,8 +328,9 @@ describe('a flashlight carried in front of a posed body', () => {
         const heldBeam = axis.clone();
         for (let reading = 0; reading < 120; reading++) {
           const beam = frame(at + i / 120, 1 / 60);
-          // Breathing continues, but the turn to the next person waits with the story.
-          expect(beam.angleTo(heldBeam)).toBeLessThan(.04);
+          // Breathing continues (the carrying arm goes with the shoulders as the weight shifts), but the turn to the next
+          // person waits with the story.
+          expect(beam.angleTo(heldBeam)).toBeLessThan(.05);
         }
         previous = new Vector3(0, 0, 1).applyQuaternion(lamp.quaternion);
         const position = lamp.position.clone(), turn = lamp.quaternion.clone();

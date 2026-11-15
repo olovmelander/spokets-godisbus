@@ -685,7 +685,15 @@ function sunboard(def: BuildingDef) {
   const foot = 3;
   const parts: BufferGeometry[] = [box(w + 0.8, h + 0.8, 0.5, 0, h / 2 + foot, -0.1, '#6a4a2c'), box(w, h * 0.45, 0.3, 0, foot + h * 0.225, 0.2, '#3f6a8a')];
   parts.push(box(w, h * 0.55, 0.3, 0, foot + h * 0.725, 0.2, '#b8d0dc'), box(w, h * 0.16, 0.34, 0, foot + h * 0.5, 0.2, '#3a5a40'));
-  for (const x of [-w / 2 + 0.6, w / 2 - 0.6]) parts.push(post(0.3, foot + 0.4, x, 0, -0.3, '#5a3e22'));
+  // Where the chapter lifts it over the ground it stands in (Flärken's, out in the shallows), its posts go down to an
+  // islet of its own under it, as the model's do: it stood in the air over the lake (Olov, 14 November 2026).
+  const down = (def.y ?? 0) > 0 ? def.y! + 0.9 : 0;
+  for (const x of [-w / 2 + 0.6, w / 2 - 0.6]) parts.push(post(0.3, foot + 0.4 + down, x, -down, -0.3, '#5a3e22'));
+  if (down > 0) {
+    parts.push(paint(new SphereGeometry(1, 18, 8).scale(w * 0.72, 0.9, 2.4).translate(0, -def.y! - 0.6, 0.2), '#6c7a40'));
+    parts.push(box(w - 0.6, 0.3, 0.14, 0, foot - 0.7, -0.1, '#6f5a44'));
+    for (const side of [-1, 1]) parts.push(tilted(Math.hypot(w / 2 - 0.9, foot + def.y! - 1.1), 0.24, 0.1, 0, side * Math.atan2(foot + def.y! - 1.1, w / 2 - 0.9), side * (w / 4 - 0.2), (foot - 0.8 - def.y! + 0.3) / 2, -0.12, '#6f5a44'));
+  }
   const sun = { x: w * 0.22, y: foot + h * 0.74, r: h * 0.17 };
   parts.push(paint(new CircleGeometry(sun.r, 16).translate(sun.x, sun.y, 0.4), '#d9a84e'));
   for (let i = 0; i < 10; i++) {

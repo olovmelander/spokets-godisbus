@@ -34,6 +34,12 @@ export interface Climb {
    * that its end is tied round the stone at `tied`.
    */
   heldBy?: { scene: string; at: number; seconds: number; until: string; tied: { x: number; y: number; z: number } };
+  /**
+   * Picture only: the jay he gave a berry brings it down (Stormskogen's beard lichen; src/render/jay-lichen.ts). It hangs
+   * bundled on a snag at its top. In the scene `scene` the jay at the spot `jay` flies up to it and tugs it loose `at`
+   * seconds in, and it unrolls down the face over `seconds`. Its `needs` is a flag that scene sets as it reaches the ground.
+   */
+  broughtBy?: { scene: string; jay: string; at: number; seconds: number };
 }
 
 /** A hook for the lace, marked with a red ring (plan §4.2). */
@@ -176,6 +182,12 @@ export interface Spot {
    * the carving once Elof has taken the knife.
    */
   goesWhen?: string;
+  /**
+   * For the picture: what lies beyond whoever of the family is shown here belongs in the picture of the two of them
+   * (src/render/family-shot.ts): it looks `lead` EL further along once he has come up to them, and shows at least
+   * `width` across. Moa at the wall's edge in Byn i stormen, with the flooded crossing and the church beyond her.
+   */
+  vista?: { lead: number; width: number };
   verb: 'turn' | 'take' | 'call' | 'give';
   /** A flag that has to be set before it can be used. A thing on a rail sets `placed:<its id>` once in place. */
   needs?: string;
@@ -260,9 +272,11 @@ export interface Ride {
   look?: RideLook;
   /**
    * Over this stretch it goes low, his feet at most `y` high, and climbs again after it (./ride-path.ts): the owl over
-   * the shallows in Älven, so that what lies there is in reach of the stick.
+   * the shallows in Älven, so that what lies there is in reach of the stick. `in` and `out` are how far before the
+   * stretch it comes down to it and how far after it it climbs back, where that is not a bird's swoop: a raft's deck,
+   * which he steps down onto at one bank and up off at the other.
    */
-  skim?: { from: number; to: number; y: number };
+  skim?: { from: number; to: number; y: number; in?: number; out?: number };
   /**
    * He walks it on his own feet, along this ground, and is not carried through the air: where his feet are, point to
    * point along the way (the bed of the shallows where he wades). It takes the arc's place, and the stick does not
@@ -311,6 +325,17 @@ export interface Bouncer {
   /** Its top. */
   y: number;
   lift: number;
+}
+
+/**
+ * A playground slide's chute (Flärken; Olov, 14 November 2026: "när han tar sig nedför ska han åka"): a straight stretch
+ * of the ground's outline from its top (`from`) down to its foot (`to`). Heading down it he sits and slides, gathering
+ * speed, and comes off its foot in a little hop (./chute.ts); up it he walks, as up any slope. A toy of the way: it
+ * cannot be missed or failed.
+ */
+export interface Chute {
+  from: Vec;
+  to: Vec;
 }
 
 /**
@@ -385,6 +410,11 @@ export interface CameraZone {
   lift?: number;
   /** How far ahead of Elof it looks, where the usual 2.5 EL is wrong. */
   lead?: number;
+  /**
+   * How far the camera rises over where it looks, in EL, looking down on it: a vista from a height (Billsta's brow), the
+   * ground falling away in front of it and the water far below. Left out: level.
+   */
+  eye?: number;
 }
 
 /**
@@ -470,7 +500,7 @@ export type MoverLook = 'none' | 'owl-twig' | 'boulder' | 'riverLog' | 'plank' |
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
 export type SpotLook = 'souvenir' | 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
-  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'cocoa' | 'breakfast' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
+  | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'candyBowl' | 'cocoa' | 'breakfast' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';
 export type RideLook = 'plane' | 'cap' | 'crane' | 'ants' | 'leaf' | 'none' | 'boot' | 'umbrella' | 'owl' | 'football' | 'raft';
 
@@ -588,6 +618,8 @@ export interface ChapterData {
   }[];
   /** Cranberries to bounce on (plan §4.8, O7). */
   bouncers?: Bouncer[];
+  /** Chutes he slides down sitting (Flärken's slide). */
+  chutes?: Chute[];
   /** Optional routes, entered by leaving the ordinary trail; their prizes never gate the story. */
   challenges?: Challenge[];
   /**
@@ -646,6 +678,12 @@ export interface ChapterData {
   street?: StreetPart[];
   /** For the picture: where the street's lamp posts stand, on the far pavement across the crossing. */
   lampPosts?: number[];
+  /**
+   * For the picture: the passer-by on the road behind the street (src/render/village.ts) does not walk in beyond
+   * `from` while he is between the two x of `while`: nothing crosses the picture he has from there (Moa's wall in Byn
+   * i stormen, with the church over the crossing). One already past `from` walks on out of it.
+   */
+  streetClear?: { from: number; while: readonly [number, number] };
   /** For the picture: an open shop door leading into a room beside the street, at the path's height. */
   shop?: { door: number; to: number; floor: number };
   /** The ground as one open line, from left to right. Elof walks on its upper side. */
@@ -762,6 +800,11 @@ export interface ChapterData {
    * garden's far scenery. Indoors before it.
    */
   outdoors?: number;
+  /**
+   * For the picture only: a brink behind the path, from `from` to `to` along the course, where the ground ends `z`
+   * behind the play plane and falls away out of sight (Billsta's brow over the narrow). The chapter draws what is beyond.
+   */
+  brink?: { from: number; to: number; z: number };
   /** The rides. */
   rides?: Ride[];
   /**
@@ -956,4 +999,9 @@ export interface PlayerState {
   hook: Vec | null;
   /** The word for the button, where the verb's own is too plain: a key of `sv.verbs`. */
   word: string | null;
+  /**
+   * He sits and slides down a chute (ChapterData.chutes): his feet's middle is on its line and he goes its way. To
+   * everything else he is on his own feet on the ground (`mode` is 'free'); the picture sits him down.
+   */
+  sliding?: boolean;
 }

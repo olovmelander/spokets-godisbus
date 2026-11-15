@@ -163,25 +163,33 @@ did the integration and the checks.
 ### Fauna (`src/render/lift/fauna.ts`, `fauna/plan.ts`, `fauna/shapes.ts`)
 
 - **How it is built.**
-  - Everything is built in code, one `InstancedMesh` for each kind, all on the `rich` layer, so Low draws none of it.
+  - Everything is built in code, one `InstancedMesh` for each kind, all on the `rich` layer, so Low draws none of it:
+    but the carvings and the stones they stand on, which every tier draws (14 November 2026).
   - Parts move in the vertex stage: one rig shader turns tails, heads, wings and lids from per-vertex pivots and a
     per-instance act.
   - Placement is seeded by the chapter id. It reads the dressing's trunks, birches, snags and dandelions.
 - **The cast.**
   - Squirrels on the forest's spruces and the garden's birches dash up and round, flick their tails, and run higher
     when Elof comes near.
-  - A fox far back in the forest (z −12…−24) steps out, trots, sits, looks and trots off, never towards him.
+  - A fox far back in the forest (z −16…−24: nearer, the lens blurs it most) steps out, trots, sits, looks and trots
+    off, never towards him.
   - Great tits, blue tits, thrushes and sparrows hop behind the path. They lift and fly off when he comes within about
     3 EL, and come back later.
   - Butterflies (brimstone, wood white, a blue) settle on the garden's dandelions and over the bog's meadow.
   - Dragonflies dart over the bog's water and the brook pools.
-  - An owl in Norrsken and in Äventyr 2's storms, never within 16 EL of the story owl.
+  - An owl in Norrsken and in Äventyr 2's storms, never within 16 EL of the story owl, and never more than 6.5 EL behind
+    the path: on a near trunk, or on a stump just behind it.
   - Fireflies at dusk and in the storm's eye.
 - **The little forest beings.** Round, made of moss and bark, with lichen caps and soft dark eyes. They peek over
   stones and stumps in the forest, on the bog and on the mountain.
 - **The carvings.** Small figures in pale carved wood: a bird, a hare, a figure with a pointed cap. They sit quietly
-  by stones in both adventures.
-- **In the storm the life hides.** Only birds sheltering on branches remain, plus the owl.
+  on stones in both adventures. Whittled in Blender (`art/blender/carvings.py`, `fauna/carving-kit.ts`): a few hundred
+  flat facets each, burnt-in eyes, a plinth, and a little warmth of their own so that they are wood in the storm's blue
+  light too.
+- **Where he is carried.** Nobody hides, nothing is left and no bird hops on ground he is carried high over and never
+  walks: Berget's valley under the crane's flight, the gap under Stormskogen's owl, Granskogen's ravine.
+- **In the storm the life hides.** Only birds sheltering on branches remain, plus the owl. The birds sit near the path,
+  three to seven EL back, in a near trunk or, where none stands, on a bare dead sapling.
 
 ### Flora and interaction (`src/render/lift/flora/`, `wind.ts`, the dressing's plant files)
 

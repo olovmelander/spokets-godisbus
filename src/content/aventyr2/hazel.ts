@@ -7,7 +7,8 @@ import type { ChapterData, Ledge } from '../../sim/types';
 import { sequence } from '../../render/dressing/kit';
 import type { ExtraContext, ViewExtra } from '../../render/extensions';
 import { sway } from '../../render/wind';
-import { HAZEL } from './chapters/billsta';
+import { HAZELNUT, hazelnut } from '../../render/hazelnut';
+import { HAZEL, NUT as FOUND } from './chapters/billsta';
 
 /**
  * Hazel at Billaberget's rock shelves in Billsta (Olov, 12 November 2026: "gör det som rekommenderad men gärna
@@ -295,11 +296,57 @@ export function hazelGrowth(shelves: readonly Ledge[]): { wood: BufferGeometry; 
   return { wood: merged, leaves, nuts };
 }
 
-/** Billsta's hazel (registered by ./render.ts). Other chapters get nothing. */
+/** Billsta's hazel (registered by ./render.ts), and the hazelnut he finds. Other chapters get nothing. */
 export function hazelExtra({ chapter, scene }: ExtraContext): ViewExtra | null {
   if (chapter.id !== 'billsta') return null;
   scene.add(hazel(chapter));
-  return { update() {} };
+  const found = foundNut(chapter);
+  scene.add(found.group);
+  return { update: (frame) => found.update(frame) };
+}
+
+/**
+ * The hazelnut he finds on the first boulder (`NUT` in ./chapters/billsta.ts): lying on its side on the rock, a little
+ * in front of the path. When the moment begins (`bi:nut`) it is where his hands go for it, in front of his feet: if he
+ * has stopped a little short of it or beyond, a gust rolls it there. While it is in his hands (../../render/stage.ts,
+ * `held`) it is not on the rock; laid down again, it lies where he laid it.
+ */
+export function foundNut(chapter: ChapterData): { group: Group; update(frame: { dt: number; x: number; still: boolean; scene?: { id: string; seconds: number } | null }): void } {
+  const moment = chapter.scenes?.find((one) => one.id === 'bi:nut');
+  const held = moment?.stage?.held ?? { from: 0, until: 0 };
+  const group = new Group();
+  group.name = 'found-hazelnut';
+  group.position.set(FOUND.x, FOUND.y, FOUND.z);
+  const lying = new Group();
+  const nut = hazelnut();
+  // On its side, its point along the course and a little away from us, resting on its broad side.
+  nut.rotation.z = -Math.PI / 2;
+  nut.position.set(-HAZELNUT.long / 2, HAZELNUT.wide / 2 - 0.006, 0);
+  lying.add(nut);
+  lying.rotation.y = 0.45;
+  group.add(lying);
+  let from = FOUND.x, to = FOUND.x, since = -1;
+  return {
+    group,
+    update({ dt, x, still, scene }) {
+      const playing = scene?.id === 'bi:nut' ? scene : null;
+      if (playing && since < 0) {
+        since = 0;
+        from = group.position.x;
+        to = x + FOUND.reach.x;
+      }
+      if (!playing) since = -1;
+      else since += dt;
+      if (playing) {
+        const k = still ? 1 : Math.min(1, since / 0.45);
+        const ease = k * k * (3 - 2 * k);
+        group.position.x = from + (to - from) * ease;
+        // It rolls as it goes, about its own length.
+        lying.rotation.x = -((group.position.x - from) / (HAZELNUT.wide / 2)) * 0.5;
+      }
+      group.visible = !(playing && playing.seconds >= held.from && playing.seconds < held.until);
+    },
+  };
 }
 
 /** The hazel's two meshes, in a group named 'hazel'. */

@@ -219,7 +219,9 @@ const figures: { who: Grandparent; figure: Figure; group: Group }[] = elders.map
 });
 
 // ?scene=elof: Elof on his own model, as the game moves him (src/render/player-motion.ts): a walk, a run, and a stop.
+// &tall=3: as big as he is at home, going as fast in EL (a walk is then a stroll for his size, a run a jog).
 let boy: { rig: Rig; motion: ReturnType<typeof createPlayerMotion>; x: number } | null = null;
+const tall = Number(query.get('tall') ?? 1);
 /**
  * ?scene=elofcoat: Elof on his own model in the doll's raincoat (made in Blender where the pack has it), putting it on as in
  * Stormkvällen's `regnrock`, or with &off taking it off as in Stormens öga's `rockav`: his arms as ./elof-coat.ts keys them,
@@ -260,7 +262,7 @@ function frame(): void {
   const view = query.get('view') === 'three';
   const distance = Math.max(followed ? 4 : 14, span * 0.5 / Math.tan(camera.fov * Math.PI / 360) / Math.max(0.6, camera.aspect) * 1.05);
   // Halfway up whoever is followed (Elof is one EL tall, the grown-ups five), or at `?at` EL.
-  const high = query.has('at') ? Number(query.get('at')) : followed ? (boy || coated || played ? 0.5 : 2.3) : 2.4;
+  const high = query.has('at') ? Number(query.get('at')) : followed ? (boy ? 0.5 * tall : coated || played ? 0.5 : 2.3) : 2.4;
   // `?yaw`: the camera's angle round them in degrees, 0 from the front, 90 from their left, 180 from behind.
   const yaw = query.has('yaw') ? Number(query.get('yaw')) * Math.PI / 180 : view ? Math.atan2(0.55, 0.84) : 0;
   const reach = view && !query.has('yaw') ? Math.hypot(0.55, 0.84) * distance : distance;
@@ -380,7 +382,7 @@ function step(dt: number): void {
     const player = { mode: 'free', grounded: true, vx: speed, vy: 0, x: boy.x, y: 0, facing: 1, atEdge: false, t: 0 } as unknown as PlayerState;
     const legs = boy.rig.legs;
     boy.rig.group.position.x = boy.x;
-    boy.rig.pose(boy.motion.update(player, boy.x, dt, null, 0, false, 0, 1, query.has('oldlegs') ? undefined : legs));
+    boy.rig.pose(boy.motion.update(player, boy.x, dt, null, 0, false, 0, tall, query.has('oldlegs') ? undefined : legs));
   }
 }
 /** From the start to `to` seconds, at the game's own frame rate, so that a still is that moment as it is in play. */
@@ -448,6 +450,7 @@ const load = async () => {
     const model = await assets.model('private', 'elof');
     model.rotation.y = Math.PI / 2;
     const rig = createModelRig(model, 1);
+    rig.group.scale.setScalar(tall);
     scene.add(rig.group);
     boy = { rig, motion: createPlayerMotion(), x: 0 };
     watchPose('elof', rig);
@@ -515,7 +518,7 @@ window.__motion = {
         soles[side] = best;
       }
     });
-    return { ankles: [at('foot_l'), at('foot_r')], soles, x: boy.x };
+    return { ankles: [at('foot_l'), at('foot_r')], soles, x: boy.x, legs: boy.rig.legs };
   },
   /** Each skinned mesh in the lab, and how many of its corners ../src/render/sleeves.ts gave to the arms. */
   skins() {
