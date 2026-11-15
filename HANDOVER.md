@@ -36,16 +36,26 @@ after another:
     and paler towards the crown, damp and darker at the foot, in a fine grain on twice as many points each way; 2,900
     shorter, finer loose needles, forty twigs and nine small cones. 2,318 triangles before, 7,164 now.
 - **Granskogen: the fallen spruce after the seesaw.** "Kan vi ge trädet som ligger på marken efter att pappa skjutit
-  över Elof på gungbrädan bättre design och textur."
+  över Elof på gungbrädan bättre design och textur." And of the first try, from a phone: "Denna stock ser lite
+  annorlunda ut än alla andra fallna stockar och texturer, använde vi Blender och texturer på samma sätt som de andra
+  fallna stockarna?"
   - Before: a smooth brown pipe, its bark painted on 44 rings of 17 points.
-  - Now (`stock`): 100 rings of 35; irregular scales standing out of deep cracks in a spruce's grey-brown, rust-red
-    where it has flaked, grey lichen in patches, the moss of its top running down its sides in tongues, three red-belted
-    conks on its front tipped up so the camera sees their tops, and five stubs of its lower boughs besides the four
-    broken ones at its back. 1,680 triangles before, 7,522 now. Both keep their blocks: nothing in front of the path
-    stands higher than the path.
+  - First try (not what is there now): its scales and cracks painted on its corners, 100 rings of 35. The pattern was
+    finer than the corners, so each corner showed as a block, and no other fallen tree in the game is made so.
+  - Now (`stock`): made as the nature kit's windfalls are (the moss-grown `lag-mossig` in Granskogen's own background is
+    one), and drawn by their shader, `oldWood()` (`src/render/old-wood.ts`). Its corners carry only an old spruce's
+    broad tones (the nature kit's colours), the moss of its top running down its sides in tongues, and the dark under
+    it; each also says what its face is and where on the tree it is (`_BARK`, written by `wface` in
+    `art/blender/forest-kit.py`, kept by `forestKit()` and drawn with the kit's second material, `wood`, both sides).
+    The game draws the scales, cracks and crust lichen of its bark, the fibres of the bare wood where it broke and the
+    shoots of its moss, each pixel its own, on Mid and High; Low shows the broad tones. Red-belted bracket fungi on its
+    front, grey stubs of its lower boughs and the four boughs broken at its back, four cushions of moss along its top
+    behind where he walks, and torn wood at both ends (the windfalls' `bracket`, `dead_stub` and snapped ends, ported).
+    1,680 triangles before, 5,225 now. It keeps its block: nothing in front of the path stands higher than the path.
+    Stormskogen's felled spruces, made in code, draw their scales per pixel too (`src/render/fallen-spruce.ts`).
   - Built, baked and exported headless in this cloud session with Blender 5.2.4 LTS (the `bpy` module; notes under
     "Notes for sessions that drive Blender"). Built first as committed, the kit came out byte for byte as its GLB, so
-    nothing but the two models changed. `forest-kit.glb` is 1,040 KB baked and about 370 KB packed (was 537 and 212).
+    nothing but the models changed. `forest-kit.glb` is 994 KB baked and about 344 KB packed (was 537 and 212).
 - **Myren: the gungfly.** "Kan vi designa och förbättra designen och texturen på gungflyt i kapitlet myren!"
   - Before: Myren's pale tussocks that sink under him were lathed mounds of moss with a ring of sedge.
   - Now they are Flärken's gungfly (made at Olov's word on 14 November): a raft of bog, a cushion of sphagnum in greens,
@@ -6405,9 +6415,11 @@ night).** The camera's far plane follows it back (`farPlane`, `src/render/far-pl
 behind the play plane, or a shot that backs further off than any now, is checked by `far-plane.test.ts` and needs
 `SIGHT` changed. A climb a creature brings is `broughtBy` with a live scene and a flag (`LICHEN` in Granskogen, as in
 Stormskogen). The home's furniture is the base game's in all four home chapters (`toyShelf`, `hall`, `HOME_LAYOUT`):
-change it in one place, with `home-floor.test.ts`. Soft tussocks in any chapter are drawn as gungfly
-(`src/render/gungfly.ts`). The last card of each adventure opens that adventure's own book (`ofAdventure` in
-`src/main.ts`). Next: Olov plays the seven and answers the questions. No Blender work is waiting.
+change it in one place, with `home-floor.test.ts`. A fallen tree is old wood (`wface` and `_BARK`, drawn by
+`oldWood()`): never paint a pattern finer than its corners into their colours (`forest-kit.test.ts` measures the steps).
+Soft tussocks in any chapter are drawn as gungfly (`src/render/gungfly.ts`). The last card of each adventure opens that
+adventure's own book (`ofAdventure` in `src/main.ts`). Next: Olov plays the seven and answers the questions. No Blender
+work is waiting.
 
 **Whole houses, the storm's eye's sky, the level floor and the narrator's "Storm…" (15 November, later).** Keep a
 village house whole over its shop floor (`UPPER`, `src/render/village.ts`): a kit part that ends at `TOP` needs what stands
@@ -6924,6 +6936,9 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Fallen trees are drawn alike (Olov, 15 November 2026):** "använde vi Blender och texturer på samma sätt som de andra
+  fallna stockarna?": a fallen tree's bark is drawn by a shader from where on the tree each corner is (old wood,
+  `_BARK`, `src/render/old-wood.ts`), never painted on its corners finer than they are.
 - **The background stays (Olov, 15 November 2026):** "Vi måste fixa det på alla ställen där kameran zoomar ut så
   bakgrunden inte försvinner": the camera sees as far behind the play plane in every shot, however far it backs off.
 - **Creatures bring what he climbs (Olov, 15 November 2026):** in Granskogen as in Stormskogen, the jay given the
@@ -7058,7 +7073,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
-| The background, the jay, the anthill and spruce, the gungfly, one home, Äventyr 2's book (15 Nov, night) | Seven wishes after #280 | The same cloud session; Blender 5.2.4 headless for the forest kit | — / 7 messages | The camera sees as far behind in every wide shot; the jay brings Granskogen's lichen, with Elof's thanks recorded; a wood ant's mound and a barked spruce with conks and stubs; Myren's tussocks as Flärken's gungfly; the four homes furnished alike; Äventyr 2's last card opens its own book; the voices' licence row added |
+| The background, the jay, the anthill and spruce, the gungfly, one home, Äventyr 2's book (15 Nov, night) | Seven wishes after #280 | The same cloud session; Blender 5.2.4 headless for the forest kit | — / 8 messages | The camera sees as far behind in every wide shot; the jay brings Granskogen's lichen, with Elof's thanks recorded; a wood ant's mound, and the fallen spruce made as the windfalls are, its bark drawn by their shader; Myren's tussocks as Flärken's gungfly; the four homes furnished alike; Äventyr 2's last card opens its own book; the voices' licence row added |
 | Godisracet's drift again (15 Nov, evening) | The merged drift still slid and turned too fast | The same cloud session, after #279 | — / 2 messages | A held drift no tighter than the wheel at full lock, its body at most 11.5° across and swinging out gently; the rivals' laps as before |
 | Byn's houses, the storm's eye, the home floor, the narrator, the drift, the vättar (15 Nov, later) | Three things seen while playing, the narrator's "Storm…", the drift, and the vättar seen and in Äventyr 2 | One cloud session | — / 1 report (+5 messages) | Houses whole over the shop floor with a roof, the birch into its crown; stars and moon kept in sight in every shot; a level floor at home (the Hoppa lesson went with the sill); six narrator cards taken again and chosen by measuring the vowel; ElevenLabs reachable from cloud sessions; a held drift turns less; the vättar on every tier, out as he comes, three in Äventyr 2 under leaves |
 | Äventyr 2, second round (14–15 Nov) | Olov's fifty points from playing Äventyr 2 | One session on Olov's computer: thirteen builders and the lead, stopped overnight and by the Fable limit, finished on Opus 5.5; Blender headless | — / 1 list | Every point done; Sickan the cat, the narrator's "Storm…", the bowl and the gift given to the old trägubbe, natural ground edges everywhere, Elof's walk paced by the time drawn; 12 lines recorded |
@@ -7135,8 +7150,8 @@ The older list, still true where it is not struck:
 - **The seven of 15 November, night:** all seen with stand-in figures in this computer's renderer only, not on the
   family's devices or with the family's models. On a phone held upright the wide shots now keep their background, but
   the camera stands far back there (up to 154 EL) and everything in them is small, as it was. The anthill and the fallen
-  spruce have about three and four times the triangles they had (7,164 and 7,522; Granskogen's draws are unchanged); Low
-  was looked at, not timed on a phone.
+  spruce have about three times the triangles they had (7,164 and 5,225; Granskogen's draws are unchanged); Low was
+  looked at, not timed on a phone.
 
 - **Whole houses and the narrator (15 November, later):** the six new narrator takes were chosen by measuring and by
   speech-to-text, not by ear. The houses' upper storeys, roofs and the birch's limbs were seen with stand-in figures on
@@ -7499,9 +7514,10 @@ Från den 15 november, kväll (allt är byggt; inget hindrar):
 - **Hemmet:** prologen och Godiskalaset har nu samma leksakshylla och samma träbord utan duk som Morgonen efter, och
   Godiskalaset samma hall med regnkläderna, stövlarna och den gröna ytterdörren. Prologens rum slutar fortfarande vid
   verandadörren, där berättelsen går ut. Ser du något mer som skiljer?
-- **Myrstacken, granen och gungflyt:** myrstacken är rost- och gyllenbrun av granbarr med kvistar och kottar, granen på
-  marken har bark med fjäll, lav, mossa, tre tickor och grenstumpar, och Myrens tuvor är gungfly som i Flärken. Blev de
-  som du ville?
+- **Myrstacken, granen och gungflyt:** myrstacken är rost- och gyllenbrun av granbarr med kvistar och kottar, och Myrens
+  tuvor är gungfly som i Flärken. Granen på marken är nu gjord på samma sätt som de andra fallna träden: formen i
+  Blender som vindfällena, och barkens fjäll, sprickor, lav och mossa ritas av samma shader som deras, med tre tickor
+  och grenstumpar. Ser den ut som de andra nu, och blev de tre som du ville?
 - **Slutet på Äventyr 2:** sista kortet öppnar boken med Äventyr 2:s egna bilder (paraplyet, fotbollen, flotten,
   nattugglan, lamporna, återseendet och kakaon) och tacket på sista sidan, som i Äventyr 1. Rätt bilder?
 - **Rösternas rad i LICENSES.md:** de inspelade rösterna saknade en rad där. Nu finns den (ElevenLabs, ditt konto,
