@@ -1,5 +1,32 @@
 # Handover
 
+## State (15 November 2026, evening): Godisracet's drift, calmer again
+
+One cloud session, after PR #279 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`, started again from `main`).
+Olov drove the merged drift and wrote: "Sladdningen i godisracet på tvn är fortfarande för mycket sladd, vi måste minska
+sladdningen ganska mycket mer", and then: "När man sladdar just nu så svänger man alldeles för snabbt".
+
+- **Measured** (the simulation, full speed): a held drift turned 1.80 rad/s with the wheel in, 1.41 times the wheel alone
+  at full lock (1.27 in its first second, 1.33 once held), 1.08 straight and 0.37 out. The body swung 26° across its way
+  in about a tenth of a second, so that at the start of a drift the kart seemed to turn at about 6 rad/s.
+- **Now** (`DRIFT_TURN`, `DRIFT_RANGE`, `DRIFT_SLIP` in `src/kart/sim/kart.ts`): 1.36 rad/s with the wheel in, as tight
+  as the wheel alone at full lock and no tighter; 0.68 straight; none with the wheel out, which holds it straight. The
+  body is at most 11.5° across (twice the wheel's 6°) and swings out over a quarter of a second. A drift is a curve held
+  for its sparks; at 150 cc a hairpin asks for a lift, as it does of the wheel. In Lugnt the wheel alone (its help turns
+  it tighter, 1.87) is now tighter than a drift; Lugnt's nudge away from the edge works in a drift too.
+- **The rivals** plan from the same numbers: one lap each on the four courses at full speed takes 28–30 s as before, no
+  wall, at most 0.2 s on the rough; whole races pass. Over three seeded races they no longer happened to get the rocket
+  (it goes almost only to the last kart); the test that wants every item over a few races now drives four
+  (`tests/unit/kart-race.test.ts`).
+- **Guards:** `kart-race.test.ts` (a drift with the wheel in turns 0.95–1.12 times the wheel alone; its body 0.15–0.24
+  rad across, less than half of that 0.1 s in; held straight under 0.65 of the wheel, held out under 0.1).
+- **Validation:** `npm run typecheck`, `npm test` (3341 passed, 20 skipped; the four kart files 127), `npm run build` (size
+  gate ok: JS 732.0 of 1000 KB gzipped; Äventyr 2's chunk 158.6 of 160 KB), `npm run privacy-check`, and the browser
+  suite home-console (55: the TV from the house and Godisracet's page of its own) pass here.
+- **Not checked:** nobody has driven it yet; only the simulation's numbers and the rivals' races.
+- **Next:** Olov drives a held drift, at the class and difficulty he plays. If it still turns too fast, the wheel alone
+  is what to look at next (`turnRate`), since a drift no longer turns more than the wheel. No Blender work is waiting.
+
 ## State (15 November 2026, later): whole houses over the flood, the storm's eye keeps its sky, a level floor at home, the narrator's "Storm…", a calmer drift, and the vättar
 
 One cloud session (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov reported three things seen while playing, then four
@@ -6273,8 +6300,9 @@ over it, since a wide shot or a phone held upright sees there. Keep a sky that s
 of the camera (`SKY`, `src/content/aventyr2/render.ts`), never at a fixed depth past what a wide shot's camera sees (140).
 The floor at home is level in every chapter (`tests/unit/home-floor.test.ts`). A narrator line whose vowel the model gets
 wrong is spelled with a double consonant, taken several times and measured (Praat in a scratch venv: the first formant
-against his own "klockan"); speech-to-text cannot tell. Godisracet's held drift turns 1.8 rad/s in, 1.05 straight and 0.3
-out at full speed (`kart.ts`); change those with `kart-race.test.ts` and the rivals' races. A being is placed where it is
+against his own "klockan"); speech-to-text cannot tell. Godisracet's held drift turns 1.36 rad/s in (the wheel alone's
+full lock), 0.68 straight and none out at full speed, its body at most 11.5° across (`kart.ts`, the evening's change);
+change those with `kart-race.test.ts` and the rivals' races. A being is placed where it is
 seen as he comes: no big candy in front of it or in the three EL before it, its plan not hanging on where he begins, and
 in the storm only where a stretch of free grass is (`STORM_BEINGS`). Next: Olov listens to the six cards, drives the
 drift, looks for the vättar and answers the questions. No Blender work is waiting.
@@ -6786,8 +6814,9 @@ The older list, still true where it is not struck:
   Olov says otherwise (question below).
 - **The narrator's "Storm…" (15 November 2026):** sent with a double r, as `scripts/voices-spoken.json` has it, after Olov
   heard the "Stårm…" takes as strange.
-- **Godisracet's drift (Olov, 15 November 2026):** "man sladdar lite för mycket när man använder sladdknappen": a held
-  drift turns less than before: with the wheel held straight a little less than the wheel alone at full lock.
+- **Godisracet's drift (Olov, 15 November 2026):** "man sladdar lite för mycket när man använder sladdknappen", then
+  "fortfarande för mycket sladd" and "När man sladdar just nu så svänger man alldeles för snabbt": a held drift turns
+  no tighter than the wheel alone at full lock, and its body is at most 11.5° across, swinging out gently.
 - **The vättar (Olov, 15 November 2026):** "se till att Vätterns syns på ett bra och fint sätt" and "Kan vi ha vättarna i
   äventyr 2 också på passande ställen!": drawn on every tier, out where he comes, in Stormskogen and at Billsta under a
   leaf. The session chose the places; Älven has none (question below).
@@ -6904,6 +6933,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Godisracet's drift again (15 Nov, evening) | The merged drift still slid and turned too fast | The same cloud session, after #279 | — / 2 messages | A held drift no tighter than the wheel at full lock, its body at most 11.5° across and swinging out gently; the rivals' laps as before |
 | Byn's houses, the storm's eye, the home floor, the narrator, the drift, the vättar (15 Nov, later) | Three things seen while playing, the narrator's "Storm…", the drift, and the vättar seen and in Äventyr 2 | One cloud session | — / 1 report (+5 messages) | Houses whole over the shop floor with a roof, the birch into its crown; stars and moon kept in sight in every shot; a level floor at home (the Hoppa lesson went with the sill); six narrator cards taken again and chosen by measuring the vowel; ElevenLabs reachable from cloud sessions; a held drift turns less; the vättar on every tier, out as he comes, three in Äventyr 2 under leaves |
 | Äventyr 2, second round (14–15 Nov) | Olov's fifty points from playing Äventyr 2 | One session on Olov's computer: thirteen builders and the lead, stopped overnight and by the Fable limit, finished on Opus 5.5; Blender headless | — / 1 list | Every point done; Sickan the cat, the narrator's "Storm…", the bowl and the gift given to the old trägubbe, natural ground edges everywhere, Elof's walk paced by the time drawn; 12 lines recorded |
 | Elof's run lean (14 Nov) | Elof leans back too much when he runs | One cloud session | — / 1 report | Twice the forward lean at a run, the head held up, a forward lean in running jumps; seen on the stand-in, not yet on the real Elof |
@@ -7333,9 +7363,10 @@ Från den 15 november, senare (allt är byggt; inget hindrar):
   stormen, Stormens öga). Låter "Storm" rätt nu? Säg vilket kort det gäller om något fortfarande låter konstigt.
 - **Husen i Byn:** de har nu en övervåning med fönster och ett plåttak (svart, falurött eller grågrönt) som syns när
   bilden vidgas. Stämmer det med Köpmangatan, eller ska de ha andra fönster eller takfärger?
-- **Sladden i Godisracet:** en hållen sladd svänger nu mindre än förut åt alla håll; med ratten rak lite mindre än ratten
-  ensam för fullt, och kartens kropp står högst 26 grader snett i stället för 37. Är det lagom, eller ska den sladda ännu
-  mindre (eller lite mer)?
+- **Sladden i Godisracet (kvällen):** en hållen sladd svänger nu aldrig snabbare än ratten ensam för fullt, med ratten
+  rak ungefär hälften så mycket, och med ratten utåt går den rakt fram. Karten står högst 11,5 grader snett (förut 26)
+  och glider ut mjukt på en kvarts sekund i stället för att slå ut direkt. Är det lagom nu? Om den fortfarande svänger
+  för snabbt är det ratten själv som ska ner nästa gång.
 - **Vättarna i Äventyr 2:** två i Stormskogen och en vid skogskanten i Billsta, var och en med ett stort blad över huvudet
   mot regnet. I Älven fanns ingen ledig plats längs vägen som inte låg bakom något i berättelsen, så där är ingen. Vill du
   ha någon på fler ställen, till exempel en gårdsvätte vid huset i Stormgården?
