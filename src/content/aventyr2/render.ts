@@ -2640,7 +2640,7 @@ function aftermath(): SpotProp {
   // windows, and the front door past them, where the morning ends: the same hall as at home in Äventyr 1
   // (../../render/home-hall.ts). Beside the coats, small, the doll's raincoat Elof wore through the storm when he was
   // small (../../render/elof-coat.ts).
-  const LITTLE = { x: 41.55, tall: 0.6 };
+  const LITTLE = { x: 41.7, tall: 0.6 };
   const little: BufferGeometry[] = [
     paint(new CylinderGeometry(0.09, 0.2, LITTLE.tall, 10).scale(1, 1, 0.4).translate(LITTLE.x, 5.45 - LITTLE.tall / 2, WALL), ELOF_COAT),
     paint(new SphereGeometry(0.1, 10, 8).scale(1, 0.85, 0.6).translate(LITTLE.x, 5.47, WALL), ELOF_COAT),
@@ -2652,8 +2652,8 @@ function aftermath(): SpotProp {
   // The sofa, the lamp, the plant, the rug and Moa's drawings where they were on the evening of the storm; the blanket
   // pulled half off the sofa now.
   group.add(roomThings({ rug: HOME_LAYOUT.dining.x, blanket: true }));
-  // The pool they stand in: flat, and giving back the room's light.
-  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(39.1, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
+  // The pool they stand in, under their boots: flat, and giving back the room's light.
+  const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.3, 1, 1.1).translate(39.7, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
   // The sun on the floor, one window's worth from each, lying a little aslant.
   const light = new PlaneGeometry(4.8, 10.5, 1, 1).rotateX(-Math.PI / 2);

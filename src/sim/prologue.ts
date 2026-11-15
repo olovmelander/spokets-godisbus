@@ -32,8 +32,11 @@ const PAPPA_OFF = 3.4;
 const PAPPA_DOWN = 3.8;
 export const PAPPA_SNUCK = 4.4;
 const PAPPA_EDGE = 5.4;
-/** Where it lands on the deck, off the railing, and how many quick hops its scurry to the edge takes. */
-const DECK_LANDING = 47.4;
+/**
+ * Where it lands on the deck, as far past the railing where Pappa set it as it hops down, and how many quick hops its
+ * scurry to the edge takes. (It landed at 47.4, by a railing at 46.6, before the hall was put before the veranda's door.)
+ */
+const DECK_LANDING = 0.8;
 const SCURRY_HOPS = 6;
 /**
  * Mamma's joke: the ghost stiffens in mid-hop as she turns (FROZEN), drops like a dropped piece of wood, lands with a
@@ -159,14 +162,14 @@ export function prologuePose(layout: PrologueLayout, frame: PrologueFrame) {
     if (t < PAPPA_DOWN) {
       const k = Math.max(0, (t - PAPPA_OFF) / (PAPPA_DOWN - PAPPA_OFF));
       return {
-        x: mix(onRail.x, DECK_LANDING, k), y: mix(onRail.y, layout.edge.y, k * k) + Math.sin(Math.PI * k) * 0.45,
+        x: mix(onRail.x, layout.railing.x + DECK_LANDING, k), y: mix(onRail.y, layout.edge.y, k * k) + Math.sin(Math.PI * k) * 0.45,
         z: mix(onRail.z, PLAY_Z, k), tilt: -0.1 * Math.sin(Math.PI * k), turn: away, scale: 1,
       };
     }
     // Along the boards in quick little hops, leaning into its run; at the edge it turns to look back at him.
     const run = Math.min(1, (t - PAPPA_DOWN) / (PAPPA_EDGE - PAPPA_DOWN));
     return {
-      x: mix(DECK_LANDING, layout.edge.x, between(run, 0, 1)),
+      x: mix(layout.railing.x + DECK_LANDING, layout.edge.x, between(run, 0, 1)),
       y: layout.edge.y + Math.abs(Math.sin(Math.PI * SCURRY_HOPS * run)) * 0.2,
       z: PLAY_Z,
       tilt: -0.3 * Math.sin(Math.PI * run),

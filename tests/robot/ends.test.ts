@@ -83,7 +83,7 @@ describe('Prolog, Lördagsmorgon', () => {
     // The ghost has not moved from the table.
     expect(sim.ghost!.x).toBeCloseTo(prolog.ghost![0]!.at.x, 1);
     // And the star can't be taken before the ghost has run.
-    const early = new Sim({ ...prolog, spawn: { x: 41, y: -0.79 } });
+    const early = new Sim({ ...prolog, spawn: { x: 51, y: -0.79 } });
     run(early, 0.3);
     expect(early.curr.verb).toBeNull();
   });
@@ -101,7 +101,7 @@ describe('Prolog, Lördagsmorgon', () => {
   });
 
   it('lets him discover the star, choose to taste it, and then choose Pappa\'s hand', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 39, y: -0.79 } }, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn'] });
+    const sim = new Sim({ ...prolog, spawn: { x: 49, y: -0.79 } }, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn'] });
     run(sim, 1, { x: 1 });
     expect(sim.sceneFrame?.id).toBe('stjarnan');
     expect(sim.flags.has('star')).toBe(false);

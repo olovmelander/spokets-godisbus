@@ -334,7 +334,7 @@ try {
       await until(state, (s) => s.scene?.id === 'titel', 'the title scene', 120000);
     } finally { await page.keyboard.up('ArrowRight'); }
     const atEdge = await state();
-    check('shrinking: the authored title holds Elof at the edge', atEdge.held && atEdge.x >= 51.4 && atEdge.x < 54 && atEdge.y > -0.85);
+    check('shrinking: the authored title holds Elof at the edge', atEdge.held && atEdge.x >= 61.4 && atEdge.x < 64 && atEdge.y > -0.85);
     for (const [id, words] of promises) {
       await readStop(page, state, id, words);
       await continueDialogue(page);
@@ -351,14 +351,14 @@ try {
   }
   if (!process.env.PROLOGUE_SCENE || process.env.PROLOGUE_SCENE === 'shrinking') {
     const game = await open('shrinking', { hasTouch: true },
-      `?dev&debug&standin&course=prolog&tier=low&at=37,0.01&flags=${VERANDA}`);
+      `?dev&debug&standin&course=prolog&tier=low&at=47,0.01&flags=${VERANDA}`);
     await shrinking(game);
     await game.finish();
   }
   if (process.env.PROLOGUE_SCENE === 'family-shot') {
     // A focused presentation review of the same live scene and UI, without repeating the already-tested bite.
     const { page, state, finish } = await open('family-reading', { hasTouch: true },
-      `?dev&debug&standin&course=prolog&tier=low&at=40.5,-0.8&flags=${VERANDA},star,scene:poff`);
+      `?dev&debug&standin&course=prolog&tier=low&at=50.5,-0.8&flags=${VERANDA},star,scene:poff`);
     await readStop(page, state, 'familj:3', 'Jag är här. Du är inte ensam.');
     await familyCaptures(page);
     await finish();
@@ -378,7 +378,7 @@ try {
       });
     check('star restore: the accepted bite resumes on the deck while preserving its checkpoint identity',
       (await state()).flags.includes('star') && !(await state()).flags.includes('scene:poff') &&
-      (await state()).checkpoint === 1 && (await state()).x >= 39.5);
+      (await state()).checkpoint === 1 && (await state()).x >= 49.5);
     await walk(page, state, s => s.scene?.id === 'poff', 'the unfinished transformation replays at the deck');
     await until(state, s => s.scene?.id === 'poff' && s.scene.seconds >= 5, 'a saved mid-transformation moment', 120000);
     await page.keyboard.press('Escape');
@@ -408,7 +408,7 @@ try {
     const pappa = kind === 'pappa';
     const flags = pappa ? `${VERANDA},star,scene:poff,scene:familj,hand,scene:handen` : 'scene:morgon,eye,paint,woke,grab,blink,scene:vaknar';
     // Keep the bag perch strictly ahead of spawn+1, so the ghost hops into Mamma's doorway joke.
-    const at = pappa ? '41.6,-0.79' : '13.9,0.01';
+    const at = pappa ? '51.6,-0.79' : '13.9,0.01';
     const { page, state, info, finish } = await open(name, { viewport, hasTouch: true },
       `?dev&debug&standin&course=prolog&tier=${tier}&at=${at}&flags=${flags}`);
     await until(state, (s) => s.prologue?.kind === kind && s.prologue.seconds >= (pappa ? 1.45 : 0.85), `${name}: tableau`, 90000);

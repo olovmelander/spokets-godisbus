@@ -16,31 +16,38 @@ import { LOOK as RAIN_GEAR } from './rain-gear';
 /** Where the toy shelf stands: its middle along the room, and how far behind the play plane (its model's own). */
 export const TOY_SHELF = { x: HOME_LAYOUT.toyShelf.x, z: -2 } as const;
 
-/** The hall's wall, where the coats hang a little off it; the rail they hang from; the coats and the boots. */
+/**
+ * The hall's wall, where the coats hang a little off it; the rail they hang from; the coats and the boots; and how wide a
+ * coat is at its hem. All of it on the wall between the white bathroom door's frame (x 37.57) and the green front door's
+ * (42.25): Olov, 15 November 2026, "Sen måste vi se till så att regnkläderna inte hänger över den vita dörren". The rail
+ * began at 37.05 and Pappa's coat at 37.04, over the white door's frame.
+ */
 export const HALL = {
   wall: -8.5,
-  rail: { x: 39.45, y: 5.6, wide: 4.8 },
-  coats: (['pappa', 'mamma', 'moa', 'bertil'] as const).map((who, i) => ({ who, x: [37.6, 38.7, 39.8, 40.7][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]! })),
-  boots: (['pappa', 'mamma', 'moa', 'bertil'] as const).map((who, i) => ({ who, x: [37.5, 38.6, 39.7, 40.7][i]! })),
+  rail: { x: 39.95, y: 5.6, wide: 4 },
+  coats: (['pappa', 'mamma', 'moa', 'bertil'] as const).map((who, i) => ({ who, x: [38.5, 39.35, 40.2, 40.95][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]! })),
+  boots: (['pappa', 'mamma', 'moa', 'bertil'] as const).map((who, i) => ({ who, x: [38.45, 39.3, 40.15, 40.95][i]! })),
+  hem: 0.56,
 } as const;
 
 /**
  * The hall's coats and boots as one merged mesh, and the front door: two draws and the door's pane. `extra` adds what a
- * chapter hangs there besides (Äventyr 2's morning: the doll's raincoat Elof wore when he was small).
+ * chapter hangs there besides (Äventyr 2's morning: the doll's raincoat Elof wore when he was small). `worn`: the rail
+ * alone, its coats and the boots under them being worn (the evening of the storm).
  */
-export function hallThings(extra: BufferGeometry[] = []): { group: Group; coats: readonly { x: number; tall: number }[] } {
+export function hallThings(extra: BufferGeometry[] = [], worn = false): { group: Group; coats: readonly { x: number; tall: number }[] } {
   const group = new Group();
   group.name = 'home-hall';
   const WALL = HALL.wall;
   const parts: BufferGeometry[] = [];
   parts.push(paint(new BoxGeometry(HALL.rail.wide, 0.16, 0.16).translate(HALL.rail.x, HALL.rail.y, WALL - 0.24), '#6a4a2c'));
-  for (const coat of HALL.coats) {
+  for (const coat of worn ? [] : HALL.coats) {
     const colour = RAIN_GEAR[coat.who].coat;
     const mid = 5.45 - coat.tall / 2;
-    parts.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), colour));
+    parts.push(paint(new CylinderGeometry(0.3, HALL.hem, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), colour));
     parts.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), colour));
   }
-  for (const boot of HALL.boots) {
+  for (const boot of worn ? [] : HALL.boots) {
     const colour = RAIN_GEAR[boot.who].boots;
     for (const side of [-0.2, 0.2]) {
       parts.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), colour));
@@ -50,5 +57,5 @@ export function hallThings(extra: BufferGeometry[] = []): { group: Group; coats:
   parts.push(...extra);
   group.add(new Mesh(mergeGeometries(parts), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
   group.add(frontDoor(HOME_LAYOUT.hall.door));
-  return { group, coats: HALL.coats };
+  return { group, coats: worn ? [] : HALL.coats };
 }

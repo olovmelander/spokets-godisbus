@@ -129,20 +129,20 @@ try {
   for (const [tier, slow] of [['low', false], ['high', false], ['high', true]]) {
     const name = `reactions-${tier}${slow ? '-slow' : ''}`;
     console.log(`  ${tier}${slow ? ' with 150 ms frame stalls' : ''}`);
-    const { page, state, info, finish } = await open(name, {}, query('34.5,0.01', '&flags=blink').replace('tier=low', `tier=${tier}`), slow ? slowFrames : undefined);
-    await until(state, s => s.grounded && s.steps > 50, 'still on the veranda');
+    const { page, state, info, finish } = await open(name, {}, query('44.5,0.01', '&flags=blink').replace('tier=low', `tier=${tier}`), slow ? slowFrames : undefined);
+    await until(state, s => s.grounded && s.steps > 50, 'still in the hall, before the veranda\'s door');
     const before = await state();
     const programs = (await info()).programs;
     await page.mouse.click(before.playerScreen.x, before.playerScreen.y);
     await until(state, s => s.pointing.last === 'player', 'tap Elof');
     check('Elof reacts without changing progress', (await state()).x === before.x && !(await state()).flags.includes('star'));
-    const candy = await screen(page, 36.4, 0.45);
+    const candy = await screen(page, 46.4, 0.45);
     assert.ok(candy, 'near candy is framed');
     await page.mouse.click(candy.x, candy.y);
     await until(state, s => s.pointing.last === 'candy', 'tap candy');
     await until(state, s => s.candy > before.candy && !s.pointing.walking && s.vx === 0, 'ordinary walking collects the candy');
-    check('near candy gives one short safe stroll and stops', (await state()).x < 36.5 && (await state()).bubbles === 0);
-    const star = await screen(page, 41.7, -0.2);
+    check('near candy gives one short safe stroll and stops', (await state()).x < 46.5 && (await state()).bubbles === 0);
+    const star = await screen(page, 51.7, -0.2);
     assert.ok(star, 'far star is framed');
     const where = (await state()).x;
     await page.mouse.click(star.x, star.y);
@@ -157,7 +157,7 @@ try {
   for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
     const name = `tap-${viewport.width}`;
     // The star is taken by running into it; the action offered here is Pappa's open hand (*Kliv upp*).
-    const { page, context, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('40.6,-0.79', `&flags=${HAND}`));
+    const { page, context, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('50.6,-0.79', `&flags=${HAND}`));
     await until(state, s => s.grounded && s.verb === 'take' && s.steps > 30, 'near the hand');
     await page.tap('#pauseBtn');
     await settingsPage(page);
@@ -180,7 +180,7 @@ try {
     const cdp = await context.newCDPSession(page);
     const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
     // Where the game offers the hand's action: over the hand, clear of Elof himself (Sim.actionAt).
-    const hand = await screen(page, 40.9, 0.7);
+    const hand = await screen(page, 50.9, 0.7);
     assert.ok(hand && hand.x >= 0 && hand.x < viewport.width && hand.y >= 0 && hand.y < viewport.height, `${name}: the hand is framed`);
     const finger = { ...hand, id: 1 };
     await touch('touchStart', [finger]);
@@ -193,7 +193,7 @@ try {
     await touch('touchCancel', []);
     await frames(page, 3);
     check(`${name}: a cancelled finger never acts`, !(await state()).flags.includes('hand'));
-    const at = await screen(page, 40.9, 0.7);
+    const at = await screen(page, 50.9, 0.7);
     assert.ok(at && at.x >= 0 && at.x < viewport.width && at.y >= 0 && at.y < viewport.height, `${name}: the hand remains in view`);
     await page.touchscreen.tap(at.x, at.y);
     await until(state, s => s.flags.includes('hand'), `${name}: near hand touch`);
@@ -232,7 +232,7 @@ try {
     await page.touchscreen.tap(15, viewport.height / 2);
     await page.waitForTimeout(4000);
     check(`${name}: the level hall teaches no Hoppa`, await page.locator('#tutorial').isHidden());
-    await page.goto(`${origin}${BASE}${query('40.6,-0.79', `&flags=${HAND}`)}`);
+    await page.goto(`${origin}${BASE}${query('50.6,-0.79', `&flags=${HAND}`)}`);
     await ready(page);
     await page.touchscreen.tap(15, viewport.height / 2);
     await shown(page, 'act');
@@ -253,7 +253,7 @@ try {
     await padPress(page, 1);
     check('selecting the gamepad does not open the nearby TV console', !(await state()).homeConsole.open);
     // Shrunk on the deck, with Pappa's hand held out: X is the real Använd action there.
-    await page.goto(`${origin}${BASE}${query('40.6,-0.79', `&flags=${HAND}`)}`);
+    await page.goto(`${origin}${BASE}${query('50.6,-0.79', `&flags=${HAND}`)}`);
     await ready(page);
     await padPress(page, 1);
     await shown(page, 'act');

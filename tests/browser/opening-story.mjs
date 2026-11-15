@@ -106,13 +106,13 @@ try {
     const before = await page.evaluate(() => {
       const p = window.probe;
       for (const flag of ['scene:morgon', 'woke', 'grab', 'scene:vaknar', 'mamma:noticed']) p.sim.flags.add(flag);
-      for (const state of [p.sim.prev, p.sim.curr]) { state.x = 40.5; state.y = -.79; state.grounded = true; state.vx = state.vy = 0; }
-      p.sim.ghost.x = 44.4; p.sim.ghost.y = -.8;
+      for (const state of [p.sim.prev, p.sim.curr]) { state.x = 50.5; state.y = -.79; state.grounded = true; state.vx = state.vy = 0; }
+      p.sim.ghost.x = 54.4; p.sim.ghost.y = -.8;
       for (let i = 0; i < 10; i++) p.draw(.1);
       return p.snapshot();
     });
     check(`${name}: the spilled star lies ahead of him, and the family has followed him out`, before.star
-      && before.family.every((actor) => actor.visible && actor.at[0] < 40.5 && actor.at[0] > 30));
+      && before.family.every((actor) => actor.visible && actor.at[0] < 50.5 && actor.at[0] > 40));
     await picture(page, join(shots, `${name}-before.png`));
     const taste = await page.evaluate(() => {
       const p = window.probe; p.sim.flags.add('star');
@@ -141,10 +141,10 @@ try {
     // Pappa deliberately steps closer before kneeling; after the POFF the other three come over to him at a walk
     // (the motion pass of 6 November 2026), so they are on their way to their places by now.
     const pappa = change.after.family[1];
-    const marks = [[38.8, -1.4], null, [40.3, -2.5], [43.1, -2.8]];
+    const marks = [[48.8, -1.4], null, [50.3, -2.5], [53.1, -2.8]];
     const toMark = (actor, i) => Math.hypot(actor.at[0] - marks[i][0], actor.at[2] - marks[i][1]);
     check(`${name}: Pappa reaches his supportive mark while the other relatives come over to him`,
-      pappa.at.every((value, i) => Math.abs(value - [39.6, -.8, -1.4][i]) < 1e-6) &&
+      pappa.at.every((value, i) => Math.abs(value - [49.6, -.8, -1.4][i]) < 1e-6) &&
       pappa.at[0] > before.family[1].at[0] &&
       change.after.family.every((actor, i) => i === 1 || toMark(actor, i) <= toMark(before.family[i], i) + 1e-6));
     check(`${name}: story staging stays inside the draw budget with warmed shaders`, withinDraws(change.after.drawCalls, change.after.tier) && change.after.programs === before.programs);
@@ -156,12 +156,12 @@ try {
       return p.snapshot();
     });
     check(`${name}: the whole family kneels round him in one picture`, kneeling.family.every((actor) => actor.visible
-      && Math.abs(actor.at[0] - 41) < 3.5 && actor.corners.every(([x, y]) => Math.abs(x) < 1.02 && y > -1.02)));
+      && Math.abs(actor.at[0] - 51) < 3.5 && actor.corners.every(([x, y]) => Math.abs(x) < 1.02 && y > -1.02)));
     check(`${name}: the family's scene fits the draw budget with warmed shaders`, withinDraws(kneeling.drawCalls, kneeling.tier) && kneeling.programs === before.programs);
     await picture(page, join(shots, `${name}-after.png`));
     const restored = await page.evaluate(async ({ tier }) => {
       // The transformation is complete; even if the unfinished family scene resumes, Elof already starts small.
-      const p = window.probe, chapter = { ...p.f.prolog, spawn: { x: 45, y: -0.79 } };
+      const p = window.probe, chapter = { ...p.f.prolog, spawn: { x: 55, y: -0.79 } };
       const oldCanvas = document.getElementById('game'), canvas = document.createElement('canvas');
       canvas.id = 'game'; canvas.style.cssText = oldCanvas.style.cssText; oldCanvas.replaceWith(canvas);
       p.sim = new p.f.Sim(chapter, {}, { flags: ['eye', 'paint', 'blink', 'mamma:passed', 'bag:torn', 'star', 'scene:poff'] });

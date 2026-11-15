@@ -49,6 +49,10 @@ export const prolog: ChapterData = {
     // The home is the same in every chapter (Olov, 15 November 2026: "Bord, golv, inredning och allt måste se likadant ut
     // som hemmet i äventyr 2"): the toy shelf beside the sofa, as in Äventyr 2's room. The bag tears on its corner.
     { look: 'toyShelf', at: { x: HOME_LAYOUT.toyShelf.x, y: 0 } },
+    // And past the white bathroom door the hall, with the family's raincoats, their boots and the green front door, before
+    // the veranda's door (Olov, 15 November 2026: "Jag vill ha den vita och den gröna dörren överallt", and "Jag vill ha
+    // verandadörren så som den funkar idag men även ha de två dörrarna"; ../../render/home-hall.ts).
+    { look: 'hall', at: { x: 0, y: 0 } },
     // The shavings Pappa's knife left, and the Saturday bag on the table, until the ghost takes it.
     { look: 'shavings', at: { x: HOME_LAYOUT.dining.x + 0.1, y: 0 } },
     { look: 'bag', at: { x: HOME_LAYOUT.dining.x + 1.6, y: 1.65 }, until: 'grab', z: -1.25 },
@@ -65,46 +69,48 @@ export const prolog: ChapterData = {
   // In reach of the brush Pappa holds out, so the morning ends with "Måla ögonen!" lit on Använd: the first thing
   // asked of him has its button ready (docs/ux-audit/first-minutes.md row 19). The move lesson waits for the hall.
   spawn: { x: HOME_LAYOUT.dining.x - 2.9, y: 0.01 },
-  goalX: 51.0,
+  goalX: 61,
   goalNeeds: 'titel',
   prologue: {
     // Pappa notices the ghost once Moa's drawing is told, as Elof sets off towards it.
     // The ghost waits at the very edge of the boards, looking back at him, and leaps down into the garden as he comes,
     // five EL away: he never reaches it (Olov, 13 November 2026: "fixa så att spöket hoppar ner innan man hinner fram
     // till det"). Until then it stood at the edge while the family said their promises, and he could walk up to it.
-    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 46.6, y: 1.9 }, edge: { x: 53.3, y: -0.8 }, leapFrom: 48.3, pappaAfter: 'scene:handen', pappaFrom: 41.5,
+    doorway: { x: HOME_LAYOUT.dining.x + 6.5, y: 0 }, railing: { x: 56.6, y: 1.9 }, edge: { x: 63.3, y: -0.8 }, leapFrom: 58.3, pappaAfter: 'scene:handen', pappaFrom: 51.5,
     // The deck's railing runs along its far side: Pappa puts the frozen ghost up on its top rail.
-    rail: { from: 38.4, to: 53.8, z: -3.4 },
+    rail: { from: 48.4, to: 63.8, z: -3.4 },
   },
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
-    // the kitchen, the living room and the veranda, one level floor as at home in every chapter (Olov, 15 November
+    // the kitchen, the living room and the hall, one level floor as at home in every chapter (Olov, 15 November
     // 2026: "Golvet ska vara plant i alla kapitel"; a door sill to the veranda stood up from it in front of the TV,
-    // with the floor bent round it), and the step down to the deck, out of doors
-    { x: 38, y: 0 },
-    { x: 38, y: -0.8 },
+    // with the floor bent round it), and through the veranda's door past the hall the step down to the deck, out of
+    // doors. The door stood at 38, right after the bathroom's, before the hall was in this house: all that is out of
+    // doors here stands ten further along than it did.
+    { x: HOME_LAYOUT.veranda, y: 0 },
+    { x: HOME_LAYOUT.veranda, y: -0.8 },
     // the deck, and its edge: the garden's lawn lies far below it
-    { x: 54, y: -0.8 },
-    { x: 54, y: -7 },
-    { x: 96, y: -7 },
-    { x: 96, y: 10 },
+    { x: 64, y: -0.8 },
+    { x: 64, y: -7 },
+    { x: 106, y: -7 },
+    { x: 106, y: 10 },
   ],
   // The floors and the deck are boards; the garden below the deck's edge is lawn (picture and footsteps only).
-  surfaces: [{ from: -19, to: 54, kind: 'wood' }],
-  house: { from: -40, to: 38, windows: HOME_LAYOUT.windows },
-  outdoors: 38,
+  surfaces: [{ from: -19, to: 64, kind: 'wood' }],
+  house: { from: -40, to: HOME_LAYOUT.veranda, windows: HOME_LAYOUT.windows },
+  outdoors: HOME_LAYOUT.veranda,
   // The big candies keep their meaning in older saves: in the kitchen at the start (behind him, out of the
   // morning's pictures), at the end of the hall, and on the deck after the shrinking.
-  checkpoints: [{ x: HOME_LAYOUT.dining.x - 4.9, y: 0 }, { x: 26, y: 0 }, { x: 45.5, y: -0.8 }],
+  checkpoints: [{ x: HOME_LAYOUT.dining.x - 4.9, y: 0 }, { x: 26, y: 0 }, { x: 55.5, y: -0.8 }],
   spots: [
     // Two eyes: a brush stroke for each; Pappa finishes a short stroke.
     { id: 'eye', at: { x: HOME_LAYOUT.dining.x - 1.8, y: 0 }, verb: 'give', word: 'paintGhost', story: 'paint' },
     { id: 'paint', at: { x: HOME_LAYOUT.dining.x - 1.8, y: 0 }, verb: 'give', word: 'paintGhost', needs: 'eye', story: 'paint' },
     // He first sees where the star came from, then chooses to taste it. Walking past never consumes it.
-    { id: 'star', look: 'star', at: { x: 41.7, y: -0.8 }, verb: 'take', word: 'tasteStar', needs: 'scene:stjarnan' },
+    { id: 'star', look: 'star', at: { x: 51.7, y: -0.8 }, verb: 'take', word: 'tasteStar', needs: 'scene:stjarnan' },
     // Pappa's open hand on the planks: he chooses to step onto it.
-    { id: 'hand', at: { x: 40.9, y: -0.8 }, verb: 'take', word: 'climbOn', needs: 'scene:familj' },
+    { id: 'hand', at: { x: 50.9, y: -0.8 }, verb: 'take', word: 'climbOn', needs: 'scene:familj' },
   ],
   ghost: [
     // On the table, new, with no eyes yet. Awake, it hops to the bag, and with the bag off the table.
@@ -115,10 +121,10 @@ export const prolog: ChapterData = {
     { at: { x: 28.6, y: 0 } },
     { at: { x: 35, y: 0 } },
     // On the deck, beyond the star it lost: it waits there until Pappa's joke.
-    { at: { x: 44.4, y: -0.8 }, until: 'pappa:done', near: 0 },
+    { at: { x: 54.4, y: -0.8 }, until: 'pappa:done', near: 0 },
     // At the deck's edge, where it hid behind his back, until he comes near; then down into the garden.
-    { at: { x: 53.3, y: -0.8 }, until: 'leap', near: 99 },
-    { at: { x: 57.5, y: -7 }, near: 0 },
+    { at: { x: 63.3, y: -0.8 }, until: 'leap', near: 99 },
+    { at: { x: 67.5, y: -7 }, near: 0 },
   ],
   beats: [
     // Once the ghost lies on the floor before her (src/sim/prologue.ts, MAMMA_SEEN).
@@ -129,15 +135,18 @@ export const prolog: ChapterData = {
     { id: 'snuck', on: 'snuck', who: 'elof', line: 'snuck' },
   ],
   // Indoors the picture is wide while he is big; on the deck it frames him small among the kneeling family.
-  cameras: [{ from: -3, to: 38, zoom: 1.5, lift: 0.3 }, { from: 38, to: 60, zoom: 1.7, lift: 1.5 }],
+  cameras: [{ from: -3, to: 48, zoom: 1.5, lift: 0.3 }, { from: 48, to: 70, zoom: 1.7, lift: 1.5 }],
   candy: [
     // Nothing lies there until the bag has torn on the doorway's hinge.
     // Keep all eleven original save indices, in order, along the shorter hall after the new hinge.
     ...row(21.5, 29, 0, 0.75, 'bag:torn'),
     { x: 30.6, y: 0.45, after: 'bag:torn' },
-    ...row(32.4, 36.4, 0, 2, 'bag:torn'),
-    { x: 38.6, y: -0.2, after: 'bag:torn' },
-    { x: 39.8, y: -0.35, after: 'bag:torn' },
+    // On past the bathroom's door and through the hall to the veranda's: the three that lay before the bathroom's door,
+    // further apart, the last as near the veranda's door as it lay to it before, so that a saved game's candy keeps its
+    // places and its order.
+    ...row(35, 46.4, 0, 5.7, 'bag:torn'),
+    { x: 48.6, y: -0.2, after: 'bag:torn' },
+    { x: 49.8, y: -0.35, after: 'bag:torn' },
   ],
 };
 

@@ -749,11 +749,13 @@ export function spotProp(spot: Spot): SpotProp | null {
       group.add(model);
       return { group, update: () => {} };
     }
-    case 'hall': {
+    case 'hall':
+    case 'hallWorn': {
       // The hall past the bathroom: the family's raincoats on their rail, their boots under them, and the front door
-      // (./home-hall.ts), as in Äventyr 2's home. Placed by the room's own numbers.
+      // (./home-hall.ts), as in Äventyr 2's home. Placed by the room's own numbers. On the evening of the storm the rail
+      // is bare and the floor under it too: they wear their raincoats and boots out into it (`hallWorn`).
       group.position.set(0, 0, 0);
-      group.add(hallThings().group);
+      group.add(hallThings([], spot.look === 'hallWorn').group);
       return { group, update: () => {} };
     }
     case 'shavings': {

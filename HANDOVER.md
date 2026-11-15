@@ -1,5 +1,66 @@
 # Handover
 
+## State (15 November 2026, late night): the white and the green door in every home, the veranda's door past them, and the raincoats clear of the white door
+
+One cloud session, after PR #281 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov, looking at the deployed
+game, wrote four things, one after another:
+
+- "Vad är det för pinne framför soffan i första kapitlet i äventyr 1. Stämmer det med hur huset ser ut i äventyr två? Och
+  är det inte två dörrar en toalett dörr och en grön dörr som ska vara med. De är inte med i äventyr 1."
+- "Jag vill ha den vita och den gröna dörren överallt.", with a picture of Morgonen efter's hall (the TV, the white door,
+  the raincoats and boots, the green door): "Gillar när det ser ut såhär."
+- "Jag vill ha verandadörren så som den funkar idag men även ha de två dörrarna."
+- "Sen måste vi se till så att regnkläderna inte hänger över den vita dörren."
+
+What was found:
+
+- The stick in front of the sofa was the post of the free-standing doorway whose hinge tore the bag, in the deployed game
+  (main before #281). #281 removed it; the toy shelf stands there now.
+- The white door (the bathroom's, x 35.5) was in every home already. The green front door was only in Morgonen efter's
+  hall, and Godiskalaset's since #281. In the prologue and in Stormkvällen the veranda's glass door stood right after the
+  white door, at 38, where Morgonen efter has its hall, so the green door had nowhere to be.
+
+What was done:
+
+- **The hall in the first chapters.** Between the white door and the veranda's door, the prologue has the hall as
+  Morgonen efter has it: the raincoats on their rail, the boots under them, the green front door (`hall`). Stormkvällen
+  has it too, its rail bare and no boots: the family put on their raincoats and boots that evening and wear them out
+  into the storm (`hallWorn`, `hallThings(…, worn)` in `src/render/home-hall.ts`).
+- **The veranda's door works as before, ten further along.** It moved from x 38 to 48 (`HOME_LAYOUT.veranda`, which
+  `outdoors`, `house.to` and the step down to the deck read), and everything out of doors moved with it: the deck, its
+  railing and edge, the star, Pappa's hand, the ghost's places and its leap, the family's places and lanes, every shot
+  and aim of the deck's scenes, the deck's big candy and sweets, the camera zones and the goal (51 → 61). A script added
+  10 to every x past the old door in `ends.ts` (the prologue), `prolog-scenes.ts` and `stormkvall.ts`, and printed each
+  change (70, 26 and 38 of them); every one and every number left between 25 and 38 was read by hand. Moved by hand
+  besides: in Stormkvällen where Moa and Bertil go on ahead of him (`LEAVE`, 29.6 → 39.6), where they turn and wait
+  by the door (`KIDS`), where Mamma and Pappa come out from (`FROM_HOUSE`), the hall's big candy (31.5 → 41.5) with
+  `before`, a ghost's place in the hall (44.4), and the deck's row of sweets; in the prologue the frozen ghost's landing,
+  which follows the railing now (`DECK_LANDING` in `src/sim/prologue.ts`).
+- **The trail through the hall.** The three sweets that lay before the white door are spread on through the hall (35,
+  40.7, 46.4: the last as near the veranda's door as before), in both chapters, so that each keeps its place and order in the list: a saved game's candy stays its own
+  (the prologue's seventeen, Stormkvällen's twenty-two).
+- **The raincoats clear of the white door.** The rail began at 37.05 and Pappa's coat at 37.04, over the white door's
+  frame (37.57). Now the rail runs 37.95–41.95, the coats hang at 38.5, 39.35, 40.2 and 40.95, the boots stand under them,
+  and everything is clear of the green door's frame (42.25) too; Elof's small coat in Morgonen efter hangs at 41.7, and
+  the puddle lies under the boots (`HALL` in `src/render/home-hall.ts`, `aftermath` in `src/content/aventyr2/render.ts`).
+- **Guards:** `tests/unit/home-floor.test.ts` (the white and the green door in every home chapter, the veranda's door
+  past the green one where a chapter goes out, the floor level through the hall to it, and the coats, rail and boots clear
+  of both frames); `tests/sim/prologue.test.ts`, `tests/robot/ends.test.ts`, `tests/unit/stage-interactions.test.ts` and
+  `tests/unit/story-context.test.ts` moved with the deck; the robot's Stormkvällen candy trail stays in order.
+- **Validation:** `npm run typecheck`, `npm test` (3352 passed, 20 skipped), `npm run build` (size gate ok: JS 735.8 of
+  1000 KB gzipped; boot 5,979 of 10,240 KB; Äventyr 2's chunk 154.7 of 160 KB) and `npm run privacy-check` pass. Browser
+  suites, run here with the preinstalled Chromium as before: prologue (86; its deck positions moved with the deck),
+  pointing (44; it taps the hall's last sweet and the star past the door), aventyr2 (42), opening-story (75),
+  walk-and-talk (34), home-console (55), shared-home (42), journey, smoke (101) and endings (80). Seen in the game's
+  renderer with stand-in figures at 1440×900 (and 844×390 for the prologue's hall): the prologue's hall, its veranda's
+  door and deck, and its title at the deck's edge (also at 390×844); Stormkvällen's bare hall, the family coming out
+  onto the deck (`lofte`) and the promises (`stormtitel`); Morgonen efter's and Godiskalaset's halls with the coats
+  clear of the white door.
+- **Not checked:** nobody has played the two chapters through the hall onto the deck by hand; the scenes were seen in
+  stills with stand-in figures in this computer's renderer, not with the family's models or on the family's devices.
+- **Next:** Olov plays Lördagsmorgon and Stormkvällen through the hall and out onto the deck, and answers the questions.
+  No Blender work is waiting.
+
 ## State (15 November 2026, night): the background in wide shots, Granskogen's jay, a finer anthill and fallen spruce, Myren's gungfly, one home, and Äventyr 2's book
 
 One cloud session, after PR #280 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov wrote seven wishes, one
@@ -6412,6 +6473,13 @@ record identify the exact published revision.
 
 ## Next
 
+**The white and the green door everywhere (15 November, late night).** Every home chapter has the white bathroom door
+(35.5), then the hall (the rail and coats 37.95–41.95, the green front door at 44.4), and where it goes out on the
+veranda, the veranda's door at `HOME_LAYOUT.veranda` (48). Anything placed on the deck in the prologue or Stormkvällen
+stands past 48; `tests/unit/home-floor.test.ts` checks the doors and the coats. A trail's sweets keep their places in
+the list (saved games): spread them rather than add new ones in the middle. Next: Olov plays the two first chapters
+through the hall onto the deck. No Blender work is waiting.
+
 **The background, the jay, the anthill and spruce, Myren's gungfly, one home and Äventyr 2's book (15 November,
 night).** The camera's far plane follows it back (`farPlane`, `src/render/far-plane.ts`): a far layer deeper than 125
 behind the play plane, or a shot that backs further off than any now, is checked by `far-plane.test.ts` and needs
@@ -6938,6 +7006,11 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **The white and the green door in every home (Olov, 15 November 2026):** "Jag vill ha den vita och den gröna dörren
+  överallt", "Jag vill ha verandadörren så som den funkar idag men även ha de två dörrarna", and "regnkläderna [ska
+  inte] hänga över den vita dörren": every home chapter has the white bathroom door, then the hall with the raincoats,
+  the boots and the green front door; where a chapter goes out on the veranda (the prologue, Stormkvällen) its door is
+  past the hall (`HOME_LAYOUT.veranda`, 48). On the evening of the storm the rail is bare: the raincoats are worn.
 - **Fallen trees are drawn alike (Olov, 15 November 2026):** "använde vi Blender och texturer på samma sätt som de andra
   fallna stockarna?": a fallen tree's bark is drawn by a shader from where on the tree each corner is (old wood,
   `_BARK`, `src/render/old-wood.ts`), never painted on its corners finer than they are.
@@ -6946,9 +7019,8 @@ The older list, still true where it is not struck:
 - **Creatures bring what he climbs (Olov, 15 November 2026):** in Granskogen as in Stormskogen, the jay given the
   berry flies up and lets the lichen down, and Elof thanks it.
 - **One home (Olov, 15 November 2026):** "Bord, golv, inredning och allt måste se likadant ut som hemmet i äventyr 2":
-  the prologue, Godiskalaset, Stormkvällen and Morgonen efter share the toy shelf and the wooden table without a cloth;
-  Godiskalaset and Morgonen efter the hall with the raincoats, the boots and the front door. The prologue's room still
-  ends at the veranda door, where its story goes out.
+  the prologue, Godiskalaset, Stormkvällen and Morgonen efter share the toy shelf, the wooden table without a cloth,
+  and the hall with the raincoats, the boots and the green front door past the white bathroom door (see below).
 - **Each adventure ends with its own book (Olov, 15 November 2026):** "Sen slutar äventyr 2 på samma snygga sätt som
   äventyr 1": the last card opens the album of that adventure's own photos, with the thanks on its last page.
 - **The floor at home is level (Olov, 15 November 2026):** "Golvet ska vara plant i alla kapitel, precis som i det sista
@@ -7075,6 +7147,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The white and the green door everywhere (15 Nov, late night) | The stick in front of the sofa, the two doors in Äventyr 1, the veranda's door as today, the coats clear of the white door | The same cloud session, after #281 | — / 4 messages (+1 picture) | The stick was the old doorway's post (gone with #281); the hall with the green door in the prologue and Stormkvällen, their veranda's door and all out of doors ten further along; the coats, rail and boots clear of both door frames |
 | The background, the jay, the anthill and spruce, the gungfly, one home, Äventyr 2's book (15 Nov, night) | Seven wishes after #280 | The same cloud session; Blender 5.2.4 headless for the forest kit | — / 8 messages | The camera sees as far behind in every wide shot; the jay brings Granskogen's lichen, with Elof's thanks recorded; a wood ant's mound, and the fallen spruce made as the windfalls are, its bark drawn by their shader; Myren's tussocks as Flärken's gungfly; the four homes furnished alike; Äventyr 2's last card opens its own book; the voices' licence row added |
 | Godisracet's drift again (15 Nov, evening) | The merged drift still slid and turned too fast | The same cloud session, after #279 | — / 2 messages | A held drift no tighter than the wheel at full lock, its body at most 11.5° across and swinging out gently; the rivals' laps as before |
 | Byn's houses, the storm's eye, the home floor, the narrator, the drift, the vättar (15 Nov, later) | Three things seen while playing, the narrator's "Storm…", the drift, and the vättar seen and in Äventyr 2 | One cloud session | — / 1 report (+5 messages) | Houses whole over the shop floor with a roof, the birch into its crown; stars and moon kept in sight in every shot; a level floor at home (the Hoppa lesson went with the sill); six narrator cards taken again and chosen by measuring the vowel; ElevenLabs reachable from cloud sessions; a held drift turns less; the vättar on every tier, out as he comes, three in Äventyr 2 under leaves |
@@ -7507,6 +7580,14 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 15 november, sent på natten (allt är byggt; inget hindrar):
+
+- **Hallen i de första kapitlen:** i prologen och Stormkvällen kommer nu den vita dörren, regnkläderna, stövlarna och
+  den gröna dörren, och sedan verandadörren, som fungerar som förut men står tio steg längre bort. Hallen tar Elof några
+  sekunder att gå igenom. Känns det lagom?
+- **Stormkvällen:** där hänger inga regnkläder på hängaren och inga stövlar står under den, eftersom familjen har dem på
+  sig ut i stormen. Ska hängaren vara tom så, eller vill du se något annat där?
 
 Från den 15 november, kväll (allt är byggt; inget hindrar):
 
