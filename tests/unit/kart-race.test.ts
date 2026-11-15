@@ -221,15 +221,24 @@ describe('arcade handling', () => {
     drive(kart, road, 3, { throttle: 0, brake: 1 }); expect(kart.speed).toBeGreaterThan(-8);
     drive(kart, road, 1); expect(kart.speed).toBeGreaterThan(5); expect(finite(kart)).toBe(true);
   });
-  it('turns a wide arc on the wheel at full speed, a tighter one when slower, and far tighter in a drift', () => {
+  // Olov, 15 November 2026: "man sladdar lite för mycket när man använder sladdknappen". A held drift with the wheel
+  // straight turned more than the wheel alone at full lock, and twice as much with the wheel turned in.
+  it('turns a wide arc on the wheel at full speed, a tighter one when slower, and tighter in a drift, but not wildly', () => {
     expect(TOP_SPEED / turnRate(TOP_SPEED)).toBeGreaterThan(20); expect(TOP_SPEED / turnRate(TOP_SPEED)).toBeLessThan(25);
     expect(15 / turnRate(15)).toBeLessThan(8); expect(turnRate(0)).toBe(0);
     expect(turnRate(TOP_SPEED, true)).toBeGreaterThan(turnRate(TOP_SPEED) * 1.3);
     const plain = fresh(), drifting = fresh(), road = open();
     drive(plain, road, 1, { steer: 1 }); drive(drifting, road, 1, { steer: 1, drift: true });
     expect(plain.heading).toBeGreaterThan(1); expect(plain.heading).toBeLessThan(1.45);
-    expect(drifting.drift).toBe(1); expect(drifting.heading).toBeGreaterThan(plain.heading * 1.6);
-    expect(Math.abs(drifting.slip)).toBeGreaterThan(.4); expect(Math.abs(plain.slip)).toBeLessThan(.15);
+    expect(drifting.drift).toBe(1); expect(drifting.heading).toBeGreaterThan(plain.heading * 1.3);
+    expect(drifting.heading).toBeLessThan(plain.heading * 1.5);
+    expect(Math.abs(drifting.slip)).toBeGreaterThan(.4); expect(Math.abs(drifting.slip)).toBeLessThan(.5); expect(Math.abs(plain.slip)).toBeLessThan(.15);
+    // Into a drift, then held a second with the wheel straight: less of a turn than the wheel alone at full lock.
+    const straight = fresh();
+    drive(straight, road, .15, { steer: 1, drift: true });
+    const before = straight.heading;
+    drive(straight, road, 1, { steer: 0, drift: true });
+    expect(straight.drift).toBe(1); expect(straight.heading - before).toBeLessThan(plain.heading * .9);
   });
   it('hops on a press, locks a drift to the side it was begun on, and charges blue, gold and pink sparks', () => {
     const kart = fresh(), road = open(), events: KartEvent[] = [];
