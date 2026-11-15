@@ -39,6 +39,7 @@ import { windWisp } from './wind-wisp';
 import { createAfloat } from './afloat';
 import { createRain } from './rain';
 import { PACK } from './extensions';
+import { farPlane } from './far-plane';
 import { installLift } from './lift';
 import { paintStreetMirror } from './village';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
@@ -985,8 +986,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   characterShadows.setTier(tier);
 
-  // Over a brink (Billsta's brow) the camera sees far: the water far below, its far shore and the ridges beyond.
-  const camera = new PerspectiveCamera(FOV, 1, 0.1, chapter.brink ? 640 : 140);
+  // Over a brink (Billsta's brow) the camera sees far: the water far below, its far shore and the ridges beyond. However
+  // far a shot backs it off, it sees as far behind the play plane (./far-plane.ts, set again each frame).
+  const camera = new PerspectiveCamera(FOV, 1, 0.1, farPlane(0, !!chapter.brink));
   seeRich(camera, tier);
   let viewHeight = 5;
   let distance = 10;
@@ -1677,6 +1679,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const shotHeight = Math.max(2.6, 2.8 / camera.aspect);
       camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
       camera.lookAt(window.x, window.y + 0.65, window.z);
+    }
+    // Where the camera now stands, it sees as far behind the play plane as at the usual picture (./far-plane.ts): a shot
+    // backed off to fit its width keeps the trees, the forest and the hills behind it.
+    const far = farPlane(camera.position.z, !!chapter.brink);
+    if (Math.abs(far - camera.far) > 0.01) {
+      camera.far = far;
+      camera.updateProjectionMatrix();
     }
     const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory, lifeDt);
     // The foreground's own shade, by day; little of it at night and in the storm, which are dark enough (./grade.ts).
