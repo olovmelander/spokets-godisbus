@@ -105,8 +105,9 @@ try {
     await page.keyboard.up('ArrowRight');
     check(`${name}: no card at the goal itself: the coda plays first`, await page.locator('#endCard').isHidden());
     // The page waits for his walk into the forest (about 7.6 s of frame time after the goal); under CI's software
-    // rendering that is two minutes or more.
-    await page.waitForSelector('#endCard:not([hidden])', { timeout: 240000 });
+    // rendering that is two minutes or more. At 1180×820 it took 133 s on a usual runner, and more than the four minutes
+    // this wait allowed on one half as fast, every suite in its job slowed alike (15 November 2026): seven, then.
+    await page.waitForSelector('#endCard:not([hidden])', { timeout: 420000 });
     // The coda's seconds are counted in frame time, which never runs ahead of the clock.
     check(`${name}: the page comes after the coda`, Date.now() - reached >= 4000);
     check(`${name}: the coda's last picture is glued into the page`, await page.locator('#endPicture canvas').count() === 1
