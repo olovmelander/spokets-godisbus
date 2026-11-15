@@ -1,4 +1,5 @@
 import { sv } from '../content/sv';
+import type { PhotoMoment } from '../content/photos';
 import type { AlbumPhoto, PhotoStore } from '../save/photos';
 import { CHECK, CROSS, NEXT, PREVIOUS, use } from './icons';
 
@@ -28,6 +29,10 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
   const panel = byId('photoAlbum');
   const section = byId('albumPhotos');
   let photos: (AlbumPhoto & { url: string })[] = [];
+  /** Which photos the credits show: the adventure that has ended's own (Olov, 15 November 2026). */
+  let ofTheStory: (moment: PhotoMoment) => boolean = () => true;
+  /** What is turned through: every photo in the album, or in the credits the ended adventure's. */
+  const pages = () => (credits ? photos.filter((photo) => ofTheStory(photo.moment)) : photos);
   let index = 0;
   let credits = false;
   let source: HTMLElement | null = null;
@@ -39,7 +44,7 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
 
   /** In the credits two photos lie on each spread, and the thanks have the last page to themselves. */
   const perPage = () => (credits ? 2 : 1);
-  const count = () => Math.ceil(photos.length / perPage()) + (credits ? 1 : 0);
+  const count = () => Math.ceil(pages().length / perPage()) + (credits ? 1 : 0);
   const print = (frame: string, image: string, caption: string, photo: (typeof photos)[number] | undefined) => {
     byId(frame).hidden = !photo;
     const img = byId<HTMLImageElement>(image);
@@ -54,9 +59,10 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     turning = null;
   };
   function draw(): void {
-    const first = photos[index * perPage()];
+    const shown = pages();
+    const first = shown[index * perPage()];
     print('photoFrame', 'photoImage', 'photoCaption', first);
-    print('photoFrame2', 'photoImage2', 'photoCaption2', credits && first ? photos[index * 2 + 1] : undefined);
+    print('photoFrame2', 'photoImage2', 'photoCaption2', credits && first ? shown[index * 2 + 1] : undefined);
     byId('photoCredits').hidden = !!first;
     byId('photoTitle').textContent = credits ? sv.photos.journey : sv.photos.title;
     byId('photoCount').textContent = sv.photos.count.replace('{n}', String(index + 1)).replace('{total}', String(count()));
@@ -85,8 +91,8 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     stage.classList.add('turned');
   }
   function show(at: number, withCredits: boolean, from: HTMLElement, backTo: HTMLElement): void {
-    index = Math.max(0, Math.min(at, photos.length - 1));
     credits = withCredits;
+    index = Math.max(0, Math.min(at, pages().length - 1));
     source = from;
     focus = backTo;
     focusMoment = backTo.dataset.photoMoment ?? null;
@@ -175,6 +181,14 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     get open() { return !panel.hidden; },
     back,
     refresh,
-    credits() { show(0, true, byId('endCard'), byId('endPhotos')); },
+    /**
+     * The book of the adventure that has ended, its last pages turning by themselves: its own photos, and the thanks.
+     * Äventyr 1 ends so after Godiskalaset, Äventyr 2 after Morgonen efter (Olov, 15 November 2026: "äventyr 2 [slutar]
+     * på samma snygga sätt som äventyr 1 där man får se alla bilder från äventyret").
+     */
+    credits(of: (moment: PhotoMoment) => boolean = () => true, backTo?: HTMLElement) {
+      ofTheStory = of;
+      show(0, true, byId('endCard'), backTo ?? byId('endPhotos'));
+    },
   };
 }

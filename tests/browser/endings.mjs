@@ -155,7 +155,10 @@ try {
     // On GitHub the game is drawn in software, and its ten seconds of scene can take a few minutes there.
     let seen = false, read = false;
     const end = Date.now() + 300000;
-    while (Date.now() < end && await page.locator('#endCard').isHidden()) {
+    // It ends with its own book of photos, which hides the card while it turns (Olov, 15 November 2026: "äventyr 2
+    // [slutar] på samma snygga sätt som äventyr 1 där man får se alla bilder från äventyret").
+    const over = async () => !(await page.locator('#endCard').isHidden()) || !(await page.locator('#photoAlbum').isHidden());
+    while (Date.now() < end && !(await over())) {
       const now = await state();
       seen ||= now.scene?.id === 'slut';
       if (now.storyReading && await page.locator('#endCard').isHidden()) {
@@ -174,6 +177,10 @@ try {
     check(`morgonen: the story ends in its own last scene, at the door${seen && ended.flags.includes('a2slut') ? ''
       : ` (seen ${seen}, x ${ended.x.toFixed(1)}, scene ${ended.scene?.id ?? '-'}, ${ended.flags.filter((f) => !f.startsWith('beat:')).join(' ')})`}`,
     seen && ended.flags.includes('a2slut'));
+    await page.waitForSelector('#photoAlbum:not([hidden])', { timeout: 30000 });
+    check('morgonen: the adventure ends with its own book of photos and the thanks, as Äventyr 1 does',
+      await page.locator('#photoTitle').textContent() === 'Vårt äventyr' && await page.locator('.photo-panel').evaluate((node) => node.classList.contains('book')));
+    await page.keyboard.press('Escape');
     await page.waitForSelector('#endCard:not([hidden])', { timeout: 30000 });
     check('morgonen: the last card says that it ends', await page.locator('#endTitle').textContent() === 'Slut'
       && await page.locator('#endKicker').textContent() === 'Äventyr 2 · Slutet');

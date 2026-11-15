@@ -17,7 +17,7 @@ import { ADVENTURE2, BONUS, STORY, bonusAfter, chapterNumber, courseAvailable, c
 import { album, albumComplete, foundFlag, KINDS } from './content/kinds';
 import { lostFlag, lostFound } from './content/lost';
 import { cobbleMemory } from './content/cobbles';
-import { createPhotoMoments } from './content/photos';
+import { createPhotoMoments, photoChapter, type PhotoMoment } from './content/photos';
 import { albumHtml } from './ui/album';
 import { mapSvg, mapState } from './ui/map';
 import { createMemory, memoryAlbumHtml } from './ui/memory';
@@ -592,7 +592,9 @@ async function start(): Promise<void> {
   byId('albumPhotos').hidden = !storyCourse;
   byId('pauseBagBtn').hidden = !storyCourse;
   byId('pauseMapCard').hidden = !mapState(chapter.id, canEnter);
-  byId('endPhotos').addEventListener('click', () => photoAlbum.credits());
+  /** The photos of the adventure a chapter belongs to: the book its ending turns through. */
+  const ofAdventure = (id: string) => (moment: PhotoMoment) => isAdventure2(photoChapter(moment)) === isAdventure2(id);
+  byId('endPhotos').addEventListener('click', () => photoAlbum.credits(ofAdventure(chapter.id)));
   byId('graphicsFallback').hidden = hdrAvailable;
   byId<HTMLButtonElement>('graphicsMid').disabled = !hdrAvailable;
   byId<HTMLButtonElement>('graphicsHigh').disabled = !hdrAvailable;
@@ -1473,10 +1475,14 @@ async function start(): Promise<void> {
       // went black and began again).
       const last = !next && isAdventure2(chapter.id);
       byId('endHome').hidden = !last;
-      byId(canExplore ? 'endExplore' : next ? 'endOnward' : last ? 'endHome' : 'endAgain').focus();
-      if (chapter.id === 'epilog') {
+      const focused = byId(canExplore ? 'endExplore' : next ? 'endOnward' : last ? 'endHome' : 'endAgain');
+      focused.focus();
+      // Each adventure ends with the book of its own photos turning by itself, and the thanks (Olov, 15 November 2026:
+      // "Sen slutar äventyr 2 på samma snygga sätt som äventyr 1 där man får se alla bilder från äventyret"). Äventyr 2's
+      // gives the focus back to the card's own, the map of the chapters: a press meant for the last words opens the map.
+      if (chapter.id === 'epilog' || last) {
         byId('endPhotos').hidden = false;
-        photoAlbum.credits();
+        photoAlbum.credits(ofAdventure(chapter.id), last ? focused : undefined);
       }
     }
 
