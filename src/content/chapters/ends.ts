@@ -46,6 +46,9 @@ export const prolog: ChapterData = {
   // Pappa's shelf, with the first place in the row empty: the first trägubbe is not there.
   shelf: HOME_LAYOUT.shelf,
   decor: [
+    // The home is the same in every chapter (Olov, 15 November 2026: "Bord, golv, inredning och allt måste se likadant ut
+    // som hemmet i äventyr 2"): the toy shelf beside the sofa, as in Äventyr 2's room. The bag tears on its corner.
+    { look: 'toyShelf', at: { x: HOME_LAYOUT.toyShelf.x, y: 0 } },
     // The shavings Pappa's knife left, and the Saturday bag on the table, until the ghost takes it.
     { look: 'shavings', at: { x: HOME_LAYOUT.dining.x + 0.1, y: 0 } },
     { look: 'bag', at: { x: HOME_LAYOUT.dining.x + 1.6, y: 1.65 }, until: 'grab', z: -1.25 },
@@ -164,9 +167,12 @@ const THANKS: SceneDef[] = [...GUESTS.map((g) => g.id), 'spoket'].map((id) => ({
   dialogue: [`partyThanks:${id}`, ...({ pappa: ['coinBack', 'cobbles1', 'cobbles2', 'cobbles3'], moa: ['clipBack'], bertil: ['marbleBack'] } as Record<string, string[]>)[id] ?? []],
 }));
 
-/** The party table's top (`furniture`, below, and the room's table in ../../render/stage.ts): its two ends and middle. */
+/**
+ * The party table's top (`furniture`, below, and the room's table in ../../render/stage.ts): its two ends and middle. Its
+ * own wooden top, as at every meal at home (Morgonen efter's `TABLE_TOP`); a cloth over it stood three hundredths higher.
+ */
 const TABLE_HOP = { left: HOME_LAYOUT.dining.x - 2, middle: HOME_LAYOUT.dining.x,
-  right: HOME_LAYOUT.dining.x + 2, top: 1.68, z: HOME_LAYOUT.dining.z };
+  right: HOME_LAYOUT.dining.x + 2, top: 1.65, z: HOME_LAYOUT.dining.z };
 
 /** In the naming's scene: when the ghost stands on the table's end, and when it has come down and tilts its head. */
 const KLONK_UP = 1.85;
@@ -207,9 +213,10 @@ export const epilog: ChapterData = {
   size: { scale: 3 },
   // The first trägubbe has its place again, first in the row.
   shelf: { ...HOME_LAYOUT.shelf, filled: true },
-  // The party's table, behind the family where they stand to be given their candy.
+  // The party's table, behind the family where they stand to be given their candy: the family's own wooden table, as
+  // in every chapter at home (it had a cloth over it, which drew it as a flat grey slab).
   furniture: [
-    { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z, cloth: '#f1ead8' },
+    { look: 'table', at: { x: HOME_LAYOUT.dining.x, y: 0 }, z: HOME_LAYOUT.dining.z },
     ...Object.values(HOME_LAYOUT.dining.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),
     // The step stool under Pappa's shelf, for putting his carving up.
     { look: 'steps', at: { x: STEP_STOOL.x, y: 0 }, z: STEP_STOOL.z },
@@ -239,7 +246,7 @@ export const epilog: ChapterData = {
       { at: 1.2, x: TABLE_HOP.right, y: TABLE_HOP.top, z: TABLE_HOP.z, move: .6 },
       { at: 1.85, x: TABLE_HOP.middle, move: .8 },
       { at: 2.7, x: TABLE_HOP.left, move: .8 },
-      // First clear the cloth, then land and run along the open floor in front of the family.
+      // First clear the table's edge, then land and run along the open floor in front of the family.
       { at: 3.55, y: TABLE_HOP.top + .37, z: 1.65, move: .65 },
       { at: 4.25, y: 0, move: .45 },
       { at: 4.75, x: 26.6, move: 1.8, act: 'run' },
@@ -297,13 +304,12 @@ export const epilog: ChapterData = {
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
-    // The hall floor continues beyond the bathroom; the end waits for the complete brushing scene.
-    { x: 47, y: 0 },
-    { x: 47, y: 3 },
-    { x: 62, y: 3 },
-    { x: 62, y: 12 },
+    // The hall floor continues beyond the bathroom, past the coats and the front door, to the room's end, as in
+    // Äventyr 2's home; the end waits for the complete brushing scene.
+    { x: HOME_LAYOUT.hall.end, y: 0 },
+    { x: HOME_LAYOUT.hall.end, y: 12 },
   ],
-  house: { from: -40, to: 76, windows: HOME_LAYOUT.windows },
+  house: { from: -40, to: 76, windows: [...HOME_LAYOUT.windows, HOME_LAYOUT.hall.window] },
   // It is evening from the first moment: the lights are low, and the northern lights show in the windows.
   night: { after: null },
   // The last stood between him and Pappa in the carving's picture ("Titta, Pappa! Min egen Lillgubbe!"): it is there once
@@ -332,6 +338,10 @@ export const epilog: ChapterData = {
   // What he found under the deck came with him: each thing lies by the one it belongs to, until it is given back
   // ("Mitt hårspänne! Tack, lillebror!"); the found coin is returned to Pappa.
   decor: [
+    // The home as it is in every chapter: the toy shelf beside the sofa, and the hall with the family's raincoats, their
+    // boots and the front door (../../render/home-hall.ts).
+    { look: 'toyShelf', at: { x: HOME_LAYOUT.toyShelf.x, y: 0 } },
+    { look: 'hall', at: { x: 0, y: 0 } },
     { look: 'coin', at: { x: HOME_LAYOUT.dining.x - 1.6, y: TABLE_HOP.top }, z: HOME_LAYOUT.dining.z, after: 'lost:coin', until: 'back:coin' },
     { look: 'clip', at: { x: HOME_LAYOUT.dining.x + 1.7, y: TABLE_HOP.top }, z: HOME_LAYOUT.dining.z, after: 'lost:clip', until: 'back:clip' },
     { look: 'marble', at: { x: 20.2, y: 0 }, after: 'lost:marble', until: 'back:marble' },

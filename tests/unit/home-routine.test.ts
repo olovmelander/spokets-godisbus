@@ -122,13 +122,15 @@ describe('the family bathroom and first carving', () => {
     } finally { vi.unstubAllGlobals(); }
   });
 
-  it('takes Klonk over the front of the party table and back onto clear floor, without passing through its cloth or chairs', () => {
+  // The party's table is the family's own wooden table, as at every meal at home (Olov, 15 November 2026): a cloth over it
+  // stood 0.03 higher.
+  it('takes Klonk over the front of the party table and back onto clear floor, without passing through it or its chairs', () => {
     stubCanvas();
     try {
       const stage = createStage(epilog, () => 0), flags = new Set(['partied']);
       const table = stage.group.getObjectByName('furniture:table')!;
       const cloth = new Box3().setFromObject(table).expandByVector(new Vector3(.15, 0, .15));
-      cloth.max.y = 1.68;
+      cloth.max.y = 1.65;
       const solids = [cloth, ...stage.group.children.filter(object => object.name === 'furniture:chair').map(object => new Box3().setFromObject(object))];
       const sequence = epilog.scenes!.find(scene => scene.id === 'klonk-table')!;
       let tableLandings = 0;

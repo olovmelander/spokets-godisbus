@@ -1,10 +1,15 @@
 import { BoxGeometry, Color, Group, InstancedMesh, Matrix4, MeshLambertMaterial, Object3D } from 'three';
 import type { PrologueLayout } from '../sim/prologue';
+import { TOY_SHELF } from './home-hall';
 
 /**
- * The prologue's set pieces: the open doorway with the hinge that tears the bag, the tear's mark on it, and the
- * deck's railing along its far side, that Pappa puts the frozen ghost on. Plain shapes: the house is Olov's to model (HANDOVER.md).
- * The family who act in front of them are the stage's (./stage.ts).
+ * The prologue's set pieces: the tear's mark where the bag tears, and the deck's railing along its far side, that Pappa
+ * puts the frozen ghost on. Plain shapes. The family who act in front of them are the stage's (./stage.ts).
+ *
+ * An open doorway stood free in the room there, its hinge tearing the bag. The home is the same in every chapter now
+ * (Olov, 15 November 2026: "Bord, golv, inredning och allt måste se likadant ut som hemmet i äventyr 2"), and no doorway
+ * stands in Äventyr 2's room: the bag catches on the corner of the toy shelf beside the sofa (./home-hall.ts), where the
+ * scrap of it stays.
  */
 export function createPrologueStage(layout: PrologueLayout | undefined, ground: (x: number) => number = () => 0) {
   const group = new Group();
@@ -28,12 +33,7 @@ export function createPrologueStage(layout: PrologueLayout | undefined, ground: 
   const weathered = '#b39a74';
   const deck = ground(layout.railing.x);
   const post = layout.railing.y - deck;
-  const parts: Box[] = [
-    // An open doorway and its visible hinge.
-    [layout.doorway.x, 2.8, -1.1, 0.22, 5.6, 0.25, wood],
-    [layout.doorway.x, 5.6, 0, 0.22, 0.2, 2.45, wood],
-    [layout.doorway.x, 1.5, -0.08, 0.25, 0.38, 0.27, '#7b745d'],
-  ];
+  const parts: Box[] = [];
   const rail = layout.rail;
   if (rail) {
     // The deck's railing along its far side, at a grown-up's waist: posts, a top rail and a lower one, with the
@@ -52,8 +52,9 @@ export function createPrologueStage(layout: PrologueLayout | undefined, ground: 
     );
   }
   group.add(boxes(parts));
-  const seam = boxes([[0, 0, 0, 0.06, 0.3, 0.15, '#6e3d29']]);
-  seam.position.set(layout.doorway.x + 0.08, layout.doorway.y + 1.48, 0.05);
+  // A scrap of the bag's paper, caught on the toy shelf's near top corner, the side he comes from.
+  const seam = boxes([[0, 0, 0, 0.16, 0.3, 0.06, '#6e3d29']]);
+  seam.position.set(TOY_SHELF.x - 1.64, layout.doorway.y + 1.62, TOY_SHELF.z + 0.53);
   group.add(seam);
   return {
     group,

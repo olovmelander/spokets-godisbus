@@ -3,8 +3,9 @@ import type { GhostState } from './sim';
 import type { GhostPerch, PlayerState, Vec } from './types';
 
 /**
- * The prologue's set: the doorway whose hinge tears the bag, the railing Pappa puts the frozen ghost on, and
- * the deck's edge it sneaks off to behind his back. Pappa notices it once the flag `pappaAfter` is set.
+ * The prologue's set: where the bag tears (`doorway`: a doorway stood there once; now the toy shelf's corner,
+ * ../render/prologue-stage.ts), the railing Pappa puts the frozen ghost on, and the deck's edge it sneaks off to behind
+ * his back. Pappa notices it once the flag `pappaAfter` is set.
  */
 export interface PrologueLayout {
   doorway: Vec; railing: Vec; edge?: Vec; pappaAfter?: string; pappaFrom?: number;

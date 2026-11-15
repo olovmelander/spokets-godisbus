@@ -92,7 +92,8 @@ describe('the lost things under the deck', () => {
     expect(not.flags.has('party:moa')).toBe(true);
     expect(not.said).toEqual(['partyThanks:moa']);
     // Each thing lies on the table by its owner, and only once it has been found.
-    expect(epilog.decor!.map((d) => d.after)).toEqual(['lost:coin', 'lost:clip', 'lost:marble', 'lost:brick']);
+    // The things he found, among the room's own (the toy shelf, the hall).
+    expect(epilog.decor!.filter((d) => d.after).map((d) => d.after)).toEqual(['lost:coin', 'lost:clip', 'lost:marble', 'lost:brick']);
     const lines: Record<string, string> = sv.lines;
     for (const line of ['coinBack', 'clipBack', 'marbleBack']) expect(lines[line]!.length).toBeLessThanOrEqual(40);
   });

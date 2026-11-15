@@ -9,6 +9,7 @@ import { PLACES } from '../../render/dressing';
 import { heightAt, type PlaceLook } from '../../render/dressing/kit';
 import { PACK, type ExtraContext, type ExtraFrame, type ViewExtra } from '../../render/extensions';
 import { roomThings } from '../../render/home-room';
+import { HALL, hallThings } from '../../render/home-hall';
 import { HOME_LAYOUT } from '../home-layout';
 import { littleCarving } from '../../render/little-carving';
 import { glowTexture } from '../../render/glow';
@@ -22,7 +23,6 @@ import { kitLife } from '../../render/kit-life';
 import { ambientOf, stepAmbient } from '../../render/ambient-animals';
 import { drawnWhile } from '../../render/idle';
 import { flashlight, lampColour, litLamp } from '../../render/flashlight';
-import { LOOK as RAIN_GEAR } from '../../render/rain-gear';
 import { DOLL_SIZE, DOLL_Z, ELOF_COAT, PUT_ON } from '../../render/elof-coat';
 import type { SpotProp } from '../../render/props';
 import type { ChapterData, Mover, RideLook, Spot } from '../../sim/types';
@@ -42,8 +42,7 @@ import { beaverLife } from './beaver';
 import { otterLife } from './otter';
 import { installRiverCreatures } from './river-creatures';
 import { RAPID_LANE, RAPID_STONES, riverStones } from './river-stones';
-import { DOOR, morgonen, WINK } from './chapters/morgonen';
-import { frontDoor } from '../../render/front-door';
+import { morgonen, WINK } from './chapters/morgonen';
 import { paintedBlink } from '../../render/epilogue-stage';
 import type { SceneFrame } from '../../sim/scene';
 import { PENDANT } from './chapters/stormkvall';
@@ -2534,20 +2533,6 @@ function spotLooks(): Record<string, (spot: Spot) => SpotProp | null> {
         },
       };
     },
-    toyShelf: (spot) => {
-      // A low toy shelf in the family's room, its front towards the camera: blocks, a ball, a ring tower, books, a truck.
-      const root = new Group();
-      root.position.set(spot.at.x, spot.at.y, -2);
-      const model = new Group();
-      model.userData.model = 'leksakshylla';
-      model.userData.disposeFallback = true;
-      const birch = solid('#dcbc8c', 0.8);
-      for (const x of [-1.64, 1.64]) model.add(new Mesh(new BoxGeometry(0.12, 1.8, 1).translate(x, 0.9, 0), birch));
-      for (const y of [0.14, 0.9, 1.78]) model.add(new Mesh(new BoxGeometry(3.3, 0.08, 1).translate(0, y, 0), birch));
-      model.add(new Mesh(new BoxGeometry(3.3, 1.7, 0.06).translate(0, 0.9, -0.46), solid('#c4a070', 0.85)));
-      root.add(model);
-      return { group: root, update: () => {} };
-    },
     // The same room on the evening of the storm, before anything has happened to it.
     homeEvening: () => ({ group: roomThings({ rug: HOME_LAYOUT.dining.x, blanket: false }), update: () => {} }),
     mormor: (spot) => figure(spot, 'mormor'),
@@ -2650,36 +2635,24 @@ const MORNING_WINDOWS = morgonen.house!.windows;
  */
 function aftermath(): SpotProp {
   const group = new Group();
-  const WALL = -8.5;
+  const WALL = HALL.wall;
   const SILL = 3.2;
-  const coats: BufferGeometry[] = [];
-  // The very coats and boots they wore through the storm (../../render/rain-gear.ts), on the hall's wall between two windows.
-  const WHO = ['pappa', 'mamma', 'moa', 'bertil'] as const;
-  const COATS = WHO.map((who, i) => ({ x: [37.6, 38.7, 39.8, 40.7][i]!, tall: [2.7, 2.5, 1.9, 1.5][i]!, colour: RAIN_GEAR[who].coat }));
-  coats.push(paint(new BoxGeometry(4.8, 0.16, 0.16).translate(39.45, 5.6, WALL - 0.24), '#6a4a2c'));
-  for (const coat of COATS) {
-    const mid = 5.45 - coat.tall / 2;
-    coats.push(paint(new CylinderGeometry(0.3, 0.56, coat.tall, 10).scale(1, 1, 0.36).translate(coat.x, mid, WALL), coat.colour));
-    coats.push(paint(new SphereGeometry(0.27, 10, 8).scale(1, 0.85, 0.6).translate(coat.x, 5.5, WALL), coat.colour));
-  }
-  // And beside them, small, the doll's raincoat Elof wore through the storm when he was small (../../render/elof-coat.ts).
+  // The very coats and boots they wore through the storm (../../render/rain-gear.ts), on the hall's wall between two
+  // windows, and the front door past them, where the morning ends: the same hall as at home in Äventyr 1
+  // (../../render/home-hall.ts). Beside the coats, small, the doll's raincoat Elof wore through the storm when he was
+  // small (../../render/elof-coat.ts).
   const LITTLE = { x: 41.55, tall: 0.6 };
-  coats.push(paint(new CylinderGeometry(0.09, 0.2, LITTLE.tall, 10).scale(1, 1, 0.4).translate(LITTLE.x, 5.45 - LITTLE.tall / 2, WALL), ELOF_COAT));
-  coats.push(paint(new SphereGeometry(0.1, 10, 8).scale(1, 0.85, 0.6).translate(LITTLE.x, 5.47, WALL), ELOF_COAT));
-  for (const side of [-1, 1]) coats.push(paint(new CylinderGeometry(0.04, 0.045, 0.34, 6).rotateZ(side * 0.28).translate(LITTLE.x + side * 0.15, 5.2, WALL + 0.02), ELOF_COAT));
-  const BOOTS = WHO.map((who, i) => ({ x: [37.5, 38.6, 39.7, 40.7][i]!, colour: RAIN_GEAR[who].boots }));
-  for (const boot of BOOTS) {
-    for (const side of [-0.2, 0.2]) {
-      coats.push(paint(new BoxGeometry(0.3, 0.74, 0.26).translate(boot.x + side, 0.37, WALL + 1), boot.colour));
-      coats.push(paint(new BoxGeometry(0.34, 0.16, 0.46).translate(boot.x + side, 0.08, WALL + 1.1), boot.colour));
-    }
-  }
-  group.add(new Mesh(mergeGeometries(coats), new MeshStandardMaterial({ vertexColors: true, roughness: 0.42 })));
+  const little: BufferGeometry[] = [
+    paint(new CylinderGeometry(0.09, 0.2, LITTLE.tall, 10).scale(1, 1, 0.4).translate(LITTLE.x, 5.45 - LITTLE.tall / 2, WALL), ELOF_COAT),
+    paint(new SphereGeometry(0.1, 10, 8).scale(1, 0.85, 0.6).translate(LITTLE.x, 5.47, WALL), ELOF_COAT),
+    ...[-1, 1].map((side) => paint(new CylinderGeometry(0.04, 0.045, 0.34, 6).rotateZ(side * 0.28).translate(LITTLE.x + side * 0.15, 5.2, WALL + 0.02), ELOF_COAT)),
+  ];
+  const hall = hallThings(little);
+  const COATS = hall.coats;
+  group.add(hall.group);
   // The sofa, the lamp, the plant, the rug and Moa's drawings where they were on the evening of the storm; the blanket
   // pulled half off the sofa now.
   group.add(roomThings({ rug: HOME_LAYOUT.dining.x, blanket: true }));
-  // The front door past the coats, where the morning ends (../../render/front-door.ts).
-  group.add(frontDoor(DOOR));
   // The pool they stand in: flat, and giving back the room's light.
   const pool = new Mesh(new CircleGeometry(1, 20).rotateX(-Math.PI / 2).scale(2.9, 1, 1.1).translate(39.1, 0.012, WALL + 1.3), new MeshStandardMaterial({ color: '#5a5040', roughness: 0.08, transparent: true, opacity: 0.55 }));
   group.add(pool);
