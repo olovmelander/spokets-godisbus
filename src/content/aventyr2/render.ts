@@ -2,7 +2,7 @@ import {
   AdditiveBlending, Box3, BoxGeometry, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color, ConeGeometry, CylinderGeometry, DataTexture, ExtrudeGeometry, InstancedBufferAttribute, DoubleSide, DynamicDrawUsage,
   Float32BufferAttribute, Group, InstancedMesh, LatheGeometry, LinearFilter, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, RepeatWrapping, RingGeometry,
   Points, PointsMaterial, Shape, ShapeGeometry, SphereGeometry, SRGBColorSpace, TorusGeometry, Vector2, Vector3,
-  type Material,
+  type Material, type PerspectiveCamera,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { PLACES } from '../../render/dressing';
@@ -324,6 +324,15 @@ const RAIN_MAX = 420;
 const RAIN_FOR = { low: 150, mid: 290, high: RAIN_MAX } as const;
 /** How near the play plane the camera comes in play, at the least: nearer than this, the box goes with it. */
 const RAIN_OUT = 6;
+/**
+ * The sky of the storm's eye is far off, and stays as far in front of the camera however far back a shot takes it: its
+ * stars 115 to 125 off and its moon 130, inside the camera's sight of 140 (src/render/view.ts). They stood at a fixed depth,
+ * and a picture that opened out (the eye opening, him grown with the family on the shore, on a narrower screen) took the
+ * camera back until they were past the end of its sight (Olov, 15 November 2026: "I kapitlet 'Stormens öga' zoomar kameran
+ * ut, och då försvinner stjärnorna och månen"). `eye`: how far in front of the camera their depths are counted from;
+ * `moon`: how far beyond that the moon is.
+ */
+export const SKY = { eye: 20, moon: 110 } as const;
 
 /** The flag at which the storm blows the window open: the gust in Stormkvällen's `fonstret`. */
 const WINDOW_BURST = 'gust';
@@ -711,6 +720,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   starGeometry.setAttribute('position', new Float32BufferAttribute(stars, 3));
   const starMaterial = new PointsMaterial({ color: '#f2f4ff', size: 0.55, transparent: true, opacity: 0, depthWrite: false, fog: false, sizeAttenuation: true });
   const starField = new Points(starGeometry, starMaterial);
+  starField.name = 'storm-stars';
   starField.frustumCulled = false;
   const moon = new Group();
   // Named: the light shafts of the visual upgrade find the moon by it (src/render/lift/atmosphere.ts).
@@ -1267,8 +1277,13 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
       }
       starMaterial.opacity = calm;
       drawnWhile(starField, calm > 0);
-      starField.position.x = cx * 0.85;
-      moon.position.set(cx * 0.92 + 26, cy + 18, -110);
+      // The stars and the moon keep their place in the picture as a shot opens out (`SKY`). The moon stands to the right,
+      // low over the lake; on a narrow picture (a phone held upright) it comes in from beyond the picture's side.
+      const far = camera.position.z - SKY.eye;
+      starField.position.set(cx * 0.85, 0, far);
+      const lens = camera as PerspectiveCamera;
+      const side = lens.isPerspectiveCamera ? 0.62 * Math.tan((lens.fov * Math.PI) / 360) * lens.aspect * (SKY.eye + SKY.moon) : Infinity;
+      moon.position.set(cx + Math.min(26 - cx * 0.08, side), cy + 18, far - SKY.moon);
       (moon.children[0] as Mesh<SphereGeometry, MeshBasicMaterial>).material.opacity = calm;
       (moon.children[1] as Mesh<PlaneGeometry, MeshBasicMaterial>).material.opacity = calm * 0.5;
       drawnWhile(moon, calm > 0);
