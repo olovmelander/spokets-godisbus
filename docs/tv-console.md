@@ -42,7 +42,7 @@ Every lap is 960 m, and a race is three laps (`src/kart/sim/courses.ts` holds ea
   and 1 points; the most points after the fourth race wins, and level on points the better place in the last race
   is ahead. From Pause a cup race can be driven again; its points are counted only when it is finished.
 - **Speed class:** 50, 100 or 150 cc, which is 78 %, 90 % or all of full speed (108 km/h, about 147 with the strongest boost)
-  for every kart in the race. At 50 cc the wheel alone takes most bends; at 150 cc the hairpins ask for a drift.
+  for every kart in the race. At 50 cc the wheel alone takes most bends; at 150 cc the hairpins ask for a lift.
 - **Difficulty:** *Lugnt* (slower rivals that wait and are given fewer things to throw, a start in the middle of the
   field, a tighter wheel and a nudge away from the edge), *Äventyr* (rivals a little slower than the player, a start
   at the back) and *Mästare* (rivals as fast as the player, who chase harder).
@@ -54,12 +54,14 @@ Every lap is 960 m, and a race is three laps (`src/kart/sim/courses.ts` holds ea
 - **Eight karts.** Elof's crown kart against seven wooden animals: Räven, Haren, Ugglan, Ekorren, Igelkotten,
   Älgen and Björnen.
 - **Handling** (`src/kart/sim/kart.ts`). The drift button hops. Held through a bend it locks a drift to that side;
-  steering in tightens it and steering out widens it (at full speed 1.8, 1.05 and 0.3 rad/s with the wheel in, straight
-  and out, against 1.27 for the wheel alone; Olov, 15 November 2026: it slid too much at 2.4 and 1.35). The drift
-  charges blue, then gold, then pink sparks, and
-  letting go spends them as a turbo of that size. The wheel alone turns a wide arc at full speed, so the hairpins
-  ask for a drift or a lift. Grass, snow, mud and water slow the kart; a boost carries it over them. Barriers cost
-  little on a graze and a lot square on.
+  steering in tightens it and steering out holds it straight: at full speed 1.36, 0.68 and 0 rad/s with the wheel in,
+  straight and out, as tight as the wheel alone at full lock (1.33) and no tighter. The kart's body is at most 11.5°
+  across its way, about twice the wheel's, and swings out over a quarter of a second. Olov, 15 November 2026, twice: it
+  slid too much at 2.4 and 1.35 rad/s with the wheel in and straight, and then still at 1.8 and 1.05 ("svänger man
+  alldeles för snabbt"), the body 37° and then 26° across and there in a tenth of a second. The drift charges blue, then
+  gold, then pink sparks, and letting go spends them as a turbo of that size: a drift is a curve held for its sparks. The
+  wheel alone turns a wide arc at full speed, so the hairpins ask for a lift. Grass, snow, mud and water slow the kart; a
+  boost carries it over them. Barriers cost little on a graze and a lot square on.
 - **More ways to go faster.** Boost strips on the road, a trick (the drift button on a ramp) that lands with a boost,
   a rocket start (the drift button pressed inside the last second of the countdown and held), and the pull of the
   air behind another kart. Sweets on the road count to ten; each adds a little top speed, and a hit drops three.

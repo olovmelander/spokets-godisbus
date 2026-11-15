@@ -221,24 +221,31 @@ describe('arcade handling', () => {
     drive(kart, road, 3, { throttle: 0, brake: 1 }); expect(kart.speed).toBeGreaterThan(-8);
     drive(kart, road, 1); expect(kart.speed).toBeGreaterThan(5); expect(finite(kart)).toBe(true);
   });
-  // Olov, 15 November 2026: "man sladdar lite för mycket när man använder sladdknappen". A held drift with the wheel
-  // straight turned more than the wheel alone at full lock, and twice as much with the wheel turned in.
-  it('turns a wide arc on the wheel at full speed, a tighter one when slower, and tighter in a drift, but not wildly', () => {
+  // Olov, 15 November 2026: "man sladdar lite för mycket när man använder sladdknappen", then "fortfarande för mycket
+  // sladd" and "När man sladdar just nu så svänger man alldeles för snabbt". A held drift turned 1.4 times as much as the
+  // wheel alone at full lock with the wheel in (after 1.9 times at first), and the body swung 26° across in a tenth of a
+  // second.
+  it('turns a wide arc on the wheel at full speed, a tighter one when slower, and in a drift no tighter than the wheel at full lock', () => {
     expect(TOP_SPEED / turnRate(TOP_SPEED)).toBeGreaterThan(20); expect(TOP_SPEED / turnRate(TOP_SPEED)).toBeLessThan(25);
     expect(15 / turnRate(15)).toBeLessThan(8); expect(turnRate(0)).toBe(0);
     expect(turnRate(TOP_SPEED, true)).toBeGreaterThan(turnRate(TOP_SPEED) * 1.3);
     const plain = fresh(), drifting = fresh(), road = open();
     drive(plain, road, 1, { steer: 1 }); drive(drifting, road, 1, { steer: 1, drift: true });
     expect(plain.heading).toBeGreaterThan(1); expect(plain.heading).toBeLessThan(1.45);
-    expect(drifting.drift).toBe(1); expect(drifting.heading).toBeGreaterThan(plain.heading * 1.3);
-    expect(drifting.heading).toBeLessThan(plain.heading * 1.5);
-    expect(Math.abs(drifting.slip)).toBeGreaterThan(.4); expect(Math.abs(drifting.slip)).toBeLessThan(.5); expect(Math.abs(plain.slip)).toBeLessThan(.15);
-    // Into a drift, then held a second with the wheel straight: less of a turn than the wheel alone at full lock.
-    const straight = fresh();
-    drive(straight, road, .15, { steer: 1, drift: true });
-    const before = straight.heading;
-    drive(straight, road, 1, { steer: 0, drift: true });
-    expect(straight.drift).toBe(1); expect(straight.heading - before).toBeLessThan(plain.heading * .9);
+    expect(drifting.drift).toBe(1); expect(drifting.heading).toBeGreaterThan(plain.heading * .95);
+    expect(drifting.heading).toBeLessThan(plain.heading * 1.12);
+    // Its body a little across its way, about twice the wheel's, and swung out over a quarter of a second, not at once.
+    expect(Math.abs(drifting.slip)).toBeGreaterThan(.15); expect(Math.abs(drifting.slip)).toBeLessThan(.24); expect(Math.abs(plain.slip)).toBeLessThan(.15);
+    const swinging = fresh(); drive(swinging, road, .1, { steer: 1, drift: true });
+    expect(swinging.drift).toBe(1); expect(Math.abs(swinging.slip)).toBeLessThan(Math.abs(drifting.slip) * .5);
+    // Into a drift, then held a second with the wheel straight: little more than half the wheel's turn; with it out, straight.
+    for (const [steer, most] of [[0, .65], [-1, .1]] as const) {
+      const held = fresh();
+      drive(held, road, .15, { steer: 1, drift: true });
+      const before = held.heading;
+      drive(held, road, 1, { steer, drift: true });
+      expect(held.drift).toBe(1); expect(held.heading - before).toBeLessThan(plain.heading * most); expect(held.heading - before).toBeGreaterThan(-.05);
+    }
   });
   it('hops on a press, locks a drift to the side it was begun on, and charges blue, gold and pink sparks', () => {
     const kart = fresh(), road = open(), events: KartEvent[] = [];
@@ -526,7 +533,9 @@ describe('items', () => {
   });
   it('the rivals get, and use, every kind of thing over a few races', () => {
     const used = new Set<string>(), got = new Set<string>();
-    for (const seed of [11, 12, 13]) {
+    // Four: the rocket goes almost only to the last of the field (16 in about 170 there, 2 in the middle), a race or two in
+    // three gives one, and with the drift calmer (15 November 2026) these three seeds' races gave none.
+    for (const seed of [11, 12, 13, 14]) {
       const race = started({ seed }); Object.assign(race.state.player, { distance: -400 });
       for (let i = 0; i < 100 / RACE_STEP; i++) {
         race.tick(idle, RACE_STEP);
