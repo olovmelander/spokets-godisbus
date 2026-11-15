@@ -40,6 +40,7 @@ import { createAfloat } from './afloat';
 import { createRain } from './rain';
 import { PACK } from './extensions';
 import { farPlane } from './far-plane';
+import { gungflyExtra } from './gungfly';
 import { installLift } from './lift';
 import { paintStreetMirror } from './village';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
@@ -529,7 +530,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const night = buildNight(chapter, sky, hemisphere, sun);
   scene.add(night.group);
   // What a chapter pack adds: Äventyr 2's storm (./extensions.ts).
-  const extras = PACK.extras.map((make) => make({ chapter, scene, sky, hemisphere, sun })).filter((extra) => extra !== null);
+  // Every chapter's soft tussocks are drawn as gungfly (./gungfly.ts): Myren's and Flärken's.
+  const extras = [...PACK.extras, gungflyExtra].map((make) => make({ chapter, scene, sky, hemisphere, sun })).filter((extra) => extra !== null);
   // The visual upgrade's systems, for every chapter (./lift/, docs/visual-upgrade.md).
   installLift();
   const lifts = PACK.lifts.map((make) => make({ chapter, scene, sky, hemisphere, sun, place, dressing: dressing?.group ?? null })).filter((lift) => lift !== null);
@@ -2960,7 +2962,7 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
     // tussock of the bog, not a bowl. Seen from both sides, so each blade is twice, once each way round.
     const shape = colour ? mergeGeometries([geometry, sedge(t.width, t.x)]) : geometry;
     const mesh = new Mesh(shape ?? geometry, moss);
-    // Named, for a chapter that draws its own in their place and follows these (Flärken's gungfly, content/aventyr2/gungfly.ts).
+    // Named, for the gungfly drawn in their place, which follows these (./gungfly.ts).
     mesh.name = 'tussock';
     mesh.position.set(t.x, t.y, 0);
     return mesh;

@@ -3,17 +3,18 @@ import {
   MeshBasicMaterial, MeshStandardMaterial, Object3D, RingGeometry, SphereGeometry,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import type { ExtraContext, ExtraFrame, ViewExtra } from '../../render/extensions';
-import { groundDetail } from '../../render/ground-detail';
-import { drawnWhile } from '../../render/idle';
-import { openWaterAt } from '../../render/water';
-import { ELOF_HALF_WIDTH, GRAVITY, SINK_DEPTH } from '../../sim/constants';
-import type { Tussock } from '../../sim/types';
+import type { ExtraContext, ExtraFrame, ViewExtra } from './extensions';
+import { groundDetail } from './ground-detail';
+import { drawnWhile } from './idle';
+import { openWaterAt } from './water';
+import { ELOF_HALF_WIDTH, GRAVITY, SINK_DEPTH } from '../sim/constants';
+import type { Tussock } from '../sim/types';
 
 /**
- * Flärken's gungfly (Olov, 14 November 2026: "Kan vi förbättra designen och texturerna på gungflyet som sjunker när Elof
- * står stilla på det?"): the floating mats between the shore and the jetty, which sink while he stands on one. They
- * were plain dark green mounds with a few blades on them.
+ * The gungfly: Flärken's (Olov, 14 November 2026: "Kan vi förbättra designen och texturerna på gungflyet som sjunker när
+ * Elof står stilla på det?"), the floating mats between the shore and the jetty, which sink while he stands on one; and
+ * Myren's, the pale tussocks out on the bog that sink under him (Olov, 15 November 2026: "Kan vi designa och förbättra
+ * designen och texturen på gungflyt i kapitlet myren!"). They were plain mounds of moss with a few blades on them.
  *
  * Each is a raft of bog now, as a quaking bog's edge is: a cushion of sphagnum on top, in greens, straw and rust, low
  * hummocks at its back and level where he stands; under it the mat itself, pale dead moss darkening down into wet
@@ -24,7 +25,7 @@ import type { Tussock } from '../../sim/types';
  * It floats: it rocks a little on the water, and tips towards him when he stands on it. As it sinks, the water wells
  * up through the moss round his boots and rings spread from it over the lake; when he leaves it, it comes up again
  * dripping. The sinking itself is the simulation's and is not changed: each mat is drawn where the view has its own
- * (src/render/view.ts, buildTussocks, which this takes the place of), its top where his feet are.
+ * (./view.ts, buildTussocks, which this takes the place of), its top where his feet are.
  */
 
 /** A mat's measures, in EL: how far it reaches behind and in front of the play plane, and how far down its sides go. */
@@ -215,9 +216,9 @@ export function gungflyMat(width: number, seed: number, water: number): BufferGe
 /** How much of a mat's rocking, tipping and dripping is drawn: its state from frame to frame. */
 interface Mat { def: Tussock; mesh: Mesh; rest: number; was: number; tip: number; tipSpeed: number; dripped: number }
 
-/** Flärken's gungfly (registered by ./render.ts). Other chapters keep the view's own tussocks. */
+/** Every chapter's soft tussocks, drawn as gungfly (./view.ts adds it to the extras): Myren's and Flärken's. */
 export function gungflyExtra({ chapter, scene }: ExtraContext): ViewExtra | null {
-  if (chapter.id !== 'flarken' || !chapter.tussocks?.length) return null;
+  if (!chapter.tussocks?.length) return null;
   const group = new Group();
   group.name = 'gungfly';
   // Wet moss: a little sheen. Seen from both sides, for its blades; and seen close it has the ground's own grain, damp

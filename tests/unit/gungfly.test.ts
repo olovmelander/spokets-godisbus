@@ -4,13 +4,13 @@ import { describe, expect, it } from 'vitest';
 import '../../src/content/aventyr2/aventyr2';
 import { alven } from '../../src/content/aventyr2/chapters/alven';
 import { flarken } from '../../src/content/aventyr2/chapters/flarken';
-import { gungflyExtra, gungflyMat } from '../../src/content/aventyr2/gungfly';
+import { gungflyExtra, gungflyMat } from '../../src/render/gungfly';
 import type { ExtraFrame } from '../../src/render/extensions';
 import { openWaterAt } from '../../src/render/water';
 import { SINK_DEPTH } from '../../src/sim/constants';
 
 /**
- * Flärken's gungfly as it is drawn (src/content/aventyr2/gungfly.ts; Olov, 14 November 2026: "Kan vi förbättra designen
+ * Flärken's gungfly as it is drawn (src/render/gungfly.ts; Olov, 14 November 2026: "Kan vi förbättra designen
  * och texturerna på gungflyet som sjunker när Elof står stilla på det?"). They were plain dark green mounds. Each is a
  * raft of bog now, drawn in the place of the view's own mound and following it as the simulation sinks it: level where
  * he stands, down under the water at its sides, with water welling up round his boots as it sinks.

@@ -55,7 +55,6 @@ import { teamBenchesExtra } from './team-benches';
 import { BARK_BOAT, barkBoat } from './bark-boat';
 import { volleyNetExtra } from './volley-net';
 import { floatingBark } from './bark-raft';
-import { gungflyExtra } from './gungfly';
 import { fieldBoulder } from './field-boulder';
 import { hazelExtra } from './hazel';
 import { vistaExtra } from './billsta-vista';
@@ -3242,7 +3241,6 @@ export function installPictures(): void {
   // Flärken's volleyball net, which dips and springs (./volley-net.ts).
   if (!PACK.extras.includes(volleyNetExtra)) PACK.extras.push(volleyNetExtra);
   // Flärken's gungfly, rafts of bog that tip and well up as they sink (./gungfly.ts).
-  if (!PACK.extras.includes(gungflyExtra)) PACK.extras.push(gungflyExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
   // The view from Billaberget's brow down over the narrow (./billsta-vista.ts).
