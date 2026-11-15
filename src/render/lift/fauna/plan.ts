@@ -17,10 +17,10 @@ export interface Climber { tree: Tree; a: number; h: number }
 /** A place to rest: where, and which way it faces (a turn about the upright: 0 along +x). */
 export interface Rest { at: V3; yaw: number }
 export interface Flock { x: number; y: number; species: Species; birds: Rest[]; perch: boolean; shelter: boolean }
-/** A stone or a stump to peek from behind: its foot, how high its top is, how deep and wide it is, and the side to peek out on. */
 /**
- * Where a being peeks out from: over a stone or a stump, its top and its size, which side it leans out on, whether it wears
- * lichen for a cap (else a leaf), and whether it holds a big leaf over its head against the rain (in the storm).
+ * A stone or a stump to peek from behind: its foot, how high its top is, how deep and wide it is, the side to peek out
+ * on, whether a being there wears lichen for a cap (else a leaf), and whether it holds a big leaf over its head against
+ * the rain (in the storm).
  */
 export interface Peek { at: V3; top: number; deep: number; wide: number; side: number; lichen: boolean; umbrella: boolean }
 export interface Carved extends Rest { shape: Carving }
