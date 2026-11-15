@@ -12,6 +12,8 @@
     "plant": { "x": 0.6, "z": -7.8 },
     "drawings": -20.5, "drawingsLift": 2.2
   },
+  "toyShelf": { "x": 21.3 },
+  "hall": { "door": 44.4, "window": 52, "end": 62 },
   "television": {
     "x": 30.8, "z": -7.5, "yaw": -0.12,
     "consoleWidth": 4.1, "consoleDepth": 1.4, "consoleTop": 1.52,

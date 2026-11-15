@@ -81,6 +81,7 @@ export const VOICE_LINES = [
   { key: 'gardenFound', speaker: 'elof', situation: 'Finding sister\'s leaf drawing', tag: '[happy little boy, discovering]', text: 'En lövteckning! Den är Moas.' },
   { key: 'givesAway', speaker: 'elof', situation: 'Shocked ghost gives away candy', tag: '[puzzled little boy, surprised whisper]', text: 'Spöket ger bort mitt godis!?' },
   { key: 'vittraBerry', speaker: 'elof', situation: 'Offering a lingonberry to little creatures', tag: '[gentle, friendly small boy whisper]', text: 'Ett lingon till er också.' },
+  { key: 'forestJayLichen', speaker: 'elof', situation: 'The jay he gave a lingonberry flew up and let the beard lichen down for him to climb', tag: '[grateful, delighted little boy]', text: 'Tack, lavskrikan! Nu klättrar jag upp.' },
   { key: 'forestVittraClue', speaker: 'elof', situation: 'Receiving clue from vittror', tag: '[curious, thoughtful little boy]', text: 'En liten bild från vittrorna.' },
   { key: 'forestTrial', speaker: 'elof', situation: 'Pinecone seesaw trial', tag: '[thinking little boy, working it out]', text: 'Oj! Nästan. Den större väger mer.' },
   { key: 'thanked', speaker: 'elof', situation: 'Ghost thanks him', tag: '[warmly surprised little boy, gentle smile]', text: 'Spöket tackade mig!' },

@@ -12,7 +12,7 @@ import { STONE } from '../../src/render/bark-detail';
 import { FLOOR_SHAPES, restock, stretch } from '../../src/render/dressing/forest';
 import { shoreAt } from '../../src/render/dressing/ground';
 import { heightAt, landscape, makeKit } from '../../src/render/dressing/kit';
-import { LANDMARKS, forestKit, forestLandmarks, forestSocket, installForest, placing, rollingCone, standingCone, together, type ForestKit } from '../../src/render/forest-kit';
+import { LANDMARKS, forestKit, forestLandmarks, forestSocket, installForest, kitMaterial, placing, rollingCone, standingCone, together, type ForestKit } from '../../src/render/forest-kit';
 import { moverProp, rideProp, spotProp } from '../../src/render/props';
 
 const forest = COURSES['granskog']!;
@@ -56,6 +56,8 @@ function baked(): { model: Group; json: { images?: unknown[]; textures?: unknown
     geometry.setAttribute('normal', new Float32BufferAttribute(numbers(primitive.attributes.NORMAL).values, 3));
     const colour = numbers(primitive.attributes.COLOR_0);
     geometry.setAttribute('color', new Float32BufferAttribute(colour.values.filter((_, i) => i % colour.size < 3), 3));
+    // Old wood says where on its tree each corner is: three's loader names the attribute so.
+    if (primitive.attributes._BARK !== undefined) geometry.setAttribute('_bark', new Float32BufferAttribute(numbers(primitive.attributes._BARK).values, 3));
     geometry.setIndex(numbers(primitive.indices).values);
     const mesh = new Mesh(geometry, new MeshStandardMaterial());
     mesh.name = node.name;
@@ -112,8 +114,12 @@ describe('the forest kit from Blender', () => {
   it('has no texture, so nothing can be written or drawn on any of it: its colours are on its corners', () => {
     expect(json.images).toBeUndefined();
     expect(json.textures).toBeUndefined();
-    for (const mesh of json.meshes) {
-      expect(Object.keys(mesh.primitives[0]!.attributes).sort()).toEqual(['COLOR_0', 'NORMAL', 'POSITION']);
+    const nodes = (json as unknown as { nodes: { name: string; mesh?: number }[] }).nodes;
+    for (const node of nodes) {
+      if (node.mesh === undefined) continue;
+      // The fallen spruce is old wood: its corners also say where on the tree they are, for the shader that draws it.
+      const own = node.name === 'stock' ? ['COLOR_0', 'NORMAL', 'POSITION', '_BARK'] : ['COLOR_0', 'NORMAL', 'POSITION'];
+      expect(Object.keys(json.meshes[node.mesh]!.primitives[0]!.attributes).sort(), node.name).toEqual(own);
     }
   });
 
@@ -254,6 +260,79 @@ describe('the landmarks', () => {
     expect(installForest(scene, forest, kit)).toBe(0);
     expect(scene.children).toHaveLength(4);
     for (const holder of scene.children) expect(holder.children).toHaveLength(1);
+  });
+});
+
+/**
+ * Olov, 15 November 2026, of the fallen spruce after the seesaw, when its bark's scales had been painted on its corners:
+ * "Denna stock ser lite annorlunda ut än alla andra fallna stockar och texturer, använde vi Blender och texturer på samma
+ * sätt som de andra fallna stockarna?" The scales were finer than the corners, so each corner showed as a block. It is
+ * old wood now, made as the nature kit's windfalls are and drawn by their shader (src/render/old-wood.ts).
+ */
+describe('the fallen spruce, old wood as the windfalls are', () => {
+  /** What each corner of the stock says: its face's kind, and how far along and round the tree it is, in EL. */
+  const said = () => {
+    const shape = kit.shape('stock')!;
+    const bark = shape.getAttribute('_bark');
+    return { shape, at: (i: number) => ({ kind: Math.round(bark.getX(i) * 16), along: bark.getY(i) * 40 - 8, round: bark.getZ(i) * 40 - 8 }) };
+  };
+  /** The corners of each triangle of its front, as the camera sees it: in front of the path, below the moss of its top. */
+  const front = (kind: number) => {
+    const { shape, at } = said();
+    const position = shape.getAttribute('position');
+    const index = shape.index!;
+    const found: number[][] = [];
+    for (let t = 0; t < index.count; t += 3) {
+      const corners = [index.getX(t), index.getX(t + 1), index.getX(t + 2)];
+      if (corners.every((i) => position.getZ(i) > 0.3 && position.getY(i) < 0.65 && at(i).kind === kind)) found.push(corners);
+    }
+    return found;
+  };
+
+  it('says on every corner what its face is and where on the tree it is, as the nature kit\'s windfalls do', () => {
+    const { shape, at } = said();
+    expect(shape.getAttribute('_bark'), 'the stock is old wood').toBeDefined();
+    const position = shape.getAttribute('position');
+    const kinds = new Map<number, number>();
+    for (let i = 0; i < position.count; i++) {
+      const { kind, along, round } = at(i);
+      kinds.set(kind, (kinds.get(kind) ?? 0) + 1);
+      // The spruce's bark is measured along it as the path is, and round it from under its front.
+      if (kind === 1) {
+        expect(Math.abs(along - position.getX(i)), `a corner of its bark at x ${position.getX(i).toFixed(2)}`).toBeLessThan(0.02);
+        expect(round).toBeGreaterThanOrEqual(0);
+        expect(round).toBeLessThan(5);
+      }
+    }
+    // Spruce bark, the bare wood of its breaks and its boughs' stubs, the moss of its cushions, and the fungi's shelves.
+    expect([...kinds.keys()].sort((a, b) => a - b)).toEqual([0, 1, 4, 6]);
+    // Its front, as the camera sees it, is the spruce's bark.
+    expect(front(1).length).toBeGreaterThan(1000);
+  });
+
+  it('carries only broad tones on the corners of its bark: its scales are drawn, never painted on them as blocks', () => {
+    const { shape } = said();
+    const colour = shape.getAttribute('color');
+    const light = (i: number) => 0.2126 * colour.getX(i) + 0.7152 * colour.getY(i) + 0.0722 * colour.getZ(i);
+    const steps = front(1).map((corners) => Math.max(...corners.map(light)) - Math.min(...corners.map(light))).sort((a, b) => a - b);
+    // Painted on its corners, the scales stepped 0.06 across a triangle of its front in the middle and 0.13 in one in ten.
+    expect(steps[Math.floor(steps.length / 2)]).toBeLessThan(0.03);
+    expect(steps[Math.floor(steps.length * 0.9)]).toBeLessThan(0.08);
+  });
+
+  it('is drawn with the windfalls\' shader, both sides, and the rest of the kit as before', () => {
+    const stock = kit.shape('stock')!;
+    expect(kit.wood).toBeDefined();
+    expect(kitMaterial(kit, stock)).toBe(kit.wood);
+    expect(kit.wood!.customProgramCacheKey()).toContain('old-wood');
+    expect(kit.wood!.side).toBe(DoubleSide);
+    for (const name of ['jattekotte', 'myrstack', 'virvelsten', 'kotte']) expect(kitMaterial(kit, kit.shape(name)!), name).toBe(kit.material);
+    const scene = forestLandmarks(forest);
+    installForest(scene, forest, kit);
+    const log = scene.getObjectByName('landmark:log')!;
+    const meshes: Mesh[] = [];
+    log.traverse((node) => { if ((node as Mesh).isMesh) meshes.push(node as Mesh); });
+    expect(meshes.map((mesh) => mesh.material)).toEqual([kit.wood]);
   });
 });
 

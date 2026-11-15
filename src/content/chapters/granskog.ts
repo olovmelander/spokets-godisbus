@@ -5,8 +5,8 @@ import type { Candy, ChapterData } from '../../sim/types';
  * Kapitel 2: Granskogen (plan §3.4), in greybox. Units: EL. The places, from the left:
  *
  * 1. **The forest floor:** roots and a cone as big as a car.
- * 2. **Lavskrikan** (P6): Elof picks a lingonberry and gives it to the jay. It shows him the beard lichen
- *    that hangs down a high root, and he climbs it.
+ * 2. **Lavskrikan** (P6): Elof picks a lingonberry and gives it to the jay. It flies up over a high root's edge
+ *    and lets the beard lichen down for him, as it does in Stormskogen, and he climbs it (`LICHEN`).
  * 3. **The ant road** (P5): a twig lies across it. Pulled away with the lace, and the ants carry him up
  *    their hill. From the top he sees the ghost leave a candy at the vittra door. A root leads down.
  * 4. **Kottlavinen** (E2): a needle slope. He nudges a loose cone at its top, and from then on cones roll
@@ -71,6 +71,17 @@ const ANT_LIFT = { from: { x: 58.6, y: 4 }, to: { x: 61.6, y: 10 }, rise: 3, tim
 const EDDY_LEAF = -9.36;
 /** Where the ghost stands once the leaf is pulled up level with the stone: on its top, at its middle (the mover `rescue`). */
 const RESCUED = { x: 186.8, y: -7.5 };
+/**
+ * The jay brings the beard lichen down, as it does in Stormskogen (Olov, 15 November 2026: "I kapitel granskog i äventyr
+ * 1 så måste fågeln man ger ett lingon flyga upp och släppa ner laven så att Elof kan klättra upp. Precis som fågeln man
+ * ger lingonen till gör i äventyr 2. Vi måste lägga in en kommentar från Elof också när fågeln gör detta"). Given its
+ * berry it swallows it, flies up over the high root's edge to the dead snag where the lichen hangs wound up, and its
+ * second tug frees it (`loose`, seconds into the scene): the lichen unrolls down the face (`unroll`), and the jay looks
+ * down at him from the snag and calls (../../render/jay-lichen.ts). Nothing is there to climb before it has come down
+ * (`down`); as it reaches the ground he thanks the bird. He is free all the while. A game taken up after the berry finds
+ * it down (the scene is `live`, and its end sets the flag too).
+ */
+const LICHEN = { scene: 'laven', down: 'lichen:down', loose: 3.4, unroll: 0.6 };
 const LAUNCH = { from: { x: 113.2, y: -8 }, to: { x: 128.4, y: -8 }, rise: 5, time: 1.8, corridor: 0.4 };
 const TRIAL = { from: { x: 113.2, y: -8 }, to: { x: 116.5, y: -8 }, rise: 1.3, time: 1.5, corridor: 0.15 };
 const CAP = { from: { x: 154.6, y: -8 }, to: { x: 177.4, y: -8 }, rise: 0.15, time: 8, corridor: 0.3 };
@@ -145,6 +156,12 @@ export const granskog: ChapterData = {
         { at: .95, kind: 'sparkle', from: { x: RESCUED.x - .2, y: RESCUED.y + .45, z: .1 }, seconds: 1.3 },
       ],
     },
+  }, {
+    // The jay, given its berry, brings the beard lichen down the high root (`LICHEN`). He is free in it. Its own call
+    // sounds as it looks down at him from the snag.
+    id: LICHEN.scene, on: 'jay', live: true, seconds: LICHEN.loose + 2.4,
+    cues: [{ at: LICHEN.loose + LICHEN.unroll, flag: LICHEN.down }],
+    sounds: [{ at: LICHEN.loose + 1.05, sound: 'bird' }],
   }],
   goalX: 204,
   // For the picture only (content/life.ts): far in among the trunks, where the trail is calm after a big candy. A moose
@@ -230,11 +247,15 @@ export const granskog: ChapterData = {
     { x: 179, y: -8 },
     { x: 194.6, y: -8 },
   ],
+  // The lichen hangs down in a game taken up after the jay had its berry, as in one that saw it brought down.
+  sets: [{ flag: LICHEN.down, when: [`scene:${LICHEN.scene}`] }],
   climbs: [
     // C2 has its own way down to the ordinary hilltop, without a long drop.
     { x: 63.1, bottom: 10, top: 14, exit: -1, needs: 'found:chokladkola', look: 'root' },
-    // The beard lichen: the jay shows it once it is his friend.
-    { x: 43.7, bottom: 0, top: 4, exit: 1, needs: 'jay', look: 'lichen' },
+    // The beard lichen: the jay, once it is his friend, tugs it loose up on the edge, and it is there to climb when it
+    // has unrolled to the ground (`LICHEN`).
+    { x: 43.7, bottom: 0, top: 4, exit: 1, needs: LICHEN.down, look: 'lichen',
+      broughtBy: { scene: LICHEN.scene, jay: 'jay', at: LICHEN.loose, seconds: LICHEN.unroll } },
     // The root down from the anthill.
     { x: 66.3, bottom: 0, top: 10, exit: -1, look: 'root' },
     // A root down the hilltop's near side, back to the ant road. It is there once the ants have carried him
@@ -416,6 +437,8 @@ export const granskog: ChapterData = {
     { at: { x: 205.5, y: -8 }, thought: { picture: 'mountain', after: 'placed:rescue' } },
   ],
   beats: [
+    // As the lichen the jay let down reaches the ground beside him (`LICHEN`); not in a game taken up far beyond it.
+    { id: 'jay-lichen', on: LICHEN.down, within: [30, 50], who: 'elof', line: 'forestJayLichen' },
     { id: 'vittra', at: 61.8, who: 'elof', line: 'givesAway' },
     { id: 'vittra-gift', on: 'vittra:gift', who: 'elof', line: 'vittraBerry' },
     { id: 'family:pappa', at: 106.8, until: 'seesaw', who: 'pappa', line: 'familyPappa', read: true },
@@ -444,6 +467,9 @@ export const granskog: ChapterData = {
     // At the ants the picture rises to the hilltop they will carry him to, so that it is already up there with him as
     // they lift him: from the ant road it lagged under him and the anthill's near side hid him.
     { from: 57.4, to: 59.6, zoom: 1.3, lift: 2.4 },
+    // From the jay to the high root's foot the picture takes in the root's edge four EL up, the snag on it and the jay's
+    // flight up to it, as in Stormskogen.
+    { from: 33.3, to: 44, zoom: 1.7, lift: 1.5 },
     { from: 40, to: 66, zoom: 1.25, lift: 0.3 },
     // On the slope the picture looks less far ahead, so that the cones coming from behind are seen.
     { from: 68, to: 105, zoom: 1.45, lead: 0.3 },

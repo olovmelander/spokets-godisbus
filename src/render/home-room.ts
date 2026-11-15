@@ -7,7 +7,7 @@ import { sequence } from './dressing/kit';
 import { HOME_LAYOUT } from '../content/home-layout';
 
 // Shared by both adventures. The room models can load without importing the second adventure's story pack.
-const paint = (geometry: BufferGeometry, colour: string): BufferGeometry => {
+export const paint = (geometry: BufferGeometry, colour: string): BufferGeometry => {
   const part = geometry.index ? geometry.toNonIndexed() : geometry;
   const tint = new Color(colour);
   const count = part.getAttribute('position').count;
@@ -17,7 +17,7 @@ const paint = (geometry: BufferGeometry, colour: string): BufferGeometry => {
   part.deleteAttribute('uv');
   return part;
 };
-const box = (w: number, h: number, d: number, x: number, y: number, z: number, colour: string) =>
+export const box = (w: number, h: number, d: number, x: number, y: number, z: number, colour: string) =>
   paint(new BoxGeometry(w, h, d).translate(x, y, z), colour);
 
 /** A little picture drawn in code, where there is anything to draw with. */

@@ -299,7 +299,10 @@ try {
     await page.keyboard.press('Enter'); await until(state, (s) => s.flags.includes('dots'), 'the new figure gets both eyes');
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('godisbus.v1.player.elof')));
     check('three cuts and both eyes are saved', ['cut1', 'cut2', 'cut3', 'dots'].every((flag) => saved.flags.epilog.includes(flag)));
-    await until(state, (s) => s.flags.includes('scene:first-carving'), 'Pappa admires the completed Lillgubben', 30000);
+    // An authored scene, waited for as the others are: while its clock advances. Its six seconds run at the frame rate
+    // (eight steps of 1/120 s at most to a frame), and under software rendering on a slow runner they took more than the
+    // 30 s this once waited (PR #281: at 5.9 s of 6 when it gave up).
+    await untilScene(state, (s) => s.flags.includes('scene:first-carving'), 'Pappa admires the completed Lillgubben');
     // His carving goes up on Pappa's shelf, back along the room, before his teeth (Olov, 12 November 2026).
     await reach(page, 'putOnShelf', 'the shelf is reachable', { key: 'ArrowLeft', timeout: 90000 });
     await page.keyboard.press('e');

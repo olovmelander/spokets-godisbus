@@ -54,7 +54,7 @@ const MORFAR = { x: 20.2, z: -3.1 };
 /** Pappa by the window when the latch is to be hooked, beside it, not in front of it. */
 const BY_WINDOW = { x: 7.1, z: -6.6 };
 /** The toy shelf in front of the sofa, as on the evening of the storm. */
-const TOY_SHELF = { x: 21.3, z: DOLL_Z - 0.8 };
+const TOY_SHELF = { x: HOME_LAYOUT.toyShelf.x, z: DOLL_Z - 0.8 };
 /** Where he takes his cup of cocoa: at the front of the table, where it stands poured for him. */
 const COCOA = TABLE.x + 1.6;
 /**
@@ -64,7 +64,7 @@ const COCOA = TABLE.x + 1.6;
  * (../../../render/front-door.ts), just past the raincoats, and the hall's window beyond it: at 42.5 he stood before a bare
  * wall, where the window at 46 left no room for a door.
  */
-export const DOOR = 44.4;
+export const DOOR = HOME_LAYOUT.hall.door;
 /** When the little one winks one eye on the shelf in the last scene, as at the end of the first adventure. */
 export const WINK = { scene: 'slut', at: 5.45, seconds: 0.55 } as const;
 
@@ -434,7 +434,7 @@ export const morgonen: ChapterData = {
   ],
   surfaces: [{ from: -19, to: 62, kind: 'wood' }],
   // The windows of the evening of the storm, and on along the room; the first is the one it blew open, by the shelf.
-  house: { from: -40, to: 76, windows: [...HOME_LAYOUT.windows, 52] },
+  house: { from: -40, to: 76, windows: [...HOME_LAYOUT.windows, HOME_LAYOUT.hall.window] },
   furniture: [
     { look: 'table', at: { x: TABLE.x, y: 0 }, z: TABLE.z },
     ...Object.values(TABLE.chairs).map(chair => ({ look: 'chair' as const, at: { x: chair.x, y: 0 }, z: chair.z, face: chair.face })),

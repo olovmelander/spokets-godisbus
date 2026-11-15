@@ -451,6 +451,7 @@ export const sv = {
     dripAgain: 'Aj då! En droppe till.',
     givesAway: 'Spöket ger bort mitt godis!?',
     vittraBerry: 'Ett lingon till er också.',
+    forestJayLichen: 'Tack, lavskrikan! Nu klättrar jag upp.',
     forestVittraClue: 'En liten bild från vittrorna.',
     forestTrial: 'Oj! Nästan. Den större väger mer.',
     heja: 'Heja, lillebror!',

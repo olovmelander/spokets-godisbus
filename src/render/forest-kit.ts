@@ -1,9 +1,10 @@
 import {
-  BoxGeometry, BufferGeometry, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion, Vector3,
-  type Box3, type Material, type Object3D,
+  BoxGeometry, BufferGeometry, DoubleSide, Euler, Float32BufferAttribute, Group, InstancedMesh, Matrix3, Matrix4, Mesh, MeshStandardMaterial, Quaternion,
+  Vector3, type Box3, type Material, type Object3D,
 } from 'three';
 import { STONE, barkDetail, barky } from './bark-detail';
 import { fallenSpruce } from './fallen-spruce';
+import { oldWood } from './old-wood';
 import type { ChapterData, Landmark, LandmarkThing } from '../sim/types';
 import { restock } from './dressing/forest';
 import { heightAt, isThing } from './dressing/kit';
@@ -14,7 +15,11 @@ import { heightAt, isThing } from './dressing/kit';
  * Bertil's cap, the twig, the seesaw, the vittra door, and what he climbs. They arrive in one file,
  * `boot/forest-kit`. Until it has, and wherever it is missing, each place draws the stand-in it builds in code.
  *
- * Nothing in the kit has a texture: its colours are painted on its corners, with its own shade baked in.
+ * Nothing in the kit has a texture: its colours are painted on its corners, with its own shade baked in. The fallen
+ * spruce (`stock`) is old wood, made as the nature kit's windfalls are: its corners carry only its broad tones, and each
+ * also says what its face is and where on the tree it is (`_bark`), from which the windfalls' shader draws its bark's
+ * scales, cracks and lichen, bare wood and moss (./old-wood.ts; Olov, 15 November 2026: "Denna stock ser lite
+ * annorlunda ut än alla andra fallna stockar och texturer", when its scales had been painted on its corners, as blocks).
  *
  * | Shape | Its origin, and its size |
  * | --- | --- |
@@ -36,7 +41,13 @@ export interface ForestKit {
   shape(name: string): BufferGeometry | undefined;
   /** Lit by the place, with the colours of its corners. One for the whole view. */
   readonly material: MeshStandardMaterial;
+  /** For the shapes of old wood (those with `_bark`): drawn as the nature kit's windfalls are. */
+  readonly wood?: MeshStandardMaterial;
 }
+
+/** The material a shape of the kit is drawn with: old wood's where its corners say where on the tree they are. */
+export const kitMaterial = (kit: ForestKit, shape: BufferGeometry): MeshStandardMaterial =>
+  (kit.wood && shape.getAttribute('_bark') ? kit.wood : kit.material);
 
 /** What a place in the scene asks the kit for: set as `userData.forest` on a group that holds the stand-in. */
 export interface ForestSocket {
@@ -73,6 +84,7 @@ export function forestKit(model: Object3D): ForestKit {
     const position = from?.getAttribute('position');
     const normal = from?.getAttribute('normal');
     const colour = from?.getAttribute('color');
+    const bark = from?.getAttribute('_bark');
     if (!from || !position || !normal || !colour) return;
     const count = position.count;
     const positions = new Float32Array(count * 3);
@@ -90,6 +102,16 @@ export function forestKit(model: Object3D): ForestKit {
     made.setAttribute('position', new Float32BufferAttribute(positions, 3));
     made.setAttribute('normal', new Float32BufferAttribute(normals, 3));
     made.setAttribute('color', new Float32BufferAttribute(colours, 3));
+    if (bark) {
+      // Old wood: what its face is and where on the tree it is, for its shader (./old-wood.ts).
+      const barks = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        barks[i * 3] = bark.getX(i);
+        barks[i * 3 + 1] = bark.getY(i);
+        barks[i * 3 + 2] = bark.getZ(i);
+      }
+      made.setAttribute('_bark', new Float32BufferAttribute(barks, 3));
+    }
     made.setIndex(from.index ? Array.from(from.index.array) : Array.from({ length: count }, (_, i) => i));
     made.computeBoundingSphere();
     made.computeBoundingBox();
@@ -99,7 +121,11 @@ export function forestKit(model: Object3D): ForestKit {
   });
   const material = forestMaterial();
   barkDetail(material);
-  return { shape: (name) => shapes.get(name), material };
+  // Both sides, as the windfalls': its splinters and the fungi's shelves are thin.
+  const wood = forestMaterial();
+  wood.side = DoubleSide;
+  oldWood(wood);
+  return { shape: (name) => shapes.get(name), material, wood };
 }
 
 /** One of the kit's shapes, placed: for putting several together as one mesh. */
@@ -355,7 +381,8 @@ export function installForest(root: Object3D, chapter: ChapterData, kit: ForestK
     for (const child of [...holder.children]) discard(child);
     holder.clear();
     for (const socket of sockets) {
-      const mesh = new Mesh(kit.shape(socket.shape)!, kit.material);
+      const shape = kit.shape(socket.shape)!;
+      const mesh = new Mesh(shape, kitMaterial(kit, shape));
       mesh.applyMatrix4(placing(socket.at ?? [0, 0, 0], socket.turn, socket.size));
       holder.add(mesh);
     }

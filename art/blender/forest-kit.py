@@ -16,7 +16,10 @@ thing's front faces -Y, which is towards the camera in the game. Every thing is 
 as the game asks for it (src/render/forest-kit.ts says where each has its origin).
 
 Nothing here has a texture. A thing's colours are painted on its corners (the colour attribute "Color"), with
-the shade of its own creases, and of the ground it stands on, baked into them.
+the shade of its own creases, and of the ground it stands on, baked into them. The fallen spruce (`stock`) is old
+wood, made as the nature kit's windfalls are (art/blender/a2-nature.py): its corners carry only its broad tones, and
+each also says what its face is and where on the tree it is (`_BARK`, see `wface`), from which the game draws its
+bark as it draws theirs (src/render/old-wood.ts).
 
 Nothing in this model comes from anyone else, and nothing on it is a letter, a numeral or a mark: the cap's
 badge is a plain round patch. Keep this file in plain ASCII: it is sent to Blender as text. The server's safe
@@ -118,9 +121,10 @@ for node in MATERIAL.node_tree.nodes:
 
 
 def new_part():
-    """One thing while it is being built: its mesh, the colour of each of its points, and the faces that
-    have one colour of their own (a crisp border, where a point's colour would run)."""
-    return {'bm': bmesh.new(), 'paint': {}, 'flat': {}}
+    """One thing while it is being built: its mesh, the colour of each of its points, the faces that
+    have one colour of their own (a crisp border, where a point's colour would run), and for old wood what
+    each of its faces is (`bark`, see `wface`)."""
+    return {'bm': bmesh.new(), 'paint': {}, 'flat': {}, 'bark': {}}
 
 
 def put(part, at, colour):
@@ -134,6 +138,25 @@ def face(part, verts, colour=None):
     made = part['bm'].faces.new(verts)
     if colour is not None:
         part['flat'][made] = colour
+    return made
+
+
+# Old wood is made as the nature kit's (art/blender/a2-nature.py) and drawn in the game by the same shader
+# (src/render/old-wood.ts): its corners carry only its broad tones, and each says what its face is and where on its
+# tree it is (`_BARK`: the kind in sixteenths, and how far along and round it, from BARK_FROM over BARK_SPAN). From
+# that the game draws a spruce's scales, cracks and lichen, bare wood's fibres and moss's shoots, each pixel its own.
+BARK_FROM = -8.0
+BARK_SPAN = 40.0
+K_PLAIN = 0
+K_SPRUCE = 1
+K_BARE = 4
+K_MOSS = 6
+
+
+def wface(part, verts, kind, at=None, colour=None):
+    """A face of old wood that says what it is: `at` gives its kind's two numbers (along, round) at each of its points."""
+    made = face(part, verts, colour)
+    part['bark'][made] = (kind, at)
     return made
 
 
@@ -258,6 +281,15 @@ def finish(part, name, sharp=180.0, strength=0.6, reach=0.3, floor=None, recalc=
         for loop in made.loops:
             colour = own if own is not None else paint.get(loop.vert, (1.0, 0.0, 1.0))
             loop[layer] = (colour[0], colour[1], colour[2], 1.0)
+    marks = part['bark']
+    if marks:
+        # Old wood: what each face is, and where on its tree each corner is (see `wface`).
+        bark = bm.loops.layers.float_vector.new('_BARK')
+        for made in bm.faces:
+            kind, at = marks.get(made, (K_PLAIN, None))
+            for loop in made.loops:
+                pair = at.get(loop.vert, (0.0, 0.0)) if at else (0.0, 0.0)
+                loop[bark] = (kind / 16.0, max(0.0, min(1.0, (pair[0] - BARK_FROM) / BARK_SPAN)), max(0.0, min(1.0, (pair[1] - BARK_FROM) / BARK_SPAN)))
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
@@ -1088,69 +1120,287 @@ for at, size in HUMMOCKS:
         part['paint'][vert] = lit(green, 0.62 + 0.22 * max(0.0, high))
 finish(part, 'jattekotte', sharp=50.0, strength=0.6, reach=0.3, recalc=False)
 
-# Stock: the fallen spruce he nearly catches the ghost on. The block is 5 long and 0.8 high. Bark in plates
-# with dark furrows between them, moss along its top, four broken boughs, a broken root end and a torn end.
+# Stock: the fallen spruce he nearly catches the ghost on. The block is 5 long and 0.8 high.
+# Olov, 15 November 2026: "Kan vi ge tradet som ligger pa marken efter att pappa skjutit over Elof pa gungbradan
+# battre design och textur", and, when its bark had been painted on its corners in plates finer than the corners
+# themselves, so that they showed as blocks: "Denna stock ser lite annorlunda ut an alla andra fallna stockar och
+# texturer". It is made now as the nature kit's windfalls are (art/blender/a2-nature.py), and the game draws it with
+# their shader (src/render/old-wood.ts). Its corners carry no more than an old spruce's broad tones, the moss of its
+# top running down its sides in tongues and the dark under it; each says where on the tree it is, and from that the game
+# draws the scales, cracks and lichen of its bark, the fibres of bare wood where it broke, and the shoots of its moss.
+# (No patch of its bark has sloughed off: where bark met bare wood the two were drawn a corner's width apart, in steps.) Red-belted bracket fungi on its front, grey stubs of its lower boughs round
+# it, the four boughs that broke when it fell at its back, cushions of moss along its top, and wood torn at both ends.
 part = new_part()
 LOG_FROM = -0.25
 LOG_TO = 5.05
 LOG_DEEP = 1.9
 LOG_HIGH = 0.62
 LOG_AXIS = (-0.2, 0.2)
-ALONG_LOG = 44
-# Round it from under its front to the back of its top: more rows where the bark shows, fewer in the moss.
-ROUND_LOG = (-42.0, -28.0, -15.0, -4.0, 6.0, 15.0, 24.0, 33.0, 42.0, 51.0, 60.0, 70.0, 82.0, 94.0, 106.0, 120.0, 135.0)
-GREY_LICHEN = tone('#9aa08e')
-rings = []
+# Its shape and its broad tones need no more points than these: what is finer, the game draws.
+ALONG_LOG = 60
+# Round it from under its front to the back of its top, evenly.
+ROUND_LOG = tuple(-42.0 + 177.0 * k / 30.0 for k in range(31))
+# An old spruce's bark, the grey of bare wood long dead, wood just torn and its rotten heart, and the red-belted
+# bracket fungus of spruce: the nature kit's colours.
+OLD_BARK = tone('#8a715c')
+OLD_BARK_DEEP = tone('#4a3a2e')
+OLD_BARK_PALE = tone('#ab947d')
+OLD_BARK_RED = tone('#9c6646')
+SILVER = tone('#a49c8e')
+SILVER_DEEP = tone('#6c655c')
+TORN = tone('#ecd29c')
+TORN_DEEP = tone('#c69a5e')
+ROT = tone('#5e3a22')
+CONK_CRUST = tone('#342c28')
+CONK_RED = tone('#a8442a')
+CONK_ORANGE = tone('#d0762e')
+CONK_CREAM = tone('#f0e4c2')
+CONK_UNDER = tone('#d6c89e')
+
+
+def old_bark(seed, around, run):
+    """An old spruce's bark at a place `around` and `run` EL round and along it, before the game draws its scales:
+    grey-brown, light and dark in broad patches, red-brown here and there where it has flaked."""
+    broad = noise(around * 1.3 + seed, run * 0.5, 3.0)
+    fine = noise(around * 4.1, run * 2.3 + seed, 7.0)
+    colour = blend(OLD_BARK_DEEP, blend(OLD_BARK, OLD_BARK_PALE, broad * 1.3 - 0.15), 0.45 + 0.6 * fine)
+    return blend(colour, OLD_BARK_RED, 0.3 * max(0.0, min(1.0, (noise(around * 2.2 + 5.0, run * 1.4, seed) - 0.68) / 0.08)))
+
+
+def log_at(x, degrees, out=0.0):
+    """A point on the log's bark at x, `degrees` round from its front, `out` off it."""
+    angle = math.radians(degrees)
+    thick = 1.05 - 0.09 * (x - LOG_FROM) / (LOG_TO - LOG_FROM)
+    return Vector((x, LOG_AXIS[0] - (LOG_DEEP * thick + out) * math.cos(angle), LOG_AXIS[1] + (LOG_HIGH + out * 0.33) * math.sin(angle)))
+
+
+def spike(part, foot, tip, thick, colour, pale, kind=K_BARE, sides=3):
+    """A splinter or a twig: a thin point from `foot` to `tip`."""
+    ahead = tip - foot
+    long = ahead.length
+    ahead.normalize()
+    side = ahead.cross(Vector((0.31, 0.2, 0.93)))
+    side.normalize()
+    up = side.cross(ahead)
+    ring = [put(part, foot + (side * math.cos(TAU * j / sides) + up * math.sin(TAU * j / sides)) * thick, colour) for j in range(sides)]
+    end = put(part, tip, pale)
+    for j in range(sides):
+        k = (j + 1) % sides
+        wface(part, (ring[j], ring[k], end), kind, {ring[j]: (0.0, 0.0), ring[k]: (0.0, 0.02), end: (long, 0.01)})
+
+
+def torn_end(part, ring, centre, ahead, long, seed, run, rounds, angles, heart, deep=0.3, sticks=8, tongue=1.0, closed=True, splinter=None):
+    """Where wood broke: from its last ring of bark, the bark's edge torn pale, splinters out to `long` along `ahead`,
+    longest round `tongue` (an angle, as `angles` are, one for each point of the ring), and inside them the wood torn
+    back in round its heart. `rounds` says how far round the ring each of its points is, one more for a closed ring's
+    seam. All of it bare wood to the game, its fibres along it."""
+    count = len(ring)
+    lip = []
+    tips = []
+    inner = []
+    reach = []
+    for j in range(count):
+        out = ring[j].co - centre
+        far = long * (0.1 + 0.9 * rnd(seed, j * 1.7) ** 2.4)
+        far += long * 0.7 * max(0.0, math.cos(angles[j] - tongue)) ** 3 * (0.4 + 0.6 * rnd(seed + 1.0, j))
+        back = deep * long * rnd(seed + 3.0, j)
+        lip.append(put(part, centre + out * 0.95 + ahead * 0.012, blend(TORN_DEEP, OLD_BARK_PALE, 0.4)))
+        tips.append(put(part, centre + out * (0.56 + 0.36 * rnd(seed + 2.0, j)) + ahead * far, lit(TORN, 0.9 + 0.16 * rnd(j, seed))))
+        inner.append(put(part, centre + out * 0.38 - ahead * back, blend(TORN_DEEP, heart, 0.4)))
+        reach.append((far, back))
+    hub = put(part, centre - ahead * (deep * long), heart)
+    for j in range(count if closed else count - 1):
+        k = (j + 1) % count
+        ra = rounds[j]
+        rb = rounds[j + 1]
+        wface(part, (ring[j], ring[k], lip[k], lip[j]), K_BARE, {ring[j]: (run, ra), ring[k]: (run, rb), lip[k]: (run + 0.02, rb), lip[j]: (run + 0.02, ra)})
+        wface(part, (lip[j], lip[k], tips[j]), K_BARE, {lip[j]: (run, ra), lip[k]: (run, rb), tips[j]: (run + reach[j][0], ra)})
+        wface(part, (lip[k], tips[k], tips[j]), K_BARE, {lip[k]: (run, rb), tips[k]: (run + reach[k][0], rb), tips[j]: (run + reach[j][0], ra)})
+        wface(part, (tips[j], tips[k], inner[j]), K_BARE, {tips[j]: (run + reach[j][0], ra), tips[k]: (run + reach[k][0], rb), inner[j]: (run - reach[j][1], ra)})
+        wface(part, (tips[k], inner[k], inner[j]), K_BARE, {tips[k]: (run + reach[k][0], rb), inner[k]: (run - reach[k][1], rb), inner[j]: (run - reach[j][1], ra)})
+        wface(part, (inner[j], inner[k], hub), K_BARE, {inner[j]: (run - reach[j][1], ra), inner[k]: (run - reach[k][1], rb), hub: (run - deep * long, 0.5 * (ra + rb))})
+    # Loose splinters standing out of the break, pale as matchsticks.
+    thick = splinter if splinter is not None else (ring[0].co - centre).length * 0.045 + 0.012
+    for n in range(sticks):
+        j = int(rnd(seed + 5.0, n) * count) % count
+        foot = centre + (tips[j].co - centre) * 0.9
+        foot = foot - ahead * (foot - centre).dot(ahead) * 0.6
+        spread = (ring[j].co - centre) * (0.12 * (rnd(n, seed) - 0.3))
+        spike(part, foot, foot + ahead * (long * (0.5 + 0.9 * rnd(seed + 6.0, n))) + spread, thick, TORN_DEEP, TORN)
+
+
+def wood_tube(part, path, radii, sides, kind, tones, ref, hint):
+    """A branch along a path, its seam underneath: its corners say how far along it each ring is and how far round it
+    each point is, measured at radius `ref`. Gives its rings of points and how far along each ring is."""
+    rows = []
+    runs = []
+    run = 0.0
+    for i in range(len(path)):
+        if i > 0:
+            run += (path[i] - path[i - 1]).length
+        runs.append(run)
+        ahead = path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]
+        ahead.normalize()
+        side = ahead.cross(hint)
+        if side.length < 0.01:
+            side = ahead.cross(Vector((1.0, 0.0, 0.0)))
+        side.normalize()
+        up = side.cross(ahead)
+        rows.append([put(part, path[i] + (up * math.cos(math.pi + TAU * j / sides) + side * math.sin(math.pi + TAU * j / sides)) * radii[i], tones[i]) for j in range(sides)])
+    for i in range(len(rows) - 1):
+        for j in range(sides):
+            k = (j + 1) % sides
+            ra = ref * TAU * j / sides
+            rb = ref * TAU * (j + 1) / sides
+            wface(part, (rows[i][j], rows[i][k], rows[i + 1][k], rows[i + 1][j]), kind,
+                  {rows[i][j]: (runs[i], ra), rows[i][k]: (runs[i], rb), rows[i + 1][k]: (runs[i + 1], rb), rows[i + 1][j]: (runs[i + 1], ra)})
+    return rows, runs
+
+
+def dead_stub(part, foot, out, long, thick, seed):
+    """The stub of a branch that broke off long ago: grey and bare, a collar where it leaves the trunk, crooked, and a
+    jagged pale end."""
+    side = out.cross(Vector((0.3, 0.5, 0.8)))
+    side.normalize()
+    path = []
+    radii = []
+    for k in range(5):
+        s = k / 4.0
+        bend = side * (long * 0.05 * math.sin(s * 3.0 + seed))
+        path.append(foot + out * (long * s - 0.12 * (1.0 - s)) + bend * s)
+        radii.append(thick * (1.6 - 0.55 * min(1.0, s * 3.0) - 0.3 * s))
+    tones = [blend(OLD_BARK, SILVER_DEEP, min(1.0, 0.2 + k * 0.4)) for k in range(5)]
+    tones[-1] = blend(SILVER, TORN_DEEP, 0.3)
+    rows, runs = wood_tube(part, path, radii, 6, K_BARE, tones, thick, Vector((0.21, 0.35, 0.91)))
+    ahead = path[-1] - path[-2]
+    ahead.normalize()
+    torn_end(part, rows[-1], path[-1], ahead, thick * 1.4, seed, runs[-1], [thick * TAU * j / 6.0 for j in range(7)],
+             [TAU * j / 6.0 for j in range(6)], blend(SILVER_DEEP, TORN_DEEP, 0.5), deep=0.2, sticks=2)
+
+
+def bracket(part, at, out, wide, seed):
+    """A shelf fungus on the trunk, the red-belted one of dead spruce: a hoof with its back to the bark at `at`,
+    standing out level along `out`: a dark crust, a red band, an orange one and a cream margin, cream underneath."""
+    side = out.cross(UP)
+    side.normalize()
+    deep = wide * (0.56 + 0.16 * rnd(seed, 1.0))
+    thick = wide * (0.4 + 0.14 * rnd(seed, 2.0))
+    columns = 9
+    bands = ((0.3, CONK_CRUST), (0.58, blend(CONK_CRUST, CONK_RED, 0.75)), (0.82, blend(CONK_RED, CONK_ORANGE, 0.8)), (1.0, CONK_CREAM))
+    apex = put(part, at + UP * (thick * 0.6) - out * (wide * 0.04), lit(CONK_CRUST, 0.8))
+    rows = []
+    for s, colour in bands:
+        row = []
+        for c in range(columns):
+            a = math.pi * c / (columns - 1.0)
+            wave = 1.0 + 0.07 * math.sin(c * 2.3 + seed * 5.0) * s
+            point = at + side * (math.cos(a) * wide * 0.5 * s ** 0.8 * wave) + out * (math.sin(a) * deep * s * wave - wide * 0.04)
+            point = point + UP * (thick * 0.6 * (1.0 - s ** 1.7) - thick * 0.12 * s + 0.02 * wide * math.sin(s * 9.0 + c))
+            row.append(put(part, point, lit(colour, 0.9 + 0.2 * rnd(seed + c, s))))
+        rows.append(row)
+    for c in range(columns - 1):
+        wface(part, (apex, rows[0][c], rows[0][c + 1]), K_PLAIN)
+    for r in range(len(rows) - 1):
+        for c in range(columns - 1):
+            wface(part, (rows[r][c], rows[r + 1][c], rows[r + 1][c + 1], rows[r][c + 1]), K_PLAIN)
+    under = put(part, at - UP * (thick * 0.42) - out * (wide * 0.04), lit(CONK_UNDER, 0.7))
+    rim = [put(part, vert.co - UP * (0.012 * wide), CONK_UNDER) for vert in rows[-1]]
+    for c in range(columns - 1):
+        wface(part, (rows[-1][c], rim[c], rim[c + 1], rows[-1][c + 1]), K_PLAIN)
+        wface(part, (under, rim[c + 1], rim[c]), K_PLAIN)
+
+
+def moss_cushion(part, centre, size, seed, axes):
+    """A cushion of moss: a low lump, dark where it tucks under and bright on its crown; `axes` are the three ways
+    its sizes are measured along, the last its crown's. Moss to the game, which draws its shoots."""
+    ball = bmesh.new()
+    bmesh.ops.create_icosphere(ball, subdivisions=1, radius=1.0, matrix=Matrix.Identity(4))
+    ball.verts.index_update()
+    ex, ey, ez = axes
+    made = []
+    for vert in ball.verts:
+        unit = vert.co.copy()
+        grown = unit * (0.84 + 0.36 * noise(unit.x * 2.1 + seed, unit.y * 2.1, unit.z * 2.1 + seed * 0.7))
+        high = max(0.0, min(1.0, unit.z * 0.6 + 0.45))
+        fleck = noise(unit.x * 4.0 + seed, unit.y * 4.0, unit.z * 4.0)
+        made.append(put(part, centre + ex * (grown.x * size[0]) + ey * (grown.y * size[1]) + ez * (grown.z * size[2]),
+                        lit(blend(MOSS_DEEP, blend(MOSS_DEEP, MOSS_BRIGHT, 0.45 + 0.75 * fleck), high), 0.95)))
+    for side in ball.faces:
+        wface(part, [made[vert.index] for vert in side.verts], K_MOSS)
+    ball.free()
+
+
+grid = []
 tones = []
 for i in range(ALONG_LOG + 1):
     x = LOG_FROM + (LOG_TO - LOG_FROM) * i / ALONG_LOG
+    thick = 1.05 - 0.09 * i / ALONG_LOG
     ring = []
     shades = []
-    for j in range(len(ROUND_LOG)):
-        angle = math.radians(ROUND_LOG[j])
+    for degrees in ROUND_LOG:
+        angle = math.radians(degrees)
         up = math.sin(angle)
-        # Plates of bark, longer along the trunk than round it, with a furrow where two meet.
-        plate = abs(noise(x * 0.75 + 3.0 + angle * 0.9, angle * 12.0 + 0.25 * math.sin(x * 2.7), 0.5) - 0.5) * 2.0
-        furrow = max(0.0, 1.0 - plate / 0.2)
-        moss = max(0.0, min(1.0, (up - 0.8) / 0.14)) * min(1.0, 0.5 + 0.9 * noise(x * 1.3, angle * 2.0, 5.0))
-        swell = 1.0 + (0.035 - 0.085 * furrow + (noise(x * 5.0, angle * 14.0, 2.0) - 0.5) * 0.05) * (1.0 - moss) + moss * 0.025
-        thick = 1.05 - 0.09 * i / ALONG_LOG
-        ring.append(Vector((x, LOG_AXIS[0] - LOG_DEEP * thick * swell * math.cos(angle), LOG_AXIS[1] + LOG_HIGH * swell * up)))
-        bark = blend(BARK, BARK_PALE, noise(x * 1.2 + angle, angle * 11.0, 7.0) * 1.4 - 0.2)
-        bark = blend(bark, GREY_LICHEN, max(0.0, noise(x * 0.9 + 5.0, angle * 3.0, 1.0) - 0.66) * 1.6)
-        bark = blend(bark, BARK_DARK, furrow * 0.9)
-        green = blend(MOSS_DEEP, MOSS_BRIGHT, noise(x * 2.3, angle * 5.0, 9.0))
-        shades.append(blend(bark, green, moss))
-    rings.append(ring)
+        # The moss of its top, running down its sides in tongues, and lying thick where it grows.
+        reach = 0.62 + 0.3 * noise(x * 1.6 + 2.0, 0.5, 3.0)
+        moss = max(0.0, min(1.0, (up - reach) / 0.12)) * min(1.0, 0.5 + 0.9 * noise(x * 1.3, angle * 2.0, 5.0))
+        # Its bark's long ridges, broad and low: its scales and cracks are the game's.
+        ridge = 0.025 * (2.0 * noise(degrees * 0.075, x * 0.7, 4.0) - 1.0)
+        colour = old_bark(2.0, angle * LOG_DEEP * 0.75, x)
+        if moss > 0.05:
+            colour = blend(colour, blend(MOSS_DEEP, MOSS_BRIGHT, noise(x * 2.6, angle * 3.0, 9.0)), min(1.0, moss * 1.6))
+            ridge += moss * (0.03 + 0.04 * noise(x * 4.1, angle * 6.0, 8.0))
+        # Dark and damp underneath, where it lies.
+        shades.append(lit(colour, 0.42 + 0.58 * max(0.0, min(1.0, (up + 0.9) / 0.9))))
+        ring.append(Vector((x, LOG_AXIS[0] - LOG_DEEP * thick * (1.0 + ridge) * math.cos(angle), LOG_AXIS[1] + LOG_HIGH * (1.0 + ridge) * up)))
+    grid.append(ring)
     tones.append(shades)
-made = skin(part, rings, tones, closed=False, flip=True)
-LAST = len(ROUND_LOG) - 1
+# How far along and round it each point is, so that its scales are of one size all over it.
+runs = [ring[0].x for ring in grid]
+rounds = []
+for ring in grid:
+    way = [0.0]
+    for j in range(1, len(ring)):
+        way.append(way[-1] + (ring[j] - ring[j - 1]).length)
+    rounds.append(way)
+rows = [[put(part, grid[i][j], tones[i][j]) for j in range(len(grid[i]))] for i in range(len(grid))]
+for i in range(ALONG_LOG):
+    for j in range(len(ROUND_LOG) - 1):
+        quad = (rows[i][j], rows[i][j + 1], rows[i + 1][j + 1], rows[i + 1][j])
+        wface(part, quad[::-1], K_SPRUCE, {rows[i][j]: (runs[i], rounds[i][j]), rows[i][j + 1]: (runs[i], rounds[i][j + 1]),
+                                       rows[i + 1][j + 1]: (runs[i + 1], rounds[i + 1][j + 1]), rows[i + 1][j]: (runs[i + 1], rounds[i + 1][j])})
+angles = [math.radians(degrees) for degrees in ROUND_LOG]
 middle = Vector((0.0, LOG_AXIS[0], LOG_AXIS[1]))
-# The root end: broken across, pale wood with a darker heart.
-ring = made[0]
-hub = put(part, middle + Vector((LOG_FROM - 0.06, 0.0, 0.1)), WOOD_HEART)
-inner = [put(part, v.co + (middle + Vector((LOG_FROM - 0.03, 0.0, 0.0)) - v.co) * 0.5, blend(WOOD, WOOD_HEART, 0.4)) for v in ring]
-for j in range(LAST):
-    face(part, (inner[j], ring[j], ring[j + 1], inner[j + 1]), blend(WOOD, WOOD_PALE, rnd(j, 6.0)))
-    face(part, (hub, inner[j], inner[j + 1]))
-# The torn end: long splinters of pale wood.
-ring = made[-1]
-hub = put(part, middle + Vector((LOG_TO - 0.12, 0.0, 0.1)), WOOD_HEART)
-for j in range(LAST):
-    between = (ring[j].co + ring[j + 1].co) / 2.0
-    point = between + (middle + Vector((LOG_TO, 0.0, 0.0)) - between) * (0.25 + 0.3 * rnd(j, 8.0)) + Vector((0.1 + 0.24 * rnd(j, 9.0), 0.0, 0.0))
-    splinter = put(part, point, WOOD_PALE)
-    face(part, (ring[j + 1], ring[j], splinter), blend(WOOD, WOOD_PALE, rnd(j, 10.0)))
-    face(part, (hub, ring[j + 1], ring[j]), blend(WOOD_HEART, WOOD, 0.4))
-# The boughs that broke when it fell, standing from its back, each with a splintered end.
+# Where it broke from its root: short and rough, the heart gone dark with rot. And where its top tore off as it fell:
+# longer splinters, longest over its top. Both within a hand of its block, where he walks.
+torn_end(part, rows[0], middle + Vector((LOG_FROM, 0.0, 0.0)), Vector((-1.0, 0.0, 0.0)), 0.07, 3.0, runs[0], rounds[0], angles, ROT,
+         deep=0.6, sticks=0, tongue=math.radians(60.0), closed=False)
+torn_end(part, rows[-1], middle + Vector((LOG_TO, 0.0, 0.0)), Vector((1.0, 0.0, 0.0)), 0.16, 7.0, runs[-1], rounds[-1], angles, TORN_DEEP,
+         deep=0.3, sticks=7, tongue=math.radians(80.0), closed=False, splinter=0.035)
+# The boughs that broke when it fell, standing from its back.
 for x, lean, back, long, thick in ((0.9, -0.35, 0.5, 0.95, 0.1), (2.2, 0.3, 0.75, 0.55, 0.085), (3.3, -0.15, 0.35, 1.25, 0.11), (4.4, 0.4, 0.6, 0.7, 0.08)):
     angle = math.radians(116.0)
     root = Vector((x, LOG_AXIS[0] - LOG_DEEP * math.cos(angle) * 0.9, LOG_AXIS[1] + LOG_HIGH * math.sin(angle) * 0.85))
     way = Vector((lean, back, 0.8))
     way.normalize()
-    bent = way + Vector((lean * 0.3, 0.1, 0.0))
-    tube(part, [root, root + way * (long * 0.5), root + bent * (long * 0.9), root + bent * long + Vector((0.03, 0.0, 0.05))],
-         [thick * 1.3, thick, thick * 0.8, thick * 0.3], [BARK_DARK, BARK, BARK_PALE, WOOD_PALE], 6)
+    dead_stub(part, root, way, long, thick, x * 3.0)
+# Stubs of its lower boughs, broken short, round its front and top: none reaching up over the path.
+for x, degrees, long, thick in ((0.55, 38.0, 0.3, 0.06), (1.45, 8.0, 0.24, 0.055), (2.65, 44.0, 0.3, 0.065), (3.6, 20.0, 0.28, 0.055), (4.55, 42.0, 0.24, 0.05)):
+    foot = log_at(x, degrees, -0.03)
+    out = log_at(x + 0.08, degrees, long) - log_at(x, degrees, 0.0)
+    out.normalize()
+    dead_stub(part, foot, out, long, thick, x * 5.0 + degrees)
+# Red-belted bracket fungi on its front, standing out level towards the camera.
+for x, degrees, wide in ((1.05, 2.0, 0.46), (1.48, -4.0, 0.3), (3.95, 8.0, 0.5)):
+    bracket(part, log_at(x, degrees, -0.04), Vector((0.0, -1.0, 0.0)), wide, x * 7.0)
+# Cushions of moss along its top, behind where he walks.
+for n, (x, size) in enumerate(((0.6, (0.36, 0.2, 0.07)), (1.9, (0.3, 0.18, 0.06)), (2.95, (0.42, 0.22, 0.08)), (4.3, (0.32, 0.18, 0.06)))):
+    degrees = 108.0 + 12.0 * rnd(n, 4.0)
+    angle = math.radians(degrees)
+    crown = Vector((0.0, math.cos(angle) / LOG_DEEP, math.sin(angle) / LOG_HIGH))
+    crown.normalize()
+    across = crown.cross(Vector((1.0, 0.0, 0.0)))
+    across.normalize()
+    moss_cushion(part, log_at(x, degrees, 0.01), size, 3.0 + n, (Vector((1.0, 0.0, 0.0)), across, crown))
 finish(part, 'stock', sharp=55.0, strength=0.5, reach=0.3, recalc=False)
 
 # Virvelsten: the stone he stands on to pull the ghost out of the eddy. The block is 2.4 long and 0.5 high,
@@ -1195,23 +1445,27 @@ finish(part, 'virvelsten', sharp=30.0, strength=0.6, reach=0.6)
 # Myrstack: the anthill, a mound of spruce needles as high as six of him, with twigs in it and the ants'
 # holes. The block is 6 long and 6 high: its top is level and its two sides are steep where he walks, towards
 # the camera it is a dome, and behind where he walks the mound goes on up to its crown.
-NEEDLE = (tone('#38312a'), tone('#483e33'), tone('#5a4e40'), tone('#6a5c4a'))
-STROKE = (tone('#84704f'), tone('#9c8a66'), tone('#b9a884'), tone('#28221c'), tone('#6a5a44'), tone('#8a5a30'), tone('#4a3f33'))
-STRAW = tone('#b79a66')
+# Olov, 15 November 2026: "Kan vi gora myrstacken snyggare design och textur". It was a dark grey-brown, its foot shaded
+# to a dark teal, with loose needles lying on it like sticks. Now the needles are a wood ant's mound: rust and golden
+# brown, paler and drier towards the crown and darker and damp at the foot, in a fine grain of their own (twice as
+# many points to paint it on), with many more short loose needles, more twigs and a few small cones.
+NEEDLE = (tone('#4a2e1c'), tone('#6a4126'), tone('#8a5a32'), tone('#a87443'))
+STROKE = (tone('#a8743e'), tone('#c08a4c'), tone('#d6aa6c'), tone('#3a2618'), tone('#8a5a30'), tone('#b06a34'), tone('#6a4a2e'))
+STRAW = tone('#d0ae72')
 HOLE = tone('#1a100a')
-HILL_SHADE = tone('#4d5e55')
+HILL_SHADE = tone('#3a2a1e')
 HILL_TOP = 6.03
 HILL_HALF = 3.06
 HILL_FRONT = 6.0
 HILL_AT = Vector((3.0, -0.5, 0.0))
-SPOKES = 24
-DOWN = 12
+SPOKES = 48
+DOWN = 24
 # The mound behind: where its crown stands, how high, and how far it reaches to the left, right, front and back.
 MOUND_AT = Vector((2.6, 5.2, 0.0))
 MOUND_TOP = 7.6
 MOUND = (4.9, 3.5, 4.6, 5.6)
-ROUND_MOUND = 22
-DOWN_MOUND = 7
+ROUND_MOUND = 36
+DOWN_MOUND = 12
 
 
 def hill_at(spoke, row):
@@ -1241,7 +1495,10 @@ def mound_at(spoke, row):
 
 def needles(at, steep):
     """The colour of the mound at a place: rust needles, a straw here and there, and the dark of a hole."""
-    n = noise(at.x * 1.9, at.y * 1.9, at.z * 1.9) * 0.6 + noise(at.x * 5.3, at.y * 5.3, at.z * 5.3) * 0.4
+    n = noise(at.x * 1.9, at.y * 1.9, at.z * 1.9) * 0.45 + noise(at.x * 5.3, at.y * 5.3, at.z * 5.3) * 0.3
+    n += noise(at.x * 13.0 + 7.0, at.y * 13.0, at.z * 13.0) * 0.25
+    # Drier and paler towards the crown, damp and darker towards the foot.
+    n += (at.z / HILL_TOP - 0.5) * 0.18
     k = min(2.999, max(0.0, n * 4.2 - 0.6))
     colour = blend(NEEDLE[int(k)], NEEDLE[int(k) + 1], k - int(k))
     if noise(at.x * 7.0 + 3.0, at.y * 7.0, at.z * 7.0) > 0.78:
@@ -1266,11 +1523,11 @@ def sliver(part, at, toward, out, n, over=0.03):
     turn = TAU * rnd(n, 61.0)
     way = way * math.cos(turn) + side * math.sin(turn)
     side = out.cross(way)
-    long = 0.2 + 0.3 * rnd(n, 67.0)
+    long = 0.13 + 0.2 * rnd(n, 67.0)
     colour = STROKE[int(rnd(n, 71.0) * len(STROKE)) % len(STROKE)]
     a = put(part, at - way * (long / 2.0) + out * over, colour)
     b = put(part, at + way * (long / 2.0) + out * over, colour)
-    c = put(part, at + side * 0.035 + out * (over * 1.6), lit(colour, 1.15))
+    c = put(part, at + side * 0.024 + out * (over * 1.6), lit(colour, 1.15))
     face(part, (a, b, c))
 
 
@@ -1324,9 +1581,9 @@ for a in range(ROUND_MOUND):
     for r in range(DOWN_MOUND):
         face(part, (round_it[a][r], round_it[a][r + 1], round_it[b][r + 1], round_it[b][r]))
 # Loose needles: on the dome, on its two sides, and on the mound behind.
-for n in range(620):
-    spoke = 0.6 + 22.8 * rnd(n, 41.0)
-    row = 1.2 + 10.5 * rnd(n, 43.0) ** 0.8
+for n in range(1700):
+    spoke = 1.2 + 45.6 * rnd(n, 41.0)
+    row = 2.4 + 21.0 * rnd(n, 43.0) ** 0.8
     at = hill_at(spoke, row)
     out = at - Vector((HILL_AT.x, HILL_AT.y, at.z * 0.5))
     level = at.z > HILL_TOP - 0.2
@@ -1334,30 +1591,44 @@ for n in range(620):
         out = Vector((0.0, 0.0, 1.0))
     out.normalize()
     # Where he walks they lie flat on it: his feet stand on the mound, not over it.
-    sliver(part, at, hill_at(spoke + 0.4, row + 0.3), out, n, 0.006 if level else 0.03)
-for n in range(260):
+    sliver(part, at, hill_at(spoke + 0.8, row + 0.6), out, n, 0.006 if level else 0.03)
+for n in range(600):
     left = n % 2 == 0
     at = Vector((HILL_AT.x + (-HILL_HALF if left else HILL_HALF), HILL_AT.y + BACK * rnd(n, 73.0), 0.2 + 5.6 * rnd(n, 79.0)))
-    sliver(part, at, at + Vector((0.0, 0.3, 0.3)), Vector((-1.0 if left else 1.0, 0.0, 0.0)), n + 700)
-for n in range(240):
+    sliver(part, at, at + Vector((0.0, 0.3, 0.3)), Vector((-1.0 if left else 1.0, 0.0, 0.0)), n + 2000)
+for n in range(600):
     spoke = ROUND_MOUND * rnd(n, 83.0)
-    row = 0.6 + 6.0 * rnd(n, 89.0) ** 0.8
+    row = 1.0 + 10.3 * rnd(n, 89.0) ** 0.8
     at = mound_at(spoke, row)
     out = at - Vector((MOUND_AT.x, MOUND_AT.y, at.z * 0.5))
     out.normalize()
-    sliver(part, at, mound_at(spoke + 0.4, row + 0.3), out, n + 1000)
+    sliver(part, at, mound_at(spoke + 0.4, row + 0.3), out, n + 3000)
 # Twigs the ants have carried there.
 TWIG = (tone('#9c8a70'), tone('#6a5038'), tone('#b9a584'))
-for n in range(18):
-    spoke = 3.0 + 18.0 * rnd(n, 41.0)
-    row = 2.5 + 8.5 * rnd(n, 43.0)
+for n in range(40):
+    spoke = 6.0 + 36.0 * rnd(n, 41.0)
+    row = 5.0 + 17.0 * rnd(n, 43.0)
     at = hill_at(spoke, row)
-    ahead = hill_at(spoke + 0.6, row + 0.5 * (rnd(n, 47.0) - 0.5) * 4.0) - at
+    ahead = hill_at(spoke + 1.2, row + 1.0 * (rnd(n, 47.0) - 0.5) * 4.0) - at
     ahead.normalize()
     out = at - Vector((HILL_AT.x, HILL_AT.y, at.z * 0.5))
     out.normalize()
     long = 0.5 + 0.7 * rnd(n, 53.0)
     tube(part, [at - ahead * (long / 2.0) + out * 0.05, at + ahead * (long / 2.0) + out * 0.11], [0.04, 0.026], [TWIG[n % 3], TWIG[(n + 1) % 3]], 3)
+# Small spruce cones the ants have rolled up onto it, lying on its flanks: fat at their middle, blunt at their ends.
+CONE_SCALES = (tone('#6a4428'), tone('#8e5e36'), tone('#a87446'))
+for n in range(9):
+    spoke = 8.0 + 32.0 * rnd(n, 151.0)
+    row = 9.0 + 12.0 * rnd(n, 157.0)
+    at = hill_at(spoke, row)
+    ahead = hill_at(spoke + 1.0, row + (rnd(n, 163.0) - 0.5) * 3.0) - at
+    ahead.normalize()
+    out = at - Vector((HILL_AT.x, HILL_AT.y, at.z * 0.5))
+    out.normalize()
+    long = 0.32 + 0.12 * rnd(n, 167.0)
+    lift = out * 0.08
+    tube(part, [at - ahead * (long / 2.0) + lift, at - ahead * (long / 6.0) + lift, at + ahead * (long / 6.0) + lift, at + ahead * (long / 2.0) + lift],
+         [0.05, 0.085, 0.075, 0.03], [CONE_SCALES[0], CONE_SCALES[1], CONE_SCALES[2], CONE_SCALES[1]], 6)
 finish(part, 'myrstack', sharp=70.0, strength=0.4, reach=0.9, recalc=False)
 
 # KIT-PARTS-END

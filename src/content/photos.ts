@@ -25,6 +25,9 @@ const moments: { id: PhotoMoment; chapter: string; flag?: string; mode?: PlayerS
   { id: 'cocoa', chapter: 'morgonen', flag: 'cocoa', delay: 2.5 },
 ];
 
+/** The chapter a photo moment is taken in: so that an adventure's last pages show that adventure's own. */
+export const photoChapter = (id: PhotoMoment): string => moments.find((moment) => moment.id === id)!.chapter;
+
 /** Let the picture settle during play. Loading an old flag must not take a picture of the wrong place. */
 export function createPhotoMoments(chapter: string, initial: ReadonlySet<string>) {
   const pending = moments.filter((moment) => moment.chapter === chapter && !(moment.flag && initial.has(moment.flag)))

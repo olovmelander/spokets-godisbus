@@ -24,6 +24,7 @@ import { MODEL_TURN } from './ghost-model';
 import { matchboxShape } from './matchbox';
 import { streetLeaf } from './village';
 import { PACK } from './extensions';
+import { TOY_SHELF, hallThings } from './home-hall';
 
 /**
  * Stand-ins for the things and the animals of the story, built in code: each is recognisable, and none is
@@ -732,6 +733,28 @@ export function spotProp(spot: Spot): SpotProp | null {
           curl.rotation.y = used ? 0.4 : Math.sin(clock * 0.8) * 0.5;
         },
       };
+    }
+    case 'toyShelf': {
+      // A low toy shelf in the family's room, its front towards the camera, the same in every home chapter (Olov, 15
+      // November 2026: "Bord, golv, inredning och allt måste se likadant ut som hemmet i äventyr 2"). Its model,
+      // 'leksakshylla', with blocks, a ball, a ring tower, books and a truck, is one of the room's (./shared-models.ts).
+      group.position.set(spot.at.x, spot.at.y, TOY_SHELF.z);
+      const model = new Group();
+      model.userData.model = 'leksakshylla';
+      model.userData.disposeFallback = true;
+      const birch = solid('#dcbc8c', 0.8);
+      for (const x of [-1.64, 1.64]) model.add(new Mesh(new BoxGeometry(0.12, 1.8, 1).translate(x, 0.9, 0), birch));
+      for (const y of [0.14, 0.9, 1.78]) model.add(new Mesh(new BoxGeometry(3.3, 0.08, 1).translate(0, y, 0), birch));
+      model.add(new Mesh(new BoxGeometry(3.3, 1.7, 0.06).translate(0, 0.9, -0.46), solid('#c4a070', 0.85)));
+      group.add(model);
+      return { group, update: () => {} };
+    }
+    case 'hall': {
+      // The hall past the bathroom: the family's raincoats on their rail, their boots under them, and the front door
+      // (./home-hall.ts), as in Äventyr 2's home. Placed by the room's own numbers.
+      group.position.set(0, 0, 0);
+      group.add(hallThings().group);
+      return { group, update: () => {} };
     }
     case 'shavings': {
       // What Pappa's knife left on the table: pale curls.

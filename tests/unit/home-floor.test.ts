@@ -24,3 +24,37 @@ describe('the floor at home', () => {
     }
   });
 });
+
+/**
+ * Olov, 15 November 2026: "Kapitlet Godiskalaset i äventyr 1 och första kapitlet i äventyr 1 måste ha samma design på
+ * hemmet som i det allra sista kapitlet i äventyr 2. Bord, golv, inredning och allt måste se likadant ut som hemmet i
+ * äventyr 2." The toy shelf was Äventyr 2's alone, Godiskalaset's table had a cloth drawn as a flat grey slab and its hall
+ * ended in a step, and an open doorway stood free in the prologue's room.
+ */
+describe('the home', () => {
+  it('is furnished the same in every chapter at home: the same table and chairs, and the toy shelf beside the sofa', async () => {
+    await loadAdventure2();
+    const home = [...STORY, ...ADVENTURE2].filter((chapter) => chapter.place === 'home');
+    for (const chapter of home) {
+      const shelf = (chapter.decor ?? []).filter((d) => d.look === 'toyShelf');
+      expect(shelf.map((d) => d.at.x), chapter.id).toEqual([HOME_LAYOUT.toyShelf.x]);
+      const table = (chapter.furniture ?? []).filter((piece) => piece.look === 'table');
+      expect(table, chapter.id).toHaveLength(1);
+      expect(table[0]!.cloth, chapter.id).toBeUndefined();
+      expect((chapter.furniture ?? []).filter((piece) => piece.look === 'chair').length, chapter.id).toBe(Object.keys(HOME_LAYOUT.dining.chairs).length);
+    }
+  });
+
+  it('has the same hall in Godiskalaset as on Sunday morning: the coats, the boots and the front door, to the end wall', async () => {
+    await loadAdventure2();
+    const [epilog, morgonen] = ['epilog', 'morgonen'].map((id) => [...STORY, ...ADVENTURE2].find((chapter) => chapter.id === id)!);
+    expect((epilog!.decor ?? []).some((d) => d.look === 'hall')).toBe(true);
+    // Sunday morning's hall is in what the night left (its coats are wet).
+    expect((morgonen!.decor ?? []).some((d) => d.look === 'aftermath')).toBe(true);
+    for (const chapter of [epilog!, morgonen!]) {
+      expect(chapter.house!.windows, chapter.id).toContain(HOME_LAYOUT.hall.window);
+      const floor = chapter.ground.filter((p) => p.x > chapter.ground[0]!.x && p.x < HOME_LAYOUT.hall.end);
+      expect(floor.every((p) => p.y === 0), chapter.id).toBe(true);
+    }
+  });
+});

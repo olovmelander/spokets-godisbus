@@ -27,7 +27,8 @@ describe('Äventyr 1, the last chapters: where the sweets lie', () => {
     const marks = [
       ...(epilog.spots ?? []).filter((spot) => spot.id.startsWith('party:') && spot.look === 'sign' && (spot.standsAt?.z ?? 0) > -2.5)
         .map((spot) => spot.standsAt?.x ?? spot.at.x),
-      ...(epilog.decor ?? []).filter((d) => d.at.y === 0).map((d) => d.at.x),
+      // The things he found on the floor; not the room's own (the toy shelf, the hall).
+      ...(epilog.decor ?? []).filter((d) => d.at.y === 0 && d.after?.startsWith('lost:')).map((d) => d.at.x),
     ];
     for (const x of marks) for (const c of epilog.candy) expect(Math.abs(c.x - x), `the sweet at ${c.x} by ${x}`).toBeGreaterThan(0.65);
   });

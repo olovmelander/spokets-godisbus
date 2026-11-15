@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/app/game';
 import { STORY, chapterNumber, courseFor, nextAfter } from '../../src/content/chapters';
 import { epilog, prolog } from '../../src/content/chapters/ends';
-import { HOME_BATHROOM } from '../../src/content/home-layout';
+import { HOME_BATHROOM, HOME_LAYOUT } from '../../src/content/home-layout';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
 import { STEP } from '../../src/sim/constants';
@@ -303,11 +303,13 @@ describe('Epilog, Godiskalaset, in greybox', () => {
     expect(sim.flags.has('bedtime')).toBe(true);
     expect(sim.flags.has('goal')).toBe(true);
   });
+  // The hall goes on past the bathroom to the room's end wall, past the coats and the front door, as in Äventyr 2's home
+  // (Olov, 15 November 2026); a step stood across it at 47 before.
   it('cannot be walked past: the ending waits until his teeth are brushed', () => {
     const sim = new Sim(epilog);
     run(sim, 30, { x: 1, hopHeld: true });
     expect(sim.flags.has('goal')).toBe(false);
-    expect(sim.curr.x).toBeLessThan(47);
+    expect(sim.curr.x).toBeLessThan(HOME_LAYOUT.hall.end);
   });
 });
 

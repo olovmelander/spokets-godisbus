@@ -39,6 +39,8 @@ import { windWisp } from './wind-wisp';
 import { createAfloat } from './afloat';
 import { createRain } from './rain';
 import { PACK } from './extensions';
+import { farPlane } from './far-plane';
+import { gungflyExtra } from './gungfly';
 import { installLift } from './lift';
 import { paintStreetMirror } from './village';
 import { candyKit, createTrail, installSweets, sweeten, sweetSocket } from './candy';
@@ -485,7 +487,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Berget's lace, let down and held by the ghost (./ghost-lace.ts).
   const ghostLace = buildGhostLace(chapter);
   scene.add(ghostLace.group);
-  // The jay brings Stormskogen's beard lichen down for him (./jay-lichen.ts).
+  // The jay brings the beard lichen down for him, in Stormskogen and in Granskogen (./jay-lichen.ts).
   const jayLichen = buildJayLichen(chapter, climbs.group);
   scene.add(jayLichen.group);
   const lichenJay = things.find((thing) => chapter.climbs?.some((climb) => climb.broughtBy?.jay === thing.spot.id))?.prop?.group ?? null;
@@ -528,7 +530,8 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   const night = buildNight(chapter, sky, hemisphere, sun);
   scene.add(night.group);
   // What a chapter pack adds: Äventyr 2's storm (./extensions.ts).
-  const extras = PACK.extras.map((make) => make({ chapter, scene, sky, hemisphere, sun })).filter((extra) => extra !== null);
+  // Every chapter's soft tussocks are drawn as gungfly (./gungfly.ts): Myren's and Flärken's.
+  const extras = [...PACK.extras, gungflyExtra].map((make) => make({ chapter, scene, sky, hemisphere, sun })).filter((extra) => extra !== null);
   // The visual upgrade's systems, for every chapter (./lift/, docs/visual-upgrade.md).
   installLift();
   const lifts = PACK.lifts.map((make) => make({ chapter, scene, sky, hemisphere, sun, place, dressing: dressing?.group ?? null })).filter((lift) => lift !== null);
@@ -985,8 +988,9 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   }
   characterShadows.setTier(tier);
 
-  // Over a brink (Billsta's brow) the camera sees far: the water far below, its far shore and the ridges beyond.
-  const camera = new PerspectiveCamera(FOV, 1, 0.1, chapter.brink ? 640 : 140);
+  // Over a brink (Billsta's brow) the camera sees far: the water far below, its far shore and the ridges beyond. However
+  // far a shot backs it off, it sees as far behind the play plane (./far-plane.ts, set again each frame).
+  const camera = new PerspectiveCamera(FOV, 1, 0.1, farPlane(0, !!chapter.brink));
   seeRich(camera, tier);
   let viewHeight = 5;
   let distance = 10;
@@ -1677,6 +1681,13 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
       const shotHeight = Math.max(2.6, 2.8 / camera.aspect);
       camera.position.set(window.x, window.y + 0.65, window.z + shotHeight / 2 / Math.tan(FOV * Math.PI / 360));
       camera.lookAt(window.x, window.y + 0.65, window.z);
+    }
+    // Where the camera now stands, it sees as far behind the play plane as at the usual picture (./far-plane.ts): a shot
+    // backed off to fit its width keeps the trees, the forest and the hills behind it.
+    const far = farPlane(camera.position.z, !!chapter.brink);
+    if (Math.abs(far - camera.far) > 0.01) {
+      camera.far = far;
+      camera.updateProjectionMatrix();
     }
     const darkness = night.update(flags, dt, tier === 'low' ? 0.5 : 0.85, calmStory, lifeDt);
     // The foreground's own shade, by day; little of it at night and in the storm, which are dark enough (./grade.ts).
@@ -2951,7 +2962,7 @@ function buildTussocks(chapter: ChapterData, colour: string | null): Mesh[] {
     // tussock of the bog, not a bowl. Seen from both sides, so each blade is twice, once each way round.
     const shape = colour ? mergeGeometries([geometry, sedge(t.width, t.x)]) : geometry;
     const mesh = new Mesh(shape ?? geometry, moss);
-    // Named, for a chapter that draws its own in their place and follows these (Flärken's gungfly, content/aventyr2/gungfly.ts).
+    // Named, for the gungfly drawn in their place, which follows these (./gungfly.ts).
     mesh.name = 'tussock';
     mesh.position.set(t.x, t.y, 0);
     return mesh;

@@ -1,6 +1,6 @@
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { box } from '../content/aventyr2/buildings';
+import { box } from './home-room';
 import { HOME_LAYOUT } from '../content/home-layout';
 
 /**
