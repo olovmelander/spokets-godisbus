@@ -1,5 +1,112 @@
 # Handover
 
+## State (15 November 2026, night): the background in wide shots, Granskogen's jay, a finer anthill and fallen spruce, Myren's gungfly, one home, and Äventyr 2's book
+
+One cloud session, after PR #280 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov wrote seven wishes, one
+after another:
+
+- **The background left wide pictures.** "På lördagsmorgon i slutet, när kameran zoomar ut, så försvinner bakgrunden som
+  den gjorde i stormens öga förut. ... Vi måste fixa det på alla ställen där kameran zoomar ut så bakgrunden inte
+  försvinner."
+  - Cause: a scene's shot backs the camera off to fit its width, and the camera saw 140 EL however far back it stood. On
+    a phone held upright the title over the garden at the end of Lördagsmorgon took it 114 back, so it saw 26 behind the
+    play plane, and the trees, the forest and the hills (up to 90 back) left the picture. Twenty-nine shots in both
+    adventures backed it past what it saw, among them the same title in Stormkvällen, Bertil's thanks in Granskogen,
+    Moa's over the flood, Flärken's card (18 behind) and Morgonen efter's last picture (154 back: the room itself beyond
+    it).
+  - Fix: `farPlane()` (`src/render/far-plane.ts`, set each frame in `view.ts`) keeps the camera seeing 125 behind the
+    play plane (625 in a chapter that looks out from a brink) from wherever it stands, and never less than before (140,
+    640). The depth of field, the contact shade, the water and the light shafts read it each frame. Stormens öga's stars
+    and moon keep their own fix (`SKY`).
+- **Granskogen: the jay lets the lichen down.** "I kapitel granskog i äventyr 1 så måste fågeln man ger ett lingon flyga
+  upp och släppa ner laven så att Elof kan klättra upp. Precis som fågeln man ger lingonen till gör i äventyr 2. Vi
+  måste lägga in en kommentar från Elof också när fågeln gör detta I äventyr 1."
+  - Before: the beard lichen on the high root (x 43.7) could be climbed the moment the berry was given.
+  - Now as in Stormskogen (`LICHEN` in `src/content/chapters/granskog.ts`): the jay swallows the berry, flies up over
+    the root's edge to a dead snag where the lichen hangs wound up, tugs it loose, and it unrolls down the face (the
+    live scene `laven`, 5.8 s: loose at 3.4 s, down at 4.0 s, which sets `lichen:down`; the climb `needs` it and is
+    drawn by `src/render/jay-lichen.ts` from its `broughtBy`). As it reaches the ground Elof says "Tack, lavskrikan! Nu
+    klättrar jag upp." (`forestJayLichen`, the beat `jay-lichen`). A camera zone (x 33.3–44, zoom 1.7, lift 1.5) takes
+    in the root's edge and the flight. A game taken up after the berry finds the lichen down, without the line.
+  - Recorded in Elof's voice with ElevenLabs (`record-voices.mjs --record --only forestJayLichen`; the first take was
+    heard right by its speech-to-text check) and levelled to −18.7 LUFS.
+- **Granskogen: the anthill.** "Kan vi göra myrstacken snyggare design och textur i granskogen i äventyr 1."
+  - Before: a dark grey-brown mound, its foot shaded to a dark teal, loose needles lying on it like sticks.
+  - Now (`myrstack` in `art/blender/forest-kit.py`): a wood ant's mound of spruce needles, rust and golden brown, drier
+    and paler towards the crown, damp and darker at the foot, in a fine grain on twice as many points each way; 2,900
+    shorter, finer loose needles, forty twigs and nine small cones. 2,318 triangles before, 7,164 now.
+- **Granskogen: the fallen spruce after the seesaw.** "Kan vi ge trädet som ligger på marken efter att pappa skjutit
+  över Elof på gungbrädan bättre design och textur."
+  - Before: a smooth brown pipe, its bark painted on 44 rings of 17 points.
+  - Now (`stock`): 100 rings of 35; irregular scales standing out of deep cracks in a spruce's grey-brown, rust-red
+    where it has flaked, grey lichen in patches, the moss of its top running down its sides in tongues, three red-belted
+    conks on its front tipped up so the camera sees their tops, and five stubs of its lower boughs besides the four
+    broken ones at its back. 1,680 triangles before, 7,522 now. Both keep their blocks: nothing in front of the path
+    stands higher than the path.
+  - Built, baked and exported headless in this cloud session with Blender 5.2.4 LTS (the `bpy` module; notes under
+    "Notes for sessions that drive Blender"). Built first as committed, the kit came out byte for byte as its GLB, so
+    nothing but the two models changed. `forest-kit.glb` is 1,040 KB baked and about 370 KB packed (was 537 and 212).
+- **Myren: the gungfly.** "Kan vi designa och förbättra designen och texturen på gungflyt i kapitlet myren!"
+  - Before: Myren's pale tussocks that sink under him were lathed mounds of moss with a ring of sedge.
+  - Now they are Flärken's gungfly (made at Olov's word on 14 November): a raft of bog, a cushion of sphagnum in greens,
+    straw, ochre and rust-brown, level where he stands, pale dead moss under it darkening into wet black peat, undercut
+    at the waterline with roots, sedge with cotton grass at its ends and back, cranberries and bog rosemary; it rocks
+    and tips towards him, the water wells up round his boots as it sinks, rings spread, and it comes up dripping. The
+    module moved from the Äventyr 2 pack into the base game (`src/render/gungfly.ts`, one of the view's extras) and
+    draws every chapter's soft tussocks. The sinking is the simulation's, unchanged.
+- **One home in all four chapters.** "Kapitlet Godiskalaset i äventyr 1 och första kapitlet i äventyr 1 måste ha samma
+  design på hemmet som i det allra sista kapitlet i äventyr 2. Bord, golv, inredning och allt måste se likadant ut som
+  hemmet i äventyr 2."
+  - Compared along the room, the four homes already shared the walls, windows, sofa, lamp, plant, rug, drawings, TV and
+    bathroom door (the one home of 11 November). What differed is now the same:
+    - the low toy shelf beside the sofa, Äventyr 2's alone: now in every home chapter at the layout's x 21.3 (the look
+      `toyShelf` in `props.ts`; its model `leksakshylla` comes from the room kit, as the sofa's does);
+    - Godiskalaset's table under a cloth drawn as a flat grey slab: now the family's wooden table, its top at 1.65 as at
+      every meal (Klonk's hop and the coin and clip found on it follow);
+    - Godiskalaset's hall, ended by a step at 47: now Morgonen efter's hall, the raincoats on their rail, the boots
+      under them, the green front door at 44.4 and the window at 52, the floor level to the end wall at 62 (the look
+      `hall`, `src/render/home-hall.ts`, shared with the morning's aftermath; `hall` in `home-layout.json`);
+    - an open doorway standing free in the prologue's room, whose hinge tore the bag: gone. The bag tears at the same
+      place, on the toy shelf's corner, where its scrap stays.
+  - The prologue's room still ends at the veranda door, where its story goes out; it has no hall.
+- **Äventyr 2 ends as Äventyr 1 does.** "Sen slutar äventyr 2 på samma snygga sätt som äventyr 1 där man får se alla
+  bilder från äventyret."
+  - Äventyr 1's last card (Godiskalaset) opens the album as a book, two photos a spread turning by themselves every four
+    seconds, and the thanks on its last page; Äventyr 2's last card had only its buttons. Now Morgonen efter's opens the
+    same book, with "Se äventyret igen" on the card. Each book holds its own adventure's photos, by the moment's chapter
+    (`photoChapter` in `src/content/photos.ts`): the umbrella, the football, the raft, the night owl, the lamps, the
+    reunion and the cocoa in Äventyr 2's; the shrinking, the swing, the plane, the cap, the crane, the aurora and the
+    carving in Äventyr 1's. Closed, Äventyr 2's gives the focus back to the card's map of the chapters.
+  - On that card the book's button comes after the map and the way home, and on a phone held sideways it is a plain
+    link, as "Spela igen" is on Äventyr 1's (`adventure-end` in `src/ui/ui.css`): as a button it pushed the way home off
+    a 844×390 screen.
+- **LICENSES.md** had no row for the recorded voices at all (none since 12 November); it has one now, under "Owned by
+  Olov", with the plan and the terms still to be added (question below). The gungfly's row follows it to
+  `src/render/gungfly.ts`, and the forest kit's row says it was rebuilt.
+- **Guards:** `tests/unit/far-plane.test.ts` (every scene's shot in both adventures, on a phone and an iPad held either
+  way, keeps the chapter's far layers in sight, with room to spare), `tests/robot/granskog.test.ts` (the root cannot be
+  climbed until the lichen is down, about 4 s after the berry; then it is climbed and the line said; a game taken up
+  after the berry finds it down without the line), `tests/unit/home-floor.test.ts` (the toy shelf in every home chapter
+  at the layout's place; one table without a cloth and its two chairs; Godiskalaset's hall, front door, window and level
+  floor to the end wall), `tests/browser/endings.mjs` (Morgonen efter's card opens the book "Vårt äventyr", Escape
+  closes it, the way home in view at 844×390), and the tests that relied on the step, the cloth and the doorway follow.
+- **Validation:** `npm run typecheck` and `npm run privacy-check` pass. `npm test` passed 3346 with 20 skipped; the one
+  test it failed (Äventyr 2's own extras, eight before the gungfly moved into the base game, seven now) was corrected
+  and passes. `npm run build` passes its size gate: JS 736.4 of 1000 KB gzipped, boot 6,005 of 10,240 KB, and Äventyr
+  2's chunk 154.7 of 160 KB, about 4 KB less now that the gungfly and the toy shelf are the base game's. Browser suites,
+  run here with the preinstalled Chromium as before: shared-home (42), myren-loop (30; draws as before, at most 63 on
+  Low and 108 on High), epilogue (20), journey and prologue (86); forest-puzzles, smoke and endings were still running
+  when this was written. Seen in the game's renderer with stand-in figures: the title over the garden at 390×844,
+  820×1180, 1180×820 and 844×390, Morgonen efter's last picture at 390×844 and 1180×820 and Flärken's card at 390×844,
+  the background in each; the jay at 844×390 and 390×844; the four homes at 1440×900; Myren's gungfly at 1440×900 and
+  844×390; the anthill and the fallen spruce at 1440×900 on High and Low.
+- **Not checked:** nobody has played these on the family's devices; the new line was heard right by speech-to-text, not
+  by ear; the anthill, the spruce, the gungfly, the homes and the jay were seen with stand-in figures in this computer's
+  renderer, not with the family's models.
+- **Next:** Olov plays Lördagsmorgon to its title, Granskogen past the jay and the fallen spruce, Myren over the
+  gungfly, Godiskalaset to its book and Morgonen efter to Äventyr 2's book, and answers the questions. No Blender work
+  is waiting: the forest kit was built here with Blender 5.2, the version on his computer.
+
 ## State (15 November 2026, evening): Godisracet's drift, calmer again
 
 One cloud session, after PR #279 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`, started again from `main`).
@@ -6294,6 +6401,15 @@ record identify the exact published revision.
 
 ## Next
 
+**The background, the jay, the anthill and spruce, Myren's gungfly, one home and Äventyr 2's book (15 November,
+night).** The camera's far plane follows it back (`farPlane`, `src/render/far-plane.ts`): a far layer deeper than 125
+behind the play plane, or a shot that backs further off than any now, is checked by `far-plane.test.ts` and needs
+`SIGHT` changed. A climb a creature brings is `broughtBy` with a live scene and a flag (`LICHEN` in Granskogen, as in
+Stormskogen). The home's furniture is the base game's in all four home chapters (`toyShelf`, `hall`, `HOME_LAYOUT`):
+change it in one place, with `home-floor.test.ts`. Soft tussocks in any chapter are drawn as gungfly
+(`src/render/gungfly.ts`). The last card of each adventure opens that adventure's own book (`ofAdventure` in
+`src/main.ts`). Next: Olov plays the seven and answers the questions. No Blender work is waiting.
+
 **Whole houses, the storm's eye's sky, the level floor and the narrator's "Storm…" (15 November, later).** Keep a
 village house whole over its shop floor (`UPPER`, `src/render/village.ts`): a kit part that ends at `TOP` needs what stands
 over it, since a wide shot or a phone held upright sees there. Keep a sky that stands far off at a fixed distance in front
@@ -6809,6 +6925,16 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **The background stays (Olov, 15 November 2026):** "Vi måste fixa det på alla ställen där kameran zoomar ut så
+  bakgrunden inte försvinner": the camera sees as far behind the play plane in every shot, however far it backs off.
+- **Creatures bring what he climbs (Olov, 15 November 2026):** in Granskogen as in Stormskogen, the jay given the
+  berry flies up and lets the lichen down, and Elof thanks it.
+- **One home (Olov, 15 November 2026):** "Bord, golv, inredning och allt måste se likadant ut som hemmet i äventyr 2":
+  the prologue, Godiskalaset, Stormkvällen and Morgonen efter share the toy shelf and the wooden table without a cloth;
+  Godiskalaset and Morgonen efter the hall with the raincoats, the boots and the front door. The prologue's room still
+  ends at the veranda door, where its story goes out.
+- **Each adventure ends with its own book (Olov, 15 November 2026):** "Sen slutar äventyr 2 på samma snygga sätt som
+  äventyr 1": the last card opens the album of that adventure's own photos, with the thanks on its last page.
 - **The floor at home is level (Olov, 15 November 2026):** "Golvet ska vara plant i alla kapitel, precis som i det sista
   kapitlet." No sill or step in the room in any chapter; the prologue's Hoppa lesson at the old sill is gone with it until
   Olov says otherwise (question below).
@@ -6933,6 +7059,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The background, the jay, the anthill and spruce, the gungfly, one home, Äventyr 2's book (15 Nov, night) | Seven wishes after #280 | The same cloud session; Blender 5.2.4 headless for the forest kit | — / 7 messages | The camera sees as far behind in every wide shot; the jay brings Granskogen's lichen, with Elof's thanks recorded; a wood ant's mound and a barked spruce with conks and stubs; Myren's tussocks as Flärken's gungfly; the four homes furnished alike; Äventyr 2's last card opens its own book; the voices' licence row added |
 | Godisracet's drift again (15 Nov, evening) | The merged drift still slid and turned too fast | The same cloud session, after #279 | — / 2 messages | A held drift no tighter than the wheel at full lock, its body at most 11.5° across and swinging out gently; the rivals' laps as before |
 | Byn's houses, the storm's eye, the home floor, the narrator, the drift, the vättar (15 Nov, later) | Three things seen while playing, the narrator's "Storm…", the drift, and the vättar seen and in Äventyr 2 | One cloud session | — / 1 report (+5 messages) | Houses whole over the shop floor with a roof, the birch into its crown; stars and moon kept in sight in every shot; a level floor at home (the Hoppa lesson went with the sill); six narrator cards taken again and chosen by measuring the vowel; ElevenLabs reachable from cloud sessions; a held drift turns less; the vättar on every tier, out as he comes, three in Äventyr 2 under leaves |
 | Äventyr 2, second round (14–15 Nov) | Olov's fifty points from playing Äventyr 2 | One session on Olov's computer: thirteen builders and the lead, stopped overnight and by the Fable limit, finished on Opus 5.5; Blender headless | — / 1 list | Every point done; Sickan the cat, the narrator's "Storm…", the bowl and the gift given to the old trägubbe, natural ground edges everywhere, Elof's walk paced by the time drawn; 12 lines recorded |
@@ -7005,6 +7132,12 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **The seven of 15 November, night:** all seen with stand-in figures in this computer's renderer only, not on the
+  family's devices or with the family's models. On a phone held upright the wide shots now keep their background, but
+  the camera stands far back there (up to 154 EL) and everything in them is small, as it was. The anthill and the fallen
+  spruce have about three and four times the triangles they had (7,164 and 7,522; Granskogen's draws are unchanged); Low
+  was looked at, not timed on a phone.
 
 - **Whole houses and the narrator (15 November, later):** the six new narrator takes were chosen by measuring and by
   speech-to-text, not by ear. The houses' upper storeys, roofs and the birch's limbs were seen with stand-in figures on
@@ -7228,6 +7361,12 @@ The older list, still true where it is not struck:
 
 ## Notes for sessions that drive Blender
 
+- **Blender 5.2.4 in a cloud session (15 November 2026).** In a scratch venv `pip install "bpy==5.2.*"` gave 5.2.4 LTS
+  (Blender 5.2, as on Olov's computer; the preinstalled `bpy` is still 4.5.14). The forest kit was built, baked and
+  exported with a small scratch driver: `import bpy`, then `exec` the text of `art/blender/forest-kit.py` (it holds its
+  own tools and bake), then set `OUT` and `exec` `scripts/bake/export.py`. The kit binds `ROOT` itself, so the driver
+  keeps the repository's path under another name. Built first unchanged, the kit came out byte for byte as its committed
+  GLB; `npm run assets` then packs it into `public/packs`.
 - **Olov's computer, 12 November 2026.** Blender 5.2.2 LTS also had Blender Lab's own "MCP" extension enabled, on the
   same port 9876, so the session's server got answers it could not read ("Incomplete JSON response"). It is now disabled,
   and "Interface: MCP for Blender" 2.0 is installed with `uvx mcp-for-blender install-addon` (protocol 16, telemetry
@@ -7352,6 +7491,23 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 15 november, kväll (allt är byggt; inget hindrar):
+
+- **Laven i Granskogen:** nu flyger lavskrikan upp och släpper ner laven, och när den når marken säger Elof "Tack,
+  lavskrikan! Nu klättrar jag upp." (inspelad med Elofs röst). Låter repliken rätt, och är flygturen lagom lång (knappt
+  sex sekunder)?
+- **Hemmet:** prologen och Godiskalaset har nu samma leksakshylla och samma träbord utan duk som Morgonen efter, och
+  Godiskalaset samma hall med regnkläderna, stövlarna och den gröna ytterdörren. Prologens rum slutar fortfarande vid
+  verandadörren, där berättelsen går ut. Ser du något mer som skiljer?
+- **Myrstacken, granen och gungflyt:** myrstacken är rost- och gyllenbrun av granbarr med kvistar och kottar, granen på
+  marken har bark med fjäll, lav, mossa, tre tickor och grenstumpar, och Myrens tuvor är gungfly som i Flärken. Blev de
+  som du ville?
+- **Slutet på Äventyr 2:** sista kortet öppnar boken med Äventyr 2:s egna bilder (paraplyet, fotbollen, flotten,
+  nattugglan, lamporna, återseendet och kakaon) och tacket på sista sidan, som i Äventyr 1. Rätt bilder?
+- **Rösternas rad i LICENSES.md:** de inspelade rösterna saknade en rad där. Nu finns den (ElevenLabs, ditt konto,
+  Eleven v4, 12–15 november). Vilken plan har du hos ElevenLabs? Reglerna vill att raden har planen och en länk till
+  villkoren.
 
 Från den 15 november, senare (allt är byggt; inget hindrar):
 
