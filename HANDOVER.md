@@ -100,15 +100,17 @@ after another:
   at the layout's place; one table without a cloth and its two chairs; Godiskalaset's hall, front door, window and level
   floor to the end wall), `tests/browser/endings.mjs` (Morgonen efter's card opens the book "Vårt äventyr", Escape
   closes it, the way home in view at 844×390), and the tests that relied on the step, the cloth and the doorway follow.
-- **Validation:** `npm run typecheck`, `npm test` (3347 passed, 20 skipped), `npm run build` (size gate ok: JS 736.4 of
-  1000 KB gzipped; boot 6,005 of 10,240 KB; Äventyr 2's chunk 154.7 of 160 KB, about 4 KB less now that the gungfly and
+- **Validation:** `npm run typecheck`, `npm test` (3350 passed, 20 skipped), `npm run build` (size gate ok: JS 735.8 of
+  1000 KB gzipped; boot 5,979 of 10,240 KB; Äventyr 2's chunk 154.7 of 160 KB, about 4 KB less now that the gungfly and
   the toy shelf are the base game's) and `npm run privacy-check` pass. Browser suites, run here with the preinstalled
   Chromium as before: shared-home (42), myren-loop (30; draws as before, at most 63 on Low and 108 on High),
   forest-puzzles (52), smoke (101), endings (80; Morgonen efter's book, and its way home in view at 844×390 and
-  390×844), epilogue (20), journey and prologue (86). Seen in the game's renderer with stand-in figures: the title over
-  the garden at 390×844, 820×1180, 1180×820 and 844×390, Morgonen efter's last picture at 390×844 and 1180×820 and
-  Flärken's card at 390×844, the background in each; the jay at 844×390 and 390×844; the four homes at 1440×900; Myren's
-  gungfly at 1440×900 and 844×390; the anthill and the fallen spruce at 1440×900 on High and Low.
+  390×844), epilogue (20), journey and prologue (86); smoke and forest-puzzles again after the fallen spruce was made as
+  old wood. Seen in the game's renderer with stand-in figures: the title over the garden at 390×844, 820×1180, 1180×820
+  and 844×390, Morgonen efter's last picture at 390×844 and 1180×820 and Flärken's card at 390×844, the background in
+  each; the jay at 844×390 and 390×844; the four homes at 1440×900; Myren's gungfly at 1440×900 and 844×390; the anthill
+  at 1440×900 on High and Low; the fallen spruce as old wood at 844×390 on High and Low, at 1440×900 and at 390×844,
+  before and after.
 - **Not checked:** nobody has played these on the family's devices; the new line was heard right by speech-to-text, not
   by ear; the anthill, the spruce, the gungfly, the homes and the jay were seen with stand-in figures in this computer's
   renderer, not with the family's models.
