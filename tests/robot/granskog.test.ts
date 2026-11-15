@@ -4,6 +4,8 @@ import { granskog } from '../../src/content/chapters/granskog';
 import { nextAfter } from '../../src/content/chapters';
 import { sv } from '../../src/content/sv';
 import { settingsFor, simOptions } from '../../src/save/settings';
+import { Sim } from '../../src/sim/sim';
+import { run, runPast, use, walkTo } from '../sim/drive';
 import { decide, playThrough } from './robot';
 
 describe('Kapitel 2, Granskogen, in greybox', () => {
@@ -18,8 +20,9 @@ describe('Kapitel 2, Granskogen, in greybox', () => {
       expect(result.flags).toEqual(expect.arrayContaining([
         'berry', 'jay', 'placed:twig', 'antlift', 'seesaw', 'placed:cone', 'launch', 'log', 'cap', 'placed:rescue', 'goal',
       ]));
-      // This robot presses every offered Använd, so it also chooses the optional berry gift.
-      expect(result.said).toEqual(['vittra', 'vittra-gift', 'family:pappa', 'family:seesaw',
+      // This robot presses every offered Använd, so it also chooses the optional berry gift. Elof thanks the jay as the
+      // lichen it let down reaches the ground (Olov, 15 November 2026).
+      expect(result.said).toEqual(['jay-lichen', 'vittra', 'vittra-gift', 'family:pappa', 'family:seesaw',
         'family:seesaw-ready', 'tack-pappa:0', 'family:bertil', 'family:cap-ready', 'heja', 'tack-bertil:0', 'thanked']);
       // The avalanche may bowl it over now and then: that only takes it back to a big candy.
       expect(result.bowled).toBeLessThanOrEqual(2);
@@ -99,5 +102,41 @@ describe('Kapitel 2, Granskogen, in greybox', () => {
   it('follows Kapitel 1', () => {
     expect(nextAfter('garden')?.id).toBe('granskog');
     expect(nextAfter('testbana')).toBeNull();
+  });
+
+  // Olov, 15 November 2026: "fågeln man ger ett lingon [måste] flyga upp och släppa ner laven så att Elof kan klättra upp.
+  // Precis som fågeln man ger lingonen till gör i äventyr 2. Vi måste lägga in en kommentar från Elof också".
+  it('the jay, given its berry, brings the beard lichen down: nothing to climb until it has, and he thanks it', () => {
+    const sim = new Sim(granskog, {}, { checkpoint: 1 });
+    run(sim, 0.2);
+    // The root is too high, and the lichen is not there yet.
+    walkTo(sim, 43.4);
+    run(sim, 1, { x: 1 });
+    expect(sim.curr.y).toBeLessThan(1);
+    walkTo(sim, 33);
+    expect(sim.curr.word).toBe('pick');
+    use(sim);
+    walkTo(sim, 37);
+    expect(sim.curr.verb).toBe('give');
+    use(sim);
+    expect(sim.flags.has('jay')).toBe(true);
+    // The jay flies up to the snag and pecks: two seconds on, nothing hangs down yet.
+    run(sim, 2);
+    expect(sim.flags.has('lichen:down')).toBe(false);
+    expect(sim.said).not.toContain('jay-lichen');
+    // It comes down as the jay tugs it loose, and he thanks the bird as it reaches the ground.
+    run(sim, 2.5);
+    expect(sim.flags.has('lichen:down')).toBe(true);
+    expect(sim.said).toContain('jay-lichen');
+    expect(sv.lines.forestJayLichen).toBe('Tack, lavskrikan! Nu klättrar jag upp.');
+    runPast(sim, 46);
+    expect(sim.curr.y).toBeCloseTo(4, 1);
+  });
+
+  it('finds the lichen down in a game taken up after the berry, and says nothing of it far beyond', () => {
+    const sim = new Sim(granskog, {}, { checkpoint: 4, flags: ['berry', 'jay', 'scene:laven'] });
+    run(sim, 0.5);
+    expect(sim.flags.has('lichen:down')).toBe(true);
+    expect(sim.said).not.toContain('jay-lichen');
   });
 });

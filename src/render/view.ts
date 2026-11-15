@@ -486,7 +486,7 @@ export function createView(canvas: HTMLCanvasElement, chapter: ChapterData, aske
   // Berget's lace, let down and held by the ghost (./ghost-lace.ts).
   const ghostLace = buildGhostLace(chapter);
   scene.add(ghostLace.group);
-  // The jay brings Stormskogen's beard lichen down for him (./jay-lichen.ts).
+  // The jay brings the beard lichen down for him, in Stormskogen and in Granskogen (./jay-lichen.ts).
   const jayLichen = buildJayLichen(chapter, climbs.group);
   scene.add(jayLichen.group);
   const lichenJay = things.find((thing) => chapter.climbs?.some((climb) => climb.broughtBy?.jay === thing.spot.id))?.prop?.group ?? null;

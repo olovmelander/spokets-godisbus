@@ -6,7 +6,7 @@ import { drawnWhile } from './idle';
 import { EAT, face, jayRigOf, STAND_IN_WINGS, type JayRig } from './jay';
 
 /**
- * Stormskogen: the jay brings the beard lichen down (Olov, 14 November 2026: "När man har gett lavskrikan ett lingon
+ * Stormskogen, and Granskogen as in it (Olov, 15 November 2026): the jay brings the beard lichen down (Olov, 14 November 2026: "När man har gett lavskrikan ett lingon
  * och den visar vägen ska den först flyga upp över kanten. Därefter ska det tydligt framgå visuellt att det är
  * lavskrikan som ordnar det Elof kan klättra på för att ta sig upp. Nu dyker det som Elof ska klättra på upp direkt
  * när man ger fågeln lingonet."). Picture only: the simulation's climb is there from the flag the scene leaves.

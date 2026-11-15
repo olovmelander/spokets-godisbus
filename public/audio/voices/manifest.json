@@ -3865,5 +3865,14 @@
     "model": "eleven_v4",
     "stability": 0.35,
     "generatedAt": "2026-11-15T00:06:19.141Z"
+  },
+  "forestJayLichen": {
+    "speaker": "elof",
+    "text": "Tack, lavskrikan! Nu klättrar jag upp.",
+    "tag": "[grateful, delighted]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-15T17:10:10.027Z"
   }
 }

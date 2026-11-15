@@ -4576,5 +4576,16 @@
     "tagHeard": false,
     "takes": 1,
     "ok": true
+  },
+  "forestJayLichen": {
+    "key": "forestJayLichen",
+    "speaker": "elof",
+    "text": "Tack, lavskrikan! Nu klättrar jag upp.",
+    "tag": "[grateful, delighted]",
+    "heard": "Tack, lavskrikan! Nu klättrar jag upp",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
   }
 }
