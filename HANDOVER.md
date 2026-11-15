@@ -47,13 +47,15 @@ What was done:
   past the green one where a chapter goes out, the floor level through the hall to it, and the coats, rail and boots clear
   of both frames); `tests/sim/prologue.test.ts`, `tests/robot/ends.test.ts`, `tests/unit/stage-interactions.test.ts` and
   `tests/unit/story-context.test.ts` moved with the deck; the robot's Stormkvällen candy trail stays in order.
-- **Validation:** `npm run typecheck`, `npm test` (3351 passed, 20 skipped) and `npm run build` (size gate ok: JS 735.8
-  of 1000 KB gzipped; boot 5,979 of 10,240 KB; Äventyr 2's chunk 154.7 of 160 KB) pass. The browser suites prologue,
-  aventyr2, opening-story, pointing, walk-and-talk, home-console, shared-home, journey, smoke and endings were running
-  when this was written. Seen in the game's renderer with stand-in figures at 1440×900 (and 844×390 for the prologue's
-  hall): the prologue's hall, its veranda's door and deck, and its title at the deck's edge (also at 390×844);
-  Stormkvällen's bare hall, the family coming out onto the deck (`lofte`) and the promises (`stormtitel`); Morgonen
-  efter's and Godiskalaset's halls with the coats clear of the white door.
+- **Validation:** `npm run typecheck`, `npm test` (3352 passed, 20 skipped), `npm run build` (size gate ok: JS 735.8 of
+  1000 KB gzipped; boot 5,979 of 10,240 KB; Äventyr 2's chunk 154.7 of 160 KB) and `npm run privacy-check` pass. Browser
+  suites, run here with the preinstalled Chromium as before: prologue (86; its deck positions moved with the deck),
+  pointing (44; it taps the hall's last sweet and the star past the door), aventyr2 (42), opening-story (75),
+  walk-and-talk (34), home-console (55), shared-home (42), journey, smoke (101) and endings (80). Seen in the game's
+  renderer with stand-in figures at 1440×900 (and 844×390 for the prologue's hall): the prologue's hall, its veranda's
+  door and deck, and its title at the deck's edge (also at 390×844); Stormkvällen's bare hall, the family coming out
+  onto the deck (`lofte`) and the promises (`stormtitel`); Morgonen efter's and Godiskalaset's halls with the coats
+  clear of the white door.
 - **Not checked:** nobody has played the two chapters through the hall onto the deck by hand; the scenes were seen in
   stills with stand-in figures in this computer's renderer, not with the family's models or on the family's devices.
 - **Next:** Olov plays Lördagsmorgon and Stormkvällen through the hall and out onto the deck, and answers the questions.
