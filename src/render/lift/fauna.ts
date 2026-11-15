@@ -153,18 +153,21 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
   // The calm of the storm's eye, as the storm itself fades it.
   let calm = 0;
   const storm = chapter.storm;
-  // The fox, the squirrels and the beings (./fauna/folk.ts): drawn rigged once their models have come.
-  const folk = forestFolk(plan, add, group, chapter.checkpoints ?? []);
-  group.userData.forestFolk = folk.wants;
   // Pappa's carvings and the stones they stand on are drawn on every tier (Olov, 14 November 2026: the hare's new
-  // design is to be on "alla dessa kaniner"): a group of their own beside the rich one, two or three small draws.
+  // design is to be on "alla dessa kaniner"): a group of their own beside the rich one, two or three small draws. So are
+  // the beings and the stones they peek over (Olov, 15 November 2026: "se till att vättarna syns på ett bra och fint
+  // sätt"): two at the most in a chapter, one skinned draw each.
   const still = new Group();
   still.name = 'fauna-carvings';
-  const carved = carvings(plan, (shape, count, with_, name) => {
+  const addStill: Add = (shape, count, with_, name) => {
     const made = add(shape, count, with_, name);
     still.add(made.mesh);
     return made;
-  });
+  };
+  // The fox, the squirrels and the beings (./fauna/folk.ts): drawn rigged once their models have come.
+  const folk = forestFolk(plan, add, group, chapter.checkpoints ?? [], { add: addStill, group: still });
+  group.userData.forestFolk = folk.wants;
+  const carved = carvings(plan, addStill);
   const kinds = [
     ...folk.kinds,
     owls(plan, add),
@@ -206,7 +209,9 @@ export function createFauna(context: ExtraContext): ViewExtra | null {
         cy: camera.position.y, rise: Math.tan((camera.fov * Math.PI) / 360),
         day: storm?.rain || plan.place === 'dusk' ? 0 : 1 - smooth(((frame.darkness ?? 0) - 0.25) / 0.4),
       };
-      // Low draws the carvings only: the rest of the near life is on the rich layer, which its camera does not see.
+      // Low draws the carvings and the beings only: the rest of the near life is on the rich layer, which its camera does
+      // not see.
+      folk.beings?.(now);
       if (frame.tier === 'low') carved?.(now, calm);
       else for (const kind of kinds) kind(now, calm);
       for (const c of crowds) c.flush();

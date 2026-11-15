@@ -169,13 +169,16 @@ function frame(chapter: ChapterData, x: number, clock: number, over: Partial<Ext
   camera.updateMatrixWorld();
   return { dt: 1 / 30, clock, flags: new Set(), x, y: ground, camera, still: false, tier: 'high', riding: false, darkness: 0, ...over };
 }
-const rigsOf = (id: string, kind: string) => (built.get(id)!.group.getObjectByName('fauna-rigged')?.children ?? []).filter((c) => c.name === `fauna-rigged:${kind}`);
+// The beings are drawn on every tier, in a group beside the rich one (../../src/render/lift/fauna.ts): found in the scene.
+const rigsOf = (id: string, kind: string) => [built.get(id)!.group.getObjectByName('fauna-rigged'), built.get(id)!.group.parent?.getObjectByName('fauna-rigged-beings')]
+  .flatMap((holder) => holder?.children ?? []).filter((c) => c.name === `fauna-rigged:${kind}`);
 const clipsOf = (root: Object3D) => (root as Object3D & { creatureClips: CreatureClips }).creatureClips;
-const crowd = (id: string, name: string) => built.get(id)!.group.children.find((c) => c.name === name) as InstancedMesh;
+const crowd = (id: string, name: string) => built.get(id)!.group.parent!.getObjectByName(name) as InstancedMesh;
 const showing = (root: Object3D, clip: string) => clipsOf(root).showing().find((s) => s.name === clip)?.weight ?? 0;
 
 describe('the forest folk in the near life (src/render/lift/fauna/folk.ts)', () => {
-  it('has a rigged copy for each of its places, drawn only on Mid and High, in place of the shapes built in code', () => {
+  // The beings on every tier (Olov, 15 November 2026: "se till att vättarna syns på ett bra och fint sätt").
+  it('has a rigged copy for each of its places in place of the shapes built in code, the beings on every tier, the rest on Mid and High', () => {
     expect(rigsOf('granskog', 'fox')).toHaveLength(1);
     expect(rigsOf('granskog', 'squirrel')).toHaveLength(built.get('granskog')!.plan.squirrels.length);
     expect(rigsOf('granskog', 'vatte')).toHaveLength(built.get('granskog')!.plan.beings.length);
@@ -184,6 +187,7 @@ describe('the forest folk in the near life (src/render/lift/fauna/folk.ts)', () 
     for (const root of built.get('granskog')!.group.getObjectByName('fauna-rigged')!.children) {
       root.traverse((part) => expect(part.layers.mask, part.name).toBe(1 << RICH_LAYER));
     }
+    for (const root of rigsOf('granskog', 'vatte')) root.traverse((part) => expect(part.layers.mask, part.name).toBe(1));
   });
 
   it('puts the squirrels on their trunks, with the code-built shapes hidden, and sends one down to eat now and then', () => {

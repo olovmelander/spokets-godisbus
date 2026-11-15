@@ -16,13 +16,15 @@ import { being, fox, squirrel } from './shapes';
  * each, once its GLB has come (`installForestFolk`, before the view's first frames); and until then, or without the
  * file, with the shapes built in code (./shapes.ts), one instanced draw for all of a kind, as the near life always had.
  * There are few of them (a fox, two or three squirrels, two beings a chapter), so a copy each costs a draw call each
- * only while it is in the picture, on Mid and High; Low draws none of the near life.
+ * only while it is in the picture, on Mid and High. Low draws none of the near life but the beings, two at the most
+ * (Olov, 15 November 2026: "se till att vättarna syns på ett bra och fint sätt").
  *
  * The fox steps out from behind a trunk far back, trots, sniffs the moss, pounces now and then, sits down facing the
  * picture with its tail round its feet, looks at the camera, scratches or yawns, and trots off, never towards him. The
  * squirrel dashes up and round its trunk, stops dead and flicks its tail, and now and then runs down to sit at the foot of
  * its tree and nibble a cone, until he comes near and it leaps back onto the bark. The beings peek over their stones,
- * duck when he comes, blink at him, and now and then one waves.
+ * duck when he is right by them, blink at him, and wave to him as he comes; in the storm each holds a big leaf over its
+ * head.
  */
 
 /** What every kind is told each frame (../fauna.ts `Now`). */
@@ -70,6 +72,14 @@ export const STRIDE = 0.5;
 export const RUN_OUT = 1;
 /** How big a being is drawn: three quarters of him. */
 export const BEING = 1.35;
+/**
+ * How a being shows itself (Olov, 15 November 2026: "se till att vättarna syns på ett bra och fint sätt"). Out, it stands
+ * `rise` higher than its rest pose, so that its face, its shoulders and its twig arms are over its stone, not only its
+ * eyes. It ducks only when he comes within `near` of it, comes out again `back` seconds after he has gone by and takes
+ * `out` seconds over it; it watches him from `watch` away, and waves at him once as he comes. In the storm it holds its leaf
+ * over its head, `umbrella` times as big.
+ */
+export const BEING_SHOW = { rise: 0.24, near: 1.6, back: [0.8, 1.4], out: 0.8, watch: 12, wave: 0.6, umbrella: 2.3 } as const;
 /** How far down a being ducks in its `hide` clip, in its own units (art/blender/vatte.py HIDE). */
 export const HIDE = 0.34;
 
@@ -128,7 +138,7 @@ interface Rigs { list: CreatureClips[] | null }
  * The copies go in a group of their own (`holder`), put in the fauna only once some have come, so that a fauna without
  * them is its instanced meshes alone, as it always was.
  */
-function rigs(kind: Folk, count: number, holder: Group, wants: FolkWant[]): Rigs {
+function rigs(kind: Folk, count: number, holder: Group, wants: FolkWant[], rich = true): Rigs {
   const made: Rigs = { list: null };
   wants.push({
     kind, count,
@@ -142,7 +152,7 @@ function rigs(kind: Folk, count: number, holder: Group, wants: FolkWant[]): Rigs
         Object.defineProperty(rig.root, 'creatureClips', { value: rig });
         holder.add(rig.root);
         // What only Mid and High draw (../../rich.ts): laid here too, in case it comes after the view has laid its own.
-        rig.root.traverse((part) => part.layers.set(RICH_LAYER));
+        if (rich) rig.root.traverse((part) => part.layers.set(RICH_LAYER));
         drawnWhile(rig.root, false);
       }
       made.list = list;
@@ -159,14 +169,17 @@ const shown = (rig: CreatureClips, on: boolean) => { if (rig.root.visible !== on
  * loader. The rigged copies go in a group of their own in `fauna`; the code-built shapes are made by `add`. `sweets`
  * are the chapter's big candies (its checkpoints), tall on the path, which nothing of them sits behind.
  */
-export function forestFolk(plan: Plan, add: FolkAdd, fauna: Object3D, sweets: readonly Sweet[] = []): { kinds: FolkKind[]; wants: FolkWant[] } {
+export function forestFolk(plan: Plan, add: FolkAdd, fauna: Object3D, sweets: readonly Sweet[] = [], everyTier?: { add: FolkAdd; group: Object3D }):
+  { kinds: FolkKind[]; beings: FolkKind | null; wants: FolkWant[] } {
   const wants: FolkWant[] = [];
   const holder = new Group();
   holder.name = 'fauna-rigged';
   holder.userData.fauna = fauna;
-  const kinds = [squirrels(plan, add, holder, wants, sweets), foxes(plan, add, holder, wants), beings(plan, add, holder, wants)]
-    .filter((kind): kind is FolkKind => kind !== null);
-  return { kinds, wants };
+  const kinds = [squirrels(plan, add, holder, wants, sweets), foxes(plan, add, holder, wants)].filter((kind): kind is FolkKind => kind !== null);
+  // The beings are drawn on every tier, given a group for it (../fauna.ts): beside the rich one, as Pappa's carvings are.
+  const near = everyTier ? Object.assign(new Group(), { name: 'fauna-rigged-beings' }) : holder;
+  if (everyTier) near.userData.fauna = everyTier.group;
+  return { kinds, beings: beings(plan, everyTier?.add ?? add, near, wants, !everyTier), wants };
 }
 
 /**
@@ -576,11 +589,13 @@ const clipOf = (act: FoxAct): string => (act === 'pounce' ? 'mouse-jump' : act =
 
 type BeingAct = 'peek' | 'blink' | 'wave';
 
-function beings(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): FolkKind | null {
+function beings(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[], rich = true): FolkKind | null {
   if (!plan.beings.length) return null;
   const lichen = plan.beings[0]!.lichen;
+  const umbrella = plan.beings[0]!.umbrella;
   const crowd = add(being(lichen), plan.beings.length, undefined, 'beings');
-  const rigged = rigs('vatte', plan.beings.length, holder, wants);
+  const rigged = rigs('vatte', plan.beings.length, holder, wants, rich);
+  const { rise, near: close, back, out: coming, watch, wave } = BEING_SHOW;
   const next = sequence(61);
   // What a being chooses to do while it is out, apart from its ducking and blinking: so that those are as they were.
   const chance = sequence(67);
@@ -594,24 +609,25 @@ function beings(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Fol
     const list = rigged.list;
     for (const [i, b] of all.entries()) {
       const rig = list?.[i];
-      if (i >= quota(all.length, now) || !seen(now, b.at[0], b.at[2], 2)) {
+      // Every one of them on every tier: there are two at the most in a chapter.
+      if (!seen(now, b.at[0], b.at[2], 2)) {
         crowd.hide(i);
         if (rig) shown(rig, false);
         continue;
       }
-      const near = Math.abs(now.x - b.at[0]) < 3 && Math.abs(now.y - b.at[1]) < 4;
+      const near = Math.abs(now.x - b.at[0]) < close && Math.abs(now.y - b.at[1]) < 4;
       if (!now.still) {
-        // Quick to duck, slow and careful to come out again, a while after he has gone by.
-        if (near) { b.out = Math.max(0, b.out - now.dt / 0.25); b.wait = 2 + next() * 2; }
-        else if ((b.wait -= now.dt) <= 0) b.out = Math.min(1, b.out + now.dt / 1.4);
+        // Quick to duck when he is right by it, and out again soon after he has gone by.
+        if (near) { b.out = Math.max(0, b.out - now.dt / 0.25); b.wait = back[0] + next() * (back[1] - back[0]); }
+        else if ((b.wait -= now.dt) <= 0) b.out = Math.min(1, b.out + now.dt / coming);
         b.blink -= now.dt;
         if (b.blink < -0.3) b.blink = 2.5 + next() * 3;
         b.clock += now.dt;
-        // Out, it looks about, or watches him and blinks, or, with him not far, waves once in a while: shy and friendly.
+        // Out, it looks about, or watches him and blinks, or, with him coming, waves to him: shy and friendly.
         if ((b.actFor -= now.dt) <= 0) {
-          const watching = Math.abs(now.x - b.at[0]) < 10;
+          const watching = Math.abs(now.x - b.at[0]) < watch;
           const r = chance();
-          b.act = watching && (!b.waved || friendly) && (r < 0.4 || friendly) && b.out > 0.9 ? 'wave' : watching && r < 0.75 ? 'blink' : 'peek';
+          b.act = watching && (!b.waved || friendly) && (r < wave || friendly) && b.out > 0.9 ? 'wave' : watching && r < 0.85 ? 'blink' : 'peek';
           if (b.act === 'wave') b.waved = true;
           if (!watching) b.waved = false;
           b.actFor = b.act === 'wave' ? 3 : b.act === 'blink' ? 1.5 * (1 + Math.floor(chance() * 2)) : 2.5 + chance() * 3;
@@ -629,7 +645,7 @@ function beings(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Fol
         // Behind its stone, as high as it is when it peeks: its clips take it down out of sight. One on its stone's left
         // is drawn mirrored, so that it waves with the hand on its open side.
         E.set(roll, yaw, 0, 'YZX');
-        rig.root.position.set(x, b.top - 0.36, z);
+        rig.root.position.set(x, b.top - 0.36 + rise * out, z);
         rig.root.quaternion.setFromEuler(E);
         rig.root.scale.set(BEING, BEING, b.side < 0 ? -BEING : BEING);
         for (const act of ['peek', 'blink', 'wave'] as const) b.w[act] = ease(b.w[act], act === b.act ? 1 : 0, 4, now.dt);
@@ -639,14 +655,15 @@ function beings(plan: Plan, add: FolkAdd, holder: Group, wants: FolkWant[]): Fol
           if (b.w[act] > 0.001) rig.scrub(act, (act === 'peek' ? now.t + i * 1.7 : b.clock) / rig.duration(act), (out * b.w[act]) / sum);
         }
         rig.update(now.still ? 0 : now.dt);
-        // It wears the cap of its place: a leaf in the forest, lichen on the bog and the mountain.
-        rig.bone('cap.leaf')?.scale.setScalar(lichen ? 0 : 1);
-        rig.bone('cap.lichen')?.scale.setScalar(lichen ? 1 : 0);
+        // It wears the cap of its place: a leaf in the forest, lichen on the bog and the mountain; in the storm, a big leaf
+        // held over its head against the rain.
+        rig.bone('cap.leaf')?.scale.setScalar(umbrella ? BEING_SHOW.umbrella : lichen ? 0 : 1);
+        rig.bone('cap.lichen')?.scale.setScalar(umbrella || !lichen ? 0 : 1);
         continue;
       }
       // The shape built in code: out, its eyes are just over the top, and it leans out to one side to look.
       const shut = b.blink < 0 ? Math.sin((-b.blink / 0.3) * Math.PI) : 0;
-      crowd.put(i, x, b.top - lerp(0.82, 0.36, out), z, yaw, BEING, 0, roll);
+      crowd.put(i, x, b.top - lerp(0.82, 0.36 - rise, out), z, yaw, BEING, 0, roll);
       crowd.pose(i, 0, 0, 0, shut);
     }
   };

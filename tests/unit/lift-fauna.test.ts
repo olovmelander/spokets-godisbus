@@ -198,7 +198,10 @@ describe('the near life', () => {
     }
   });
 
-  it('hides in the storm: only birds sheltering on branches, and the owls', () => {
+  // Olov, 15 November 2026: "Kan vi ha vättarna i äventyr 2 också på passande ställen!" They peek out in the storm's
+  // forests and by the forest at Billsta, each under a big leaf; everything else hides.
+  it('hides in the storm: only birds sheltering on branches, the owls, and the beings under their leaves', () => {
+    const beings: Record<string, number> = { stormskog: 2, billsta: 1 };
     for (const chapter of ADVENTURE2.filter((c) => c.storm?.rain)) {
       const plan = built.get(chapter.id)!.plan;
       if (!plan) continue;
@@ -206,7 +209,11 @@ describe('the near life', () => {
       expect(plan.fox, chapter.id).toBe(false);
       expect(plan.butterflies, chapter.id).toEqual([]);
       expect(plan.dragonflies, chapter.id).toEqual([]);
-      expect(plan.beings, chapter.id).toEqual([]);
+      expect(plan.beings.length, chapter.id).toBe(beings[chapter.id] ?? 0);
+      for (const b of plan.beings) {
+        expect(b.umbrella, chapter.id).toBe(true);
+        expect(b.at[0], chapter.id).toBeLessThan(chapter.goalX - 4);
+      }
       for (const flock of plan.flocks) {
         expect(flock.shelter && flock.perch, chapter.id).toBe(true);
         // Near the path, where two small birds are seen: they sat up to seventeen EL back, a few soft pixels (Olov, 14
@@ -220,6 +227,25 @@ describe('the near life', () => {
       // Fireflies only where the storm's eye opens.
       expect(plan.fireflies > 0, chapter.id).toBe(!!chapter.storm!.calm);
     }
+  });
+
+  // Olov, 15 November 2026: "se till att vättarna syns på ett bra och fint sätt". Älven's one being peeked out right behind
+  // its last big lollipop, which hid all of it but its leaf.
+  it('lets no big candy hide a being as he comes: none right in front of it, nor in the three EL before it', () => {
+    let beings = 0;
+    for (const chapter of chapters) {
+      for (const b of built.get(chapter.id)!.plan?.beings ?? []) {
+        beings++;
+        for (const c of chapter.checkpoints ?? []) {
+          if (Math.abs(c.y - b.at[1]) > 1.5) continue;
+          // Nearer the picture than the being, a candy before it crosses in front of it while he is still coming: one
+          // after it crosses only once he has gone by, when it has ducked.
+          const ahead = c.x - b.at[0];
+          expect(ahead <= -3 || ahead >= 0.5, `${chapter.id}: the being at ${b.at[0].toFixed(1)}, the big candy at ${c.x}`).toBe(true);
+        }
+      }
+    }
+    expect(beings).toBeGreaterThanOrEqual(9);
   });
 
   it('never gives the lakebed beneath the meeting stone a tree perch or a nesting stump', () => {
@@ -380,7 +406,7 @@ describe('the near life', () => {
 
   it('stands where it always does, wherever he begins', () => {
     // A game taken up at a checkpoint, or a picture taken with ?at, starts him elsewhere (src/main.ts).
-    for (const id of ['granskog', 'garden', 'norrsken', 'flarken']) {
+    for (const id of ['granskog', 'garden', 'norrsken', 'flarken', 'stormskog', 'billsta']) {
       const chapter = COURSES[id]!;
       const dressing = built.get(id)!.scene.children[0]!;
       const plan = (spawn: { x: number; y: number }) => JSON.stringify(faunaPlan({ ...chapter, spawn }, dressing));
