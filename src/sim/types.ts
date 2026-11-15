@@ -498,7 +498,7 @@ export type MoverLook = 'none' | 'owl-twig' | 'boulder' | 'riverLog' | 'plank' |
   | 'fieldstone'
   | 'lid' | 'bark' | 'swing-sign' | 'jetty-plank' | 'football' | 'raft' | 'buoy' | 'hut-door' | 'barn-door';
 export type LedgeLook = 'plank' | 'trestle' | 'leaf' | 'branch' | 'bark' | 'nest' | 'stone' | 'ladder' | 'shelf';
-export type SpotLook = 'souvenir' | 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'hall' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
+export type SpotLook = 'souvenir' | 'toothbrushes' | 'kit' | 'casement' | 'doll' | 'toyShelf' | 'hall' | 'hallWorn' | 'mormorHome' | 'otter' | 'seesawLog' | 'bellCord' | 'blind' | 'homeEvening' | 'whiteWater' | 'floatBall' | 'deadLamp' | 'owlLanding' | 'aftermath' | 'ladybird' | 'berry' | 'crowberry' | 'jay' | 'ants' | 'sign' | 'seesaw' | 'lollipop' | 'crane' | 'cobble' | 'bag' | 'gold' | 'star' | 'shavings' | 'memory' | 'marble' | 'clip' | 'brick' | 'coin' | 'dew' | 'wisp' | 'cairn' | 'crack' | 'vittra-door' | 'keepsake' | 'rootHole'
   // Äventyr 2's, drawn by its pack (src/content/aventyr2/render.ts).
   | 'pumpkin' | 'tragubbe' | 'lillgubbe' | 'owl' | 'tap' | 'candle' | 'candyBowl' | 'cocoa' | 'breakfast' | 'tiny-cap' | 'latch' | 'flashlight' | 'reed'
   | 'football' | 'lifebuoy' | 'flag' | 'lantern' | 'mormor' | 'morfar' | 'target';

@@ -20,18 +20,18 @@ describe('the star is a choice', () => {
   const beforeStar = ['scene:morgon', 'eye', 'paint', 'woke', 'grab', 'blink', 'scene:vaknar', 'mamma:noticed', 'mamma:passed', 'bag:torn', 'scene:stjarnan'];
 
   it('never consumes the star when he walks through it in either direction', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 40.4, y: -0.79 } }, {}, { flags: beforeStar });
+    const sim = new Sim({ ...prolog, spawn: { x: 50.4, y: -0.79 } }, {}, { flags: beforeStar });
     tick(sim, 1.1, go);
-    expect(sim.curr.x).toBeGreaterThan(42.8);
+    expect(sim.curr.x).toBeGreaterThan(52.8);
     expect(sim.flags.has('star')).toBe(false);
     tick(sim, 1.7, { ...idle, x: -1 });
-    expect(sim.curr.x).toBeLessThan(40.5);
+    expect(sim.curr.x).toBeLessThan(50.5);
     expect(sim.flags.has('star')).toBe(false);
   });
 
   it('replays an interrupted taste on the deck without asking him to consume the star twice', () => {
     const sim = new Sim(prolog, {}, { checkpoint: 1, flags: [...beforeStar, 'star'] });
-    expect(sim.curr.x).toBeCloseTo(40.5);
+    expect(sim.curr.x).toBeCloseTo(50.5);
     expect(sim.checkpoint).toBe(1);
     for (let i = 0; i < 30 && !sim.sceneFrame; i++) sim.step(idle);
     expect(sim.sceneFrame?.id).toBe('poff');
@@ -42,7 +42,7 @@ describe('the star is a choice', () => {
 
   it('replays a taste inside its picture after he has first saved beyond the uneaten star', () => {
     const sim = new Sim(prolog, {}, { checkpoint: 2, flags: beforeStar });
-    expect(sim.curr.x).toBeCloseTo(45.5);
+    expect(sim.curr.x).toBeCloseTo(55.5);
     tick(sim, 0.2);
     for (let i = 0; i < 360 && sim.curr.word !== 'tasteStar'; i++) sim.step({ ...idle, x: -1 });
     expect(sim.curr.word).toBe('tasteStar');
@@ -52,7 +52,7 @@ describe('the star is a choice', () => {
     expect(sim.checkpoint).toBe(2);
 
     const restored = new Sim(prolog, {}, { checkpoint: sim.checkpoint, flags: [...sim.flags] });
-    expect(restored.curr.x).toBeCloseTo(40.5);
+    expect(restored.curr.x).toBeCloseTo(50.5);
     tick(restored, 0.2);
     expect(restored.sceneFrame?.id).toBe('poff');
     expect(restored.flags.has('star')).toBe(true);
@@ -60,17 +60,17 @@ describe('the star is a choice', () => {
     sim.toCheckpoint();
     tick(sim, 4);
     expect(sim.sceneFrame?.id).toBe('poff');
-    expect(sim.curr.x).toBeCloseTo(40.5, 1);
+    expect(sim.curr.x).toBeCloseTo(50.5, 1);
   });
 
   it('uses the normal checkpoint again after the deck scenes are finished', () => {
     const sim = new Sim(prolog, {}, { checkpoint: 2, flags: [...beforeStar, 'star', 'scene:poff', 'scene:familj', 'hand', 'scene:handen'] });
-    expect(sim.curr.x).toBeCloseTo(45.5);
+    expect(sim.curr.x).toBeCloseTo(55.5);
   });
 
   it('recognises completed shrinking in an older save that only remembers the later railing joke', () => {
     const sim = new Sim(prolog, {}, { checkpoint: 2, flags: ['eye', 'paint', 'blink', 'star', 'pappa:noticed'] });
-    expect(sim.curr.x).toBeCloseTo(45.5);
+    expect(sim.curr.x).toBeCloseTo(55.5);
     expect(sim.flags.has('scene:poff')).toBe(true);
     expect(sim.flags.has('scene:familj')).toBe(true);
     expect(sim.flags.has('scene:handen')).toBe(true);
@@ -94,7 +94,9 @@ describe('the shared kitchen keeps opening saves playable', () => {
     expect(sim.collected).toHaveLength(17);
     expect(sim.collected.flatMap((taken, index) => taken ? [index] : [])).toEqual(collected);
     expect(prolog.candy.every(candy => candy.x > layout.doorway.x)).toBe(true);
-    expect(prolog.candy.slice(11).map(candy => candy.x)).toEqual([30.6, 32.4, 34.4, 36.4, 38.6, 39.8]);
+    // The three before the bathroom's door spread on through the hall to the veranda's door (15 November 2026), and the
+    // two at the step down to the deck stand where the step is now: the same seventeen, in the same order.
+    expect(prolog.candy.slice(11).map(candy => candy.x)).toEqual([30.6, 35, 39.5, 44, 48.6, 49.8]);
   });
 
   it('lets an old kitchen save finish its second eye and resumes the awakening beside the carving', () => {
@@ -197,7 +199,7 @@ describe('the prologue freeze jokes', () => {
   });
 
   it('waits for Pappa until Moa\'s drawing is told, lifts the wooden ghost onto the railing, and leaves it at the deck\'s edge', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 41.6, y: -0.79 } }, {}, { flags: told });
+    const sim = new Sim({ ...prolog, spawn: { x: 51.6, y: -0.79 } }, {}, { flags: told });
     tick(sim, 0.1);
     expect(sim.prologue!.frame?.kind).toBe('pappa');
     expect(sim.flags.has('pappa:noticed')).toBe(true);
@@ -221,12 +223,12 @@ describe('the prologue freeze jokes', () => {
     // The railing is empty: the ghost is at the deck's edge, and waits there for him, looking back.
     expect(sim.ghost!.gone).toBe(false);
     expect(sim.ghost!.x).toBeCloseTo(layout.edge!.x);
-    expect(prologuePose(layout, { kind: 'pappa', seconds: PAPPA_TIME, ghost: { x: 44.4, y: -0.8 } }).turn).toBeCloseTo(Math.PI - 0.4);
+    expect(prologuePose(layout, { kind: 'pappa', seconds: PAPPA_TIME, ghost: { x: 54.4, y: -0.8 } }).turn).toBeCloseTo(Math.PI - 0.4);
     expect(sim.flags.has('goal')).toBe(false);
   });
 
   it('does not begin Pappa\'s joke before Moa has told what the star did', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 41, y: -0.79 } }, {}, { flags: toHand });
+    const sim = new Sim({ ...prolog, spawn: { x: 51, y: -0.79 } }, {}, { flags: toHand });
     tick(sim, 1);
     expect(sim.prologue!.frame).toBeNull();
     expect(sim.curr.word).toBe('climbOn');
@@ -253,7 +255,7 @@ describe('the prologue freeze jokes', () => {
 
   it('keeps the meaning of the old big candies, and infers only the passed doorway for older saves', () => {
     // 0 in the kitchen at the start, 1 at the end of the hall, 2 on the deck after the shrinking.
-    expect(prolog.checkpoints!.map((c) => c.x)).toEqual([9.1, 26, 45.5]);
+    expect(prolog.checkpoints!.map((c) => c.x)).toEqual([9.1, 26, 55.5]);
     const sim = new Sim(prolog, {}, { checkpoint: 1, flags: ['eye', 'paint', 'blink'] });
     tick(sim, 0.1);
     expect(sim.prologue!.frame).toBeNull();
@@ -275,17 +277,17 @@ describe('the prologue freeze jokes', () => {
   });
 
   it('gives him his feet back after the lift: Pappa notices the ghost as he sets off towards it', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 40.8, y: -0.79 } }, {}, { flags: told });
+    const sim = new Sim({ ...prolog, spawn: { x: 50.8, y: -0.79 } }, {}, { flags: told });
     tick(sim, 1);
     expect(sim.prologue!.frame).toBeNull();
     expect(sim.held).toBe(false);
     for (let i = 0; i < 240 && !sim.prologue!.frame; i++) sim.step(go);
     expect(sim.prologue!.frame?.kind).toBe('pappa');
-    expect(sim.curr.x).toBeGreaterThanOrEqual(41.5);
+    expect(sim.curr.x).toBeGreaterThanOrEqual(51.5);
   });
 
   it('restarts an interrupted tableau after Till stora godiset without losing its completed actions', () => {
-    const sim = new Sim({ ...prolog, spawn: { x: 41.6, y: -0.79 } }, {}, { flags: told });
+    const sim = new Sim({ ...prolog, spawn: { x: 51.6, y: -0.79 } }, {}, { flags: told });
     tick(sim, 0.8);
     sim.toCheckpoint();
     expect(sim.prologue!.frame).toBeNull();
@@ -317,7 +319,7 @@ describe('the ghost gets away from the deck\'s edge before he is there', () => {
 
   for (const [how, input] of [['runs and jumps at it', { ...go, hopHeld: true }], ['walks up to it', { ...idle, x: 0.45 }]] as const) {
     it(`leaps down into the garden while a child who ${how} is still a way off, and the family's promises follow`, () => {
-      const sim = new Sim({ ...prolog, spawn: { x: 41.8, y: -0.79 } }, {}, { flags: afterJoke });
+      const sim = new Sim({ ...prolog, spawn: { x: 51.8, y: -0.79 } }, {}, { flags: afterJoke });
       const read = page(sim);
       let nearest = Infinity, lowest = Infinity, standing = 0, leapt = -1, apart = 0;
       for (let i = 0; i < 90 / STEP && !sim.flags.has('goal'); i++) {

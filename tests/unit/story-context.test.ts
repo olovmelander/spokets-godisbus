@@ -190,7 +190,7 @@ describe('reminders survive checkpoints without inventing knowledge', () => {
   });
 
   it.each([
-    { chapter: prolog, x: 45.5, flags: ['eye', 'paint', 'blink', 'bag:torn', 'star', 'scene:poff'], id: 'tiny' },
+    { chapter: prolog, x: 55.5, flags: ['eye', 'paint', 'blink', 'bag:torn', 'star', 'scene:poff'], id: 'tiny' },
     { chapter: garden, x: 118.2, flags: ['ladybird', 'dandelion'], id: 'garden' },
     { chapter: granskog, x: 106.5, flags: ['jay', 'placed:twig', 'antlift'], id: 'seesaw' },
     { chapter: granskog, x: 179, flags: ['launch', 'cap'], id: 'eddy' },
