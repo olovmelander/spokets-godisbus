@@ -30,7 +30,9 @@ describe('the recorded voices', () => {
   });
 
   // Olov, 14 November 2026: the narrator's "Stormkvällen", "Stormgården" and "Stormskogen" sounded wrong: "storm" was
-  // said as "stor", with a long closed vowel. Sent as "Stårm…" it is said right; the line shown keeps its own spelling.
+  // said as "stor", with a long closed vowel. Sent as "Stårm…" it became a long å (Olov, 15 November 2026: "Det låter
+  // konstigt"; measured: the vowel 140–200 ms, its first formant 350–400 Hz). With a double r the vowel is short and open,
+  // as the narrator's own o in "klockan" (about 520 Hz). The line shown keeps its own spelling.
   it('records a line spelled by sound with the same words, and still plays it over the line as written', () => {
     expect(Object.keys(SPOKEN)).toEqual(expect.arrayContaining(['scene_stormkvall', 'scene_stormgard', 'scene_stormskog']));
     for (const [key, sound] of Object.entries(SPOKEN)) {
@@ -40,6 +42,6 @@ describe('the recorded voices', () => {
       expect(manifest[key]!.spoken, `${key}: recorded before its spelling by sound`).toBe(sound);
       expect(stillSaid([key], manifest), key).toEqual([key]);
     }
-    for (const key of ['scene_stormkvall', 'scene_stormgard', 'scene_stormskog', 'scene_a2title']) expect(SPOKEN[key]).toMatch(/^Stårm/);
+    for (const key of ['scene_stormkvall', 'scene_stormgard', 'scene_stormskog', 'scene_a2title', 'scene_stormoga']) expect(SPOKEN[key]).toMatch(/^St[oå]rrm/);
   });
 });

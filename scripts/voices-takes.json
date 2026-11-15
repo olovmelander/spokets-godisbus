@@ -62,9 +62,14 @@
     "heard": "Stormkvällen. Lördag kväll",
     "share": 1,
     "tagHeard": false,
-    "takes": 1,
+    "takes": 13,
     "ok": true,
-    "spoken": "Stårmkvällen. lördag kväll"
+    "spoken": "Storrmkvällen. lördag kväll",
+    "vowel": {
+      "ms": 145,
+      "f1": 551,
+      "f2": 799
+    }
   },
   "biMorfarHere": {
     "key": "biMorfarHere",
@@ -1603,9 +1608,14 @@
     "heard": "Stormnatten",
     "share": 1,
     "tagHeard": false,
-    "takes": 1,
+    "takes": 13,
     "ok": true,
-    "spoken": "Stårmnatten"
+    "spoken": "Storrmnatten",
+    "vowel": {
+      "ms": 140,
+      "f1": 457,
+      "f2": 825
+    }
   },
   "sgPumpkin": {
     "key": "sgPumpkin",
@@ -1813,9 +1823,14 @@
     "heard": "Stormgården. Klockan åtta",
     "share": 1,
     "tagHeard": false,
-    "takes": 1,
+    "takes": 8,
     "ok": true,
-    "spoken": "Stårmgården. klockan åtta"
+    "spoken": "Storrmgården. klockan åtta",
+    "vowel": {
+      "ms": 120,
+      "f1": 517,
+      "f2": 823
+    }
   },
   "ssDark": {
     "key": "ssDark",
@@ -2166,9 +2181,14 @@
     "heard": "Stormskogen. Klockan nio",
     "share": 1,
     "tagHeard": false,
-    "takes": 1,
+    "takes": 13,
     "ok": true,
-    "spoken": "Stårmskogen. klockan nio"
+    "spoken": "Stårrmskogen. klockan nio",
+    "vowel": {
+      "ms": 130,
+      "f1": 471,
+      "f2": 803
+    }
   },
   "sbDark": {
     "key": "sbDark",
@@ -2365,8 +2385,13 @@
     "heard": "Byn i stormen. Klockan tio",
     "share": 1,
     "tagHeard": false,
-    "takes": 1,
-    "ok": true
+    "takes": 18,
+    "ok": true,
+    "vowel": {
+      "ms": 120,
+      "f1": 459,
+      "f2": 759
+    }
   },
   "olArrive": {
     "key": "olArrive",
@@ -4114,8 +4139,14 @@
     "heard": "Stormens öga vid midnatt",
     "share": 1,
     "tagHeard": false,
-    "takes": 1,
-    "ok": true
+    "takes": 13,
+    "ok": true,
+    "spoken": "Storrmens öga. vid midnatt",
+    "vowel": {
+      "ms": 125,
+      "f1": 451,
+      "f2": 763
+    }
   },
   "moOldHome": {
     "key": "moOldHome",

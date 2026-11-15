@@ -903,12 +903,12 @@
   "scene_stormkvall": {
     "speaker": "storyteller",
     "text": "Stormkvällen. lördag kväll",
-    "spoken": "Stårmkvällen. lördag kväll",
+    "spoken": "Storrmkvällen. lördag kväll",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-14T14:02:13.735Z"
+    "generatedAt": "2026-11-15T10:02:22.000Z"
   },
   "biMorfarHere": {
     "speaker": "morfar",
@@ -1480,12 +1480,12 @@
   "scene_a2title": {
     "speaker": "storyteller",
     "text": "Stormnatten",
-    "spoken": "Stårmnatten",
+    "spoken": "Storrmnatten",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-14T14:02:13.735Z"
+    "generatedAt": "2026-11-15T10:02:22.000Z"
   },
   "sgPumpkin": {
     "speaker": "elof",
@@ -1652,12 +1652,12 @@
   "scene_stormgard": {
     "speaker": "storyteller",
     "text": "Stormgården. klockan åtta",
-    "spoken": "Stårmgården. klockan åtta",
+    "spoken": "Storrmgården. klockan åtta",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-14T14:02:13.735Z"
+    "generatedAt": "2026-11-15T10:02:22.000Z"
   },
   "ssDark": {
     "speaker": "elof",
@@ -1941,12 +1941,12 @@
   "scene_stormskog": {
     "speaker": "storyteller",
     "text": "Stormskogen. klockan nio",
-    "spoken": "Stårmskogen. klockan nio",
+    "spoken": "Stårrmskogen. klockan nio",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-14T14:02:13.735Z"
+    "generatedAt": "2026-11-15T10:02:22.000Z"
   },
   "sbDark": {
     "speaker": "elof",
@@ -2108,7 +2108,7 @@
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:43:59.831Z"
+    "generatedAt": "2026-11-15T10:02:22.000Z"
   },
   "olArrive": {
     "speaker": "elof",
@@ -3526,11 +3526,12 @@
   "scene_stormoga": {
     "speaker": "storyteller",
     "text": "Stormens öga. vid midnatt",
+    "spoken": "Storrmens öga. vid midnatt",
     "tag": "[warm]",
     "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:45:18.230Z"
+    "generatedAt": "2026-11-15T10:02:22.000Z"
   },
   "moOldHome": {
     "speaker": "elof",
