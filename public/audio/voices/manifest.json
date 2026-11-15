@@ -3846,5 +3846,23 @@
     "model": "eleven_v4",
     "stability": 0.35,
     "generatedAt": "2026-11-14T23:30:05.893Z"
+  },
+  "biNut": {
+    "speaker": "elof",
+    "text": "En hasselnöt! Lika stor som mitt huvud!",
+    "tag": "[excited]",
+    "voiceId": "pKEH83CenvGnvS9JlN8f",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-15T00:06:18.903Z"
+  },
+  "biWelcome": {
+    "speaker": "mormor",
+    "text": "Varsågod, lilla Elof. Kliv in!",
+    "tag": "[gentle]",
+    "voiceId": "TI58dCdnaz4gmYn5EbvK",
+    "model": "eleven_v4",
+    "stability": 0.35,
+    "generatedAt": "2026-11-15T00:06:19.141Z"
   }
 }

@@ -4523,5 +4523,27 @@
     "tagHeard": false,
     "takes": 1,
     "ok": true
+  },
+  "biNut": {
+    "key": "biNut",
+    "speaker": "elof",
+    "text": "En hasselnöt! Lika stor som mitt huvud!",
+    "tag": "[excited]",
+    "heard": "En hasselnöt, lika stor som mitt huvud",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
+  },
+  "biWelcome": {
+    "key": "biWelcome",
+    "speaker": "mormor",
+    "text": "Varsågod, lilla Elof. Kliv in!",
+    "tag": "[gentle]",
+    "heard": "Varsågod, lilla Elof. Kliv in",
+    "share": 1,
+    "tagHeard": false,
+    "takes": 1,
+    "ok": true
   }
 }
