@@ -2365,8 +2365,10 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
     min-height: 52px;
   }
 
-  /* Playing again is the lesser choice here: a plain link under the way on. */
-  .panel.end #endAgain {
+  /* Playing again is the lesser choice here: a plain link under the way on. So is seeing the last adventure's book
+     again, which has just turned by itself: it would push the way home off a phone held sideways. */
+  .panel.end #endAgain,
+  .panel-back.adventure-end #endPhotos {
     min-height: 40px;
     background: transparent;
     box-shadow: none;
@@ -2374,6 +2376,11 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
     font-size: 16px;
     text-decoration: underline;
   }
+}
+
+/* The last adventure's card: its book again comes after the map of the chapters and the way home, not before them. */
+.panel-back.adventure-end #endPhotos {
+  order: 1;
 }
 
 /* --- the title: the game's name, Börja or Fortsätt, and at a first start the two play styles ------- */

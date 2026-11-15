@@ -1475,6 +1475,7 @@ async function start(): Promise<void> {
       // went black and began again).
       const last = !next && isAdventure2(chapter.id);
       byId('endHome').hidden = !last;
+      byId('endCard').classList.toggle('adventure-end', last);
       const focused = byId(canExplore ? 'endExplore' : next ? 'endOnward' : last ? 'endHome' : 'endAgain');
       focused.focus();
       // Each adventure ends with the book of its own photos turning by itself, and the thanks (Olov, 15 November 2026:
