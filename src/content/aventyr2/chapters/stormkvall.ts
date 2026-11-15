@@ -838,8 +838,9 @@ export const stormkvall: ChapterData = {
     ...row(10, 29, 0, 1.9, TRAIL),
     { x: 30.6, y: 0.45, after: TRAIL },
     // On past the bathroom's door and through the hall to the veranda's: the three that lay before the bathroom's door,
-    // further apart, so that a saved game's candy keeps its places and its order.
-    ...row(35, 44, 0, 4.5, TRAIL),
+    // further apart, the last as near the veranda's door as it lay to it before, so that a saved game's candy keeps its
+    // places and its order.
+    ...row(35, 46.4, 0, 5.7, TRAIL),
     { x: 48.6, y: -0.2, after: TRAIL },
     ...row(50, 60, -0.8, 2, TRAIL),
   ].map((c) => ({ ...c, x: round(c.x, 1) })),

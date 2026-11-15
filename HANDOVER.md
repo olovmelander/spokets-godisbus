@@ -37,7 +37,7 @@ What was done:
   `before`, a ghost's place in the hall (44.4), and the deck's row of sweets; in the prologue the frozen ghost's landing,
   which follows the railing now (`DECK_LANDING` in `src/sim/prologue.ts`).
 - **The trail through the hall.** The three sweets that lay before the white door are spread on through the hall (35,
-  39.5, 44), in both chapters, so that each keeps its place and order in the list: a saved game's candy stays its own
+  40.7, 46.4: the last as near the veranda's door as before), in both chapters, so that each keeps its place and order in the list: a saved game's candy stays its own
   (the prologue's seventeen, Stormkvällen's twenty-two).
 - **The raincoats clear of the white door.** The rail began at 37.05 and Pappa's coat at 37.04, over the white door's
   frame (37.57). Now the rail runs 37.95–41.95, the coats hang at 38.5, 39.35, 40.2 and 40.95, the boots stand under them,

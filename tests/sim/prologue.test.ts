@@ -96,7 +96,7 @@ describe('the shared kitchen keeps opening saves playable', () => {
     expect(prolog.candy.every(candy => candy.x > layout.doorway.x)).toBe(true);
     // The three before the bathroom's door spread on through the hall to the veranda's door (15 November 2026), and the
     // two at the step down to the deck stand where the step is now: the same seventeen, in the same order.
-    expect(prolog.candy.slice(11).map(candy => candy.x)).toEqual([30.6, 35, 39.5, 44, 48.6, 49.8]);
+    expect(prolog.candy.slice(11).map(candy => candy.x)).toEqual([30.6, 35, 40.7, 46.4, 48.6, 49.8]);
   });
 
   it('lets an old kitchen save finish its second eye and resumes the awakening beside the carving', () => {

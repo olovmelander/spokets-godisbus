@@ -142,8 +142,9 @@ export const prolog: ChapterData = {
     ...row(21.5, 29, 0, 0.75, 'bag:torn'),
     { x: 30.6, y: 0.45, after: 'bag:torn' },
     // On past the bathroom's door and through the hall to the veranda's: the three that lay before the bathroom's door,
-    // further apart, so that a saved game's candy keeps its places and its order.
-    ...row(35, 44, 0, 4.5, 'bag:torn'),
+    // further apart, the last as near the veranda's door as it lay to it before, so that a saved game's candy keeps its
+    // places and its order.
+    ...row(35, 46.4, 0, 5.7, 'bag:torn'),
     { x: 48.6, y: -0.2, after: 'bag:torn' },
     { x: 49.8, y: -0.35, after: 'bag:torn' },
   ],
