@@ -45,7 +45,10 @@ const failures = [];
 const external = [];
 const check = (name, value) => { assert.ok(value, name); checked++; console.log(`  ok   ${name}`); };
 async function ready(page) {
-  await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 60000 });
+  // A ceiling on wall-clock time, not a check. Two software-rendered tabs load and warm the game at once here; on the
+  // runner of PR #280 the reload after an update took about 50 s, and on a runner one and a half times slower (PR #281)
+  // it passed 60 s.
+  await page.waitForFunction(() => window.__godis && document.getElementById('loading').classList.contains('done'), null, { timeout: 180000 });
   await page.waitForFunction(() => window.__godis.state().bootReady, null, { timeout: 30000 });
 }
 async function waiting(page) {
