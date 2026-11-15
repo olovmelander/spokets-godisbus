@@ -410,6 +410,11 @@ export interface CameraZone {
   lift?: number;
   /** How far ahead of Elof it looks, where the usual 2.5 EL is wrong. */
   lead?: number;
+  /**
+   * How far the camera rises over where it looks, in EL, looking down on it: a vista from a height (Billsta's brow), the
+   * ground falling away in front of it and the water far below. Left out: level.
+   */
+  eye?: number;
 }
 
 /**
@@ -795,6 +800,11 @@ export interface ChapterData {
    * garden's far scenery. Indoors before it.
    */
   outdoors?: number;
+  /**
+   * For the picture only: a brink behind the path, from `from` to `to` along the course, where the ground ends `z`
+   * behind the play plane and falls away out of sight (Billsta's brow over the narrow). The chapter draws what is beyond.
+   */
+  brink?: { from: number; to: number; z: number };
   /** The rides. */
   rides?: Ride[];
   /**

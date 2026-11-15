@@ -57,7 +57,9 @@ import { BARK_BOAT, barkBoat } from './bark-boat';
 import { volleyNetExtra } from './volley-net';
 import { floatingBark } from './bark-raft';
 import { gungflyExtra } from './gungfly';
+import { fieldBoulder } from './field-boulder';
 import { hazelExtra } from './hazel';
+import { vistaExtra } from './billsta-vista';
 import { ballBag } from './ball-bag';
 import { bigBall, rollBalls } from './big-ball';
 import { GRABS, grabPlaces } from './bowl';
@@ -68,7 +70,7 @@ import { barnLoft } from './barn-loft';
 import { flowerPot } from './flower-pots';
 import { createTrampoline, type Trampoline } from './trampoline';
 import { installSickan, sickanExtra } from './sickan';
-import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, type LandingAnchor } from './storm-rain';
+import { RAIN_ANGLE, RAIN_BOX as BOX, rainDropAt, rainLandingAt, rainStreakAlpha, UNDER_ROOF, underRoof, type LandingAnchor } from './storm-rain';
 
 /**
  * Äventyr 2's pictures (docs/aventyr-2.md), built in code like the first adventure's stand-ins: each is
@@ -549,6 +551,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
   const base = { hemisphere: hemisphere.intensity, sun: sun.intensity };
   // A home with a door out into the storm: the room's warm lamps stay behind him, and the night has the light.
   const doorway = rain > 0 ? chapter.outdoors : undefined;
+  UNDER_ROOF.dry = 0;
   const room = { sky: hemisphere.color.clone(), ground: hemisphere.groundColor.clone(), sun: sun.color.clone() };
   // The room's lamps on the evening of the storm, until the power goes (../../render/power-cut.ts).
   const powerCut = chapter.id === POWER_CHAPTER ? createPowerCut(chapter.id, PENDANT, scene) : null;
@@ -807,6 +810,8 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
     if ((d.look !== 'tragubbe' && d.look !== 'lillgubbe') || (d.z ?? 0) > -6) continue;
     const size = d.scale ?? 1;
     const rock = new Mesh(new SphereGeometry(1.4, 12, 8), solid('#3c4048', 0.9, { flatShading: true }));
+    // (Billsta's vista draws a stone of its own there, and puts this one away: ./billsta-vista.ts.)
+    rock.name = 'figure-stone';
     rock.scale.set(1.3 * size, 0.55 * size, size);
     rock.position.set(d.at.x, d.at.y - (size === 1 ? 0.45 : 0.72 * size), d.z ?? 0);
     group.add(rock);
@@ -1034,7 +1039,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const at = rainDropAt(s, t, cx, cy);
           place.position.set(at.x, at.y, s.z + cz);
           // No rain falls indoors: only out of doors, beyond the house's corner.
-          const out = chapter.outdoors !== undefined && place.position.x < chapter.outdoors ? 0 : 1;
+          const out = (chapter.outdoors !== undefined && place.position.x < chapter.outdoors) || underRoof(place.position.x) ? 0 : 1;
           place.scale.set(out, out * s.long, out);
           place.updateMatrix();
           drops.setMatrixAt(i, place.matrix);
@@ -1052,7 +1057,7 @@ function stormExtra({ chapter, scene, hemisphere, sun }: ExtraContext): ViewExtr
           const at = rainLandingAt(s, i, t, cx, landingAnchors[i]);
           landingAnchors[i] = at;
           const { x, age: k } = at;
-          const out = chapter.outdoors !== undefined && x < chapter.outdoors;
+          const out = (chapter.outdoors !== undefined && x < chapter.outdoors) || underRoof(x);
           const ground = heightAt(chapter, x), water = openWaterAt(chapter, x);
           place.position.set(x, Math.max(ground, water ?? ground) + 0.02, at.z);
           place.rotation.set(0, 0, 0);
@@ -3116,17 +3121,9 @@ function barnDoor(mover: Mover): Group {
 
 function moverLooks(): Record<string, (mover: Mover) => Group | null> {
   return {
-    boulder: (mover) => {
-      // A round field stone, as wide and as high as the thing it is to the simulation, with moss on its shaded side.
-      const group = new Group();
-      const stone = new Mesh(rock(Math.round(mover.width * 37), mover.width / 2 * 1.06, mover.height / 2 * 1.04, mover.width * 0.46), solid('#7a7e80', 0.86, { flatShading: true }));
-      stone.position.y = mover.height / 2;
-      stone.castShadow = true;
-      const moss = new Mesh(rock(Math.round(mover.width * 41), mover.width * 0.3, mover.height * 0.2, mover.width * 0.3), solid('#55703e', 0.95, { flatShading: true }));
-      moss.position.set(-mover.width * 0.16, mover.height * 0.86, 0.04);
-      group.add(stone, moss);
-      return group;
-    },
+    // A field stone, as wide and as high as the thing it is to the simulation (./field-boulder.ts): Billsta's, under the
+    // seesaw, whose trunk lies in a trough across its top, a little behind the path.
+    boulder: (mover) => fieldBoulder({ width: mover.width, height: mover.height, depth: mover.width * 1.45, back: -0.14, saddle: { z: -0.34, deep: 0.12, wide: 0.26 }, seed: 3 }),
     riverLog: (mover) => {
       // A sawn log floating half under, its top level where he stands (./river-log.ts): the kit's fallen branch, fitted
       // to the thing's box, lay 0.47 to 0.78 under his feet.
@@ -3260,6 +3257,8 @@ export function installPictures(): void {
   if (!PACK.extras.includes(gungflyExtra)) PACK.extras.push(gungflyExtra);
   // Billsta's hazel beside Billaberget's shelves, and its nuts (./hazel.ts).
   if (!PACK.extras.includes(hazelExtra)) PACK.extras.push(hazelExtra);
+  // The view from Billaberget's brow down over the narrow (./billsta-vista.ts).
+  if (!PACK.extras.includes(vistaExtra)) PACK.extras.push(vistaExtra);
   // Älven's beaver and otter with bones and clips, from Blender, where their lives wait for them (./river-creatures.ts).
   if (!PACK.models.includes(installRiverCreatures)) PACK.models.push(installRiverCreatures);
   // Sickan, the family's cat, out in Stormgården (./sickan.ts).

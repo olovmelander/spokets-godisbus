@@ -1484,6 +1484,13 @@
     "text": "Ladudörren är öppen! Tack, mormor!"
   },
   {
+    "key": "biWelcome",
+    "speaker": "mormor",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[warm, kind grandmother]",
+    "text": "Varsågod, lilla Elof. Kliv in!"
+  },
+  {
     "key": "biLookout",
     "speaker": "mormor",
     "situation": "Äventyr 2, billsta",
@@ -1587,6 +1594,13 @@
     "situation": "Äventyr 2, billsta",
     "tag": "[playful wooden voice, wordless]",
     "text": "Klonk, klonk!"
+  },
+  {
+    "key": "biNut",
+    "speaker": "elof",
+    "situation": "Äventyr 2, billsta",
+    "tag": "[cute 7-year-old boy, brave and curious, a stormy night]",
+    "text": "En hasselnöt! Lika stor som mitt huvud!"
   },
   {
     "key": "biHazel",

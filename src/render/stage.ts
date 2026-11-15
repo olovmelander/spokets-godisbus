@@ -25,6 +25,8 @@ import { goldSweet } from './gold-sweet';
 import { goldMouthWeight } from './gold-contact';
 import type { Grip } from './fingers';
 import { lookAt } from './look';
+import { hazelnut } from './hazelnut';
+import { routeAt, routeThrough, runProgress, runRate, runTop, type Route } from './run-route';
 import { createTalker, talk, type Free, type Look, type Talker } from './talk';
 
 /**
@@ -81,7 +83,7 @@ interface State {
   /** Gone in, out of the picture: not drawn. */
   away: boolean;
   /** The walk under way, when a key moves the actor: from where, how far it has come, and how long it takes. */
-  walk: { fromX: number; fromY: number; fromZ: number; toX: number; toY: number; toZ: number; at: number; seconds: number } | null;
+  walk: { fromX: number; fromY: number; fromZ: number; toX: number; toY: number; toZ: number; at: number; seconds: number; route?: Route } | null;
   /**
    * Walking when the scene began: how fast along the course, and the stride then. The scene starts them where
    * they come to a stop (GLIDE on), and they are drawn easing into it, not frozen mid-step.
@@ -103,28 +105,39 @@ const mixTurn = (a: number, b: number, t: number) => {
   const d = ((((b - a) % 1) + 1.5) % 1) - 0.5;
   return a + d * t;
 };
+/** An eased move's speed at `s` of its time, as a multiple of its mean: from rest to rest. */
+const eased = (s: number) => 6 * s * (1 - s);
+/** The curve of a key that bends its way (`ActorKey.via`, ./run-route.ts), from where the actor stood: made once a key. */
+const routes = new WeakMap<ActorKey, { x: number; z: number; route: Route }>();
+function routeOf(key: ActorKey, x: number, z: number, toX: number, toZ: number): Route {
+  const made = routes.get(key);
+  if (made && made.x === x && made.z === z) return made.route;
+  const route = routeThrough([{ x, z }, ...key.via!, { x: toX, z: toZ }]);
+  routes.set(key, { x, z, route });
+  return route;
+}
 /**
  * How many steps an eased walk of `way` over `seconds` has taken at `u` of the way through its time, for a body
  * `height` tall on `legs`: its distance counted in steps of the length each moment's speed gives (acting.ts stepLength).
  */
-function stepsOf(way: number, seconds: number, height: number, u: number, legs: Legs): number {
+function stepsOf(way: number, seconds: number, height: number, u: number, legs: Legs, rate = eased): number {
   // No interval has elapsed at the exact start key. Both speed and step length are zero there;
   // integrating 0 / 0 would poison a previous stride still settling under the new action.
   if (u <= 0) return 0;
   const n = 24;
   let steps = 0;
   for (let i = 0; i < n; i++) {
-    const s = (i + 0.5) / n * u, speed = way / seconds * 6 * s * (1 - s);
+    const s = (i + 0.5) / n * u, speed = way / seconds * rate(s);
     steps += speed * seconds * (u / n) / stepLength(speed / height, height, legs);
   }
   return steps;
 }
 /** How far through an eased walk (0 to 1 of its time) its stride has counted `n` steps (`stepsOf`, made whole by `fit`). */
-function strideAt(way: number, seconds: number, height: number, legs: Legs, fit: number, n: number): number {
+function strideAt(way: number, seconds: number, height: number, legs: Legs, fit: number, n: number, rate = eased): number {
   let low = 0, high = 1;
   for (let i = 0; i < 16; i++) {
     const mid = (low + high) / 2;
-    if (stepsOf(way, seconds, height, mid, legs) / fit < n) low = mid; else high = mid;
+    if (stepsOf(way, seconds, height, mid, legs, rate) / fit < n) low = mid; else high = mid;
   }
   return (low + high) / 2;
 }
@@ -229,15 +242,19 @@ export const yaw = (face: number) => Math.PI / 2 - face * Math.PI * 2;
 function apply(state: State, key: ActorKey, since: number): void {
   const first = state.actAt === -99;
   const move = key.move ?? 0.6;
-  const p = first || since >= move ? 1 : smooth(since / move);
+  // A way that bends (`via`) is run at an even pace along its curve; any other move is eased from rest to rest.
+  const bends = !!key.via?.length && !first;
+  const p = first || since >= move ? 1 : bends ? runProgress(since / move, move) : smooth(since / move);
   const toX = key.x ?? state.x, toY = key.y ?? state.y, toZ = key.z ?? state.z;
   const far = Math.hypot(toX - state.x, toZ - state.z);
+  const route = bends && p < 1 ? routeOf(key, state.x, state.z, toX, toZ) : undefined;
   if (far > 0.25 && p < 1 && !SEATED.includes(key.act ?? state.act)) {
-    state.walk = { fromX: state.x, fromY: state.y, fromZ: state.z, toX, toY, toZ, at: key.at, seconds: move };
+    state.walk = { fromX: state.x, fromY: state.y, fromZ: state.z, toX, toY, toZ, at: key.at, seconds: move, ...(route ? { route } : {}) };
   } else if (p >= 1) state.walk = null;
-  state.x = mix(state.x, toX, p);
+  const bent = route ? routeAt(route, p) : null;
+  state.x = bent ? bent.x : mix(state.x, toX, p);
   state.y = mix(state.y, toY, p);
-  state.z = mix(state.z, toZ, p);
+  state.z = bent ? bent.z : mix(state.z, toZ, p);
   if (key.face !== undefined) state.face = first ? key.face : mixTurn(state.face, key.face, smooth(since / Math.max(0.35, move)));
   else if (key.aim && key.act !== undefined && TURNS_TO.includes(key.act) && stanceOf(key.act, state.stance) !== 'sit') {
     // Reaching for something, lifting it somewhere or holding it out, the body turns to it: the arms only
@@ -637,6 +654,13 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   drawnWhile(raspberry, false);
   if (scenes.some(scene => scene.stage?.star === 'gold')) group.add(raspberry);
   let starOn: Group | null = null;
+  // What he holds in both hands in a scene that has him do so (`held`): Billsta's hazelnut. Picture only.
+  const nut = scenes.some((scene) => scene.stage?.held?.thing === 'hazelnut') ? hazelnut() : null;
+  if (nut) { nut.name = 'held-hazelnut'; drawnWhile(nut, false); group.add(nut); }
+  let nutHeld = false;
+  /** How far round the nut his fingers close, in EL for him small. */
+  const NUT_GRIP = 0.08;
+  const nutLeft = new Vector3(), nutRight = new Vector3();
   // The block of wood Pappa carves the ghost out of: it shrinks away as the shavings fly.
   const block = new Mesh(new CylinderGeometry(.43, .38, 1.08, 7), new MeshStandardMaterial({ color: '#d8bf8e', roughness: 0.85, flatShading: true }));
   block.name = 'stage-block';
@@ -725,6 +749,19 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
   return {
     group,
     updateElof(rig, direction, height, calm) {
+      if (nut) {
+        // In both his hands, between them, its point up and a little towards him.
+        drawnWhile(nut, nutHeld);
+        if (nutHeld) {
+          const grip: Grip = { kind: 'power', size: NUT_GRIP * height };
+          for (const side of [0, 1] as const) rig.hold?.(side, grip);
+          if (rig.socket) { rig.socket(0, grip, nutLeft); rig.socket(1, grip, nutRight); } else { rig.hand(0, nutLeft); rig.hand(1, nutRight); }
+          nut.position.copy(nutLeft).add(nutRight).multiplyScalar(0.5);
+          nut.position.y -= 0.1 * height;
+          nut.scale.setScalar(height);
+          nut.rotation.set(0.25, 0.6, -0.15);
+        }
+      }
       // The golden sweet is in his hands as he looks at it too, held before him (`hands`).
       const shown = !!starOn && (direction?.act === 'show' || direction?.act === 'eat' || (starOn === raspberry && direction?.act === 'hands'));
       const bite = eatingAt(direction?.actT ?? 0, calm);
@@ -783,6 +820,8 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
       const active = frame ? scenes.findIndex((scene) => scene.id === frame.id) : -1;
       const scene = active >= 0 ? scenes[active]! : null;
       starOn = scene?.stage?.star === true ? star : scene?.stage?.star === 'gold' ? raspberry : null;
+      const held = scene?.stage?.held;
+      nutHeld = !!held && (frame?.seconds ?? 0) >= held.from && (frame?.seconds ?? 0) < held.until;
       const t = frame?.seconds ?? 0;
       const elofKeys = scene?.stage?.elof;
       const elofNow = scene && elofKeys && elofKeys[0]!.at <= t ? elofAt(elofKeys, t, elof) : null;
@@ -894,16 +933,20 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           stride = was.stride + step / stepLength(Math.max(gait, 0.3), rig.height, rig.legs);
         } else if (state.walk) {
           const w = state.walk;
-          const p = smooth((t - w.at) / w.seconds);
-          pace = Math.min(1, Math.sin(Math.PI * Math.min(1, (t - w.at) / w.seconds)) * 1.6);
-          const way = Math.hypot(w.toX - w.fromX, w.toZ - w.fromZ);
+          // A way that bends is run evenly along its curve (./run-route.ts): its length, its pace and its heading are the curve's.
+          const rate = w.route ? (s: number) => runRate(s, w.seconds) : eased;
+          const through = w.route ? (s: number) => runProgress(s, w.seconds) : smooth;
+          const p = through((t - w.at) / w.seconds);
+          pace = w.route ? Math.min(1, rate(Math.min(1, (t - w.at) / w.seconds)) / runTop(w.seconds) * 1.6)
+            : Math.min(1, Math.sin(Math.PI * Math.min(1, (t - w.at) / w.seconds)) * 1.6);
+          const way = w.route ? w.route.length : Math.hypot(w.toX - w.fromX, w.toZ - w.fromZ);
           walked = way * p;
           // Its gait at each moment from how fast the eased move goes then: setting off and arriving it takes short
           // steps, at its fastest long ones, and far and soon is a jog. The stride counts those steps, made a whole
           // number so that the walk ends with the feet together, and each step's swing fits its length.
           const u = Math.min(1, Math.max(0, (t - w.at) / w.seconds));
-          gait = way / w.seconds * 6 * u * (1 - u) / rig.height;
-          const steps = stepsOf(way, w.seconds, rig.height, u, rig.legs), all = stepsOf(way, w.seconds, rig.height, 1, rig.legs);
+          gait = way / w.seconds * rate(u) / rig.height;
+          const steps = stepsOf(way, w.seconds, rig.height, u, rig.legs, rate), all = stepsOf(way, w.seconds, rig.height, 1, rig.legs, rate);
           const whole = Math.max(1, Math.round(all)), fit = all / whole;
           stride = steps / fit;
           // Taken over from legs already striding, it starts where they were and comes round to the feet together.
@@ -931,10 +974,10 @@ export function createStage(chapter: ChapterData, ground: (x: number) => number)
           if (carry) step = Math.max(0.02, stepLength(gait, rig.height, rig.legs) / rig.height * fit);
           else {
             const k = Math.min(whole - 1, Math.floor(stride));
-            const at = (n: number) => n <= 0 ? 0 : n >= whole ? 1 : strideAt(way, w.seconds, rig.height, rig.legs, fit, n);
-            step = Math.max(0.02, way * (smooth(at(k + 1)) - smooth(at(k))) / rig.height);
+            const at = (n: number) => n <= 0 ? 0 : n >= whole ? 1 : strideAt(way, w.seconds, rig.height, rig.legs, fit, n, rate);
+            step = Math.max(0.02, way * (through(at(k + 1)) - through(at(k))) / rig.height);
           }
-          const travel = Math.atan2(w.toX - w.fromX, w.toZ - w.fromZ) / (Math.PI * 2);
+          const travel = w.route ? routeAt(w.route, p).travel : Math.atan2(w.toX - w.fromX, w.toZ - w.fromZ) / (Math.PI * 2);
           face = mixTurn(face, 0.25 - travel, Math.min(1, pace * 1.5));
           // Walking on the ground, a body keeps to it, up and down a step where it is, not sinking through a floor.
           if (Math.abs(w.fromY - ground(w.fromX)) < 0.05 && Math.abs(w.toY - ground(w.toX)) < 0.05) y = ground(x);

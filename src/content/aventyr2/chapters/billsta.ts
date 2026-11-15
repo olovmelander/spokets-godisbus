@@ -1,4 +1,4 @@
-import { GRAVITY, RUN_SPEED } from '../../../sim/constants';
+import { GRAVITY, MOVE_TIME, RUN_SPEED } from '../../../sim/constants';
 import type { Candy, ChapterData, Jump, Ledge, Mover, Vec } from '../../../sim/types';
 import type { Chooser } from '../context';
 import { alongAll, elderWalk, hopCandy, jump, round, row, slopeRow, timeCard } from '../kit';
@@ -56,20 +56,46 @@ const BY_CAR = { x: 1, y: 0.5, z: 0 };
 const UP_TO_HOUSE = { x: 16, y: 2, z: -40 };
 const WINDOW = { x: 14, y: 7.5, z: -66 };
 /**
- * Their run ahead of him to the house, which stands about x 2 to 34 and z -84 to -61 (`buildings`, below): to its left
- * end, and round it to the door at its back, where the house hides them from the road. In seconds, each child's run to
- * the corner and on round to the door: at about a child's sprint for their size at the fastest, so that their steps
- * hold the ground (in 6.2 and 2.6 seconds they went twice that, and their boots slid a third to a half of the way).
- * Bertil, the smaller, takes a little longer and comes round a moment after Moa.
+ * Mormor and morfar's house as it stands on the ground, for whoever runs round it (Olov, 14 November 2026: "Moa och
+ * Bertil springer rakt igenom det vita huset i bakgrunden. De måste springa mot huset och sedan runt det."). The model
+ * stands cornerwise to the road (`buildings`, below, 'villa'): `corners` are its walls' four corners, the nearest to the
+ * road first and then its left end, its back and its right end, measured on the model in the running game. Its long
+ * front, with the two gables, faces the road's left; a gravel path runs along it, and at its left end stand two big
+ * round bushes (`shrubs`: each one's middle and how far it reaches), with the great birch behind them. `standIn` is the
+ * plain house that is drawn where the family's own model is not: square to the road.
  */
-const RUN = {
-  corner: { x: -0.6, y: 0, z: -62 }, door: { x: 6, y: 0, z: -89 },
-  moa: { from: 1.1, corner: 11, door: 5.4 }, bertil: { from: 0.8, corner: 11.6, door: 6 },
-};
-/** Each child sets off round the corner a little before reaching it, so that the run goes round it rather than stopping. */
-const ROUND = 0.93;
-const roundAt = (who: 'moa' | 'bertil') => round(RUN[who].from + RUN[who].corner * ROUND, 1);
-const inAt = (who: 'moa' | 'bertil') => round(roundAt(who) + RUN[who].door, 1);
+export const HOUSE = {
+  corners: [{ x: 24.5, z: -50 }, { x: -4.5, z: -78.5 }, { x: 11.5, z: -94 }, { x: 39.5, z: -65.5 }],
+  shrubs: [{ x: -12.3, z: -75.5, r: 4.6 }, { x: -9, z: -85.5, r: 8.2 }],
+  standIn: { from: { x: 1.5, z: -84 }, to: { x: 35, z: -59.5 } },
+} as const;
+/**
+ * Their run ahead of him to the house: from the car straight up the road and over the lawn towards the house, bending
+ * left onto the gravel path along its front, past its left end and round the bushes there, where the bushes and the
+ * house hide them from the road; there they have gone in by the door at the back. It is one curve (`via`,
+ * ../../../sim/scene.ts), run at an even pace, at a child's eager run for their size (Moa at 1.7 of her own heights a
+ * second, Bertil at 1.9 of his), so that their steps hold the ground. As two straight legs it went through the house's
+ * left corner and the bushes. Bertil, the smaller, sets off a moment after Moa, keeps to her right, and comes round the
+ * bushes a couple of seconds after her. `from`: when each sets off, in seconds; `seconds`: how long the way takes.
+ */
+export const RUN = {
+  moa: {
+    from: 0.15, seconds: 14.8,
+    via: [{ x: 7.6, z: -17 }, { x: 8.4, z: -32 }, { x: 8.2, z: -45 }, { x: 3.8, z: -54.6 }, { x: -5.2, z: -62 }, { x: -14.4, z: -68.6 }, { x: -20.6, z: -76.5 }, { x: -21.6, z: -87 }],
+    to: { x: -12.5, z: -96.6 },
+  },
+  bertil: {
+    from: 0.45, seconds: 16.6,
+    via: [{ x: 10, z: -16 }, { x: 10.8, z: -31 }, { x: 10.6, z: -43.4 }, { x: 5.8, z: -52.6 }, { x: -3.6, z: -59.8 }, { x: -13, z: -66.4 }, { x: -20, z: -74.6 }, { x: -21.2, z: -85 }],
+    to: { x: -14.6, z: -94.6 },
+  },
+} as const;
+/** The lawn round the house lies a hair over the road. */
+const LAWN = 0.1;
+/** When each of them is round the bushes and gone. */
+const inAt = (who: 'moa' | 'bertil') => round(RUN[who].from + RUN[who].seconds, 1);
+/** Where the others look as the two run off: past the house's left end, where they go round. */
+const ROUND_THERE = { x: HOUSE.corners[1].x - 12, y: 2, z: HOUSE.corners[1].z };
 
 /** The road's ditch, full of rushing rain: twice a running jump. Morfar's ladder lies over it, rim to rim. */
 const DITCH = { from: 14.6, to: 19.2, bottom: -5 };
@@ -156,7 +182,19 @@ const MORMOR_WAITS = { x: 47.9, y: 0, z: -0.9 };
  */
 const MORMOR_AT_DOOR = { x: 54.6, y: ramp(54.6), z: 1.0 };
 const MORMOR_WALK = elderWalk(MORMOR_WAITS.x, MORMOR_AT_DOOR.x, (x) => (x < PLANKS.from ? 0 : ramp(x)));
-const MORMOR_SEEN = { x: 51.4, y: 5.4, height: 12.4, width: 13.6, seconds: round(MORMOR_WALK + 2.2, 1) };
+const MORMOR_SEEN = { x: 51.4, y: 5.4, height: 12.4, width: 13.6, seconds: round(MORMOR_WALK + 0.55 + MOVE_TIME + 0.6, 1) };
+/**
+ * His thanks to mormor (Olov, 14 November 2026: "Se också till att Elof tackar både morfar för stegen och mormor för att
+ * hon öppnar ladan"). "Ladudörren är öppen! Tack, mormor!" was said in passing as the door opened, from the planks'
+ * foot or already on his way in, and whoever ran on never saw it said to her. Now it is told standing, as his thanks to
+ * morfar is (`bi:tack-morfar`): at the top of the planks, a step short of where she stands by the open door (`at`), he
+ * stops, turns to her, looks up and waves, says it, and she answers him. The picture takes in the two of them and the
+ * open door (`shot`). `face`: her face, for him to look up at; `turned`: how he is turned to her, a little towards us.
+ */
+const MORMOR_THANKED = {
+  at: 52.9, face: { x: MORMOR_AT_DOOR.x, y: round(MORMOR_AT_DOOR.y + 4.1), z: MORMOR_AT_DOOR.z }, turned: 0.15,
+  shot: { x: 54, y: round(ramp(52.9) + 3.3), height: 8.8, width: 9.6 },
+};
 
 // --- 5. the forest behind the house, and Billaberget ---------------------------------------------------------------
 
@@ -226,10 +264,11 @@ const LEE = [163.9, 169.1, 174.3, 179.5, 184.7];
 
 /** Up the last of the hill to its brow, where the narrow is seen far below. */
 const RISE = { from: 186.9, to: 191.3 };
-const BROW = { from: RISE.to, to: 210, y: 6.4 };
+/** The brow, bare granite, level out past the picture: from up here the view is wide (`cameras`), and the end of the world is well beyond it. */
+export const BROW = { from: RISE.to, to: 230, y: 6.4 };
 const rise = (x: number) => round(SLOPE + ((BROW.y - SLOPE) * (x - RISE.from)) / (RISE.to - RISE.from), 4);
 /** Where mormor stands when she has come up the path behind him, on the last of the rise, behind the path and Klonk. */
-const MORMOR_UP = { x: 190.4, z: -1.5 };
+const MORMOR_UP = { x: 190.4, z: -0.6 };
 
 /**
  * Up Billaberget's cliff, a second way (docs/level-design.md): three shelves of rock where the hazel grows, each a
@@ -264,13 +303,40 @@ export const HAZEL = {
 };
 
 /**
- * The narrow far below the brow, behind the forest, for the picture: from the brow, a dark band of water at the
- * horizon. The sheet lies a little over the brow's own ground, where the ground's bank behind the path does not
- * hide it, and starts in front of the garden's nearest far picture (32 behind the path), which covers whatever is
- * behind it. From lower down the hill it is above the camera, and not seen. The two figures sit on a stone in it.
+ * The hazelnut he finds (Olov, 14 November 2026: "På berget vid hasselnötsbuskarna ska Elof hitta en hasselnöt och säga
+ * något om fyndet"). It has fallen from the two hazels at the back of the first boulder and lies on the boulder's top, a
+ * little in front of the path: coming up onto the boulder he stops, bends and picks it up in both hands (as big as his
+ * head, to him), looks at it, holds it up and says what it is, and lays it down again where it lay: it is too big to
+ * carry over the rocks, and a nut is the hazel's. A moment of its own, held (`bi:nut`), and nothing collected: no save
+ * changes. `at`: where the moment is, when he is there; `reach`: where the nut lies from his feet, ahead and towards us
+ * (where it rolls to, in a gust, if he has stopped a little short of it or beyond); `held`: when, in the moment, it is in
+ * his hands.
  */
-const NARROW = { from: 182, to: 300, y: 6.75, near: -20 };
-const STONE_OUT = { x: 195, y: round(NARROW.y + 0.3), z: -27 };
+const NUT_AT = 146;
+const NUT_REACH = { x: 0.45, y: 0.1, z: 0.3 };
+export const NUT = {
+  at: NUT_AT, reach: NUT_REACH, held: { from: 0.55, until: 3 },
+  x: round(NUT_AT + NUT_REACH.x), y: B1.y, z: NUT_REACH.z,
+};
+/** He says it as he holds it up, and looks at it. */
+const NUT_SEEN = 2.1;
+
+/**
+ * The narrow far below the brow, for the picture (Olov, 14 November 2026: "Kan vi få det att kännas som om sundet ligger
+ * längre ned? Vi står på Billaberget och tittar ned mot sundet, men nu känns det som att sundet ligger på samma höjd, och
+ * vattnet ser dessutom helt platt ut."). It was a flat dark sheet a little over the brow's own ground, at the horizon.
+ * Now the brow is bare granite with a brink of boulders behind the path, and beyond it Billaberget's steep end falls
+ * away to its wooded foot and the shore, far below; the narrow's water runs there, `y` under the brow, from the near
+ * shore (`near`) out to the far shore (`far`), and the picture looks down onto it from the brow (`cameras`). All of it is
+ * drawn by ../billsta-vista.ts: the simulation has none of it. The two figures sit on a big water-worn boulder out in
+ * the current (`STONE_OUT`: where its top is, under their feet; `STONE`: its own measures), the stone of the storm's eye
+ * in the next chapter.
+ */
+export const NARROW = { from: 60, to: 340, y: -26, near: -46, far: -300 };
+/** The brow's brink: the ground behind the path ends this far back and falls away (../billsta-vista.ts draws the fall). */
+export const BRINK = { from: 188, to: BROW.to + 6, z: -3.4 };
+export const STONE = { width: 7, depth: 4.6, over: 1.05, under: 1.2 };
+export const STONE_OUT = { x: 198, y: round(NARROW.y + STONE.over), z: -130 };
 /**
  * Seeing them there (Olov, 9 November 2026: "Bilden ska bli tydligare när lillgubben och gamla trägubben syns nere i
  * sundet"): far as they are, the two figures and their stone are drawn bigger than they would be, as a picture that wants
@@ -279,7 +345,7 @@ const STONE_OUT = { x: 195, y: round(NARROW.y + 0.3), z: -27 };
  * them while he says what he sees, and then gives him back.
  */
 const FAR_SIZE = 2.2;
-const SEEN = { x: STONE_OUT.x - 0.3, y: round(NARROW.y + 1.1), z: STONE_OUT.z, height: 4.4, width: 5, seconds: 7 };
+const SEEN = { x: STONE_OUT.x - 0.1, y: round(STONE_OUT.y + 0.6), z: STONE_OUT.z, height: 4.8, width: 6, eye: 2.4, seconds: 7 };
 
 /** A heart over a ledge, where he takes it standing there. */
 const over = (ledge: Ledge, dx = 0, lift = 0.55): Candy => ({ x: round(ledge.x + dx), y: round(ledge.y + lift) });
@@ -339,31 +405,31 @@ export const billsta: ChapterData = {
         { at: 0, ...KIDS.moa, y: 0, face: 0.3, move: 0.01, act: 'look', aim: WINDOW },
         { at: 2, act: 'point', aim: WINDOW },
         { at: 3.7, act: 'look', aim: BY_CAR },
+        // "Följ vårt godis! Vi springer före.": she waves to him as she says it, and Bertil cheers.
+        { at: 4.1, act: 'wave', aim: BY_CAR },
       ],
       bertil: [
         { at: 0, ...KIDS.bertil, y: 0, face: 0.35, move: 0.01, act: 'look', aim: BY_CAR },
         { at: 2.4, act: 'look', aim: WINDOW },
         { at: 3.9, act: 'look', aim: BY_CAR },
+        { at: 4.4, act: 'cheer' },
       ],
       mamma: [{ at: 0, ...PARENTS.mamma, y: 0, face: 0.2, move: 0.01, act: 'shine', aim: ROAD, holds: 'lamp-mamma' }],
       pappa: [{ at: 0, ...PARENTS.pappa, y: 0, face: 0.12, move: 0.01, act: 'shine', aim: UP_TO_HOUSE, holds: 'lamp-pappa' }],
     } } },
-    // "Följ vårt godis! Vi springer före.": the trail is theirs now (docs/aventyr-2.md). Moa waves to him, and they
-    // run off ahead of him up to mormor and morfar's house, round its left end, and in by its door at the back.
-    { id: 'bi:kids-run', on: 'beat:bi:new-trail', until: 'bi:morfar', seconds: inAt('bertil') + 0.6, stage: { actors: {
+    // "Följ vårt godis! Vi springer före.": the trail is theirs now (docs/aventyr-2.md). Moa has waved to him, and they
+    // run off ahead of him up to mormor and morfar's house, along its front, round its left end, and in by its door at
+    // the back (`RUN`).
+    { id: 'bi:kids-run', on: 'beat:bi:new-trail', until: 'bi:morfar', seconds: inAt('bertil') + 0.5, stage: { actors: {
       // Mamma watches them go, and lights his road again.
-      mamma: [{ at: 0.6, act: 'look', aim: RUN.corner }, { at: roundAt('moa') + 1, act: 'shine', aim: ROAD }],
+      mamma: [{ at: 0.6, act: 'look', aim: ROUND_THERE }, { at: inAt('moa') - 3, act: 'shine', aim: ROAD }],
       moa: [
-        { at: 0, act: 'wave', aim: BY_CAR },
-        { at: RUN.moa.from, ...RUN.corner, y: 0, move: RUN.moa.corner, act: 'look', aim: RUN.corner },
-        { at: roundAt('moa'), ...RUN.door, y: 0, move: RUN.moa.door, act: 'look', aim: RUN.door },
-        { at: inAt('moa') + 0.2, away: true },
+        { at: RUN.moa.from, ...RUN.moa.to, y: LAWN, via: RUN.moa.via, move: RUN.moa.seconds, act: 'look', aim: ROUND_THERE },
+        { at: inAt('moa') + 0.1, away: true },
       ],
       bertil: [
-        { at: 0.3, act: 'cheer' },
-        { at: RUN.bertil.from, x: RUN.corner.x + 1.4, y: 0, z: RUN.corner.z + 2.2, move: RUN.bertil.corner, act: 'look', aim: RUN.corner },
-        { at: roundAt('bertil'), x: RUN.door.x + 1.2, y: 0, z: RUN.door.z + 0.6, move: RUN.bertil.door, act: 'look', aim: RUN.door },
-        { at: inAt('bertil') + 0.2, away: true },
+        { at: RUN.bertil.from, ...RUN.bertil.to, y: LAWN, via: RUN.bertil.via, move: RUN.bertil.seconds, act: 'look', aim: ROUND_THERE },
+        { at: inAt('bertil') + 0.1, away: true },
       ],
     } } },
     // Over the ditch he turns back to morfar, waves and thanks him for the ladder, and morfar sends him on to mormor
@@ -385,6 +451,35 @@ export const billsta: ChapterData = {
       id: 'bi:ladan', on: 'bi:mormor-goes', seconds: MORMOR_SEEN.seconds,
       stage: { shots: [{ at: 0, x: MORMOR_SEEN.x, y: MORMOR_SEEN.y, height: MORMOR_SEEN.height, width: MORMOR_SEEN.width, move: 1.2 }] },
     },
+    // Up the planks, beside her at the open door, he stops, turns to her, waves and thanks her, and she answers
+    // (`MORMOR_THANKED`). A game taken up in the loft, past the door, has had it.
+    {
+      id: 'bi:tack-mormor', at: MORMOR_THANKED.at, needs: `placed:${DOOR.id}`, before: round(DOOR.stops[0]!.x - DOOR.width / 2), seconds: 0.9, hold: true,
+      dialogue: ['bi:open', 'bi:welcome'], cues: [{ at: 0.55, flag: 'bi:open-seen' }],
+      stage: {
+        shots: [{ at: 0, ...MORMOR_THANKED.shot, move: 0.6 }],
+        elof: [{ at: 0, face: MORMOR_THANKED.turned, act: 'wave', aim: MORMOR_THANKED.face }, { at: 0.8, act: 'look', aim: MORMOR_THANKED.face }],
+      },
+    },
+    // Up on the first boulder, the hazelnut (`NUT`): he bends and picks it up in both hands, looks at it, holds it up and
+    // says what it is, and lays it down again. The picture comes close to him, the nut and the hazels behind. A game taken
+    // up past the crack has had it.
+    {
+      id: 'bi:nut', at: NUT.at, before: round(CRACK.from - 0.4), seconds: 3.7, hold: true,
+      dialogue: ['bi:nut'], cues: [{ at: NUT_SEEN, flag: 'bi:nut-seen' }],
+      stage: {
+        shots: [{ at: 0, x: round(NUT.at + 0.4), y: round(B1.y + 1.05), height: 2.8, width: 3.8, move: 0.7 }],
+        elof: [
+          { at: 0, face: 0.1, act: 'reach', aimByElof: NUT.reach },
+          { at: 0.7, act: 'hands' },
+          // Up and out in front of him, to look at it, clear of his face.
+          { at: 1.45, act: 'lift', aimByElof: { x: 0.55, y: 0.84, z: 0.34 } },
+          { at: 2.35, act: 'reach', aimByElof: NUT.reach },
+          { at: 3.15, act: 'look', aimByElof: { x: 3, y: 1.6, z: -1 } },
+        ],
+        held: { thing: 'hazelnut', ...NUT.held },
+      },
+    },
     // "Där nere! På en sten i sundet!": the camera goes out to the stone far below, looking down onto it a little, and
     // stays there while he says what he sees, the little one lands, and the old one holds him. This short
     // view holds Elof on the safe brow; its dialogue finishes automatically, with the figures still in sight.
@@ -395,10 +490,12 @@ export const billsta: ChapterData = {
       dialogue: ['bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl'],
       // Frame the stone before making the first line available, even when earlier speech is still queued.
       cues: [{ at: 0.01, flag: 'bi:strait-seen' }],
-      stage: { shots: [{ at: 0, x: SEEN.x, y: SEEN.y, z: SEEN.z, height: SEEN.height, width: SEEN.width, eye: 1, move: 0.001 }] },
+      stage: { shots: [{ at: 0, x: SEEN.x, y: SEEN.y, z: SEEN.z, height: SEEN.height, width: SEEN.width, eye: SEEN.eye, move: 0.001 }] },
     },
   ],
   goalX: 194.6,
+  // Behind the brow the ground ends at a brink and falls away to the narrow far below (`BRINK`, ../billsta-vista.ts).
+  brink: BRINK,
   // The chapter's card waits until the flash's last word is said: the little one safe on the stone, the owl.
   goalNeeds: 'beat:bi:cheer',
   // Everyone answers in the coda: the family by the car, and mormor and morfar.
@@ -480,7 +577,9 @@ export const billsta: ChapterData = {
     // Billaberget: moss and thin forest up to the boulders, and all the way over them to the brow.
     { from: TOP.from, to: B1.from, kind: 'moss' },
     { from: B1.from, to: B3.to, kind: 'stone' },
-    { from: B3.to, to: BROW.to, kind: 'moss' },
+    { from: B3.to, to: RISE.from, kind: 'moss' },
+    // Up the last of it, the brow is bare granite (hällmark): no forest stands between him and the view.
+    { from: RISE.from, to: BROW.to, kind: 'stone' },
   ],
   // What the stones and the boulders are, for the picture only: granite of Billaberget's boulder field.
   landmarks: [
@@ -569,11 +668,14 @@ export const billsta: ChapterData = {
     lightning: 5.5,
     // On the barn's roof the lee is its brick ventilation chimneys (../barn-chimney.ts); on Billaberget its boulders.
     shelters: ['vents', 'rocks'],
-    // The narrow, far below the brow beyond the forest, where the two figures are.
-    lakes: [NARROW],
+    // The narrow far below the brow, where the two figures are, is the vista's own (../billsta-vista.ts).
     flybys: [
       // From the brow: a wave of wind tosses the little one away towards the narrow, onto the stone out in it.
-      { on: 'beat:bi:there', from: { x: 188.4, y: 12 }, to: { x: STONE_OUT.x + 1, y: 9 }, seconds: 1.6, who: 'lillgubbe' },
+      // Out of the dark over the narrow, down onto the stone in the picture that has gone out to it, lit as it comes.
+      {
+        on: 'beat:bi:there', from: { x: STONE_OUT.x - 5.5, y: round(STONE_OUT.y + 6) }, to: { x: round(STONE_OUT.x + 0.32 * FAR_SIZE), y: STONE_OUT.y },
+        z: STONE_OUT.z + 3, toZ: STONE_OUT.z, seconds: 1.6, who: 'lillgubbe', size: FAR_SIZE, rise: 1.2, lit: [0.15],
+      },
     ],
     // Mormor and morfar's place by the road near the forest: the white house with its lit window behind the yard,
     // the red barn beside it, whose windows glow once mormor has taken her lantern in; the woodshed, the rowing boat
@@ -587,10 +689,12 @@ export const billsta: ChapterData = {
       { kind: 'pole', x: -30, z: -9, height: 19, width: 34, lit: '' },
       { kind: 'pole', x: 4, z: -9, height: 19, width: 34, lit: '' },
       { kind: 'pole', x: 38, z: -9, height: 19, width: 34, lit: '' },
-      // Spruces across the road.
-      { kind: 'spruce', x: -26, z: -30, y: -6, height: 62 },
-      { kind: 'spruce', x: -12, z: -42, y: -7, height: 70 },
-      { kind: 'spruce', x: -1, z: -34, y: -5, height: 54 },
+      // Birches across the road, in front of the house (Olov, 14 November 2026: "I början av kapitlet ska det stå björkar
+      // framför huset i stället för granar"): three hanging birches in October's last yellow, their white stems in the
+      // lamps' light, the house and its lit window seen between them.
+      { kind: 'birch', x: -26, z: -30, height: 62 },
+      { kind: 'birch', x: -12, z: -42, height: 70 },
+      { kind: 'birch', x: -1, z: -34, height: 54 },
       // The house behind the yard, in sight from the road, with the barn beside it: neither stands in the other.
       { kind: 'villa', x: 18, z: -72, width: 44, lit: '', model: 'billsta-house', size: 0.72 },
       // The great round birch that stands behind it.
@@ -629,7 +733,7 @@ export const billsta: ChapterData = {
       // Mormor, come up the path behind him with her lantern, as the owl hoots: its light, where she holds it low.
       { at: { x: MORMOR_UP.x + 0.9, y: round(rise(MORMOR_UP.x) + 2.1) }, z: MORMOR_UP.z + 0.4, size: 1.2, after: 'beat:bi:owl' },
       // A light on the water behind the two on their stone, from the moment the flash shows them: they stand out against it.
-      { at: { x: STONE_OUT.x + 0.4, y: round(NARROW.y + 1.1) }, z: STONE_OUT.z - 1.2, size: 6.5, after: 'beat:bi:there' },
+      { at: { x: STONE_OUT.x + 0.4, y: round(STONE_OUT.y + 0.8) }, z: STONE_OUT.z - 1.2, size: 6.5, after: 'beat:bi:there' },
     ],
   },
   decor: [
@@ -644,7 +748,9 @@ export const billsta: ChapterData = {
     { look: 'kit', word: 'gren-a', at: { x: 176.6, y: 3.2 }, z: -1.7, turn: 0.2 },
     { look: 'kit', word: 'stubbe-sagad', at: { x: 181.2, y: 3.2 }, z: -2.4, turn: 0.5 },
     { look: 'kit', word: 'gren-b', at: { x: 190.2, y: 6.4 }, z: -1.5, turn: 1.2 },
-    { look: 'kit', word: 'lag-mossig', at: { x: 199, y: 6.4 }, z: -3.2, turn: 2.9 },
+    // At the edge of the forest below the rise: up on the bare brow nothing lies between him and the view. Set back
+    // to z -3.2 so the windfall's own earth bank (the nature kit's old wood) stays behind his path.
+    { look: 'kit', word: 'lag-mossig', at: { x: 184.6, y: 3.2 }, z: -3.2, turn: 2.9 },
     // The hazel shelves on Billaberget's face.
     ...SHELVES.map((l, i) => ({ look: 'kit' as const, word: i === 1 ? 'hylla-b' : 'hylla-a', at: { x: l.x, y: l.y }, z: -0.5, scale: l.width / (i === 1 ? 3.2 : 2.6) })),
     // Mormor, come up the path behind him with her lantern as the owl hoots, and there when the picture comes back from
@@ -687,7 +793,8 @@ export const billsta: ChapterData = {
     { at: HIGH_END, until: PIVOT_PLACED, near: 8, z: -0.34, still: true },
     { at: HIGH_ARM, until: 'bi:fling', near: 8, z: -0.34, still: true },
     { at: { x: 143, y: TOP.y } },
-    { at: { x: 146.3, y: B1.y } },
+    // At the first boulder's far end, past the hazelnut, while he finds it.
+    { at: { x: 147.55, y: B1.y } },
     { at: { x: 151.1, y: B2.y } },
     { at: { x: 154.9, y: SLOPE } },
     { at: { x: 159.7, y: B3.high } },
@@ -715,10 +822,13 @@ export const billsta: ChapterData = {
     { id: 'bi:yard', at: 26.4, who: 'elof', line: 'biYard', aside: true },
     { id: 'bi:mormor-here', at: 45, until: 'bi:mormor', who: 'mormor', line: 'biMormorHere', read: true },
     { id: 'bi:lantern', on: 'bi:mormor', until: 'bi:door', who: 'mormor', line: 'biLantern', read: true },
-    { id: 'bi:open', on: `placed:${DOOR.id}`, who: 'elof', line: 'biOpen', read: true },
-    // A lookout is the next lead after the river's trail ends; the barn is the way up to it. Told at the door and in
-    // the loft's first steps: on the roof the wind's words have to come at once.
-    { id: 'bi:lookout', on: 'beat:bi:open', within: [MORMOR.x - 2.6, HATCH.from], who: 'mormor', line: 'biLookout', read: true },
+    // His thanks for the door and her answer are the story's, told standing beside her at the top of the planks
+    // (`bi:tack-mormor`, above). Her answer belongs there: a game taken up in the loft goes on with the lookout.
+    { id: 'bi:open', at: MORMOR_THANKED.at, needs: 'bi:open-seen', within: [PLANKS.from, DOOR.stops[0]!.x], who: 'elof', line: 'biOpen', read: true },
+    { id: 'bi:welcome', on: 'beat:bi:open', until: 'beat:bi:lookout', within: [PLANKS.from, DOOR.stops[0]!.x], who: 'mormor', line: 'biWelcome' },
+    // A lookout is the next lead after the river's trail ends; the barn is the way up to it. Told as he goes in and in
+    // the loft's first steps, once the thanks are said: on the roof the wind's words have to come at once.
+    { id: 'bi:lookout', on: 'scene:bi:tack-mormor', within: [MORMOR.x - 2.6, HATCH.from], who: 'mormor', line: 'biLookout', read: true },
     { id: 'bi:way', on: 'beat:bi:lookout', within: [MORMOR.x - 2.6, HATCH.from], who: 'mormor', line: 'biWay', read: true },
     { id: 'bi:onward', on: 'beat:bi:way', within: [MORMOR.x - 2.6, HATCH.from], who: 'elof', line: 'biOnward', read: true },
     // 4. the hay loft, the roof, and down behind the house
@@ -738,6 +848,8 @@ export const billsta: ChapterData = {
     { id: 'bi:fly', on: 'bi:fling', within: [FLING.from.x - 1, FLING.to.x + 1], who: 'elof', line: 'biFly', aside: 12 },
     { id: 'bi:thanks-klonk', at: 141, needs: 'bi:fling', who: 'elof', line: 'biThanksKlonk' },
     { id: 'bi:klonk-glad', on: 'beat:bi:thanks-klonk', who: 'spoket', line: 'biKlonkKlonk', aside: true },
+    // The hazelnut on the first boulder, said as he holds it up (`bi:nut`, above).
+    { id: 'bi:nut', at: NUT.at, needs: 'bi:nut-seen', within: [B1.from, CRACK.from], who: 'elof', line: 'biNut' },
     { id: 'bi:hazel', at: 150.2, who: 'elof', line: 'biHazel', aside: true },
     { id: 'bi:wind', at: 162.4, who: 'elof', line: 'biWind', read: true },
     // 6. the brow: a flash, both trägubbar on a stone in the narrow far below, and the owl far off
@@ -772,7 +884,7 @@ export const billsta: ChapterData = {
     { from: 162, to: 187, zoom: 1.35 },
     // Up on the brow the picture opens out over the forest towards the narrow far below. It looks little ahead: the
     // end of the world is well to the right, out of the picture.
-    { from: 187, to: 210, zoom: 1.6, lift: 2.6, lead: 1 },
+    { from: 187, to: BROW.to, zoom: 3, lift: 2, lead: 1, eye: 2.1 },
   ],
   candy: [
     // 1. along the road to the ditch
@@ -816,7 +928,8 @@ export const billsta: ChapterData = {
     { x: 141.8, y: round(TOP.y + 0.45) },
     // up the first boulder, over the crack, along the second, down, and up the big one
     ...hopUp(B1.from, B1.y),
-    { x: 146.8, y: round(B1.y + 0.45) },
+    // Past the hazelnut, not over it.
+    { x: 147.2, y: round(B1.y + 0.45) },
     hopCandy({ x: CRACK.from, y: B1.y }, { x: CRACK.to, y: B2.y }, 1.15),
     { x: 150.5, y: round(B2.y + 0.45) },
     { x: 152.3, y: round(B2.y + 0.45) },

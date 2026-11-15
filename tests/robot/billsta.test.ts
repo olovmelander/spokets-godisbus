@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Game } from '../../src/app/game';
 import { AVENTYR2 } from '../../src/content/aventyr2/aventyr2';
-import { billsta, context } from '../../src/content/aventyr2/chapters/billsta';
+import { billsta, context, HAZEL, NARROW, NUT, STONE, STONE_OUT } from '../../src/content/aventyr2/chapters/billsta';
 import { words } from '../../src/content/aventyr2/lines/billsta';
 import { nextAfter } from '../../src/content/chapters';
 import { storyContext } from '../../src/content/story-context';
@@ -28,8 +28,8 @@ vi.setConfig({ testTimeout: 90000 });
 const SAID = [
   'bi:window', 'bi:new-trail',
   'bi:morfar-here', 'bi:ditch', 'bi:ladder-lay', 'bi:ladder', 'bi:thanks', 'bi:to-mormor',
-  'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open', 'bi:lookout', 'bi:way', 'bi:onward',
-  'bi:loft', 'bi:roof', 'bi:roof-klonk', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad', 'bi:hazel', 'bi:wind',
+  'bi:yard', 'bi:mormor-here', 'bi:lantern', 'bi:open', 'bi:welcome', 'bi:lookout', 'bi:way', 'bi:onward',
+  'bi:loft', 'bi:roof', 'bi:roof-klonk', 'bi:seesaw', 'bi:call', 'bi:klonk-jump', 'bi:too-light', 'bi:klonk-sorry', 'bi:near-middle', 'bi:fly', 'bi:thanks-klonk', 'bi:klonk-glad', 'bi:nut', 'bi:hazel', 'bi:wind',
   'bi:there', 'bi:holds', 'bi:not-alone', 'bi:owl', 'bi:down', 'bi:cheer',
 ];
 /** The big candies by name: their places in billsta.checkpoints. */
@@ -151,10 +151,12 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       // Its headlights glow at its front, from the start.
       const front = car.x + (car.width ?? 29) / 2;
       expect(billsta.storm!.glows!.filter((g) => g.after === undefined && Math.abs(g.at.x - front) < 1).length).toBeGreaterThanOrEqual(1);
-      // Spruces across the road, behind it.
-      const spruces = buildings.filter((b) => b.kind === 'spruce' && b.x < spot('bi:morfar').at.x);
-      expect(spruces.length).toBeGreaterThanOrEqual(2);
-      for (const s of spruces) expect(s.z).toBeLessThanOrEqual(-12);
+      // Birches across the road, behind it and in front of the house, and no spruce there (Olov, 14 November 2026: "I
+      // början av kapitlet ska det stå björkar framför huset i stället för granar").
+      const before = (kind: string) => buildings.filter((b) => b.kind === kind && b.x < spot('bi:morfar').at.x && b.z > buildings.find((v) => v.kind === 'villa')!.z);
+      expect(before('spruce')).toEqual([]);
+      expect(before('birch').length).toBeGreaterThanOrEqual(3);
+      for (const s of before('birch')) expect(s.z).toBeLessThanOrEqual(-12);
       // The house behind the yard, lit from the start; the barn beside it, where he climbs.
       const villa = buildings.find((b) => b.kind === 'villa')!;
       expect(villa.lit).toBe('');
@@ -312,6 +314,61 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(sim.said).toEqual(expect.arrayContaining(['bi:mormor-here', 'bi:lantern', 'bi:open', 'bi:loft']));
     });
 
+    it('at the open door Elof turns to mormor, waves and thanks her, standing, and she answers there', () => {
+      // Olov, 14 November 2026: "Se också till att Elof tackar både morfar för stegen och mormor för att hon öppnar
+      // ladan." "Ladudörren är öppen! Tack, mormor!" was said as the door opened, in passing, wherever he was by then: now
+      // it is the story's, told in a short held moment beside her, as his thanks to morfar is, and she answers it.
+      const beat = (id: string) => billsta.beats!.find((b) => b.id === id)!;
+      expect(words.lines.biOpen).toBe('Ladudörren är öppen! Tack, mormor!');
+      expect(words.lines.biWelcome).toBe('Varsågod, lilla Elof. Kliv in!');
+      expect(beat('bi:open')).toMatchObject({ who: 'elof', line: 'biOpen' });
+      expect(beat('bi:welcome')).toMatchObject({ who: 'mormor', line: 'biWelcome', on: 'beat:bi:open' });
+      expect(beat('bi:open').aside).toBeUndefined();
+      expect(beat('bi:welcome').aside).toBeUndefined();
+      const scene = billsta.scenes!.find((s) => s.id === 'bi:tack-mormor')!;
+      expect(scene.hold).toBe(true);
+      expect(scene.needs).toBe(`placed:${door.id}`);
+      expect(scene.dialogue).toEqual(['bi:open', 'bi:welcome']);
+      // He stops on the planks a step short of her, where she does not stand in front of him, turns to her (a little
+      // towards us), waves and looks up at her face; the picture takes in the two of them and the open doorway.
+      const mormor = spot('bi:mormor').goesTo!;
+      expect(scene.at!).toBeLessThan(mormor.x - 1.2);
+      expect(scene.at!).toBeGreaterThan(mormor.x - 2.6);
+      const turned = scene.stage!.elof![0]!;
+      expect(turned.act).toBe('wave');
+      expect(turned.face!).toBeGreaterThan(0.02);
+      expect(turned.face!).toBeLessThan(0.25);
+      expect(turned.aim).toMatchObject({ x: mormor.x, z: mormor.z });
+      expect(turned.aim!.y).toBeGreaterThan(mormor.y + 3.5);
+      const shot = scene.stage!.shots![0]!;
+      for (const x of [scene.at!, mormor.x, door.stops[0]!.x + 1]) expect(Math.abs(x - shot.x)).toBeLessThan(shot.width! / 2 - 0.5);
+      expect(shot.y - shot.height / 2).toBeLessThan(heightAt(billsta, scene.at!));
+      expect(shot.y + shot.height / 2).toBeGreaterThan(turned.aim!.y + 0.6);
+      // Played: called, she opens the door; he runs up the planks, is stopped beside her, and both lines are said there,
+      // her answer straight after his thanks, before he is through the door. Then she says what the barn is the way to.
+      const sim = new Sim(billsta, {}, saveAt(CP.lawn).start);
+      walkTo(sim, spot('bi:mormor').at.x);
+      use(sim);
+      let furthest = 0;
+      for (let i = 0; i < 60 * 40 && !sim.flags.has('beat:bi:welcome'); i++) {
+        sim.step({ x: 1, y: 0, hopHeld: false, hop: false, act: false });
+        furthest = Math.max(furthest, sim.curr.x);
+        if (!sim.flags.has(`placed:${door.id}`)) expect(sim.said).not.toContain('bi:open');
+      }
+      expect(sim.flags.has('beat:bi:welcome')).toBe(true);
+      expect(furthest).toBeGreaterThanOrEqual(scene.at!);
+      expect(furthest).toBeLessThan(door.stops[0]!.x - door.width / 2);
+      expect(sim.said.indexOf('bi:welcome')).toBe(sim.said.indexOf('bi:open') + 1);
+      expect(sim.said).not.toContain('bi:lookout');
+      run(sim, 1.5, { x: 1 });
+      expect(sim.flags.has('scene:bi:tack-mormor')).toBe(true);
+      expect(sim.said.indexOf('bi:lookout')).toBe(sim.said.indexOf('bi:welcome') + 1);
+      expect(beat('bi:lookout').on).toBe('scene:bi:tack-mormor');
+      // A game taken up in the loft, past the door, has had the moment, and goes on with the lookout.
+      const later = new Sim(billsta, {}, saveAt(CP.loft).start);
+      expect(later.flags.has('scene:bi:tack-mormor')).toBe(true);
+    });
+
     it('is seen clearly where she waits, walks up the planks to the door, and stands there with her lantern', () => {
       // Olov: "Mormor döljs av en stubbe." The woodshed's chopping block stands 9.2 in front of the woodshed's middle
       // (art/blender/a2-yard.py, 'vedbod'): it is behind the path, and behind her, so it hides neither.
@@ -347,7 +404,7 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       expect(storm.glows!.some((g) => g.after === 'beat:bi:owl' && g.at.x > slopeGust!.to)).toBe(true);
       expect(words.lines.biMormorHere).toBe('Lilla Elof! Är det verkligen du?');
       const mormor = billsta.beats!.filter((b) => b.who === 'mormor');
-      expect(mormor.map((b) => b.line)).toEqual(['biMormorHere', 'biLantern', 'biLookout', 'biWay', 'biToNarrow']);
+      expect(mormor.map((b) => b.line)).toEqual(['biMormorHere', 'biLantern', 'biWelcome', 'biLookout', 'biWay', 'biToNarrow']);
     });
   });
 
@@ -615,6 +672,53 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const cliff = billsta.storm!.buildings!.find((b) => b.kind === 'cliff')!;
       for (const s of shelves) expect(Math.abs(s.x - cliff.x)).toBeLessThan((cliff.width ?? 16) / 2);
     });
+
+    it('up on the first boulder, by the hazels, Elof finds a hazelnut, holds it up and says what it is, standing', () => {
+      // Olov, 14 November 2026: "På berget vid hasselnötsbuskarna ska Elof hitta en hasselnöt och säga något om fyndet."
+      expect(words.lines.biNut).toBe('En hasselnöt! Lika stor som mitt huvud!');
+      const scene = billsta.scenes!.find((s) => s.id === 'bi:nut')!;
+      expect(scene.hold).toBe(true);
+      expect(scene.dialogue).toEqual(['bi:nut']);
+      const beat = billsta.beats!.find((b) => b.id === 'bi:nut')!;
+      expect(beat).toMatchObject({ who: 'elof', line: 'biNut', needs: 'bi:nut-seen' });
+      expect(beat.aside).toBeUndefined();
+      // On the first boulder's top, in front of the two hazels at its back, a little in front of the path.
+      const b1 = billsta.landmarks!.find((l) => l.look === 'stone' && l.from <= NUT.x && l.to >= NUT.x)!;
+      expect(heightAt(billsta, NUT.x)).toBeCloseTo(NUT.y, 6);
+      expect(heightAt(billsta, scene.at!)).toBeCloseTo(NUT.y, 6);
+      expect(b1.from).toBeLessThan(scene.at!);
+      const near = HAZEL.bushes.filter((bush) => Math.abs(bush.x - NUT.x) < 2.5);
+      expect(near.length).toBe(2);
+      expect(NUT.z).toBeGreaterThan(0.2);
+      expect(NUT.z).toBeLessThan(0.5);
+      // He picks it up, has it in his hands while he looks at it and says what it is, and lays it down again.
+      const held = scene.stage!.held!;
+      expect(held.thing).toBe('hazelnut');
+      const seen = scene.cues!.find((c) => c.flag === 'bi:nut-seen')!.at;
+      expect(held.from).toBeLessThan(seen);
+      expect(held.until).toBeGreaterThan(seen);
+      expect(held.until).toBeLessThan(scene.seconds);
+      const acts = scene.stage!.elof!.map((k) => k.act);
+      expect(acts[0]).toBe('reach');
+      expect(acts).toContain('hands');
+      // No sweet lies over it, and Klonk does not stand on it.
+      for (const c of billsta.candy) expect(Math.hypot(c.x - NUT.x, c.y - NUT.y), `the sweet at ${c.x}`).toBeGreaterThan(0.6);
+      for (const p of billsta.ghost!) expect(Math.abs(p.at.x - NUT.x) > 0.8 || Math.abs(p.at.y - NUT.y) > 0.5, `Klonk at ${p.at.x}`).toBe(true);
+      // Played from the hill's big candy: he stands for it on the boulder, the line is said there, and he goes on.
+      const sim = new Sim(billsta, {}, saveAt(CP.hill).start);
+      let stood: number | null = null;
+      for (let i = 0; i < 60 * 30 && !sim.flags.has(`scene:${scene.id}`); i++) {
+        sim.step({ x: 1, y: 0, hopHeld: false, hop: !sim.curr.grounded ? false : Math.abs(sim.curr.x - (b1.from - 0.2)) < 0.15, act: false });
+        if (sim.flags.has('beat:bi:nut') && stood === null) stood = sim.curr.x;
+      }
+      expect(sim.flags.has(`scene:${scene.id}`)).toBe(true);
+      expect(stood).not.toBeNull();
+      expect(stood!).toBeGreaterThan(b1.from);
+      expect(stood!).toBeLessThan(NUT.x + 1);
+      expect(sim.curr.y).toBeCloseTo(NUT.y, 1);
+      // Nothing is collected: it is a moment, and the nut stays the hazel's. A game taken up past it has had it.
+      expect(new Sim(billsta, {}, saveAt(CP.gusts).start).flags.has(`scene:${scene.id}`)).toBe(true);
+    });
   });
 
   describe('the brow', () => {
@@ -631,16 +735,25 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       const far = billsta.decor!.filter((d) => d.z !== undefined && d.z <= -25);
       expect(far.map((d) => d.look).sort()).toEqual(['lillgubbe', 'tragubbe']);
       for (const d of far) expect(['beat:bi:there', 'bi:landed']).toContain(d.after);
-      // They stand on their stone out on the narrow's water, in front of the far scenery (the garden's nearest far
-      // picture is 32 behind the path, and covers what is behind it).
-      const narrow = billsta.storm!.lakes![0]!;
+      // They stand on the top of their stone out on the narrow's water, far below the brow (Olov, 14 November 2026: "Kan vi
+      // få det att kännas som om sundet ligger längre ned?"), between its near shore and its far one
+      // (src/content/aventyr2/billsta-vista.ts draws it; the flat sheet a little over the brow's ground is gone).
+      expect(billsta.storm!.lakes).toBeUndefined();
+      expect(NARROW.y).toBeLessThan(heightAt(billsta, there.at!) - 25);
       for (const d of far) {
-        expect(d.at.x).toBeGreaterThan(narrow.from);
-        expect(d.at.y - narrow.y).toBeCloseTo(0.3, 5);
-        expect(d.z!).toBeLessThan(narrow.near!);
-        expect(d.z!).toBeGreaterThan(-32);
+        expect(d.at.x).toBeGreaterThan(NARROW.from);
+        expect(d.at.x).toBeLessThan(NARROW.to);
+        expect(d.at.y).toBeCloseTo(STONE_OUT.y, 5);
+        expect(STONE_OUT.y - NARROW.y).toBeCloseTo(STONE.over, 5);
+        expect(d.z!).toBeLessThan(NARROW.near);
+        expect(d.z!).toBeGreaterThan(NARROW.far);
       }
-      expect(billsta.storm!.flybys!.some((f) => f.on === 'beat:bi:there')).toBe(true);
+      // The little one comes to the stone through the air, into the picture that has gone out to it, and lands on its top.
+      const tossed = billsta.storm!.flybys!.find((f) => f.on === 'beat:bi:there')!;
+      expect(tossed.toZ).toBe(STONE_OUT.z);
+      expect(tossed.to.y).toBeCloseTo(STONE_OUT.y, 5);
+      expect(Math.abs(tossed.to.x - far.find((d) => d.look === 'lillgubbe')!.at.x)).toBeLessThan(0.05);
+      expect(tossed.lit?.length).toBeGreaterThan(0);
       // Olov: "Bilden ska bli tydligare när lillgubben och gamla trägubben syns nere i sundet." They are drawn bigger, warm
       // (found, as on the stone in the storm's eye), with a light on the water behind them; and the flash's moment is a
       // close look at the stone that holds them a few seconds.
@@ -715,9 +828,10 @@ describe('Äventyr 2, Kapitel 7: Billsta', () => {
       // The card, and Moa and Bertil by the car: Moa points at the window and says whose trail it is now, while he
       // stands by the car; then they run ahead of him round the house to its back door. That run and mormor's walk
       // let him move; the arrival, his thanks to morfar over the ditch (Olov, 12 November 2026: "Elof måste tacka
-      // morfar som lägger stegen över diket") and the distant strait reveal are the three he stands for.
-      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-run', 'bi:tack-morfar', 'bi:ladan', 'bi:sundet']);
-      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['card', 'bi:tack-morfar', 'bi:sundet']);
+      // morfar som lägger stegen över diket"), his thanks to mormor at the open door (14 November 2026) and the distant
+      // strait reveal are the four he stands for; and the hazelnut he finds on Billaberget (14 November 2026).
+      expect(billsta.scenes!.map((s) => s.id)).toEqual(['card', 'bi:kids-run', 'bi:tack-morfar', 'bi:ladan', 'bi:tack-mormor', 'bi:nut', 'bi:sundet']);
+      expect(billsta.scenes!.filter((s) => s.hold).map((s) => s.id)).toEqual(['card', 'bi:tack-morfar', 'bi:tack-mormor', 'bi:nut', 'bi:sundet']);
       const run = billsta.scenes!.find((s) => s.id === 'bi:kids-run')!;
       const house = billsta.storm!.buildings!.find((b) => b.kind === 'villa')!;
       for (const who of ['moa', 'bertil'] as const) {

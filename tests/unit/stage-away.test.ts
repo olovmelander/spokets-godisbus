@@ -2,6 +2,7 @@ import { stubCanvas } from './canvas-stub';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { billsta } from '../../src/content/aventyr2/chapters/billsta';
 import { heightOf } from '../../src/render/rig';
+import { routeThrough, runTop } from '../../src/render/run-route';
 import { createStage } from '../../src/render/stage';
 
 beforeEach(() => {
@@ -37,8 +38,11 @@ it('gives Moa and Bertil the time their steps need: at most about a child’s sp
     let x = who === 'moa' ? 6.4 : 8.6, z = who === 'moa' ? -7.6 : -6.4, fastest = 0;
     for (const key of keys) {
       if (key.x === undefined || key.z === undefined || !key.move) continue;
-      // An eased move (smoothstep) goes at its fastest one and a half times its mean speed, half way.
-      fastest = Math.max(fastest, 1.5 * Math.hypot(key.x - x, key.z - z) / key.move);
+      // An eased move (smoothstep) goes at its fastest one and a half times its mean speed, half way. A way that bends
+      // (`via`) is as long as its curve, and run evenly along it (src/render/run-route.ts).
+      fastest = Math.max(fastest, key.via
+        ? runTop(key.move) * routeThrough([{ x, z }, ...key.via, { x: key.x, z: key.z }]).length / key.move
+        : 1.5 * Math.hypot(key.x - x, key.z - z) / key.move);
       x = key.x; z = key.z;
     }
     // In their own heights a second: they ran at 4 (Moa) and 5.4 (Bertil), twice a child's sprint, and their boots slid.
