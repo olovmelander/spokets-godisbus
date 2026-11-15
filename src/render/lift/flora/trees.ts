@@ -4,11 +4,13 @@ import { KIT, grows, heightAt, sequence, surfaceAt } from '../../dressing/kit';
 import { gardenViewGap } from '../../garden-home';
 import { backRise } from '../../mountain-kit';
 import { STREET_DEPTH } from '../../village';
+import { TOP, pictureTop } from '../../picture-top';
+import { Cards } from './light';
+
+export { TOP, pictureTop };
 
 /** Where the village's church and belfry stand far behind the street (src/render/view.ts): no tree in front of them. */
 const CHURCH_X = 46;
-import { walkLine } from '../../dressing/foreground';
-import { Cards } from './light';
 
 /**
  * The crowns of the flora (docs/visual-upgrade.md): what was a pillar of bark gets its boughs, and between the path
@@ -18,31 +20,6 @@ import { Cards } from './light';
  * (../../wind.ts) moves its crown by its height: the foot stays, the top goes furthest. A kind is one mesh of
  * instances for the whole chapter.
  */
-
-const TAN = Math.tan(Math.PI / 12);
-/** About how high over the ground he stands on the picture reaches at a depth, on a tablet held sideways (the lens 10.9 off). */
-export const TOP = (z: number, lens = 10.9) => 0.08 * lens + (lens - z) * TAN;
-
-/**
- * How high the picture's top reaches at a depth, at most, wherever he is when a thing at x is in it: the picture
- * follows where he can stand (dressing/foreground.ts `walkLine`), waits at the edge of a drop, and is wider and
- * lifted where the chapter says. A bough hung under that never hangs into the middle of the picture.
- */
-export function pictureTop(chapter: ChapterData): (x: number, z: number) => number {
-  const walk = walkLine(chapter);
-  return (x, z) => {
-    let top = -Infinity;
-    const half = (10.9 - z) * TAN * 1.5;
-    for (let eye = x - half; eye <= x + half; eye += 1) {
-      const zones = (chapter.cameras ?? []).filter((zone) => eye >= zone.from && eye <= zone.to);
-      const lens = 10.9 * Math.max(1, ...zones.map((zone) => zone.zoom ?? 1));
-      // He may stand on a ledge over the ground there, and the picture goes up with him.
-      const stand = Math.max(walk(eye, true), ...(chapter.ledges ?? []).filter((l) => Math.abs(l.x - eye) < l.width / 2).map((l) => l.y));
-      top = Math.max(top, stand + TOP(z, lens) + Math.max(0, ...zones.map((zone) => zone.lift ?? 0)));
-    }
-    return top;
-  };
-}
 
 const hex = (colour: string) => new Color(colour);
 /** The leaves of October: birch green going yellow, the dark of spruce, the lighter grey-green of pine. */

@@ -181,14 +181,18 @@ did the integration and the checks.
     the path: on a near trunk, or on a stump just behind it.
   - Fireflies at dusk and in the storm's eye.
 - **The little forest beings.** Round, made of moss and bark, with lichen caps and soft dark eyes. They peek over
-  stones and stumps in the forest, on the bog and on the mountain.
+  stones and stumps in the forest, on the bog and on the mountain, their faces and twig arms over the top, on every tier
+  (two at the most in a chapter): they duck only when he is right by them, and wave to him as he comes (Olov, 15
+  November 2026: "se till att vättarna syns på ett bra och fint sätt"). In Äventyr 2 two peek out in Stormskogen and
+  one by the forest at Billsta, each holding a big leaf over its head against the rain.
 - **The carvings.** Small figures in pale carved wood: a bird, a hare, a figure with a pointed cap. They sit quietly
   on stones in both adventures. Whittled in Blender (`art/blender/carvings.py`, `fauna/carving-kit.ts`): a few hundred
   flat facets each, burnt-in eyes, a plinth, and a little warmth of their own so that they are wood in the storm's blue
   light too.
 - **Where he is carried.** Nobody hides, nothing is left and no bird hops on ground he is carried high over and never
   walks: Berget's valley under the crane's flight, the gap under Stormskogen's owl, Granskogen's ravine.
-- **In the storm the life hides.** Only birds sheltering on branches remain, plus the owl. The birds sit near the path,
+- **In the storm the life hides.** Only birds sheltering on branches remain, plus the owl and the beings under their
+  leaves. The birds sit near the path,
   three to seven EL back, in a near trunk or, where none stands, on a bare dead sapling.
 
 ### Flora and interaction (`src/render/lift/flora/`, `wind.ts`, the dressing's plant files)

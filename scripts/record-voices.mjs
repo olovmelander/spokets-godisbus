@@ -7,7 +7,11 @@
 //     taken again (up to three takes; the best is kept and reported);
 //   - the takes are levelled to one loudness afterwards (scripts/level-voices.py);
 //   - a line the model says wrongly as it is written is sent spelled as it sounds (scripts/voices-spoken.json): the
-//     narrator said the compounds of "storm" as "stor", with a long, closed vowel, until they were sent as "Stårm…".
+//     narrator said the compounds of "storm" as "stor", with a long, closed vowel, and sent as "Stårm…" as a long å
+//     (Olov, 15 November 2026: "Det låter konstigt"). With a double r, "Storrm…" or "Stårrm…", the vowel is short and
+//     open, as in his own "klockan"; the model still varies from take to take, so those six lines were taken a dozen
+//     times each and the take kept whose vowel measured nearest that o (HANDOVER.md, 15 November). Speech-to-text hears
+//     every one of those spellings as "Storm…", so it cannot tell a good take from a strange one.
 //     The manifest keeps the line's own words: they are what the game shows, and what a recording is matched by.
 // Reads ELEVENLABS_API_KEY from .env. Writes public/audio/voices/<key>.mp3 and its manifest entry.
 //

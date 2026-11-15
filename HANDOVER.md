@@ -1,5 +1,118 @@
 # Handover
 
+## State (15 November 2026, later): whole houses over the flood, the storm's eye keeps its sky, a level floor at home, the narrator's "Storm…", a calmer drift, and the vättar
+
+One cloud session (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov reported three things seen while playing, then four
+more while it was being built:
+
+- **Byn i stormen: the houses ended in a straight line.** "Efter att man har flugit med paraply över vattnet zoomar
+  kameran ut, och då ser man att vissa byggnader inte är fullt modellerade – de slutar liksom med ett rakt streck."
+  - Cause: the village kit (`art/blender/village.py`) ends every wall at 12 EL, the top of the shop floor, where the
+    picture usually ends. The thanks to Moa (`tack-moa`) opens it to 14 × 24.5 EL, and on a phone held upright the
+    crossing's own camera zone already reached about 27 EL at the near wall: the walls stopped there against the sky. The
+    yard birch's stem ended at 15–17 EL like a sawn-off pipe, under the crown the flora hangs from 17.5.
+  - Fix, built in code in each house's own colours and merged into its geometry (no new draw; `UPPER` in
+    `src/render/village.ts`): a moulded band over the shop floor, round each end that is seen; an upper storey of the
+    house's own boards (lying, upright with cover strips, or plaster) with white two-casement windows (dark glass in the
+    storm, the power being out); corner boards up to the eaves; eaves with soffit, fascia and a zinc gutter, the downpipes
+    going up to it; a pitched roof of painted sheet metal (black, Falu red or grey-green) with seams and a ridge cap; a
+    gable where a house's end is seen (not where a house of the same depth and foot goes on, nor at the street's ends);
+    a brick chimney. Built only with a kit (stand-in or Blender), so the masonry tests' empty kit still isolates the stone.
+    The yard birch's stem goes on from the kit's top ring and parts into limbs up into the crown, as high as the flora
+    hangs it (`pictureTop`, moved to `src/render/picture-top.ts` so that both read it).
+  - Byn by day is unchanged in play (the picture seldom reaches over 12); the church is as visible as before. Byn's street
+    went from 23,576 to 25,246 triangles (its guard is 26,000), Byn i stormen's from 37,108 to 39,570.
+- **Stormens öga: the stars and the moon vanished.** "I kapitlet 'Stormens öga' zoomar kameran ut, och då försvinner
+  stjärnorna och månen."
+  - Cause: the stars stood 95–105 EL behind the play plane and the moon 110, and the camera sees 140. A shot backs the
+    camera off to fit its width: the eye opening (`oga`, 20 wide) and him grown with the family on the shore (`stor`, 26.6
+    wide) took it 37–107 back on a tablet, a narrower window or a phone held upright, and the sky went past its sight.
+  - Fix (`SKY` in `src/content/aventyr2/render.ts`): the stars and the moon stay as far in front of the camera as at the
+    usual picture (stars 115–125, moon 130), so they keep their place however a shot opens. On a narrow picture the moon
+    comes in from beyond the picture's side (on a phone held upright it was out of the picture even before). The water's
+    moon path and the moon's light shafts read its place as before. Desktop pictures look as they did.
+- **Home: the floor bulged in front of the TV.** "Golvet ska vara plant i alla kapitel, precis som i det sista kapitlet."
+  - Cause: the prologue and Stormkvällen kept a door sill to the veranda in their ground (x 30–31.2, 0.5 high) from before
+    the shared home of 11 November. In the shared room it ran across the whole floor right in front of the TV, the boards
+    bent round it. Godiskalaset and Morgonen efter had none.
+  - Fix: one level floor from the back wall to the veranda's step in both (`ends.ts`, `stormkvall.ts`); the jump marked
+    onto the sill is gone and the candy over it lies on the floor; the veranda begins a third of a room before the door
+    (`house-door.ts`).
+  - **Consequence:** the sill was where the prologue taught Hoppa (plan §4.1: "Hoppa at the veranda door sill"). With
+    nothing to jump over, `Tutorial` (`src/app/tutorial.ts`) no longer shows Hoppa; the stick and Använd are as they were,
+    and the hand can still show a hop lesson if one is given a place again. Question below.
+- **The narrator's "Storm…" sounded strange.** "Sen måste vi fixa när berättaren säger stormgården, stormnatten och andra
+  saker som innehåller storm. Det låter konstigt."
+  - Measured with Praat (scratch only): sent as "Stårm…" every card was a long å, its vowel 140–200 ms with the first
+    formant at 350–400 Hz, where the narrator's own short o in "klockan" in the same clips is about 55 ms and 520 Hz. "Byn i
+    stormen" and "Stormens öga", sent as written, about 400 Hz. Speech-to-text heard them all as "Storm…", so the recorder's
+    check could not tell.
+  - Fixed: spelled with a double r ("Storrm…"; for Stormskogen "Stårrm…") the vowel is short and open, with an r after it.
+    The model still varies, so each of the six cards was taken 8–18 times with the recorder's own voice, model and
+    settings, and the take kept whose vowel measured nearest his "klockan": now 455–580 Hz and 110–145 ms. "Byn i stormen"
+    is sent as written. Levelled with `scripts/level-voices.py`: four at −18.7 LUFS, "Byn i stormen" and "Stormens öga" at
+    −19.2 and −19.7 (held under −1 dBFS at their peaks). `scripts/voices-spoken.json`, the manifest and
+    `scripts/voices-takes.json` (each take's `vowel`) say so; `record-voices.mjs --dry-run` has nothing left to record.
+  - ElevenLabs works from a cloud session now: Olov's key is a network secret on the environment "Spökets Godisbus", added
+    by the proxy to requests to `api.elevenlabs.io`. The environment variable he also added reaches only new sessions; a
+    script run here needs `ELEVENLABS_API_KEY=proxy-injected` (the proxy replaces it) and Node `NODE_USE_ENV_PROXY=1`.
+- **Godisracet: the drift slid too much.** "I kart-spelet på tvn så sladdar man lite för mycket när man använder
+  sladdknappen."
+  - Measured in the simulation (`src/kart/sim/kart.ts`): held with the wheel straight, a drift turned more than the wheel
+    alone at full lock (1.35 rad/s against 1.27), and with the wheel turned in nearly twice as much (2.4), the kart's body
+    37° across its way.
+  - Now 1.8 rad/s with the wheel in, 1.05 straight and 0.3 out (`DRIFT_TURN`, `DRIFT_RANGE`), the body at most 26° across
+    (`DRIFT_SLIP`): still tighter than the wheel, and a curve to steer. The rivals plan their drifts from the same numbers
+    and their whole races pass. `docs/tv-console.md` has the numbers.
+- **The vättar: when they are seen, seen well, and in Äventyr 2 too.** Asked "när syns Vättarna i spelet, vilket
+  kapitel?", then "se till att Vätterns syns på ett bra och fint sätt i de kapitlen där du anser att de ska synas" and
+  "Kan vi ha vättarna i äventyr 2 också på passande ställen!"
+  - Where they were: only in Äventyr 1, two a chapter behind a stone (in the forest sometimes a stump) beside the path:
+    Granskogen (x ≈ 106 and 190; goal 204), Myren (x ≈ 184 and 195; goal 197) and Berget (x ≈ 69 up the cliff, 119 on the
+    summit). High drew both, Mid one and Low none (they were on the rich layer). Out, little more than their eyes and caps
+    were over the stone; they ducked with him 3 EL away and stayed down 2–4 s after he had gone by, so while he came they
+    were mostly hiding. Myren's two stood at the trail's end, behind the crane he boards and where the end page comes.
+  - Now (`BEING_SHOW`, `src/render/lift/fauna/folk.ts`): every one on every tier (one skinned draw each, two at the most
+    in a chapter, in the group beside Pappa's carvings that every tier draws, with the stones they peek over); out, they
+    stand 0.24 higher, face, shoulders and twig arms over the stone; they watch him from 12 EL, wave to him as he comes
+    (six times in ten), duck only when he is within 1.6 EL, and are out again 0.8–1.4 s after he has passed. Myren's two
+    peek out where he arrives, past the first big candy (x 7.5), and on the dry ground before the boardwalk (x 99.6), a
+    step further back than the bog's others (`PEEK`, `src/render/lift/fauna/plan.ts`); Pappa's bird keeps its stone at
+    144.5. Granskogen's and Berget's stay where they were.
+  - Äventyr 2 (`STORM_BEINGS` in `plan.ts`): two in Stormskogen (x ≈ 77 and 140; goal 205) and one by the forest at
+    Billsta (x ≈ 35, its one stretch of free grass), each holding its leaf cap, 2.3 times as big, over its head against the
+    rain (the `cap.leaf` bone of `vatte.glb`: no new model). They take their places after the carvings from a sequence of
+    their own, so nothing else moves, and not from where he begins (`?at` moves none). Not in Älven: its dry banks are all
+    the story's (its stones, the beaver's place, the lift, the end), and the one gap left was right behind its last big
+    lollipop, which hid all of the being but its leaf. Not in Stormgården, Byn i stormen, Olympia, Flärken (no stone at the
+    bathing place) or Stormens öga.
+  - In the storm's dark they are as dim as everything else there: at 844×390 their faces and leaves read, Stormskogen's
+    first with a few blades of grass in front.
+- **Guards:** `tests/unit/street-upper.test.ts` (every house whole up to a roof over its eaves; the shoemaker's gable over
+  the crossing; the birch's limbs in its crown), `storm-eye-sky.test.ts` (moon and stars in the picture with the camera 16
+  to 107 back, at 1.6, 1.44 and 0.46 wide; it fails with the old depths), `home-floor.test.ts` (the floor level past the TV
+  and the bathroom door in all four chapters at home), `kart-race.test.ts` (a drift with the wheel in turns 1.3–1.5 times
+  the wheel alone, its body 0.4–0.5 rad across; held straight, less than the wheel alone), `lift-fauna.test.ts` (the storm's
+  beings and their leaves; no big candy right in front of a being or in the three EL before it, which Älven's broke; the
+  plan the same wherever he begins, now also in Stormskogen and Billsta) and `forest-folk.test.ts` (the beings' rigs on
+  every tier), and the tutorial and voice tests changed with them.
+- **Validation:** `npm run typecheck`, `npm test` (3341 passed, 20 skipped), `npm run build` (size gate ok: JS 732.0 of
+  1000 KB gzipped; Äventyr 2's chunk 158.6 of 160 KB) and `npm run privacy-check` pass. Browser suites run here with the
+  preinstalled, newer Chromium (Vite's local-network check switched off for the run by a scratch preload; nothing in the
+  repository changes): smoke (101), pointing (44), prologue (86), shared-home (42), bredbyn (91), village (64),
+  adaptive-rendering (17), myren-loop (30; at most 63 draws on Low, 108 on High) and aventyr2 (42; on Low 64 draws in
+  Stormskogen and 103 at Billsta, which was 102 before its being). Seen in the game's renderer with stand-in figures, at
+  1440×900, 1180×820, 844×390 and 390×844: the thanks over the flood, the crossing on a phone held upright, Byn by day,
+  the storm's eye and its growing on all of them, and the floor in front of the TV in the prologue and Stormkvällen; at
+  844×390 the vättar in Myren, Granskogen, Stormskogen, Älven and Billsta.
+- **Not checked:** nobody has heard the six new narrator takes (measured, and heard right by speech-to-text); nobody has
+  driven the new drift by hand (measured in the simulation, and whole races with the rivals); the vättar were seen in
+  this computer's renderer with stand-in figures, not on the family's devices; the real family models were not used.
+- **Next:** Olov listens to the six cards (Stormkvällen, Stormnatten, Stormgården, Stormskogen, Byn i stormen, Stormens
+  öga), drives Godisracet with a held drift, looks for the vättar (Granskogen, Myren, Berget; Stormskogen and Billsta in
+  Äventyr 2), looks at the thanks over the flood and the storm's eye on his computer and a phone, and answers the
+  questions. No Blender work is waiting.
+
 ## State (15 November 2026): Olov's second Äventyr 2 list, all fifty points
 
 Olov played Äventyr 2 through on 14 November and wrote about fifty points, chapter by chapter, plus general wishes for
@@ -6154,6 +6267,18 @@ record identify the exact published revision.
 
 ## Next
 
+**Whole houses, the storm's eye's sky, the level floor and the narrator's "Storm…" (15 November, later).** Keep a
+village house whole over its shop floor (`UPPER`, `src/render/village.ts`): a kit part that ends at `TOP` needs what stands
+over it, since a wide shot or a phone held upright sees there. Keep a sky that stands far off at a fixed distance in front
+of the camera (`SKY`, `src/content/aventyr2/render.ts`), never at a fixed depth past what a wide shot's camera sees (140).
+The floor at home is level in every chapter (`tests/unit/home-floor.test.ts`). A narrator line whose vowel the model gets
+wrong is spelled with a double consonant, taken several times and measured (Praat in a scratch venv: the first formant
+against his own "klockan"); speech-to-text cannot tell. Godisracet's held drift turns 1.8 rad/s in, 1.05 straight and 0.3
+out at full speed (`kart.ts`); change those with `kart-race.test.ts` and the rivals' races. A being is placed where it is
+seen as he comes: no big candy in front of it or in the three EL before it, its plan not hanging on where he begins, and
+in the storm only where a stretch of free grass is (`STORM_BEINGS`). Next: Olov listens to the six cards, drives the
+drift, looks for the vättar and answers the questions. No Blender work is waiting.
+
 **Olov's second Äventyr 2 list (15 November).** Keep a held scene where a thing in the story must be seen (the bowl,
 the gift, the hazelnut, the thanks), `ActorKey.via` for routes round buildings, `ChapterData.brink` and `CameraZone.eye`
 for views from a height, the natural edges (`dressing/natural.ts`: built things straight, his plane exact), Elof paced
@@ -6656,6 +6781,16 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **The floor at home is level (Olov, 15 November 2026):** "Golvet ska vara plant i alla kapitel, precis som i det sista
+  kapitlet." No sill or step in the room in any chapter; the prologue's Hoppa lesson at the old sill is gone with it until
+  Olov says otherwise (question below).
+- **The narrator's "Storm…" (15 November 2026):** sent with a double r, as `scripts/voices-spoken.json` has it, after Olov
+  heard the "Stårm…" takes as strange.
+- **Godisracet's drift (Olov, 15 November 2026):** "man sladdar lite för mycket när man använder sladdknappen": a held
+  drift turns less than before: with the wheel held straight a little less than the wheel alone at full lock.
+- **The vättar (Olov, 15 November 2026):** "se till att Vätterns syns på ett bra och fint sätt" and "Kan vi ha vättarna i
+  äventyr 2 också på passande ställen!": drawn on every tier, out where he comes, in Stormskogen and at Billsta under a
+  leaf. The session chose the places; Älven has none (question below).
 - **Lines at their moment (Olov, 12 November 2026):** every conversation fits what happens and is said at its
   place. Nothing is cut, and nothing comes late: passing remarks give way to the story's lines, and are said at
   their moment or not at all (`docs/dialogue.md`). In both adventures.
@@ -6769,6 +6904,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Byn's houses, the storm's eye, the home floor, the narrator, the drift, the vättar (15 Nov, later) | Three things seen while playing, the narrator's "Storm…", the drift, and the vättar seen and in Äventyr 2 | One cloud session | — / 1 report (+5 messages) | Houses whole over the shop floor with a roof, the birch into its crown; stars and moon kept in sight in every shot; a level floor at home (the Hoppa lesson went with the sill); six narrator cards taken again and chosen by measuring the vowel; ElevenLabs reachable from cloud sessions; a held drift turns less; the vättar on every tier, out as he comes, three in Äventyr 2 under leaves |
 | Äventyr 2, second round (14–15 Nov) | Olov's fifty points from playing Äventyr 2 | One session on Olov's computer: thirteen builders and the lead, stopped overnight and by the Fable limit, finished on Opus 5.5; Blender headless | — / 1 list | Every point done; Sickan the cat, the narrator's "Storm…", the bowl and the gift given to the old trägubbe, natural ground edges everywhere, Elof's walk paced by the time drawn; 12 lines recorded |
 | Elof's run lean (14 Nov) | Elof leans back too much when he runs | One cloud session | — / 1 report | Twice the forward lean at a run, the head held up, a forward lean in running jumps; seen on the stand-in, not yet on the real Elof |
 | Mormor and the sofa (13 Nov, evening) | Mormor stands in the sofa's arm in Morgonen efter | One session on Olov's computer, while he played Äventyr 2 | — / 1 report | Grandparents' body offset in one constant; Mormor behind the table's far end; a sofa-clearance test |
@@ -6839,6 +6975,12 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Whole houses and the narrator (15 November, later):** the six new narrator takes were chosen by measuring and by
+  speech-to-text, not by ear. The houses' upper storeys, roofs and the birch's limbs were seen with stand-in figures on
+  this computer's renderer only, not on the family's devices. A far house is only 8 EL deep (to stand clear of the church),
+  so its roof is low and short from the side, seen only in very wide pictures. The vättar in Stormskogen are dark in the
+  storm's light, like everything there; seen on stand-ins in this renderer only.
 
 - **Äventyr 2 list (12 November, night):** Elof's coat hem, the flashlight fingers, Mamma's SUP stroke and the old one's lighting were
   seen on stand-ins only. (Billsta's bales, Moa's second upright and the otter's early line are fixed in the
@@ -7180,6 +7322,23 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 15 november, senare (allt är byggt; inget hindrar):
+
+- **Hoppa i prologen:** tröskeln framför tv:n var platsen där prologen lärde ut Hoppa (handen pekade på hoppknappen när
+  Elof stod still vid den). Nu är golvet plant och det finns inget att hoppa över i prologen, så handen för Hoppa visas
+  inte längre. Vill du ha något annat att hoppa över i hallen, till exempel en sittkudde eller en leksak på golvet, eller
+  räcker det att Elof hittar hoppet själv i Gården?
+- **Berättaren:** de sex storm-korten är inspelade på nytt (Stormkvällen, Stormnatten, Stormgården, Stormskogen, Byn i
+  stormen, Stormens öga). Låter "Storm" rätt nu? Säg vilket kort det gäller om något fortfarande låter konstigt.
+- **Husen i Byn:** de har nu en övervåning med fönster och ett plåttak (svart, falurött eller grågrönt) som syns när
+  bilden vidgas. Stämmer det med Köpmangatan, eller ska de ha andra fönster eller takfärger?
+- **Sladden i Godisracet:** en hållen sladd svänger nu mindre än förut åt alla håll; med ratten rak lite mindre än ratten
+  ensam för fullt, och kartens kropp står högst 26 grader snett i stället för 37. Är det lagom, eller ska den sladda ännu
+  mindre (eller lite mer)?
+- **Vättarna i Äventyr 2:** två i Stormskogen och en vid skogskanten i Billsta, var och en med ett stort blad över huvudet
+  mot regnet. I Älven fanns ingen ledig plats längs vägen som inte låg bakom något i berättelsen, så där är ingen. Vill du
+  ha någon på fler ställen, till exempel en gårdsvätte vid huset i Stormgården?
 
 Från din andra genomspelning av Äventyr 2 den 14 november (allt är byggt; inget hindrar):
 

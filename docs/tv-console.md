@@ -54,7 +54,9 @@ Every lap is 960 m, and a race is three laps (`src/kart/sim/courses.ts` holds ea
 - **Eight karts.** Elof's crown kart against seven wooden animals: Räven, Haren, Ugglan, Ekorren, Igelkotten,
   Älgen and Björnen.
 - **Handling** (`src/kart/sim/kart.ts`). The drift button hops. Held through a bend it locks a drift to that side;
-  steering in tightens it and steering out widens it. The drift charges blue, then gold, then pink sparks, and
+  steering in tightens it and steering out widens it (at full speed 1.8, 1.05 and 0.3 rad/s with the wheel in, straight
+  and out, against 1.27 for the wheel alone; Olov, 15 November 2026: it slid too much at 2.4 and 1.35). The drift
+  charges blue, then gold, then pink sparks, and
   letting go spends them as a turbo of that size. The wheel alone turns a wide arc at full speed, so the hairpins
   ask for a drift or a lift. Grass, snow, mud and water slow the kart; a boost carries it over them. Barriers cost
   little on a graze and a lot square on.

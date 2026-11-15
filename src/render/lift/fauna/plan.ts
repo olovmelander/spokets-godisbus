@@ -17,8 +17,12 @@ export interface Climber { tree: Tree; a: number; h: number }
 /** A place to rest: where, and which way it faces (a turn about the upright: 0 along +x). */
 export interface Rest { at: V3; yaw: number }
 export interface Flock { x: number; y: number; species: Species; birds: Rest[]; perch: boolean; shelter: boolean }
-/** A stone or a stump to peek from behind: its foot, how high its top is, how deep and wide it is, and the side to peek out on. */
-export interface Peek { at: V3; top: number; deep: number; wide: number; side: number; lichen: boolean }
+/**
+ * A stone or a stump to peek from behind: its foot, how high its top is, how deep and wide it is, the side to peek out
+ * on, whether a being there wears lichen for a cap (else a leaf), and whether it holds a big leaf over its head against
+ * the rain (in the storm).
+ */
+export interface Peek { at: V3; top: number; deep: number; wide: number; side: number; lichen: boolean; umbrella: boolean }
 export interface Carved extends Rest { shape: Carving }
 /** Where a visiting bird may come down: on the ground behind the path, or on a bough. */
 export interface Landing extends Rest { bough: boolean }
@@ -85,7 +89,28 @@ const PEEK: Partial<Record<string, readonly { found: number; x: number; z: numbe
   // finds for it where he walks is by the jay, in a shaft of light in front of a pale boulder and among the thrushes,
   // where it was not to be seen: it peeks over its stone on the level moss before the seesaw instead (14 November 2026).
   granskog: [{ found: 139.5, x: 138.08, z: -2.84 }, { found: 40.7, x: 105.6, z: -2.9, being: true }],
+  // Myren's two found their places where the trail ends, the widest gaps: one behind the crane he boards, the other on the
+  // goal's height, where the end page comes (Olov, 15 November 2026: "se till att vättarna syns på ett bra och fint
+  // sätt"). They peek out where he arrives, past the first big candy, and on the dry ground before the boardwalk, instead:
+  // a step further back than the bog's others, since a sweet lies every two EL along the path there, and far from Pappa's
+  // bird on its stone past the lysklubba.
+  myren: [
+    { found: 184.2, x: 7.5, z: -3, being: true }, { found: 195.2, x: 99.6, z: -3, being: true },
+    // Pappa's bird keeps its stone past the lysklubba: it went there because the beings had taken the trail's end.
+    { found: 194.7, x: 144.5, z: -2.7 },
+  ],
 };
+/**
+ * How many beings peek out in a chapter of the storm (Olov, 15 November 2026: "Kan vi ha vättarna i äventyr 2 också på
+ * passande ställen!"): in the storm's forest and by the forest at Billsta, each under a big leaf against the rain; Billsta
+ * has room for one, on its one stretch of free grass. Not in the garden, the village or at Olympia, nor at Flärken, whose
+ * bathing place has no stone for one, nor in the storm's eye, which is the family's. Nor by the river: Älven's dry banks
+ * are all the story's (its stones, the beaver's place, the lift, the end), and the one gap left was right behind its
+ * last big lollipop, which hid the being.
+ */
+const STORM_BEINGS: Partial<Record<string, number>> = { stormskog: 2, billsta: 1 };
+/** Where along the path the storm's beings may peek out from: five EL past where he starts in each of those chapters. */
+const STORM_BEINGS_FROM = 6;
 /**
  * How far each carving stands turned from facing the picture, in radians: the hare and the bird far enough to show what
  * they are from the side (the long back and the tucked tail; the bill and the tail), the nisse nearly facing it.
@@ -466,23 +491,27 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
    * Spots behind the path, far from candy and the story's things, with a stone or a stump in front: of the places
    * tried, those that stand in the widest gaps of the trail, so that none looks to be by a candy.
    */
-  const hideouts = (n: number, taken: number[], carved = false): Peek[] => {
+  const hideouts = (n: number, taken: number[], carved = false, ask: { draw?: () => number; since?: number; until?: number; tries?: number } = {}): Peek[] => {
+    const { draw = next, since = from + 8, until = to - 8, tries = 90 } = ask;
     const tried: { x: number; z: number; gap: number }[] = [];
-    for (let k = 0; k < 90; k++) {
-      const x = from + 8 + next() * (to - from - 16);
-      const z = place === 'bog' ? -2.1 : -2.5 - next() * 0.9;
+    for (let k = 0; k < tries; k++) {
+      const x = since + draw() * (until - since);
+      const z = place === 'bog' ? -2.1 : -2.5 - draw() * 0.9;
       const y = ground(x);
       if (!soil(x) || carried(x) || !clear(x, y + 0.4, z, 2.8)) continue;
       tried.push({ x, z, gap: gap(x, y) });
     }
     tried.sort((a, b) => b.gap - a.gap);
-    const apart = (x: number, out: readonly Peek[]) => taken.concat(out.map((o) => o.at[0])).every((t) => Math.abs(t - x) >= 10);
+    // Apart from those taken, and from where the plan found each already chosen (before `PEEK` moved it): so that moving
+    // one does not change which the plan chooses next.
+    const chosen: number[] = [];
+    const apart = (x: number) => taken.concat(chosen).every((t) => Math.abs(t - x) >= 10);
     // Where the trail's candy lies all along the dry ground (Myren: a sweet every two EL, one over every hop), no spot
     // tried is clear of it, or the only ones are by those taken. A carving then looks every half EL for the widest gap
     // of the trail, a little further back on the same dry ground, not beside a big lollipop, and of those the one
     // furthest from the story's things. It is only asked when the tries came to too few, so a chapter that has its
     // carvings keeps them where they are (Olov, 12 November 2026: Myren had none).
-    if (carved && tried.filter((t) => apart(t.x, [])).length < n) {
+    if (carved && tried.filter((t) => apart(t.x)).length < n) {
       const z = place === 'bog' ? -2.7 : -3.4;
       const room = (x: number) => Math.min(9, ...busy.map(([a, b]) => Math.max(a - x, x - b)));
       const found: { x: number; z: number; gap: number; room: number }[] = [];
@@ -494,19 +523,21 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     }
     const out: Peek[] = [];
     for (const { x: found, z: back } of tried) {
-      if (out.length >= n || !apart(found, out)) continue;
+      if (out.length >= n || !apart(found)) continue;
+      chosen.push(found);
       // A carving or a being that the plan puts where a chapter's own things hide it peeks out elsewhere instead (`PEEK`).
       const peek = PEEK[source.id]?.find((p) => !p.being === carved && Math.abs(p.found - found) < 1.5);
       const x = peek?.x ?? found, z = peek?.z ?? back;
       const y = ground(x);
       // As high as the moss and the ferns round it, or a little higher, so that what peeks over it is seen.
-      const size = 1.25 + next() * 0.3;
-      const stumpy = place === 'forest' && next() < 0.4;
-      const yaw = next() * 6.28;
-      (carved ? stands : props).push(...placed(
+      const size = 1.25 + draw() * 0.3;
+      const stumpy = place === 'forest' && draw() < 0.4;
+      const yaw = draw() * 6.28;
+      // Drawn on every tier, as what it stands behind or sits on is (../fauna.ts).
+      stands.push(...placed(
         stumpy ? stump(0.95, 0.42) : place === 'mountain' ? stone(size, '#9a9da4', '#c4c6b4') : place === 'bog' ? stone(size, '#8c8b7c', '#7d8a36') : place === 'garden' ? stone(size, '#8f918c', '#a4ab7a') : stone(size, '#8a877c', '#5f7a34'),
         x, y - 0.06, z, stumpy ? yaw : yaw * 0.1));
-      out.push({ at: [x, y, z], top: y + (stumpy ? 0.97 : size * 0.68), deep: stumpy ? 0.45 : size * 0.45, wide: stumpy ? 0.44 : size * 0.55, side: next() < 0.5 ? -1 : 1, lichen: place !== 'forest' });
+      out.push({ at: [x, y, z], top: y + (stumpy ? 0.97 : size * 0.68), deep: stumpy ? 0.45 : size * 0.45, wide: stumpy ? 0.44 : size * 0.55, side: draw() < 0.5 ? -1 : 1, lichen: place !== 'forest', umbrella: storm });
     }
     return out;
   };
@@ -518,6 +549,15 @@ export function faunaPlan(source: ChapterData, dressing: Object3D | null | undef
     // end of the plinth hung in the air.
     return { at: [h.at[0] + h.side * h.wide * 0.1, h.top - 0.045, h.at[2] - h.deep * 0.08], yaw: -Math.PI / 2 + h.side * TURNED[shape], shape };
   });
+  // The storm's beings come after the carvings, from a sequence of their own, and keep away from them: so that every
+  // carving keeps the place and the kind it had.
+  // Where he goes: from a little past where he starts to short of the goal. Billsta's ground reaches thirty EL back behind
+  // him, where nobody goes; each of these chapters begins at 1, and a picture that starts him elsewhere (`?at`) moves none.
+  if (storm) {
+    beings.push(...hideouts(STORM_BEINGS[source.id] ?? 0, carvings.map((c) => c.at[0]), false, {
+      draw: sequence(seedOf(source.id) ^ 0x7a77e), since: Math.max(from + 8, STORM_BEINGS_FROM), until: Math.min(to - 8, source.goalX - 6), tries: 400,
+    }));
+  }
   if (shelter) seatShelter(shelter, carvings.map((c) => c.at[0]));
 
   // Fireflies at dusk, and in the storm's eye once it is calm.

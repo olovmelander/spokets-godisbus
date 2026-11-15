@@ -225,26 +225,23 @@ try {
   }
   for (const viewport of [{ width: 844, height: 390 }, { width: 390, height: 844 }]) {
     const name = `tutorial-touch-${viewport.width}`;
-    // In the hall the chase is on, and Hoppa has come in (first-minutes.md row 8).
+    // In the hall the chase is on, and Hoppa has come in (first-minutes.md row 8). The floor at home is level, with no
+    // sill to jump over (Olov, 15 November 2026), so no lesson comes there.
     const { page, state, finish } = await open(name, { viewport, hasTouch: true, isMobile: true }, query('29.4,0.01', '&flags=blink,bag:torn'));
     // A harmless surface tap selects touch without discovering either movement or jump.
     await page.touchscreen.tap(15, viewport.height / 2);
-    await shown(page, 'hop');
-    const hint = await page.locator('#tutorial').boundingBox();
-    const button = await page.locator('#hopBtn').boundingBox();
-    check(`${name}: the one hand points at Hoppa inside the viewport`, Math.abs(hint.x + hint.width / 2 - button.x - button.width / 2) < 2 && hint.y >= 0 && hint.y + hint.height <= viewport.height);
-    check(`${name}: the tutorial stays wordless on touch`, await page.locator('#tutorialKey').evaluate(el => getComputedStyle(el).display === 'none'));
-    await picture(page, join(shots, `${name}-hop.png`));
-    await page.tap('#hopBtn');
-    await until(state, s => s.y > 0.3 && !s.grounded, 'Hoppa responds normally');
-    check(`${name}: jumping dismisses the learned cue`, await page.locator('#tutorial').isHidden());
+    await page.waitForTimeout(4000);
+    check(`${name}: the level hall teaches no Hoppa`, await page.locator('#tutorial').isHidden());
     await page.goto(`${origin}${BASE}${query('40.6,-0.79', `&flags=${HAND}`)}`);
     await ready(page);
     await page.touchscreen.tap(15, viewport.height / 2);
     await shown(page, 'act');
     const useHint = await page.locator('#tutorial').boundingBox();
     const use = await page.locator('#actBtn').boundingBox();
-    check(`${name}: the next idle cue points only at Använd`, Math.abs(useHint.x + useHint.width / 2 - use.x - use.width / 2) < 2 && !(await state()).flags.includes('hand'));
+    check(`${name}: the one hand points only at Använd, inside the viewport`, Math.abs(useHint.x + useHint.width / 2 - use.x - use.width / 2) < 2
+      && useHint.y >= 0 && useHint.y + useHint.height <= viewport.height && !(await state()).flags.includes('hand'));
+    check(`${name}: the tutorial stays wordless on touch`, await page.locator('#tutorialKey').evaluate(el => getComputedStyle(el).display === 'none'));
+    await picture(page, join(shots, `${name}-act.png`));
     await page.tap('#actBtn');
     await until(state, s => s.flags.includes('hand'), 'Använd responds normally');
     check(`${name}: the prompt never blocks the real button`, await page.locator('#tutorial').isHidden());
@@ -252,13 +249,17 @@ try {
   }
   {
     const { page, state, finish } = await open('gamepad lesson', {}, query('29.4,0.01', '&flags=blink'), installPad);
-    // B selects the pad without using the nearby TV. X is the real Använd action at this hall position.
+    // B selects the pad without using the nearby TV.
     await padPress(page, 1);
     check('selecting the gamepad does not open the nearby TV console', !(await state()).homeConsole.open);
-    await shown(page, 'hop');
-    check('gamepad cue shows A for Hoppa', (await state()).device === 'pad' && (await page.locator('#tutorialKey').innerText()) === 'A');
-    await padPress(page, 0);
-    await until(state, s => !s.grounded && s.y > 0.2, 'gamepad A jumps');
+    // Shrunk on the deck, with Pappa's hand held out: X is the real Använd action there.
+    await page.goto(`${origin}${BASE}${query('40.6,-0.79', `&flags=${HAND}`)}`);
+    await ready(page);
+    await padPress(page, 1);
+    await shown(page, 'act');
+    check('gamepad cue shows X for Använd', (await state()).device === 'pad' && (await page.locator('#tutorialKey').innerText()) === 'X');
+    await padPress(page, 2);
+    await until(state, s => s.flags.includes('hand'), 'gamepad X uses');
     check('gamepad input discovers and hides the same lesson', await page.locator('#tutorial').isHidden());
     await finish();
   }

@@ -70,8 +70,6 @@ async function walk(page, state, accepts, name, timeout = 120000) {
       await page.keyboard.down('ArrowRight');
       down = true;
     }
-    // The hall has one low door sill. The player makes the jump, after coming up to it.
-    if (value.x > 29.25 && value.x < 30.1 && value.grounded) await page.keyboard.press('Space');
     return value;
   }, { page });
   try { return await until(moving, accepts, name, timeout); }
