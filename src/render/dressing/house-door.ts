@@ -113,9 +113,9 @@ export function houseDoor(chapter: ChapterData, floor: number): HouseDoor | null
   const evening = chapter.night !== undefined;
   const group = new Group();
   group.name = 'house-door';
-  // Where the veranda begins: the sill between the hall and it, or a third of a room before the door.
-  const sill = chapter.ground.find((p, i, all) => i > 0 && p.x < door && p.y > all[i - 1]!.y && p.x > door - 12);
-  const veranda = sill ? sill.x : door - 7;
+  // Where the veranda begins: a third of a room before the door. The floor runs on into it level, with no sill (Olov,
+  // 15 November 2026: "Golvet ska vara plant i alla kapitel").
+  const veranda = door - 7;
   const dim = evening ? 0.62 : 1;
   const white = new MeshStandardMaterial({ color: new Color(WHITE).multiplyScalar(dim), roughness: 0.75 });
 

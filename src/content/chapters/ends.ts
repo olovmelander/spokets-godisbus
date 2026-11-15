@@ -76,12 +76,9 @@ export const prolog: ChapterData = {
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
-    // the kitchen and the hall, and the door sill to the veranda
-    { x: 30, y: 0 },
-    { x: 30, y: 0.5 },
-    { x: 31.2, y: 0.5 },
-    { x: 31.2, y: 0 },
-    // the veranda, and the step down to the deck, out of doors
+    // the kitchen, the living room and the veranda, one level floor as at home in every chapter (Olov, 15 November
+    // 2026: "Golvet ska vara plant i alla kapitel"; a door sill to the veranda stood up from it in front of the TV,
+    // with the floor bent round it), and the step down to the deck, out of doors
     { x: 38, y: 0 },
     { x: 38, y: -0.8 },
     // the deck, and its edge: the garden's lawn lies far below it
@@ -105,9 +102,6 @@ export const prolog: ChapterData = {
     { id: 'star', look: 'star', at: { x: 41.7, y: -0.8 }, verb: 'take', word: 'tasteStar', needs: 'scene:stjarnan' },
     // Pappa's open hand on the planks: he chooses to step onto it.
     { id: 'hand', at: { x: 40.9, y: -0.8 }, verb: 'take', word: 'climbOn', needs: 'scene:familj' },
-  ],
-  jumps: [
-    { at: { x: 29.8, y: 0 }, dir: 1, land: { x: 30.6, y: 0.5 } },
   ],
   ghost: [
     // On the table, new, with no eyes yet. Awake, it hops to the bag, and with the bag off the table.
@@ -137,7 +131,7 @@ export const prolog: ChapterData = {
     // Nothing lies there until the bag has torn on the doorway's hinge.
     // Keep all eleven original save indices, in order, along the shorter hall after the new hinge.
     ...row(21.5, 29, 0, 0.75, 'bag:torn'),
-    { x: 30.6, y: 1.25, after: 'bag:torn' },
+    { x: 30.6, y: 0.45, after: 'bag:torn' },
     ...row(32.4, 36.4, 0, 2, 'bag:torn'),
     { x: 38.6, y: -0.2, after: 'bag:torn' },
     { x: 39.8, y: -0.35, after: 'bag:torn' },

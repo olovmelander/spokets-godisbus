@@ -1227,7 +1227,7 @@ async function start(): Promise<void> {
         game.resume();
       } else {
         game.frame(dt, { x: held.x, y: held.y, hopHeld: held.hopHeld, talking: hud.speaking() }, edges);
-        tutorial.update(dt, game.sim.curr, game.sim.flags, held, edges, game.sim.held);
+        tutorial.update(dt, game.sim.curr, game.sim.flags, held, game.sim.held);
       }
       askedForUse = askedForHelp = false;
       if (highLanding(game.sim.curr)) devicePlay.landing(settings.vibration);

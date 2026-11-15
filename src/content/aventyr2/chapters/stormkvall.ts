@@ -1,7 +1,7 @@
 import type { ChapterData } from '../../../sim/types';
 import type { SceneDef } from '../../../sim/scene';
 import type { Chooser } from '../context';
-import { jump, round, row } from '../kit';
+import { round, row } from '../kit';
 import { DOLL_Z, TAKE } from '../../../render/elof-coat';
 import { HOME_LAYOUT } from '../../home-layout';
 import { CANDLES_LIT, POWER_FLICKER, POWER_GOES, POWER_OUT } from '../../home-power';
@@ -26,9 +26,9 @@ import { BOWL, BOWL_LEAP, GRAB, GRABS, LEAP_OVER } from '../bowl';
  *    the bag. It is nowhere to be seen before (`Spot.after`). *Smaka på stjärnan*: POFF.
  * 6. **Vi letar tillsammans:** Moa misses Elof; Bertil finds him tiny on the floor. Once they have
  *    reacted and promised to help, the family pull on raincoats and take their lamps. A candy lies on the floor, then
- *    another: the old trägubbe's trail, found with Moa and Bertil beside him (`spar`). Tiny, he crosses the giant room,
- *    the door sill and the veranda. The trail
- *    is laid only now, its big candies too (`Checkpoint.after`): nothing lies on the floor before the gust.
+ *    another: the old trägubbe's trail, found with Moa and Bertil beside him (`spar`). Tiny, he crosses the giant room
+ *    and the veranda. The trail is laid only now, its big candies too (`Checkpoint.after`): nothing lies on the floor
+ *    before the gust.
  *    None of their raincoats fits him now; at the foot of the toy shelf a doll sits in a small yellow one. *Ta
  *    regnrocken*: he puts it on, one arm and the other, and it fits (Olov, 9 November 2026; ../../../render/elof-coat.ts).
  *    He wears it through the storm. It is not needed to go on: walked past, he goes out onto the deck in his own clothes.
@@ -96,7 +96,7 @@ const DECK = {
   bertil: { x: 46.8, z: -2.3, face: 0.3 },
   pappa: { x: 49.4, z: -3.0, face: 0.34 },
 };
-/** Where he is when Moa and Bertil go on ahead of him to the door (`verandan`): at the door sill, past the toy shelf. */
+/** Where he is when Moa and Bertil go on ahead of him to the door (`verandan`): past the toy shelf, before the veranda. */
 const LEAVE = 29.6;
 /**
  * Where he is when the four of them come out after him (`lofte`): out on the deck, in the rain, far enough from the
@@ -756,12 +756,8 @@ export const stormkvall: ChapterData = {
   ground: [
     { x: -3, y: 9 },
     { x: -3, y: 0 },
-    // the living room and the hall, and the door sill to the veranda
-    { x: 30, y: 0 },
-    { x: 30, y: 0.5 },
-    { x: 31.2, y: 0.5 },
-    { x: 31.2, y: 0 },
-    // the veranda, and the step down to the deck, out of doors in the rain
+    // the living room and the veranda, one level floor as in every chapter at home (Olov, 15 November 2026: a door
+    // sill to the veranda stood up from it in front of the TV), and the step down to the deck, out of doors in the rain
     { x: 38, y: 0 },
     { x: 38, y: -0.8 },
     // the deck, and its edge: the stormy garden lies far below it
@@ -778,9 +774,9 @@ export const stormkvall: ChapterData = {
   // the gap between two of the trail's sweets, not with one at its foot. The second stands at the table's end, a gap
   // before the doll: by the doll (18.55) its lollipop stood in the picture of the raincoat going on, in front of him.
   // The veranda's and the deck's stand further back than a big candy's usual 0.7, behind the lane the family go out
-  // in (`KIDS`, `LANE`). The veranda's stands at its beginning, just over the sill, well before where Moa and Bertil
-  // wait by the door (at 35.4 it stood where they turn out of the lane); the deck's out of the door, before Mamma and
-  // clear of her arm as she waves: at 45 it stood where Moa crouches by her (`DECK`).
+  // in (`KIDS`, `LANE`). The veranda's stands at its beginning, well before where Moa and Bertil wait by the door (at
+  // 35.4 it stood where they turn out of the lane); the deck's out of the door, before Mamma and clear of her arm as she
+  // waves: at 45 it stood where Moa crouches by her (`DECK`).
   checkpoints: [
     { x: TRAIL_FOUND, y: 0, after: TRAIL }, { x: 16.65, y: 0, after: TRAIL },
     { x: 31.5, y: 0, z: CANDY_BEHIND_LANE, after: TRAIL }, { x: 40.6, y: -0.8, z: CANDY_BEHIND_LANE, after: TRAIL },
@@ -795,13 +791,12 @@ export const stormkvall: ChapterData = {
     // The doll's raincoat, once the family have put on theirs and he is small.
     { id: TAKE, look: 'doll', at: { x: DOLL.x, y: 0 }, verb: 'take', word: 'skTakeCoat', needs: 'scene:tillsammans' },
   ],
-  jumps: [jump({ x: 29.8, y: 0 }, { x: 30.6, y: 0.5 })],
   ghost: [
     // On the shelf beside the figures, still wood while the grown-ups look.
     { at: { x: KLONK_SHELF.x, y: KLONK_SHELF.y }, z: KLONK_SHELF.z, until: 'scene:fonstret', near: 99 },
     // Down on the floor with its star, where the scene lands it.
     { at: { x: KLONK.x, y: KLONK.y }, until: 'scene:tillsammans', near: 99 },
-    // Then ahead of him: across the room, over the sill, out onto the deck and down into the garden.
+    // Then ahead of him: across the room and the veranda, out onto the deck and down into the garden.
     { at: { x: 16, y: 0 } },
     { at: { x: 23, y: 0 } },
     { at: { x: 28.6, y: 0 } },
@@ -830,7 +825,7 @@ export const stormkvall: ChapterData = {
   candy: [
     // The old trägubbe's trail: a sweet where it landed, then one at a time towards the veranda door.
     ...row(10, 29, 0, 1.9, TRAIL),
-    { x: 30.6, y: 1.25, after: TRAIL },
+    { x: 30.6, y: 0.45, after: TRAIL },
     ...row(32.4, 36.4, 0, 2, TRAIL),
     { x: 38.6, y: -0.2, after: TRAIL },
     ...row(40, 50, -0.8, 2, TRAIL),
