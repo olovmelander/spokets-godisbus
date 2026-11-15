@@ -126,11 +126,19 @@ const ACCEL = 17, COAST = 6, BRAKE = 30, REVERSE_TOP = 7, GRAVITY = 24;
  * A drift's turn at full speed, rad/s, with the wheel straight, and how far turning the wheel in or out moves it. Olov,
  * 15 November 2026: "man sladdar lite för mycket när man använder sladdknappen". At 1.3 and 1.1 a held drift turned more
  * with the wheel straight than the wheel alone at full lock (1.35 rad in a second against 1.27), and twice as much with it
- * turned in (2.4). Now 1.05 straight, 1.8 in and 0.3 out: tighter than the wheel, and still a curve to steer.
+ * turned in (2.4); then 1.05 straight, 1.8 in and 0.3 out. Later that day: "fortfarande för mycket sladd, vi måste minska
+ * sladdningen ganska mycket mer" and "När man sladdar just nu så svänger man alldeles för snabbt". Now 0.68 straight,
+ * 1.36 in, as tight as the wheel alone at full lock and no tighter, and none out, which holds it straight: a drift is a
+ * curve held for its sparks, never a swing round. A hairpin at full speed asks for a lift, as it does of the wheel.
  */
-const DRIFT_TURN = 1.05, DRIFT_RANGE = .75, DRIFT_MIN_SPEED = .45 * TOP_SPEED;
-/** How far the kart's body is turned across its way in a drift (rad): with the wheel straight, and in or out of it. */
-const DRIFT_SLIP = { straight: .32, range: .14 } as const;
+const DRIFT_TURN = .68, DRIFT_RANGE = .68, DRIFT_MIN_SPEED = .45 * TOP_SPEED;
+/**
+ * How far the kart's body is turned across its way in a drift (rad): with the wheel straight, and in or out of it; and
+ * how fast it swings out to that (a second's rate). It was 0.32 and 0.14, the body 26° across with the wheel in and there
+ * in a tenth of a second, so that the kart seemed to whip round; now at most 11.5°, about twice the wheel alone's 6°, and
+ * a quarter of a second to come.
+ */
+const DRIFT_SLIP = { straight: .13, range: .07, rate: 4 } as const;
 const HOP_TIME = .24, CANDY_SPEED = .007, GUARD = 1.5;
 const SPIN_TIME: Readonly<Record<HitKind, number>> = { cone: 1.2, bee: 1.2, gum: .95, star: 1.3, cracker: 1.25, horn: 1, rocket: 1.3 };
 /** How fast a fizzy rocket can turn its kart: enough for any hairpin at its speed. */
@@ -247,7 +255,7 @@ export function stepKart(kart: Kart, controls: Readonly<KartControls>, track: Tr
     if (grounded && k.surface !== 'water') k.driftCharge += dt * (.3 + .9 * (.5 + .5 * inward) ** 1.5);
     const tier = DRIFT_TIERS.filter(need => k.driftCharge >= need).length;
     if (tier > k.driftTier) { k.driftTier = tier; events.push({ type: 'tier', kart: k.index, tier }); }
-    k.slip += (k.drift * (DRIFT_SLIP.straight + DRIFT_SLIP.range * inward) - k.slip) * ease(9, dt);
+    k.slip += (k.drift * (DRIFT_SLIP.straight + DRIFT_SLIP.range * inward) - k.slip) * ease(DRIFT_SLIP.rate, dt);
   } else if (rocket) {
     // The rocket steers for itself (the race hands it the wheel), and turns as hard as the road asks.
     omega = steerIn * ROCKET_TURN;
