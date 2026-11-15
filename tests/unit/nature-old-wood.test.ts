@@ -139,7 +139,10 @@ describe('the nature kit\'s old wood', () => {
 
   it('has the lying tree at the end of Billsta and of Stormens öga, the kit\'s windfall', () => {
     const last = (chapter: ChapterData) => (chapter.decor ?? []).filter((d) => d.word === 'lag-mossig').sort((a, b) => b.at.x - a.at.x)[0]!;
-    expect(last(billsta).at.x).toBeGreaterThan(billsta.goalX);
+    // In Billsta it lies at the forest's edge below the rise, the last thing he passes before the bare brow: up there
+    // nothing may stand between him and the view down to the narrow (src/content/aventyr2/billsta-vista.ts).
+    expect(last(billsta).at.x).toBeGreaterThan(billsta.goalX - 12);
+    expect(last(billsta).z!).toBeLessThan(-3);
     // On the shore where the family gathers at the end; far enough back that none of them stands in it.
     const tree = last(stormoga);
     expect(tree.at.x).toBeGreaterThan(stormoga.goalX);
