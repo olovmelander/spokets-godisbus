@@ -96,9 +96,15 @@ more while it was being built:
   beings and their leaves; no big candy right in front of a being or in the three EL before it, which Älven's broke; the
   plan the same wherever he begins, now also in Stormskogen and Billsta) and `forest-folk.test.ts` (the beings' rigs on
   every tier), and the tutorial and voice tests changed with them.
-- **Validation:** see the PR and the end of this section. Seen in the game's renderer with stand-in figures, at
+- **Validation:** `npm run typecheck`, `npm test` (3341 passed, 20 skipped), `npm run build` (size gate ok: JS 732.0 of
+  1000 KB gzipped; Äventyr 2's chunk 158.6 of 160 KB) and `npm run privacy-check` pass. Browser suites run here with the
+  preinstalled, newer Chromium (Vite's local-network check switched off for the run by a scratch preload; nothing in the
+  repository changes): smoke (101), pointing (44), prologue (86), shared-home (42), bredbyn (91), village (64),
+  adaptive-rendering (17), myren-loop (30; at most 63 draws on Low, 108 on High) and aventyr2 (42; on Low 64 draws in
+  Stormskogen and 103 at Billsta, which was 102 before its being). Seen in the game's renderer with stand-in figures, at
   1440×900, 1180×820, 844×390 and 390×844: the thanks over the flood, the crossing on a phone held upright, Byn by day,
-  the storm's eye and its growing on all of them, and the floor in front of the TV in the prologue and Stormkvällen.
+  the storm's eye and its growing on all of them, and the floor in front of the TV in the prologue and Stormkvällen; at
+  844×390 the vättar in Myren, Granskogen, Stormskogen, Älven and Billsta.
 - **Not checked:** nobody has heard the six new narrator takes (measured, and heard right by speech-to-text); nobody has
   driven the new drift by hand (measured in the simulation, and whole races with the rivals); the vättar were seen in
   this computer's renderer with stand-in figures, not on the family's devices; the real family models were not used.
