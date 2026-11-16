@@ -99,10 +99,36 @@
   --pad-x-edge: #1f4479;
   --pad-y: #e8b923;
   --pad-y-edge: #a07a10;
-  /* The memories' sepia. */
+  /* The memories' sepia and TV-console framing. */
   --sepia-light: #f6e6c4;
   --sepia: #ecd6a8;
   --sepia-deep: #c9a56c;
+  --sepia-paper-light: #fff4d9;
+  --sepia-paper: #ead7b4;
+  --sepia-paper-border: #fff0ce;
+  --sepia-card: #d8bd94;
+  --sepia-thumb: #e7d5aa;
+  --sepia-border: #bda27d;
+  --sepia-dot: #a28965;
+  --sepia-ink: #4e4137;
+  --sepia-title: #4f473a;
+  --sepia-btn-back: #fff2d2;
+  --sepia-pine: #4b6758;
+  --sepia-pine-hover: #3d584a;
+  --sepia-pine-edge: #3c594a;
+  --sepia-pine-dot: #537261;
+  --sepia-rim: #fff8e52e;
+  --sepia-drop: #12231b99;
+  --sepia-card-border: #a68c674f;
+  --sepia-card-shadow: #66503130;
+  --sepia-card-ring: #fff9e780;
+  --sepia-shade-top: rgb(73 83 70 / 88%);
+  --sepia-shade-bottom: rgb(25 37 34 / 94%);
+  --console-bg: #162c29;
+  --console-ink: #334e42;
+  --console-cream: #fff5df;
+  --console-edge: #d9be80;
+  --console-shadow: #101e2750;
   /* States. */
   --focus: #1d4f91;
   --knock: #f6c445;

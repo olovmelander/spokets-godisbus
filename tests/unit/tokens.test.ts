@@ -7,10 +7,12 @@ import { PLACE_SHADE } from '../../src/ui/materials';
 // The UI's colours are tokens (docs/ux-audit/style-and-sound.md row 7): every rule reads them, so no part of the look
 // is written in two places, and neighbouring surfaces always match.
 
-// The rules, without their comments.
-const css = readFileSync(new URL('../../src/ui/ui.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+// The rules, without their comments. Tokens are declared on :root in ui.css and shared across UI stylesheets.
+const strip = (file: string) => readFileSync(new URL(`../../src/ui/${file}`, import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const css = strip('ui.css');
+const sheets = ['ui.css', 'scene.css', 'memory.css', 'home-console.css'].map(strip);
 const roots = [...css.matchAll(/:root\s*\{([^}]*)\}/g)].map((match) => match[1]!);
-const outside = css.replace(/:root\s*\{[^}]*\}/g, '');
+const outside = sheets.map((text) => text.replace(/:root\s*\{[^}]*\}/g, '')).join('\n');
 
 /** Every custom property the page's code sets: `setProperty('--x', …)` and `style="--x: …"` in the UI's markup. */
 function setByCode(): Set<string> {
