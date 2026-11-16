@@ -298,6 +298,10 @@ try {
       check(`Godisracet, ${name}: meddelandet syns fritt från alla rutor och knappar${under.length ? ` (inte från ${under.join(', ')})` : ''}`, under.length === 0);
       if (viewport.width < viewport.height) check(`Godisracet, ${name}: farten och sladdmätaren till vänster om godisrutan, i dess rad`,
         boxes['.kart-dashboard'].right < boxes['.kart-slot'].left && Math.abs(boxes['.kart-dashboard'].top - boxes['.kart-slot'].top) < 2);
+      await race.keyboard.press('ArrowLeft');
+      check(`Godisracet, ${name}: tangentbordet byter från pekknappar till tangenthjälp`, await race.locator('.kart-touch').isHidden());
+      await race.touchscreen.tap(viewport.width / 2, viewport.height * .6);
+      check(`Godisracet, ${name}: ett tryck på spelvyn tar tillbaka pekknapparna`, await race.locator('.kart-touch').isVisible() && await race.locator('.kart-game').getAttribute('data-device') === 'touch');
       assert.deepEqual(raceErrors, [], `Godisracet, ${name}: körfel`);
       await race.keyboard.press('Escape');
       await race.waitForFunction(() => window.__kart.debug().mode === 'paused', null, { timeout: 60000 });
