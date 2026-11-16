@@ -230,6 +230,37 @@ try {
     check('Godisracets egen sida: Tillbaka till huset leder till äventyret', new URL(page.url()).pathname === BASE);
     assert.deepEqual(errors, [], 'Godisracets egen sida: körfel'); assert.deepEqual(external, [], 'Godisracets egen sida: externa anrop');
     await context.close();
+    // The race screen on phones held upright and on a small one held sideways (Olov, 16 November 2026: the panel
+    // "Ladda sladden" hid the words that come with a candy bag): the notice clear of every panel and button, and on a
+    // phone held upright the speed and the spark meter beside the item slot, at its left.
+    for (const [name, viewport] of [['upprätt', { width: 412, height: 696 }], ['liten upprätt', { width: 360, height: 640 }], ['liten på tvären', { width: 667, height: 375 }], ['surfplatta på tvären', { width: 1180, height: 820 }]]) {
+      const phone = await browser.newContext({ serviceWorkers: 'block', viewport, hasTouch: true, isMobile: true });
+      const race = await phone.newPage(), raceErrors = [];
+      race.on('pageerror', error => raceErrors.push(String(error)));
+      await race.goto(`${origin}${BASE}godisracet.html?debug&tier=low`);
+      await race.waitForFunction(() => window.__kart?.debug().mode === 'intro', null, { timeout: 120000 });
+      await race.locator('[data-action="start"]:visible').first().click();
+      await race.waitForFunction(() => window.__kart.debug().mode === 'race' && window.__kart.debug().frames > 8, null, { timeout: 120000 });
+      await race.evaluate(() => window.__kart.poke({ item: 'cones3', itemCount: 3 }));
+      await race.waitForTimeout(600);
+      // Where everything rests, measured in one go with the notice's words put up here: the game's own notices come and
+      // go on its clock, and a notice, the place or the candy count arrives with a pop that scales it for a quarter of a
+      // second (on PR #283's first run the tablet's notice was caught in the middle of one, its box over the map; the
+      // words themselves stayed clear of it).
+      const boxes = await race.evaluate(() => {
+        for (const popping of document.querySelectorAll('.kart-pop')) popping.classList.remove('kart-pop');
+        document.querySelector('.kart-notice').textContent = 'Tre kast rakt fram.';
+        return Object.fromEntries(['.kart-notice', '.kart-dashboard', '.kart-slot', '.kart-map', '.kart-position', '.kart-laps', '.kart-candies', '.kart-pause', '.kart-ranks', '.kart-steering', '.kart-pedals']
+          .map(selector => { const r = document.querySelector(selector).getBoundingClientRect(); return [selector, { left: r.left, top: r.top, right: r.right, bottom: r.bottom }]; }));
+      });
+      const apart = (a, b) => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+      const under = Object.keys(boxes).filter(selector => selector !== '.kart-notice' && !apart(boxes['.kart-notice'], boxes[selector]));
+      check(`Godisracet, ${name}: meddelandet syns fritt från alla rutor och knappar${under.length ? ` (inte från ${under.join(', ')})` : ''}`, under.length === 0);
+      if (viewport.width < viewport.height) check(`Godisracet, ${name}: farten och sladdmätaren till vänster om godisrutan, i dess rad`,
+        boxes['.kart-dashboard'].right < boxes['.kart-slot'].left && Math.abs(boxes['.kart-dashboard'].top - boxes['.kart-slot'].top) < 2);
+      assert.deepEqual(raceErrors, [], `Godisracet, ${name}: körfel`);
+      await phone.close();
+    }
   }
   console.log(`TV-konsolen: ${checks} webbläsarkontroller godkända.`);
 } finally { if (browser) await browser.close(); await new Promise(done => server.close(done)); }

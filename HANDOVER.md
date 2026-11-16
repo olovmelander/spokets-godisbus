@@ -1,5 +1,35 @@
 # Handover
 
+## State (16 November 2026, morning): Godisracet's race screen, nothing over the notices
+
+One cloud session, after PR #282 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov sent a picture from his
+phone held upright, with a red mark at the left of the item slot: "I kart-spelet godisracet på tvn så döljer rutan där
+det står ladda sladden texten som kommer upp efter att man tagit en godispåse. Kan vi göra den rutan mindre och flytta
+upp den till vänster det man använder för att skjuta eller boosta. Så förbättra ux, ui, huds och designen så att
+godisracet ser perfekt ut."
+
+- **Cause.** On a phone held upright the panel with the speed and the spark meter ("Ladda sladden") stood in the middle,
+  150 under the top, and the notices at 30% of the height; with the browser's bars his picture is about 412×696, and
+  there the two met. Measured: at 412×696 the notice's top was 209 and the panel's bottom 211.
+- **Now** (`src/kart/kart.css`, a query of its own for a phone held upright): the panel is small (at most 140 wide, the
+  speed over the spark meter) and stands at the left of the item slot, in its row and as tall as it, where the red mark
+  was; the notices come under that row and under the map at its right, however short the picture. Held sideways on a
+  small phone (667×375) the item slot stood in the second row, in the notice's way: it is in the top row now, and the
+  notice under it. Everywhere the notice keeps clear of the map: its box went nine tenths of the width and under the map
+  on a tablet held sideways and a small phone held sideways.
+- **Guards:** `tests/browser/home-console.mjs` opens Godisracet's page at 412×696, 360×640, 667×375 and 1180×820
+  (touch), gives the player three cones and puts "Tre kast rakt fram." up, and checks that the notice lies clear of
+  every panel and button (the ranks too), and on a phone held upright that the speed panel is at the left of the item
+  slot, in its row. Run on the build from before the change, it failed at 412×696, as Olov saw it. It measures where
+  everything rests: on the PR's first run it caught the tablet's notice in the middle of its pop (a quarter of a second
+  at up to 1.35 times its size), its box over the map, though the words were clear of it.
+- **Validation:** `npm run typecheck`, `npm test` (3352 passed, 20 skipped), `npm run build` (JS 735.8 KB of 1000 KB,
+  size gate ok), `npm run privacy-check`, the browser suite `home-console.mjs` (61 checks, the 6 new ones among them),
+  and the pull request's checks on GitHub.
+- **Not checked:** on Olov's own phone; seen in Chromium at 412×696, 390×844, 360×640, 915×412, 667×375, 820×1180,
+  1180×820 and 1440×900.
+- **Next:** Olov races on his phone, held both ways. No Blender work is waiting.
+
 ## State (15 November 2026, late night): the white and the green door in every home, the veranda's door past them, and the raincoats clear of the white door
 
 One cloud session, after PR #281 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov, looking at the deployed
@@ -7006,6 +7036,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Godisracet's race screen (Olov, 16 November 2026):** nothing lies over the notices: on a phone held upright the
+  speed and the spark meter are a small panel at the left of the item slot, in its row.
 - **The white and the green door in every home (Olov, 15 November 2026):** "Jag vill ha den vita och den gröna dörren
   överallt", "Jag vill ha verandadörren så som den funkar idag men även ha de två dörrarna", and "regnkläderna [ska
   inte] hänga över den vita dörren": every home chapter has the white bathroom door, then the hall with the raincoats,
@@ -7147,6 +7179,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Godisracet's race screen (16 Nov, morning) | The speed panel hid the notice after a candy bag on a phone held upright | The same cloud session, after #282 | — / 1 message (+1 picture) | The speed panel small at the left of the item slot, the notices clear of every panel, the map and the buttons at every size |
 | The white and the green door everywhere (15 Nov, late night) | The stick in front of the sofa, the two doors in Äventyr 1, the veranda's door as today, the coats clear of the white door | The same cloud session, after #281 | — / 4 messages (+1 picture) | The stick was the old doorway's post (gone with #281); the hall with the green door in the prologue and Stormkvällen, their veranda's door and all out of doors ten further along; the coats, rail and boots clear of both door frames |
 | The background, the jay, the anthill and spruce, the gungfly, one home, Äventyr 2's book (15 Nov, night) | Seven wishes after #280 | The same cloud session; Blender 5.2.4 headless for the forest kit | — / 8 messages | The camera sees as far behind in every wide shot; the jay brings Granskogen's lichen, with Elof's thanks recorded; a wood ant's mound, and the fallen spruce made as the windfalls are, its bark drawn by their shader; Myren's tussocks as Flärken's gungfly; the four homes furnished alike; Äventyr 2's last card opens its own book; the voices' licence row added |
 | Godisracet's drift again (15 Nov, evening) | The merged drift still slid and turned too fast | The same cloud session, after #279 | — / 2 messages | A held drift no tighter than the wheel at full lock, its body at most 11.5° across and swinging out gently; the rivals' laps as before |

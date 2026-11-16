@@ -123,10 +123,16 @@ Reduced motion removes the camera's shake, roll and widening, the speed lines, t
 a hit. Audio follows the player's existing effects/music settings; the music and every effect are synthesised in
 the page (`src/kart/audio.ts`).
 
-The menu, HUD and controls are composed for both portrait and landscape phones. On the Low tier there are no cast
-shadows and well under half of the geometry. A course's world is built when its race is first drawn, and the one
-before it is released. Browser viewport review establishes appearance and interaction at those dimensions;
-physical-device performance is a separate check.
+The menu, HUD and controls are composed for both portrait and landscape phones. On a phone held upright the top row
+holds the place, the laps and time, the candy count and the pause; the second row the speed and the spark meter as a
+small panel at the left, the item slot beside it and the map at the right; the notices come under that row, and the
+controls at the bottom (16 November 2026: the speed panel stood in the middle, where the words that come with a
+candy bag are read, and hid them). Held sideways, the item slot is in the top row and the speed panel at the bottom
+between the steering and the pedals; on a tablet the speed panel is under the item slot, and with keys at the
+bottom. A notice never lies under a panel, the map or a button, at any of those sizes
+(`tests/browser/home-console.mjs`). On the Low tier there are no cast shadows and well under half of the geometry. A
+course's world is built when its race is first drawn, and the one before it is released. Browser viewport review
+establishes appearance and interaction at those dimensions; physical-device performance is a separate check.
 
 ## Working on it
 
