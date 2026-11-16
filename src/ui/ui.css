@@ -1627,7 +1627,7 @@ body.big-text .pause-home .tile { font-size: 20px; }
   min-width: 0;
 }
 
-.album-chapter.single .album-grid {
+.album-chapter:has(> .album-grid > li:only-child) .album-grid {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -1666,7 +1666,7 @@ body.big-text .pause-home .tile { font-size: 20px; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .album-chapters > :not(.single) {
+  .album-chapters > :not(:has(> .album-grid > li:only-child)) {
     grid-column: 1 / -1;
   }
 }

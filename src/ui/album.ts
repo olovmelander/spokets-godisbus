@@ -47,7 +47,7 @@ export function albumHtml(found: readonly string[], lost: readonly string[] = []
         : '<li><i class="missing"></i></li>',
     );
     const adventure = chapter === 'garden' ? `<h4>${sv.collection.first}</h4>` : chapter === 'stormgard' ? `<h4>${sv.collection.second}</h4>` : '';
-    return adventure + `<section class="album-chapter${own.length === 1 ? ' single' : ''}" aria-label="${place}: ${tally}"><p class="album-place">${chapterPicture(({stormgard:'garden',stormskog:'granskog',stormbyn:'byn',olympia:'byn',flarken:'myren',alven:'myren',billsta:'garden',stormoga:'norrsken'} as Record<string,string>)[chapter] ?? chapter)}<b>${place}</b><small>${tally}</small></p><ul class="album-grid">${slots.join('')}</ul></section>`;
+    return adventure + `<section class="album-chapter" aria-label="${place}: ${tally}"><p class="album-place">${chapterPicture(({stormgard:'garden',stormskog:'granskog',stormbyn:'byn',olympia:'byn',flarken:'myren',alven:'myren',billsta:'garden',stormoga:'norrsken'} as Record<string,string>)[chapter] ?? chapter)}<b>${place}</b><small>${tally}</small></p><ul class="album-grid">${slots.join('')}</ul></section>`;
   });
   // Hittegods: what he has found under the deck, drawn and named. What is still lost keeps its name to itself.
   const things = LOST.map((thing) => (lost.includes(thing) ? `<li class="got" data-thing="${thing}">${drawn(LOST_PICTURE[thing] ?? findPicture(thing))}<span>${sv.lost[thing] ?? sv.lostTitle}</span></li>` : '<li><i class="missing"></i></li>'));
