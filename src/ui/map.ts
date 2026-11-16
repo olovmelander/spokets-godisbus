@@ -124,8 +124,8 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
   const to = ghostAt && (named || ghostAt !== state.here) ? AT[ghostAt] : null;
   // Elof and the ghost at the same place (Klonk, at home): their names go either side, so neither covers the other.
   const together = to !== null && ghostAt === state.here;
-  // A little Elof: blond curls and the same blue-striped shirt as his game model.
-  const elof = `<g transform="translate(${here.x - 22} ${here.y - 30})"><circle r="6" fill="#f8d2b6" stroke="#755747" stroke-width="1.2"/><path d="M-6 0Q-8-5-4-5L-2-7 0-6 3-7 5-5Q7-4 6 1L3-2 0-1-2-3-4 0Z" fill="#e2c07a" stroke="#b48f4e" stroke-width=".9" stroke-linejoin="round"/><circle cx="-1.8" cy="1.5" r=".65" fill="#5a3c22"/><circle cx="1.8" cy="1.5" r=".65" fill="#5a3c22"/><path d="M-5 7h10l2 11h-14z" fill="#a6bfe6" stroke="#4a6a8c" stroke-width="1.5"/><path d="M-5.5 11h11m-12 4h13" stroke="#eff2ed" stroke-width="1.6"/></g><text class="here" x="${together ? here.x - 8 : here.x - 22}" y="${here.y - 42}" text-anchor="${together ? 'end' : 'middle'}">${sv.map.here}</text>`;
+  // A little Elof: blond curls and the same blue-striped shirt as his game model, placed slightly beside the place mark.
+  const elof = `<g transform="translate(${here.x - 28} ${here.y - 31})"><circle r="6" fill="#f8d2b6" stroke="#755747" stroke-width="1.2"/><path d="M-6 0Q-8-5-4-5L-2-7 0-6 3-7 5-5Q7-4 6 1L3-2 0-1-2-3-4 0Z" fill="#e2c07a" stroke="#b48f4e" stroke-width=".9" stroke-linejoin="round"/><circle cx="-1.8" cy="1.5" r=".65" fill="#5a3c22"/><circle cx="1.8" cy="1.5" r=".65" fill="#5a3c22"/><path d="M-5 7h10l2 11h-14z" fill="#a6bfe6" stroke="#4a6a8c" stroke-width="1.5"/><path d="M-5.5 11h11m-12 4h13" stroke="#eff2ed" stroke-width="1.6"/></g><text class="here" x="${together ? here.x - 8 : here.x - 28}" y="${here.y - 43}" text-anchor="${together ? 'end' : 'middle'}">${sv.map.here}</text>`;
   // The ghost, where it is heading: on blank paper, when that place is not drawn yet.
   const ghost = to
     ? `<g transform="translate(${to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)} ${to.y - (state.drawn.includes(ghostAt!) ? 26 : 0)})"><path d="M-7 10v-12a7 7 0 0 1 14 0v12z" fill="#e9d3a8" stroke="#8a6a3a" stroke-width="1.5"/><circle cx="-2.5" cy="-2" r="1.2"/><circle cx="2.5" cy="-2" r="1.2"/><text x="${together ? -14 : 0}" y="-15" text-anchor="${together ? 'start' : 'middle'}">${named ? sv.ghostName : sv.who.spoket}</text></g>`
@@ -141,7 +141,7 @@ export function mapSvg(state: MapState | null, named = false, wayOn = false): st
   // sheet for its note.
   let box = '0 -16 380 180';
   if (!state.unfinished) {
-    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 22, here.x - 30, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : []),
+    const xs = [...state.drawn.map((place) => AT[place].x), here.x - 28, here.x - 36, ...(to ? [to.x + (state.drawn.includes(ghostAt!) ? 22 : 0)] : []),
       // Names either side of a shared place reach further out.
       ...(together ? [here.x - 70, here.x + 60] : [])];
     const ys = state.drawn.map((place) => AT[place].y);

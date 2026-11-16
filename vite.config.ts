@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
       noZstd(),
       // The drawn icons, once, at the top of every page (src/ui/sprite.ts): the game's script carries none of them.
       // (Only the game's own page: godisracet.html draws its own few emblems.)
-      { name: 'icon-sprite', transformIndexHtml: (html: string, ctx: { filename: string }) => ctx.filename.replaceAll('\\', '/').endsWith('/index.html') ? html.replace(/<body([^>]*)>/, (body) => `${body}\n  ${spriteHtml()}`) : html },
+      { name: 'icon-sprite', transformIndexHtml: (html: string, ctx: { filename: string }) => /\/(index|dev\/menus)\.html$/.test(ctx.filename.replaceAll('\\', '/')) ? html.replace(/<body([^>]*)>/, (body) => `${body}\n  ${spriteHtml()}`) : html },
       staticPresentation(MEMORIES, shellHtml),
       // The home screen's name for the web app on an iPhone, from the game's words (access-and-devices.md row 21).
       { name: 'short-name', transformIndexHtml: (html: string) => html.replace('%SHORT_NAME%', sv.homeScreen.shortName) },

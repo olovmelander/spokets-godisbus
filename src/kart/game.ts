@@ -7,7 +7,7 @@ import { createKartView } from './render';
 import { createKartInput } from './input';
 import { createKartAudio, type KartSoundEvent } from './audio';
 import { createKartRecords, kartTime } from './records';
-import { BAG, CANDY, CROWN, ITEM_ICONS, ROULETTE_ORDER } from './icons';
+import { ARROW_ICON, BAG, CANDY, CROWN, DRIFT_ICON, ITEM_ICONS, LEFT_ICON, PAUSE_ICON, RIGHT_ICON, ROULETTE_ORDER, STEER_ICON } from './icons';
 import type { KartOptions, KartSession } from './types';
 import './kart.css';
 
@@ -17,9 +17,6 @@ const hex = (color: number) => `#${color.toString(16).padStart(6, '0')}`;
 /** How far away a rival's bang or pop can still be heard, in metres along the road. */
 const EARSHOT = 70;
 const CLASSES: readonly SpeedClass[] = [50, 100, 150];
-/** Where each course's name may break on a narrow button: Gårds-varvet, Kristall-berget. */
-const BREAKS: Readonly<Record<TrackId | 'cup', number>> = { cup: 5, garden: 5, bog: 3, mountain: 8, varggropen: 4 };
-const label = (id: TrackId | 'cup', name: string) => `${name.slice(0, BREAKS[id])}&shy;${name.slice(BREAKS[id])}`;
 const LEVELS: readonly Difficulty[] = ['easy', 'normal', 'hard'];
 /** A course's outline as a little drawing for its button. */
 function outlineArt(id: TrackId): string {
@@ -33,6 +30,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
   const root = document.createElement('section');
   root.className = 'kart-game'; root.dataset.mode = 'intro'; root.dataset.device = matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
   root.dataset.calm = String(options.calm);
+  root.dataset.bigText = String(Boolean(options.bigText));
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', words.title);
   root.innerHTML = `
     <canvas class="kart-canvas" tabindex="0" aria-label="${words.title}"></canvas>
@@ -44,7 +42,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
         <div class="kart-laps"><small>${words.lap}</small><b data-value="lap">1/3</b><span data-value="time">0:00,0</span></div>
         <div class="kart-candies" aria-label="${words.candies}">${CANDY}<b data-value="candies">0</b></div>
         <div class="kart-slot" data-state="empty" role="img" aria-label="${words.itemSlot}"><span class="kart-slot-art">${BAG}</span><b class="kart-slot-count" hidden></b></div>
-        <button class="kart-pause" data-action="pause" aria-label="${words.pause}">Ⅱ</button>
+        <button class="kart-pause" data-action="pause" aria-label="${words.pause}">${PAUSE_ICON}</button>
       </header>
       <canvas class="kart-map" width="240" height="240" role="img" aria-label="${words.map}"></canvas>
       <ol class="kart-ranks" aria-hidden="true"></ol>
@@ -53,33 +51,35 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
       <div class="kart-dashboard"><span class="kart-speed"><b data-value="speed">0</b> ${words.speed}</span>
         <div class="kart-drift-meter" data-tier="0"><span data-value="drift">${words.sparks[0]}</span><div><i></i><u></u><u></u></div></div></div>
       <div class="kart-touch">
-        <div class="kart-steering"><button data-kart-control="left" aria-label="${words.left}">‹</button><button data-kart-control="right" aria-label="${words.right}">›</button>
+        <div class="kart-steering"><button data-kart-control="left" aria-label="${words.left}">${LEFT_ICON}</button><button data-kart-control="right" aria-label="${words.right}">${RIGHT_ICON}</button>
           <button class="kart-brake" data-kart-control="brake">${words.brake}</button></div>
         <div class="kart-pedals"><button class="kart-gas" data-kart-control="gas" hidden>${words.gas}</button>
-          <button class="kart-drift" data-kart-control="drift">${words.drift}<span>↝</span></button>
+          <button class="kart-drift" data-kart-control="drift">${words.drift}<span>${DRIFT_ICON}</span></button>
           <button class="kart-item" data-kart-control="item" aria-label="${words.useItem}"><span class="kart-item-art">${BAG}</span><small>${words.item}</small></button></div>
       </div>
       <p class="kart-key-hint"></p>
     </div>
     <div class="kart-menu kart-intro">
-      <div class="kart-title"><span class="kart-kicker">${words.subtitle}</span><div>${CROWN}<h1>${words.title}</h1></div><p class="kart-course"></p><p class="kart-lore">${words.story}</p><div class="kart-title-actions"><button class="kart-primary" data-action="start"><b>${words.startCup}</b><span>→</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
+      <div class="kart-title"><span class="kart-kicker">${words.subtitle}</span><div>${CROWN}<h1>${words.title}</h1></div><p class="kart-course"></p><p class="kart-lore">${words.story}</p><div class="kart-title-actions"><button class="kart-primary" data-action="start"><b>${words.startCup}</b><span>${ARROW_ICON}</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
+      <div class="kart-guide">
+        <div class="kart-lessons" aria-label="${words.controlsLabel}"><div><b>${STEER_ICON}</b><strong>${words.steer}</strong><span>${words.steerTip}</span></div><div><b>${DRIFT_ICON}</b><strong>${words.drift}</strong><span>${words.driftTip}</span></div><div><b class="kart-lesson-art">${BAG}</b><strong>${words.item}</strong><span>${words.itemTip}</span></div></div>
+        <p class="kart-more">${words.moreTips}</p>
+        <p class="kart-instructions"></p>
+      </div>
       <div class="kart-start-card">
-        <fieldset class="kart-tracks"><legend>${words.trackLabel}</legend><button type="button" data-track="cup" aria-pressed="true"><span>${CROWN}</span>${label('cup', words.cup)}</button>${TRACK_IDS.map(id => `<button type="button" data-track="${id}" aria-pressed="false"><span>${outlineArt(id)}</span>${label(id, words.tracks[id])}</button>`).join('')}</fieldset>
+        <fieldset class="kart-tracks"><legend>${words.trackLabel}</legend><button type="button" data-track="cup" aria-pressed="true"><span>${CROWN}</span>${words.cup}</button>${TRACK_IDS.map(id => `<button type="button" data-track="${id}" aria-pressed="false"><span>${outlineArt(id)}</span>${words.tracks[id]}</button>`).join('')}</fieldset>
         <p class="kart-track-tip">${words.cupTip}</p>
         <fieldset class="kart-classes"><legend>${words.classLabel}</legend>${CLASSES.map(cc => `<button type="button" data-cc="${cc}" aria-pressed="${cc === 100}">${words.classes[cc]}</button>`).join('')}</fieldset>
         <fieldset class="kart-modes"><legend>${words.modeLabel}</legend>${LEVELS.map(level => `<button type="button" data-action="${level}" aria-pressed="${level === 'normal'}">${words[level]}</button>`).join('')}</fieldset>
         <p class="kart-mode-tip"></p>
-        <div class="kart-lessons" aria-label="${words.controlsLabel}"><div><b>↔</b><strong>${words.steer}</strong><span>${words.steerTip}</span></div><div><b>↝</b><strong>${words.drift}</strong><span>${words.driftTip}</span></div><div><b class="kart-lesson-art">${BAG}</b><strong>${words.item}</strong><span>${words.itemTip}</span></div></div>
-        <p class="kart-more">${words.moreTips}</p>
-        <p class="kart-instructions"></p>
         <label class="kart-autogas"><input type="checkbox" checked> ${words.autoGas}<span>${words.autoGasTip}</span></label>
         <p class="kart-record">${words.noCup}</p>
-        <button class="kart-primary" data-action="start"><b>${words.startCup}</b><span>→</span></button>
+        <button class="kart-primary" data-action="start"><b>${words.startCup}</b><span>${ARROW_ICON}</span></button>
         <button class="kart-back" data-action="exit">${words.back}</button>
       </div>
     </div>
-    <div class="kart-menu kart-paused" hidden><div class="kart-paper"><span class="kart-kicker">${words.title}</span><h2>${words.paused}</h2><p>${words.pauseHint}</p><button class="kart-primary" data-action="resume">${words.resume}<span>→</span></button><button data-action="restart" data-value="again">${words.again}</button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
-    <div class="kart-menu kart-results" hidden><div class="kart-paper">${CROWN}<span class="kart-kicker">${words.finish}</span><h2></h2><p class="kart-result-place"></p><div class="kart-result-time"></div><ol class="kart-result-order" aria-label="${words.standings}"></ol><ol class="kart-result-laps"></ol><p class="kart-result-record"></p><p class="kart-result-storage"></p><button class="kart-primary" data-action="next" hidden>${words.nextRace}<span>→</span></button><button class="kart-primary" data-action="restart"><b>${words.again}</b><span>→</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
+    <div class="kart-menu kart-paused" hidden><div class="kart-paper"><span class="kart-kicker">${words.title}</span><h2>${words.paused}</h2><p>${words.pauseHint}</p><button class="kart-primary" data-action="resume">${words.resume}<span>${ARROW_ICON}</span></button><button data-action="restart" data-value="again">${words.again}</button><button class="kart-back" data-action="exit">${words.back}</button></div></div>
+    <div class="kart-menu kart-results" hidden><div class="kart-paper">${CROWN}<span class="kart-kicker">${words.finish}</span><h2></h2><p class="kart-result-place"></p><div class="kart-result-time"></div><ol class="kart-result-order" aria-label="${words.standings}"></ol><ol class="kart-result-laps"></ol><p class="kart-result-record"></p><p class="kart-result-storage"></p><div class="kart-result-actions"><button class="kart-primary" data-action="next" hidden>${words.nextRace}<span>${ARROW_ICON}</span></button><button class="kart-primary" data-action="restart"><b>${words.again}</b><span>${ARROW_ICON}</span></button><button class="kart-back" data-action="exit">${words.back}</button></div></div></div>
     <div class="kart-menu kart-error" hidden><div class="kart-paper"><h2>${words.paused}</h2><p>${words.pictureLost}</p><button class="kart-primary" data-action="exit">${words.back}</button></div></div>
     <span class="kart-announcement" aria-live="polite" aria-atomic="true"></span>`;
   const query = <T extends HTMLElement>(selector: string) => root.querySelector<T>(selector)!;

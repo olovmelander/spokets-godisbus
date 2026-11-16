@@ -863,7 +863,7 @@ async function start(): Promise<void> {
     async load(host, onClose) {
       const { openKart } = await import('./kart/game');
       const session = await openKart({ host, onClose, effects: settings.sound ? settings.effectsVolume : 0,
-        music: settings.music ? settings.musicVolume : 0, calm: lessMotion(), tier: view.info().tier,
+        music: settings.music ? settings.musicVolume : 0, calm: lessMotion(), bigText: settings.bigText, tier: view.info().tier,
         storage: benchOn ? null : storage(), playerId: store.currentId, debug: debugOn });
       host.querySelector('.home-console-loading')?.remove();
       return session;

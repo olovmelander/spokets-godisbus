@@ -4,6 +4,7 @@ export interface KartOptions {
   effects: number;
   music: number;
   calm: boolean;
+  bigText?: boolean;
   tier: 'low' | 'mid' | 'high';
   storage: Storage | null;
   playerId: string;

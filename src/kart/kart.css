@@ -1,6 +1,8 @@
-/* Godisracet: the television's game. Bright toy colours, chunky panels, and nothing that needs reading at speed. */
+/* Godisracet: the television's game. Bright toy colours, chunky panels, and readable text across TV, desktop, tablet, and phone. */
 .kart-game{position:absolute;inset:0;isolation:isolate;overflow:hidden;background:#12303a;color:#fff7e0;font-family:Andika,sans-serif;touch-action:none;
+  --ks:1;font-size:calc(16px * var(--ks));
   --kart-cream:#fff7e0;--kart-ink:#17303b;--kart-gold:#ffd24a;--kart-panel:#17303bf0;--kart-line:#ffe9a8}
+.kart-game[data-big-text="true"]{--ks:1.14}
 .kart-game [hidden]{display:none!important}
 .kart-game *{box-sizing:border-box}
 .kart-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;outline:none}
@@ -21,82 +23,95 @@
 .kart-game button:hover{filter:brightness(1.12)}
 .kart-game button:focus-visible,.kart-game input:focus-visible{outline:3px solid #fff6cd;outline-offset:4px}
 .kart-game button:active,.kart-game button.is-held{transform:translateY(3px);box-shadow:0 1px 0 #071a1fb0}
-.kart-game button.kart-primary{background:linear-gradient(#ffe27a,#ffbf3d);color:#3a2a10;border:3px solid #fff1b8;font-weight:bold;font-size:1.18rem;display:flex;justify-content:center;align-items:center;gap:22px;box-shadow:0 5px 0 #a8701d;width:100%;padding:13px 22px}
-.kart-primary span{font-size:1.35em}
-.kart-game button.kart-back{background:transparent;border-color:transparent;box-shadow:none;font-size:.92rem;text-decoration:underline;text-underline-offset:4px;padding:10px}
+.kart-game button.kart-primary{background:linear-gradient(#ffe27a,#ffbf3d);color:#3a2a10;border:3px solid #fff1b8;font-weight:bold;font-size:1.18em;display:flex;justify-content:center;align-items:center;gap:14px;box-shadow:0 5px 0 #a8701d;width:100%;padding:12px 22px}
+.kart-primary span{display:inline-flex;align-items:center}
+.kart-primary svg{width:1.35em;height:1.35em;display:block}
+.kart-game button.kart-back{background:transparent;border-color:transparent;box-shadow:none;font-size:.95em;text-decoration:underline;text-underline-offset:4px;padding:10px}
 
-/* Menus */
-.kart-menu{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:max(18px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));overflow:auto;touch-action:pan-y;background:#06202a55;gap:clamp(20px,6vw,100px)}
-.kart-intro{justify-content:space-around}
-.kart-title{align-self:center;max-width:600px;text-shadow:0 4px 20px #06202a}
-.kart-kicker{display:block;font-size:.72rem;font-weight:bold;text-transform:uppercase;letter-spacing:.15em;color:#ffe08a}
-.kart-title>div{display:flex;align-items:center;gap:16px}
-.kart-title svg{width:86px;flex-shrink:0;filter:drop-shadow(0 5px 0 #071e2488)}
-.kart-title h1{font-family:'Playpen Sans',cursive;font-size:clamp(2.6rem,5.6vw,6rem);line-height:1.1;letter-spacing:-.04em;margin:14px 0 6px;color:#fff3b8;-webkit-text-stroke:2px #7a4a12;paint-order:stroke fill}
-.kart-course{font-family:'Playpen Sans',cursive;margin:10px 0 0 104px;font-size:1.6rem}
-.kart-title .kart-lore{margin:16px 0 0 104px;max-width:440px;font-size:.98rem;line-height:1.5}
-.kart-start-card,.kart-paper{background:linear-gradient(150deg,#22505ef7,#143541f7);border:3px solid #ffe9a8aa;border-radius:26px;box-shadow:0 22px 80px #04161c99,inset 0 0 0 5px #ffffff0d;padding:18px 22px;max-width:470px;width:100%;text-align:center;flex-shrink:0}
-/* The course picker: the cup and the four courses, each with its outline. */
-.kart-tracks,.kart-classes{border:0;padding:0;margin:0;display:grid;gap:6px}
-.kart-tracks{grid-template-columns:repeat(5,1fr)}
+/* Menus: desktop and 720p TV use a split hero + controls column and a dedicated, overscan-safe setup card. */
+.kart-menu{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));overflow:auto;touch-action:pan-y;background:#06202a5c;gap:clamp(18px,4vw,56px)}
+.kart-menu>*{margin-block:auto}
+.kart-intro{display:grid;grid-template-columns:minmax(320px,520px) minmax(380px,480px);grid-template-rows:auto auto;align-content:center;justify-content:center;column-gap:clamp(22px,4.5vw,64px);row-gap:14px;padding:max(32px,4.5vh) clamp(24px,4vw,56px)}
+.kart-title{grid-column:1;grid-row:1;align-self:end;max-width:none;background:linear-gradient(155deg,#102a33e2,#0c222ad6);border:2px solid #ffe9a844;border-radius:26px;padding:18px 22px;box-shadow:0 18px 48px #04161c88;text-shadow:0 2px 12px #06202a}
+.kart-kicker{display:block;font-size:.82em;font-weight:bold;text-transform:uppercase;letter-spacing:.12em;color:#ffe08a}
+.kart-title>div:not(.kart-title-actions){display:flex;align-items:center;gap:14px}
+.kart-title>div:not(.kart-title-actions) svg{width:76px;flex-shrink:0;filter:drop-shadow(0 5px 0 #071e2488)}
+.kart-title h1{font-family:'Playpen Sans',cursive;font-size:clamp(2.4rem,4.6vw,4.4rem);line-height:1.08;letter-spacing:-.04em;margin:10px 0 4px;color:#fff3b8;-webkit-text-stroke:2px #7a4a12;paint-order:stroke fill}
+.kart-course{font-family:'Playpen Sans',cursive;margin:8px 0 0 90px;font-size:1.5em;color:#ffe9a8}
+.kart-title .kart-lore{margin:10px 0 0;font-size:.96em;line-height:1.45;color:#eef6f4}
+.kart-guide{grid-column:1;grid-row:2;align-self:start;background:linear-gradient(155deg,#122e38e6,#0d232bde);border:2px solid #ffe9a838;border-radius:22px;padding:14px 18px;text-align:center;box-shadow:0 14px 40px #04161c77}
+.kart-start-card,.kart-paper{background:linear-gradient(150deg,#22505ef7,#143541f7);border:3px solid #ffe9a8aa;border-radius:26px;box-shadow:0 22px 80px #04161c99,inset 0 0 0 5px #ffffff0d;padding:18px 22px;max-width:480px;width:100%;text-align:center;flex-shrink:0}
+.kart-start-card{grid-column:2;grid-row:1 / 3;align-self:center;justify-self:stretch}
+
+/* Course picker: the Cup hero button spans top, followed by a clean 2x2 grid of full-word course buttons. */
+.kart-tracks,.kart-classes{border:0;padding:0;margin:0;display:grid;gap:7px}
+.kart-tracks{grid-template-columns:repeat(2,minmax(0,1fr))}
 .kart-tracks legend,.kart-classes legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-.kart-game .kart-tracks button{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;padding:6px 1px 5px;min-height:0;min-width:0;font-size:.6rem;line-height:1.15;border-color:#7fa9a6;border-radius:14px;hyphens:manual}
-.kart-tracks button span{display:block;width:40px;height:40px;color:#fff4d6}
+.kart-game .kart-tracks button{display:flex;align-items:center;justify-content:center;gap:8px;padding:7px 10px;min-height:48px;min-width:64px;font-size:.88em;line-height:1.15;border-color:#7fa9a6;border-radius:14px;overflow-wrap:normal}
+.kart-game .kart-tracks button[data-track="cup"]{grid-column:1 / -1}
+.kart-tracks button span{display:block;width:30px;height:30px;color:#fff4d6;flex-shrink:0}
 .kart-tracks svg{width:100%;height:100%}
 .kart-game .kart-tracks button[aria-pressed=true],.kart-game .kart-classes button[aria-pressed=true]{background:#fff0c2;color:#17303b;border-color:#fff7dd;box-shadow:0 3px 0 #a38a4d;font-weight:bold}
-.kart-track-tip{font-size:.74rem;line-height:1.35;margin:8px 0 10px;min-height:2.7em;color:#ffe9a8}
+.kart-game .kart-tracks button[aria-pressed=true] span{color:#3a2a10}
+.kart-track-tip{font-size:.88em;line-height:1.35;margin:8px 0 10px;min-height:2.7em;color:#ffe9a8}
 .kart-classes{grid-template-columns:repeat(3,1fr)}
-.kart-game .kart-classes button{min-height:38px;font-size:.88rem;padding:6px 4px;border-color:#7fa9a6}
+.kart-game .kart-classes button{min-height:44px;font-size:.94em;padding:6px 4px;border-color:#7fa9a6}
 .kart-lessons{display:flex;gap:12px}
-.kart-lessons>div{display:flex;flex:1;flex-direction:column;align-items:center;gap:3px;min-width:0}
-.kart-lessons b{font-family:serif;font-size:2rem;font-weight:normal;line-height:1.1;color:var(--kart-gold);height:36px;display:flex;align-items:center}
-.kart-lessons b svg{width:34px;height:34px}
-.kart-lessons strong{font-size:.88rem}
-.kart-lessons span{font-size:.72rem;line-height:1.3;opacity:.9}
-.kart-more{font-size:.7rem;line-height:1.35;margin:8px 0 0;color:#ffe9a8}
-.kart-instructions{font-size:.66rem;line-height:1.45;color:#d6e6e2;margin:6px 0 8px}
-.kart-modes{border:0;padding:0;display:flex;justify-content:center;gap:6px;margin:6px 0 0}
+.kart-lessons>div{display:flex;flex:1;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.kart-lessons b{height:34px;display:flex;align-items:center;justify-content:center;color:var(--kart-gold)}
+.kart-lessons b svg{width:32px;height:32px}
+.kart-lessons strong{font-size:.95em}
+.kart-lessons span{font-size:.84em;line-height:1.35;opacity:.92}
+.kart-more{font-size:.84em;line-height:1.35;margin:10px 0 0;color:#ffe9a8}
+.kart-instructions{font-size:.84em;line-height:1.4;color:#e0efec;margin:6px 0 0}
+.kart-modes{border:0;padding:0;display:flex;justify-content:center;gap:7px;margin:7px 0 0}
 .kart-modes legend{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-.kart-game .kart-modes button{flex:1;min-height:38px;font-size:.88rem;padding:6px 4px;border-color:#7fa9a6}
+.kart-game .kart-modes button{flex:1;min-height:44px;font-size:.94em;padding:6px 4px;border-color:#7fa9a6}
 .kart-game .kart-modes button[aria-pressed=true]{background:#fff0c2;color:#17303b;border-color:#fff7dd;box-shadow:0 3px 0 #a38a4d;font-weight:bold}
-.kart-mode-tip{font-size:.7rem;line-height:1.3;min-height:2.6em;margin:8px 0 10px;color:#d6e6e2}
-.kart-autogas{display:block;font-size:.88rem;font-weight:bold;cursor:pointer}
-.kart-autogas input{accent-color:#ffd24a;width:18px;height:18px;vertical-align:middle}
-.kart-autogas span{display:block;font-size:.68rem;font-weight:normal;opacity:.85;margin:3px}
-.kart-record{font-size:.74rem;color:#ffe08a;margin:6px 0 8px}
+.kart-mode-tip{font-size:.86em;line-height:1.35;min-height:2.7em;margin:8px 0 10px;color:#e0efec}
+.kart-autogas{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;font-size:.94em;font-weight:bold;cursor:pointer;min-height:44px}
+.kart-autogas input{accent-color:#ffd24a;width:20px;height:20px;vertical-align:middle}
+.kart-autogas span{display:block;flex-basis:100%;font-size:.84em;font-weight:normal;opacity:.9;margin:0}
+.kart-record{font-size:.88em;color:#ffe08a;margin:8px 0 10px}
 .kart-start-card>.kart-back{margin-top:8px}
-.kart-paper{max-width:420px;max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y}
+.kart-paper{max-width:440px;max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y}
 .kart-paper>svg{width:56px;display:block;margin:0 auto 4px}
-.kart-paper h2{font-family:'Playpen Sans',cursive;font-size:1.7rem;line-height:1.25;color:#ffe9a8;margin:6px 0 10px}
-.kart-paper>p{font-size:.88rem;line-height:1.4;margin:6px 0}
-.kart-paper>button{display:block;margin-top:12px;width:100%}
+.kart-paper h2{font-family:'Playpen Sans',cursive;font-size:1.7em;line-height:1.25;color:#ffe9a8;margin:6px 0 10px}
+.kart-paper>p{font-size:.94em;line-height:1.4;margin:6px 0}
+.kart-paper>button,.kart-result-actions button{display:block;margin-top:12px;width:100%}
+.kart-result-actions{display:flex;flex-direction:column}
 .kart-paper .kart-primary{margin-top:12px}
-.kart-result-time{font-size:2.2rem;line-height:1.2;font-weight:bold;font-variant-numeric:tabular-nums;color:#ffe9a8;font-family:'Playpen Sans',cursive}
+.kart-result-time{font-size:2.2em;line-height:1.2;font-weight:bold;font-variant-numeric:tabular-nums;color:#ffe9a8;font-family:'Playpen Sans',cursive}
 .kart-result-order,.kart-result-laps{list-style:none;padding:6px 0 0;margin:6px 0 0;border-top:2px solid #ffe9a833}
-.kart-result-order li{display:flex;align-items:center;gap:8px;padding:1px 10px;font-size:.84rem;border-radius:9px;font-variant-numeric:tabular-nums}
+.kart-result-order li{display:flex;align-items:center;gap:8px;padding:2px 10px;font-size:.92em;border-radius:9px;font-variant-numeric:tabular-nums}
 .kart-result-order li i{width:13px;height:13px;border-radius:50%;border:2px solid #fff7e0;flex-shrink:0}
 .kart-result-order li span{flex:1;text-align:left}
-.kart-result-laps{display:flex;justify-content:center;gap:14px;font-size:.72rem;opacity:.9;font-variant-numeric:tabular-nums}
+.kart-result-laps{display:flex;justify-content:center;gap:14px;font-size:.84em;opacity:.92;font-variant-numeric:tabular-nums}
 .kart-result-order li.is-me{background:#ffd24a;color:#3a2a10;font-weight:bold}
 .kart-result-record{color:#ffe9a8;font-weight:bold}
-.kart-paper .kart-result-storage{font-size:.7rem;opacity:.8}
+.kart-paper .kart-result-storage{font-size:.82em;opacity:.88}
 
-/* The race */
+/* The race HUD */
 .kart-hud{position:absolute;left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));display:flex;align-items:flex-start;gap:10px;pointer-events:none}
 .kart-position,.kart-laps,.kart-candies{background:var(--kart-panel);border:3px solid var(--kart-line);border-radius:18px;box-shadow:0 5px 0 #06181ecc;padding:4px 14px;display:flex}
 .kart-position{align-items:baseline;gap:2px;min-width:92px;justify-content:center;transform:rotate(-3deg)}
-.kart-position>b{font-family:'Playpen Sans',cursive;color:#fff;font-size:2.5rem;line-height:1.25;display:inline-block;-webkit-text-stroke:2px #0b2530;paint-order:stroke fill}
-.kart-position>span{font-size:.95rem;color:#ffe9a8;font-weight:bold}
+.kart-position>b{font-family:'Playpen Sans',cursive;color:#fff;font-size:2.5em;line-height:1.25;display:inline-block;-webkit-text-stroke:2px #0b2530;paint-order:stroke fill}
+.kart-position>span{font-size:.95em;color:#ffe9a8;font-weight:bold}
 .kart-position[data-place="1"]{background:#f2b01ef5;border-color:#fff3b8}
-.kart-position[data-place="2"]{background:#8fa3b8f5;border-color:#eef4fa}
-.kart-position[data-place="3"]{background:#c9824af5;border-color:#ffd9b0}
+.kart-position[data-place="1"]>b{color:#3a2a10;-webkit-text-stroke:2px #fff8dd}
+.kart-position[data-place="1"]>span{color:#3a2a10}
+.kart-position[data-place="2"]{background:#b8cadef5;border-color:#eef4fa}
+.kart-position[data-place="2"]>b{color:#10252f;-webkit-text-stroke:2px #f4f8fc}
+.kart-position[data-place="2"]>span{color:#10252f}
+.kart-position[data-place="3"]{background:#9f5926f5;border-color:#ffd9b0}
+.kart-position[data-place="3"]>span{color:#fff3d6}
 .kart-laps{flex-direction:column;align-items:center;padding:5px 14px}
-.kart-laps small{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;line-height:1.2}
-.kart-laps>b{font-family:'Playpen Sans',cursive;font-size:1.25rem;line-height:1.15}
-.kart-laps>span{font-size:.78rem;font-variant-numeric:tabular-nums;color:#ffe9a8}
+.kart-laps small{font-size:.75em;letter-spacing:.06em;text-transform:uppercase;line-height:1.2}
+.kart-laps>b{font-family:'Playpen Sans',cursive;font-size:1.25em;line-height:1.15}
+.kart-laps>span{font-size:.875em;font-variant-numeric:tabular-nums;color:#ffe9a8}
 .kart-candies{align-items:center;gap:6px;padding:6px 12px 6px 8px}
 .kart-candies svg{width:34px;height:34px}
-.kart-candies b{font-family:'Playpen Sans',cursive;font-size:1.4rem;min-width:1.2em;text-align:center}
+.kart-candies b{font-family:'Playpen Sans',cursive;font-size:1.4em;min-width:1.2em;text-align:center}
 .kart-candies.is-full{border-color:#ffd24a;box-shadow:0 5px 0 #06181ecc,0 0 18px #ffd24a}
 .kart-slot{position:absolute;left:50%;top:0;transform:translateX(-50%);width:92px;height:92px;border-radius:26px;background:#fff7e0;border:5px solid #ffbf3d;box-shadow:0 6px 0 #a8701d,0 10px 24px #06181e99;display:flex;align-items:center;justify-content:center}
 .kart-slot-art{display:flex;width:66px;height:66px}
@@ -104,25 +119,26 @@
 .kart-slot[data-state=empty] .kart-slot-art{opacity:.28;filter:grayscale(1)}
 .kart-slot[data-state=rolling]{animation:kart-roll .16s linear infinite;border-color:#ff7fb2}
 .kart-slot[data-state=ready]{animation:kart-ready .9s ease-in-out infinite}
-.kart-slot-count{position:absolute;right:-10px;bottom:-10px;min-width:34px;height:34px;border-radius:17px;background:#e5484d;color:#fff;border:3px solid #fff;font-family:'Playpen Sans',cursive;font-size:1.1rem;line-height:28px;text-align:center}
+.kart-slot-count{position:absolute;right:-10px;bottom:-10px;min-width:34px;height:34px;border-radius:17px;background:#c42b31;color:#fff;border:3px solid #fff;font-family:'Playpen Sans',cursive;font-size:1.1em;line-height:28px;text-align:center}
 @keyframes kart-roll{0%{transform:translateX(-50%) rotate(-4deg)}50%{transform:translateX(-50%) rotate(4deg)}100%{transform:translateX(-50%) rotate(-4deg)}}
 @keyframes kart-ready{50%{box-shadow:0 6px 0 #a8701d,0 0 0 8px #ffd24a66,0 10px 24px #06181e99}}
-.kart-game .kart-pause{margin-left:auto;border-radius:50%;width:50px;height:50px;font-weight:bold;pointer-events:auto;padding:0;font-size:1.4rem;border-width:3px;border-color:var(--kart-line)}
+.kart-game .kart-pause{margin-left:auto;border-radius:50%;width:52px;height:52px;display:grid;place-items:center;pointer-events:auto;padding:0;border-width:3px;border-color:var(--kart-line)}
+.kart-pause svg{width:24px;height:24px;display:block}
 .kart-map{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 62px);width:136px;height:136px;filter:drop-shadow(0 4px 5px #06181e99)}
-.kart-ranks{position:absolute;left:max(14px,env(safe-area-inset-left));top:calc(max(12px,env(safe-area-inset-top)) + 78px);list-style:none;margin:0;padding:0;display:none;flex-direction:column;gap:3px;font-size:.78rem}
+.kart-ranks{position:absolute;left:max(14px,env(safe-area-inset-left));top:calc(max(12px,env(safe-area-inset-top)) + 78px);list-style:none;margin:0;padding:0;display:none;flex-direction:column;gap:3px;font-size:.875em}
 .kart-ranks li{display:flex;align-items:center;gap:7px;background:#17303bcc;border-radius:12px;padding:2px 12px 2px 5px;width:max-content;text-shadow:0 1px 2px #06181e}
 .kart-ranks li i{width:14px;height:14px;border-radius:50%;border:2px solid #fff7e0}
 .kart-ranks li.is-me{background:#ffd24a;color:#3a2a10;font-weight:bold;text-shadow:none}
 @media(min-width:900px) and (min-height:560px){.kart-ranks{display:flex}}
-.kart-countdown{position:absolute;left:50%;top:40%;margin:-1em 0 0 -2em;width:4em;text-align:center;font-family:'Playpen Sans',cursive;font-size:clamp(4.5rem,13vw,9rem);line-height:2;font-weight:bold;color:#ffd24a;-webkit-text-stroke:5px #7a3d0c;paint-order:stroke fill;text-shadow:0 8px 0 #7a3d0c,0 14px 40px #06181e;pointer-events:none}
-/* The notices between the panels on either side, never under the map at the right. */
-.kart-notice{position:absolute;left:160px;right:160px;top:25%;text-align:center;font-family:'Playpen Sans',cursive;color:#fff;font-size:clamp(1.25rem,3.2vw,2rem);line-height:1.3;-webkit-text-stroke:5px #0b2530;paint-order:stroke fill;text-shadow:0 4px 0 #0b2530;pointer-events:none}
+.kart-countdown{position:absolute;left:50%;top:45%;margin:-1em 0 0 -2em;width:4em;text-align:center;font-family:'Playpen Sans',cursive;font-size:clamp(4.5rem,13vw,9rem);line-height:2;font-weight:bold;color:#ffd24a;-webkit-text-stroke:5px #7a3d0c;paint-order:stroke fill;text-shadow:0 8px 0 #7a3d0c,0 14px 40px #06181e;pointer-events:none}
+/* Notices sit directly below the item slot on wide screens, clear of ranks, map, start gantry, and countdown. */
+.kart-notice{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;max-width:min(62vw,34rem);top:calc(max(12px,env(safe-area-inset-top)) + 114px);text-align:center;font-family:'Playpen Sans',cursive;color:#fff;font-size:clamp(1.25rem,3vw,1.9rem);line-height:1.3;-webkit-text-stroke:5px #0b2530;paint-order:stroke fill;text-shadow:0 4px 0 #0b2530;pointer-events:none}
 .kart-notice:empty{display:none}
 .kart-notice[data-rank="3"],.kart-notice[data-rank="4"]{color:#ffe066}
-.kart-dashboard{position:absolute;bottom:max(46px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;background:var(--kart-panel);border:3px solid var(--kart-line);border-radius:20px;padding:8px 18px;white-space:nowrap;box-shadow:0 5px 0 #06181ecc}
-.kart-speed{font-size:.65rem;color:#ffe9a8}
-.kart-speed b{font-family:'Playpen Sans',cursive;font-size:1.5rem;color:#fff;display:inline-block;min-width:2.2em;text-align:right}
-.kart-drift-meter{width:170px;font-size:.74rem;text-align:center;font-weight:bold}
+.kart-dashboard{position:absolute;bottom:max(48px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;background:var(--kart-panel);border:3px solid var(--kart-line);border-radius:20px;padding:8px 18px;white-space:nowrap;box-shadow:0 5px 0 #06181ecc}
+.kart-speed{font-size:.82em;color:#ffe9a8}
+.kart-speed b{font-family:'Playpen Sans',cursive;font-size:1.5em;color:#fff;display:inline-block;min-width:2.2em;text-align:right}
+.kart-drift-meter{width:170px;font-size:.84em;text-align:center;font-weight:bold}
 .kart-drift-meter>div{position:relative;background:#06181e;height:12px;border-radius:8px;overflow:hidden;margin-top:4px;border:2px solid #9ec3c0}
 .kart-drift-meter i{display:block;height:100%;width:0;background:#9aa6ad;border-radius:6px}
 .kart-drift-meter u{position:absolute;top:0;bottom:0;width:2px;background:#fff7e0aa;left:24%}
@@ -133,7 +149,7 @@
 .kart-drift-meter[data-tier="1"] span{color:#8fdcff}
 .kart-drift-meter[data-tier="2"] span{color:#ffd966}
 .kart-drift-meter[data-tier="3"] span{color:#ff9bd0}
-.kart-key-hint{position:absolute;bottom:max(10px,env(safe-area-inset-bottom));left:16px;right:16px;text-align:center;font-size:.7rem;text-shadow:0 2px 5px #06181e;margin:0;color:#f3ecd3;pointer-events:none}
+.kart-key-hint{position:absolute;bottom:max(8px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);width:max-content;padding:4px 14px;border-radius:999px;background:#102a33d4;border:1px solid #ffe9a844;text-align:center;font-size:.84em;text-shadow:0 1px 2px #06181e;margin:0;color:#fff7e0;pointer-events:none}
 
 /* Touch */
 .kart-touch{display:none;position:absolute;left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));justify-content:space-between;align-items:flex-end;pointer-events:none}
@@ -141,133 +157,136 @@
 .kart-game[data-device=touch] .kart-touch{display:flex}
 .kart-game[data-device=touch] .kart-key-hint{display:none}
 .kart-steering{display:grid;grid-template-columns:72px 72px;gap:8px}
-.kart-game .kart-steering>button:not(.kart-brake){font-size:3.2rem;height:72px;line-height:1;padding:0;border-radius:22px;background:#fff7e0f0;color:#17303b;border-color:#fff;box-shadow:0 5px 0 #8b7851}
-.kart-game .kart-brake{grid-column:1 / 3;justify-self:center;font-size:.75rem;padding:4px 18px;min-height:34px}
+.kart-game .kart-steering>button:not(.kart-brake){height:72px;padding:0;display:grid;place-items:center;border-radius:22px;background:#fff7e0f0;color:#17303b;border-color:#fff;box-shadow:0 5px 0 #8b7851}
+.kart-steering>button:not(.kart-brake) svg{width:34px;height:34px;display:block}
+.kart-game .kart-brake{grid-column:1 / 3;justify-self:center;font-size:.88em;padding:4px 18px;min-height:44px}
 .kart-pedals{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;justify-content:flex-end;max-width:230px}
-.kart-game .kart-drift{width:84px;height:92px;border-radius:26px;background:#4fc3fff2;color:#0b3442;font-weight:bold;padding:8px 4px;font-size:.9rem;border:3px solid #d5f3ff;box-shadow:0 5px 0 #1f7fa8}
-.kart-drift>span{display:block;font-size:2rem;line-height:1.1}
-.kart-game .kart-item{width:84px;height:92px;border-radius:26px;padding:6px;background:#1d4450e8;opacity:.8;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.kart-item-art{display:block;width:46px;height:46px;opacity:.4;filter:grayscale(1)}
+.kart-game .kart-drift{width:84px;height:92px;border-radius:26px;background:#4fc3fff2;color:#0b3442;font-weight:bold;padding:8px 4px;font-size:.94em;border:3px solid #d5f3ff;box-shadow:0 5px 0 #1f7fa8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.kart-drift>span{display:flex;align-items:center;justify-content:center}
+.kart-drift svg{width:32px;height:24px;display:block}
+.kart-game .kart-item{width:84px;height:92px;border-radius:26px;padding:6px;background:#1d4450e8;opacity:.88;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.kart-item-art{display:block;width:46px;height:46px;opacity:.45;filter:grayscale(1)}
 .kart-item svg{display:block;width:100%;height:100%}
-.kart-item small{display:block;line-height:1.1;font-size:.66rem}
+.kart-item small{display:block;line-height:1.1;font-size:.8125em}
 .kart-game .kart-item.is-ready{background:#fff7e0;color:#3a2a10;opacity:1;border-color:#ffbf3d;box-shadow:0 5px 0 #a8701d}
 .kart-item.is-ready .kart-item-art{opacity:1;filter:none}
-.kart-game .kart-gas{font-size:.8rem;padding:8px;min-height:42px;flex-basis:100%}
+.kart-game .kart-gas{font-size:.88em;padding:8px;min-height:44px;flex-basis:100%}
 .kart-game[data-device=touch] .kart-dashboard{bottom:auto;top:calc(max(12px,env(safe-area-inset-top)) + 104px);padding:5px 12px;gap:10px}
-.kart-game[data-device=touch] .kart-drift-meter{width:120px;font-size:.66rem}
-.kart-game[data-device=touch] .kart-speed b{font-size:1.15rem}
+@media(min-width:701px) and (min-height:501px){.kart-game[data-device=touch] .kart-notice{top:calc(max(12px,env(safe-area-inset-top)) + 178px)}}
+.kart-game[data-device=touch] .kart-drift-meter{width:136px;font-size:.78em}
+.kart-game[data-device=touch] .kart-speed b{font-size:1.15em}
 .kart-announcement{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
 
-@media(max-width:700px){
-  .kart-menu{padding:18px 16px}
-  .kart-intro{flex-direction:column;justify-content:flex-start;gap:14px}
-  .kart-title{align-self:center;text-align:center;padding:6px 0 0}
-  .kart-title>div{gap:8px;justify-content:center}
-  .kart-title svg{width:50px}
-  .kart-title h1{font-size:2.7rem;margin:8px 0 0}
-  .kart-course{font-size:1.15rem;margin:2px 0 0}
+/* Portrait & narrower stacked screens (< 860px wide when taller than 500px): header -> setup card -> guide card. */
+@media(max-width:859px) and (min-height:501px),(max-width:599px){
+  .kart-intro{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;padding:max(14px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom))}
+  .kart-intro>*{margin-block:0}
+  .kart-title{align-self:stretch;max-width:480px;margin-inline:auto;text-align:center;padding:10px 14px;border-radius:20px}
+  .kart-title>div:not(.kart-title-actions){gap:8px;justify-content:center}
+  .kart-title>div:not(.kart-title-actions) svg{width:44px}
+  .kart-title h1{font-size:2.3rem;margin:4px 0 0}
+  .kart-course{font-size:1.15em;margin:2px 0 0}
   .kart-title .kart-lore{display:none}
-  .kart-kicker{font-size:.6rem;letter-spacing:.12em}
-  .kart-start-card{padding:18px;max-width:430px;border-radius:22px}
+  .kart-start-card{padding:14px 16px;max-width:480px;border-radius:22px;order:2}
+  .kart-guide{max-width:480px;width:100%;order:3;padding:12px 14px;border-radius:20px}
+}
+
+@media(max-width:700px){
+  .kart-menu{padding:max(14px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom))}
   .kart-lessons{gap:8px}
-  .kart-lessons span{font-size:.66rem}
-  .kart-lessons strong{font-size:.78rem}
-  .kart-game .kart-primary{font-size:1.06rem;padding:11px 16px}
+  .kart-lessons span{font-size:.78em}
+  .kart-lessons strong{font-size:.88em}
+  .kart-game .kart-primary{font-size:1.06em;padding:11px 16px}
   .kart-hud{gap:6px;left:10px;right:10px}
   .kart-position{min-width:66px;padding:2px 8px}
-  .kart-position>b{font-size:1.7rem}
-  .kart-position>span{font-size:.72rem}
+  .kart-position>b{font-size:1.7em}
+  .kart-position>span{font-size:.82em}
   .kart-laps{padding:3px 8px}
-  .kart-laps>b{font-size:1rem}
-  .kart-laps>span{font-size:.68rem}
+  .kart-laps>b{font-size:1em}
+  .kart-laps>span{font-size:.78em}
   .kart-candies{padding:3px 8px 3px 4px;gap:3px}
   .kart-candies svg{width:26px;height:26px}
-  .kart-candies b{font-size:1.1rem}
-  .kart-slot{width:72px;height:72px;border-radius:20px;border-width:4px;top:62px}
+  .kart-candies b{font-size:1.1em}
+  .kart-slot{width:72px;height:72px;border-radius:20px;border-width:4px;top:68px}
   .kart-slot-art{width:50px;height:50px}
   .kart-map{width:104px;height:104px;right:10px}
   .kart-dashboard{padding:6px 12px;gap:10px}
-  .kart-drift-meter{width:120px;font-size:.66rem}
+  .kart-drift-meter{width:130px;font-size:.78em}
   .kart-touch{left:10px;right:10px}
   .kart-steering{grid-template-columns:66px 66px;gap:7px}
   .kart-game .kart-steering>button:not(.kart-brake){height:68px}
   .kart-pedals{gap:8px;max-width:180px}
   .kart-game .kart-drift,.kart-game .kart-item{width:76px;height:86px}
-  .kart-paper{padding:20px}
-  .kart-paper h2{font-size:1.5rem}
-  .kart-result-time{font-size:2.1rem}
+  .kart-paper{padding:16px}
+  .kart-paper h2{font-size:1.5em}
+  .kart-result-time{font-size:2em}
 }
 @media(max-width:700px) and (orientation:portrait){
-  /* On a phone held upright the speed and the spark meter are a small panel at the left of the item slot, in the row
-     under the place and the laps, so that the middle of the picture is the notices' and the road's (Olov, 16 November
-     2026: the panel "Ladda sladden" hid the words that come with a candy bag). Below the item slot it stood where they
-     are read. */
-  .kart-game[data-device=touch] .kart-dashboard{left:max(10px,env(safe-area-inset-left));transform:none;top:calc(max(12px,env(safe-area-inset-top)) + 62px);width:min(140px,calc(50% - 58px));min-height:72px;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;padding:5px 10px 8px;border-radius:16px}
-  .kart-game[data-device=touch] .kart-speed{font-size:.58rem;line-height:1.05}
-  .kart-game[data-device=touch] .kart-speed b{font-size:1.15rem;min-width:0;text-align:left;margin-right:2px}
-  .kart-game[data-device=touch] .kart-drift-meter{width:100%;font-size:.56rem;line-height:1.1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:clip}
+  /* On a phone held upright the speed and the spark meter are a small panel at the left of the item slot, in its row. */
+  .kart-game[data-device=touch] .kart-dashboard{left:max(10px,env(safe-area-inset-left));transform:none;top:calc(max(12px,env(safe-area-inset-top)) + 68px);width:min(144px,calc(50% - 58px));min-height:72px;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;padding:5px 10px 8px;border-radius:16px}
+  .kart-game[data-device=touch] .kart-speed{font-size:.75em;line-height:1.1}
+  .kart-game[data-device=touch] .kart-speed b{font-size:1.15em;min-width:0;text-align:left;margin-right:2px}
+  .kart-game[data-device=touch] .kart-drift-meter{width:100%;font-size:.74em;line-height:1.1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:clip}
   .kart-game[data-device=touch] .kart-drift-meter>div{height:9px;margin-top:3px}
-  /* The notices under that row, and under the map beside it, however short the picture is. */
-  .kart-notice{left:5%;right:5%;top:max(30%,calc(max(12px,env(safe-area-inset-top)) + 196px))}
+  .kart-notice{max-width:90vw;top:max(31%,calc(max(12px,env(safe-area-inset-top)) + 204px))}
+  .kart-countdown{top:46%}
 }
 @media(max-height:500px) and (min-width:600px){
-  .kart-menu{padding:12px 24px;gap:22px}
-  .kart-intro{align-items:center}
-  .kart-title{max-width:42%}
-  .kart-title>div{gap:8px}
-  .kart-title svg{width:54px}
-  .kart-title h1{font-size:2.7rem}
-  .kart-course{font-size:1.2rem;margin-left:65px}
+  .kart-menu{padding:10px 18px;gap:14px}
+  .kart-intro{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:16px;padding:10px 18px}
+  .kart-intro>*{margin-block:0}
+  .kart-title{flex:0 1 36%;max-width:280px;padding:12px 14px;border-radius:20px;align-self:center;text-align:center}
+  .kart-title>div:not(.kart-title-actions){gap:8px;justify-content:center}
+  .kart-title>div:not(.kart-title-actions) svg{width:44px}
+  .kart-title h1{font-size:2.1rem;margin:4px 0 0}
+  .kart-course{font-size:1.1em;margin:2px 0 0}
   .kart-title .kart-lore{display:none}
-  .kart-tracks button span{width:30px;height:30px}
-  .kart-track-tip{font-size:.64rem;margin:5px 0 6px;min-height:0}
-  .kart-kicker{font-size:.62rem}
-  .kart-start-card{max-width:380px;padding:14px 18px;max-height:calc(100dvh - 24px);overflow:auto;touch-action:pan-y}
-  .kart-lessons span,.kart-more{display:none}
-  .kart-lessons b{font-size:1.6rem;height:32px}
-  .kart-lessons b svg{width:30px;height:30px}
-  .kart-lessons strong{font-size:.7rem}
-  .kart-instructions{font-size:.6rem;margin:7px 0}
-  .kart-modes{margin-top:6px}
-  .kart-mode-tip{margin:4px 0 6px;font-size:.6rem;min-height:0}
-  .kart-autogas{font-size:.75rem}
+  .kart-guide{display:none}
+  .kart-start-card{flex:1 1 auto;max-width:520px;padding:10px 14px;max-height:calc(100dvh - 20px);overflow:auto;touch-action:pan-y;border-radius:20px}
+  .kart-tracks{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
+  .kart-game .kart-tracks button,.kart-game .kart-tracks button[data-track="cup"]{grid-column:span 2;flex-direction:row;justify-content:center;gap:6px;padding:5px 6px;font-size:.78em;min-height:64px}
+  .kart-game .kart-tracks button:nth-of-type(n+4){grid-column:span 3}
+  .kart-tracks button span{width:24px;height:24px}
+  .kart-track-tip{font-size:.78em;margin:4px 0 5px;min-height:0}
+  .kart-classes,.kart-modes{gap:5px;margin-top:5px}
+  .kart-game .kart-classes button,.kart-game .kart-modes button{font-size:.82em;padding:4px}
+  .kart-mode-tip{margin:4px 0 5px;font-size:.76em;min-height:0}
+  .kart-autogas{font-size:.82em;min-height:44px}
   .kart-autogas span{display:none}
-  .kart-record{font-size:.65rem;margin:7px 0}
-  .kart-game .kart-primary{padding:8px 12px;font-size:.95rem;min-height:40px}
-  .kart-game .kart-back{font-size:.75rem;min-height:30px;padding:5px}
-  .kart-start-card>.kart-back{margin:4px 0 0}
-  .kart-paper{max-height:calc(100dvh - 24px);overflow:auto;padding:12px 22px;max-width:520px}
-  .kart-paper h2{font-size:1.3rem;margin:4px 0 8px}
-  .kart-paper>svg{width:36px;margin-bottom:2px}
+  .kart-record{font-size:.78em;margin:4px 0 0}
+  .kart-game .kart-primary{padding:8px 12px;font-size:.95em;min-height:44px}
+  .kart-game .kart-back{font-size:.82em;min-height:44px;padding:6px 10px}
+  .kart-paper{max-height:calc(100dvh - 20px);overflow:auto;padding:10px 18px;max-width:580px}
+  .kart-paper>svg{display:none}
+  .kart-paper h2{font-size:1.25em;margin:2px 0 6px}
   .kart-result-order{columns:2;column-gap:14px}
-  .kart-result-order li{font-size:.72rem;padding:1px 8px;break-inside:avoid}
-  .kart-result-laps{display:none}
-  .kart-result-time{font-size:1.6rem}
-  .kart-paper>p{font-size:.75rem;margin:5px 0}
-  .kart-paper>button{margin-top:7px}
+  .kart-result-order li{font-size:.82em;padding:1px 8px;break-inside:avoid}
+  .kart-result-laps,.kart-paper .kart-result-storage{display:none}
+  .kart-result-time{font-size:1.45em}
+  .kart-paper>p{font-size:.82em;margin:3px 0}
+  .kart-result-actions{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;margin-top:8px}
+  .kart-result-actions button,.kart-result-actions .kart-primary{margin-top:0;width:100%}
+  .kart-result-actions .kart-back{width:auto;white-space:nowrap}
   .kart-hud{top:8px;gap:8px}
-  .kart-position>b{font-size:1.9rem}
-  .kart-laps>b{font-size:1rem}
-  .kart-slot{width:74px;height:74px;border-radius:20px;border-width:4px}
+  .kart-position>b{font-size:1.9em}
+  .kart-laps>b{font-size:1em}
+  .kart-slot{width:74px;height:74px;border-radius:20px;border-width:4px;top:0}
   .kart-slot-art{width:52px;height:52px}
   .kart-map{width:96px;height:96px;top:60px}
-  .kart-game .kart-pause{width:44px;height:44px;min-height:44px}
+  .kart-game .kart-pause{width:46px;height:46px;min-height:46px}
   .kart-touch{bottom:12px}
-  .kart-game .kart-brake{min-height:28px;font-size:.65rem}
+  .kart-game .kart-brake{min-height:44px;font-size:.8em}
   .kart-dashboard,.kart-game[data-device=touch] .kart-dashboard{top:auto;bottom:16px;padding:5px 12px;gap:10px}
-  /* The item slot in the top row, as on a wider phone held sideways (the narrow screens' second row is for a phone
-     held upright), and the notices under it. */
-  .kart-slot{top:0}
-  .kart-notice{left:112px;right:112px;top:max(22%,calc(max(8px,env(safe-area-inset-top)) + 88px))}
+  .kart-notice{max-width:calc(100vw - 224px);top:max(22%,calc(max(8px,env(safe-area-inset-top)) + 90px))}
   .kart-key-hint{display:none}
-  .kart-countdown{top:36%}
+  .kart-countdown{top:38%}
 }
 .kart-game[data-calm=true] *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 @media(prefers-reduced-motion:reduce){.kart-game *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 /* Keep the primary choice visible beside the settings on a short landscape screen. */
 .kart-title>.kart-title-actions{display:none}
 @media(max-height:500px) and (min-width:600px){
-  .kart-title>.kart-title-actions{display:flex;flex-direction:column;gap:8px;margin-top:22px}
+  .kart-title>.kart-title-actions{display:flex;flex-direction:column;gap:6px;margin-top:10px}
   .kart-game .kart-start-card>.kart-primary,.kart-game .kart-start-card>.kart-back{display:none}
   .kart-title>.kart-title-actions>.kart-back{width:100%}
 }
@@ -277,20 +296,18 @@
   .kart-game .kart-modes button,.kart-game .kart-classes button,.kart-game .kart-tracks button,.kart-game .kart-back,.kart-game .kart-primary{min-height:64px}
   .kart-game .kart-pause{width:64px;height:64px;min-height:64px}
   .kart-map{top:calc(max(12px,env(safe-area-inset-top)) + 74px)}
-  .kart-game .kart-brake{min-height:64px;width:100%;font-size:.78rem}
+  .kart-game .kart-brake{min-height:64px;width:100%;font-size:.82em}
   .kart-game .kart-gas{min-height:64px}
   .kart-autogas{min-height:64px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;column-gap:8px}
   .kart-autogas span{flex-basis:100%;margin-top:0}
 }
 @media(pointer:coarse) and (max-height:500px) and (min-width:600px){
   .kart-map{top:78px;width:88px;height:88px}
-  .kart-title>.kart-title-actions{margin-top:14px}
-  .kart-title{max-width:40%}
-  .kart-title h1{font-size:2.4rem}
-  .kart-course{margin-left:0;text-align:center}
-  .kart-title .kart-kicker{font-size:.57rem}
-  .kart-start-card{max-width:350px}
+  .kart-title{max-width:236px;padding:10px 12px}
+  .kart-title h1{font-size:1.95rem}
+  .kart-title>.kart-title-actions{margin-top:8px}
   .kart-title>.kart-title-actions>.kart-back{min-height:64px}
+  .kart-game .kart-tracks button{font-size:.78em}
   .kart-game .kart-steering>button:not(.kart-brake){height:64px}
   .kart-game .kart-drift,.kart-game .kart-item{height:72px}
   .kart-game .kart-brake{min-height:64px}

@@ -51,6 +51,7 @@
   /* Moa's crayons. */
   --crayon-red: #c4352b;
   --crayon-red-dark: #8f2a20;
+  --crayon-red-ink: #ad2d25;
   --crayon-blue: #2e5c99;
   --crayon-green: #3d7a3c;
   --crayon-brown: #6b4a2c;
@@ -81,6 +82,7 @@
   --gold-deep: #7d5414;
   /* Who speaks: their sign's colour, and an ink of it for their name (src/ui/faces.ts). */
   --who-mamma: #bf3d36;
+  --who-mamma-ink: #a62a23;
   --who-pappa: #5a7d4a;
   --who-pappa-ink: #4b6b3d;
   --who-moa: #5b7fb5;
@@ -99,10 +101,36 @@
   --pad-x-edge: #1f4479;
   --pad-y: #e8b923;
   --pad-y-edge: #a07a10;
-  /* The memories' sepia. */
+  /* The memories' sepia and TV-console framing. */
   --sepia-light: #f6e6c4;
   --sepia: #ecd6a8;
   --sepia-deep: #c9a56c;
+  --sepia-paper-light: #fff4d9;
+  --sepia-paper: #ead7b4;
+  --sepia-paper-border: #fff0ce;
+  --sepia-card: #d8bd94;
+  --sepia-thumb: #e7d5aa;
+  --sepia-border: #bda27d;
+  --sepia-dot: #a28965;
+  --sepia-ink: #4e4137;
+  --sepia-title: #4f473a;
+  --sepia-btn-back: #fff2d2;
+  --sepia-pine: #4b6758;
+  --sepia-pine-hover: #3d584a;
+  --sepia-pine-edge: #3c594a;
+  --sepia-pine-dot: #537261;
+  --sepia-rim: #fff8e52e;
+  --sepia-drop: #12231b99;
+  --sepia-card-border: #a68c674f;
+  --sepia-card-shadow: #66503130;
+  --sepia-card-ring: #fff9e780;
+  --sepia-shade-top: rgb(73 83 70 / 88%);
+  --sepia-shade-bottom: rgb(25 37 34 / 94%);
+  --console-bg: #162c29;
+  --console-ink: #334e42;
+  --console-cream: #fff5df;
+  --console-edge: #d9be80;
+  --console-shadow: #101e2750;
   /* States. */
   --focus: #1d4f91;
   --knock: #f6c445;
@@ -324,8 +352,8 @@ textarea {
 .btn-act {
   width: calc(100px * var(--k));
   height: calc(100px * var(--k));
-  right: calc(env(safe-area-inset-right) + 20px + 108px * var(--k));
-  bottom: calc(env(safe-area-inset-bottom) + 20px + 74px * var(--k));
+  right: calc(env(safe-area-inset-right) + 20px + 118px * var(--k));
+  bottom: calc(env(safe-area-inset-bottom) + 20px + 78px * var(--k));
   background-color: var(--paint-green);
 }
 
@@ -379,12 +407,61 @@ body.lefty .btn-hop {
 
 body.lefty .btn-act {
   right: auto;
-  left: calc(env(safe-area-inset-left) + 20px + 108px * var(--k));
+  left: calc(env(safe-area-inset-left) + 20px + 118px * var(--k));
 }
 
 body.lefty .btn-act span {
   right: auto;
   left: calc(100% + 10px);
+}
+
+/* Upright phones keep generous >= 64 px targets while preventing #actBtn from colliding into #stickBase on 320-390 px screens. */
+@media (max-width: 520px) and (orientation: portrait) {
+  .stick-base {
+    left: calc(env(safe-area-inset-left) + clamp(64px, 20vw, 96px));
+    top: calc(100% - env(safe-area-inset-bottom) - 68px);
+    width: 96px;
+    height: 96px;
+    margin: -48px 0 0 -48px;
+  }
+
+  .stick-knob {
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+  }
+
+  .btn-hop {
+    width: 96px;
+    height: 96px;
+    right: calc(env(safe-area-inset-right) + 16px);
+    bottom: calc(env(safe-area-inset-bottom) + 18px);
+  }
+
+  .btn-act {
+    width: 82px;
+    height: 82px;
+    right: calc(env(safe-area-inset-right) + 100px);
+    bottom: calc(env(safe-area-inset-bottom) + 102px);
+  }
+
+  .btn-act span {
+    max-width: 124px;
+  }
+
+  body.lefty .stick-base {
+    left: calc(100% - env(safe-area-inset-right) - clamp(64px, 20vw, 96px));
+  }
+
+  body.lefty .btn-hop {
+    right: auto;
+    left: calc(env(safe-area-inset-left) + 16px);
+  }
+
+  body.lefty .btn-act {
+    right: auto;
+    left: calc(env(safe-area-inset-left) + 100px);
+  }
 }
 
 /* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
@@ -759,7 +836,8 @@ body.lefty .key-prompt {
   /* On a tablet the sheet and its words grow with the controls (access-and-devices.md row 7). */
   width: min(100%, calc(460px * var(--k)));
   max-height: 100%;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: grid;
   gap: 10px;
   padding: 18px 18px 20px;
@@ -820,7 +898,7 @@ body.lefty .key-prompt {
 /* --- Pause: a short first page, and pages of its own (docs/ux-audit/menus.md rows 1-4) ------------------- */
 /* What focus or a scroll brings into view stops below the sticky header, never under it. */
 .panel.pause {
-  padding-top: 0;
+  padding: 0 0 20px;
   scroll-padding-top: 76px;
   scroll-padding-bottom: 12px;
   container: album-panel / inline-size;
@@ -828,9 +906,22 @@ body.lefty .key-prompt {
   scrollbar-color: var(--paper-edge) var(--paper);
 }
 
+.pause-options,
+.controls-reference,
+.photo-panel > :not(.panel-head),
+.explore .panel > :not(.panel-head) {
+  padding-inline: 18px;
+}
+
 @media (min-width: 700px) {
   .panel.pause {
     width: min(100%, 760px);
+  }
+}
+
+@media (min-width: 900px) {
+  .panel.pause {
+    width: min(100%, 840px);
   }
 }
 
@@ -844,9 +935,9 @@ body.lefty .key-prompt {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 4px;
-  min-height: 64px;
-  margin: 0 -18px;
-  padding: 0 4px 0 12px;
+  min-height: 70px;
+  margin: 0;
+  padding: 8px 8px 0 14px;
   background-color: var(--paper);
 }
 
@@ -1030,7 +1121,7 @@ body.big-text .pause-home .tile { font-size: 20px; }
 
 .panel .map-card h3 {
   margin: 0;
-  color: var(--crayon-red);
+  color: var(--crayon-red-ink);
   font-size: 0.9em;
 }
 
@@ -1305,7 +1396,7 @@ body.big-text .pause-home .tile { font-size: 20px; }
    at its sides and the count in the header (docs/ux-audit/menus.md row 17). */
 .panel.photo-panel {
   width: min(100%, 760px);
-  padding-top: 0;
+  padding: 0 0 20px;
   scroll-padding-top: 76px;
 }
 
@@ -1517,10 +1608,10 @@ body.big-text .pause-home .tile { font-size: 20px; }
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px 6px;
 }
-@media (max-width: 360px) {
+@container album-panel (max-width: 480px) {
   .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -1528,11 +1619,17 @@ body.big-text .pause-home .tile { font-size: 20px; }
   display: grid;
   justify-items: center;
   align-content: start;
-  gap: 4px;
-  font-size: 0.67em;
-  line-height: 1.15;
+  gap: 5px;
+  font-size: 0.82em;
+  line-height: 1.2;
   text-align: center;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 0;
+}
+
+.album-chapter:has(> .album-grid > li:only-child) .album-grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .album-grid i {
@@ -1565,13 +1662,24 @@ body.big-text .pause-home .tile { font-size: 20px; }
 .album-chapters > h4 { grid-column: 1 / -1; margin-top: 14px; }
 .album-section + .album-section { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--paper-edge); }
 
+@media (min-width: 360px) and (max-width: 699px) {
+  .album-chapters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .album-chapters > :not(:has(> .album-grid > li:only-child)) {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (min-width: 700px) {
   .album-chapters {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .album-chapter {
+  min-width: 0;
   display: grid;
   gap: 8px;
   padding: 8px 10px 10px;
@@ -1582,9 +1690,11 @@ body.big-text .pause-home .tile { font-size: 20px; }
 
 .album-place {
   margin: 0;
+  min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
 }
 
 .album-place .chapter-picture {
@@ -1596,6 +1706,8 @@ body.big-text .pause-home .tile { font-size: 20px; }
   font-family: var(--font-hand);
   font-weight: 700;
   color: var(--crayon-blue);
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .album-place small {
@@ -1637,9 +1749,10 @@ body.big-text .pause-home .tile { font-size: 20px; }
   max-height: 180px;
 }
 
-/* A phone held sideways: the map stays first, but low enough that the diary under it is seen without scrolling. */
-@media (max-height: 500px) and (min-width: 700px) {
-  .pause-story .moas-karta { max-height: 116px; }
+/* A phone held sideways: the map stays first, but low enough that the list/diary under it is seen without scrolling. */
+@media (max-height: 500px) and (min-width: 600px) {
+  .pause-story .moas-karta,
+  .explore .moas-karta { max-height: 112px; }
   .pause-story .story-recap { margin: 0; padding: 8px 12px; }
   .pause-story .story-recap h3 { margin-bottom: 2px; }
   .pause-story .story-recap p { margin-top: 2px; }
@@ -1877,6 +1990,8 @@ body.big-text .pause-home .tile { font-size: 20px; }
 .pips {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 40px));
+  align-content: center;
+  min-height: 48px;
   gap: 8px;
   padding: 2px 0;
   border-radius: 12px;
@@ -2063,7 +2178,7 @@ details.info-row p {
 body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
 
 /* The wrapper carries the speaker's colour across the text and its optional action. */
-.dialogue:has(> .bubble[data-who='mamma']) { --who: var(--who-mamma); --who-ink: var(--who-mamma); }
+.dialogue:has(> .bubble[data-who='mamma']) { --who: var(--who-mamma); --who-ink: var(--who-mamma-ink); }
 .dialogue:has(> .bubble[data-who='pappa']) { --who: var(--who-pappa); --who-ink: var(--who-pappa-ink); }
 .dialogue:has(> .bubble[data-who='moa']) { --who: var(--who-moa); --who-ink: var(--who-moa-ink); }
 .dialogue:has(> .bubble[data-who='bertil']) { --who: var(--who-bertil); --who-ink: var(--who-bertil-ink); }
@@ -2272,7 +2387,7 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
   font-family: var(--font-hand);
   font-size: 18px;
   font-weight: 700;
-  color: var(--crayon-red);
+  color: var(--crayon-red-ink);
 }
 
 /* Moa's crayon draws the way on, once the page is there. */
@@ -2365,16 +2480,25 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
     min-height: 52px;
   }
 
-  /* Playing again is the lesser choice here: a plain link under the way on. So is seeing the last adventure's book
-     again, which has just turned by itself: it would push the way home off a phone held sideways. */
+  /* Playing again is the lesser choice here when another forward button exists, while keeping >= 48 px touch height. */
   .panel.end #endAgain,
   .panel-back.adventure-end #endPhotos {
-    min-height: 40px;
+    min-height: 48px;
     background: transparent;
     box-shadow: none;
     font-weight: 400;
     font-size: 16px;
     text-decoration: underline;
+  }
+
+  .panel.end .page-tally:not(:has(:is(#endOnward, #endExplore):not([hidden]))) #endAgain {
+    min-height: 52px;
+    background-color: var(--linden);
+    background-image: var(--woodgrain, none);
+    box-shadow: var(--bevel), 0 4px 0 var(--wood-dark), var(--wood-shadow);
+    font-weight: 700;
+    font-size: inherit;
+    text-decoration: none;
   }
 }
 
@@ -2392,6 +2516,14 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
   background: linear-gradient(90deg, rgb(20 14 9 / 0.6) 0%, rgb(20 14 9 / 0.35) 40%, rgb(20 14 9 / 0) 65%);
 }
 
+.panel-back.title:has(#titleFront[hidden]) {
+  place-items: center;
+}
+
+.title .panel:has(#titleFront[hidden]) {
+  width: min(100%, 520px);
+}
+
 @media (orientation: portrait) {
   .panel-back.title {
     place-items: end center;
@@ -2403,7 +2535,7 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
 .panel-back.explore { z-index: 13; }
 
 .explore .panel {
-  padding-top: 0;
+  padding: 0 0 20px;
   scroll-padding-top: 76px;
 }
 
@@ -2629,11 +2761,18 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   animation: bob 2.4s ease-in-out infinite;
 }
 
-/* Under the start: round buttons with a word under each (row 7). */
+/* Under the start: round buttons balanced cleanly in 3 or 2x2 (row 7). */
 .round-row {
+  order: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 10px;
+}
+
+.round-row:has(#titleExplore:not([hidden])) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
 }
 
 .round {
@@ -2659,12 +2798,15 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 }
 
 .title .round {
+  flex: 1 1 82px;
+  max-width: 112px;
   min-height: 72px;
   align-content: center;
   font-size: 15px;
   line-height: 1.2;
 }
-.title .round svg { width: 44px; height: 44px; padding: 10px; }
+.round-row:has(#titleExplore:not([hidden])) .round { max-width: none; }
+.title .round svg { width: 48px; height: 48px; padding: 11px; }
 .title .round span { overflow-wrap: anywhere; }
 body.big-text .title .round { font-size: 18px; }
 
@@ -2698,7 +2840,7 @@ body.big-text .title .round { font-size: 18px; }
 /* A game taken up again: where he is, as the chapter's card says it, over what he is doing (row 9). */
 .title .story-title .story-card {
   display: block;
-  color: var(--crayon-red);
+  color: var(--crayon-red-ink);
   font-family: var(--font-hand);
   font-size: 20px;
   font-weight: 700;
@@ -2809,13 +2951,18 @@ body.big-text .title .round { font-size: 18px; }
 }
 
 .title #titleStartOverBtn {
-  min-height: 44px;
+  order: 2;
+  min-height: 48px;
+  margin-top: 2px;
+  padding: 8px 14px;
   gap: 8px;
+  border: 1px solid var(--paper-edge);
+  background-color: var(--paper-2);
   font-size: 16px;
   font-weight: 500;
   text-decoration: none;
   border-radius: 14px;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .title #titleStartOverBtn:hover,
@@ -3081,7 +3228,7 @@ body.big-text .story-purpose { font-size: 21px; }
 /* On short landscape screens the bookmark uses the sky between the bag and both utility buttons. */
 @media (max-height: 500px) and (orientation: landscape) {
   .story-purpose {
-    left: calc(env(safe-area-inset-left) + 120px);
+    left: calc(env(safe-area-inset-left) + 136px);
     right: calc(env(safe-area-inset-right) + var(--hud-tools-width) + var(--hud-gap));
     top: var(--hud-row-top);
     width: auto;
@@ -3312,7 +3459,21 @@ button.bag {
 .player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
 .player-token.kind { flex: none; width: calc(40px * var(--k)); height: calc(40px * var(--k)); }
 #titlePlayers .section-head { grid-template-columns: 64px 1fr auto; column-gap: 12px; }
-.players-edit[aria-pressed='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
+.title .players-edit {
+  min-height: 48px;
+  min-width: 76px;
+  padding: 8px 16px;
+  border-radius: 14px;
+  background-color: var(--linden);
+  background-image: var(--woodgrain, none);
+  box-shadow: var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
+  font-weight: 700;
+  text-decoration: none;
+}
+.title .players-edit[aria-pressed='true'] {
+  background-color: var(--paint-blue);
+  color: var(--ink-on-paint);
+}
 /* "Ja" to what cannot be undone is held for 1.5 s while a ring fills round its tick (ui/hold.ts). */
 @property --held {
   syntax: '<percentage>';
@@ -3517,7 +3678,8 @@ body.no-candy .bag {
   visibility: hidden;
 }
 
-body.keys-later .hint {
+body.keys-later .hint,
+body:has(:is(#pause, #explore, #photoAlbum, #storyPanel, #memory):not([hidden])) .hint {
   visibility: hidden;
 }
 
@@ -3628,14 +3790,14 @@ body.scene-bars .scene-caption .place {
   background-image: var(--grain, none);
 }
 
-/* Moa's masking tape holds the sheet at its top: two strips over its top edge, turned a little. */
+/* Moa's masking tape holds the header at its top: two jagged strips clear of any overflow clip edge. */
 .panel-head::before,
 .panel-head::after {
   content: '';
   position: absolute;
-  top: -9px;
-  width: 78px;
-  height: 22px;
+  top: 2px;
+  width: 72px;
+  height: 18px;
   background-color: var(--tape);
   clip-path: polygon(0 12%, 6% 0, 12% 14%, 18% 0, 82% 0, 88% 14%, 94% 0, 100% 12%, 100% 88%, 94% 100%, 88% 86%,
     82% 100%, 18% 100%, 12% 86%, 6% 100%, 0 88%);
