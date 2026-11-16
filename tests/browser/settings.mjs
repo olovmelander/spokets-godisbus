@@ -316,11 +316,18 @@ try {
     check('Större text makes the headings and the small lines bigger too', big.every((size, i) => size >= small[i] * 1.2));
     await page.uncheck('#setBigText');
     // The key reference: keycaps, and the header's way back (row 24).
+    await page.locator('#controlsReferenceBtn').scrollIntoViewIfNeeded();
+    const referenceScroll = await page.locator('#pause .panel').evaluate(panel => panel.scrollTop);
     await page.click('#controlsReferenceBtn');
     check('the key reference draws its keys as keycaps', await page.locator('#controlsReference kbd').count() >= 25 && await page.locator('#controlsReference .pad-a').count() >= 1);
     check('its way back is the header\'s, named for the page it goes to', await page.locator('#pauseBack').isVisible() && await page.getAttribute('#pauseBack', 'aria-label') === 'Tillbaka till Inställningar' && await page.evaluate(() => document.activeElement?.id === 'pauseBack'));
     await page.click('#pauseBack');
     check('back from it, the settings again, at the button that opened it', await page.locator('#pauseSettingsPage').isVisible() && await page.evaluate(() => document.activeElement?.id === 'controlsReferenceBtn'));
+    check('returning from the reference preserves the settings reading position and keeps focus visible', await page.evaluate(scroll => {
+      const panel = document.querySelector('#pause .panel'), bounds = panel.getBoundingClientRect();
+      const button = document.getElementById('controlsReferenceBtn').getBoundingClientRect();
+      return Math.abs(panel.scrollTop - scroll) <= 1 && button.top >= document.querySelector('#pause .panel-head').getBoundingClientRect().bottom && button.bottom <= bounds.bottom;
+    }, referenceScroll));
     await finish();
   }
   {
