@@ -49,7 +49,7 @@
   --ink-faint: #8a7258;
   --ink-on-paint: #fff8ec;
   /* Moa's crayons. */
-  --crayon-red: #c4352b;
+  --crayon-red: #ad2d25;
   --crayon-red-dark: #8f2a20;
   --crayon-blue: #2e5c99;
   --crayon-green: #3d7a3c;
@@ -81,6 +81,7 @@
   --gold-deep: #7d5414;
   /* Who speaks: their sign's colour, and an ink of it for their name (src/ui/faces.ts). */
   --who-mamma: #bf3d36;
+  --who-mamma-ink: #a62a23;
   --who-pappa: #5a7d4a;
   --who-pappa-ink: #4b6b3d;
   --who-moa: #5b7fb5;
@@ -917,6 +918,12 @@ body.lefty .key-prompt {
   }
 }
 
+@media (min-width: 900px) {
+  .panel.pause {
+    width: min(100%, 840px);
+  }
+}
+
 /* One header for the panel, which stays put while the page under it scrolls: the way back always sits in the
    same place (research §7). */
 .panel-head {
@@ -1600,10 +1607,10 @@ body.big-text .pause-home .tile { font-size: 20px; }
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px 6px;
 }
-@media (max-width: 360px) {
+@container album-panel (max-width: 480px) {
   .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -1611,11 +1618,16 @@ body.big-text .pause-home .tile { font-size: 20px; }
   display: grid;
   justify-items: center;
   align-content: start;
-  gap: 4px;
-  font-size: 0.67em;
-  line-height: 1.15;
+  gap: 5px;
+  font-size: 0.82em;
+  line-height: 1.2;
   text-align: center;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.album-chapter.single .album-grid {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .album-grid i {
@@ -1647,6 +1659,16 @@ body.big-text .pause-home .tile { font-size: 20px; }
 
 .album-chapters > h4 { grid-column: 1 / -1; margin-top: 14px; }
 .album-section + .album-section { margin-top: 24px; padding-top: 12px; border-top: 1px solid var(--paper-edge); }
+
+@media (min-width: 360px) and (max-width: 699px) {
+  .album-chapters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .album-chapters > :not(.single) {
+    grid-column: 1 / -1;
+  }
+}
 
 @media (min-width: 700px) {
   .album-chapters {
@@ -1720,9 +1742,10 @@ body.big-text .pause-home .tile { font-size: 20px; }
   max-height: 180px;
 }
 
-/* A phone held sideways: the map stays first, but low enough that the diary under it is seen without scrolling. */
-@media (max-height: 500px) and (min-width: 700px) {
-  .pause-story .moas-karta { max-height: 116px; }
+/* A phone held sideways: the map stays first, but low enough that the list/diary under it is seen without scrolling. */
+@media (max-height: 500px) and (min-width: 600px) {
+  .pause-story .moas-karta,
+  .explore .moas-karta { max-height: 112px; }
   .pause-story .story-recap { margin: 0; padding: 8px 12px; }
   .pause-story .story-recap h3 { margin-bottom: 2px; }
   .pause-story .story-recap p { margin-top: 2px; }
@@ -2148,7 +2171,7 @@ details.info-row p {
 body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
 
 /* The wrapper carries the speaker's colour across the text and its optional action. */
-.dialogue:has(> .bubble[data-who='mamma']) { --who: var(--who-mamma); --who-ink: var(--who-mamma); }
+.dialogue:has(> .bubble[data-who='mamma']) { --who: var(--who-mamma); --who-ink: var(--who-mamma-ink); }
 .dialogue:has(> .bubble[data-who='pappa']) { --who: var(--who-pappa); --who-ink: var(--who-pappa-ink); }
 .dialogue:has(> .bubble[data-who='moa']) { --who: var(--who-moa); --who-ink: var(--who-moa-ink); }
 .dialogue:has(> .bubble[data-who='bertil']) { --who: var(--who-bertil); --who-ink: var(--who-bertil-ink); }
@@ -2486,6 +2509,14 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
   background: linear-gradient(90deg, rgb(20 14 9 / 0.6) 0%, rgb(20 14 9 / 0.35) 40%, rgb(20 14 9 / 0) 65%);
 }
 
+.panel-back.title:has(#titleFront[hidden]) {
+  place-items: center;
+}
+
+.title .panel:has(#titleFront[hidden]) {
+  width: min(100%, 520px);
+}
+
 @media (orientation: portrait) {
   .panel-back.title {
     place-items: end center;
@@ -2723,11 +2754,18 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
   animation: bob 2.4s ease-in-out infinite;
 }
 
-/* Under the start: round buttons with a word under each (row 7). */
+/* Under the start: round buttons balanced cleanly in 3 or 2x2 (row 7). */
 .round-row {
+  order: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 10px;
+}
+
+.round-row:has(#titleExplore:not([hidden])) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
 }
 
 .round {
@@ -2753,12 +2791,15 @@ body.at-title :is(.controls, .bag, .corner, .hint, .story-purpose, .key-prompt) 
 }
 
 .title .round {
+  flex: 1 1 82px;
+  max-width: 112px;
   min-height: 72px;
   align-content: center;
   font-size: 15px;
   line-height: 1.2;
 }
-.title .round svg { width: 44px; height: 44px; padding: 10px; }
+.round-row:has(#titleExplore:not([hidden])) .round { max-width: none; }
+.title .round svg { width: 48px; height: 48px; padding: 11px; }
 .title .round span { overflow-wrap: anywhere; }
 body.big-text .title .round { font-size: 18px; }
 
@@ -2903,13 +2944,18 @@ body.big-text .title .round { font-size: 18px; }
 }
 
 .title #titleStartOverBtn {
-  min-height: 44px;
+  order: 2;
+  min-height: 48px;
+  margin-top: 2px;
+  padding: 8px 14px;
   gap: 8px;
+  border: 1px solid var(--paper-edge);
+  background-color: var(--paper-2);
   font-size: 16px;
   font-weight: 500;
   text-decoration: none;
   border-radius: 14px;
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
 .title #titleStartOverBtn:hover,
@@ -3406,7 +3452,21 @@ button.bag {
 .player-row [aria-current='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
 .player-token.kind { flex: none; width: calc(40px * var(--k)); height: calc(40px * var(--k)); }
 #titlePlayers .section-head { grid-template-columns: 64px 1fr auto; column-gap: 12px; }
-.players-edit[aria-pressed='true'] { box-shadow: inset 0 0 0 3px var(--crayon-red); }
+.title .players-edit {
+  min-height: 48px;
+  min-width: 76px;
+  padding: 8px 16px;
+  border-radius: 14px;
+  background-color: var(--linden);
+  background-image: var(--woodgrain, none);
+  box-shadow: var(--bevel), 0 3px 0 var(--wood-dark), var(--wood-shadow);
+  font-weight: 700;
+  text-decoration: none;
+}
+.title .players-edit[aria-pressed='true'] {
+  background-color: var(--paint-blue);
+  color: var(--ink-on-paint);
+}
 /* "Ja" to what cannot be undone is held for 1.5 s while a ring fills round its tick (ui/hold.ts). */
 @property --held {
   syntax: '<percentage>';
