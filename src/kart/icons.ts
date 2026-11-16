@@ -2,6 +2,13 @@
 import type { ItemId } from './sim/kart';
 
 const svg = (body: string, box = '0 0 64 64') => `<svg viewBox="${box}" aria-hidden="true">${body}</svg>`;
+const line = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
+export const PAUSE_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1.8" fill="currentColor"/><rect x="14" y="4.5" width="4" height="15" rx="1.8" fill="currentColor"/></svg>`;
+export const LEFT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" ${line} stroke-width="3.2"/></svg>`;
+export const RIGHT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" ${line} stroke-width="3.2"/></svg>`;
+export const ARROW_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5" ${line} stroke-width="2.6"/></svg>`;
+export const STEER_ICON = `<svg viewBox="0 0 36 24" aria-hidden="true"><path d="M4 12h28M9 7l-5 5 5 5M27 7l5 5-5 5" ${line} stroke-width="2.8"/></svg>`;
+export const DRIFT_ICON = `<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M4 18c4-9 10-9 13 0s9 7 11-8" ${line} stroke-width="2.8"/><path d="m23 11 5-3 1 5.5" ${line} stroke-width="2.6"/></svg>`;
 const SWEET = (x: number, y: number, s: number, turn = -18) => `<g transform="translate(${x} ${y}) rotate(${turn}) scale(${s})"><path d="M-30 0-17-11v22ZM30 0 17-11v22Z" fill="#f2a93b" stroke="#8a5a1c" stroke-width="2.5" stroke-linejoin="round"/><ellipse rx="19" ry="13" fill="#ffd45e" stroke="#8a5a1c" stroke-width="2.5"/><path d="M-10-5q9-6 19 0" fill="none" stroke="#fff6cf" stroke-width="3" stroke-linecap="round"/></g>`;
 
 const PINE = (x: number, y: number, s: number) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0-26c14 6 20 20 18 32S8 26 0 26-16 18-18 6-14-20 0-26Z" fill="#a8693a" stroke="#5b3518" stroke-width="3"/><path d="M-13-8q13 9 26 0M-16 4q16 10 32 0M-13 15q13 8 26 0M0-24v48" fill="none" stroke="#5b3518" stroke-width="2.5" stroke-linecap="round"/><path d="M-4-26q4-6 8 0" fill="none" stroke="#4d7a36" stroke-width="4" stroke-linecap="round"/></g>`;

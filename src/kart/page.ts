@@ -39,7 +39,7 @@ async function open(): Promise<void> {
     const session: KartSession = await openKart({
       host, onClose: () => { location.assign(import.meta.env.BASE_URL); },
       effects: settings ? (settings.sound ? settings.effectsVolume : 0) : .8, music: settings ? (settings.music ? settings.musicVolume : 0) : .6,
-      calm, tier: tier(settings?.graphics), storage, playerId: id, debug: params.has('debug'),
+      calm, bigText: !!settings?.bigText, tier: tier(settings?.graphics), storage, playerId: id, debug: params.has('debug'),
     });
     if (params.has('debug')) (window as unknown as { __kart: KartSession }).__kart = session;
   } catch {
