@@ -151,6 +151,8 @@ export interface SaveStore {
   /** Removes only this profile, choosing another if the current one was removed. */
   remove(id: string): boolean;
   load(): Loaded;
+  /** Ensures the current profile exists for side games, without creating adventure progress. */
+  ensureProfile(): boolean;
   /** Writes the save. Returns false when it could not be written. */
   write(save: PlayerSave): boolean;
   /** Forgets only the current player's progress: "Börja om från början". Its name stays. */
@@ -312,6 +314,27 @@ export function createStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'remo
         return readSave(get(playerKey(currentId)));
       } catch {
         return { kind: 'unreadable' };
+      }
+    },
+    ensureProfile() {
+      if (!storage) return false;
+      const data = readIndex();
+      if (!data) return false;
+      const profile = data.index.players.find((p) => p.id === currentId);
+      if (profile && profile.generation !== generation) return false;
+      if (!profile && (currentWasIndexed || data.index.players.length > 0 || currentId !== FIRST_PLAYER.id)) return false;
+      if (profile && data.raw !== null) return true;
+      try {
+        if (readSave(get(playerKey(currentId))).kind === 'unreadable') return false;
+        const createdGeneration = profile ? profile.generation
+          : globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+        putIndex({ ...data.index, players: profile ? data.index.players
+          : [...data.index.players, { ...FIRST_PLAYER, generation: createdGeneration }] });
+        generation = createdGeneration;
+        currentWasIndexed = true;
+        return true;
+      } catch {
+        return false;
       }
     },
     write(save) {
