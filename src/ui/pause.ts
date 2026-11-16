@@ -69,6 +69,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
   const parentOf: Record<PausePage, PausePage | null> = { home: null, bag: 'home', settings: 'home', reference: 'settings' };
   let page: PausePage = 'home';
   let entry: PausePage = 'home';
+  let settingsScroll = 0;
   const graphics: Record<Graphics, HTMLButtonElement> = {
     auto: byId('graphicsAuto'), low: byId('graphicsLow'), mid: byId('graphicsMid'), high: byId('graphicsHigh'),
   };
@@ -218,6 +219,7 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
    */
   function go(next: PausePage, from?: PausePage, turn = true): void {
     const returning = from !== undefined;
+    if (page === 'settings' && next === 'reference') settingsScroll = panel.scrollTop;
     page = next;
     back.dataset.page = next;
     for (const button of albumLinks) {
@@ -240,13 +242,14 @@ export function createPause(doc: Document, handlers: PauseHandlers): Pause {
       byId('pauseBack').setAttribute('aria-label', p.backTo.replace('{page}', titles[up]));
     }
     if (next !== 'home') stuck(false);
-    panel.scrollTop = 0;
+    panel.scrollTop = returning && next === 'settings' ? settingsScroll : 0;
     markAlbumSection();
     // Focus where the hand is wanted: coming back, on the tile that opened the page left behind.
     const focus = returning && next === 'home' ? (from === 'bag' ? 'pauseBagBtn' : from === 'settings' ? 'pauseSettingsBtn' : 'resumeBtn')
       : returning && next === 'settings' ? 'controlsReferenceBtn'
         : next === 'home' ? 'resumeBtn' : next === 'bag' ? 'pauseAlbum' : next === 'settings' ? (styles.lugnt.tabIndex === 0 ? 'styleLugnt' : 'styleAventyr') : 'pauseBack';
-    byId(focus).focus({ preventScroll: true });
+    // Restore the settings' reading position; if the viewport changed, native focus also brings the button into view.
+    byId(focus).focus({ preventScroll: !(returning && next === 'settings') });
   }
   /** "Jag har fastnat" asks in place of the tiles, so ✓ and ✕ come where the finger was. */
   function stuck(asking: boolean): void {
