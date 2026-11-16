@@ -20,6 +20,7 @@ import { createMemory } from '../src/ui/memory';
 import { storyContext, storyHandoff } from '../src/content/story-context';
 import { createStoryContext } from '../src/ui/story-context';
 import '../src/ui/ui.css';
+import '../src/ui/scene.css';
 
 const VIEWS = ['touch', 'keys', 'pad', 'purpose', 'goal', 'title', 'saved', 'styles', 'pause', 'stuck', 'album', 'settings', 'end', 'photos', 'memory', 'sharing', 'painting', 'carving', 'party', 'bubble', 'message', 'debug'] as const;
 // The paper's tooth, the wood's grain and the crayon's wax, as the game draws them.

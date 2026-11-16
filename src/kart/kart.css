@@ -132,7 +132,7 @@
 @media(min-width:900px) and (min-height:560px){.kart-ranks{display:flex}}
 .kart-countdown{position:absolute;left:50%;top:45%;margin:-1em 0 0 -2em;width:4em;text-align:center;font-family:'Playpen Sans',cursive;font-size:clamp(4.5rem,13vw,9rem);line-height:2;font-weight:bold;color:#ffd24a;-webkit-text-stroke:5px #7a3d0c;paint-order:stroke fill;text-shadow:0 8px 0 #7a3d0c,0 14px 40px #06181e;pointer-events:none}
 /* Notices sit directly below the item slot on wide screens, clear of ranks, map, start gantry, and countdown. */
-.kart-notice{position:absolute;left:160px;right:160px;top:calc(max(12px,env(safe-area-inset-top)) + 114px);text-align:center;font-family:'Playpen Sans',cursive;color:#fff;font-size:clamp(1.25rem,3vw,1.9rem);line-height:1.3;-webkit-text-stroke:5px #0b2530;paint-order:stroke fill;text-shadow:0 4px 0 #0b2530;pointer-events:none}
+.kart-notice{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;max-width:min(62vw,34rem);top:calc(max(12px,env(safe-area-inset-top)) + 114px);text-align:center;font-family:'Playpen Sans',cursive;color:#fff;font-size:clamp(1.25rem,3vw,1.9rem);line-height:1.3;-webkit-text-stroke:5px #0b2530;paint-order:stroke fill;text-shadow:0 4px 0 #0b2530;pointer-events:none}
 .kart-notice:empty{display:none}
 .kart-notice[data-rank="3"],.kart-notice[data-rank="4"]{color:#ffe066}
 .kart-dashboard{position:absolute;bottom:max(48px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;background:var(--kart-panel);border:3px solid var(--kart-line);border-radius:20px;padding:8px 18px;white-space:nowrap;box-shadow:0 5px 0 #06181ecc}
@@ -207,7 +207,7 @@
   .kart-candies{padding:3px 8px 3px 4px;gap:3px}
   .kart-candies svg{width:26px;height:26px}
   .kart-candies b{font-size:1.1em}
-  .kart-slot{width:72px;height:72px;border-radius:20px;border-width:4px;top:62px}
+  .kart-slot{width:72px;height:72px;border-radius:20px;border-width:4px;top:68px}
   .kart-slot-art{width:50px;height:50px}
   .kart-map{width:104px;height:104px;right:10px}
   .kart-dashboard{padding:6px 12px;gap:10px}
@@ -223,12 +223,12 @@
 }
 @media(max-width:700px) and (orientation:portrait){
   /* On a phone held upright the speed and the spark meter are a small panel at the left of the item slot, in its row. */
-  .kart-game[data-device=touch] .kart-dashboard{left:max(10px,env(safe-area-inset-left));transform:none;top:calc(max(12px,env(safe-area-inset-top)) + 62px);width:min(144px,calc(50% - 58px));min-height:72px;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;padding:5px 10px 8px;border-radius:16px}
+  .kart-game[data-device=touch] .kart-dashboard{left:max(10px,env(safe-area-inset-left));transform:none;top:calc(max(12px,env(safe-area-inset-top)) + 68px);width:min(144px,calc(50% - 58px));min-height:72px;flex-direction:column;align-items:stretch;justify-content:center;gap:3px;padding:5px 10px 8px;border-radius:16px}
   .kart-game[data-device=touch] .kart-speed{font-size:.75em;line-height:1.1}
   .kart-game[data-device=touch] .kart-speed b{font-size:1.15em;min-width:0;text-align:left;margin-right:2px}
   .kart-game[data-device=touch] .kart-drift-meter{width:100%;font-size:.74em;line-height:1.1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:clip}
   .kart-game[data-device=touch] .kart-drift-meter>div{height:9px;margin-top:3px}
-  .kart-notice{left:5%;right:5%;top:max(31%,calc(max(12px,env(safe-area-inset-top)) + 196px))}
+  .kart-notice{max-width:90vw;top:max(31%,calc(max(12px,env(safe-area-inset-top)) + 204px))}
   .kart-countdown{top:46%}
 }
 @media(max-height:500px) and (min-width:600px){
@@ -277,7 +277,7 @@
   .kart-touch{bottom:12px}
   .kart-game .kart-brake{min-height:44px;font-size:.8em}
   .kart-dashboard,.kart-game[data-device=touch] .kart-dashboard{top:auto;bottom:16px;padding:5px 12px;gap:10px}
-  .kart-notice{left:112px;right:112px;top:max(22%,calc(max(8px,env(safe-area-inset-top)) + 90px))}
+  .kart-notice{max-width:calc(100vw - 224px);top:max(22%,calc(max(8px,env(safe-area-inset-top)) + 90px))}
   .kart-key-hint{display:none}
   .kart-countdown{top:38%}
 }

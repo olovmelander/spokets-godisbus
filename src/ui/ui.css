@@ -1622,8 +1622,9 @@ body.big-text .pause-home .tile { font-size: 20px; }
   font-size: 0.82em;
   line-height: 1.2;
   text-align: center;
-  overflow-wrap: normal;
-  word-break: keep-all;
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 0;
 }
 
 .album-chapter.single .album-grid {
@@ -1672,11 +1673,12 @@ body.big-text .pause-home .tile { font-size: 20px; }
 
 @media (min-width: 700px) {
   .album-chapters {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .album-chapter {
+  min-width: 0;
   display: grid;
   gap: 8px;
   padding: 8px 10px 10px;
@@ -1687,9 +1689,11 @@ body.big-text .pause-home .tile { font-size: 20px; }
 
 .album-place {
   margin: 0;
+  min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
 }
 
 .album-place .chapter-picture {
@@ -1701,6 +1705,8 @@ body.big-text .pause-home .tile { font-size: 20px; }
   font-family: var(--font-hand);
   font-weight: 700;
   color: var(--crayon-blue);
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .album-place small {
