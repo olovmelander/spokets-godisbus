@@ -30,6 +30,9 @@ class FakeElement extends EventTarget {
   closest() { return this.hidden || this.inControls ? this : null; }
   focus() { doc.activeElement = this as unknown as Element; }
   click() { fire(this, 'click', { detail: 0 }); }
+  /** Focus brought by the keyboard shows; a click with the mouse leaves it unseen. */
+  focusVisible = true;
+  matches(selector: string) { return selector === ':focus-visible' && this.focusVisible; }
   role = '';
   tabIndex = 0;
   getAttribute(name: string) { return name === 'role' ? this.role : null; }
@@ -132,6 +135,17 @@ describe('the keyboard', () => {
     expect(key('keydown', code, value).defaultPrevented).toBe(false);
     expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
     expect(input.state().hopHeld).toBe(false);
+  });
+
+  it('keeps Space as Hoppa on a button clicked with the mouse, whose focus does not show', () => {
+    const clicked = new FakeElement();
+    clicked.focusVisible = false;
+    clicked.focus();
+    expect(key('keydown', 'Space', ' ').defaultPrevented).toBe(true);
+    expect(input.consume().hop).toBe(true);
+    key('keyup', 'Space', ' ');
+    expect(key('keydown', 'Enter', 'Enter').defaultPrevented).toBe(false);
+    expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
   });
 
   it('gives Använd for E and the helper for H', () => {

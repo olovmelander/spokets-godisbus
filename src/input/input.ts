@@ -80,6 +80,11 @@ const MOVE_KEYS: Record<string, Dir> = {
 };
 const VERB_KEYS = [' ', 'e', 'Enter', 'h', 'g', 'Escape', 'p', 'Shift'];
 
+/** Whether an element's focus shows, as it does when the keyboard brought it there. False where a browser can't tell. */
+function focusShows(element: Element): boolean {
+  try { return element.matches(':focus-visible'); } catch { return false; }
+}
+
 function browserEnv(): InputEnv {
   return {
     win: window,
@@ -327,7 +332,10 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (key !== 'Escape' && active && (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable)) return;
     const menuKey = key === 'Escape' || key === 'p' || key === 'g';
     if (opts.panelOpen?.() && !menuKey) return;
-    if ((key === 'Enter' || key === ' ') && active?.tagName === 'BUTTON') return; // native button activation
+    // A focused button takes Enter, and Space when the keyboard brought the focus there. A button clicked with the mouse
+    // keeps its focus unseen, and Space stays Hoppa: after a click on the helper's portrait, every jump would otherwise
+    // ask for more help.
+    if (active?.tagName === 'BUTTON' && (key === 'Enter' || (key === ' ' && focusShows(active)))) return;
     if (!dir && !VERB_KEYS.includes(key)) return;
     e.preventDefault();
     if (e.repeat) return;

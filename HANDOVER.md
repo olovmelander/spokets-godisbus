@@ -1,5 +1,30 @@
 # Handover
 
+## State (16 November 2026, midday): the QA round's nine pull requests merged, and Space after a click on the helper
+
+One cloud session (branch `claude/graphics-bugs-scenes-yy9rt7`), after #283. Olov sent a picture of the open pull
+requests #284–#292, the QA round's fixes described in the section below (#291, the touch controls back after keys, and
+#292, the settings' scroll kept on the way back from the key reference, came after that section was written), and asked:
+"Can we look into and ensure that all these PRs looks good and makes sense and then merge all these to main."
+
+- **Reviewed:** each diff read against what its description says and against the rest of the game. Eight were right as
+  they stood. #287 (Space presses a focused HUD button, as Enter did) had one side effect: Chromium leaves the focus on
+  a button clicked with the mouse, and the helper's portrait keeps it, so after a click on the portrait every Space
+  asked for more help (step 1, 2, 3, then the replay) instead of jumping. Seen in the browser with the nine together.
+- **Together:** the nine merge without a conflict. On the nine together: `npm run typecheck`, `npm test` (3369 passed,
+  20 skipped), `npm run build` (JS 736.0 KB of 1000 KB, size gate ok), `npm run privacy-check`, and the browser suites
+  they touch: home-console (96 checks), settings (68), story with `STORY_FILTER=painting` (8) and mountain-loop with
+  `MOUNTAIN_CASE=lugnt` (3).
+- **Merged:** #284–#292 in order of number, each at the head that was reviewed and green on GitHub.
+- **The follow-up (this branch's PR):** a focused button takes Enter as before, and Space only when its focus shows
+  (`:focus-visible`: the keyboard brought it there); on a button clicked with the mouse Space stays Hoppa
+  (`src/input/input.ts`). Guards: a unit test, which fails without the change, and a check in
+  `tests/browser/settings.mjs`: a mouse click on the helper's portrait, then Space, and Elof jumps without a second ask
+  for help.
+- **Left open:** #242 (8 November, "What is said is what is seen") was not in Olov's picture and was not touched.
+- **Validation:** `npm run typecheck`; `tests/unit/input.test.ts` (68 tests, the new one failing without the change).
+- **Next:** Olov tries the controls on the family's devices, as the QA section below says. No Blender work is waiting.
+
 ## State (16 November 2026): autonomous playtest and seven isolated QA pull requests
 
 Olov requested a browser playtest at 1920×1080 and 1280×720, a prioritized backlog of 5–8 improvements, and one
@@ -7088,6 +7113,8 @@ The older list, still true where it is not struck:
 
 ## Decisions in effect
 
+- **Space on a focused button (16 November 2026, after #287):** Enter presses a focused HUD button; Space too when the
+  keyboard brought the focus there (it shows). On a button clicked with the mouse Space stays Hoppa.
 - **Godisracet's race screen (Olov, 16 November 2026):** nothing lies over the notices: on a phone held upright the
   speed and the spark meter are a small panel at the left of the item slot, in its row.
 - **The white and the green door in every home (Olov, 15 November 2026):** "Jag vill ha den vita och den gröna dörren
@@ -7231,6 +7258,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| The QA round's nine PRs (16 Nov, midday) | Check #284–#292 and merge them | The same cloud session, after #283 | — / 1 message (+1 picture) | Eight right as they were; #287's Space after a mouse click fixed in a follow-up; all nine merged after the checks on them together |
 | Autonomous QA (16 Nov) | Playtest both desktop sizes; 5–8 isolated improvements | One cloud session; six game fixes plus one browser timing repair in seven separate PRs | — / 1 request | 3367 combined tests passed; real play and targeted debug scenarios; no merge/deploy; screenshots outside Git |
 | Godisracet's race screen (16 Nov, morning) | The speed panel hid the notice after a candy bag on a phone held upright | The same cloud session, after #282 | — / 1 message (+1 picture) | The speed panel small at the left of the item slot, the notices clear of every panel, the map and the buttons at every size |
 | The white and the green door everywhere (15 Nov, late night) | The stick in front of the sofa, the two doors in Äventyr 1, the veranda's door as today, the coats clear of the white door | The same cloud session, after #281 | — / 4 messages (+1 picture) | The stick was the old doorway's post (gone with #281); the hall with the green door in the prologue and Stormkvällen, their veranda's door and all out of doors ten further along; the coats, rail and boots clear of both door frames |
