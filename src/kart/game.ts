@@ -32,6 +32,7 @@ function outlineArt(id: TrackId): string {
 export async function openKart(options: KartOptions): Promise<KartSession> {
   const root = document.createElement('section');
   root.className = 'kart-game'; root.dataset.mode = 'intro'; root.dataset.device = matchMedia('(pointer: coarse)').matches ? 'touch' : 'keys';
+  root.dataset.calm = String(options.calm);
   root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', words.title);
   root.innerHTML = `
     <canvas class="kart-canvas" tabindex="0" aria-label="${words.title}"></canvas>

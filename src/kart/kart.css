@@ -262,6 +262,7 @@
   .kart-key-hint{display:none}
   .kart-countdown{top:36%}
 }
+.kart-game[data-calm=true] *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 @media(prefers-reduced-motion:reduce){.kart-game *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 /* Keep the primary choice visible beside the settings on a short landscape screen. */
 .kart-title>.kart-title-actions{display:none}
