@@ -834,7 +834,8 @@ body.lefty .key-prompt {
   /* On a tablet the sheet and its words grow with the controls (access-and-devices.md row 7). */
   width: min(100%, calc(460px * var(--k)));
   max-height: 100%;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: grid;
   gap: 10px;
   padding: 18px 18px 20px;
@@ -895,12 +896,19 @@ body.lefty .key-prompt {
 /* --- Pause: a short first page, and pages of its own (docs/ux-audit/menus.md rows 1-4) ------------------- */
 /* What focus or a scroll brings into view stops below the sticky header, never under it. */
 .panel.pause {
-  padding-top: 0;
+  padding: 0 0 20px;
   scroll-padding-top: 76px;
   scroll-padding-bottom: 12px;
   container: album-panel / inline-size;
   scrollbar-width: thin;
   scrollbar-color: var(--paper-edge) var(--paper);
+}
+
+.pause-options,
+.controls-reference,
+.photo-panel > :not(.panel-head),
+.explore .panel > :not(.panel-head) {
+  padding-inline: 18px;
 }
 
 @media (min-width: 700px) {
@@ -919,9 +927,9 @@ body.lefty .key-prompt {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 4px;
-  min-height: 64px;
-  margin: 0 -18px;
-  padding: 0 4px 0 12px;
+  min-height: 70px;
+  margin: 0;
+  padding: 8px 8px 0 14px;
   background-color: var(--paper);
 }
 
@@ -1380,7 +1388,7 @@ body.big-text .pause-home .tile { font-size: 20px; }
    at its sides and the count in the header (docs/ux-audit/menus.md row 17). */
 .panel.photo-panel {
   width: min(100%, 760px);
-  padding-top: 0;
+  padding: 0 0 20px;
   scroll-padding-top: 76px;
 }
 
@@ -2489,7 +2497,7 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
 .panel-back.explore { z-index: 13; }
 
 .explore .panel {
-  padding-top: 0;
+  padding: 0 0 20px;
   scroll-padding-top: 76px;
 }
 
@@ -3603,7 +3611,8 @@ body.no-candy .bag {
   visibility: hidden;
 }
 
-body.keys-later .hint {
+body.keys-later .hint,
+body:has(:is(#pause, #explore, #photoAlbum, #storyPanel, #memory):not([hidden])) .hint {
   visibility: hidden;
 }
 
@@ -3714,14 +3723,14 @@ body.scene-bars .scene-caption .place {
   background-image: var(--grain, none);
 }
 
-/* Moa's masking tape holds the sheet at its top: two strips over its top edge, turned a little. */
+/* Moa's masking tape holds the header at its top: two jagged strips clear of any overflow clip edge. */
 .panel-head::before,
 .panel-head::after {
   content: '';
   position: absolute;
-  top: -9px;
-  width: 78px;
-  height: 22px;
+  top: 2px;
+  width: 72px;
+  height: 18px;
   background-color: var(--tape);
   clip-path: polygon(0 12%, 6% 0, 12% 14%, 18% 0, 82% 0, 88% 14%, 94% 0, 100% 12%, 100% 88%, 94% 100%, 88% 86%,
     82% 100%, 18% 100%, 12% 86%, 6% 100%, 0 88%);
