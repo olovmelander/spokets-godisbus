@@ -22,7 +22,7 @@ const server = createServer((req, res) => {
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const cases = new Set((process.env.HOME_CONSOLE_CASES ?? 'homes,race,save,loading,page').split(','));
+const cases = new Set((process.env.HOME_CONSOLE_CASES ?? 'homes,race,save,loading,page,motion').split(','));
 let browser, checks = 0;
 const check = (name, condition) => { assert.ok(condition, name); checks++; console.log(`  ok   ${name}`); };
 const FLAGS = {
@@ -304,6 +304,24 @@ try {
       await checkMenuFocus(race, '.kart-paused');
       await phone.close();
     }
+  }
+  if (cases.has('motion')) for (const calm of [true, false]) {
+    const context = await browser.newContext({ serviceWorkers: 'block', reducedMotion: 'no-preference', viewport: { width: 1280, height: 720 } });
+    await context.addInitScript(calm => localStorage.setItem('godisbus.v1.player.elof', JSON.stringify({ v: 1, name: 'Elof', settings: { calm } })), calm);
+    const page = await context.newPage(), errors = [];
+    page.on('pageerror', error => errors.push(String(error)));
+    await page.goto(`${origin}${BASE}godisracet.html?debug&tier=low`);
+    await page.waitForFunction(() => window.__kart?.debug().mode === 'intro', null, { timeout: 120000 });
+    await page.locator('[data-action="start"]:visible').first().click();
+    await page.waitForFunction(() => window.__kart.debug().mode === 'race' && window.__kart.debug().frames > 8, null, { timeout: 120000 });
+    await page.evaluate(() => window.__kart.poke({ item: 'cones3', itemCount: 3 })); await frames(page);
+    const slot = page.locator('.kart-slot');
+    check(`Godisracet, sparade lugna effekter ${calm}: föremålets puls följer inställningen`, await slot.evaluate(el => getComputedStyle(el).animationName) === (calm ? 'none' : 'kart-ready'));
+    check(`Godisracet, sparade lugna effekter ${calm}: föremålet och antalet syns fortfarande`, await slot.isVisible() && await slot.getAttribute('data-state') === 'ready' && await page.locator('.kart-slot-count').textContent() === '3');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    check(`Godisracet, sparade lugna effekter ${calm}: även systemets rörelseval gäller`, await slot.evaluate(el => getComputedStyle(el).animationName) === 'none');
+    assert.deepEqual(errors, [], 'Godisracet, lugna effekter: körfel');
+    await context.close();
   }
   console.log(`TV-konsolen: ${checks} webbläsarkontroller godkända.`);
 } finally { if (browser) await browser.close(); await new Promise(done => server.close(done)); }
