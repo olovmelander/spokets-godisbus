@@ -28,7 +28,7 @@ class FakeElement extends EventTarget {
   getClientRects() { return this.hidden ? [] : [this.getBoundingClientRect()]; }
   querySelectorAll() { return this.children; }
   closest() { return this.hidden || this.inControls ? this : null; }
-  focus() { doc.activeElement = this as unknown as Element; }
+  focus() { doc.activeElement = this as unknown as Element; doc.dispatchEvent(new Event('focusin')); }
   click() { fire(this, 'click', { detail: 0 }); }
   role = '';
   tabIndex = 0;
@@ -132,6 +132,19 @@ describe('the keyboard', () => {
     expect(key('keydown', code, value).defaultPrevented).toBe(false);
     expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
     expect(input.state().hopHeld).toBe(false);
+  });
+
+  it('keeps Space as Hoppa on a button pressed with the mouse, and leaves it to one reached with Tab', () => {
+    fire(win, 'pointerdown', { pointerType: 'mouse', button: 0 });
+    new FakeElement().focus();
+    expect(key('keydown', 'Space', ' ').defaultPrevented).toBe(true);
+    expect(input.consume().hop).toBe(true);
+    key('keyup', 'Space', ' ');
+    expect(key('keydown', 'Enter', 'Enter').defaultPrevented).toBe(false);
+    key('keydown', 'Tab', 'Tab');
+    new FakeElement().focus();
+    expect(key('keydown', 'Space', ' ').defaultPrevented).toBe(false);
+    expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
   });
 
   it('gives Använd for E and the helper for H', () => {

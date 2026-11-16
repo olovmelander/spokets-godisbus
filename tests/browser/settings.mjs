@@ -122,6 +122,13 @@ try {
     await page.keyboard.press('Space');
     check('Space activates a focused HUD button instead of jumping', (await state()).paused && await page.locator('#pauseHome').isVisible());
     await page.keyboard.press('Escape');
+    // Clicked with the mouse, the helper's portrait keeps the focus without showing it: Space there is still Hoppa, not
+    // another ask for help (16 November 2026).
+    await page.click('#helpBtn');
+    const asked = (await until(state, (s) => s.help.step > 0, 'the helper answers the click', 30000)).help.step;
+    await page.keyboard.press('Space');
+    await until(state, (s) => !s.grounded, 'Space after a click on the helper jumps', 30000);
+    check('Space after a mouse click on the helper is Hoppa, not another ask for help', (await state()).help.step === asked);
     await until(info, (i) => i.models.includes('boot/big-candy'), 'checkpoint model loaded', 30000);
     await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.x > 2.5 && s.candy > 0, 'collect candy before changing graphics');
