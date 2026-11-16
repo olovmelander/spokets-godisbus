@@ -20,12 +20,12 @@ function gamepad(): Gamepad {
 }
 
 describe('Godisracet controller ownership', () => {
-  let win: EventTarget, doc: KartInputEnv['doc'], pad: Gamepad, buttons: Record<KartControl, Button>;
+  let win: EventTarget, root: HTMLElement, doc: KartInputEnv['doc'], pad: Gamepad, buttons: Record<KartControl, Button>;
   let input: ReturnType<typeof createKartInput>, pause: () => void;
   beforeEach(() => {
     win = new EventTarget(); doc = Object.assign(new EventTarget(), { hidden: false, activeElement: null }); pad = gamepad();
     buttons = Object.fromEntries(['left', 'right', 'gas', 'brake', 'drift', 'item'].map(c => [c, new Button(c as KartControl)])) as Record<KartControl, Button>;
-    const root = { querySelectorAll: () => Object.values(buttons) } as unknown as HTMLElement;
+    root = Object.assign(new EventTarget(), { querySelectorAll: () => Object.values(buttons) }) as unknown as HTMLElement;
     pause = vi.fn();
     input = createKartInput(root, { pause }, { win, doc, gamepads: () => [pad] });
     input.setEnabled(true); input.read(0);
@@ -111,10 +111,28 @@ describe('Godisracet controller ownership', () => {
   });
   it('reports the first real keyboard action even when the host initially showed touch hints', () => {
     input.dispose(); const changed = vi.fn();
-    input = createKartInput({ querySelectorAll: () => Object.values(buttons) } as unknown as HTMLElement,
+    input = createKartInput(root,
       { pause, device: changed }, { win, doc, gamepads: () => [] });
     input.setEnabled(true); key(win, 'ArrowLeft'); key(win, 'Space');
     expect(changed).toHaveBeenCalledExactlyOnceWith('keys');
+  });
+  it('restores touch controls from the canvas or a menu without issuing a driving action', () => {
+    input.setAutoGas(false);
+    key(win, 'ArrowLeft'); fire(win, 'keyup', { code: 'ArrowLeft' });
+    fire(root, 'pointerdown', { pointerType: 'touch' });
+    expect(input.device).toBe('touch');
+    expect(input.read(.02)).toEqual({ steer: 0, throttle: 0, brake: 0, drift: false, item: false });
+    key(win, 'ArrowLeft'); fire(win, 'keyup', { code: 'ArrowLeft' }); input.setEnabled(false);
+    fire(root, 'pointerdown', { pointerType: 'pen' });
+    expect(input.device).toBe('touch'); expect(pause).not.toHaveBeenCalled();
+  });
+  it('ignores touch device changes while hidden, unfocused or disposed', () => {
+    key(win, 'ArrowLeft'); fire(win, 'blur'); fire(root, 'pointerdown', { pointerType: 'touch' });
+    expect(input.device).toBe('keys');
+    fire(win, 'focus'); doc.hidden = true; fire(root, 'pointerdown', { pointerType: 'touch' });
+    expect(input.device).toBe('keys');
+    doc.hidden = false; input.dispose(); fire(root, 'pointerdown', { pointerType: 'touch' });
+    expect(input.device).toBe('keys');
   });
 });
 

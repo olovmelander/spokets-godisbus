@@ -126,6 +126,11 @@ export function createKartInput(root: HTMLElement, callbacks: KartInputCallbacks
     try { finger.element.releasePointerCapture?.(id); } catch { /* Already released. */ }
     refresh();
   };
+  // A keyboard or pad hides the driving buttons. A tap anywhere in this game must be able to bring them back.
+  listen(root, 'pointerdown', event => {
+    const e = event as PointerEvent;
+    if (!disposed && windowActive && !env.doc.hidden && (e.pointerType === 'touch' || e.pointerType === 'pen')) switchDevice('touch');
+  }, true);
   for (const button of buttons) {
     const control = controlOf(button);
     if (!control) continue;
