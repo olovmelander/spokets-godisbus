@@ -49,8 +49,9 @@
   --ink-faint: #8a7258;
   --ink-on-paint: #fff8ec;
   /* Moa's crayons. */
-  --crayon-red: #ad2d25;
+  --crayon-red: #c4352b;
   --crayon-red-dark: #8f2a20;
+  --crayon-red-ink: #ad2d25;
   --crayon-blue: #2e5c99;
   --crayon-green: #3d7a3c;
   --crayon-brown: #6b4a2c;
@@ -1120,7 +1121,7 @@ body.big-text .pause-home .tile { font-size: 20px; }
 
 .panel .map-card h3 {
   margin: 0;
-  color: var(--crayon-red);
+  color: var(--crayon-red-ink);
   font-size: 0.9em;
 }
 
@@ -2386,7 +2387,7 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
   font-family: var(--font-hand);
   font-size: 18px;
   font-weight: 700;
-  color: var(--crayon-red);
+  color: var(--crayon-red-ink);
 }
 
 /* Moa's crayon draws the way on, once the page is there. */
@@ -2839,7 +2840,7 @@ body.big-text .title .round { font-size: 18px; }
 /* A game taken up again: where he is, as the chapter's card says it, over what he is doing (row 9). */
 .title .story-title .story-card {
   display: block;
-  color: var(--crayon-red);
+  color: var(--crayon-red-ink);
   font-family: var(--font-hand);
   font-size: 20px;
   font-weight: 700;
