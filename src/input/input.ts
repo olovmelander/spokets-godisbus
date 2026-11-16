@@ -43,7 +43,7 @@ export interface InputOptions {
 /** What the page gives the input. Tests pass their own. */
 export interface InputEnv {
   win: EventTarget;
-  doc: EventTarget & { readonly hidden: boolean; readonly activeElement: Element | null };
+  doc: EventTarget & { readonly hidden: boolean; readonly activeElement: Element | null; hasFocus?(): boolean };
   gamepads(): readonly (Gamepad | null)[];
   now(): number;
 }
@@ -359,8 +359,8 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   // Play: the left stick or the D-pad moves, A is Hoppa, X is Använd, Y calls the helper, Start pauses.
   // Menus: the D-pad or the stick moves the focus, A presses, B goes back. In a choice of several or on a
   // sound's pips, left and right move the choice or the level, and up and down leave it (menus.md row 22).
-  let windowActive = true;
-  const pad = { x: 0, y: 0, prev: [] as boolean[], hopHeld: false, active: false, navAt: 0, navDir: 0, polledAt: -1, needsNeutral: false };
+  let windowActive = env.doc.hasFocus?.() ?? true;
+  const pad = { x: 0, y: 0, prev: [] as boolean[], hopHeld: false, active: false, navAt: 0, navDir: 0, polledAt: -1, needsNeutral: !windowActive };
   const deadzone = (v: number) => (Math.abs(v) < 0.22 ? 0 : Math.sign(v) * Math.min(1, (Math.abs(v) - 0.22) / 0.72));
   const focusables = (scope: HTMLElement) =>
     [...scope.querySelectorAll<HTMLElement>('button, input, select, summary, [tabindex]:not([tabindex="-1"])')]

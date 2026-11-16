@@ -565,6 +565,20 @@ describe('the gamepad', () => {
     expect(input.consume().hop).toBe(false);
   });
 
+  it('stays neutral when loading finishes in an already unfocused window', () => {
+    input.destroy();
+    input = createInput(ui as unknown as InputUi, {}, {
+      win, doc: Object.assign(doc, { hasFocus: () => false }), gamepads: () => pads, now: () => (clock += 16),
+    });
+    pads = [gamepad([1, 0], [PAD.a])];
+    expect(input.state()).toEqual({ x: 0, y: 0, hopHeld: false });
+    fire(win, 'focus');
+    expect(input.state()).toEqual({ x: 0, y: 0, hopHeld: false });
+    pads = [gamepad([0, 0], [])]; input.poll();
+    pads = [gamepad([1, 0], [PAD.a])];
+    expect(input.state()).toEqual({ x: 1, y: 0, hopHeld: true });
+  });
+
   it('moves with the D-pad, and stops when the gamepad goes away', () => {
     pads = [gamepad([0, 0], [PAD.left])];
     expect(input.state().x).toBe(-1);

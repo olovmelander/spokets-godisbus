@@ -248,6 +248,7 @@ try {
     await page.evaluate(() => { document.getElementById('strokeAssist').click(); window.dispatchEvent(new Event('blur')); });
     await new Promise((resolve) => setTimeout(resolve, 450));
     check('focus loss cancels a pending guided stroke completion', !(await state()).flags.includes('eye') && await page.locator('#storyPanel').isVisible());
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
     await page.mouse.move(coords[0].x, coords[0].y); await page.mouse.down(); await page.mouse.up();
     check('a tap alone has not painted an eye', !(await state()).flags.includes('eye'));
     await page.mouse.down(); await page.mouse.move(coords[1].x, coords[1].y, { steps: 3 }); await page.mouse.up();
@@ -258,6 +259,8 @@ try {
     check('back keeps the finished eye and leaves the other ready to paint', (await state()).flags.includes('eye') && !(await state()).flags.includes('paint'));
     await page.keyboard.press('e'); await page.waitForSelector('#storyPanel:not([hidden])');
     await page.evaluate(installPad);
+    // Returning from the synthetic blur requires a neutral controller poll before a new A press.
+    await frames(page, 2);
     await padPress(page, 0);
     await until(state, (s) => s.flags.includes('paint'), 'gamepad paints with help');
     // The wake-up scene ends at 18 authored seconds; slow CI can still be making progress after 90 wall seconds.
