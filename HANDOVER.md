@@ -1,5 +1,57 @@
 # Handover
 
+## State (16 November 2026): autonomous playtest and seven isolated QA pull requests
+
+Olov requested a browser playtest at 1920×1080 and 1280×720, a prioritized backlog of 5–8 improvements, and one
+branch/PR per verified outcome. These changes are in separate **open PRs**, each based on updated `main`; none has
+been merged or deployed by this session. No release setting or family asset was changed.
+
+Delivered, in priority order:
+
+1. [#284](https://github.com/olovmelander/spokets-godisbus/pull/284), `fix/adventure-gamepad-focus`: adventure input
+   ignores a gamepad while unfocused/hidden, including background startup; held controls need a neutral poll before
+   they can act again. Three unit regressions. The painting browser fixture now restores the focus it synthetically
+   removed and gives the pad a neutral poll before pressing A.
+2. [#285](https://github.com/olovmelander/spokets-godisbus/pull/285), `fix/kart-background-resume`: background A/B/Start
+   cannot resume Godisracet or move menu focus; returning with a held control still requires a deliberate new press.
+3. [#286](https://github.com/olovmelander/spokets-godisbus/pull/286), `fix/kart-first-visit-records`: a first visit directly
+   to Godisracet establishes only the profile index so records survive reload, without creating adventure progress.
+   Existing saves, deleted profiles, unreadable/newer saves and unavailable storage are guarded by ten new unit tests.
+4. [#287](https://github.com/olovmelander/spokets-godisbus/pull/287), `fix/hud-space-activation`: Space activates a focused
+   native HUD button, as Enter already did, without sending a jump/action to the game. Two keyboard regressions.
+5. [#288](https://github.com/olovmelander/spokets-godisbus/pull/288), `fix/kart-menu-focus`: Tab/Shift+Tab stay on visible
+   menu controls instead of landing on the canvas behind the intro, pause, result or error panel. The test restores
+   its original focus and checks pause independently in four phone/tablet formats, so it composes with #285.
+6. [#289](https://github.com/olovmelander/spokets-godisbus/pull/289), `fix/kart-reduced-motion`: Godisracet's CSS animations
+   follow the saved calm preference as well as the system preference. Item art and counts remain visible.
+7. This PR, `fix/mountain-test-scene-wait`: the Lugnt browser fixture waits for `scene:berget:lift` and released story
+   control before holding Right. Previously it could press during the reveal, whose intentional input release discarded
+   that press. This is a test timing repair, not a change to movement, climbing or the scene.
+
+Validation and scope:
+
+- Each product fix was built/typechecked and inspected after browser reload at both requested sizes before commit;
+  targeted checks captured no new console/runtime/HTTP errors. Keyboard navigation, gamepad focus transitions,
+  rapid pause/resume and resizing were exercised. Gamepads and visibility changes were simulated in the browser.
+- Real keyboard play covered movement, jumping, candy collection, falling into the recovery bubble, returning safely,
+  the garden's coda/end card and continuing into Granskogen. Debug entry points shortened travel to late states;
+  kart result checks deliberately set a finished race. This was not a manual playthrough of every chapter.
+- All six product patches plus this fixture were combined in a detached test worktree. `npm run typecheck` and
+  `npm test` passed: **3367 tests passed, 20 skipped, 352 files passed and 2 skipped** (baseline: 3352 passed).
+  The full `npm run build` passed (JS 736.0 KB of 1000 KB; all size gates), as did `npm run privacy-check`
+  with built-in rules/metadata scanning. Combined browser checks are recorded in the PR body when complete.
+- The mountain fixture was also played at 1280×720 and 1920×1080: the original lift reaches y=31.4 without jumping,
+  recovery bubbles or the optional chocolate prize; draw count remains within 125. The normal 844×390 check is
+  also passed all three checks on this PR's own production build. Screenshots/logs are in the session evidence archive, outside Git;
+  this is not a checkpoint contact-sheet PR.
+- Playwright 1.56.1 / Chromium ran with software WebGL, low tier and public stand-ins. Its slow draw rate is not evidence
+  of device FPS; family models, real-controller hardware and listening quality still need device verification.
+  The baseline's blocked-service-worker/font-preload warnings are recorded separately from errors.
+
+Next: Olov reviews and merges the independent PRs after their GitHub checks finish, then tries the controls on the
+family's devices. No Blender work is needed for these fixes. The next design choice is the compact kart menu's text
+hierarchy at 720p; the album timing observations are carried below in Known bugs/Senare.
+
 ## State (16 November 2026, morning): Godisracet's race screen, nothing over the notices
 
 One cloud session, after PR #282 was merged (branch `claude/graphics-bugs-scenes-yy9rt7`). Olov sent a picture from his
@@ -7179,6 +7231,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Autonomous QA (16 Nov) | Playtest both desktop sizes; 5–8 isolated improvements | One cloud session; six game fixes plus one browser timing repair in seven separate PRs | — / 1 request | 3367 combined tests passed; real play and targeted debug scenarios; no merge/deploy; screenshots outside Git |
 | Godisracet's race screen (16 Nov, morning) | The speed panel hid the notice after a candy bag on a phone held upright | The same cloud session, after #282 | — / 1 message (+1 picture) | The speed panel small at the left of the item slot, the notices clear of every panel, the map and the buttons at every size |
 | The white and the green door everywhere (15 Nov, late night) | The stick in front of the sofa, the two doors in Äventyr 1, the veranda's door as today, the coats clear of the white door | The same cloud session, after #281 | — / 4 messages (+1 picture) | The stick was the old doorway's post (gone with #281); the hall with the green door in the prologue and Stormkvällen, their veranda's door and all out of doors ten further along; the coats, rail and boots clear of both door frames |
 | The background, the jay, the anthill and spruce, the gungfly, one home, Äventyr 2's book (15 Nov, night) | Seven wishes after #280 | The same cloud session; Blender 5.2.4 headless for the forest kit | — / 8 messages | The camera sees as far behind in every wide shot; the jay brings Granskogen's lichen, with Elof's thanks recorded; a wood ant's mound, and the fallen spruce made as the windfalls are, its bark drawn by their shader; Myren's tussocks as Flärken's gungfly; the four homes furnished alike; Äventyr 2's last card opens its own book; the voices' licence row added |
@@ -7254,6 +7307,11 @@ The older list, still true where it is not struck:
 | 0c Characters | 2–4 | begun | 3 / 0 so far | In the same session: first models of the ghost and of Elof, each in two rounds against its pictures, and both in the game from a private pack. H1b, the textures, the library's skeleton and clips are left. On 4 October: first models of Pappa, Mamma, Moa, Bertil and three-year-old Elof, on Olov's computer only, and shown at home and on the summit where the pack has them. The overhaul adds replaceable public rehearsal bodies at every chapter's family help points, shared shrinking and shoulder carrying; that staging does not finish likeness or acting and does not approve publishing new private assets. On 6 October, cloud stage 10 articulates the public player and unifies distance-driven locomotion with the existing named-bone Rig, with separate jump phases and landing. Stage 11 unifies help-point family rigs, adds grounded greetings and carry poses, and supports model head turns/arm spread. A cloud check with the private models then found the named-bone Rig bending arms, elbows, thighs and knees the wrong way; it is fixed. On 7 October, a local Blender pass revises all six main models against the sheets, bakes the ghost's carved wood, refines locomotion and family greetings, and grounds imported boots from their actual geometry. All six private models pass Low/High browser checks; this remains a local revision, with faces, hair and clothes still simpler than the sheets. A second local motion pass adds start/stop/reversal weight, leading-foot jumps, hand paths and carried-arm layering, eased family following and story-driven ghost shoes; 1,414 tests pass. A focused opening-carving pass then adds planted support, a palm-centred knife grip, visible surface cuts, lifted returns and cut-timed shavings. A further family pass gives Sofie, Moa and Bertil distinct timing, precise mug and drawing contacts, purposeful gestures at every later help point, and smoother reunion/carry transitions. A subsequent audit fixes retained seated stances, interrupted-action snaps, abrupt glances, assisted-jump poses, fast-swing resets and history-dependent elbows; swing hands now follow the rope clear of the face. Sitting/standing blends use each rig's actual sole support, removing penetration and endpoint drops. A further contact audit adds accurate 3D pointing and reach/release blending, a visible supported palm lift held through Elof's cue, and chair exit paths for Moa and Emil. All 1,512 tests pass. A residual .432 EL low-reach gap, approximate palm surface support, brief chair contacts at Emil's exit, rig seams, review on a device, H1b and authored clips remain. Local Direct3D/Pixal trials now run offline on the RTX3070 laptop. Pixal60-step and estimated-camera tests give no clear likeness gain; the trained1024 portrait fits8GB and adds detail but also surface noise. The cleaner512 face remains the retained base; the seed17 alternate improves the jaw but not overall likeness, and the precision comparison is recorded above. A complete Blender candidate now combines the FP32-storage portrait/body, reference atlas and game rig. The saved14,782-triangle candidate still needs neck/hair/hand and topology repairs; H1b remains and no game replacement was made. Resume details are at the top of this handover. |
 
 ## Known bugs
+
+- **Autonomous QA (16 November):** in `src/ui/photos.ts`, the album/credits interval keeps advancing when the page is
+  hidden; Previous and the left/right keys do not reset its four-second timer as Next does. These are code-review
+  observations to reproduce in the next browser pass, not changes made here. Godisracet's compact 720p menu uses
+  very small supporting text; a larger type scale needs a deliberate layout pass rather than only larger fonts.
 
 - **The seven of 15 November, night:** all seen with stand-in figures in this computer's renderer only, not on the
   family's devices or with the family's models. On a phone held upright the wide shots now keep their background, but
@@ -7536,6 +7594,10 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- From autonomous QA (16 November): review a more readable Godisracet start menu at 720p (primary choices and larger
+  supporting text); reproduce and repair album auto-advance while hidden and inconsistent timer reset after manual
+  navigation. Validate gamepad reconnection and frame pacing on the family's actual devices.
+
 - From Olov's second Äventyr 2 list (14–15 November), seen but not fixed: Äventyr 2's own chunk is 158.5 of its 160 KB
   gate (raise the gate or split a part out before the next big Äventyr 2 change); the gnawed birch stumps' pale points
   can read as small thatched roofs in Älven's light; Billsta's spruce tops below the brink are flat dark triangles, and a
@@ -7613,6 +7675,11 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 16 november, den autonoma QA-rundan (inga svar behövs för de levererade fixarna):
+
+- **Godisracets meny i 720p:** ska nästa designrunda förenkla startvyn och flytta sekundära val till en egen panel,
+  så att instruktioner och banbeskrivningar kan få större text? Den kompakta nuvarande layouten är kvar i dessa PR:er.
 
 Från den 15 november, sent på natten (allt är byggt; inget hindrar):
 
