@@ -24,7 +24,11 @@ requests #284–#292, the QA round's fixes described in the section below (#291,
   change, and a check in `tests/browser/settings.mjs`: a mouse click on the helper's portrait, then Space, and Elof
   jumps without a second ask for help.
 - **Left open:** #242 (8 November, "What is said is what is seen") was not in Olov's picture and was not touched.
-- **Validation:** `npm run typecheck`; `tests/unit/input.test.ts` (68 tests, the new one failing without the change).
+- **Validation** (on main with the nine and this change): `npm run typecheck`, `npm test` (3370 passed, 20 skipped),
+  `npm run build` (JS 736.1 KB of 1000 KB, size gate ok), `npm run privacy-check`, and the browser suites settings (69
+  checks) and story with `STORY_FILTER=painting` (8). The new unit test fails without the change; the old behaviour was
+  seen in Chromium (a mouse click on the helper, then Space: help step 1, 2, 3 and no jump), the new one too (Space
+  jumps, the helper stays at step 1).
 - **Next:** Olov tries the controls on the family's devices, as the QA section below says. No Blender work is waiting.
 
 ## State (16 November 2026): autonomous playtest and seven isolated QA pull requests
