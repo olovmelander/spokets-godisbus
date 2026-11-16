@@ -16,11 +16,13 @@ requests #284–#292, the QA round's fixes described in the section below (#291,
   they touch: home-console (96 checks), settings (68), story with `STORY_FILTER=painting` (8) and mountain-loop with
   `MOUNTAIN_CASE=lugnt` (3).
 - **Merged:** #284–#292 in order of number, each at the head that was reviewed and green on GitHub.
-- **The follow-up (this branch's PR):** a focused button takes Enter as before, and Space only when its focus shows
-  (`:focus-visible`: the keyboard brought it there); on a button clicked with the mouse Space stays Hoppa
-  (`src/input/input.ts`). Guards: a unit test, which fails without the change, and a check in
-  `tests/browser/settings.mjs`: a mouse click on the helper's portrait, then Space, and Elof jumps without a second ask
-  for help.
+- **The follow-up (this branch's PR):** a focused button takes Enter as before, and Space only when the keyboard brought
+  the focus there; on a button pressed with the mouse or a finger Space stays Hoppa (`src/input/input.ts`). The input
+  remembers how the focus came: a `pointerdown` followed by the `focusin` is a pointer's, and any key in between makes
+  it the keyboard's. `:focus-visible` can't tell them apart here: Chromium makes the focus show at the key's own press,
+  before the game reads it (tried first; the settings suite caught it). Guards: a unit test, which fails without the
+  change, and a check in `tests/browser/settings.mjs`: a mouse click on the helper's portrait, then Space, and Elof
+  jumps without a second ask for help.
 - **Left open:** #242 (8 November, "What is said is what is seen") was not in Olov's picture and was not touched.
 - **Validation:** `npm run typecheck`; `tests/unit/input.test.ts` (68 tests, the new one failing without the change).
 - **Next:** Olov tries the controls on the family's devices, as the QA section below says. No Blender work is waiting.
@@ -7114,7 +7116,7 @@ The older list, still true where it is not struck:
 ## Decisions in effect
 
 - **Space on a focused button (16 November 2026, after #287):** Enter presses a focused HUD button; Space too when the
-  keyboard brought the focus there (it shows). On a button clicked with the mouse Space stays Hoppa.
+  keyboard brought the focus there. On a button pressed with the mouse or a finger Space stays Hoppa.
 - **Godisracet's race screen (Olov, 16 November 2026):** nothing lies over the notices: on a phone held upright the
   speed and the spark meter are a small panel at the left of the item slot, in its row.
 - **The white and the green door in every home (Olov, 15 November 2026):** "Jag vill ha den vita och den gröna dörren

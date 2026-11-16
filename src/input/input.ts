@@ -80,11 +80,6 @@ const MOVE_KEYS: Record<string, Dir> = {
 };
 const VERB_KEYS = [' ', 'e', 'Enter', 'h', 'g', 'Escape', 'p', 'Shift'];
 
-/** Whether an element's focus shows, as it does when the keyboard brought it there. False where a browser can't tell. */
-function focusShows(element: Element): boolean {
-  try { return element.matches(':focus-visible'); } catch { return false; }
-}
-
 function browserEnv(): InputEnv {
   return {
     win: window,
@@ -313,6 +308,13 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     for (const dir of moves.values()) if (dirs.includes(dir)) last = dir;
     return last;
   };
+  // How the focus came to where it is: with a press of the mouse or a finger, or by the keyboard (Tab, or a menu that
+  // moved it after a key). A browser can't tell them apart at a key's press: the press itself makes the focus show.
+  let pointerPressed = false;
+  let focusByPointer = false;
+  on(env.win, 'pointerdown', () => { pointerPressed = true; }, { capture: true });
+  on(env.win, 'keydown', () => { pointerPressed = false; });
+  on(env.doc, 'focusin', () => { focusByPointer = pointerPressed; pointerPressed = false; });
   on(env.win, 'keydown', (ev) => {
     const e = ev as KeyboardEvent;
     if (!enabled || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -332,10 +334,10 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (key !== 'Escape' && active && (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable)) return;
     const menuKey = key === 'Escape' || key === 'p' || key === 'g';
     if (opts.panelOpen?.() && !menuKey) return;
-    // A focused button takes Enter, and Space when the keyboard brought the focus there. A button clicked with the mouse
-    // keeps its focus unseen, and Space stays Hoppa: after a click on the helper's portrait, every jump would otherwise
-    // ask for more help.
-    if (active?.tagName === 'BUTTON' && (key === 'Enter' || (key === ' ' && focusShows(active)))) return;
+    // A focused button takes Enter, and Space when the keyboard brought the focus there. A button pressed with the mouse
+    // or a finger keeps the focus, and Space there stays Hoppa: after a click on the helper's portrait, every jump would
+    // otherwise ask for more help.
+    if (active?.tagName === 'BUTTON' && (key === 'Enter' || (key === ' ' && !focusByPointer))) return;
     if (!dir && !VERB_KEYS.includes(key)) return;
     e.preventDefault();
     if (e.repeat) return;
