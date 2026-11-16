@@ -149,6 +149,8 @@ try {
     await until(state, (s) => s.word === 'lift', 'Lugnt: lift offered');
     await page.keyboard.up('ArrowRight'); await page.keyboard.press('e');
     await until(state, (s) => s.flags.includes('lift'), 'Lugnt: helps the actual ghost');
+    // The reveal releases held controls when it starts. Walk only after it has returned control to the player.
+    await untilPlayed(state, (s) => s.flags.includes('scene:berget:lift') && !s.held, 'Lugnt: watch the ghost lower the lace', 12);
     await page.keyboard.down('ArrowRight');
     // The walk to the lace and the climb take about 5 s of play; the check is that he gets up, not how fast.
     await untilPlayed(state, (s) => s.y > 31.3 && s.grounded, 'Lugnt: existing lace climb', 20);
