@@ -44,6 +44,15 @@ async function until(read, accept, label, timeout = 60000) {
   do { value = await read(); if (accept(value)) return value; await new Promise(done => setTimeout(done, 50)); } while (Date.now() < deadline);
   assert.fail(`${label}: ${JSON.stringify(value)}`);
 }
+async function checkMenuFocus(page, selector) {
+  const previous = await page.evaluateHandle(() => document.activeElement);
+  const last = page.locator(`${selector} button:visible`).last();
+  await last.focus(); await page.keyboard.press('Tab');
+  check(`${selector}: Tab stannar i menyn när sista knappen passeras`, await page.locator(selector).evaluate(menu => menu.contains(document.activeElement)));
+  await page.keyboard.press('Shift+Tab');
+  check(`${selector}: Shift+Tab går tillbaka till sista knappen`, await last.evaluate(button => button === document.activeElement));
+  await previous.evaluate(element => element?.focus()); await previous.dispose();
+}
 function installProbe() {
   window.__testPad = { connected: true, mapping: 'standard', index: 0, id: 'TV-test', axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ pressed: false, value: 0 })) };
   Object.defineProperty(navigator, 'getGamepads', { value: () => [window.__testPad] });
@@ -220,6 +229,7 @@ try {
     await page.waitForFunction(() => window.__kart?.debug().mode === 'intro', null, { timeout: 120000 });
     check('Godisracets egen sida: startsidan med en enda synlig startknapp och en duk', await page.locator('[data-action="start"]:visible').count() === 1 && await page.locator('.kart-canvas').count() === 1);
     check('Godisracets egen sida: cupen och de fyra banorna går att välja', await page.locator('[data-track]').count() === 5);
+    await checkMenuFocus(page, '.kart-intro');
     await page.locator('[data-action="start"]:visible').first().click();
     await page.waitForFunction(() => window.__kart.debug().mode === 'race' && window.__kart.debug().frames > 8, null, { timeout: 120000 });
     check('Godisracets egen sida: loppet startar med åtta kartar', await page.evaluate(() => window.__kart.debug().karts.length) === 8);
@@ -289,6 +299,9 @@ try {
       if (viewport.width < viewport.height) check(`Godisracet, ${name}: farten och sladdmätaren till vänster om godisrutan, i dess rad`,
         boxes['.kart-dashboard'].right < boxes['.kart-slot'].left && Math.abs(boxes['.kart-dashboard'].top - boxes['.kart-slot'].top) < 2);
       assert.deepEqual(raceErrors, [], `Godisracet, ${name}: körfel`);
+      await race.keyboard.press('Escape');
+      await race.waitForFunction(() => window.__kart.debug().mode === 'paused', null, { timeout: 60000 });
+      await checkMenuFocus(race, '.kart-paused');
       await phone.close();
     }
   }

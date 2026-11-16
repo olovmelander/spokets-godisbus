@@ -134,7 +134,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
       map.fillStyle = hex(kart.color); map.fill(); map.strokeStyle = me ? '#ffffff' : '#10222d'; map.lineWidth = me ? 3 : 2; map.stroke();
     }
   }
-  const focusable = () => [...root.querySelectorAll<HTMLElement>('button,input,[tabindex="0"]')].filter(e => !e.closest('[hidden]') && !('disabled' in e && e.disabled) && e.getClientRects().length > 0);
+  const focusable = () => [...root.querySelectorAll<HTMLElement>('button,input,[tabindex="0"]')].filter(e => (mode === 'race' || e !== canvas) && !e.closest('[hidden]') && !('disabled' in e && e.disabled) && e.getClientRects().length > 0);
   function focusAction(action: string): void { [...root.querySelectorAll<HTMLElement>(`.kart-menu:not([hidden]) [data-action="${action}"]`)].find(e => e.getClientRects().length > 0)?.focus(); }
   function show(next: typeof mode): void {
     mode = next; root.dataset.mode = next;
