@@ -223,6 +223,16 @@ try {
     await page.locator('[data-action="start"]:visible').first().click();
     await page.waitForFunction(() => window.__kart.debug().mode === 'race' && window.__kart.debug().frames > 8, null, { timeout: 120000 });
     check('Godisracets egen sida: loppet startar med åtta kartar', await page.evaluate(() => window.__kart.debug().karts.length) === 8);
+    await page.waitForFunction(() => window.__kart.debug().phase === 'racing', null, { timeout: 120000 });
+    await page.evaluate(() => window.__kart.poke({ finishTime: 180, lapTimes: [60, 60, 60], completedLaps: 3, lap: 3 }));
+    await page.waitForFunction(() => window.__kart.debug().mode === 'result');
+    check('Första besöket direkt i Godisracet sparar rekord utan äventyrsframsteg', await page.evaluate(() =>
+      !!localStorage.getItem('godisbus.kart.v3.elof') && localStorage.getItem('godisbus.v1.player.elof') === null));
+    await page.reload();
+    await page.waitForFunction(() => window.__kart?.debug().mode === 'intro', null, { timeout: 120000 });
+    await page.locator('[data-track="garden"]').click();
+    check('Första rekordet visas efter omladdning', (await page.locator('.kart-record').textContent()).includes('3:00'));
+    await page.locator('[data-action="start"]:visible').first().click();
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => window.__kart.debug().mode === 'paused', null, { timeout: 60000 });
     await page.evaluate(installProbe);
