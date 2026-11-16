@@ -127,6 +127,13 @@ describe('the keyboard', () => {
     expect(input.state().hopHeld).toBe(true);
   });
 
+  it.each([['Space', ' '], ['Enter', 'Enter']])('leaves %s to the focused HUD button', (code, value) => {
+    new FakeElement().focus();
+    expect(key('keydown', code, value).defaultPrevented).toBe(false);
+    expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
+    expect(input.state().hopHeld).toBe(false);
+  });
+
   it('gives Använd for E and the helper for H', () => {
     key('keydown', 'KeyE', 'e');
     key('keydown', 'KeyH', 'h');

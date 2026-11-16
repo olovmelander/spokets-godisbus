@@ -327,7 +327,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (key !== 'Escape' && active && (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable)) return;
     const menuKey = key === 'Escape' || key === 'p' || key === 'g';
     if (opts.panelOpen?.() && !menuKey) return;
-    if (key === 'Enter' && active?.tagName === 'BUTTON') return; // Enter presses the focused button
+    if ((key === 'Enter' || key === ' ') && active?.tagName === 'BUTTON') return; // native button activation
     if (!dir && !VERB_KEYS.includes(key)) return;
     e.preventDefault();
     if (e.repeat) return;

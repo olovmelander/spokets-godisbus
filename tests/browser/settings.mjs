@@ -118,6 +118,10 @@ try {
   console.log('settings: saved graphics, live tier changes and keyboard menus');
   {
     const { page, state, info, finish } = await open('graphics', {}, '?debug&standin&tier=low&course=testbana');
+    await page.locator('#pauseBtn').focus();
+    await page.keyboard.press('Space');
+    check('Space activates a focused HUD button instead of jumping', (await state()).paused && await page.locator('#pauseHome').isVisible());
+    await page.keyboard.press('Escape');
     await until(info, (i) => i.models.includes('boot/big-candy'), 'checkpoint model loaded', 30000);
     await page.keyboard.down('ArrowRight');
     await until(state, (s) => s.x > 2.5 && s.candy > 0, 'collect candy before changing graphics');
