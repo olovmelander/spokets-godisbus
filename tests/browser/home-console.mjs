@@ -225,6 +225,26 @@ try {
     check('Godisracets egen sida: loppet startar med åtta kartar', await page.evaluate(() => window.__kart.debug().karts.length) === 8);
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => window.__kart.debug().mode === 'paused', null, { timeout: 60000 });
+    await page.evaluate(installProbe);
+    for (const button of [0, 1, 9]) {
+      await page.evaluate(button => {
+        if (button === 9) { Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange')); }
+        else window.dispatchEvent(new Event('blur'));
+      }, button);
+      const before = await page.evaluate(() => ({ elapsed: window.__kart.debug().elapsed, action: document.activeElement.dataset.action }));
+      await pad(page, 13, true); await pad(page, 13, false);
+      await pad(page, button, true);
+      check(`Ofokuserad kartmeny: knapp ${button} återupptar inte loppet eller flyttar fokus`, await page.evaluate(expected =>
+        window.__kart.debug().mode === 'paused' && window.__kart.debug().elapsed === expected.elapsed && document.activeElement.dataset.action === expected.action, before));
+      await page.evaluate(button => {
+        if (button === 9) { delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); }
+        else window.dispatchEvent(new Event('focus'));
+      }, button); await frames(page);
+      check(`Återkomst: hållen knapp ${button} kräver ett nytt tryck`, await page.evaluate(() => window.__kart.debug().mode) === 'paused');
+      await pad(page, button, false); await pad(page, button, true); await pad(page, button, false);
+      check(`Nytt tryck på ${button} återupptar loppet`, await page.evaluate(() => window.__kart.debug().mode) === 'race');
+      await page.keyboard.press('Escape');
+    }
     await page.locator('.kart-paused [data-action="exit"]').click();
     await page.waitForURL(url => url.pathname === BASE, { timeout: 120000 });
     check('Godisracets egen sida: Tillbaka till huset leder till äventyret', new URL(page.url()).pathname === BASE);

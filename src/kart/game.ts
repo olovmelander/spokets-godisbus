@@ -101,6 +101,7 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
   let raf = 0, previous = 0, frames = 0, lastTenth = -1, lastCountdown = -1, noticeUntil = 0, noticeRank = 0;
   let shownPlace = 0, placeClock = 0, shownItem = '', rouletteTick = -1, shownTier = -1, shownFill = -1, shownCandies = -1, shownRanks = '', hitUntil = 0, visited = 1;
   let padSelect = false, padBack = false, padDirection = 0, throttle = 0;
+  let windowActive = document.hasFocus(), menuPadReady = windowActive;
   let view: ReturnType<typeof createKartView> | undefined;
   let sound: ReturnType<typeof createKartAudio> | undefined;
   let input: ReturnType<typeof createKartInput> | undefined;
@@ -376,16 +377,24 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     }
     drawMap();
   }
-  function menuPad(): { a: boolean; b: boolean; direction: number } {
+  function menuPad(): { a: boolean; b: boolean; start: boolean; direction: number } {
     let pad: Gamepad | null | undefined;
     try { pad = navigator.getGamepads?.().find(p => p?.connected && (!p.mapping || p.mapping === 'standard')); } catch { /* Keyboard and touch still work. */ }
-    return { a: !!pad?.buttons[0]?.pressed, b: !!pad?.buttons[1]?.pressed,
+    return { a: !!pad?.buttons[0]?.pressed, b: !!pad?.buttons[1]?.pressed, start: !!pad?.buttons[9]?.pressed,
       direction: pad?.buttons[13]?.pressed || (pad?.axes[1] ?? 0) > .6 ? 1 : pad?.buttons[12]?.pressed || (pad?.axes[1] ?? 0) < -.6 ? -1 : 0 };
   }
   function pollMenu(): void {
+    if (disposed || !windowActive || document.hidden) return;
+    const { a, b, start, direction } = menuPad();
+    // Input used in another window is not a request to resume or leave this game.
+    if (!menuPadReady) {
+      padSelect = a; padBack = b; padDirection = direction;
+      menuPadReady = !a && !b && !start && !direction;
+      if (menuPadReady) input?.pollMenu();
+      return;
+    }
     input?.pollMenu();
     if (disposed || mode === 'race') return;
-    const { a, b, direction } = menuPad();
     if (direction && direction !== padDirection) {
       const items = focusable().filter(e => e !== canvas), index = items.indexOf(document.activeElement as HTMLElement);
       items[(index + direction + items.length) % items.length]?.focus();
@@ -451,8 +460,12 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
       if (items.length) { event.preventDefault(); items[(current + (event.shiftKey ? -1 : 1) + items.length) % items.length]?.focus(); }
     }, listeners);
     canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); show('error'); }, listeners);
-    window.addEventListener('blur', () => { if (mode === 'race') show('paused'); }, listeners);
-    document.addEventListener('visibilitychange', () => { if (document.hidden && mode === 'race') show('paused'); previous = 0; }, listeners);
+    window.addEventListener('blur', () => { windowActive = false; menuPadReady = false; if (mode === 'race') show('paused'); }, listeners);
+    window.addEventListener('focus', () => { windowActive = true; menuPadReady = false; }, listeners);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { menuPadReady = false; if (mode === 'race') show('paused'); }
+      previous = 0;
+    }, listeners);
     resize = new ResizeObserver(() => { if (!disposed) { view?.resize(root.clientWidth, root.clientHeight); if (mode === 'paused') view?.render(race, 0); } });
     resize.observe(root); view.resize(root.clientWidth, root.clientHeight); view.render(race, 0, 'menu');
     prepareMap(); updateInstructions(); updateChoice(); show('intro'); raf = requestAnimationFrame(frame);
