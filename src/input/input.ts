@@ -43,7 +43,7 @@ export interface InputOptions {
 /** What the page gives the input. Tests pass their own. */
 export interface InputEnv {
   win: EventTarget;
-  doc: EventTarget & { readonly hidden: boolean; readonly activeElement: Element | null };
+  doc: EventTarget & { readonly hidden: boolean; readonly activeElement: Element | null; hasFocus?(): boolean };
   gamepads(): readonly (Gamepad | null)[];
   now(): number;
 }
@@ -359,7 +359,8 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
   // Play: the left stick or the D-pad moves, A is Hoppa, X is Använd, Y calls the helper, Start pauses.
   // Menus: the D-pad or the stick moves the focus, A presses, B goes back. In a choice of several or on a
   // sound's pips, left and right move the choice or the level, and up and down leave it (menus.md row 22).
-  const pad = { x: 0, y: 0, prev: [] as boolean[], hopHeld: false, active: false, navAt: 0, navDir: 0, polledAt: -1 };
+  let windowActive = env.doc.hasFocus?.() ?? true;
+  const pad = { x: 0, y: 0, prev: [] as boolean[], hopHeld: false, active: false, navAt: 0, navDir: 0, polledAt: -1, needsNeutral: !windowActive };
   const deadzone = (v: number) => (Math.abs(v) < 0.22 ? 0 : Math.sign(v) * Math.min(1, (Math.abs(v) - 0.22) / 0.72));
   const focusables = (scope: HTMLElement) =>
     [...scope.querySelectorAll<HTMLElement>('button, input, select, summary, [tabindex]:not([tabindex="-1"])')]
@@ -375,6 +376,7 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     next?.focus();
   };
   function pollPad(now = env.now()): void {
+    if (!windowActive || env.doc.hidden) return;
     if (now - pad.polledAt < 4) return;
     pad.polledAt = now;
     const gp = [...env.gamepads()].find((g) => g && g.connected && g.buttons?.length);
@@ -395,6 +397,13 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
     if (down(PAD.right)) x = 1;
     if (down(PAD.up)) y = 1;
     if (down(PAD.down)) y = -1;
+    // A controller used in another window must be released before it can move Elof or press a menu here.
+    if (pad.needsNeutral) {
+      if (x !== 0 || y !== 0 || gp.buttons.some((_, i) => down(i))) return;
+      pad.needsNeutral = false;
+      pad.prev = [];
+      pad.navDir = 0;
+    }
     if (gp.buttons.some((_, i) => pressed(i)) || x !== 0 || y !== 0) {
       setDevice('pad');
       pad.active = true;
@@ -461,9 +470,11 @@ export function createInput(ui: InputUi, opts: InputOptions = {}, env: InputEnv 
       }
     }
   };
-  on(env.win, 'blur', releaseAll);
+  const suspendPad = () => { releaseAll(); pad.needsNeutral = true; pad.navDir = 0; };
+  on(env.win, 'blur', () => { windowActive = false; suspendPad(); });
+  on(env.win, 'focus', () => { windowActive = true; suspendPad(); });
   on(env.doc, 'visibilitychange', () => {
-    if (env.doc.hidden) releaseAll();
+    if (env.doc.hidden) suspendPad();
   });
 
   return {
