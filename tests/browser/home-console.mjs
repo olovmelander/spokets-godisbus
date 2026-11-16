@@ -44,6 +44,13 @@ async function until(read, accept, label, timeout = 60000) {
   do { value = await read(); if (accept(value)) return value; await new Promise(done => setTimeout(done, 50)); } while (Date.now() < deadline);
   assert.fail(`${label}: ${JSON.stringify(value)}`);
 }
+async function checkMenuFocus(page, selector) {
+  const last = page.locator(`${selector} button:visible`).last();
+  await last.focus(); await page.keyboard.press('Tab');
+  check(`${selector}: Tab stannar i menyn när sista knappen passeras`, await page.locator(selector).evaluate(menu => menu.contains(document.activeElement)));
+  await page.keyboard.press('Shift+Tab');
+  check(`${selector}: Shift+Tab går tillbaka till sista knappen`, await last.evaluate(button => button === document.activeElement));
+}
 function installProbe() {
   window.__testPad = { connected: true, mapping: 'standard', index: 0, id: 'TV-test', axes: [0, 0], buttons: Array.from({ length: 16 }, () => ({ pressed: false, value: 0 })) };
   Object.defineProperty(navigator, 'getGamepads', { value: () => [window.__testPad] });
@@ -220,11 +227,13 @@ try {
     await page.waitForFunction(() => window.__kart?.debug().mode === 'intro', null, { timeout: 120000 });
     check('Godisracets egen sida: startsidan med en enda synlig startknapp och en duk', await page.locator('[data-action="start"]:visible').count() === 1 && await page.locator('.kart-canvas').count() === 1);
     check('Godisracets egen sida: cupen och de fyra banorna går att välja', await page.locator('[data-track]').count() === 5);
+    await checkMenuFocus(page, '.kart-intro');
     await page.locator('[data-action="start"]:visible').first().click();
     await page.waitForFunction(() => window.__kart.debug().mode === 'race' && window.__kart.debug().frames > 8, null, { timeout: 120000 });
     check('Godisracets egen sida: loppet startar med åtta kartar', await page.evaluate(() => window.__kart.debug().karts.length) === 8);
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => window.__kart.debug().mode === 'paused', null, { timeout: 60000 });
+    await checkMenuFocus(page, '.kart-paused');
     await page.locator('.kart-paused [data-action="exit"]').click();
     await page.waitForURL(url => url.pathname === BASE, { timeout: 120000 });
     check('Godisracets egen sida: Tillbaka till huset leder till äventyret', new URL(page.url()).pathname === BASE);
