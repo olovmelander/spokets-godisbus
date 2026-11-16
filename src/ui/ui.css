@@ -324,8 +324,8 @@ textarea {
 .btn-act {
   width: calc(100px * var(--k));
   height: calc(100px * var(--k));
-  right: calc(env(safe-area-inset-right) + 20px + 108px * var(--k));
-  bottom: calc(env(safe-area-inset-bottom) + 20px + 74px * var(--k));
+  right: calc(env(safe-area-inset-right) + 20px + 118px * var(--k));
+  bottom: calc(env(safe-area-inset-bottom) + 20px + 78px * var(--k));
   background-color: var(--paint-green);
 }
 
@@ -379,12 +379,61 @@ body.lefty .btn-hop {
 
 body.lefty .btn-act {
   right: auto;
-  left: calc(env(safe-area-inset-left) + 20px + 108px * var(--k));
+  left: calc(env(safe-area-inset-left) + 20px + 118px * var(--k));
 }
 
 body.lefty .btn-act span {
   right: auto;
   left: calc(100% + 10px);
+}
+
+/* Upright phones keep generous >= 64 px targets while preventing #actBtn from colliding into #stickBase on 320-390 px screens. */
+@media (max-width: 520px) and (orientation: portrait) {
+  .stick-base {
+    left: calc(env(safe-area-inset-left) + clamp(64px, 20vw, 96px));
+    top: calc(100% - env(safe-area-inset-bottom) - 68px);
+    width: 96px;
+    height: 96px;
+    margin: -48px 0 0 -48px;
+  }
+
+  .stick-knob {
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
+  }
+
+  .btn-hop {
+    width: 96px;
+    height: 96px;
+    right: calc(env(safe-area-inset-right) + 16px);
+    bottom: calc(env(safe-area-inset-bottom) + 18px);
+  }
+
+  .btn-act {
+    width: 82px;
+    height: 82px;
+    right: calc(env(safe-area-inset-right) + 100px);
+    bottom: calc(env(safe-area-inset-bottom) + 102px);
+  }
+
+  .btn-act span {
+    max-width: 124px;
+  }
+
+  body.lefty .stick-base {
+    left: calc(100% - env(safe-area-inset-right) - clamp(64px, 20vw, 96px));
+  }
+
+  body.lefty .btn-hop {
+    right: auto;
+    left: calc(env(safe-area-inset-left) + 16px);
+  }
+
+  body.lefty .btn-act {
+    right: auto;
+    left: calc(env(safe-area-inset-left) + 100px);
+  }
 }
 
 /* Större text: what is said, and the words on buttons and in panels, a quarter bigger. */
@@ -1877,6 +1926,8 @@ body.big-text .pause-home .tile { font-size: 20px; }
 .pips {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 40px));
+  align-content: center;
+  min-height: 48px;
   gap: 8px;
   padding: 2px 0;
   border-radius: 12px;
@@ -2365,16 +2416,25 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
     min-height: 52px;
   }
 
-  /* Playing again is the lesser choice here: a plain link under the way on. So is seeing the last adventure's book
-     again, which has just turned by itself: it would push the way home off a phone held sideways. */
+  /* Playing again is the lesser choice here when another forward button exists, while keeping >= 48 px touch height. */
   .panel.end #endAgain,
   .panel-back.adventure-end #endPhotos {
-    min-height: 40px;
+    min-height: 48px;
     background: transparent;
     box-shadow: none;
     font-weight: 400;
     font-size: 16px;
     text-decoration: underline;
+  }
+
+  .panel.end .page-tally:not(:has(:is(#endOnward, #endExplore):not([hidden]))) #endAgain {
+    min-height: 52px;
+    background-color: var(--linden);
+    background-image: var(--woodgrain, none);
+    box-shadow: var(--bevel), 0 4px 0 var(--wood-dark), var(--wood-shadow);
+    font-weight: 700;
+    font-size: inherit;
+    text-decoration: none;
   }
 }
 
@@ -3081,7 +3141,7 @@ body.big-text .story-purpose { font-size: 21px; }
 /* On short landscape screens the bookmark uses the sky between the bag and both utility buttons. */
 @media (max-height: 500px) and (orientation: landscape) {
   .story-purpose {
-    left: calc(env(safe-area-inset-left) + 120px);
+    left: calc(env(safe-area-inset-left) + 136px);
     right: calc(env(safe-area-inset-right) + var(--hud-tools-width) + var(--hud-gap));
     top: var(--hud-row-top);
     width: auto;

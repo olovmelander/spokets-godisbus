@@ -1,7 +1,7 @@
 /* One compact speech card. Lines finish automatically after their reading time and recording;
    Continue is optional, and its button remains separate from the live text region. */
 .dialogue {
-  --dialogue-left: calc(env(safe-area-inset-left) + 120px * var(--k));
+  --dialogue-left: calc(env(safe-area-inset-left) + 136px * var(--k));
   --dialogue-right: calc(env(safe-area-inset-right) + var(--hud-tools-width, 152px) + 12px);
   box-sizing: border-box;
   position: absolute;
