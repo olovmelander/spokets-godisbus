@@ -19,10 +19,13 @@ godisracet ser perfekt ut."
   on a tablet held sideways and a small phone held sideways.
 - **Guards:** `tests/browser/home-console.mjs` opens Godisracet's page at 412×696, 360×640, 667×375 and 1180×820
   (touch), gives the player three cones and puts "Tre kast rakt fram." up, and checks that the notice lies clear of
-  every panel and button, and on a phone held upright that the speed panel is at the left of the item slot, in its row.
-  Run on the build from before the change, it failed at 412×696, as Olov saw it.
-- **Validation:** `npm run typecheck`, `npm test` (3352 passed, 20 skipped), `npm run build` (JS 735.8 KB of 1000 KB, size
-  gate ok), `npm run privacy-check`, and the browser suite `home-console.mjs` (61 checks, the 6 new ones among them).
+  every panel and button (the ranks too), and on a phone held upright that the speed panel is at the left of the item
+  slot, in its row. Run on the build from before the change, it failed at 412×696, as Olov saw it. It measures where
+  everything rests: on the PR's first run it caught the tablet's notice in the middle of its pop (a quarter of a second
+  at up to 1.35 times its size), its box over the map, though the words were clear of it.
+- **Validation:** `npm run typecheck`, `npm test` (3352 passed, 20 skipped), `npm run build` (JS 735.8 KB of 1000 KB,
+  size gate ok), `npm run privacy-check`, the browser suite `home-console.mjs` (61 checks, the 6 new ones among them),
+  and the pull request's checks on GitHub.
 - **Not checked:** on Olov's own phone; seen in Chromium at 412×696, 390×844, 360×640, 915×412, 667×375, 820×1180,
   1180×820 and 1440×900.
 - **Next:** Olov races on his phone, held both ways. No Blender work is waiting.
