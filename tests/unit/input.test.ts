@@ -572,6 +572,36 @@ describe('the gamepad', () => {
     expect(input.state().x).toBe(0);
   });
 
+  it.each(['blur', 'hidden'])('waits for a neutral controller after %s before moving or activating menus', (reason) => {
+    pads = [gamepad([1, 0], [PAD.a])];
+    expect(input.state().x).toBe(1);
+    if (reason === 'blur') fire(win, 'blur');
+    else { doc.hidden = true; fire(doc, 'visibilitychange'); }
+    expect(input.state()).toEqual({ x: 0, y: 0, hopHeld: false });
+    expect(input.consume()).toEqual({ hop: false, act: false, helper: false });
+    focusScope = new FakeElement();
+    const button = new FakeElement();
+    focusScope.children = [button];
+    button.focus();
+    let clicks = 0;
+    button.addEventListener('click', () => clicks++);
+    pads = [gamepad([0, 0], [])]; input.poll();
+    pads = [gamepad([0, 0], [PAD.a, PAD.start])]; input.poll();
+    expect(clicks).toBe(0);
+    expect(menuKeys).toEqual([]);
+    if (reason === 'blur') fire(win, 'focus');
+    else { doc.hidden = false; fire(doc, 'visibilitychange'); }
+    input.poll();
+    expect(clicks).toBe(0);
+    expect(menuKeys).toEqual([]);
+    pads = [gamepad([0, 0], [])]; input.poll();
+    pads = [gamepad([0, 0], [PAD.a])]; input.poll();
+    expect(clicks).toBe(1);
+    focusScope = null;
+    pads = [gamepad([1, 0], [])];
+    expect(input.state().x).toBe(1);
+  });
+
   it('recognises gentle walking as gamepad input and stops when that controller disconnects', () => {
     pads = [gamepad([.4, 0], [])];
     expect(input.state().x).toBeGreaterThan(0);
