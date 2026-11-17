@@ -914,10 +914,10 @@
     "speaker": "morfar",
     "text": "Elof! Så liten du har blivit!",
     "tag": "[bright]",
-    "voiceId": "nEJYXtiAMFuP7hh9yoi4",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:42:12.130Z"
+    "generatedAt": "2026-11-17T15:49:24.004Z"
   },
   "biMormorHere": {
     "speaker": "mormor",
@@ -2960,28 +2960,28 @@
     "speaker": "morfar",
     "text": "Så där. Gå på stegen, lilla vän.",
     "tag": "[gentle]",
-    "voiceId": "nEJYXtiAMFuP7hh9yoi4",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:44:47.192Z"
+    "generatedAt": "2026-11-17T15:49:24.395Z"
   },
   "biLadderLay": {
     "speaker": "morfar",
     "text": "Vänta, jag lägger stegen över diket.",
     "tag": "[urgent]",
-    "voiceId": "nEJYXtiAMFuP7hh9yoi4",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:44:47.379Z"
+    "generatedAt": "2026-11-17T15:49:23.969Z"
   },
   "biToMormor": {
     "speaker": "morfar",
     "text": "Mormor väntar vid ladan med lyktan.",
     "tag": "[kind]",
-    "voiceId": "nEJYXtiAMFuP7hh9yoi4",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:44:48.093Z"
+    "generatedAt": "2026-11-17T15:49:25.140Z"
   },
   "biLantern": {
     "speaker": "mormor",
@@ -3509,10 +3509,10 @@
     "speaker": "morfar",
     "text": "Vi följer med er hem till frukost!",
     "tag": "[bright]",
-    "voiceId": "nEJYXtiAMFuP7hh9yoi4",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:45:17.600Z"
+    "generatedAt": "2026-11-17T15:49:26.278Z"
   },
   "soHome": {
     "speaker": "elof",
@@ -3690,10 +3690,10 @@
     "speaker": "morfar",
     "text": "Elof! Så stor du har blivit!",
     "tag": "[bright]",
-    "voiceId": "nEJYXtiAMFuP7hh9yoi4",
+    "voiceId": "oVRBQOcE5xQoswjGIb1u",
     "model": "eleven_v4",
     "stability": 0.35,
-    "generatedAt": "2026-11-12T21:45:26.000Z"
+    "generatedAt": "2026-11-17T15:49:26.260Z"
   },
   "moThanksAll": {
     "speaker": "elof",
