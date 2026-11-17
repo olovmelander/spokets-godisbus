@@ -1,5 +1,16 @@
 # Handover
 
+## State (17 November 2026): Godisracet biome identity, dusk water, grounding & HUD contrast (`kart/biomes-and-hud-polish`)
+
+Branched `kart/biomes-and-hud-polish` from `main` (`b3e6559`) to make each Godisracet course visually unmistakable from its intro flight and start line, seat hillside/wetland geometry cleanly, and sharpen HUD legibility across dark/sky backdrops:
+
+- **Done:**
+  1. **Start-line & intro biome identity (`src/kart/sim/courses.ts`):** Shifted `bog` (`Myrspången`, zones `[[1, 756], [2, 916]]`) and `mountain` (`Kristallberget`, zones `[[1, 756], [3, 916]]`, `logGate` moved to `780`) so the start grid, overhead gantry, and menu camera showcase zone 2 planks/dusk bog or zone 3 snow/ice/aurora (`ramps[0]` now crystal-blue ice in zone 3), keeping mud pools, caves, and `160 m` Granskogen stretches intact.
+  2. **Alpine sky, ice ramp, water reflection & grounding (`src/kart/visual/{sky,world,scenery}.ts`, `src/kart/render.ts`):** Brightened `AIR[3]` alpine twilight (`stars`, brighter aurora curtains) and exposed `horizonColor` to tint bog water (`createWorld().update(..., skyTint)`); deepened bog water shading (`0x153e49`) and unified the ramp rear color (`icy ? 0x5c82aa : 0x7a4e2d`). Added `World.surfaceAt` sharing the verge shoulder height curve plus downhill slope sampling (`drop`) so alpine boulders and spruces never float above steep snowbanks or verges; kept zone 2 cottages on stilts (`WATER_LEVEL + .55`), boardwalks on outer timber pilings with cross-ties, and cotton grass on mossy shore tussocks instead of deep water; cleared props from stands and skirted grandstand benches cleanly into hillsides; added roadside mountain crystal clusters and up to 7 far alpine peaks.
+  3. **HUD & minimap contrast (`src/kart/kart.css`, `src/kart/game.ts`):** Added dark spruce-teal translucent backing pills to `.kart-map` and `.kart-notice` (`-webkit-text-stroke: 4px #0b2530`) so track titles and course outlines read cleanly over overhead start gantries, clouds, and dark canopies; upgraded the minimap start dot to a `6.5px` `#ffd24a` marker.
+- **Validation:** Verified visually across `tier=high` (`1280×720`, `390×844`) and `tier=low` Playwright captures (0 page errors, `65–162` draw calls high / `87–114` low), plus full `typecheck`, `vitest`, `build` + `size-gate`, `privacy-check`, and `home-console`.
+- **Next:** Review and merge `kart/biomes-and-hud-polish` PR after GitHub CI passes.
+
 ## State (17 November 2026): follow-up UI/UX polish items 1–4 (`ui/ux-round2-polish`)
 
 Branched `ui/ux-round2-polish` from synced `main` (`5549d65`, PR #294) to implement the four recommended post-audit polish improvements:

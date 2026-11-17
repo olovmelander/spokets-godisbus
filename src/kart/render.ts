@@ -136,7 +136,7 @@ export function createKartView(canvas: HTMLCanvasElement, { calm, tier }: KartVi
       chase.update(state.player, mode, step, time);
       track.point(chase.focus, 0, point); focus.set(point.x, point.y, point.z);
       air.update(chase.focus, focus, camera, step, time);
-      world.update(calm ? 0 : time); scenery.update(time, air.dusk);
+      world.update(calm ? 0 : time, air.horizonColor); scenery.update(time, air.dusk);
       effects.update(state, events, step, time, camera, mode);
       renderer.toneMappingExposure = air.exposure;
       renderer.render(scene, camera);

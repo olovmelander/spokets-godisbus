@@ -124,7 +124,8 @@ export async function openKart(options: KartOptions): Promise<KartSession> {
     c.clearRect(0, 0, 240, 240); c.lineJoin = 'round';
     path(); c.strokeStyle = '#10222d'; c.lineWidth = 15; c.stroke();
     path(); c.strokeStyle = '#fff4d6'; c.lineWidth = 7; c.stroke();
-    const start = outline[0]!; c.fillStyle = '#10222d'; c.beginPath(); c.arc(120 + (start.x - mx) * mapScale, 120 + (start.z - mz) * mapScale, 4.5, 0, Math.PI * 2); c.fill();
+    const start = outline[0]!; c.fillStyle = '#ffd24a'; c.beginPath(); c.arc(120 + (start.x - mx) * mapScale, 120 + (start.z - mz) * mapScale, 6.5, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#10222d'; c.lineWidth = 2.2; c.stroke();
   }
   function drawMap(): void {
     if (!map) return;

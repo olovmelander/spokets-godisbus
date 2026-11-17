@@ -23,11 +23,13 @@ export interface World {
   group: THREE.Group;
   /** Height of the terrain at a spot off the road. */
   groundAt(x: number, z: number): number;
+  /** Visible ground height beside the road, matching the verge ribbon across the shoulder before blending into terrain. */
+  surfaceAt(x: number, z: number, distance: number, out: number): number;
   /** Share of each place at a spot off the road. */
   zonesAt(x: number, z: number, out: number[]): number[];
   /** Metres from the nearest part of the road's centreline. */
   roadDistance(x: number, z: number): number;
-  update(time: number): void;
+  update(time: number, skyTint?: THREE.Color): void;
   dispose(): void;
 }
 
@@ -194,19 +196,26 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
     out.multiplyScalar(column === 2 ? .93 : stripe);
     if (column === 2) out.lerp(groundColor(point.x, point.z, other), .5);
   };
+  // Shared shoulder height curve so both the verge mesh and beside-road props land on the exact rendered surface.
+  const surfaceAt = (x: number, z: number, d: number, out: number): number => {
+    const g = groundAt(x, z);
+    if (out >= 7.5) return g;
+    const roadY = track.height(d), bog = zoneWeights(track, d, weights)[2]!;
+    if (out <= -.01) return roadY + .03 - bog * .25;
+    const shelf = roadY + .03 - bog * Math.max(.7, roadY - WATER_LEVEL + .4);
+    if (out <= 0) return shelf;
+    if (out <= 1) return shelf + (g - shelf) * .2 * out;
+    if (out <= 3.5) return shelf + (g - shelf) * (.2 + .5 * (out - 1) / 2.5);
+    const col3 = shelf + (g - shelf) * .7;
+    return col3 + (g - col3) * (out - 3.5) / 4;
+  };
   for (const side of [1, -1]) {
     const edge = (d: number) => side > 0 ? track.roadLeft(d) : track.roadRight(d), wall = (d: number) => side > 0 ? track.wallLeft(d) : track.wallRight(d);
+    const offs = [-.05, 0, 1, 3.5, 7.5];
     const geometry = ribbon(track, {
       lanes: d => [side * (edge(d) - .05), side * wall(d), side * (wall(d) + 1), side * (wall(d) + 3.5), side * (wall(d) + 7.5)],
       color: vergeColor(side),
-      height(x, z, d, _lane, column) {
-        const roadY = track.height(d), bog = zoneWeights(track, d, weights)[2]!;
-        // In the bog the verge is the bank under the water; elsewhere it is level ground beside the road.
-        const shelf = roadY + .03 - bog * Math.max(.7, roadY - WATER_LEVEL + .4);
-        if (column === 0) return roadY + .03 - bog * .25;
-        if (column <= 2) return column === 1 ? shelf : shelf + (groundAt(x, z) - shelf) * .2;
-        return column === 3 ? shelf + (groundAt(x, z) - shelf) * .7 : groundAt(x, z) - .12;
-      },
+      height: (x, z, d, _lane, column) => surfaceAt(x, z, d, offs[column]!) - (column === 4 ? .12 : 0),
     });
     const verge = new THREE.Mesh(geometry, groundMaterial); verge.name = `verge:${side}`; verge.receiveShadow = true; group.add(verge);
   }
@@ -214,7 +223,7 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
   /* ---------------------------------------------------------------- water */
   const water = new THREE.ShaderMaterial({
     transparent: true, fog: true,
-    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { clock: { value: 0 }, deep: { value: new THREE.Color(0x1f5c66) }, sky: { value: new THREE.Color(0xa9d6d0) } }]),
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { clock: { value: 0 }, deep: { value: new THREE.Color(0x153e49) }, sky: { value: new THREE.Color(0x7ea5ad) } }]),
     vertexShader: `varying vec3 vWorld; varying vec3 vView;
       #include <fog_pars_vertex>
       void main() { vec4 world = modelMatrix * vec4(position, 1.); vWorld = world.xyz; vec4 mvPosition = viewMatrix * world; vView = cameraPosition - world.xyz; gl_Position = projectionMatrix * mvPosition;
@@ -226,9 +235,9 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
         vec2 p = vWorld.xz;
         float wave = sin(p.x * .9 + clock * 1.1) * sin(p.y * .8 - clock * .9) + .5 * sin(p.x * 2.3 - p.y * 1.9 + clock * 1.7);
         float glance = pow(1. - clamp(normalize(vView).y, 0., 1.), 3.);
-        vec3 color = mix(deep, sky, clamp(glance * .9 + wave * .06, 0., 1.));
-        color += smoothstep(1.25, 1.45, wave) * .35;
-        gl_FragColor = vec4(color, .86);
+        vec3 color = mix(deep, sky, clamp(glance * .68 + wave * .05, 0., 1.));
+        color += smoothstep(1.25, 1.45, wave) * .22;
+        gl_FragColor = vec4(color, .88);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
         #include <fog_fragment>
@@ -330,7 +339,8 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
         if (lane > ramp.lane) indices.push(p, q, r, q, s, r); else indices.push(p, r, q, q, r, s);
       }
     }
-    const back = [push(ramp.to, ramp.lane + ramp.half, ramp.height, 0x7a4e2d), push(ramp.to, ramp.lane - ramp.half, ramp.height, 0x7a4e2d), push(ramp.to, ramp.lane + ramp.half, -.05, 0x7a4e2d), push(ramp.to, ramp.lane - ramp.half, -.05, 0x7a4e2d)];
+    const backColor = icy ? 0x5c82aa : 0x7a4e2d;
+    const back = [push(ramp.to, ramp.lane + ramp.half, ramp.height, backColor), push(ramp.to, ramp.lane - ramp.half, ramp.height, backColor), push(ramp.to, ramp.lane + ramp.half, -.05, backColor), push(ramp.to, ramp.lane - ramp.half, -.05, backColor)];
     indices.push(back[0]!, back[1]!, back[2]!, back[1]!, back[3]!, back[2]!);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -369,8 +379,12 @@ export function createWorld(track: Track, { low, anisotropy }: { low: boolean; a
   box.dispose(); round.dispose(); ball.dispose();
 
   return {
-    group, groundAt, zonesAt, roadDistance,
-    update(time) { water.uniforms.clock!.value = time; strip.uniforms.clock!.value = time; },
+    group, groundAt, surfaceAt, zonesAt, roadDistance,
+    update(time, skyTint) {
+      water.uniforms.clock!.value = time;
+      strip.uniforms.clock!.value = time;
+      if (skyTint) (water.uniforms.sky!.value as THREE.Color).setHex(0x7ea5ad).lerp(skyTint, .55);
+    },
     /** Materials that no mesh may be using on a course without water or strips still belong to this world. */
     dispose() { water.dispose(); strip.dispose(); },
   };
