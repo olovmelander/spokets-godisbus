@@ -1,5 +1,46 @@
 # Handover
 
+## State (17 November 2026, late evening): a trailer cut from the game itself (`trailer/forsta-trailern`)
+
+Olov: "Skapa en trailer för detta spel!", then "använd full speed på GPU och CPU!", and a version under 30 MB beside
+the master. One session on Olov's computer, from `main` at `0fc4dd8` (#297).
+
+- **Done:** a trailer of 1 min 41 s, 1080p30 H.264 + AAC, made by `scripts/trailer/` (its README says how). Every
+  picture is drawn by the game's renderer from its own simulation, with the robot playing, on the GPU at 3840×2160 and
+  scaled to 1080p. The sound is the game's polska on its own plucked string (`src/audio/music.ts`), arranged for each
+  act, under 15 recorded lines (the narrator, Elof, Moa, Bertil, Mamma, Pappa), with rain, thunder and the ghost's
+  two knocks. Four acts, each cut on its own bar lines:
+  1. Lördagsmorgon: Pappa carves, the carving wakes and takes the bag ("Pappa! Spöket tog min godispåse!"), Elof
+     shrinks, the family kneels round him, "Följ godisspåret, Elof."
+  2. The adventure: the lace swing, the forest's light, Moa's plane, Pappa's seesaw, Bertil's cap, the bog,
+     Mamma's braid, the crane at sunset.
+  3. The heart: "Men varför tog spöket godiset?", Elof and the ghost hauling at the crack, the family under the
+     northern lights, Elof on Pappa's shoulders under the title.
+  4. Stormnatten: lightning at Flärken, the boot boat, the owl, Moa's umbrella, Olympia's football, the bridge, the
+     five torches on the jetty ("Ingen ska behöva vara ensam i mörkret."), and the end card.
+- **Where the files are:** `scratch/trailer/out/elof-trailer-1080p.mp4` (152 MB, 12 Mbit/s), `elof-trailer-720p.mp4`
+  (65 MB) and `elof-trailer-under-30mb.mp4` (28.9 MB, 720p at 2.1 Mbit/s, which Olov asked for, to send; it went
+  to him in the session). They show the family's own models, so they stay on Olov's computer: git ignores `scratch/`,
+  and nothing from there is committed.
+- **How it works:** a Vite dev server serves the game's own modules to Chrome (`channel: 'chrome'`, D3D11 on the RTX
+  5080), and the shot is played frame by frame on the game's clock, so the frames are smooth however long each takes.
+  Only in that server, the High tier's 3.5 MP cap and the pixel ratio's cap of 2 are lifted. The view is 1280×720 CSS
+  pixels at density 3: the camera keeps Elof about 140 px tall only up to 720 px (`elofPx` in `view.ts`), so a
+  3840×2160 CSS view frames three times wider. The family's models stream in after `view.ready`; the capture waits
+  for them, or Moa and Bertil are drawn as stand-in blocks. WebCodecs encodes in the page, and
+  `scripts/trailer/mp4.mjs` writes the MP4 (there is no ffmpeg on this computer). The 25 shots are captured in about
+  80 s, six pages at a time; encoding takes about a minute.
+- **Validation:** Chrome plays all three files with picture and sound and no dropped frames; frames checked at 25
+  points. Loudness −15.3 LUFS integrated, peak −1.0 dBFS (BS.1770, `scripts/trailer/verify.mjs`). `npm run typecheck`,
+  `npm test` (3372 passed, 18 skipped), `npm run build` (size gate ok) and `npm run privacy-check` pass; no file of
+  the game changed. Nobody has listened to the mix yet: its levels are measured, not heard.
+- **Decisions:** the trailer uses the real family models, which are on this computer, as all of Olov's development
+  may (4 November). It is still a likeness render, so it is never committed and no session publishes it. The cut
+  keeps the endings of both adventures out.
+- **Next:** Olov watches and listens. Shots, bars and lines change in `scripts/trailer/cut.mjs`; titles and the mix
+  in `compose-page.js`. When the game changes, `scout.mjs` and `stills.mjs` find the moments again. No Blender work
+  is waiting.
+
 ## State (17 November 2026, evening): Morfar speaks in the narrator's voice (`voices/morfar-som-berattaren`)
 
 Olov: "Jag tycker vi ska ändra rösten på morfar så att han får samma röst som berättaren. Berättaren och morfar har
@@ -7325,6 +7366,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Trailer (17 Nov, late evening) | A trailer for the game | One session on Olov's computer | — / 3 messages | 1 min 41 s cut from the game's own renderer, robot and polska, with 15 recorded lines; 1080p, 720p and under-30-MB files kept out of git; tools in `scripts/trailer/` |
 | Morfar's voice (17 Nov, evening) | Morfar in the narrator's voice | One session on Olov's computer | — / 1 message | Morfar's six lines recorded again in Olov's own voice and levelled; each heard right on its first take |
 | The QA round's nine PRs (16 Nov, midday) | Check #284–#292 and merge them | The same cloud session, after #283 | — / 1 message (+1 picture) | Eight right as they were; #287's Space after a mouse click fixed in a follow-up; all nine merged after the checks on them together |
 | Autonomous QA (16 Nov) | Playtest both desktop sizes; 5–8 isolated improvements | One cloud session; six game fixes plus one browser timing repair in seven separate PRs | — / 1 request | 3367 combined tests passed; real play and targeted debug scenarios; no merge/deploy; screenshots outside Git |
@@ -7771,6 +7813,14 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 17 november, sent på kvällen (trailern är klar; inget hindrar):
+
+- **Trailern:** titta och lyssna på `scratch/trailer/out/elof-trailer-1080p.mp4` (versionen under 30 MB fick du i
+  sessionen).
+  Är längden lagom, 1 min 41 s? Ligger musiken lagom under rösterna? Ljudet är uppmätt men ingen har lyssnat på det.
+- **Var får den visas?** Den visar familjens riktiga modeller. Ska den bara finnas hos familjen, eller får den läggas
+  ut någonstans, till exempel på spelets sida? Ingen session lägger ut den utan ditt ord.
 
 Från den 17 november, kväll (allt är byggt; inget hindrar):
 
