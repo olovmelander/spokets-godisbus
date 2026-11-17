@@ -1,5 +1,25 @@
 # Handover
 
+## State (17 November 2026, evening): Morfar speaks in the narrator's voice (`voices/morfar-som-berattaren`)
+
+Olov: "Jag tycker vi ska ändra rösten på morfar så att han får samma röst som berättaren. Berättaren och morfar har
+ganska liknande röster." One session on Olov's computer, from `main` at `5271fc2` (#296).
+
+- **Done:** `scripts/voices-config.json` gives `morfar` the narrator's voice, `olov-voice` (`oVRBQOcE5xQoswjGIb1u`),
+  in place of Brage (`nEJYXtiAMFuP7hh9yoi4`). `node scripts/record-voices.mjs --record` then recorded exactly Morfar's
+  six lines again, with the recorder's usual method and his own direction tags: `biMorfarHere`, `biLadderLay`,
+  `biLadderOn`, `biToMormor` (Billsta), `soMorfar` (Stormens öga) and `moMorfar` (Morgonen efter). All six passed the
+  speech-to-text check on their first take. `scripts/level-voices.py` levelled them: five at −18.7 to −19.1 LUFS, and
+  the soft "Så där. Gå på stegen, lilla vän." (`biLadderOn`) at −20.7, held there by the −1 dBFS peak limit. The
+  manifest and `scripts/voices-takes.json` are updated. `--dry-run` has nothing left to record. No line's words changed.
+- **Levelling on this computer:** uv now fetches numpy 2.5.5, and Windows application control blocks its
+  `numpy.random` DLL. Pin the version that worked before: `--with "numpy==2.5.4"` in the `level-voices.py` command.
+- **Decision:** Morfar and the narrator share Olov's own voice (Olov, 17 November 2026). Brage stays in the ElevenLabs
+  account but the game no longer uses it.
+- **Validation:** see the PR. The takes are heard by speech-to-text, not by a person: Olov should listen to Morfar in
+  Billsta, Stormens öga and Morgonen efter.
+- **Next:** Olov listens; a line that sounds wrong is taken again with `--only <key>`. No Blender work is waiting.
+
 ## State (17 November 2026): Godisracet biome identity, dusk water, grounding & HUD contrast (`kart/biomes-and-hud-polish`)
 
 Branched `kart/biomes-and-hud-polish` from `main` (`b3e6559`) to make each Godisracet course visually unmistakable from its intro flight and start line, seat hillside/wetland geometry cleanly, and sharpen HUD legibility across dark/sky backdrops:
@@ -7245,6 +7265,8 @@ The older list, still true where it is not struck:
 - **The voice cast (Olov, 6 November 2026):** ElevenLabs, with the voices in the table under "State": four designed
   voices (Elof, Bertil, Mormor, Spöket), four library voices (Pappa, Mamma, Moa, Morfar) and his own voice for the
   narrator. Nothing is recorded with them until he says so.
+- **Morfar in the narrator's voice (Olov, 17 November 2026):** Morfar speaks with Olov's own voice, the narrator's, in
+  place of Brage: "Berättaren och morfar har ganska liknande röster."
 - **The size gate (Olov, 5 November 2026):** 4 MB as served for the whole site, from 3 MB.
 - **The size gate, again (7 November 2026, at Olov's "höj grafikbudgeten rejält om det behövs"):** 4.5 MB as served for
   the whole site, from 4 MB. With the family's models in the deploy the site measured 4282 KB: the four rain-gear
@@ -7303,6 +7325,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Morfar's voice (17 Nov, evening) | Morfar in the narrator's voice | One session on Olov's computer | — / 1 message | Morfar's six lines recorded again in Olov's own voice and levelled; each heard right on its first take |
 | The QA round's nine PRs (16 Nov, midday) | Check #284–#292 and merge them | The same cloud session, after #283 | — / 1 message (+1 picture) | Eight right as they were; #287's Space after a mouse click fixed in a follow-up; all nine merged after the checks on them together |
 | Autonomous QA (16 Nov) | Playtest both desktop sizes; 5–8 isolated improvements | One cloud session; six game fixes plus one browser timing repair in seven separate PRs | — / 1 request | 3367 combined tests passed; real play and targeted debug scenarios; no merge/deploy; screenshots outside Git |
 | Godisracet's race screen (16 Nov, morning) | The speed panel hid the notice after a candy bag on a phone held upright | The same cloud session, after #282 | — / 1 message (+1 picture) | The speed panel small at the left of the item slot, the notices clear of every panel, the map and the buttons at every size |
@@ -7748,6 +7771,13 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 17 november, kväll (allt är byggt; inget hindrar):
+
+- **Morfars röst:** morfar talar nu med berättarens röst, din egen. Hans sex repliker är inspelade på nytt: "Elof! Så
+  liten du har blivit!", "Vänta, jag lägger stegen över diket.", "Så där. Gå på stegen, lilla vän." och "Mormor väntar
+  vid ladan med lyktan." i Billsta, "Vi följer med er hem till frukost!" i Stormens öga och "Elof! Så stor du har
+  blivit!" i Morgonen efter. Låter de rätt? Brage finns kvar i ditt ElevenLabs-konto; ska han tas bort därifrån?
 
 Från den 16 november, den autonoma QA-rundan (inga svar behövs för de levererade fixarna):
 
