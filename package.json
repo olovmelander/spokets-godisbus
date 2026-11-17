@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:browser": "node tests/browser/run.mjs",
     "privacy-check": "node scripts/privacy-check.mjs",
+    "trailer": "node scripts/trailer/capture.mjs && node scripts/trailer/compose.mjs",
     "test:browser:opening": "node tests/browser/opening-story.mjs",
     "test:story-context": "node tests/browser/story-context.mjs",
     "test:browser:forest": "node tests/browser/forest-puzzles.mjs",
