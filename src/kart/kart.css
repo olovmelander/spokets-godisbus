@@ -92,7 +92,7 @@
 .kart-paper .kart-result-storage{font-size:.82em;opacity:.88}
 
 /* The race HUD */
-.kart-hud{position:absolute;left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));display:flex;align-items:flex-start;gap:10px;pointer-events:none}
+.kart-hud{position:absolute;left:max(14px,env(safe-area-inset-left));right:max(14px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));display:flex;align-items:flex-start;gap:14px;pointer-events:none}
 .kart-position,.kart-laps,.kart-candies{background:var(--kart-panel);border:3px solid var(--kart-line);border-radius:18px;box-shadow:0 5px 0 #06181ecc;padding:4px 14px;display:flex}
 .kart-position{align-items:baseline;gap:2px;min-width:92px;justify-content:center;transform:rotate(-3deg)}
 .kart-position>b{font-family:'Playpen Sans',cursive;color:#fff;font-size:2.5em;line-height:1.25;display:inline-block;-webkit-text-stroke:2px #0b2530;paint-order:stroke fill}
@@ -197,7 +197,7 @@
   .kart-lessons span{font-size:.78em}
   .kart-lessons strong{font-size:.88em}
   .kart-game .kart-primary{font-size:1.06em;padding:11px 16px}
-  .kart-hud{gap:6px;left:10px;right:10px}
+  .kart-hud{gap:8px;left:10px;right:10px}
   .kart-position{min-width:66px;padding:2px 8px}
   .kart-position>b{font-size:1.7em}
   .kart-position>span{font-size:.82em}
@@ -232,8 +232,8 @@
   .kart-countdown{top:46%}
 }
 @media(max-height:500px) and (min-width:600px){
-  .kart-menu{padding:10px 18px;gap:14px}
-  .kart-intro{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:16px;padding:10px 18px}
+  .kart-menu{padding:6px 16px;gap:14px}
+  .kart-intro{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:16px;padding:6px 16px}
   .kart-intro>*{margin-block:0}
   .kart-title{flex:0 1 36%;max-width:280px;padding:12px 14px;border-radius:20px;align-self:center;text-align:center}
   .kart-title>div:not(.kart-title-actions){gap:8px;justify-content:center}
@@ -242,18 +242,18 @@
   .kart-course{font-size:1.1em;margin:2px 0 0}
   .kart-title .kart-lore{display:none}
   .kart-guide{display:none}
-  .kart-start-card{flex:1 1 auto;max-width:520px;padding:10px 14px;max-height:calc(100dvh - 20px);overflow:auto;touch-action:pan-y;border-radius:20px}
-  .kart-tracks{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
-  .kart-game .kart-tracks button,.kart-game .kart-tracks button[data-track="cup"]{grid-column:span 2;flex-direction:row;justify-content:center;gap:6px;padding:5px 6px;font-size:.78em;min-height:64px}
+  .kart-start-card{flex:1 1 auto;max-width:520px;padding:6px 14px 8px;max-height:calc(100dvh - 12px);overflow:auto;touch-action:pan-y;border-radius:20px}
+  .kart-tracks{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+  .kart-game .kart-tracks button,.kart-game .kart-tracks button[data-track="cup"]{grid-column:span 2;flex-direction:row;justify-content:center;gap:6px;padding:4px 6px;font-size:.78em;min-height:64px}
   .kart-game .kart-tracks button:nth-of-type(n+4){grid-column:span 3}
   .kart-tracks button span{width:24px;height:24px}
-  .kart-track-tip{font-size:.78em;margin:4px 0 5px;min-height:0}
-  .kart-classes,.kart-modes{gap:5px;margin-top:5px}
+  .kart-track-tip{font-size:.76em;line-height:1.2;margin:1px 0 2px;min-height:0}
+  .kart-classes,.kart-modes{gap:4px;margin-top:2px}
   .kart-game .kart-classes button,.kart-game .kart-modes button{font-size:.82em;padding:4px}
-  .kart-mode-tip{margin:4px 0 5px;font-size:.76em;min-height:0}
+  .kart-mode-tip{margin:1px 0 2px;font-size:.75em;line-height:1.2;min-height:0}
   .kart-autogas{font-size:.82em;min-height:44px}
   .kart-autogas span{display:none}
-  .kart-record{font-size:.78em;margin:4px 0 0}
+  .kart-record{font-size:.76em;line-height:1.2;margin:0}
   .kart-game .kart-primary{padding:8px 12px;font-size:.95em;min-height:44px}
   .kart-game .kart-back{font-size:.82em;min-height:44px;padding:6px 10px}
   .kart-paper{max-height:calc(100dvh - 20px);overflow:auto;padding:10px 18px;max-width:580px}
@@ -267,7 +267,7 @@
   .kart-result-actions{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;margin-top:8px}
   .kart-result-actions button,.kart-result-actions .kart-primary{margin-top:0;width:100%}
   .kart-result-actions .kart-back{width:auto;white-space:nowrap}
-  .kart-hud{top:8px;gap:8px}
+  .kart-hud{top:8px;gap:10px}
   .kart-position>b{font-size:1.9em}
   .kart-laps>b{font-size:1em}
   .kart-slot{width:74px;height:74px;border-radius:20px;border-width:4px;top:0}
@@ -308,6 +308,7 @@
   .kart-title>.kart-title-actions{margin-top:8px}
   .kart-title>.kart-title-actions>.kart-back{min-height:64px}
   .kart-game .kart-tracks button{font-size:.78em}
+  .kart-autogas{min-height:44px}
   .kart-game .kart-steering>button:not(.kart-brake){height:64px}
   .kart-game .kart-drift,.kart-game .kart-item{height:72px}
   .kart-game .kart-brake{min-height:64px}

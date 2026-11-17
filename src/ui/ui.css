@@ -2116,17 +2116,27 @@ details.info-row p {
 
 .ask button {
   min-height: 72px;
-  display: flex;
-  align-items: center;
+  padding: 10px 8px;
+  display: grid;
+  grid-template-columns: auto auto;
   justify-content: center;
-  gap: 10px;
+  align-content: center;
+  justify-items: center;
+  gap: 4px 8px;
   border: 0;
   border-radius: 18px;
 }
 
+.ask button span {
+  grid-column: 1 / -1;
+  font-size: 0.85em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
 .ask svg {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
 }
 
 .ask .yes {
@@ -2136,6 +2146,7 @@ details.info-row p {
 
 .ask .no {
   background-color: var(--linden);
+  color: var(--ink);
 }
 
 /* Speech and optional Continue share one paper card (scene.css). The live region contains only the
@@ -2814,6 +2825,7 @@ body.big-text .title .round { font-size: 18px; }
 .section-head {
   display: grid;
   grid-template-columns: 64px 1fr 64px;
+  column-gap: 10px;
   align-items: center;
 }
 
@@ -2952,6 +2964,10 @@ body.big-text .title .round { font-size: 18px; }
 
 .title #titleStartOverBtn {
   order: 2;
+}
+
+.title #titleStartOverBtn,
+#titlePlayers #startOverBtn {
   min-height: 48px;
   margin-top: 2px;
   padding: 8px 14px;
@@ -2966,7 +2982,9 @@ body.big-text .title .round { font-size: 18px; }
 }
 
 .title #titleStartOverBtn:hover,
-.title #titleStartOverBtn:focus-visible {
+.title #titleStartOverBtn:focus-visible,
+#titlePlayers #startOverBtn:hover,
+#titlePlayers #startOverBtn:focus-visible {
   text-decoration: underline;
   opacity: 1;
 }
@@ -3039,8 +3057,8 @@ body.big-text .title .round { font-size: 18px; }
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
-  color: var(--ink-faint);
-  opacity: 1;
+  color: var(--ink-soft);
+  opacity: 0.72;
 }
 
 .code-wrong {
@@ -3681,6 +3699,13 @@ body.no-candy .bag {
 body.keys-later .hint,
 body:has(:is(#pause, #explore, #photoAlbum, #storyPanel, #memory):not([hidden])) .hint {
   visibility: hidden;
+}
+
+/* Interactive story sheets take full visual focus without top-corner HUD silhouettes peeking behind them. */
+body:has(#storyPanel:not([hidden])) :is(.bag, #helpBtn, #pauseBtn, .story-purpose, .controls, .key-prompt) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* A chapter's card does not hold him: the stick and the buttons stay where his thumbs are. */

@@ -137,8 +137,8 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
              <button class="wide go" id="resumeBtn" type="button">${PLAY}<span>${p.resume}</span></button>
              <div class="ask" id="stuckAsk" hidden>
                <p>${p.stuckAsk}</p>
-               <button class="yes" id="stuckYes" type="button" aria-label="${p.stuckYes}">${CHECK}${BIG_CANDY}</button>
-               <button class="no" id="stuckNo" type="button" aria-label="${p.stuckNo}">${CROSS}${PLAY}</button>
+               <button class="yes" id="stuckYes" type="button">${CHECK}${BIG_CANDY}<span>${p.stuckYes}</span></button>
+               <button class="no" id="stuckNo" type="button">${CROSS}${PLAY}<span>${p.stuckNo}</span></button>
              </div>
              <div class="tiles" id="pauseTiles">
                <button class="tile" id="pauseBagBtn" type="button">${BAG}<span>${p.bag}</span><small id="pauseBagCount"></small></button>
@@ -246,7 +246,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
            <div class="section-head"><button class="round-back" id="codeBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2 id="codeTitle">${sv.code.have}</h2></div>
            <form class="code-form" id="codeForm">
              <p class="code-hint" id="codeHint">${sv.code.hint}</p>
-             <div class="code-words-in" role="group" aria-labelledby="codeTitle" aria-describedby="codeHint">${[1, 2, 3].map((n) => `<input id="${n === 1 ? 'codeInput' : `codeInput${n}`}" class="code-word" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="${n === 3 ? 'go' : 'next'}" maxlength="40" aria-label="${sv.code.word.replace('{n}', String(n))}">`).join('')}</div>
+             <div class="code-words-in" role="group" aria-labelledby="codeTitle" aria-describedby="codeHint">${[1, 2, 3].map((n) => `<input id="${n === 1 ? 'codeInput' : `codeInput${n}`}" class="code-word" type="text" placeholder="Ord ${n}" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="${n === 3 ? 'go' : 'next'}" maxlength="40" aria-label="${sv.code.word.replace('{n}', String(n))}">`).join('')}</div>
              <button class="wide go" id="codeGo" type="submit" data-sound="press">${sv.code.open}</button>
              <p class="code-wrong" id="codeWrong" role="alert" hidden>${sv.code.wrong}</p>
            </form>

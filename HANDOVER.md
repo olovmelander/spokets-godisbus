@@ -1,5 +1,17 @@
 # Handover
 
+## State (17 November 2026): follow-up UI/UX polish items 1–4 (`ui/ux-round2-polish`)
+
+Branched `ui/ux-round2-polish` from synced `main` (`5549d65`, PR #294) to implement the four recommended post-audit polish improvements:
+
+- **Done:**
+  1. **Clear labels on "Jag har fastnat" (`src/ui/shell-html.ts`, `src/ui/ui.css`):** Rendered visible Swedish labels (`Ja, tillbaka` and `Nej, spela vidare`, reusing `sv.pause.stuckYes` / `sv.pause.stuckNo`) cleanly beneath the paired SVG icons inside `#stuckYes` / `#stuckNo` in a 2-row grid (`min-height: 72px`), with explicit contrast (`var(--ink)` on `.ask .no`, `var(--ink-on-paint)` on `.ask .yes`).
+  2. **Clean focus during `#storyPanel` overlays (`src/ui/ui.css`):** Suppressed `.bag`, `#helpBtn`, `#pauseBtn`, `.story-purpose`, `.controls`, and `.key-prompt` whenever `#storyPanel` is open so corner HUD silhouettes never peek behind carving, painting, sharing, or party sheets on landscape mobile.
+  3. **`Spelare` restart pill & `Jag har en kod` clarity (`src/ui/shell-html.ts`, `src/ui/ui.css`):** Styled `#titlePlayers #startOverBtn` to match `#titleStartOverBtn` as a warm `48px` paper-2 pill, added `column-gap: 10px` to `.section-head` so `<-` stays clear of scaled headings, and added `Ord 1` / `Ord 2` / `Ord 3` placeholders (`var(--ink-soft)` at `0.72` opacity) inside `#codeForm`.
+  4. **Godisracet `844×390` fit & `.kart-hud` spacing (`src/kart/kart.css`):** Tightened `.kart-start-card` vertical spacing on short landscape (`max-height: 500px`) while keeping track/class/mode buttons at `>= 64px` (`Automatisk gas` at `44px` full-width label) so the whole card fits cleanly above the fold; widened `.kart-hud` gap (`14px` desktop, `8px` narrow mobile, `10px` short landscape) so `.kart-pop` never brushes `.kart-laps`.
+- **Validation:** Verified with `typecheck`, full `vitest`, production `build` + `size-gate.mjs`, `privacy-check`, `home-console`, `smoke`, `settings`, `profiles`, `story-context`, `story`, and screenshot inspection.
+- **Next:** Review and merge `ui/ux-round2-polish` PR after GitHub CI passes, then device-test on TV, iPad, and phone.
+
 ## State (16 November 2026, evening): full UI, UX & HUD overhaul across Adventure, Memory, dev/menus, and Godisracet (`ui/menus-hud-overhaul`)
 
 Branched `ui/menus-hud-overhaul` from synced `origin/main` (`de9de63`, PR #293). Conducted a comprehensive Playwright + SwiftShader visual & DOM audit across 9 viewports (`1440×900`, `1280×720`, `1180×820`, `820×1180`, `844×390`, `667×375`, `390×844`, `360×640`, `320×568`), covering `index.html`, `godisracet.html`, and `dev/menus.html`, then implemented, visually verified, and PR-gated all improvements in PR #294 (merged to `main` per Olov's instruction after full green CI).
