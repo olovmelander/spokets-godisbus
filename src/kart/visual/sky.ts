@@ -10,7 +10,7 @@ const AIR: readonly Air[] = [
   { top: 0x2b7bdc, horizon: 0xc6eaff, fog: 0xbfe3fb, density: .0026, sun: 0xfff2d2, power: 2.6, sky: 0xd6ecff, ground: 0x8fb56a, hemi: 1.15, stars: 0, aurora: 0, cloud: .9, exposure: 1.02 },
   { top: 0x3b82c6, horizon: 0xffe2a6, fog: 0xecd9a2, density: .0040, sun: 0xffcf85, power: 2.6, sky: 0xe6ecc8, ground: 0x6f7b44, hemi: 1, stars: 0, aurora: 0, cloud: .7, exposure: 1.04 },
   { top: 0x2a3a72, horizon: 0xf5a37a, fog: 0x8da9a6, density: .0085, sun: 0xff9a66, power: 1.6, sky: 0x9fbccb, ground: 0x45625b, hemi: 1, stars: .3, aurora: .25, cloud: .5, exposure: 1.06 },
-  { top: 0x060c28, horizon: 0x2a3d78, fog: 0x1c2854, density: .0060, sun: 0xaec6ff, power: 1.3, sky: 0x86a0e6, ground: 0x3a416c, hemi: 1.15, stars: 1, aurora: 1, cloud: .15, exposure: 1.16 },
+  { top: 0x091233, horizon: 0x385296, fog: 0x24346a, density: .0054, sun: 0xc2d4ff, power: 1.65, sky: 0x9ab3f2, ground: 0x454e7a, hemi: 1.35, stars: 1, aurora: 1, cloud: .15, exposure: 1.2 },
   { top: 0x82b6ff, horizon: 0xffd0e6, fog: 0xffdbeb, density: .0030, sun: 0xfff1e2, power: 2.4, sky: 0xffe8f4, ground: 0xf3b9d1, hemi: 1.15, stars: 0, aurora: 0, cloud: 1, exposure: 1 },
 ];
 const CAVE_AIR: Air = { top: 0x0a0822, horizon: 0x1c1446, fog: 0x160f38, density: .017, sun: 0x8f7bff, power: .12, sky: 0x9b84ff, ground: 0x35d2de, hemi: 1.5, stars: 0, aurora: 0, cloud: 0, exposure: 1.2 };
@@ -46,7 +46,7 @@ export function createAtmosphere(scene: THREE.Scene, parent: THREE.Object3D, tra
         float fold = sin(d.x * 5. + sin(d.z * 3.6 + clock * .13) * 1.7 + clock * .07);
         float curtain = smoothstep(.15, 1., fold) * smoothstep(.1, .32, d.y) * smoothstep(.9, .42, d.y);
         float rays = .62 + .38 * sin(d.x * 64. + d.z * 23. + clock * .45);
-        color += mix(vec3(.18, 1., .58), vec3(.62, .38, 1.), smoothstep(.22, .72, d.y)) * curtain * rays * aurora * .6;
+        color += mix(vec3(.18, 1., .58), vec3(.62, .38, 1.), smoothstep(.22, .72, d.y)) * curtain * rays * aurora * .75;
         gl_FragColor = vec4(color, 1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
@@ -88,6 +88,7 @@ export function createAtmosphere(scene: THREE.Scene, parent: THREE.Object3D, tra
     /** A measure of how dark it is around the player (0 day, 1 night or cave): lamps and sparks shine more. */
     get dusk() { return Math.min(1, (now.stars as number) + cave); },
     get exposure() { return now.exposure as number; },
+    get horizonColor() { return now.horizon as THREE.Color; },
     update(distance: number, focus: THREE.Vector3, camera: THREE.Camera, dt: number, time: number) {
       track.mix(distance, weights);
       const inside = track.inCave(distance, -3) ? 1 : 0;

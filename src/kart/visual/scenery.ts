@@ -4,9 +4,9 @@
  * marks. Everything is merged into a few meshes per patch of ground, so what is out of view costs nothing.
  */
 import * as THREE from 'three';
-import { LAP, type Track } from '../sim/track';
+import { LAP, trackGap, type Track } from '../sim/track';
 import { createBatch, randomFrom } from './kit';
-import type { World } from './world';
+import { WATER_LEVEL, type World } from './world';
 
 const PASTEL = [0xff8fb8, 0x8fd8ff, 0xffd166, 0xa0e77d, 0xc9a7ff, 0xff9f7a] as const;
 const RAINBOW = [0xff5d6c, 0xff9f43, 0xffd23f, 0x4fd1a1, 0x5aa9ff, 0xb78bff] as const;
@@ -35,10 +35,17 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
     if (world.roadDistance(point.x, point.z) < Math.min(clear, wall + out - .6)) return null;
     // Only on ground that is this place's own: no lollipops on the mountain, no spruces in the candy.
     if (out > 3 && world.zonesAt(point.x, point.z, weights)[track.zone(distance)]! < .55) return null;
-    return { x: point.x, y: world.groundAt(point.x, point.z), z: point.z, angle: point.angle, key: chunk(point.x, point.z) };
+    const y = world.surfaceAt(point.x, point.z, distance, out);
+    // Measure downhill drop across ~1.5 m on slopes past the verge so rocks and trunks never overhang in midair.
+    const drop = out < 4 ? 0 : Math.min(1.6, Math.max(0, y - Math.min(
+      world.groundAt(point.x + 1.4, point.z), world.groundAt(point.x - 1.4, point.z),
+      world.groundAt(point.x, point.z + 1.4), world.groundAt(point.x, point.z - 1.4))));
+    return { x: point.x, y, z: point.z, angle: point.angle, key: chunk(point.x, point.z), drop };
   };
+  const nearStand = (distance: number, side: number) =>
+    track.landmarks.some(m => m.kind === 'stand' && (m.side ?? 1) === side && Math.abs(trackGap(distance, m.at)) < 16);
   type Spot = NonNullable<ReturnType<typeof beside>>;
-  type Base = { x: number; y: number; z: number; key: string };
+  type Base = { x: number; y: number; z: number; key: string; drop?: number };
   const part = (geometry: THREE.BufferGeometry, material: THREE.Material, s: Base, at: number[], size: number[] | number, color: number, rotation: number[] = [0, 0, 0], yaw = 0) => {
     const c = Math.cos(yaw), n = Math.sin(yaw);
     batch.add(geometry, material, [s.x + at[0]! * c + at[2]! * n, s.y + at[1]!, s.z - at[0]! * n + at[2]! * c], [rotation[0]!, rotation[1]! + yaw, rotation[2]!], size, color, null, s.key);
@@ -55,7 +62,8 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
 
   /* ---------------------------------------------------------------- trees and stones */
   const spruce = (s: Spot, h: number, snow = false) => {
-    part(taper, solid, s, [0, h * .12, 0], [h * .09, h * .26, h * .09], 0x7a5236);
+    const sink = (s.drop ?? 0) * .7;
+    part(taper, solid, s, [0, (h * .26 - sink) / 2, 0], [h * .09, h * .26 + sink, h * .09], 0x7a5236);
     for (let i = 0; i < 4; i++) {
       const y = h * (.24 + i * .2), r = h * (.36 - i * .075);
       part(cone, facet, s, [0, y + h * .13, 0], [r * 2, h * .34, r * 2], [0x2f7244, 0x286a3f, 0x35804c, 0x2a6e42][i]!, [0, i * 1.3, 0]);
@@ -71,8 +79,9 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
     for (let i = 0; i < fruit; i++) { const a = random() * 6.28, r = h * (.26 + random() * .1); part(bead, shine, s, [Math.sin(a) * r, h * (.52 + random() * .34), Math.cos(a) * r], h * .07, 0xe5383b); }
   };
   const stone = (s: Base, size: number, color: number, cap = 0) => {
-    part(blob, facet, s, [0, size * .3, 0], [size, size * (.6 + random() * .5), size * (.75 + random() * .4)], color, [random(), random() * 6, random()]);
-    if (cap) part(blob, facet, s, [0, size * .52, 0], [size * .8, size * .34, size * .7], cap, [0, random() * 6, 0]);
+    const settle = (s.drop ?? 0) * .75;
+    part(blob, facet, s, [0, size * .18 - settle, 0], [size, size * (.62 + random() * .42), size * (.8 + random() * .35)], color, [random(), random() * 6, random()]);
+    if (cap) part(blob, facet, s, [0, size * .42 - settle, 0], [size * .8, size * .34, size * .7], cap, [0, random() * 6, 0]);
   };
   const toadstool = (s: Spot, h: number) => {
     part(taper, solid, s, [0, h * .3, 0], [h * .3, h * .6, h * .3], 0xfff3dc);
@@ -114,32 +123,40 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
     for (const side of [-1, 1]) {
       const s = beside(d + random() * 3, side, .8 + random() * 9, 7);
       if (!s) continue;
-      const wet = { ...s, y: Math.max(s.y, -2.6) }, kind = random();
-      if (kind < .5) for (let i = 0; i < 5; i++) {       // reeds, with their brown heads
-        const x = (random() - .5) * 1.2, z = (random() - .5) * 1.2, h = 1.5 + random() * 1.4;
+      const wet = { ...s, y: Math.max(s.y, WATER_LEVEL - .48) }, dry = s.y >= WATER_LEVEL - .15, kind = random();
+      if (dry && kind < .55) { // cotton grass on mossy tussocks along the bog bank
+        part(blob, facet, s, [0, .06, 0], [.9, .34, .9], 0x45684f);
+        for (let i = 0; i < 4; i++) {
+          const x = (random() - .5) * .7, z = (random() - .5) * .7, h = .65 + random() * .45;
+          part(stalk, solid, s, [x, h / 2, z], [.03, h, .03], 0x8fa85c); part(bead, solid, s, [x, h, z], .19, 0xfdfdf6);
+        }
+      } else if (kind < .58) for (let i = 0; i < 5; i++) { // reeds emerging out of water and shallows
+        const x = (random() - .5) * 1.2, z = (random() - .5) * 1.2, h = 1.4 + random() * 1.3;
         part(stalk, solid, wet, [x, h / 2, z], [.06, h, .06], 0x7f9a4e, [(random() - .5) * .2, 0, (random() - .5) * .2]); part(stalk, solid, wet, [x, h, z], [.14, .42, .14], 0x6b4a2e);
-      } else if (kind < .72) for (let i = 0; i < 4; i++) { // cotton grass
-        const x = (random() - .5), z = (random() - .5), h = .7 + random() * .5;
-        part(stalk, solid, wet, [x, h / 2, z], [.03, h, .03], 0x8fa85c); part(bead, solid, wet, [x, h, z], .2, 0xfdfdf6);
-      } else if (kind < .86) part(disc, solid, { ...s, y: -1.93 }, [0, 0, 0], [1.2 + random(), .03, 1.2 + random()], 0x5f9e4f, [0, random() * 6, 0]);
-      else stone(wet, .8 + random() * 1.2, 0x7b8478, 0x5f8a4a);
+      } else if (s.y < WATER_LEVEL - .08 && kind < .88) {
+        part(disc, solid, { ...s, y: WATER_LEVEL + .02 }, [0, 0, 0], [1.2 + random(), .04, 1.2 + random()], 0x5f9e4f, [0, random() * 6, 0]);
+      } else if (s.y >= WATER_LEVEL - .25) stone(s, .8 + random() * 1.2, 0x7b8478, 0x5f8a4a);
     }
   });
   along(2, 8, d => {
     for (const side of [-1, 1]) {
       const s = beside(d + random() * 6, side, 7 + random() * 16, 9);
       if (!s) continue;
-      const base = { ...s, y: Math.max(s.y, -2.4) }, h = 4 + random() * 4;   // bare, crooked pines
+      const base = { ...s, y: Math.max(s.y, WATER_LEVEL - .45) }, h = 4 + random() * 4;   // bare, crooked pines
       part(taper, solid, base, [0, h / 2, 0], [.36, h, .36], 0x5a4a3c, [(random() - .5) * .3, 0, (random() - .5) * .3]);
       for (let i = 0; i < 3; i++) { const a = random() * 6.28; part(cyl, solid, base, [Math.sin(a) * .7, h * (.55 + i * .15), Math.cos(a) * .7], [.12, 1.7, .12], 0x5a4a3c, [1 + random() * .4, a, 0]); }
       if (random() < .5) part(blob, facet, base, [0, h + .4, 0], [2.4, 1.3, 2.4], 0x45684f);
     }
   });
-  // Lanterns on the boardwalk's posts light the way through the dusk.
-  along(2, 12, (d, into, left) => {
-    if (into < 24 || left < 6) return;
+  // Timber dock pilings and warm boardwalk lanterns light the way through dusk over the lake.
+  along(2, 12, d => {
+    const nearStart = Math.abs(trackGap(d, 0)) < 10;
     for (const side of [-1, 1]) {
       const wall = side > 0 ? track.wallLeft(d) : track.wallRight(d), s = onRoad(d, side * (wall + .22), -.3);
+      const pile = onRoad(d, side * (wall + .48), -.15);
+      part(cyl, solid, pile, [0, -1.65, 0], [.28, 3.5, .28], 0x5c422a);
+      part(box, solid, pile, [-side * .28, -.05, 0], [.56, .22, .24], 0x6f4f32, [0, 0, 0], point.angle);
+      if (nearStart) continue;
       part(cyl, solid, s, [0, 1.3, 0], [.12, 2.6, .12], 0x7a5a3a); part(box, solid, s, [0, 2.75, 0], [.5, .12, .5], 0x4a3a2c);
       part(box, lit, s, [0, 2.45, 0], [.36, .46, .36], 0xffe09a); lamp(s.x, s.y + 2.45, s.z, 0xffc56b);
     }
@@ -148,27 +165,37 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
   /* ---------------------------------------------------------------- Berget and its caves */
   along(3, low ? 7 : 4.2, d => {
     for (const side of [-1, 1]) {
-      const inCave = track.inCave(d, 4), s = beside(d + random() * 3, side, (inCave ? 5 : 1.8) + random() * 9, inCave ? 11 : 8);
+      if (nearStand(d, side)) continue;
+      const inCave = track.inCave(d, 4), s = beside(d + random() * 3, side, (inCave ? 5 : 2.2) + random() * 9, inCave ? 11 : 8);
       if (!s) continue;
-      if (random() < .55) stone(s, 1.6 + random() * 3.2, pick([0x8b91a3, 0x767c90, 0x9aa1b3]), random() < .6 ? 0xf4f8ff : 0);
+      if (random() < .52) stone(s, 1.6 + random() * 3.0, pick([0x8b91a3, 0x767c90, 0x9aa1b3]), random() < .6 ? 0xf4f8ff : 0);
       else spruce(s, 6 + random() * 6, true);
     }
   });
+  // Glowing roadside crystal clusters along the mountain itself, not only inside the tunnel.
+  const snowy = new THREE.Color(0xf6f9ff);
+  const crystal = (s: Base, size: number, hue: number) => {
+    const settle = (s.drop ?? 0) * .5;
+    for (let i = 0; i < 3; i++) part(gem, lit, s, [(i - 1) * size * .45, size * (.42 + (i === 1 ? .35 : 0)) - settle, (random() - .5) * size * .4], [size * .5, size * (1.2 + (i === 1 ? .7 : 0)), size * .5], i === 1 ? hue : tint.set(hue).multiplyScalar(.75).getHex(), [(random() - .5) * .5, random() * 3, (i - 1) * .35]);
+    lamp(s.x, s.y + size - settle, s.z, hue);
+  };
+  along(3, low ? 22 : 15, d => {
+    if (track.inCave(d, 10) || Math.abs(trackGap(d, 0)) < 10) return;
+    const side = random() < .5 ? -1 : 1;
+    if (nearStand(d, side)) return;
+    const s = beside(d + random() * 4, side, 1.8 + random() * 6, 7.5);
+    if (s) crystal(s, .9 + random() * 1.1, pick([0x5ff0ff, 0xd58bff, 0x7fa6ff, 0xff7fd0]));
+  });
   // Far peaks stand over the mountain wherever there is room for them.
   const peaks: { x: number; z: number }[] = [];
-  if (track.zones.some(span => span.kind === 3)) for (let attempt = 0; attempt < 500 && peaks.length < 4; attempt++) {
-    const x = track.bounds.minX - 30 + random() * (track.bounds.maxX - track.bounds.minX + 60), z = track.bounds.minZ - 30 + random() * (track.bounds.maxZ - track.bounds.minZ + 60);
-    if (world.zonesAt(x, z, weights)[3]! < .6 || world.roadDistance(x, z) < 30 || peaks.some(p => Math.hypot(p.x - x, p.z - z) < 44)) continue;
+  if (track.zones.some(span => span.kind === 3)) for (let attempt = 0; attempt < 600 && peaks.length < 7; attempt++) {
+    const x = track.bounds.minX - 36 + random() * (track.bounds.maxX - track.bounds.minX + 72), z = track.bounds.minZ - 36 + random() * (track.bounds.maxZ - track.bounds.minZ + 72);
+    if (world.zonesAt(x, z, weights)[3]! < .4 || world.roadDistance(x, z) < 24 || peaks.some(p => Math.hypot(p.x - x, p.z - z) < 38)) continue;
     peaks.push({ x, z });
     const s = { x, y: world.groundAt(x, z) - 4, z, key: 'peaks' }, r = 20 + random() * 10, h = 44 + random() * 22;
     part(cone, rock, s, [0, h / 2, 0], [r * 2, h, r * 2], 0x7c8296, [0, random() * 6, 0]); part(cone, rock, s, [0, h * .78, 0], [r * .9, h * .46, r * .9], 0xf6f9ff, [0, random() * 6, 0]);
   }
   // Each cave: a vault of rock over the road, a snowy shell over that, and crystals that light it.
-  const snowy = new THREE.Color(0xf6f9ff);
-  const crystal = (s: Base, size: number, hue: number) => {
-    for (let i = 0; i < 3; i++) part(gem, lit, s, [(i - 1) * size * .45, size * (.5 + (i === 1 ? .35 : 0)), (random() - .5) * size * .4], [size * .5, size * (1.2 + (i === 1 ? .7 : 0)), size * .5], i === 1 ? hue : tint.set(hue).multiplyScalar(.75).getHex(), [(random() - .5) * .5, random() * 3, (i - 1) * .35]);
-    lamp(s.x, s.y + size, s.z, hue);
-  };
   for (const cave of track.caves) {
     const vault = (inner: boolean) => {
       const positions: number[] = [], colors: number[] = [], indices: number[] = [], arc = 12, rows = Math.round((cave.to - cave.from) / 2);
@@ -245,8 +272,13 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
   });
 
   /* ---------------------------------------------------------------- what each course has of its own */
-  const cottage = (s: Spot, yaw: number, wide: number, color: number) => {
-    const deep = wide * .72, tall = wide * .5;
+  const cottage = (spot: Spot, yaw: number, wide: number, color: number) => {
+    const deep = wide * .72, tall = wide * .5, onWater = spot.y < WATER_LEVEL + .3;
+    const s = onWater ? { ...spot, y: WATER_LEVEL + .55 } : spot;
+    if (onWater) {
+      part(box, solid, s, [0, -.12, 0], [wide * 1.25, .24, deep * 1.35], 0x8a5f3c, [0, 0, 0], yaw);
+      for (const x of [-1, 1]) for (const z of [-1, 1]) part(cyl, solid, s, [x * wide * .52, -1.1, z * deep * .56], [.32, 2.2, .32], 0x5c422a, [0, 0, 0], yaw);
+    }
     part(box, solid, s, [0, tall / 2, 0], [wide, tall, deep], color, [0, 0, 0], yaw);
     part(roof, solid, s, [0, tall + wide * .16, 0], [wide * 1.08, wide * .32, deep * .66], 0x4a4f5c, [0, 0, 0], yaw);
     for (const x of [-1, 1]) for (const z of [-1, 1]) part(box, solid, s, [x * wide * .5, tall / 2, z * deep * .5], [.16, tall, .16], 0xfff6e6, [0, 0, 0], yaw);
@@ -270,13 +302,14 @@ export function createScenery(track: Track, world: World, { low, calm }: { low: 
       sailBatch.build(sails, { name: 'sails' });
       sails.position.set(mill.x - Math.sin(yaw) * 2.3, mill.y + 9.3, mill.z - Math.cos(yaw) * 2.3); sails.rotation.y = yaw + Math.PI; group.add(sails); mills.push(sails);
     } else if (mark.kind === 'stand') {
-      // The stand and its crowd of little turned figures.
+      // The stand and its crowd of little turned figures, skirted deep so uphill and downhill slopes stay solid.
       for (let row = 0; row < 3; row++) {
         const s = beside(mark.at, side, 4 + row * 2.2, 8);
         if (!s) continue;
-        part(box, solid, s, [0, .5 + row * .6, 0], [2.2, 1 + row * 1.2, 26], row % 2 ? 0xb5895c : 0xc79b68, [0, 0, 0], s.angle);
-        for (let i = 0; i < 12; i++) {
-          const z = -12 + i * 2.2 + random() * .6, top = 1 + row * 1.2, hue = pick(RAINBOW);
+        const skirt = 2.6 + row * 1.2;
+        part(box, solid, s, [0, 1 + row * 1.2 - skirt / 2, 0], [2.2, skirt, 20], row % 2 ? 0xb5895c : 0xc79b68, [0, 0, 0], s.angle);
+        for (let i = 0; i < 9; i++) {
+          const z = -9 + i * 2.2 + random() * .5, top = 1 + row * 1.2, hue = pick(RAINBOW);
           part(taper, solid, s, [0, top + .45, z], [.7, .9, .7], hue, [0, 0, 0], s.angle); part(bead, solid, s, [0, top + 1.2, z], .62, pick([0xf2c9a0, 0xe6b98c, 0xfbe3c4]), [0, 0, 0], s.angle);
         }
       }

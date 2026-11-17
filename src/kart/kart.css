@@ -124,7 +124,7 @@
 @keyframes kart-ready{50%{box-shadow:0 6px 0 #a8701d,0 0 0 8px #ffd24a66,0 10px 24px #06181e99}}
 .kart-game .kart-pause{margin-left:auto;border-radius:50%;width:52px;height:52px;display:grid;place-items:center;pointer-events:auto;padding:0;border-width:3px;border-color:var(--kart-line)}
 .kart-pause svg{width:24px;height:24px;display:block}
-.kart-map{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 62px);width:136px;height:136px;filter:drop-shadow(0 4px 5px #06181e99)}
+.kart-map{position:absolute;right:max(14px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 62px);width:136px;height:136px;padding:4px;border-radius:18px;background:#0e262e6b;border:2px solid #ffe9a847;filter:drop-shadow(0 4px 5px #06181e99)}
 .kart-ranks{position:absolute;left:max(14px,env(safe-area-inset-left));top:calc(max(12px,env(safe-area-inset-top)) + 78px);list-style:none;margin:0;padding:0;display:none;flex-direction:column;gap:3px;font-size:.875em}
 .kart-ranks li{display:flex;align-items:center;gap:7px;background:#17303bcc;border-radius:12px;padding:2px 12px 2px 5px;width:max-content;text-shadow:0 1px 2px #06181e}
 .kart-ranks li i{width:14px;height:14px;border-radius:50%;border:2px solid #fff7e0}
@@ -132,7 +132,7 @@
 @media(min-width:900px) and (min-height:560px){.kart-ranks{display:flex}}
 .kart-countdown{position:absolute;left:50%;top:45%;margin:-1em 0 0 -2em;width:4em;text-align:center;font-family:'Playpen Sans',cursive;font-size:clamp(4.5rem,13vw,9rem);line-height:2;font-weight:bold;color:#ffd24a;-webkit-text-stroke:5px #7a3d0c;paint-order:stroke fill;text-shadow:0 8px 0 #7a3d0c,0 14px 40px #06181e;pointer-events:none}
 /* Notices sit directly below the item slot on wide screens, clear of ranks, map, start gantry, and countdown. */
-.kart-notice{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;max-width:min(62vw,34rem);top:calc(max(12px,env(safe-area-inset-top)) + 114px);text-align:center;font-family:'Playpen Sans',cursive;color:#fff;font-size:clamp(1.25rem,3vw,1.9rem);line-height:1.3;-webkit-text-stroke:5px #0b2530;paint-order:stroke fill;text-shadow:0 4px 0 #0b2530;pointer-events:none}
+.kart-notice{position:absolute;left:0;right:0;margin-inline:auto;width:fit-content;max-width:min(62vw,34rem);top:calc(max(12px,env(safe-area-inset-top)) + 114px);padding:3px 16px 5px;border-radius:16px;background:#0b212aad;border:2px solid #ffe9a86b;box-shadow:0 4px 16px #06181e88;text-align:center;font-family:'Playpen Sans',cursive;color:#fff;font-size:clamp(1.25rem,3vw,1.9rem);line-height:1.3;-webkit-text-stroke:4px #0b2530;paint-order:stroke fill;text-shadow:0 3px 0 #0b2530;pointer-events:none}
 .kart-notice:empty{display:none}
 .kart-notice[data-rank="3"],.kart-notice[data-rank="4"]{color:#ffe066}
 .kart-dashboard{position:absolute;bottom:max(48px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;background:var(--kart-panel);border:3px solid var(--kart-line);border-radius:20px;padding:8px 18px;white-space:nowrap;box-shadow:0 5px 0 #06181ecc}
