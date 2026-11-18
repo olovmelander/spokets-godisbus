@@ -27,6 +27,7 @@ export const SUITES = [
   ['prologue', 687],
   ['device', 20],
   ['photo-focus', 1],
+  ['big-screen', 2],
   ['colour-pipeline', 74],
   ['nightfall', 88],
   ['village', 286],

@@ -830,6 +830,32 @@ body.lefty .key-prompt {
   display: none;
 }
 
+/* A big screen seen from further off, the television or a desktop monitor: the sheets grow with it, laid out as on a
+   screen of about 1440×800, where the title, Pause and the end page were made to sit. Without this, on a 1080p
+   screen they stayed phone-sized in its corner. The backdrop still covers the whole screen. The memory viewer
+   measures its own flight in screen pixels and is left at its size (it grows with the screen by itself). The
+   painting's finger still lands on its eye under the zoom (tests/browser/big-screen.mjs). */
+@media (min-width: 1800px) and (min-height: 900px) {
+  .panel-back,
+  .message {
+    zoom: 1.25;
+  }
+}
+
+@media (min-width: 2400px) and (min-height: 1300px) {
+  .panel-back,
+  .message {
+    zoom: 1.6;
+  }
+}
+
+@media (min-width: 3600px) and (min-height: 2000px) {
+  .panel-back,
+  .message {
+    zoom: 2.4;
+  }
+}
+
 .panel {
   position: relative;
   box-sizing: border-box;
@@ -1269,7 +1295,8 @@ body.big-text .pause-home .tile { font-size: 20px; }
 }
 
 .style small {
-  font-size: 0.72em;
+  /* As the other settings' descriptions (0.78em): about 14 px, not 13. */
+  font-size: 0.78em;
   line-height: 1.25;
   color: var(--ink-soft);
 }
@@ -1681,6 +1708,8 @@ body.big-text .pause-home .tile { font-size: 20px; }
 .album-chapter {
   min-width: 0;
   display: grid;
+  /* Cards side by side share a height: the name stays at the top of each, not lower where the other has more. */
+  align-content: start;
   gap: 8px;
   padding: 8px 10px 10px;
   border-radius: 8px 10px 9px 11px;
@@ -2511,6 +2540,12 @@ body.big-text .bubble b { font-size: calc(17.5px * var(--k)); }
     font-size: inherit;
     text-decoration: none;
   }
+}
+
+/* Spela igen's picture, smaller than the forward buttons' where it is the lesser, underlined choice. */
+.panel.end #endAgain svg {
+  width: 24px;
+  height: 24px;
 }
 
 /* The last adventure's card: its book again comes after the map of the chapters and the way home, not before them. */
@@ -3706,6 +3741,23 @@ body:has(#storyPanel:not([hidden])) :is(.bag, #helpBtn, #pauseBtn, .story-purpos
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+}
+
+/* Every other sheet too: the sheet's own ✕ and its backdrop close it, so play controls and corner buttons that lie
+   under the backdrop can't be pressed, and on a phone held sideways they only peeked out, cut, at its sides. The bag
+   stays where it is clear of the sheet (above it on an upright phone), with the count Pause shows on it. */
+body:has(:is(#pause, #explore, #photoAlbum, #memory, #endCard):not([hidden])) :is(#helpBtn, #pauseBtn, .story-purpose, .controls, .key-prompt, .finger-ring, .follow-arrow) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  body:has(:is(#pause, #explore, #photoAlbum, #memory, #endCard):not([hidden])) .bag {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
 }
 
 /* A chapter's card does not hold him: the stick and the buttons stay where his thumbs are. */
