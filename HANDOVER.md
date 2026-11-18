@@ -48,9 +48,11 @@ session, from `main` at `0fc4dd8` (#297).
 - **Decisions:** big screens scale the sheets uniformly with CSS `zoom` rather than by new layouts, so every sheet keeps
   the layout it was checked in. Something in a sheet that sets a position from screen pixels must divide by the zoom
   (the memory viewer does that kind of measuring, which is why it is not zoomed).
-- **Validation:** `npm run typecheck`, `npm test`, `npm run build` (size gate), `npm run privacy-check`, and the browser
-  suites big-screen, settings, photo-focus, photos, album, profiles, home-console and story
-  (`STORY_FILTER=painting`).
+- **Validation:** `npm run typecheck`; `npm test` (3399 passed, 20 skipped; 29 of them new); `npm run build` (JS 736.2 KB
+  of 1000 KB, size gate ok); `npm run privacy-check`; the browser suites big-screen (6 checks), settings (69),
+  photo-focus (4), photos (20), album, profiles (19), home-console (96) and story with `STORY_FILTER=painting` (8). The
+  painting suite once timed out clicking Fortsätt in the morning scene while other suites loaded the machine; alone,
+  on the final build, it passed.
 - **Not checked:** on the family's devices or a real television; with the family's models (stand-ins only). The zoom
   needs a browser with standard CSS `zoom` (Chrome, Edge, Safari, Firefox 126 and later; a TV's Chromium browser has it).
 - **Next:** Olov opens the game and Godisracet on the television and a computer and says whether the sheets are the
