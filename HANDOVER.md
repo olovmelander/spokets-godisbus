@@ -21,11 +21,13 @@ session, from `main` at `0fc4dd8` (#297).
   2. **A guard for the zoom** (`tests/browser/big-screen.mjs`, a new suite without WebGL, about 10 s): the title's
      card keeps its 760 px at 1440×900 and grows at 1920×1080 and 2560×1440, in view, and the painting's stroke starts
      where the finger touches on each (Chromium's `getScreenCTM()` follows the zoom; checked, nothing to change there).
-  3. **No HUD peeking round a sheet** (`src/ui/ui.css`). Under Pause, the photos, Utforska vidare, a memory and the
-     end page, the help and pause buttons, "Just nu", the stick, Hoppa and Använd fade out, as they already did
-     under the story's sheets: on a phone held sideways they showed cut at the sheet's sides, and they could not be
-     pressed under the backdrop anyway. The bag stays where it is clear of the sheet (above Pause on an upright
-     phone, with the count Pause shows), and fades on a short landscape screen, where the sheet covered it.
+  3. **No HUD peeking round a sheet** (`src/ui/ui.css`). Under Pause, the photos, Utforska vidare and the end page,
+     the help and pause buttons, "Just nu", the stick, Hoppa and Använd fade out, as they already did under the
+     story's sheets: on a phone held sideways they showed cut at the sheet's sides, and they could not be pressed
+     under the backdrop anyway. The bag stays where it is clear of the sheet (above Pause on an upright phone, with
+     the count Pause shows), and fades on a short landscape screen, where the sheet covered it. Not under a memory:
+     its dark backdrop already covers the screen, and the HUD's fade kept running while an interrupted memory must
+     hold every movement still (`memory-presentation` caught it on the PR's first CI run).
   4. **The credits' pages turning by themselves** (`src/ui/photos.ts`; the known bug from the 16 November QA). They no
      longer turn while the page is hidden, and Previous, Next and the arrow keys each give the page they turn to its
      full 4 s. `tests/unit/photo-credits.test.ts` (fails on the old code in three of its five cases).
@@ -52,7 +54,9 @@ session, from `main` at `0fc4dd8` (#297).
   of 1000 KB, size gate ok); `npm run privacy-check`; the browser suites big-screen (6 checks), settings (69),
   photo-focus (4), photos (20), album, profiles (19), home-console (96) and story with `STORY_FILTER=painting` (8). The
   painting suite once timed out clicking Fortsätt in the morning scene while other suites loaded the machine; alone,
-  on the final build, it passed.
+  on the final build, it passed. In this cloud container `memory-presentation`'s check "interruption freezes a
+  picture fade" fails on unchanged `main` too (its Chromium is a newer build than the pinned one); on GitHub it
+  passes.
 - **Not checked:** on the family's devices or a real television; with the family's models (stand-ins only). The zoom
   needs a browser with standard CSS `zoom` (Chrome, Edge, Safari, Firefox 126 and later; a TV's Chromium browser has it).
 - **Next:** Olov opens the game and Godisracet on the television and a computer and says whether the sheets are the

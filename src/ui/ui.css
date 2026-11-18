@@ -3745,15 +3745,17 @@ body:has(#storyPanel:not([hidden])) :is(.bag, #helpBtn, #pauseBtn, .story-purpos
 
 /* Every other sheet too: the sheet's own ✕ and its backdrop close it, so play controls and corner buttons that lie
    under the backdrop can't be pressed, and on a phone held sideways they only peeked out, cut, at its sides. The bag
-   stays where it is clear of the sheet (above it on an upright phone), with the count Pause shows on it. */
-body:has(:is(#pause, #explore, #photoAlbum, #memory, #endCard):not([hidden])) :is(#helpBtn, #pauseBtn, .story-purpose, .controls, .key-prompt, .finger-ring, .follow-arrow) {
+   stays where it is clear of the sheet (above it on an upright phone), with the count Pause shows on it. Not under a
+   memory: its own dark backdrop covers the whole screen already, and a fade starting there would go on running while
+   an interrupted memory holds every movement still (tests/browser/memory-presentation.mjs). */
+body:has(:is(#pause, #explore, #photoAlbum, #endCard):not([hidden])) :is(#helpBtn, #pauseBtn, .story-purpose, .controls, .key-prompt, .finger-ring, .follow-arrow) {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
 
 @media (orientation: landscape) and (max-height: 600px) {
-  body:has(:is(#pause, #explore, #photoAlbum, #memory, #endCard):not([hidden])) .bag {
+  body:has(:is(#pause, #explore, #photoAlbum, #endCard):not([hidden])) .bag {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
