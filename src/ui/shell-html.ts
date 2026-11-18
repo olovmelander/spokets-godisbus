@@ -262,7 +262,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
            <div class="section-head"><button class="round-back" id="playersBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2>${sv.players.title}</h2><button class="wide small players-edit" id="playersEdit" type="button" aria-pressed="false">${sv.players.edit}</button></div>
            <div id="playerList"></div>
            <button class="wide" id="newPlayerBtn" type="button">${PLAYER_ADD}<span>${sv.players.new}</span></button>
-           <button class="wide small" id="startOverBtn" type="button" hidden>${sv.start.over}</button>
+           <button class="wide small" id="startOverBtn" type="button" hidden>${AGAIN}<span>${sv.start.over}</span></button>
          </div>
          <div id="titleNewPlayer" hidden>
            <div class="section-head"><button class="round-back" id="newPlayerBack" type="button" aria-label="${sv.players.back}">${BACK}</button><h2>${sv.players.new}</h2></div>
@@ -306,7 +306,7 @@ export function shellHtml(helper: 'ghost' | 'jay' = 'jay'): string {
            <button class="wide go" id="endOnward" type="button" hidden>${PLAY}<span>${sv.end.onward}</span></button>
            <button class="wide go" id="endExplore" type="button" hidden>${FOLDED_MAP}<span>${sv.explore.title}</span></button>
            <button class="wide" id="endHome" type="button" hidden>${HOME}<span>${sv.pause.home}</span></button>
-           <button class="wide" id="endAgain" type="button"><span>${sv.end.again}</span></button>
+           <button class="wide" id="endAgain" type="button">${AGAIN}<span>${sv.end.again}</span></button>
            <p class="code" id="endCode" hidden><span>${sv.code.next}</span><b id="endCodeWords"></b></p>
          </div>
        </div>

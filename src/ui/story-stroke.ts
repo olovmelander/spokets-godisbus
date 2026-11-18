@@ -9,6 +9,8 @@ import { carveStrokeProgress, eyeCentres, finishEyeStroke, guidedCarve, guidedEy
 const BRUSH = use('brush');
 const KNIFE = use('knife');
 
+/** The painting stands its figure behind the kitchen table's edge (#paintTable): the picture's foot is the table it
+ *  stands on, not a cut through the ghost's hands and bag. */
 export const strokeHtml = `<div id="strokeBody" hidden>
   <svg id="strokePicture" viewBox="0 0 320 220" role="img" aria-label="${sv.painting.picture}">
     <g id="paintingPicture">
@@ -22,6 +24,12 @@ export const strokeHtml = `<div id="strokeBody" hidden>
       <path d="M112 144 122 176 117 200 99 184 104 157M206 145 194 175 199 202 219 185 214 158" fill="#d4b88a"/>
       <path d="M143 113q18 15 37-2" fill="none" stroke="#554332" stroke-width="3.5" stroke-linecap="round"/>
       <path d="M139 150 144 174 141 193M170 154 175 185M99 67 97 85M219 63 226 83" fill="none" stroke="#b99a6b" stroke-width="1.5" opacity=".65"/>
+    </g>
+    <g id="paintTable">
+      <path d="M-10 201Q160 195 330 201V213H-10Z" fill="#c99f6c"/>
+      <path d="M-10 201Q160 195 330 201" fill="none" stroke="#ecca92" stroke-width="2.5"/>
+      <path d="M26 207q52-3 104 0m48 1q58-4 116 0" fill="none" stroke="#ad8256" stroke-width="1.5" opacity=".8"/>
+      <path d="M-10 213H330V230H-10Z" fill="#9c7048"/>
     </g>
     <circle id="paintEye0" cx="116" cy="86" r="21" fill="#373031" opacity=".15"/>
     <circle id="paintEye1" cx="204" cy="86" r="21" fill="#373031" opacity=".15"/>

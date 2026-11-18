@@ -313,3 +313,8 @@
   .kart-game .kart-drift,.kart-game .kart-item{height:72px}
   .kart-game .kart-brake{min-height:64px}
 }
+/* A 1080p television or a big monitor: the menus grow with the screen, laid out as on the 720p screen they were made
+   for (about 1440×800), so their words read from the sofa. The race's own HUD keeps its size. */
+@media(min-width:1800px) and (min-height:900px){.kart-menu{zoom:1.25}}
+@media(min-width:2400px) and (min-height:1300px){.kart-menu{zoom:1.6}}
+@media(min-width:3600px) and (min-height:2000px){.kart-menu{zoom:2.4}}

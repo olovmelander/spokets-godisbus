@@ -58,6 +58,15 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     if (turning !== null) doc.defaultView?.clearInterval(turning);
     turning = null;
   };
+  /**
+   * The credits turn every 4 s while the book lies open and the page can be seen, never on its last page. Each manual
+   * step restarts the wait, so the page he turned to gets its full 4 s; a hidden page waits until it is seen again.
+   */
+  const startTurning = () => {
+    stopTurning();
+    if (credits && !panel.hidden && !doc.hidden && index + 1 < count()) turning = doc.defaultView?.setInterval(turn, 4000) ?? null;
+  };
+  doc.addEventListener('visibilitychange', () => { if (doc.hidden) stopTurning(); else startTurning(); });
   function draw(): void {
     const shown = pages();
     const first = shown[index * perPage()];
@@ -101,8 +110,15 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     draw();
     byId('photoNext').focus();
     // Every 4 s a page turns by itself; a tap turns it sooner.
-    stopTurning();
-    if (credits && count() > 1) turning = doc.defaultView?.setInterval(turn, 4000) ?? null;
+    startTurning();
+  }
+  /** One page back or on, by hand: the arrows, the keys. Forward in the credits turns the page as the book does. */
+  function step(by: -1 | 1): boolean {
+    if (by < 0 ? index <= 0 : index + 1 >= count()) return false;
+    if (by > 0 && credits) turn();
+    else { index += by; draw(); }
+    startTurning();
+    return true;
   }
   function back(): void {
     if (panel.hidden) return;
@@ -121,23 +137,17 @@ export function createPhotoAlbum(doc: Document, store: PhotoStore, player: strin
     source = focus = null;
     focusMoment = null;
   }
-  byId('photoPrevious').addEventListener('click', () => { if (index > 0) { index--; draw(); } });
+  byId('photoPrevious').addEventListener('click', () => { step(-1); });
   byId('photoNext').addEventListener('click', () => {
-    if (index + 1 < count()) {
-      if (credits) {
-        // A tap turns the page now, and the next one waits its full 4 s.
-        stopTurning();
-        turn();
-        if (index + 1 < count()) turning = doc.defaultView?.setInterval(turn, 4000) ?? null;
-      } else { index++; draw(); }
-    }
-    else { const completedCredits = credits; back(); if (completedCredits) onCreditsDone?.(); }
+    // A tap turns the page now, and the next one waits its full 4 s.
+    if (step(1)) return;
+    const completedCredits = credits; back(); if (completedCredits) onCreditsDone?.();
   });
   byId('photoClose').addEventListener('click', back);
   panel.addEventListener('click', (event) => { if (event.target === panel) back(); });
   panel.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowLeft' && index > 0) { index--; draw(); event.preventDefault(); }
-    if (event.key === 'ArrowRight' && index + 1 < count()) { index++; draw(); event.preventDefault(); }
+    if (event.key === 'ArrowLeft' && step(-1)) event.preventDefault();
+    if (event.key === 'ArrowRight' && step(1)) event.preventDefault();
   });
 
   async function refresh(): Promise<void> {

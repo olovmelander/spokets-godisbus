@@ -4,9 +4,21 @@
  */
 import * as THREE from 'three';
 import { TOP_SPEED, type Kart } from '../sim/kart';
-import type { Track } from '../sim/track';
+import { LAP, type Track } from '../sim/track';
 
 export type CameraMode = 'menu' | 'race' | 'result';
+
+/**
+ * How much the menu's flight rises over the start gate, by the lap distance it tours. At its usual 7.5 m the camera
+ * met the bunting that hangs under the gate's crossbar (about 5.8 to 7.25 m, scenery.ts), and for a moment each lap
+ * the dark pennants filled the bottom of the picture behind the menu. Rising about 4 m just before the gate, it looks
+ * down over the bunting instead.
+ */
+export function gateLift(tour: number): number {
+  // The camera rides 7 m behind the point it tours; its own distance past the gate, -LAP/2..LAP/2.
+  const past = ((((tour - 7) % LAP) + LAP * 1.5) % LAP) - LAP / 2;
+  return 4 * Math.exp(-((past + 4) ** 2) / 72);
+}
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const ease = (rate: number, dt: number) => 1 - Math.exp(-rate * Math.max(0, dt));
 const wrap = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle));
@@ -33,7 +45,7 @@ export function createChaseCamera(camera: THREE.PerspectiveCamera, track: Track,
         // A slow flight round the whole course, looking down the road ahead.
         tour = calm ? 40 : time * 15;
         track.point(tour, 0, point);
-        position.set(point.x - Math.sin(point.angle) * 7, point.y + 7.5, point.z - Math.cos(point.angle) * 7);
+        position.set(point.x - Math.sin(point.angle) * 7, point.y + 7.5 + gateLift(tour), point.z - Math.cos(point.angle) * 7);
         track.point(tour + 24, 0, point); target.set(point.x, point.y + 1, point.z);
         if (!ready) { camera.position.copy(position); ready = true; }
         camera.position.lerp(position, ease(2, step)); camera.up.set(0, 1, 0); camera.lookAt(target);

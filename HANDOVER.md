@@ -1,5 +1,67 @@
 # Handover
 
+## State (18 November 2026): UX, UI, HUD and menu audit (`ccr-dfffaef9-rm8yrr`)
+
+Olov: "In this game. I want you to do an audit of the UX, UI, Huds, menues and make sure everything is user friendly,
+looks visually stunning and that this game is a really good experience and implemented in a good way." One cloud
+session, from `main` at `0fc4dd8` (#297).
+
+- **How it was audited.** Every view of `dev/menus.html` at 390×844, 844×390, 780×360, 1180×820, 1440×900 and
+  1920×1080 (screenshots and a DOM check of each: targets under 44 px, clipped and tiny text, buttons overlapping,
+  page scroll); the real game (title over the world, play with touch and keys, the helper, Pause and its pages) at
+  390×844, 844×390, 1180×820, 1280×720 and 1920×1080; Godisracet (start menu, a track chosen, countdown, race HUD,
+  pause, results) at 1280×720, 1920×1080, 390×844 and 844×390. Software rendering, stand-in figures, no page errors.
+- **Done:**
+  1. **Sheets on big screens** (`src/ui/ui.css`, `src/kart/kart.css`). At 1920×1080 the title was a 760×280 card in the
+     screen's left corner, and Pause, the settings, the end page and Godisracet's menus kept their phone and 720p
+     sizes. On a screen at least 1800×900 the sheets (`.panel-back`, `.message`) and Godisracet's `.kart-menu` now
+     grow by CSS `zoom` (1.25; 1.6 from 2400×1300; 2.4 from 3600×2000), laid out as on a screen of about 1440×800.
+     The memory viewer already grows with the screen and measures its own flight, so it is left as it was; the
+     race's HUD keeps its size. Up to 1799 px wide nothing changes.
+  2. **A guard for the zoom** (`tests/browser/big-screen.mjs`, a new suite without WebGL, about 10 s): the title's
+     card keeps its 760 px at 1440×900 and grows at 1920×1080 and 2560×1440, in view, and the painting's stroke starts
+     where the finger touches on each (Chromium's `getScreenCTM()` follows the zoom; checked, nothing to change there).
+  3. **No HUD peeking round a sheet** (`src/ui/ui.css`). Under Pause, the photos, Utforska vidare and the end page,
+     the help and pause buttons, "Just nu", the stick, Hoppa and Använd fade out, as they already did under the
+     story's sheets: on a phone held sideways they showed cut at the sheet's sides, and they could not be pressed
+     under the backdrop anyway. The bag stays where it is clear of the sheet (above Pause on an upright phone, with
+     the count Pause shows), and fades on a short landscape screen, where the sheet covered it. Not under a memory:
+     its dark backdrop already covers the screen, and the HUD's fade kept running while an interrupted memory must
+     hold every movement still (`memory-presentation` caught it on the PR's first CI run).
+  4. **The credits' pages turning by themselves** (`src/ui/photos.ts`; the known bug from the 16 November QA). They no
+     longer turn while the page is hidden, and Previous, Next and the arrow keys each give the page they turn to its
+     full 4 s. `tests/unit/photo-credits.test.ts` (fails on the old code in three of its five cases).
+  5. **A picture on every button a child presses** (`src/ui/shell-html.ts`). "Spela igen" on the end page and "Börja om
+     från början" on the players' page had only words (plan §6.10); they have the replay arrow now, smaller on the end
+     page where "Spela igen" is the lesser, underlined choice. `tests/unit/shell-icons.test.ts` checks nineteen of them.
+  6. **The painting's picture** (`src/ui/story-stroke.ts`). The ghost was cut off by a hard line through its hands and
+     bag. The kitchen table's edge now runs in front of it, so the picture's foot is the table it stands on.
+  7. **Godisracet's flight behind the menu** (`src/kart/visual/camera.ts`). At its usual 7.5 m the camera met the
+     bunting under the start gate's crossbar, and each lap the dark pennants filled the bottom of the screen behind
+     the menu (seen at 1920×1080). It now rises about 4 m over the gate (`gateLift`).
+     `tests/unit/kart-menu-camera.test.ts` flies it over the gate on all four courses (it fails without the lift).
+  8. Small: the play styles' descriptions in Settings at the size of the other settings' (0.78 em, about 14 px, was
+     13); in the candy album two chapter cards side by side keep their names at the top (`align-content: start`; the
+     card with only an empty ring had its name 6 px lower).
+- **Looked at and left as it was:** the HUD in play (bag, helper, Pause, "Just nu", the touch controls) is clear at every
+  size; Pause, Godispåsen and the settings read well; the memory viewer, the credits and the error card are fine;
+  Godisracet's race HUD, pause and results are clear at every size. The settings' switches measure 56×32 but the
+  whole row is their label, so the target is the row.
+- **Decisions:** big screens scale the sheets uniformly with CSS `zoom` rather than by new layouts, so every sheet keeps
+  the layout it was checked in. Something in a sheet that sets a position from screen pixels must divide by the zoom
+  (the memory viewer does that kind of measuring, which is why it is not zoomed).
+- **Validation:** `npm run typecheck`; `npm test` (3399 passed, 20 skipped; 29 of them new); `npm run build` (JS 736.2 KB
+  of 1000 KB, size gate ok); `npm run privacy-check`; the browser suites big-screen (6 checks), settings (69),
+  photo-focus (4), photos (20), album, profiles (19), home-console (96) and story with `STORY_FILTER=painting` (8). The
+  painting suite once timed out clicking Fortsätt in the morning scene while other suites loaded the machine; alone,
+  on the final build, it passed. In this cloud container `memory-presentation`'s check "interruption freezes a
+  picture fade" fails on unchanged `main` too (its Chromium is a newer build than the pinned one); on GitHub it
+  passes.
+- **Not checked:** on the family's devices or a real television; with the family's models (stand-ins only). The zoom
+  needs a browser with standard CSS `zoom` (Chrome, Edge, Safari, Firefox 126 and later; a TV's Chromium browser has it).
+- **Next:** Olov opens the game and Godisracet on the television and a computer and says whether the sheets are the
+  right size from the sofa. No Blender work is waiting.
+
 ## State (17 November 2026, evening): Morfar speaks in the narrator's voice (`voices/morfar-som-berattaren`)
 
 Olov: "Jag tycker vi ska ändra rösten på morfar så att han får samma röst som berättaren. Berättaren och morfar har
@@ -7325,6 +7387,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| UX/UI audit (18 Nov) | Audit the UX, UI, HUD and menus; make them friendly and good-looking | One cloud session | — / 1 request | Sheets grow on big screens; no HUD peeking round sheets; the credits' timer; icons on every child's button; the painting's table; Godisracet's menu flight clear of the bunting |
 | Morfar's voice (17 Nov, evening) | Morfar in the narrator's voice | One session on Olov's computer | — / 1 message | Morfar's six lines recorded again in Olov's own voice and levelled; each heard right on its first take |
 | The QA round's nine PRs (16 Nov, midday) | Check #284–#292 and merge them | The same cloud session, after #283 | — / 1 message (+1 picture) | Eight right as they were; #287's Space after a mouse click fixed in a follow-up; all nine merged after the checks on them together |
 | Autonomous QA (16 Nov) | Playtest both desktop sizes; 5–8 isolated improvements | One cloud session; six game fixes plus one browser timing repair in seven separate PRs | — / 1 request | 3367 combined tests passed; real play and targeted debug scenarios; no merge/deploy; screenshots outside Git |
@@ -7404,10 +7467,11 @@ The older list, still true where it is not struck:
 
 ## Known bugs
 
-- **Autonomous QA (16 November):** in `src/ui/photos.ts`, the album/credits interval keeps advancing when the page is
-  hidden; Previous and the left/right keys do not reset its four-second timer as Next does. These are code-review
-  observations to reproduce in the next browser pass, not changes made here. Godisracet's compact 720p menu uses
-  very small supporting text; a larger type scale needs a deliberate layout pass rather than only larger fonts.
+- **UX audit (18 November):** the sheets' zoom on big screens was seen in Chromium only, at 1920×1080 and 2560×1440,
+  not on the family's television. In portrait the garden's start shows the black underside of the deck below the
+  world, the same dark as in the prologue's title picture (Senare). Godisracet's compact 720p menu still uses small
+  supporting text (about 12 px on a phone held sideways); a larger type scale needs the layout pass asked about below.
+  (The credits' timer from the 16 November QA is fixed.)
 
 - **The seven of 15 November, night:** all seen with stand-in figures in this computer's renderer only, not on the
   family's devices or with the family's models. On a phone held upright the wide shots now keep their background, but
@@ -7690,9 +7754,12 @@ The older list, still true where it is not struck:
 
 ## Senare (wishes for a later release)
 
+- From the UX audit (18 November): in the candy album, an empty sticker ring could show a faint outline of the sweet
+  to find, to invite looking (it is a plain ring by design today, menus.md row 12); the dark under the deck below the
+  world on an upright phone at the garden's start.
 - From autonomous QA (16 November): review a more readable Godisracet start menu at 720p (primary choices and larger
-  supporting text); reproduce and repair album auto-advance while hidden and inconsistent timer reset after manual
-  navigation. Validate gamepad reconnection and frame pacing on the family's actual devices.
+  supporting text). Validate gamepad reconnection and frame pacing on the family's actual devices. (The album's
+  auto-advance while hidden and its timer after manual navigation are fixed, 18 November.)
 
 - From Olov's second Äventyr 2 list (14–15 November), seen but not fixed: Äventyr 2's own chunk is 158.5 of its 160 KB
   gate (raise the gate or split a part out before the next big Äventyr 2 change); the gnawed birch stumps' pale points
@@ -7771,6 +7838,12 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 18 november (allt är byggt; inget hindrar):
+
+- **Menyerna på TV:n och datorn:** på en skärm som är minst 1800 punkter bred (en 1080p-TV eller en stor skärm) blir nu
+  startsidan, pausen, inställningarna, slutsidan och Godisracets menyer en fjärdedel större, så att de syns från
+  soffan. Är de lagom stora där, eller vill du ha dem ännu större (eller mindre)?
 
 Från den 17 november, kväll (allt är byggt; inget hindrar):
 
