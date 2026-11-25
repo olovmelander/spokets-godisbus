@@ -3,8 +3,8 @@
 ## State (25 November 2026): a story proposal for Äventyr 3 (`ccr-9c4b986a-n2u5ne`)
 
 Olov asked for a story for Äventyr 3: the family's coming trip, with their friend Martin and Ephraim, the trägubbe
-Pappa photographs on every journey, at its heart, and the family's room as a setting. One cloud session, from `main` at
-`2e3cbac` (#299). Nothing in the game changed.
+Pappa photographs on every journey, at its heart, and a hotel suite with a pool in the room as a setting. One cloud
+session, from `main` at `2e3cbac` (#299). Nothing in the game changed.
 
 - **How it was made.** Three workflows of subagents: research (the places, Thai nature and culture, story craft), five
   concepts from different angles, three judges, a synthesis, three critics, a revision, four verifiers (continuity, a

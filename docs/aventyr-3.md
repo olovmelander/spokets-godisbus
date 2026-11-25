@@ -102,14 +102,14 @@ i mörkret med ljus, leder och gör det avgörande själv.
 - **Bertil.** Röd-vit keps, fotbollsspelare; kreativ, sportig, busig, snäll. Han hoppades på ett äventyr i tofflor, och
   tofflorna åker med. Hans flipflop blir en båt, han spelar takraw med thailändska barn och får med Martin på bilden.
 
-Mormor och morfar är inte med på resan (Olov, 25 november 2026).
+Mormor och morfar är inte med i det här äventyret (Olov, 25 november 2026).
 
 ### Martin
 
 Familjens kompis, en riktig person utanför familjen, som bara heter Martin. Han vill vara med i spelet (Olov, 25
-november 2026). Han skrivs som en roll, och varje scen fungerar med en annan vuxen på hans plats. Tills Olov har
-bekräftat hans utseende är han en neutral ersättningsfigur utan yrke, hem och efternamn, och han är aldrig i sviten.
-Rollen och alla hans repliker är förslag.
+november 2026). Han skrivs som en roll, så att varje scen fungerar med en annan vuxen på hans plats om han ångrar sig.
+Han har inget yrke, hem eller efternamn i spelet, och han är aldrig i sviten. Tills Olov har bekräftat hans utseende är
+han en neutral ersättningsfigur. Rollen och alla hans repliker är förslag.
 
 - **Han tittar i fel ögonblick**, och Ephraim stelnar i allt omöjligare poser. Skämtet ligger i poserna, aldrig i honom
   (förslag – Olov bekräftar).
@@ -804,7 +804,8 @@ flytvästarna, dykmasken och badringen saknar märken och text. Bilen är familj
   årtal i adresserna.
 - Martin heter bara Martin. Han vill vara med (Olov, 25 november 2026); hans utseende och drag bekräftar Olov, och hans
   scener kan tas bort om han ångrar sig. Fah och hennes familj är påhittade.
-- **Dokumentet ligger i det vanliga, publika repot** (Olov, 25 november 2026). Hotellets namn, datum, flyg och
+- **Dokumentet ligger i det vanliga, publika repot, och Äventyr 3 byggs där som de andra äventyren** (Olov, 25
+  november 2026). Familjens modeller ligger som alltid i det privata förrådet. Hotellets namn, datum, flyg och
   avgångstider skrivs ändå aldrig, varken här, i spelet, i commit-meddelanden eller i PR-texter.
 
 **En thailändsk läsare.** Förslaget är att en betald thailändsk kulturläsare läser berättelsen innan något byggs,
@@ -839,12 +840,14 @@ ensam.” spelas in som en ny replik med egen nyckel, eftersom Mammas melodi hö
 
 **Arbetsordning**
 1. Olov svarar på de öppna frågorna, och den thailändska läsaren läser berättelsen.
-2. Den godkända berättelsen blir kanon här, i `docs/aventyr-3.md`.
-3. En PR per kapitel. Varje ny simuleringsbit får en egen PR med tester och robotgenomspelning.
-4. Prologen, Snövallen, Arlanda och Nattflyget; sedan Sviten, äventyrets hjärta, med checkpoint, kontaktark och Olovs
+2. Olov säger ja till berättelsen, och dokumentet blir kanon.
+3. Prologen, Snövallen, Arlanda och Nattflyget; sedan Sviten, äventyrets hjärta, med checkpoint, kontaktark och Olovs
    genomspelning.
-5. Snidarverkstaden, Ön, Den blå bussen, Nyårsnatten och Två nyår, ett kapitel i taget.
-6. Röster och den thailändska läsarens sista läsning. Sedan höjer Olov `RELEASED_CHAPTER`.
+4. Snidarverkstaden, Ön, Den blå bussen, Nyårsnatten och Två nyår.
+5. Röster och den thailändska läsarens sista läsning. Sedan höjer Olov `RELEASED_CHAPTER`.
+
+Varje kapitel får en egen PR, och varje ny simuleringsbit får en egen PR med tester och robotgenomspelning innan
+kapitlet som behöver den byggs.
 
 ## Frågor till Olov
 
@@ -860,9 +863,9 @@ ensam.” spelas in som en ny replik med egen nyckel, eftersom Mammas melodi hö
 10. Får vi göra Ephraims modell från dina två bilder, i det privata förrådet?
 11. **Besvarad:** Klonk stannar hemma den här gången.
 12. Hur tar sig familjen till Arlanda: bil, tåg eller flyg? Förslaget är bilen.
-13. Ska sviten vara påhittad? Förslaget är ja.
+13. Är det okej att sviten är påhittad och allmän? Förslaget är ja.
 14. **Besvarad:** Pappa står nästan alltid bakom kameran, och spelet får säga det.
-15. **Besvarad:** dokumentet ligger i det vanliga repot.
+15. **Besvarad:** dokumentet ligger i det vanliga repot, och Äventyr 3 byggs där som de andra.
 16. Ska Elof spela Äventyr 3 efter resan? Förslaget är ja, så att den hinner bli klar och resans minnen kan komma med.
 17. På nyårsafton är båtarna till ön fulla, och ön har en egen nedräkning med fyrverkeri. Ska ön ligga dagen före, efter
     ett ordlöst kort som också skiljer spelets dagar från de riktiga?
