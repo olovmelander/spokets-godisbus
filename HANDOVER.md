@@ -1,5 +1,24 @@
 # Handover
 
+## State (25 November 2026): a story proposal for Äventyr 3 (`ccr-9c4b986a-n2u5ne`)
+
+Olov asked for a story for Äventyr 3: the family's coming trip, with their friend Martin and Ephraim, the trägubbe
+Pappa photographs on every journey, at its heart, and the family's room as a setting. One cloud session, from `main` at
+`2e3cbac` (#299). Nothing in the game changed.
+
+- **How it was made.** Three workflows of subagents: research (the places, Thai nature and culture, story craft), five
+  concepts from different angles, three judges, a synthesis, three critics, a revision, four verifiers (continuity, a
+  seven-year-old's reading and the Swedish, canon and code claims against the repo, facts and respect on the web), a
+  fix and a regression check. Every voiced line in it is at most 42 characters.
+- **The result** is a Swedish document, *Äventyr 3: Ephraims stora resa* (about 10,900 words: summary, magic, the
+  question, ten chapters with puzzles, family helps and sample lines, threads, new mechanics, respect and safety, how to
+  build it, 29 questions, sources). It was sent to Olov as a file in the session.
+- **It is not in the repository, on purpose.** It says where the family is and when, and so when their house stands
+  empty; the repository and its branches are public and git history is permanent (plan §2.6: anything personal is asked
+  about first). Where it lives is Olov's decision (question below). A later session needs it from Olov; it is not in
+  this container's scratchpad for long.
+- **Gates:** `npm run typecheck`, `npm test`, `npm run build` and `npm run privacy-check` pass (only this file changed).
+
 ## State (18 November 2026): UX, UI, HUD and menu audit (`ccr-dfffaef9-rm8yrr`)
 
 Olov: "In this game. I want you to do an audit of the UX, UI, Huds, menues and make sure everything is user friendly,
@@ -6707,6 +6726,11 @@ record identify the exact published revision.
 
 ## Next
 
+**Äventyr 3's story (25 November).** A proposal exists outside the repository (see the State above). Next: Olov
+answers its questions (Martin's consent first, then where the document may live) and approves or changes the story.
+Nothing is built. When it is: one PR per chapter and one per new simulation piece; Ephraim's model, the family's new
+clothes and the new environments need Olov's computer (Blender 5.2, the private repository).
+
 **The white and the green door everywhere (15 November, late night).** Every home chapter has the white bathroom door
 (35.5), then the hall (the rail and coats 37.95–41.95, the green front door at 44.4), and where it goes out on the
 veranda, the veranda's door at `HOME_LAYOUT.veranda` (48). Anything placed on the deck in the prologue or Stormkvällen
@@ -7387,6 +7411,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 3 story proposal (25 Nov) | A story for Äventyr 3 | One cloud session; three workflows of subagents | — / 2 messages (+2 pictures) | A Swedish story document sent to Olov as a file; kept out of the repository until Olov decides; 29 questions |
 | UX/UI audit (18 Nov) | Audit the UX, UI, HUD and menus; make them friendly and good-looking | One cloud session | — / 1 request | Sheets grow on big screens; no HUD peeking round sheets; the credits' timer; icons on every child's button; the painting's table; Godisracet's menu flight clear of the bunting |
 | Morfar's voice (17 Nov, evening) | Morfar in the narrator's voice | One session on Olov's computer | — / 1 message | Morfar's six lines recorded again in Olov's own voice and levelled; each heard right on its first take |
 | The QA round's nine PRs (16 Nov, midday) | Check #284–#292 and merge them | The same cloud session, after #283 | — / 1 message (+1 picture) | Eight right as they were; #287's Space after a mouse click fixed in a follow-up; all nine merged after the checks on them together |
@@ -7838,6 +7863,14 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 25 november (förslaget till Äventyr 3; inget är byggt):
+
+- **Var ska förslaget ligga?** Du fick det som fil i sessionen. Det ligger inte i repot, eftersom det berättar var
+  familjen är och när, och därmed när huset står tomt. Allt i repot är publikt, också grenarna. Ska det läggas i det
+  privata förrådet `spokets-godisbus-familj` (på en egen gren, eftersom dess huvudgren byggs in i sajten), eller vänta
+  tills familjen är hemma?
+- **Frågorna i förslaget:** det slutar med 29 frågor. Först: har Martin själv sagt ja till att vara med?
 
 Från den 18 november (allt är byggt; inget hindrar):
 
