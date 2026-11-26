@@ -1,5 +1,29 @@
 # Handover
 
+## State (25 November 2026): a story proposal for Äventyr 3 (`ccr-9c4b986a-n2u5ne`)
+
+Olov asked for a story for Äventyr 3: the family's coming trip, with their friend Martin and Ephraim, the trägubbe
+Pappa photographs on every journey, at its heart, and a hotel suite with a pool in the room as a setting. One cloud
+session, from `main` at `2e3cbac` (#299). Nothing in the game changed.
+
+- **How it was made.** Three workflows of subagents: research (the places, Thai nature and culture, story craft), five
+  concepts from different angles, three judges, a synthesis, three critics, a revision, four verifiers (continuity, a
+  seven-year-old's reading and the Swedish, canon and code claims against the repo, facts and respect on the web), a
+  fix and a regression check. Every voiced line in it is at most 42 characters.
+- **The result** is a Swedish document, *Äventyr 3: Ephraims stora resa* (about 10,900 words: summary, magic, the
+  question, ten chapters with puzzles, family helps and sample lines, threads, new mechanics, respect and safety, how to
+  build it, 29 questions, sources): `docs/aventyr-3.md`. It is a proposal, not canon, until Olov says yes to the story.
+- **Where it lives.** It was first kept out of the repository and sent to Olov as a file, since it says where the family
+  is over the holidays (plan §2.6: anything personal is asked about first). Olov answered the same day: "Lägg det i
+  vanliga repot, det är lugnt!" The hotel's name, dates, flights and departure times are still never written, here or
+  in the game.
+- **Olov's answers (25 November):** Martin wants to be in the game (his look, traits, jokes and voice are still
+  proposals); Pappa is nearly always behind the camera, and the game may say so; Ephraim is as tall as Klonk (about
+  15 cm, small Elof's height); Klonk stays home this time. They are written into the document (questions 1, 6, 11, 14
+  and 15 marked answered).
+- **Gates:** `npm run typecheck`, `npm test`, `npm run build` and `npm run privacy-check` pass. Nothing in the game
+  changed.
+
 ## State (18 November 2026): UX, UI, HUD and menu audit (`ccr-dfffaef9-rm8yrr`)
 
 Olov: "In this game. I want you to do an audit of the UX, UI, Huds, menues and make sure everything is user friendly,
@@ -6707,6 +6731,11 @@ record identify the exact published revision.
 
 ## Next
 
+**Äventyr 3's story (25 November).** A proposal is in `docs/aventyr-3.md` (see the State above). Next: Olov answers
+its open questions (24 of 29) and approves or changes the story; a Thai cultural reader is suggested before building.
+Nothing is built. When it is: one PR per chapter and one per new simulation piece; Ephraim's model, the family's new
+clothes and the new environments need Olov's computer (Blender 5.2, the private repository).
+
 **The white and the green door everywhere (15 November, late night).** Every home chapter has the white bathroom door
 (35.5), then the hall (the rail and coats 37.95–41.95, the green front door at 44.4), and where it goes out on the
 veranda, the veranda's door at `HOME_LAYOUT.veranda` (48). Anything placed on the deck in the prologue or Stormkvällen
@@ -7387,6 +7416,7 @@ The older list, still true where it is not struck:
 
 | Stage | Planned sessions | Actual | Olov's rounds (planned / actual) | Notes |
 | --- | --- | --- | --- | --- |
+| Äventyr 3 story proposal (25 Nov) | A story for Äventyr 3 | One cloud session; three workflows of subagents | — / 2 messages (+2 pictures) | A Swedish story document, `docs/aventyr-3.md`; 29 questions, five answered the same day |
 | UX/UI audit (18 Nov) | Audit the UX, UI, HUD and menus; make them friendly and good-looking | One cloud session | — / 1 request | Sheets grow on big screens; no HUD peeking round sheets; the credits' timer; icons on every child's button; the painting's table; Godisracet's menu flight clear of the bunting |
 | Morfar's voice (17 Nov, evening) | Morfar in the narrator's voice | One session on Olov's computer | — / 1 message | Morfar's six lines recorded again in Olov's own voice and levelled; each heard right on its first take |
 | The QA round's nine PRs (16 Nov, midday) | Check #284–#292 and merge them | The same cloud session, after #283 | — / 1 message (+1 picture) | Eight right as they were; #287's Space after a mouse click fixed in a follow-up; all nine merged after the checks on them together |
@@ -7838,6 +7868,14 @@ The older list, still true where it is not struck:
 - A hoot sound for the owl (it is an Elof line now).
 
 ## Frågor till Olov
+
+Från den 25 november (förslaget till Äventyr 3; inget är byggt):
+
+- **Berättelsen:** gillar du *Ephraims stora resa* som den står i `docs/aventyr-3.md`, eller vill du ändra något innan
+  den blir kanon?
+- **De öppna frågorna:** dokumentet slutar med 29 frågor, och fem är besvarade. Viktigast nu: hur ser Martin ut, och
+  stämmer förslagen om honom (fråga 2–5)? Vad håller Ephraim i handen, och vad är den vita formen på hans ryggsäck
+  (fråga 7–8)?
 
 Från den 18 november (allt är byggt; inget hindrar):
 
